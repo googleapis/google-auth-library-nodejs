@@ -15,21 +15,13 @@ This library is in Alpha. We will make an effort to support the library, but we 
 * Ask your development related questions on [![Ask a question on Stackoverflow][overflowimg]][stackoverflow]
 * If you've found an bug/issue, please [file it on GitHub][bugs].
 
-### Working with Google Cloud APIs?
-
-If you're working with [Google Cloud Platform][cloudplatform] APIs such as
-Datastore, Cloud Storage or Pub/Sub, consider using [`gcloud`][gcloud], a
-Node idiomatic client for Google Cloud services.
-
-
-
 ## Installation
 
 This library is distributed on `npm`. In order to add it as a dependency,
 run the following command:
 
 ``` sh
-$ npm install googleapis --save
+$ npm install googleauth --save
 ```
 
 ## License
