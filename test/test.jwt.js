@@ -426,23 +426,25 @@ describe('.createScopedRequired', function() {
 
 describe('.fromJson', function () {
 
-  it('should error on null json', function () {
+  it('should error on null json', function (done) {
     var auth = new googleAuth();
     var jwt = new auth.JWT();
     jwt.fromJSON(null, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should error on empty json', function () {
+  it('should error on empty json', function (done) {
     var auth = new googleAuth();
     var jwt = new auth.JWT();
     jwt.fromJSON({}, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should error on missing client_email', function () {
+  it('should error on missing client_email', function (done) {
     var json = createJSON();
     delete json.client_email;
 
@@ -450,10 +452,11 @@ describe('.fromJson', function () {
     var jwt = new auth.JWT();
     jwt.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should error on missing private_key', function () {
+  it('should error on missing private_key', function (done) {
     var json = createJSON();
     delete json.private_key;
 
@@ -461,56 +464,62 @@ describe('.fromJson', function () {
     var jwt = new auth.JWT();
     jwt.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should create JWT with client_email', function () {
+  it('should create JWT with client_email', function (done) {
     var json = createJSON();
     var auth = new googleAuth();
     var jwt = new auth.JWT();
     jwt.fromJSON(json, function (err) {
       assert.equal(null, err);
       assert.equal(json.client_email, jwt.email);
+      done();
     });
   });
 
-  it('should create JWT with private_key', function () {
+  it('should create JWT with private_key', function (done) {
     var json = createJSON();
     var auth = new googleAuth();
     var jwt = new auth.JWT();
     jwt.fromJSON(json, function (err) {
       assert.equal(null, err);
       assert.equal(json.private_key, jwt.key);
+      done();
     });
   });
 
-  it('should create JWT with null scopes', function () {
+  it('should create JWT with null scopes', function (done) {
     var json = createJSON();
     var auth = new googleAuth();
     var jwt = new auth.JWT();
     jwt.fromJSON(json, function (err) {
       assert.equal(null, err);
       assert.equal(null, jwt.scopes);
+      done();
     });
   });
 
-  it('should create JWT with null subject', function () {
+  it('should create JWT with null subject', function (done) {
     var json = createJSON();
     var auth = new googleAuth();
     var jwt = new auth.JWT();
     jwt.fromJSON(json, function (err) {
       assert.equal(null, err);
       assert.equal(null, jwt.subject);
+      done();
     });
   });
 
-  it('should create JWT with null keyFile', function () {
+  it('should create JWT with null keyFile', function (done) {
     var json = createJSON();
     var auth = new googleAuth();
     var jwt = new auth.JWT();
     jwt.fromJSON(json, function (err) {
       assert.equal(null, err);
       assert.equal(null, jwt.keyFile);
+      done();
     });
   });
 });

@@ -39,23 +39,25 @@ describe('Refresh Token auth client', function() {
 
 describe('.fromJson', function () {
 
-  it('should error on null json', function () {
+  it('should error on null json', function (done) {
     var auth = new googleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(null, function (err) {
       assert.equal(true, err instanceof Error);
+      done()
     });
   });
 
-  it('should error on empty json', function () {
+  it('should error on empty json', function (done) {
     var auth = new googleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON({}, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should error on missing client_id', function () {
+  it('should error on missing client_id', function (done) {
     var json = createJSON();
     delete json.client_id;
 
@@ -63,10 +65,11 @@ describe('.fromJson', function () {
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should error on missing client_secret', function () {
+  it('should error on missing client_secret', function (done) {
     var json = createJSON();
     delete json.client_secret;
 
@@ -74,10 +77,11 @@ describe('.fromJson', function () {
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should error on missing refresh_token', function () {
+  it('should error on missing refresh_token', function (done) {
     var json = createJSON();
     delete json.refresh_token;
 
@@ -85,36 +89,40 @@ describe('.fromJson', function () {
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
+      done();
     });
   });
 
-  it('should create UserRefreshClient with clientId_', function() {
+  it('should create UserRefreshClient with clientId_', function(done) {
     var json = createJSON();
     var auth = new googleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.ifError(err);
       assert.equal(json.client_id, refresh.clientId_);
+      done();
     });
   });
 
-  it('should create UserRefreshClient with clientSecret_', function() {
+  it('should create UserRefreshClient with clientSecret_', function(done) {
     var json = createJSON();
     var auth = new googleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.ifError(err);
       assert.equal(json.client_secret, refresh.clientSecret_);
+      done();
     });
   });
 
-  it('should create UserRefreshClient with _refreshToken', function() {
+  it('should create UserRefreshClient with _refreshToken', function(done) {
     var json = createJSON();
     var auth = new googleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.ifError(err);
       assert.equal(json.refresh_token, refresh._refreshToken);
+      done();
     });
   });
 });
