@@ -278,6 +278,28 @@ describe('googleAuth', function() {
         done();
       });
     });
+
+    it('should read another stream and create a RefreshClient', function(done) {
+      // Read the contents of the file into a json object.
+      var fileContents = fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
+      var json = JSON.parse(fileContents);
+
+      // Now open a stream on the same file.
+      var stream = fs.createReadStream('./test/fixtures/refresh.json');
+
+      // And pass it into the fromStream method.
+      var auth = new googleAuth();
+      auth.fromStream(stream, function (err, result) {
+        assert.ifError(err);
+
+        // Ensure that the correct bits were pulled from the stream.
+        assert.equal(json.client_id, result.clientId_);
+        assert.equal(json.client_secret, result.clientSecret_);
+        assert.equal(json.refresh_token, result._refreshToken);
+
+        done();
+      });
+    });
   });
 
   describe('._getApplicationCredentialsFromFilePath', function () {
