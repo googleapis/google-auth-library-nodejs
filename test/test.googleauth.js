@@ -279,7 +279,7 @@ describe('googleAuth', function() {
       });
     });
 
-    it('should read another stream and create a RefreshClient', function(done) {
+    it('should read another stream and create a UserRefreshClient', function(done) {
       // Read the contents of the file into a json object.
       var fileContents = fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
       var json = JSON.parse(fileContents);
