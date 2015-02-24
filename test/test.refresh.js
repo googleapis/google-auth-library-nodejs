@@ -44,7 +44,7 @@ describe('.fromJson', function () {
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(null, function (err) {
       assert.equal(true, err instanceof Error);
-      done()
+      done();
     });
   });
 
