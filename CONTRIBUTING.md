@@ -19,6 +19,11 @@ $ npm test
 
 which looks for tests in the `test/` directory.
 
+In addition, you must run the [google-api-nodejs-client][client-repo] tests, which depend upon this
+library. Clone a copy of the [google-api-nodejs-client][client-repo] repo, update the dependency
+to point to your local copy of the google-auth-library-nodejs repo, and ensure that the client
+tests still pass.
+
 Your code should honor the [Google JavaScript Style Guide][js-guide].
 You can use [Closure Linter][c-linter] to detect style issues.
 
@@ -66,3 +71,4 @@ to the official list of contributors and be able to accept your patches.
 [c-linter]: https://code.google.com/p/closure-linter/
 [indv-cla]: https://developers.google.com/open-source/cla/individual
 [corp-cla]: https://developers.google.com/open-source/cla/corporate
+[client-repo]: https://github.com/google/google-api-nodejs-client

@@ -21,7 +21,7 @@ This library is distributed on `npm`. In order to add it as a dependency,
 run the following command:
 
 ``` sh
-$ npm install googleauth --save
+$ npm install google-auth-library --save
 ```
 
 ## License
@@ -33,28 +33,26 @@ available in [COPYING][copying].
 
 See [CONTRIBUTING][contributing].
 
-[travisimg]: https://api.travis-ci.org/google/google-api-nodejs-client.svg
-[bugs]: https://github.com/google/google-api-nodejs-client/issues
+[travisimg]: https://api.travis-ci.org/google/google-auth-library-nodejs.svg
+[bugs]: https://github.com/google/google-auth-library-nodejs/issues
 [node]: http://nodejs.org/
-[travis]: https://travis-ci.org/google/google-api-nodejs-client
-[stackoverflow]: http://stackoverflow.com/questions/tagged/google-api-nodejs-client
+[travis]: https://travis-ci.org/google/google-auth-library-nodejs
+[stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
 [apiexplorer]: https://developers.google.com/apis-explorer
 [urlshort]: https://developers.google.com/url-shortener/
 [usingkeys]: https://developers.google.com/console/help/#UsingKeys
-[contributing]: https://github.com/google/google-api-nodejs-client/tree/master/CONTRIBUTING.md
-[copying]: https://github.com/google/google-api-nodejs-client/tree/master/COPYING
+[contributing]: https://github.com/google/google-auth-library-nodejs/tree/master/CONTRIBUTING.md
+[copying]: https://github.com/google/google-auth-library-nodejs/tree/master/COPYING
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
 [request]: https://github.com/mikeal/request
 [requestopts]: https://github.com/mikeal/request#requestoptions-callback
 [stream]: http://nodejs.org/api/stream.html#stream_class_stream_readable
-[migrating]: https://github.com/google/google-api-nodejs-client/tree/master/MIGRATING.md
 [stability]: http://nodejs.org/api/stream.html#stream_stream
 [overflowimg]: https://googledrive.com/host/0ByfSjdPVs9MZbkhjeUhMYzRTeEE/stackoveflow-tag.png
 [devconsole]: https://console.developer.google.com
 [oauth]: https://developers.google.com/accounts/docs/OAuth2
-[oauthexample]: https://github.com/google/google-api-nodejs-client/tree/master/examples/oauth2.js
-[options]: https://github.com/google/google-api-nodejs-client/tree/master#options
+[options]: https://github.com/google/google-auth-library-nodejs/tree/master#options
 [gcloud]: https://github.com/GoogleCloudPlatform/gcloud-node
 [cloudplatform]: https://developers.google.com/cloud/
-[coveralls]: https://coveralls.io/r/google/google-api-nodejs-client?branch=master
-[coverallsimg]: https://img.shields.io/coveralls/google/google-api-nodejs-client.svg
+[coveralls]: https://coveralls.io/r/google/google-auth-library-nodejs?branch=master
+[coverallsimg]: https://img.shields.io/coveralls/google/google-auth-library-nodejs.svg

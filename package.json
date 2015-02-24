@@ -1,6 +1,6 @@
 {
-  "name": "googleauth",
-  "version": "1.0.0",
+  "name": "google-auth-library",
+  "version": "0.9.2",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "contributors": [
@@ -19,7 +19,7 @@
   "main": "./lib/auth/googleauth",
   "repository": {
     "type": "git",
-    "url": "https://github.com/google/google-auth-nodejs.git"
+    "url": "https://github.com/google/google-auth-library-nodejs.git"
   },
   "keywords": [
     "google",
@@ -49,7 +49,7 @@
     "minimist": "^1.1.0"
   },
   "scripts": {
-    "lint": "jshint lib test scripts apis",
+    "lint": "jshint lib test",
     "test": "mocha --reporter spec --timeout 4000",
     "generate-apis": "node scripts/generate",
     "generate-docs": "jsdoc -c jsdoc-conf.json ./README.md",
