@@ -21,7 +21,7 @@ This library is distributed on `npm`. In order to add it as a dependency,
 run the following command:
 
 ``` sh
-$ npm install googleauth --save
+$ npm install google-auth-library-nodejs --save
 ```
 
 ## License
