@@ -21,7 +21,7 @@ var utils = require('../lib/utils.js');
 
 describe('Utils', function() {
 
-  it('should not extend funtions on the prototype', function() {
+  it('should not extend functions on the prototype', function() {
 
     var object = {
       property: 'test'
