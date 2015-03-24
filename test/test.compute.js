@@ -41,7 +41,7 @@ describe('Compute auth client', function() {
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
     var auth = new googleAuth();
     var compute = new auth.Compute();
-    compute.request({}, function () {
+    compute.request({ uri: 'http://foo' }, function () {
       assert.equal(compute.credentials.access_token, 'abc123');
       scope.done();
       done();
@@ -56,7 +56,7 @@ describe('Compute auth client', function() {
     var compute = new auth.Compute();
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() - 10000;
-    compute.request({}, function () {
+    compute.request({ uri: 'http://foo' }, function () {
       assert.equal(compute.credentials.access_token, 'abc123');
       scope.done();
       done();
@@ -71,7 +71,7 @@ describe('Compute auth client', function() {
     var compute = new auth.Compute();
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() + 10000;
-    compute.request({}, function () {
+    compute.request({ uri: 'http://foo' }, function () {
       assert.equal(compute.credentials.access_token, 'initial-access-token');
       assert.equal(false, scope.isDone());
       nock.cleanAll();
