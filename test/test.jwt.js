@@ -77,7 +77,7 @@ describe('JWT auth client', function() {
     jwt.gToken = function(opts) {
       assert.equal('foo@serviceaccount.com', opts.iss);
       assert.equal('/path/to/key.pem', opts.keyFile);
-      assert.equal('http://bar http://foo', opts.scope);
+      assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
       assert.equal('bar@subjectaccount.com', opts.sub);
       return {
         getToken: function(opt_callback) {
