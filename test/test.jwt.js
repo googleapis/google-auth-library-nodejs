@@ -106,7 +106,7 @@ describe('JWT auth client', function() {
       done();
       return {
         getToken: function() {}
-      }
+      };
     };
 
     jwt.authorize();
