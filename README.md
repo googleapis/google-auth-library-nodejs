@@ -3,7 +3,7 @@
 [![Build Status][travisimg]][travis]
 [![Code Coverage][coverallsimg]][coveralls]
 
-Google's officially supported [node.js][node] client library for using
+This is Google's officially supported [node.js][node] client library for using
 OAuth 2.0 authorization and authentication with Google APIs.
 
 ### Alpha
@@ -17,7 +17,7 @@ This library is in Alpha. We will make an effort to support the library, but we 
 
 ## Installation
 
-This library is distributed on `npm`. In order to add it as a dependency,
+This library is distributed on `npm`. To add it as a dependency,
 run the following command:
 
 ``` sh
@@ -28,6 +28,44 @@ $ npm install google-auth-library --save
 
 This library is licensed under Apache 2.0. Full license text is
 available in [COPYING][copying].
+
+## Example Usage
+
+``` js
+var google = require('googleapis');
+
+// Get the environment configured authorization
+google.auth.getApplicationDefault(function(err, authClient) {
+  if (err === null) {
+    // Inject scopes if they have not been injected by the environment
+    if (authClient.createScopedRequired && authClient.createScopedRequired()) {
+      var scopes = [
+        'https://www.googleapis.com/auth/cloud-platform',
+        'https://www.googleapis.com/auth/compute'
+      ];
+      authClient = authClient.createScoped(scopes)
+    }
+    
+    // Fetch the access token
+    authClient.getAccessToken(function(err, token)) {
+      if (err === null) {
+        // Use the access token
+      }
+    });
+  }    
+});
+```
+
+## Application Default Credentials
+This library provides an implementation of application default credentials for Node.js.
+
+The Application Default Credentials provide a simple way to get authorization credentials for use
+in calling Google APIs.
+
+They are best suited for cases when the call needs to have the same identity and authorization
+level for the application independent of the user. This is the recommended approach to authorize
+calls to Cloud APIs, particularly when you're building an application that uses Google Compute 
+Engine.
 
 ## Contributing
 
