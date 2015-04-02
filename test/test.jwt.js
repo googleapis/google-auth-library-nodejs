@@ -80,6 +80,8 @@ describe('JWT auth client', function() {
       assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
       assert.equal('bar@subjectaccount.com', opts.sub);
       return {
+        key: 'private-key-data',
+        iss: 'foo@subjectaccount.com',
         getToken: function(opt_callback) {
           opt_callback(null, 'initial-access-token');
         }
@@ -88,6 +90,8 @@ describe('JWT auth client', function() {
     jwt.authorize(function() {
       assert.equal('initial-access-token', jwt.credentials.access_token);
       assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
+      assert.equal('private-key-data', jwt.key);
+      assert.equal('foo@subjectaccount.com', jwt.email);
       done();
     });
   });
