@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "contributors": [
@@ -30,7 +30,7 @@
   ],
   "dependencies": {
     "async": "~0.9.0",
-    "gapitoken": "~0.1.2",
+    "gtoken": "^1.1.0",
     "request": "~2.51.0",
     "string-template": "~0.2.0"
   },

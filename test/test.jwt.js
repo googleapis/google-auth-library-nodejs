@@ -74,15 +74,14 @@ describe('JWT auth client', function() {
         null,
         ['http://bar', 'http://foo'],
         'bar@subjectaccount.com');
-    jwt.GAPI = function(opts, callback) {
+    jwt.gToken = function(opts) {
       assert.equal('foo@serviceaccount.com', opts.iss);
       assert.equal('/path/to/key.pem', opts.keyFile);
-      assert.equal('http://bar http://foo', opts.scope);
+      assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
       assert.equal('bar@subjectaccount.com', opts.sub);
-      setTimeout(function() {
-        callback(null);
-      }, 0);
       return {
+        key: 'private-key-data',
+        iss: 'foo@subjectaccount.com',
         getToken: function(opt_callback) {
           opt_callback(null, 'initial-access-token');
         }
@@ -91,6 +90,8 @@ describe('JWT auth client', function() {
     jwt.authorize(function() {
       assert.equal('initial-access-token', jwt.credentials.access_token);
       assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
+      assert.equal('private-key-data', jwt.key);
+      assert.equal('foo@subjectaccount.com', jwt.email);
       done();
     });
   });
@@ -104,9 +105,12 @@ describe('JWT auth client', function() {
         'http://foo',
         'bar@subjectaccount.com');
 
-    jwt.GAPI = function(opts) {
+    jwt.gToken = function(opts) {
       assert.equal('http://foo', opts.scope);
       done();
+      return {
+        getToken: function() {}
+      };
     };
 
     jwt.authorize();
@@ -125,7 +129,7 @@ describe('JWT auth client', function() {
       refresh_token: 'jwt-placeholder'
     };
 
-    jwt.gapi = {
+    jwt.gtoken = {
       getToken: function(callback) {
         callback(null, 'abc123');
       }
@@ -152,7 +156,7 @@ describe('JWT auth client', function() {
       expiry_date: (new Date()).getTime() - 1000
     };
 
-    jwt.gapi = {
+    jwt.gtoken = {
       getToken: function(callback) {
         callback(null, 'abc123');
       }
@@ -234,7 +238,7 @@ describe('JWT auth client', function() {
 
     var dateInSeconds = (new Date()).getTime() / 1000;
 
-    jwt.gapi = {
+    jwt.gtoken = {
       getToken: function(callback) {
         callback(null, 'token');
       },
