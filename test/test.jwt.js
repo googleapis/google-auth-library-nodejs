@@ -135,7 +135,7 @@ describe('JWT auth client', function() {
       }
     };
 
-    jwt.request({}, function() {
+    jwt.request({ uri : 'http://bar' }, function() {
       assert.equal('abc123', jwt.credentials.access_token);
       done();
     });
@@ -162,7 +162,7 @@ describe('JWT auth client', function() {
       }
     };
 
-    jwt.request({}, function() {
+    jwt.request({ uri : 'http://bar' }, function() {
       assert.equal('abc123', jwt.credentials.access_token);
       done();
     });
@@ -188,7 +188,7 @@ describe('JWT auth client', function() {
       expiry_date: (new Date()).getTime() + 5000
     };
 
-    jwt.request({}, function() {
+    jwt.request({ uri : 'http://bar' }, function() {
       assert.equal('initial-access-token', jwt.credentials.access_token);
       assert.equal(false, scope.isDone());
       nock.cleanAll();
@@ -215,7 +215,7 @@ describe('JWT auth client', function() {
       refresh_token: 'jwt-placeholder'
     };
 
-    jwt.request({}, function() {
+    jwt.request({ uri : 'http://bar' }, function() {
       assert.equal('initial-access-token', jwt.credentials.access_token);
       assert.equal(false, scope.isDone());
       nock.cleanAll();
@@ -245,7 +245,7 @@ describe('JWT auth client', function() {
       token_expires: dateInSeconds
     };
 
-    jwt.refreshToken_({}, function(err, creds) {
+    jwt.refreshToken_({ uri : 'http://bar' }, function(err, creds) {
       assert.notEqual(dateInSeconds, creds.expiry_date);
       assert.equal(dateInSeconds * 1000, creds.expiry_date);
       done();
