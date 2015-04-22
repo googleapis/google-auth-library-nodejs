@@ -19,8 +19,8 @@
 var assert = require('assert');
 var fs = require('fs');
 var googleAuth = require('../lib/auth/googleauth.js');
-var jws = require('jws');
 var keypair = require('keypair');
+var jws = require('jws');
 
 
 // Creates a standard JSON credentials object for testing.
@@ -38,22 +38,21 @@ describe('.refreshAccessToken', function() {
 
   it('create a signed JWT token as the access token', function(done) {
     var keys = keypair(1024 /* bitsize of private key */);
-    var testURI = "http:/example.com/my_test_service";
+    var testUri = 'http:/example.com/my_test_service';
     var email = 'foo@serviceaccount.com';
     var auth = new googleAuth();
     var client = new auth.JWTHeader(email, keys['private']);
 
     var expect_access_token = function(err, creds) {
-      assert.strictEqual(err, null, 'no error was expected: got\n' + err);
-      assert.notStrictEqual(creds, null,
-                            'an access token should have been created');
+      assert.strictEqual(null, err, 'no error was expected: got\n' + err);
+      assert.notStrictEqual(null, creds, 'an creds object should be present');
       var decoded = jws.decode(creds.access_token);
-      assert.strictEqual(decoded.payload.iss, email);
-      assert.strictEqual(decoded.payload.sub, email);
-      assert.strictEqual(decoded.payload.aud, testURI);
+      assert.strictEqual(email, decoded.payload.iss);
+      assert.strictEqual(email, decoded.payload.sub);
+      assert.strictEqual(testUri, decoded.payload.aud);
       done();
     };
-    client.refreshAccessToken(testURI, expect_access_token);
+    client.refreshAccessToken(testUri, expect_access_token);
   });
 
 });
