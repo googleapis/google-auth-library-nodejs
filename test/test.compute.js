@@ -153,7 +153,7 @@ describe('Compute auth client', function() {
         };
 
         // Mock the refreshAccessToken method to return a 403.
-        compute.refreshAccessToken = function (callback) {
+        compute.refreshAccessToken = function (_unused, callback) {
           callback(null, 'a weird response body', { 'statusCode': 403 });
         };
 
@@ -181,7 +181,7 @@ describe('Compute auth client', function() {
         };
 
         // Mock the refreshAccessToken method to return a 404.
-        compute.refreshAccessToken = function (callback) {
+        compute.refreshAccessToken = function (_unused, callback) {
           callback(null, 'a weird response body', { 'statusCode': 404 });
         };
 

@@ -905,9 +905,10 @@ describe('OAuth2 client', function() {
   });
 
   it('should return error in callback on refreshAccessToken', function(done) {
+    var unused_uri = null;
     var auth = new googleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    oauth2client.refreshAccessToken(function(err, result) {
+    oauth2client.refreshAccessToken(unused_uri, function(err, result) {
       assert.equal(err.message, 'No refresh token is set.');
       assert.equal(result, null);
       done();
