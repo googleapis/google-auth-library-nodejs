@@ -48,161 +48,169 @@ describe('Initial credentials', function() {
 
 describe('JWT auth client', function() {
 
-  it('should get an initial access token', function(done) {
-    var auth = new googleAuth();
-    var jwt = new auth.JWT(
-        'foo@serviceaccount.com',
-        '/path/to/key.pem',
-        null,
-        ['http://bar', 'http://foo'],
-        'bar@subjectaccount.com');
-    jwt.gToken = function(opts) {
-      assert.equal('foo@serviceaccount.com', opts.iss);
-      assert.equal('/path/to/key.pem', opts.keyFile);
-      assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
-      assert.equal('bar@subjectaccount.com', opts.sub);
-      return {
-        key: 'private-key-data',
-        iss: 'foo@subjectaccount.com',
-        getToken: function(opt_callback) {
-          opt_callback(null, 'initial-access-token');
+  describe('.authorize', function() {
+
+    it('should get an initial access token', function(done) {
+      var auth = new googleAuth();
+      var jwt = new auth.JWT(
+          'foo@serviceaccount.com',
+          '/path/to/key.pem',
+          null,
+          ['http://bar', 'http://foo'],
+          'bar@subjectaccount.com');
+      jwt.gToken = function(opts) {
+        assert.equal('foo@serviceaccount.com', opts.iss);
+        assert.equal('/path/to/key.pem', opts.keyFile);
+        assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
+        assert.equal('bar@subjectaccount.com', opts.sub);
+        return {
+          key: 'private-key-data',
+          iss: 'foo@subjectaccount.com',
+          getToken: function(opt_callback) {
+            opt_callback(null, 'initial-access-token');
+          }
+        };
+      };
+      jwt.authorize(function() {
+        assert.equal('initial-access-token', jwt.credentials.access_token);
+        assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
+        assert.equal('private-key-data', jwt.key);
+        assert.equal('foo@subjectaccount.com', jwt.email);
+        done();
+      });
+    });
+
+    it('should accept scope as string', function(done) {
+      var auth = new googleAuth();
+      var jwt = new auth.JWT(
+          'foo@serviceaccount.com',
+          '/path/to/key.pem',
+          null,
+          'http://foo',
+          'bar@subjectaccount.com');
+
+      jwt.gToken = function(opts) {
+        assert.equal('http://foo', opts.scope);
+        done();
+        return {
+          getToken: function() {}
+        };
+      };
+
+      jwt.authorize();
+    });
+
+  });
+
+  describe('.request', function() {
+
+    it('should refresh token if missing access token', function(done) {
+      var auth = new googleAuth();
+      var jwt = new auth.JWT(
+          'foo@serviceaccount.com',
+          '/path/to/key.pem',
+          null,
+          ['http://bar', 'http://foo'],
+          'bar@subjectaccount.com');
+
+      jwt.credentials = {
+        refresh_token: 'jwt-placeholder'
+      };
+
+      jwt.gtoken = {
+        getToken: function(callback) {
+          callback(null, 'abc123');
         }
       };
-    };
-    jwt.authorize(function() {
-      assert.equal('initial-access-token', jwt.credentials.access_token);
-      assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
-      assert.equal('private-key-data', jwt.key);
-      assert.equal('foo@subjectaccount.com', jwt.email);
-      done();
+
+      jwt.request({ uri : 'http://bar' }, function() {
+        assert.equal('abc123', jwt.credentials.access_token);
+        done();
+      });
     });
-  });
 
-  it('should accept scope as string', function(done) {
-    var auth = new googleAuth();
-    var jwt = new auth.JWT(
-        'foo@serviceaccount.com',
-        '/path/to/key.pem',
-        null,
-        'http://foo',
-        'bar@subjectaccount.com');
+    it('should refresh token if expired', function(done) {
+      var auth = new googleAuth();
+      var jwt = new auth.JWT(
+          'foo@serviceaccount.com',
+          '/path/to/key.pem',
+          null,
+          ['http://bar', 'http://foo'],
+          'bar@subjectaccount.com');
 
-    jwt.gToken = function(opts) {
-      assert.equal('http://foo', opts.scope);
-      done();
-      return {
-        getToken: function() {}
+      jwt.credentials = {
+        access_token: 'woot',
+        refresh_token: 'jwt-placeholder',
+        expiry_date: (new Date()).getTime() - 1000
       };
-    };
 
-    jwt.authorize();
-  });
+      jwt.gtoken = {
+        getToken: function(callback) {
+          callback(null, 'abc123');
+        }
+      };
 
-  it('should refresh token if missing access token', function(done) {
-    var auth = new googleAuth();
-    var jwt = new auth.JWT(
-        'foo@serviceaccount.com',
-        '/path/to/key.pem',
-        null,
-        ['http://bar', 'http://foo'],
-        'bar@subjectaccount.com');
-
-    jwt.credentials = {
-      refresh_token: 'jwt-placeholder'
-    };
-
-    jwt.gtoken = {
-      getToken: function(callback) {
-        callback(null, 'abc123');
-      }
-    };
-
-    jwt.request({ uri : 'http://bar' }, function() {
-      assert.equal('abc123', jwt.credentials.access_token);
-      done();
+      jwt.request({ uri : 'http://bar' }, function() {
+        assert.equal('abc123', jwt.credentials.access_token);
+        done();
+      });
     });
-  });
 
-  it('should refresh token if expired', function(done) {
-    var auth = new googleAuth();
-    var jwt = new auth.JWT(
-        'foo@serviceaccount.com',
-        '/path/to/key.pem',
-        null,
-        ['http://bar', 'http://foo'],
-        'bar@subjectaccount.com');
+    it('should not refresh if not expired', function(done) {
+      var scope = nock('https://accounts.google.com')
+          .log(console.log)
+          .post('/o/oauth2/token', '*')
+          .reply(200, { access_token: 'abc123', expires_in: 10000 });
 
-    jwt.credentials = {
-      access_token: 'woot',
-      refresh_token: 'jwt-placeholder',
-      expiry_date: (new Date()).getTime() - 1000
-    };
+      var auth = new googleAuth();
+      var jwt = new auth.JWT(
+          'foo@serviceaccount.com',
+          '/path/to/key.pem',
+          null,
+          ['http://bar', 'http://foo'],
+          'bar@subjectaccount.com');
 
-    jwt.gtoken = {
-      getToken: function(callback) {
-        callback(null, 'abc123');
-      }
-    };
+      jwt.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'jwt-placeholder',
+        expiry_date: (new Date()).getTime() + 5000
+      };
 
-    jwt.request({ uri : 'http://bar' }, function() {
-      assert.equal('abc123', jwt.credentials.access_token);
-      done();
+      jwt.request({ uri : 'http://bar' }, function() {
+        assert.equal('initial-access-token', jwt.credentials.access_token);
+        assert.equal(false, scope.isDone());
+        nock.cleanAll();
+        done();
+      });
     });
-  });
 
-  it('should not refresh if not expired', function(done) {
-    var scope = nock('https://accounts.google.com')
-        .log(console.log)
-        .post('/o/oauth2/token', '*')
-        .reply(200, { access_token: 'abc123', expires_in: 10000 });
+    it('should assume access token is not expired', function(done) {
+      var scope = nock('https://accounts.google.com')
+          .log(console.log)
+          .post('/o/oauth2/token', '*')
+          .reply(200, { access_token: 'abc123', expires_in: 10000 });
 
-    var auth = new googleAuth();
-    var jwt = new auth.JWT(
-        'foo@serviceaccount.com',
-        '/path/to/key.pem',
-        null,
-        ['http://bar', 'http://foo'],
-        'bar@subjectaccount.com');
+      var auth = new googleAuth();
+      var jwt = new auth.JWT(
+          'foo@serviceaccount.com',
+          '/path/to/key.pem',
+          null,
+          ['http://bar', 'http://foo'],
+          'bar@subjectaccount.com');
 
-    jwt.credentials = {
-      access_token: 'initial-access-token',
-      refresh_token: 'jwt-placeholder',
-      expiry_date: (new Date()).getTime() + 5000
-    };
+      jwt.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'jwt-placeholder'
+      };
 
-    jwt.request({ uri : 'http://bar' }, function() {
-      assert.equal('initial-access-token', jwt.credentials.access_token);
-      assert.equal(false, scope.isDone());
-      nock.cleanAll();
-      done();
+      jwt.request({ uri : 'http://bar' }, function() {
+        assert.equal('initial-access-token', jwt.credentials.access_token);
+        assert.equal(false, scope.isDone());
+        nock.cleanAll();
+        done();
+      });
     });
-  });
 
-  it('should assume access token is not expired', function(done) {
-    var scope = nock('https://accounts.google.com')
-        .log(console.log)
-        .post('/o/oauth2/token', '*')
-        .reply(200, { access_token: 'abc123', expires_in: 10000 });
-
-    var auth = new googleAuth();
-    var jwt = new auth.JWT(
-        'foo@serviceaccount.com',
-        '/path/to/key.pem',
-        null,
-        ['http://bar', 'http://foo'],
-        'bar@subjectaccount.com');
-
-    jwt.credentials = {
-      access_token: 'initial-access-token',
-      refresh_token: 'jwt-placeholder'
-    };
-
-    jwt.request({ uri : 'http://bar' }, function() {
-      assert.equal('initial-access-token', jwt.credentials.access_token);
-      assert.equal(false, scope.isDone());
-      nock.cleanAll();
-      done();
-    });
   });
 
   it('should return expiry_date in milliseconds', function(done) {
