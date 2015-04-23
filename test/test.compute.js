@@ -152,9 +152,9 @@ describe('Compute auth client', function() {
           expiry_date: 1
         };
 
-        // Mock the refreshAccessToken method to return a 403.
-        compute.refreshAccessToken = function (_unused, callback) {
-          callback(null, 'a weird response body', { 'statusCode': 403 });
+        // Mock getRequestMetadata method to return a 403.
+        compute.getRequestMetadata = function (unused_, callback) {
+          callback(null, null, { 'statusCode': 403 });
         };
 
         compute.request({ }, function (err, result, response) {
@@ -180,9 +180,9 @@ describe('Compute auth client', function() {
           expiry_date: 1
         };
 
-        // Mock the refreshAccessToken method to return a 404.
-        compute.refreshAccessToken = function (_unused, callback) {
-          callback(null, 'a weird response body', { 'statusCode': 404 });
+        // Mock getRequestMetadata to return a 404.
+        compute.getRequestMetadata = function (unused_, callback) {
+          callback(null, null, { 'statusCode': 404 });
         };
 
         compute.request({ }, function (err, result, response) {

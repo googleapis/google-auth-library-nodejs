@@ -34,7 +34,7 @@ function createJSON() {
   };
 }
 
-describe('.refreshAccessToken', function() {
+describe('.getRequestMetadata', function() {
 
   it('create a signed JWT token as the access token', function(done) {
     var keys = keypair(1024 /* bitsize of private key */);
@@ -52,7 +52,7 @@ describe('.refreshAccessToken', function() {
       assert.strictEqual(testUri, decoded.payload.aud);
       done();
     };
-    client.refreshAccessToken(testUri, expect_access_token);
+    client.getRequestMetadata(testUri, expect_access_token);
   });
 
 });

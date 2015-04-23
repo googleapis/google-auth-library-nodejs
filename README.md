@@ -45,14 +45,16 @@ google.auth.getApplicationDefault(function(err, authClient) {
       ];
       authClient = authClient.createScoped(scopes)
     }
-    
+
     // Fetch the access token
-    authClient.getAccessToken(function(err, token)) {
+    var optionalUri = null;  // optionally specify the URI being authorized
+    authClient.getRequestMetadata(optionalUri, function(err, tokens)) {
       if (err === null) {
-        // Use the access token
+        // Use the auth tokens
+        var access_token = tokens.access_token;
       }
     });
-  }    
+  }
 });
 ```
 
@@ -64,7 +66,7 @@ in calling Google APIs.
 
 They are best suited for cases when the call needs to have the same identity and authorization
 level for the application independent of the user. This is the recommended approach to authorize
-calls to Cloud APIs, particularly when you're building an application that uses Google Compute 
+calls to Cloud APIs, particularly when you're building an application that uses Google Compute
 Engine.
 
 ## Contributing

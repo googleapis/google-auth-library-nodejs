@@ -128,10 +128,45 @@ describe('JWT auth client', function() {
           }
         };
 
-        var unusedUri = null;
-        jwt.getAccessToken(unusedUri, function(err, got) {
+        jwt.getAccessToken(function(err, got) {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.strictEqual(want, got, 'the access token was wrong ');
+          done();
+        });
+      });
+
+    });
+
+  });
+
+  describe('.getRequestMetadata', function() {
+
+    describe('when scopes are set', function() {
+
+      it('can get obtain new access token', function(done) {
+        var auth = new googleAuth();
+        var jwt = new auth.JWT(
+            'foo@serviceaccount.com',
+            '/path/to/key.pem',
+            null,
+            ['http://bar', 'http://foo'],
+            'bar@subjectaccount.com');
+
+        jwt.credentials = {
+          refresh_token: 'jwt-placeholder'
+        };
+
+        var want = 'abc123';
+        jwt.gtoken = {
+          getToken: function(callback) {
+            callback(null, want);
+          }
+        };
+
+        var unusedUri = null;
+        jwt.getRequestMetadata(unusedUri, function(err, got) {
+          assert.strictEqual(null, err, 'no error was expected: got\n' + err);
+          assert.strictEqual(want, got.access_token, 'the access token was wrong ');
           done();
         });
       });
@@ -155,11 +190,11 @@ describe('JWT auth client', function() {
           refresh_token: 'jwt-placeholder'
         };
 
-        var testUri = "http:/example.com/my_test_service";
-        jwt.getAccessToken(testUri, function(err, got) {
+        var testUri = 'http:/example.com/my_test_service';
+        jwt.getRequestMetadata(testUri, function(err, got) {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.notStrictEqual(null, got, 'an access token should be present');
-          var decoded = jws.decode(got);
+          var decoded = jws.decode(got.access_token);
           assert.strictEqual(email, decoded.payload.iss);
           assert.strictEqual(email, decoded.payload.sub);
           assert.strictEqual(testUri, decoded.payload.aud);
