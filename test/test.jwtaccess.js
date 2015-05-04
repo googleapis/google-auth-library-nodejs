@@ -41,7 +41,7 @@ describe('.getRequestMetadata', function() {
     var testUri = 'http:/example.com/my_test_service';
     var email = 'foo@serviceaccount.com';
     var auth = new googleAuth();
-    var client = new auth.JWTHeader(email, keys['private']);
+    var client = new auth.JWTAccess(email, keys['private']);
 
     var expect_access_token = function(err, creds) {
       assert.strictEqual(null, err, 'no error was expected: got\n' + err);
@@ -61,7 +61,7 @@ describe('.createScopedRequired', function() {
 
   it('should return false', function () {
     var auth = new googleAuth();
-    var client = new auth.JWTHeader(
+    var client = new auth.JWTAccess(
       'foo@serviceaccount.com',
       null);
 
@@ -76,7 +76,7 @@ describe('.fromJson', function () {
   beforeEach(function() {
     json = createJSON();
     var auth = new googleAuth();
-    client = new auth.JWTHeader();
+    client = new auth.JWTAccess();
   });
 
   it('should error on null json', function (done) {
@@ -134,7 +134,7 @@ describe('.fromStream', function () {
   var client;
   beforeEach(function() {
     var auth = new googleAuth();
-    client = new auth.JWTHeader();
+    client = new auth.JWTAccess();
   });
 
   it('should error on null stream', function (done) {
