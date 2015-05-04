@@ -25,7 +25,7 @@ describe('.getRequestMetadata', function() {
   var client;
   beforeEach(function() {
     var auth = new googleAuth();
-    client = new auth.IAM(test_selector, test_token);
+    client = new auth.IAMAuth(test_selector, test_token);
   });
 
   it('passes the token and selector to the callback ', function(done) {
