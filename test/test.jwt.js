@@ -130,7 +130,7 @@ describe('JWT auth client', function() {
 
         jwt.getAccessToken(function(err, got) {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-          assert.strictEqual(want, got, 'the access token was wrong ');
+          assert.strictEqual(want, got, 'the access token was wrong: ' + got);
           done();
         });
       });
@@ -143,7 +143,7 @@ describe('JWT auth client', function() {
 
     describe('when scopes are set', function() {
 
-      it('can get obtain new access token', function(done) {
+      it('can obtain new access token', function(done) {
         var auth = new googleAuth();
         var jwt = new auth.JWT(
             'foo@serviceaccount.com',
@@ -156,17 +156,19 @@ describe('JWT auth client', function() {
           refresh_token: 'jwt-placeholder'
         };
 
-        var want = 'abc123';
+        var wanted_token = 'abc123';
         jwt.gtoken = {
           getToken: function(callback) {
-            callback(null, want);
+            callback(null, wanted_token);
           }
         };
+        var want = 'Bearer ' + wanted_token;
 
         var unusedUri = null;
         jwt.getRequestMetadata(unusedUri, function(err, got) {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-          assert.strictEqual(want, got.access_token, 'the access token was wrong ');
+          assert.strictEqual(want, got.Authorization,
+                             'the authorization header was wrong: ' + got.Authorization);
           done();
         });
       });
@@ -193,8 +195,8 @@ describe('JWT auth client', function() {
         var testUri = 'http:/example.com/my_test_service';
         jwt.getRequestMetadata(testUri, function(err, got) {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-          assert.notStrictEqual(null, got, 'an access token should be present');
-          var decoded = jws.decode(got.access_token);
+          assert.notStrictEqual(null, got, 'the creds should be present');
+          var decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
           assert.strictEqual(email, decoded.payload.iss);
           assert.strictEqual(email, decoded.payload.sub);
           assert.strictEqual(testUri, decoded.payload.aud);
