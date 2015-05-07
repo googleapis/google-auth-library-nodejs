@@ -47,11 +47,13 @@ google.auth.getApplicationDefault(function(err, authClient) {
     }
 
     // Fetch the access token
+    var _ = require(lodash);
     var optionalUri = null;  // optionally specify the URI being authorized
-    authClient.getRequestMetadata(optionalUri, function(err, tokens)) {
+    var reqHeaders = {};
+    authClient.getRequestMetadata(optionalUri, function(err, headers)) {
       if (err === null) {
-        // Use the auth tokens
-        var access_token = tokens.access_token;
+        // Use authorization headers
+        reqHeaders = _.merge(allHeaders, headers);
       }
     });
   }
