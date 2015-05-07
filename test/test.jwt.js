@@ -332,18 +332,17 @@ describe('JWT auth client', function() {
       refresh_token: 'jwt-placeholder'
     };
 
-    var dateInSeconds = (new Date()).getTime() / 1000;
+    var dateInMillis = (new Date()).getTime();
 
     jwt.gtoken = {
       getToken: function(callback) {
         callback(null, 'token');
       },
-      token_expires: dateInSeconds
+      expires_at: dateInMillis
     };
 
     jwt.refreshToken_({ uri : 'http://bar' }, function(err, creds) {
-      assert.notEqual(dateInSeconds, creds.expiry_date);
-      assert.equal(dateInSeconds * 1000, creds.expiry_date);
+      assert.equal(dateInMillis, creds.expiry_date);
       done();
     });
   });
