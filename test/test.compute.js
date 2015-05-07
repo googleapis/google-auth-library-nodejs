@@ -34,13 +34,17 @@ describe('Initial credentials', function() {
 });
 
 describe('Compute auth client', function() {
+  // set up compute client.
+  var compute;
+  beforeEach(function() {
+    var auth = new googleAuth();
+    compute = new auth.Compute();
+  });
 
   it('should get an access token for the first request', function (done) {
     var scope = nock('http://metadata')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
-    var auth = new googleAuth();
-    var compute = new auth.Compute();
     compute.request({ uri: 'http://foo' }, function () {
       assert.equal(compute.credentials.access_token, 'abc123');
       scope.done();
@@ -52,8 +56,6 @@ describe('Compute auth client', function() {
     var scope = nock('http://metadata')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
-    var auth = new googleAuth();
-    var compute = new auth.Compute();
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() - 10000;
     compute.request({ uri: 'http://foo' }, function () {
@@ -67,8 +69,6 @@ describe('Compute auth client', function() {
     var scope = nock('http://metadata')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
-    var auth = new googleAuth();
-    var compute = new auth.Compute();
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() + 10000;
     compute.request({ uri: 'http://foo' }, function () {
@@ -89,9 +89,6 @@ describe('Compute auth client', function() {
 
   describe('._injectErrorMessage', function () {
     it('should return a helpful message on request response.statusCode 403', function (done) {
-      var auth = new googleAuth();
-      var compute = new auth.Compute();
-
       // Mock the credentials object.
       compute.credentials = {
         refresh_token: 'hello',
@@ -115,9 +112,6 @@ describe('Compute auth client', function() {
     });
 
     it('should return a helpful message on request response.statusCode 404', function (done) {
-      var auth = new googleAuth();
-      var compute = new auth.Compute();
-
       // Mock the credentials object.
       compute.credentials = {
         refresh_token: 'hello',
@@ -142,19 +136,15 @@ describe('Compute auth client', function() {
 
     it('should return a helpful message on token refresh response.statusCode 403',
       function (done) {
-        var auth = new googleAuth();
-        var compute = new auth.Compute();
+        nock('http://metadata')
+            .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
+            .reply(403, 'a weird response body');
 
         // Mock the credentials object with a null access token, to force a refresh.
         compute.credentials = {
           refresh_token: 'hello',
           access_token: null,
           expiry_date: 1
-        };
-
-        // Mock the refreshAccessToken method to return a 403.
-        compute.refreshAccessToken = function (callback) {
-          callback(null, 'a weird response body', { 'statusCode': 403 });
         };
 
         compute.request({ }, function (err, result, response) {
@@ -164,25 +154,22 @@ describe('Compute auth client', function() {
               'Compute Engine instance does not have the correct permission scopes specified. ' +
               'Could not refresh access token.',
             err.message);
+          nock.cleanAll();
           done();
         });
       });
 
     it('should return a helpful message on token refresh response.statusCode 404',
       function (done) {
-        var auth = new googleAuth();
-        var compute = new auth.Compute();
+        nock('http://metadata')
+            .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
+            .reply(404, 'a weird body');
 
         // Mock the credentials object with a null access token, to force a refresh.
         compute.credentials = {
           refresh_token: 'hello',
           access_token: null,
           expiry_date: 1
-        };
-
-        // Mock the refreshAccessToken method to return a 404.
-        compute.refreshAccessToken = function (callback) {
-          callback(null, 'a weird response body', { 'statusCode': 404 });
         };
 
         compute.request({ }, function (err, result, response) {
