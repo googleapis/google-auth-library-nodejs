@@ -44,17 +44,16 @@ describe('Transporters', function() {
 
   it('should create a single error from multiple response errors', function(done) {
     var firstError = {
-      message: 'Error 1',
-      code: 'ERR1',
+      message: 'Error 1'
     };
     var secondError = {
-      message: 'Error 2',
-      code: 'ERR2',
+      message: 'Error 2'
     };
     nock('http://example.com')
       .get('/api')
       .reply(200, {
         error: {
+          code: 500,
           errors: [ firstError, secondError ]
         }
       });
@@ -63,9 +62,8 @@ describe('Transporters', function() {
       uri: 'http://example.com/api',
     }, function(error) {
       assert(error.message === 'Error 1\nError 2');
-      assert(error.code, 'ERR1');
+      assert(error.code, 500);
       assert(error.errors.length, 2);
-      assert(error.errors[1].code, 'ERR2');
       done();
     });
   });
