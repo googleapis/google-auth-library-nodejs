@@ -69,7 +69,7 @@ describe('JWT auth client', function() {
           key: 'private-key-data',
           iss: 'foo@subjectaccount.com',
           getToken: function(opt_callback) {
-            opt_callback(null, 'initial-access-token');
+            return opt_callback(null, 'initial-access-token');
           }
         };
       };
@@ -124,7 +124,7 @@ describe('JWT auth client', function() {
         var want = 'abc123';
         jwt.gtoken = {
           getToken: function(callback) {
-            callback(null, want);
+            return callback(null, want);
           }
         };
 
@@ -159,18 +159,20 @@ describe('JWT auth client', function() {
         var wanted_token = 'abc123';
         jwt.gtoken = {
           getToken: function(callback) {
-            callback(null, wanted_token);
+            return callback(null, wanted_token);
           }
         };
         var want = 'Bearer ' + wanted_token;
-
+        var retValue = 'dummy';
         var unusedUri = null;
-        jwt.getRequestMetadata(unusedUri, function(err, got) {
+        var res = jwt.getRequestMetadata(unusedUri, function(err, got) {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.strictEqual(want, got.Authorization,
                              'the authorization header was wrong: ' + got.Authorization);
           done();
+          return retValue;
         });
+        assert.strictEqual(res, retValue);
       });
 
     });
@@ -193,7 +195,8 @@ describe('JWT auth client', function() {
         };
 
         var testUri = 'http:/example.com/my_test_service';
-        jwt.getRequestMetadata(testUri, function(err, got) {
+        var retValue = 'dummy';
+        var res = jwt.getRequestMetadata(testUri, function(err, got) {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.notStrictEqual(null, got, 'the creds should be present');
           var decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
@@ -201,7 +204,9 @@ describe('JWT auth client', function() {
           assert.strictEqual(email, decoded.payload.sub);
           assert.strictEqual(testUri, decoded.payload.aud);
           done();
+          return retValue;
         });
+        assert.strictEqual(res, retValue);
       });
 
     });
@@ -252,7 +257,7 @@ describe('JWT auth client', function() {
 
       jwt.gtoken = {
         getToken: function(callback) {
-          callback(null, 'abc123');
+          return callback(null, 'abc123');
         }
       };
 
@@ -336,7 +341,7 @@ describe('JWT auth client', function() {
 
     jwt.gtoken = {
       getToken: function(callback) {
-        callback(null, 'token');
+        return callback(null, 'token');
       },
       expires_at: dateInMillis
     };

@@ -43,7 +43,8 @@ describe('.getRequestMetadata', function() {
     var auth = new googleAuth();
     var client = new auth.JWTAccess(email, keys['private']);
 
-    var expect_authorization = function(err, creds) {
+    var retValue = 'dummy';
+    var expectAuth = function(err, creds) {
       assert.strictEqual(null, err, 'no error was expected: got\n' + err);
       assert.notStrictEqual(null, creds, 'an creds object should be present');
       var decoded = jws.decode(creds.Authorization.replace('Bearer ', ''));
@@ -51,8 +52,10 @@ describe('.getRequestMetadata', function() {
       assert.strictEqual(email, decoded.payload.sub);
       assert.strictEqual(testUri, decoded.payload.aud);
       done();
+      return retValue;
     };
-    client.getRequestMetadata(testUri, expect_authorization);
+    var res = client.getRequestMetadata(testUri, expectAuth);
+    assert.strictEqual(res, retValue);
   });
 
 });
