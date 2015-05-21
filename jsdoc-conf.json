@@ -3,7 +3,7 @@
     "allowUnknownTags": true
   },
   "source": {
-    "include": ["apis/", "lib/" ],
+    "include": ["lib/" ],
     "includePattern": ".+\\.js(doc)?$",
     "excludePattern": "(^|\\/|\\\\)_"
   },
@@ -13,10 +13,8 @@
     "monospaceLinks": false
   },
   "opts": {
-    "template": "templates/default",
     "encoding": "utf8",
     "destination": "./docs/",
-    "recurse": true,
-    "tutorials": "examples/"
+    "recurse": true
   }
 }
