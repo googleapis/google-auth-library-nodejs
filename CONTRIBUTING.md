@@ -33,10 +33,7 @@ accept your pull requests.
 
 * Read [how to properly contribute to open source projects on Github][2].
 * Fork the project.
-* Install all dependencies including development requirements by running:
-  ``` sh
-  $ npm install -d
-  ```
+* Install all dependencies including development requirements by running: `$ npm install -d`
 * Use a topic/feature branch to easily amend a pull request later, if necessary.
 * Write [good commit messages][3].
 * Use the same coding conventions as the rest of the project.
@@ -49,10 +46,7 @@ accept your pull requests.
   have your own version, or is otherwise necessary, that is fine, but please
   isolate to its own commit so I can cherry-pick around it.
 * Make sure the test suite is passing
-  * Tests are run using mocha. To run all tests just run:
-    ```sh
-    $ npm test
-    ```
+  * Tests are run using mocha. To run all tests just run: `$ npm test`
     which looks for tests in the `test/` directory.
 * In addition, you must run the [google-api-nodejs-client][9] tests,
 which depend upon this library. Clone a copy of the
@@ -61,10 +55,7 @@ your local copy of the google-auth-library-nodejs repo, and ensure that the
 client tests still pass.
 * Make sure the no new style offenses are added. Your code should honor the
   [Google JavaScript Style Guide][6].
-  * At least make sure no jslint errors occur.  This run using npm as follows:
-    ```sh
-    $ npm run lint
-    ```
+  * At least make sure no jslint errors occur.  This run using npm as follows: `$ npm run lint`
 * [Squash related commits together][5].
 * Open a [pull request][4] that relates to *only* one subject with a clear title
   and description in grammatically correct, complete sentences.
@@ -76,7 +67,7 @@ Here are a few examples:
 
 ```
 * Obtains the instance email and key from gtoken ([@stephenplusplus][])
-* [#36](google/google-auth-library#36) Adds an implementation of IAM authorization ([@tbetbetbe][])
+* [#36](google/google-auth-library-nodejs#36) Adds an implementation of IAM authorization ([@tbetbetbe][])
 ```
 
 

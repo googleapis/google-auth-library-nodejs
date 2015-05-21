@@ -1,3 +1,10 @@
+## 0.9.6 (05/21/2015)
+
+### Changes
+
+* Corrects return value in getRequestMetadata ([@tbetbetbe][])
+* Fixed error code not being parsed correctly ([@fiznool][])
+
 ## 0.9.5 (05/07/2015)
 
 ### Changes
@@ -15,6 +22,7 @@
 * Switches from GAPIToken to gtoken ([@stephenplusplus][])
 * Updates the sample ([@jasonall][])
 
+[@fiznool]: https://github.com/fiznool
 [@jasonall]: https://github.com/jasonall
-[@tbetbetbe]: https://github.com/tbetbetbe
 [@stephenplusplus]: https://github.com/stephenplusplus
+[@tbetbetbe]: https://github.com/tbetbetbe
