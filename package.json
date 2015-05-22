@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "contributors": [
@@ -52,9 +52,8 @@
   "scripts": {
     "lint": "jshint lib test",
     "test": "mocha --reporter spec --timeout 4000",
-    "generate-apis": "node scripts/generate",
     "generate-docs": "jsdoc -c jsdoc-conf.json ./README.md",
-    "prepare": "npm run generate-apis && npm test && npm run lint && npm version patch",
+    "prepare": "npm test && npm run lint && npm version patch",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",
     "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls"
   },
