@@ -32,10 +32,10 @@ available in [COPYING][copying].
 ## Example Usage
 
 ``` js
-var google = require('googleapis');
+var GoogleAuth = require('google-auth-library');
 
 // Get the environment configured authorization
-google.auth.getApplicationDefault(function(err, authClient) {
+(new GoogleAuth).getApplicationDefault(function(err, authClient) {
   if (err === null) {
     // Inject scopes if they have not been injected by the environment
     if (authClient.createScopedRequired && authClient.createScopedRequired()) {
@@ -43,7 +43,7 @@ google.auth.getApplicationDefault(function(err, authClient) {
         'https://www.googleapis.com/auth/cloud-platform',
         'https://www.googleapis.com/auth/compute'
       ];
-      authClient = authClient.createScoped(scopes)
+      authClient = authClient.createScoped(scopes);
     }
 
     // Fetch the access token
