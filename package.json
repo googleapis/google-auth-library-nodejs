@@ -29,11 +29,11 @@
     "client library"
   ],
   "dependencies": {
-    "async": "~0.9.0",
+    "async": "~1.4.2",
     "gtoken": "^1.1.0",
     "lodash.noop": "~3.0.0",
     "jws": "~3.0.0",
-    "request": "~2.51.0",
+    "request": "~2.60.0",
     "string-template": "~0.2.0"
   },
   "devDependencies": {
