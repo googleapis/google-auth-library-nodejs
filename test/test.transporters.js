@@ -51,7 +51,7 @@ describe('Transporters', function() {
     };
     nock('http://example.com')
       .get('/api')
-      .reply(200, {
+      .reply(400, {
         error: {
           code: 500,
           errors: [ firstError, secondError ]
