@@ -609,7 +609,7 @@ describe('OAuth2 client', function() {
       data,
       {keyid: publicKey},
       'testaudience',
-      'testissuer',
+      ['testissuer'],
       maxExpiry
     );
 
@@ -762,7 +762,7 @@ describe('OAuth2 client', function() {
           data,
           {keyid: publicKey},
           'testaudience',
-          'testissuer'
+          ['testissuer']
         );
       },
       /Invalid issuer/
@@ -811,7 +811,7 @@ describe('OAuth2 client', function() {
       data,
       {keyid: publicKey},
       'testaudience',
-      'testissuer'
+      ['testissuer']
     );
 
     done();
