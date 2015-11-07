@@ -1,3 +1,13 @@
+## 0.9.7 (11/06/2015)
+
+### Changes
+
+* Accept either "accounts.google.com" or "https://accounts.google.com" as the issuer of the ID token issued by Google. ([@mcduan][])
+* Update to prevent status code 200 messages from being flagged as errors. ([@ryan-devrel][])
+* Update async & request ([@josephpage][])
+* Update oauthclient2.js ([@riblee][])
+* Update README.md ([@ofrobots][])
+
 ## 0.9.6 (05/21/2015)
 
 ### Changes
@@ -24,5 +34,10 @@
 
 [@fiznool]: https://github.com/fiznool
 [@jasonall]: https://github.com/jasonall
+[@josephpage]: https://github.com/josephpage
+[@mcduan]: https://github.com/mcduan
+[@ofrobots]: https://github.com/ofrobots
+[@riblee]: https://github.com/riblee
+[@ryan-devrel]: https://github.com/ryan-devrel
 [@stephenplusplus]: https://github.com/stephenplusplus
 [@tbetbetbe]: https://github.com/tbetbetbe
