@@ -42,7 +42,7 @@ describe('Compute auth client', function() {
   });
 
   it('should get an access token for the first request', function (done) {
-    var scope = nock('http://metadata')
+    var scope = nock('http://metadata.google.internal')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
     compute.request({ uri: 'http://foo' }, function () {
@@ -53,7 +53,7 @@ describe('Compute auth client', function() {
   });
 
   it('should refresh if access token has expired', function (done) {
-    var scope = nock('http://metadata')
+    var scope = nock('http://metadata.google.internal')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
     compute.credentials.access_token = 'initial-access-token';
@@ -66,7 +66,7 @@ describe('Compute auth client', function() {
   });
 
   it('should not refresh if access token has not expired', function (done) {
-    var scope = nock('http://metadata')
+    var scope = nock('http://metadata.google.internal')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
     compute.credentials.access_token = 'initial-access-token';
@@ -136,7 +136,7 @@ describe('Compute auth client', function() {
 
     it('should return a helpful message on token refresh response.statusCode 403',
       function (done) {
-        nock('http://metadata')
+        nock('http://metadata.google.internal')
             .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
             .reply(403, 'a weird response body');
 
@@ -161,7 +161,7 @@ describe('Compute auth client', function() {
 
     it('should return a helpful message on token refresh response.statusCode 404',
       function (done) {
-        nock('http://metadata')
+        nock('http://metadata.google.internal')
             .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
             .reply(404, 'a weird body');
 
