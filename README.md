@@ -50,7 +50,7 @@ var GoogleAuth = require('google-auth-library');
     var _ = require(lodash);
     var optionalUri = null;  // optionally specify the URI being authorized
     var reqHeaders = {};
-    authClient.getRequestMetadata(optionalUri, function(err, headers)) {
+    authClient.getRequestMetadata(optionalUri, function(err, headers) {
       if (err === null) {
         // Use authorization headers
         reqHeaders = _.merge(allHeaders, headers);
