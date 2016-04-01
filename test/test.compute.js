@@ -17,7 +17,7 @@
 'use strict';
 
 var assert = require('assert');
-var googleAuth = require('../lib/auth/googleauth.js');
+var GoogleAuth = require('../lib/auth/googleauth.js');
 var nock = require('nock');
 
 nock.disableNetConnect();
@@ -27,7 +27,7 @@ describe('Initial credentials', function() {
   it('should create a dummy refresh token string', function () {
     // It is important that the compute client is created with a refresh token value filled
     // in, or else the rest of the logic will not work.
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var compute = new auth.Compute();
     assert.equal('compute-placeholder', compute.credentials.refresh_token);
   });
@@ -37,7 +37,7 @@ describe('Compute auth client', function() {
   // set up compute client.
   var compute;
   beforeEach(function() {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     compute = new auth.Compute();
   });
 
@@ -81,7 +81,7 @@ describe('Compute auth client', function() {
 
   describe('.createScopedRequired', function () {
     it('should return false', function () {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       var compute = new auth.Compute();
       assert.equal(false, compute.createScopedRequired());
     });
