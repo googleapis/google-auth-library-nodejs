@@ -17,7 +17,7 @@
 'use strict';
 
 var assert = require('assert');
-var googleAuth = require('../lib/auth/googleauth.js');
+var GoogleAuth = require('../lib/auth/googleauth.js');
 var nock = require('nock');
 var fs = require('fs');
 
@@ -117,11 +117,11 @@ function doneWhen(doneCallback, count) {
   };
 }
 
-describe('googleAuth', function() {
+describe('GoogleAuth', function() {
   describe('.fromJson', function () {
 
     it('should error on null json', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth.fromJSON(null, function (err) {
         assert.equal(true, err instanceof Error);
         done();
@@ -131,7 +131,7 @@ describe('googleAuth', function() {
     describe('JWT token', function() {
 
       it('should error on empty json', function (done) {
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON({}, function (err) {
           assert.equal(true, err instanceof Error);
           done();
@@ -142,7 +142,7 @@ describe('googleAuth', function() {
         var json = createJwtJSON();
         delete json.client_email;
 
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON(json, function (err) {
           assert.equal(true, err instanceof Error);
           done();
@@ -153,7 +153,7 @@ describe('googleAuth', function() {
         var json = createJwtJSON();
         delete json.private_key;
 
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON(json, function (err) {
           assert.equal(true, err instanceof Error);
           done();
@@ -162,7 +162,7 @@ describe('googleAuth', function() {
 
       it('should create JWT with client_email', function (done) {
         var json = createJwtJSON();
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON(json, function (err, result) {
           assert.equal(null, err);
           assert.equal(json.client_email, result.email);
@@ -172,7 +172,7 @@ describe('googleAuth', function() {
 
       it('should create JWT with private_key', function (done) {
         var json = createJwtJSON();
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON(json, function (err, result) {
           assert.equal(null, err);
           assert.equal(json.private_key, result.key);
@@ -182,7 +182,7 @@ describe('googleAuth', function() {
 
       it('should create JWT with null scopes', function (done) {
         var json = createJwtJSON();
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON(json, function (err, result) {
           assert.equal(null, err);
           assert.equal(null, result.scopes);
@@ -192,7 +192,7 @@ describe('googleAuth', function() {
 
       it('should create JWT with null subject', function (done) {
         var json = createJwtJSON();
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON(json, function (err, result) {
           assert.equal(null, err);
           assert.equal(null, result.subject);
@@ -202,7 +202,7 @@ describe('googleAuth', function() {
 
       it('should create JWT with null keyFile', function (done) {
         var json = createJwtJSON();
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         auth.fromJSON(json, function (err, result) {
           assert.equal(null, err);
           assert.equal(null, result.keyFile);
@@ -212,7 +212,7 @@ describe('googleAuth', function() {
     });
     describe('Refresh token', function() {
       it('should error on empty json', function (done) {
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         var jwt = new auth.JWT();
         jwt.fromJSON({}, function (err) {
           assert.equal(true, err instanceof Error);
@@ -224,7 +224,7 @@ describe('googleAuth', function() {
         var json = createRefreshJSON();
         delete json.client_id;
 
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         var jwt = new auth.JWT();
         jwt.fromJSON(json, function (err) {
           assert.equal(true, err instanceof Error);
@@ -236,7 +236,7 @@ describe('googleAuth', function() {
         var json = createRefreshJSON();
         delete json.client_secret;
 
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         var jwt = new auth.JWT();
         jwt.fromJSON(json, function (err) {
           assert.equal(true, err instanceof Error);
@@ -248,7 +248,7 @@ describe('googleAuth', function() {
         var json = createRefreshJSON();
         delete json.refresh_token;
 
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         var jwt = new auth.JWT();
         jwt.fromJSON(json, function (err) {
           assert.equal(true, err instanceof Error);
@@ -261,7 +261,7 @@ describe('googleAuth', function() {
   describe('.fromStream', function () {
 
     it('should error on null stream', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth.fromStream(null, function (err) {
         assert.equal(true, err instanceof Error);
         done();
@@ -277,7 +277,7 @@ describe('googleAuth', function() {
       var stream = fs.createReadStream('./test/fixtures/private.json');
 
       // And pass it into the fromStream method.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth.fromStream(stream, function (err, result) {
         assert.equal(null, err);
 
@@ -301,7 +301,7 @@ describe('googleAuth', function() {
       var stream = fs.createReadStream('./test/fixtures/refresh.json');
 
       // And pass it into the fromStream method.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth.fromStream(stream, function (err, result) {
         assert.ifError(err);
 
@@ -318,7 +318,7 @@ describe('googleAuth', function() {
   describe('._getApplicationCredentialsFromFilePath', function () {
 
     it('should error on null file path', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath(null, function (err) {
         assert.equal(true, err instanceof Error);
         done();
@@ -326,7 +326,7 @@ describe('googleAuth', function() {
     });
 
     it('should error on empty file path', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath('', function (err) {
         assert.equal(true, err instanceof Error);
         done();
@@ -334,7 +334,7 @@ describe('googleAuth', function() {
     });
 
     it('should error on non-string file path', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath(2, function (err) {
         assert.equal(true, err instanceof Error);
         done();
@@ -342,7 +342,7 @@ describe('googleAuth', function() {
     });
 
     it('should error on invalid file path', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath('./nonexistantfile.json',
         function (err) {
 
@@ -357,7 +357,7 @@ describe('googleAuth', function() {
       assert.equal(true, fs.lstatSync(directory).isDirectory());
 
       // Execute.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath(directory,
         function (err) {
 
@@ -368,7 +368,7 @@ describe('googleAuth', function() {
 
     it('should handle errors thrown from createReadStream', function (done) {
       // Set up a mock to throw from the createReadStream method.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth._createReadStream = function () {
         throw new Error('Hans and Chewbacca');
       };
@@ -383,7 +383,7 @@ describe('googleAuth', function() {
 
     it('should handle errors thrown from fromStream', function (done) {
       // Set up a mock to throw from the fromStream method.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth.fromStream = function () {
         throw new Error('Darth Maul');
       };
@@ -398,7 +398,7 @@ describe('googleAuth', function() {
 
     it('should handle errors passed from fromStream', function (done) {
       // Set up a mock to return an error from the fromStream method.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth.fromStream = function (stream, callback) {
         callback(new Error('Princess Leia'));
       };
@@ -417,7 +417,7 @@ describe('googleAuth', function() {
       var json = JSON.parse(fileContents);
 
       // Now pass the same path to the auth loader.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath('./test/fixtures/private.json',
         function (err, result) {
 
@@ -436,7 +436,7 @@ describe('googleAuth', function() {
 
     it('should return false when env var is not set', function (done) {
       // Set up a mock to return a null path string.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
 
       // The test ends successfully after 1 step has completed.
@@ -453,7 +453,7 @@ describe('googleAuth', function() {
 
     it('should return false when env var is empty string', function (done) {
       // Set up a mock to return an empty path string.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS', '');
 
       // The test ends successfully after 1 step has completed.
@@ -470,7 +470,7 @@ describe('googleAuth', function() {
 
     it('should handle invalid environment variable', function (done) {
       // Set up a mock to return a path to an invalid file.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
         './nonexistantfile.json');
 
@@ -489,7 +489,7 @@ describe('googleAuth', function() {
 
     it('should handle valid environment variable', function (done) {
       // Set up a mock to return path to a valid credentials file.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json');
 
@@ -523,7 +523,7 @@ describe('googleAuth', function() {
       var correctLocation = false;
 
       // Set up mocks.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
@@ -547,7 +547,7 @@ describe('googleAuth', function() {
       var correctLocation = false;
 
       // Set up mocks.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
       auth._pathJoin = pathJoin;
@@ -570,7 +570,7 @@ describe('googleAuth', function() {
 
     it('should fail on Windows when APPDATA is not defined', function (done) {
       // Set up mocks.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', null);
       auth._pathJoin = pathJoin;
@@ -592,7 +592,7 @@ describe('googleAuth', function() {
 
     it('should fail on non-Windows when HOME is not defined', function (done) {
       // Set up mocks.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'HOME', null);
       auth._pathJoin = pathJoin;
@@ -614,7 +614,7 @@ describe('googleAuth', function() {
 
     it('should fail on Windows when file does not exist', function (done) {
       // Set up mocks.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
@@ -636,7 +636,7 @@ describe('googleAuth', function() {
 
     it('should fail on non-Windows when file does not exist', function (done) {
       // Set up mocks.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
       auth._pathJoin = pathJoin;
@@ -659,7 +659,7 @@ describe('googleAuth', function() {
 
   it('should succeeds on Windows', function (done) {
     // Set up mocks.
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
     auth._pathJoin = pathJoin;
@@ -686,7 +686,7 @@ describe('googleAuth', function() {
 
   it('should succeeds on non-Windows', function (done) {
     // Set up mocks.
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
     auth._pathJoin = pathJoin;
@@ -713,7 +713,7 @@ describe('googleAuth', function() {
 
   it('should pass along a failure on Windows', function (done) {
     // Set up mocks.
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
     auth._pathJoin = pathJoin;
@@ -740,7 +740,7 @@ describe('googleAuth', function() {
 
   it('should pass along a failure on non-Windows', function (done) {
     // Set up mocks.
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
     auth._pathJoin = pathJoin;
@@ -784,7 +784,7 @@ describe('googleAuth', function() {
         };
 
         // Set up a new GoogleAuth and prepare it for local environment variable handling.
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
         setUpAuthForEnvironmentVariable(auth);
 
         // Ask for credentials, the first time.
@@ -818,7 +818,7 @@ describe('googleAuth', function() {
 
             // Now create a second GoogleAuth instance, and ask for credentials. We should
             // get a new credentials instance this time.
-            var auth2 = new googleAuth();
+            var auth2 = new GoogleAuth();
             setUpAuthForEnvironmentVariable(auth2);
 
             // Step 2 has completed.
@@ -848,7 +848,7 @@ describe('googleAuth', function() {
       // * Environment variable is set up to point to private.json
       // * Well-known file is set up to point to private2.json
       // * Running on GCE is set to true.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json');
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
@@ -880,7 +880,7 @@ describe('googleAuth', function() {
       // * Environment variable is not set.
       // * Well-known file is set up to point to private2.json
       // * Running on GCE is set to true.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
@@ -907,7 +907,7 @@ describe('googleAuth', function() {
       // * Environment variable is not set.
       // * Well-known file is not set.
       // * Running on GCE is set to true.
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
@@ -929,7 +929,7 @@ describe('googleAuth', function() {
   describe('._checkIsGCE', function () {
 
     it('should set the _isGCE flag when running on GCE', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
 
       // Mock the transport layer to return the correct header indicating that
       // we're running on GCE.
@@ -950,7 +950,7 @@ describe('googleAuth', function() {
     });
 
     it('should not set the _isGCE flag when not running on GCE', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
 
       // Mock the transport layer to indicate that we're not running on GCE.
       auth.transporter = new MockTransporter(false);
@@ -970,7 +970,7 @@ describe('googleAuth', function() {
     });
 
     it('Does not execute the second time when running on GCE', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
 
       // Mock the transport layer to indicate that we're not running on GCE.
       auth.transporter = new MockTransporter(true);
@@ -1001,7 +1001,7 @@ describe('googleAuth', function() {
     });
 
     it('Does not execute the second time when not running on GCE', function (done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
 
       // Mock the transport layer to indicate that we're not running on GCE.
       auth.transporter = new MockTransporter(false);
@@ -1031,7 +1031,7 @@ describe('googleAuth', function() {
       });
 
       it('Returns false on transport error', function (done) {
-        var auth = new googleAuth();
+        var auth = new GoogleAuth();
 
         // Mock the transport layer to indicate that we're not running on GCE, but also to
         // throw an error.

@@ -17,14 +17,14 @@
 'use strict';
 
 var assert = require('assert');
-var googleAuth = require('../lib/auth/googleauth.js');
+var GoogleAuth = require('../lib/auth/googleauth.js');
 
 describe('.getRequestMetadata', function() {
   var test_selector = 'a-test-selector';
   var test_token = 'a-test-token';
   var client;
   beforeEach(function() {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     client = new auth.IAMAuth(test_selector, test_token);
   });
 

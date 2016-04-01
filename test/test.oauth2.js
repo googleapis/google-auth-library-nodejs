@@ -20,7 +20,7 @@ var url = require('url');
 var assert = require('assert');
 var qs = require('querystring');
 var fs = require('fs');
-var googleAuth = require('../lib/auth/googleauth.js');
+var GoogleAuth = require('../lib/auth/googleauth.js');
 var crypto = require('crypto');
 var nock = require('nock');
 var AuthClient = require('../lib/auth/authclient.js');
@@ -43,7 +43,7 @@ describe('OAuth2 client', function() {
       response_type: 'code token'
     };
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var generated = oauth2client.generateAuthUrl(opts);
     var parsed = url.parse(generated);
@@ -71,7 +71,7 @@ describe('OAuth2 client', function() {
       response_type: 'code token'
     };
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var generated = oauth2client.generateAuthUrl(opts);
     var parsed = url.parse(generated);
@@ -83,7 +83,7 @@ describe('OAuth2 client', function() {
 
   it('should set response_type param to code if none is given while' +
       'generating the consent page url', function(done) {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var generated = oauth2client.generateAuthUrl();
     var parsed = url.parse(generated);
@@ -96,7 +96,7 @@ describe('OAuth2 client', function() {
   // jason: keep
   /*
   it('should return err no access or refresh token is set before making a request', function(done) {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new googleapis.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     new googleapis.GoogleApis()
       .urlshortener('v1').url.get({ shortUrl: '123', auth: oauth2client }, function(err, result) {
@@ -166,7 +166,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var login = oauth2client.verifySignedJwtWithCerts(data,
         {keyid: publicKey}, 'testaudience');
@@ -210,7 +210,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -258,7 +258,7 @@ describe('OAuth2 client', function() {
     //Originally: data += '.'+signature;
     data += signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -309,7 +309,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -360,7 +360,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -404,7 +404,7 @@ describe('OAuth2 client', function() {
       '.' + new Buffer(idToken).toString('base64') +
       '.' + 'broken-signature';
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -452,7 +452,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -502,7 +502,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -552,7 +552,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -603,7 +603,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.verifySignedJwtWithCerts(
       data,
@@ -652,7 +652,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -704,7 +704,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -754,7 +754,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
@@ -805,7 +805,7 @@ describe('OAuth2 client', function() {
 
     data += '.' + signature;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.verifySignedJwtWithCerts(
       data,
@@ -821,7 +821,7 @@ describe('OAuth2 client', function() {
     var scope = nock('https://www.googleapis.com')
       .get('/oauth2/v1/certs')
       .replyWithFile(200, __dirname + '/fixtures/oauthcerts.json');
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.getFederatedSignonCerts(function(err, certs) {
       assert.equal(err, null);
@@ -842,7 +842,7 @@ describe('OAuth2 client', function() {
           .get('/oauth2/v1/certs')
           .once()
           .replyWithFile(200, __dirname + '/fixtures/oauthcerts.json');
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.getFederatedSignonCerts(function(err, certs) {
         assert.equal(err, null);
@@ -859,7 +859,7 @@ describe('OAuth2 client', function() {
   });
 
   it('should set redirect_uri if not provided in options', function() {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var generated = oauth2client.generateAuthUrl({});
     var parsed = url.parse(generated);
@@ -868,7 +868,7 @@ describe('OAuth2 client', function() {
   });
 
   it('should set client_id if not provided in options', function() {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var generated = oauth2client.generateAuthUrl({});
     var parsed = url.parse(generated);
@@ -877,7 +877,7 @@ describe('OAuth2 client', function() {
   });
 
   it('should override redirect_uri if provided in options', function() {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var generated = oauth2client.generateAuthUrl({ redirect_uri: 'overridden' });
     var parsed = url.parse(generated);
@@ -886,7 +886,7 @@ describe('OAuth2 client', function() {
   });
 
   it('should override client_id if provided in options', function() {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     var generated = oauth2client.generateAuthUrl({ client_id: 'client_override' });
     var parsed = url.parse(generated);
@@ -895,7 +895,7 @@ describe('OAuth2 client', function() {
   });
 
   it('should return error in callback on request', function(done) {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.request({}, function(err, result) {
       assert.equal(err.message, 'No access or refresh token is set.');
@@ -905,7 +905,7 @@ describe('OAuth2 client', function() {
   });
 
   it('should return error in callback on refreshAccessToken', function(done) {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.refreshAccessToken(function(err, result) {
       assert.equal(err.message, 'No refresh token is set.');
@@ -996,7 +996,7 @@ describe('OAuth2 client', function() {
       var scope = nock('https://accounts.google.com')
           .get('/o/oauth2/revoke?token=abc')
           .reply(200, { success: true });
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.credentials = { access_token: 'abc', refresh_token: 'abc' };
       oauth2client.revokeCredentials(function(err, result) {
@@ -1009,7 +1009,7 @@ describe('OAuth2 client', function() {
     });
 
     it('should clear credentials and return error if no access token to revoke', function(done) {
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.credentials = { refresh_token: 'abc' };
       oauth2client.revokeCredentials(function(err, result) {
@@ -1027,7 +1027,7 @@ describe('OAuth2 client', function() {
       var scope = nock('https://accounts.google.com')
           .post('/o/oauth2/token')
           .reply(200, { access_token: 'abc', refresh_token: '123', expires_in: 10 });
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.getToken('code here', function(err, tokens) {
         assert(tokens.expiry_date >= now + (10 * 1000));
