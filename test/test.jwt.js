@@ -267,6 +267,39 @@ describe('JWT auth client', function() {
       });
     });
 
+    it('should refresh token if the server returns 403', function(done) {
+      nock('http://example.com')
+          .log(console.log)
+          .get('/access')
+          .reply(403);
+
+      var auth = new GoogleAuth();
+      var jwt = new auth.JWT(
+          'foo@serviceaccount.com',
+          '/path/to/key.pem',
+          null,
+          ['http://example.com'],
+          'bar@subjectaccount.com');
+
+      jwt.credentials = {
+        access_token: 'woot',
+        refresh_token: 'jwt-placeholder',
+        expiry_date: (new Date()).getTime() + 5000
+      };
+
+      jwt.gtoken = {
+        getToken: function(callback) {
+          return callback(null, 'abc123');
+        }
+      };
+
+      jwt.request({ uri : 'http://example.com/access' }, function() {
+        assert.equal('abc123', jwt.credentials.access_token);
+        nock.cleanAll();
+        done();
+      });
+    });
+
     it('should not refresh if not expired', function(done) {
       var scope = nock('https://accounts.google.com')
           .log(console.log)
