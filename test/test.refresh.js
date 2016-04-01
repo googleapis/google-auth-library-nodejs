@@ -17,7 +17,7 @@
 'use strict';
 
 var assert = require('assert');
-var googleAuth = require('../lib/auth/googleauth.js');
+var GoogleAuth = require('../lib/auth/googleauth.js');
 var nock = require('nock');
 var fs = require('fs');
 
@@ -40,7 +40,7 @@ describe('Refresh Token auth client', function() {
 describe('.fromJson', function () {
 
   it('should error on null json', function (done) {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(null, function (err) {
       assert.equal(true, err instanceof Error);
@@ -49,7 +49,7 @@ describe('.fromJson', function () {
   });
 
   it('should error on empty json', function (done) {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON({}, function (err) {
       assert.equal(true, err instanceof Error);
@@ -61,7 +61,7 @@ describe('.fromJson', function () {
     var json = createJSON();
     delete json.client_id;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
@@ -73,7 +73,7 @@ describe('.fromJson', function () {
     var json = createJSON();
     delete json.client_secret;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
@@ -85,7 +85,7 @@ describe('.fromJson', function () {
     var json = createJSON();
     delete json.refresh_token;
 
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.equal(true, err instanceof Error);
@@ -95,7 +95,7 @@ describe('.fromJson', function () {
 
   it('should create UserRefreshClient with clientId_', function(done) {
     var json = createJSON();
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.ifError(err);
@@ -106,7 +106,7 @@ describe('.fromJson', function () {
 
   it('should create UserRefreshClient with clientSecret_', function(done) {
     var json = createJSON();
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.ifError(err);
@@ -117,7 +117,7 @@ describe('.fromJson', function () {
 
   it('should create UserRefreshClient with _refreshToken', function(done) {
     var json = createJSON();
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, function (err) {
       assert.ifError(err);
@@ -130,7 +130,7 @@ describe('.fromJson', function () {
 describe('.fromStream', function () {
 
   it('should error on null stream', function (done) {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromStream(null, function (err) {
       assert.equal(true, err instanceof Error);
@@ -147,7 +147,7 @@ describe('.fromStream', function () {
     var stream = fs.createReadStream('./test/fixtures/refresh.json');
 
     // And pass it into the fromStream method.
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var refresh = new auth.UserRefreshClient();
     refresh.fromStream(stream, function (err) {
       assert.ifError(err);
