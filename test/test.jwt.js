@@ -268,12 +268,12 @@ describe('JWT auth client', function() {
     });
 
     it('should refresh token if the server returns 403', function(done) {
-      var scope = nock('http://example.com')
+      nock('http://example.com')
           .log(console.log)
           .get('/access')
           .reply(403);
 
-      var auth = new googleAuth();
+      var auth = new GoogleAuth();
       var jwt = new auth.JWT(
           'foo@serviceaccount.com',
           '/path/to/key.pem',
