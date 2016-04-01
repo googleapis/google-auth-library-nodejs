@@ -18,7 +18,7 @@
 
 var assert = require('assert');
 var fs = require('fs');
-var googleAuth = require('../lib/auth/googleauth.js');
+var GoogleAuth = require('../lib/auth/googleauth.js');
 var keypair = require('keypair');
 var jws = require('jws');
 
@@ -40,7 +40,7 @@ describe('.getRequestMetadata', function() {
     var keys = keypair(1024 /* bitsize of private key */);
     var testUri = 'http:/example.com/my_test_service';
     var email = 'foo@serviceaccount.com';
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var client = new auth.JWTAccess(email, keys['private']);
 
     var retValue = 'dummy';
@@ -63,7 +63,7 @@ describe('.getRequestMetadata', function() {
 describe('.createScopedRequired', function() {
 
   it('should return false', function () {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     var client = new auth.JWTAccess(
       'foo@serviceaccount.com',
       null);
@@ -78,7 +78,7 @@ describe('.fromJson', function () {
   var json, client;
   beforeEach(function() {
     json = createJSON();
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     client = new auth.JWTAccess();
   });
 
@@ -136,7 +136,7 @@ describe('.fromStream', function () {
   // set up the client instance being tested.
   var client;
   beforeEach(function() {
-    var auth = new googleAuth();
+    var auth = new GoogleAuth();
     client = new auth.JWTAccess();
   });
 
