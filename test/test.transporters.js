@@ -19,6 +19,7 @@
 var assert = require('assert');
 var DefaultTransporter = require('../lib/transporters');
 var nock = require('nock');
+var version = require('../package.json').version;
 
 nock.disableNetConnect();
 
@@ -40,6 +41,15 @@ describe('Transporters', function() {
     });
     var re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
     assert(re.test(opts.headers['User-Agent']));
+  });
+
+  it('should not append default client user agent to the existing user ' +
+      'agent more than once', function() {
+    var applicationName = 'MyTestApplication-1.0 google-api-nodejs-client/' + version;
+    var opts = transporter.configure({
+      headers: { 'User-Agent': applicationName }
+    });
+    assert.equal(opts.headers['User-Agent'], applicationName);
   });
 
   it('should create a single error from multiple response errors', function(done) {
