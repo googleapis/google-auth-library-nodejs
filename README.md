@@ -6,10 +6,6 @@
 This is Google's officially supported [node.js][node] client library for using
 OAuth 2.0 authorization and authentication with Google APIs.
 
-### Alpha
-
-This library is in Alpha. We will make an effort to support the library, but we reserve the right to make incompatible changes when necessary.
-
 ### Questions/problems?
 
 * Ask your development related questions on [![Ask a question on Stackoverflow][overflowimg]][stackoverflow]
@@ -24,46 +20,10 @@ run the following command:
 $ npm install google-auth-library --save
 ```
 
-## License
-
-This library is licensed under Apache 2.0. Full license text is
-available in [COPYING][copying].
-
-## Example Usage
-
-``` js
-var GoogleAuth = require('google-auth-library');
-
-// Get the environment configured authorization
-(new GoogleAuth).getApplicationDefault(function(err, authClient) {
-  if (err === null) {
-    // Inject scopes if they have not been injected by the environment
-    if (authClient.createScopedRequired && authClient.createScopedRequired()) {
-      var scopes = [
-        'https://www.googleapis.com/auth/cloud-platform',
-        'https://www.googleapis.com/auth/compute'
-      ];
-      authClient = authClient.createScoped(scopes);
-    }
-
-    // Fetch the access token
-    var _ = require(lodash);
-    var optionalUri = null;  // optionally specify the URI being authorized
-    var reqHeaders = {};
-    authClient.getRequestMetadata(optionalUri, function(err, headers) {
-      if (err === null) {
-        // Use authorization headers
-        reqHeaders = _.merge(allHeaders, headers);
-      }
-    });
-  }
-});
-```
-
 ## Application Default Credentials
-This library provides an implementation of application default credentials for Node.js.
+This library provides an implementation of [Application Default Credentials][] for Node.js.
 
-The Application Default Credentials provide a simple way to get authorization credentials for use
+The [Application Default Credentials][] provide a simple way to get authorization credentials for use
 in calling Google APIs.
 
 They are best suited for cases when the call needs to have the same identity and authorization
@@ -71,9 +31,80 @@ level for the application independent of the user. This is the recommended appro
 calls to Cloud APIs, particularly when you're building an application that uses Google Compute
 Engine.
 
+#### Download your Service Account Credentials JSON file
+
+To use `Application Default Credentials`, You first need to download a set of
+JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in
+the [Google Developers Console](developer console) and select
+**Service account** from the **Add credentials** dropdown.
+
+> This file is your *only copy* of these credentials. It should never be
+> committed with your source code, and should be stored securely.
+
+Once downloaded, store the path to this file in the
+`GOOGLE_APPLICATION_CREDENTIALS` environment variable.
+
+#### Enable the API you want to use
+
+Before making your API call, you must be sure the API you're calling has been
+enabled. Go to **APIs & Auth** > **APIs** in the
+[Google Developers Console](developer console) and enable the APIs you'd like to
+call. For the example below, you must enable the `DNS API`.
+
+#### Call an API
+
+As long as you update the environment variable below to point to *your* JSON
+credentials file, and the fill in the placeholder variables from your project,
+the following snippet should work.
+
+```js
+var google = require('googleapis');
+var GoogleAuth = require('google-auth-library');
+
+var authFactory = new GoogleAuth();
+var dns = google.dns('v1');
+
+authFactory.getApplicationDefault(function(err, authClient) {
+  if (err) {
+    console.log('Authentication failed because of ', err);
+    return;
+  }
+  if (authClient.createScopedRequired && authClient.createScopedRequired()) {
+    var scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+    authClient = authClient.createScoped(scopes);
+  }
+
+  var request = {
+    // TODO: Change placeholders below to values for parameters to the 'get' method:
+
+    // Identifies the project addressed by this request.
+    project: "",
+    // Identifies the managed zone addressed by this request. Can be the managed zone name or id.
+    managedZone: "",
+    // The identifier of the requested change, from a previous ResourceRecordSetsChangeResponse.
+    changeId: "",
+    // Auth client
+    auth: authClient
+  };
+
+  dns.changes.get(request, function(err, result) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(result);
+    }
+  });
+});
+```
+
 ## Contributing
 
 See [CONTRIBUTING][contributing].
+
+## License
+
+This library is licensed under Apache 2.0. Full license text is
+available in [COPYING][copying].
 
 [travisimg]: https://api.travis-ci.org/google/google-auth-library-nodejs.svg
 [bugs]: https://github.com/google/google-auth-library-nodejs/issues
@@ -98,3 +129,4 @@ See [CONTRIBUTING][contributing].
 [cloudplatform]: https://developers.google.com/cloud/
 [coveralls]: https://coveralls.io/r/google/google-auth-library-nodejs?branch=master
 [coverallsimg]: https://img.shields.io/coveralls/google/google-auth-library-nodejs.svg
+[Application Default Credentials]: https://developers.google.com/identity/protocols/application-default-credentials#callingnode
