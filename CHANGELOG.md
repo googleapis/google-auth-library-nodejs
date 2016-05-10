@@ -1,3 +1,15 @@
+## 0.9.8 (05/10/2016)
+
+### Changes
+
+* Update README.md ([@tbetbetbe][])
+* Check that pem exists before verifying it ([@murgatroid99][])
+* Fix User-Agent header ([@matthewloring][])
+* Fix some lint errors ([@murgatroid99][])
+* Added test for OAuth2Client#request retry, fixed implementation ([@murgatroid99][])
+* Fixed returned toString encoding of OAuth2Client.prototype.decodeBase64 method. ([@yamafaktory][])
+* Use full compute metadata DNS name ([@jonparrot][])
+
 ## 0.9.7 (11/06/2015)
 
 ### Changes
@@ -41,3 +53,7 @@
 [@ryan-devrel]: https://github.com/ryan-devrel
 [@stephenplusplus]: https://github.com/stephenplusplus
 [@tbetbetbe]: https://github.com/tbetbetbe
+[@murgatroid99]: https//github.com/murgatroid99
+[@matthewloring]: https://github.com/matthewloring
+[@yamafaktory]: https://github.com/yamafaktory
+[@jonparrot]: https://github.com/jonparrot
