@@ -317,6 +317,30 @@ describe('GoogleAuth', function() {
 
   describe('._getApplicationCredentialsFromFilePath', function () {
 
+    it('should not error on valid symlink', function (done) {
+      var auth = new GoogleAuth();
+      auth._getApplicationCredentialsFromFilePath('./test/fixtures/goodlink', function (err) {
+        assert.equal(false, err instanceof Error);
+        done();
+      });
+    });
+
+    it('should error on invalid symlink', function (done) {
+      var auth = new GoogleAuth();
+      auth._getApplicationCredentialsFromFilePath('./test/fixtures/badlink', function (err) {
+        assert.equal(true, err instanceof Error);
+        done();
+      });
+    });
+
+    it('should error on valid link to invalid data', function (done) {
+      var auth = new GoogleAuth();
+      auth._getApplicationCredentialsFromFilePath('./test/fixtures/emptylink', function (err) {
+        assert.equal(true, err instanceof Error);
+        done();
+      });
+    });
+
     it('should error on null file path', function (done) {
       var auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath(null, function (err) {
