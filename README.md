@@ -35,7 +35,7 @@ Engine.
 
 To use `Application Default Credentials`, You first need to download a set of
 JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in
-the [Google Developers Console](developer console) and select
+the [Google Developers Console][devconsole] and select
 **Service account** from the **Add credentials** dropdown.
 
 > This file is your *only copy* of these credentials. It should never be
@@ -48,7 +48,7 @@ Once downloaded, store the path to this file in the
 
 Before making your API call, you must be sure the API you're calling has been
 enabled. Go to **APIs & Auth** > **APIs** in the
-[Google Developers Console](developer console) and enable the APIs you'd like to
+[Google Developers Console][devconsole] and enable the APIs you'd like to
 call. For the example below, you must enable the `DNS API`.
 
 #### Call an API
