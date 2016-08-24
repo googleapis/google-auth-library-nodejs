@@ -222,6 +222,16 @@ describe('OAuth2 client', function() {
       },
       /Wrong recipient/
     );
+    assert.throws(
+      function() {
+        oauth2client.verifySignedJwtWithCerts(
+          data,
+          {keyid: publicKey},
+          ['testaudience','extra-audience']
+        );
+      },
+      /No valid recipients in array/
+    );
 
     done();
   });
