@@ -222,17 +222,57 @@ describe('OAuth2 client', function() {
       },
       /Wrong recipient/
     );
+    done();
+  });
+  
+  it('should fail due to invalid array of audiences', function(done) {
+    var publicKey = fs.readFileSync('./test/fixtures/public.pem',
+        'utf-8');
+    var privateKey = fs.readFileSync('./test/fixtures/private.pem',
+        'utf-8');
+
+    var maxLifetimeSecs = 86400;
+    var now = new Date().getTime() / 1000;
+    var expiry = now + (maxLifetimeSecs / 2);
+
+    var idToken = '{' +
+        '"iss":"testissuer",' +
+        '"aud":"wrongaudience",' +
+        '"azp":"testauthorisedparty",' +
+        '"email_verified":"true",' +
+        '"id":"123456789",' +
+        '"sub":"123456789",' +
+        '"email":"test@test.com",' +
+        '"iat":' + now + ',' +
+        '"exp":' + expiry +
+      '}';
+    var envelope = '{' +
+        '"kid":"keyid",' +
+        '"alg":"RS256"' +
+      '}';
+
+    var data = new Buffer(envelope).toString('base64') +
+      '.' + new Buffer(idToken).toString('base64');
+
+    var signer = crypto.createSign('sha256');
+    signer.update(data);
+    var signature = signer.sign(privateKey, 'base64');
+
+    data += '.' + signature;
+
+    var validAudiences = ['testaudience','extra-audience'];
+    var auth = new GoogleAuth();
+    var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(
       function() {
         oauth2client.verifySignedJwtWithCerts(
           data,
           {keyid: publicKey},
-          ['testaudience','extra-audience']
+          validAudiences
         );
       },
-      /No valid recipients in array/
+      /Wrong recipient/
     );
-
     done();
   });
 
