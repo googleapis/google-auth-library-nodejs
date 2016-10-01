@@ -20,6 +20,7 @@ var assert = require('assert');
 var GoogleAuth = require('../lib/auth/googleauth.js');
 var nock = require('nock');
 var fs = require('fs');
+var path = require('path');
 
 nock.disableNetConnect();
 
@@ -787,6 +788,163 @@ describe('GoogleAuth', function() {
 
     assert.equal(true, handled);
     step();
+  });
+
+  describe('.getDefaultProjectId', function () {
+
+    it('should return a new projectId the first time and a cached projectId the second time',
+      function (done) {
+
+        var projectId = 'my-awesome-project';
+        // The test ends successfully after 3 steps have completed.
+        var step = doneWhen(done, 3);
+
+        // Create a function which will set up a GoogleAuth instance to match on
+        // an environment variable json file, but not on anything else.
+        var setUpAuthForEnvironmentVariable = function(creds) {
+          insertEnvironmentVariableIntoAuth(creds, 'GCLOUD_PROJECT', projectId);
+
+          creds._fileExists = returns(false);
+          creds._checkIsGCE = callsBack(false);
+        };
+
+        // Set up a new GoogleAuth and prepare it for local environment variable handling.
+        var auth = new GoogleAuth();
+        setUpAuthForEnvironmentVariable(auth);
+
+        // Ask for credentials, the first time.
+        auth.getDefaultProjectId(function (err, _projectId) {
+          assert.equal(null, err);
+          assert.equal(_projectId, projectId);
+
+          // Manually change the value of the cached projectId
+          auth._cachedProjectId = 'monkey';
+
+          // Step 1 has completed.
+          step();
+
+          // Ask for projectId again, from the same auth instance. We expect a cached instance
+          // this time.
+          auth.getDefaultProjectId(function (err2, _projectId2) {
+            assert.equal(null, err2);
+
+            // Make sure we get the changed cached projectId back
+            assert.equal('monkey', _projectId2);
+
+            // Now create a second GoogleAuth instance, and ask for projectId. We should
+            // get a new projectId instance this time.
+            var auth2 = new GoogleAuth();
+            setUpAuthForEnvironmentVariable(auth2);
+
+            // Step 2 has completed.
+            step();
+
+            auth2.getDefaultProjectId(function (err3, _projectId3) {
+              assert.equal(null, err3);
+              assert.equal(_projectId3, projectId);
+
+              // Make sure we get a new (non-cached) projectId instance back.
+              assert.equal(_projectId3.specialTestBit, undefined);
+
+              // Step 3 has completed.
+              step();
+            });
+          });
+        });
+      });
+
+    it('should use GCLOUD_PROJECT environment variable when it is set', function (done) {
+      var projectId = 'my-awesome-project';
+
+      var auth = new GoogleAuth();
+      insertEnvironmentVariableIntoAuth(auth, 'GCLOUD_PROJECT', projectId);
+
+      // Execute.
+      auth.getDefaultProjectId(function (err, _projectId) {
+        assert.equal(err, null);
+        assert.equal(_projectId, projectId);
+        done();
+      });
+    });
+
+    it('should use GOOGLE_CLOUD_PROJECT environment variable when it is set', function (done) {
+      var projectId = 'my-awesome-project';
+
+      var auth = new GoogleAuth();
+      insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_CLOUD_PROJECT', projectId);
+
+      // Execute.
+      auth.getDefaultProjectId(function (err, _projectId) {
+        assert.equal(err, null);
+        assert.equal(_projectId, projectId);
+        done();
+      });
+    });
+
+    it('should use GOOGLE_APPLICATION_CREDENTIALS file when it is available', function (done) {
+      var projectId = 'my-awesome-project';
+
+      var auth = new GoogleAuth();
+      insertEnvironmentVariableIntoAuth(
+        auth,
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        path.join(__dirname, 'fixtures/private2.json')
+      );
+
+      // Execute.
+      auth.getDefaultProjectId(function (err, _projectId) {
+        assert.equal(err, null);
+        assert.equal(_projectId, projectId);
+        done();
+      });
+    });
+
+    it('should use well-known file when it is available and env vars are not set', function (done) {
+      var projectId = 'my-awesome-project';
+
+      // Set up the creds.
+      // * Environment variable is not set.
+      // * Well-known file is set up to point to private2.json
+      // * Running on GCE is set to true.
+      var auth = new GoogleAuth();
+      blockGoogleApplicationCredentialEnvironmentVariable(auth);
+      auth._getSDKDefaultProjectId = function(callback) {
+        callback(null, JSON.stringify({
+          core: {
+            project: projectId
+          }
+        }));
+      };
+
+      // Execute.
+      auth.getDefaultProjectId(function (err, _projectId) {
+        assert.equal(err, null);
+        assert.equal(_projectId, projectId);
+        done();
+      });
+    });
+
+    it('should use GCE when well-known file and env var are not set', function (done) {
+      var projectId = 'my-awesome-project';
+      var auth = new GoogleAuth();
+      blockGoogleApplicationCredentialEnvironmentVariable(auth);
+      auth._getSDKDefaultProjectId = function(callback) {
+        callback(null, '');
+      };
+      auth.transporter = {
+        request: function(reqOpts, callback) {
+          callback(null, projectId, { body: projectId, statusCode: 200 });
+        }
+      };
+
+
+      // Execute.
+      auth.getDefaultProjectId(function (err, _projectId) {
+        assert.equal(err, null);
+        assert.equal(_projectId, projectId);
+        done();
+      });
+    });
   });
 
   describe('.getApplicationDefault', function () {
