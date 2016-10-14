@@ -1,3 +1,13 @@
+## 0.9.9 (10/14/2016)
+
+### Changes
+
+* Handle symlinks to default application credentials ([@JonathanPorta][])
+* Add support for detecting project ID. ([@jmdobry][])
+* Add support for array of valid audiences ([@gameleon-dev][])
+* Fix devconsole links ([@mortonfox][])
+* Update request ([@tbetbetbe][])
+
 ## 0.9.8 (05/10/2016)
 
 ### Changes
@@ -57,3 +67,7 @@
 [@matthewloring]: https://github.com/matthewloring
 [@yamafaktory]: https://github.com/yamafaktory
 [@jonparrot]: https://github.com/jonparrot
+[@JonathanPorta]: https://github.com/JonathanPorta
+[@jmdobry]: https://github.com/jmdobry
+[@gameleon-dev]: https://github.com/gameleon-dev
+[@mortonfox]: https://github.com/mortonfox
