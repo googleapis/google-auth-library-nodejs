@@ -1106,6 +1106,41 @@ describe('GoogleAuth', function() {
         done();
       });
     });
+
+    it('should also get project ID', function (done) {
+      // We expect private.json to be the file that is used.
+      var fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+      var json = JSON.parse(fileContents);
+      var testProjectId = 'my-awesome-project';
+
+      // Set up the creds.
+      // * Environment variable is set up to point to private.json
+      // * Well-known file is set up to point to private2.json
+      // * Running on GCE is set to true.
+      var auth = new GoogleAuth();
+      insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
+        './test/fixtures/private.json');
+      insertEnvironmentVariableIntoAuth(auth, 'GCLOUD_PROJECT', testProjectId);
+      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+      auth._pathJoin = pathJoin;
+      auth._osPlatform = returns('win32');
+      auth._fileExists = returns(true);
+      auth._checkIsGCE = callsBack(true);
+      insertWellKnownFilePathIntoAuth(auth, 'foo:gcloud:application_default_credentials.json',
+        './test/fixtures/private2.json');
+
+      // Execute.
+      auth.getApplicationDefault(function (err, result, projectId) {
+        assert.equal(null, err);
+        assert.equal(json.private_key, result.key);
+        assert.equal(json.client_email, result.email);
+        assert.equal(projectId, testProjectId);
+        assert.equal(null, result.keyFile);
+        assert.equal(null, result.subject);
+        assert.equal(null, result.scope);
+        done();
+      });
+    });
   });
 
   describe('._checkIsGCE', function () {
