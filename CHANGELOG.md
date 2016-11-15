@@ -1,3 +1,9 @@
+## 0.9.10 (11/15/2016)
+
+### Changes
+
+* Detect project ID from default application credentials ([@jmdobry][])
+
 ## 0.9.9 (10/14/2016)
 
 ### Changes
