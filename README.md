@@ -2,6 +2,7 @@
 
 [![Build Status][travisimg]][travis]
 [![Code Coverage][coverallsimg]][coveralls]
+[![Dependencies][david-dm-img]][david-dm]
 
 This is Google's officially supported [node.js][node] client library for using
 OAuth 2.0 authorization and authentication with Google APIs.
@@ -130,3 +131,5 @@ available in [COPYING][copying].
 [coveralls]: https://coveralls.io/r/google/google-auth-library-nodejs?branch=master
 [coverallsimg]: https://img.shields.io/coveralls/google/google-auth-library-nodejs.svg
 [Application Default Credentials]: https://developers.google.com/identity/protocols/application-default-credentials#callingnode
+[david-dm-img]: https://david-dm.org/google/google-auth-library-nodejs/status.svg
+[david-dm]: https://david-dm.org/google/google-auth-library-nodejs
