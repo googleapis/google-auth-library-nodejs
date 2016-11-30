@@ -3,9 +3,9 @@ language: node_js
 node_js:
   - "0.10"
   - "0.12"
-  - "iojs"
   - "4"
   - "6"
+  - "7"
 script:
   - npm test
   - npm run lint
