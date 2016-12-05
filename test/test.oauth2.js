@@ -964,82 +964,112 @@ describe('OAuth2 client', function() {
     });
   });
 
-  /* Jason: keep
-  it('should refresh if access token is expired', function(done) {
-    var scope = nock('https://accounts.google.com')
-        .post('/o/oauth2/token')
-        .reply(200, { access_token: 'abc123', expires_in: 1 });
-    var oauth2client = new googleapis.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    var google = new googleapis.GoogleApis();
-    var drive = google.drive({ version: 'v2', auth: oauth2client });
-    var now = (new Date()).getTime();
-    var twoSecondsAgo = now - 2000;
-    oauth2client.credentials = { refresh_token: 'abc', expiry_date: twoSecondsAgo };
-    drive.files.get({ fileId: 'wat' }, function() {
-      var expiry_date = oauth2client.credentials.expiry_date;
-      assert.notEqual(expiry_date, undefined);
-      assert(expiry_date > now);
-      assert(expiry_date < now + 5000);
-      assert.equal(oauth2client.credentials.refresh_token, 'abc');
-      assert.equal(oauth2client.credentials.access_token, 'abc123');
-      assert.equal(oauth2client.credentials.token_type, 'Bearer');
-      scope.done();
-      done();
+  describe('request()', function() {
+    var scope;
+
+    beforeEach(function() {
+      scope = nock('https://accounts.google.com')
+          .post('/o/oauth2/token')
+          .reply(200, { access_token: 'abc123', expires_in: 1 });
+
+      nock('http://example.com')
+          .get('/')
+          .reply(200);
     });
-  });
 
-  it('should make request if access token not expired', function(done) {
-    var scope = nock('https://accounts.google.com')
-        .post('/o/oauth2/token')
-        .reply(200, { access_token: 'abc123', expires_in: 10000 });
-    var oauth2client = new googleapis.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    var google = new googleapis.GoogleApis();
-    var drive = google.drive({ version: 'v2', auth: oauth2client });
-    var now = (new Date()).getTime();
-    var tenSecondsFromNow = now + 10000;
-    oauth2client.credentials = {
-      access_token: 'abc123',
-      refresh_token: 'abc',
-      expiry_date: tenSecondsFromNow
-    };
-    drive.files.get({ fileId: 'wat' }, function() {
-      assert.equal(JSON.stringify(oauth2client.credentials), JSON.stringify({
-        access_token: 'abc123',
-        refresh_token: 'abc',
-        expiry_date: tenSecondsFromNow,
-        token_type: 'Bearer'
-      }));
-
-      assert.throws(function() {
-        scope.done();
-      }, 'AssertionError');
+    afterEach(function() {
       nock.cleanAll();
-      done();
     });
-  });
 
-  it('should refresh if have refresh token but no access token', function(done) {
-    var scope = nock('https://accounts.google.com')
-        .post('/o/oauth2/token')
-        .reply(200, { access_token: 'abc123', expires_in: 1 });
-    var oauth2client = new googleapis.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    var google = new googleapis.GoogleApis();
-    var drive = google.drive({ version: 'v2', auth: oauth2client });
-    var now = (new Date()).getTime();
-    oauth2client.credentials = { refresh_token: 'abc' };
-    drive.files.get({ fileId: 'wat' }, function() {
-      var expiry_date = oauth2client.credentials.expiry_date;
-      assert.notEqual(expiry_date, undefined);
-      assert(expiry_date > now);
-      assert(expiry_date < now + 4000);
-      assert.equal(oauth2client.credentials.refresh_token, 'abc');
-      assert.equal(oauth2client.credentials.access_token, 'abc123');
-      assert.equal(oauth2client.credentials.token_type, 'Bearer');
-      scope.done();
-      done();
+    it('should refresh token if missing access token', function(done) {
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
+      oauth2client.credentials = {
+        refresh_token: 'refresh-token-placeholder'
+      };
+
+      oauth2client.request({ uri : 'http://example.com' }, function() {
+        assert.equal('abc123', oauth2client.credentials.access_token);
+        done();
+      });
+    });
+
+    it('should refresh if access token is expired', function(done) {
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
+      oauth2client.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'refresh-token-placeholder',
+        expiry_date: (new Date()).getTime() - 1000
+      };
+
+      oauth2client.request({ uri : 'http://example.com' }, function() {
+        assert.equal('abc123', oauth2client.credentials.access_token);
+        done();
+      });
+    });
+
+    it('should not refresh if not expired', function(done) {
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
+      oauth2client.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'refresh-token-placeholder',
+        expiry_date: (new Date()).getTime() + 1000
+      };
+
+      oauth2client.request({ uri : 'http://example.com' }, function() {
+        assert.equal('initial-access-token', oauth2client.credentials.access_token);
+        assert.equal(false, scope.isDone());
+        done();
+      });
+    });
+
+    it('should assume access token is not expired', function(done) {
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
+      oauth2client.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'refresh-token-placeholder'
+      };
+
+      oauth2client.request({ uri : 'http://example.com' }, function() {
+        assert.equal('initial-access-token', oauth2client.credentials.access_token);
+        assert.equal(false, scope.isDone());
+        done();
+      });
+    });
+
+    [401, 403].forEach(function(statusCode) {
+      it('should refresh token if the server returns ' + statusCode, function(done) {
+        nock('http://example.com')
+            .get('/access')
+            .reply(statusCode, {
+              error: {
+                code: statusCode,
+                message: 'Invalid Credentials'
+              }
+            });
+
+        var auth = new GoogleAuth();
+        var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
+        oauth2client.credentials = {
+          access_token: 'initial-access-token',
+          refresh_token: 'refresh-token-placeholder'
+        };
+
+        oauth2client.request({ uri : 'http://example.com/access' }, function() {
+          assert.equal('abc123', oauth2client.credentials.access_token);
+          done();
+        });
+      });
     });
   });
-  */
 
   describe('revokeCredentials()', function() {
     it('should revoke credentials if access token present', function(done) {
