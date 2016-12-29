@@ -1,3 +1,16 @@
+## 0.10.0 (12/29/2016)
+
+### Breaking bug fixes
+
+* Fix oauth2 token refresh (#109) ([@ianmetcalf][])
+
+### Backwards compatible changes
+
+* Remove unused dependencies and upgrade remaining dependencies. (#112) ([@jmdobry][])
+* Add yarn.lock file. (#113) ([@jmdobry][])
+* Improve dev scripts. (#114) ([@jmdobry][])
+* Improve repo licensing. (#115) ([@jmdobry][])
+
 ## 0.9.10 (11/15/2016)
 
 ### Changes
