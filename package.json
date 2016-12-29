@@ -54,10 +54,11 @@
   },
   "scripts": {
     "lint": "jshint lib test",
-    "test": "mocha --reporter spec --timeout 4000",
+    "mocha": "mocha --reporter spec --timeout 4000",
     "generate-docs": "jsdoc -c jsdoc-conf.json ./README.md",
     "prepare": "npm test && npm run lint && npm version patch",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",
+    "test": "npm run lint && npm run coverage",
     "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls"
   },
   "license": "Apache-2.0"
