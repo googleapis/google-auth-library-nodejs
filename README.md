@@ -105,7 +105,7 @@ See [CONTRIBUTING][contributing].
 ## License
 
 This library is licensed under Apache 2.0. Full license text is
-available in [COPYING][copying].
+available in [LICENSE][copying].
 
 [travisimg]: https://api.travis-ci.org/google/google-auth-library-nodejs.svg
 [bugs]: https://github.com/google/google-auth-library-nodejs/issues
@@ -115,8 +115,8 @@ available in [COPYING][copying].
 [apiexplorer]: https://developers.google.com/apis-explorer
 [urlshort]: https://developers.google.com/url-shortener/
 [usingkeys]: https://developers.google.com/console/help/#UsingKeys
-[contributing]: https://github.com/google/google-auth-library-nodejs/tree/master/CONTRIBUTING.md
-[copying]: https://github.com/google/google-auth-library-nodejs/tree/master/COPYING
+[contributing]: https://github.com/google/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
+[copying]: https://github.com/google/google-auth-library-nodejs/tree/master/LICENSE
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
 [request]: https://github.com/mikeal/request
 [requestopts]: https://github.com/mikeal/request#requestoptions-callback
