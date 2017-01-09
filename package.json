@@ -20,8 +20,10 @@
   ],
   "dependencies": {
     "gtoken": "^1.2.1",
-    "lodash.noop": "^3.0.1",
     "jws": "^3.1.4",
+    "lodash.isstring": "^4.0.1",
+    "lodash.merge": "^4.6.0",
+    "lodash.noop": "^3.0.1",
     "request": "^2.74.0"
   },
   "devDependencies": {
