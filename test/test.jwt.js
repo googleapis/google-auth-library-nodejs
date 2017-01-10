@@ -686,3 +686,36 @@ describe('.fromStream', function () {
   });
 
 });
+
+describe('.fromAPIKey', function () {
+  var jwt;
+  var KEY = 'test';
+  beforeEach(function () {
+    var auth = new GoogleAuth();
+    jwt = new auth.JWT();
+  });
+  describe('exception behaviour', function () {
+    it('should error without api key', function (done) {
+      jwt.fromAPIKey(undefined, function (err) {
+        assert(err instanceof Error);
+        done();
+      });
+    });
+    it('should error with invalid api key type', function (done) {
+      jwt.fromAPIKey({key: KEY}, function (err) {
+        assert(err instanceof Error);
+        done();
+      });
+    });
+  });
+  describe('Valid behaviour', function () {
+    
+    it('should set the .apiKey property on the instance', function (done) {
+      jwt.fromAPIKey(KEY, function (err) {
+        assert.strictEqual(jwt.apiKey, KEY);
+        assert.strictEqual(err, null);
+        done();
+      });
+    });
+  });
+});

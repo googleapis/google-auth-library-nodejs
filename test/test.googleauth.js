@@ -129,6 +129,89 @@ describe('GoogleAuth', function() {
       });
     });
 
+    describe('.fromAPIKey', function () {
+      var API_KEY = 'test-123';
+      var STUB_PROJECT = 'my-awesome-project';
+      describe('Exception behaviour', function () {
+        var auth;
+        before(function () {
+          auth = new GoogleAuth();
+        });
+        it('Should error given an invalid api key', function (done) {
+          auth.fromAPIKey(null, function (err) {
+            assert(err instanceof Error);
+            done();
+          });
+        });
+      });
+      describe('Request/response lifecycle mocking', function () {
+        var ENDPOINT = '/events:report';
+        var RESPONSE_BODY = 'RESPONSE_BODY';
+        var BASE_URL = [
+          'https://clouderrorreporting.googleapis.com/v1beta1/projects',
+          STUB_PROJECT
+        ].join('/');
+        var auth;
+        beforeEach(function () {
+          auth = new GoogleAuth();
+          insertEnvironmentVariableIntoAuth(auth, 'GCLOUD_PROJECT', STUB_PROJECT);
+        });
+        afterEach(function () {
+          nock.cleanAll();
+        });
+        describe('With no added query string parameters', function () {
+          it('should make a request with the api key', function (done) {
+            var fakeService = nock(BASE_URL).post(ENDPOINT)
+              .query({key: API_KEY}).once().reply(function (uri) {
+                assert(uri.indexOf('key='+API_KEY) > -1);
+                return [200, RESPONSE_BODY];
+              });
+            auth.fromAPIKey(API_KEY, function (err, client) {
+              assert.strictEqual(err, null);
+              client.request({
+                url: BASE_URL+ENDPOINT,
+                method: 'POST',
+                json: '{"test": true}'
+              }, function (err, body) {
+                assert.strictEqual(err, null);
+                assert.strictEqual(RESPONSE_BODY, body);
+                fakeService.done();
+                done();
+              });
+            });
+          });
+        });
+        describe('With preexisting query string parameters', function () {
+          it('should make a request while preserving original parameters',
+            function (done) {
+              var OTHER_QS_PARAM = {test: 'abc'};
+              var fakeService = nock(BASE_URL).post(ENDPOINT)
+                .query({test: OTHER_QS_PARAM.test, key: API_KEY}).once()
+                .reply(function (uri) {
+                  assert(uri.indexOf('key='+API_KEY) > -1);
+                  assert(uri.indexOf('test='+OTHER_QS_PARAM.test) > -1);
+                  return [200, RESPONSE_BODY];
+                });
+              auth.fromAPIKey(API_KEY, function (err, client) {
+                assert.strictEqual(err, null);
+                client.request({
+                  url: BASE_URL+ENDPOINT,
+                  method: 'POST',
+                  json: '{"test": true}',
+                  qs: OTHER_QS_PARAM
+                }, function (err, body) {
+                  assert.strictEqual(err, null);
+                  assert.strictEqual(RESPONSE_BODY, body);
+                  fakeService.done();
+                  done();
+                });
+              });
+            }
+          );
+        });
+      });
+    });
+
     describe('JWT token', function() {
 
       it('should error on empty json', function (done) {
