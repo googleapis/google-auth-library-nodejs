@@ -36,11 +36,18 @@ describe('Initial credentials', function() {
 describe('Compute auth client', function() {
   // set up compute client.
   var compute;
+  var serve;
   beforeEach(function() {
     var auth = new GoogleAuth();
     compute = new auth.Compute();
+    serve = nock('http://foo').persist().get('/').reply(200);
   });
-
+  afterEach(function () {
+    nock.cleanAll();
+  });
+  after(function () {
+    nock.cleanAll();
+  });
   it('should get an access token for the first request', function (done) {
     var scope = nock('http://metadata.google.internal')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
@@ -89,6 +96,9 @@ describe('Compute auth client', function() {
 
   describe('._injectErrorMessage', function () {
     it('should return a helpful message on request response.statusCode 403', function (done) {
+      var scope = nock('http://metadata.google.internal')
+        .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
+        .once().reply(200, { access_token: 'abc123', expires_in: 10000 });
       // Mock the credentials object.
       compute.credentials = {
         refresh_token: 'hello',
@@ -107,6 +117,7 @@ describe('Compute auth client', function() {
             'token for the Compute Engine built-in service account. This may be because the ' +
             'Compute Engine instance does not have the correct permission scopes specified.',
           err.message);
+        scope.done();
         done();
       });
     });

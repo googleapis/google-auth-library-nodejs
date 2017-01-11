@@ -1047,6 +1047,7 @@ describe('OAuth2 client', function() {
     [401, 403].forEach(function(statusCode) {
       it('should refresh token if the server returns ' + statusCode, function(done) {
         nock('http://example.com')
+            .persist()
             .get('/access')
             .reply(statusCode, {
               error: {
@@ -1065,6 +1066,7 @@ describe('OAuth2 client', function() {
 
         oauth2client.request({ uri : 'http://example.com/access' }, function() {
           assert.equal('abc123', oauth2client.credentials.access_token);
+          nock.cleanAll();
           done();
         });
       });

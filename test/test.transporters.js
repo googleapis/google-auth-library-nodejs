@@ -31,7 +31,7 @@ describe('Transporters', function() {
   it('should set default client user agent if none is set', function() {
     var opts = transporter.configure({});
     var re = new RegExp(defaultUserAgentRE);
-    assert(re.test(opts.headers['User-Agent']));
+    assert(re.test(opts.requestOptions.headers['User-Agent']));
   });
 
   it('should append default client user agent to the existing user agent', function() {
@@ -40,7 +40,7 @@ describe('Transporters', function() {
       headers: { 'User-Agent': applicationName }
     });
     var re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
-    assert(re.test(opts.headers['User-Agent']));
+    assert(re.test(opts.requestOptions.headers['User-Agent']));
   });
 
   it('should not append default client user agent to the existing user ' +
@@ -49,7 +49,7 @@ describe('Transporters', function() {
     var opts = transporter.configure({
       headers: { 'User-Agent': applicationName }
     });
-    assert.equal(opts.headers['User-Agent'], applicationName);
+    assert.equal(opts.requestOptions.headers['User-Agent'], applicationName);
   });
 
   it('should create a single error from multiple response errors', function(done) {

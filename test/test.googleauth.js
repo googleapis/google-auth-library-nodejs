@@ -1031,6 +1031,14 @@ describe('GoogleAuth', function() {
   });
 
   describe('.getApplicationDefault', function () {
+    var service;
+    beforeEach(function () {
+      service = nock('http://169.254.169.254:80/computeMetadata/v1/project')
+        .persist().get('/project-id').reply(500);
+    });
+    afterEach(function () {
+      nock.cleanAll();
+    });
 
     it('should return a new credential the first time and a cached credential the second time',
       function (done) {

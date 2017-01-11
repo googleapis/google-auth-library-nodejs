@@ -223,6 +223,7 @@ describe('JWT auth client', function() {
           null,
           ['http://bar', 'http://foo'],
           'bar@subjectaccount.com');
+      var scope = nock('http://bar').get('/').once().reply(200, {});
 
       jwt.credentials = {
         refresh_token: 'jwt-placeholder'
@@ -233,9 +234,10 @@ describe('JWT auth client', function() {
           callback(null, 'abc123');
         }
       };
-
+      
       jwt.request({ uri : 'http://bar' }, function() {
         assert.equal('abc123', jwt.credentials.access_token);
+        scope.done();
         done();
       });
     });
@@ -248,6 +250,7 @@ describe('JWT auth client', function() {
           null,
           ['http://bar', 'http://foo'],
           'bar@subjectaccount.com');
+      var scope = nock('http://bar').get('/').once().reply(200, {});
 
       jwt.credentials = {
         access_token: 'woot',
@@ -263,15 +266,14 @@ describe('JWT auth client', function() {
 
       jwt.request({ uri : 'http://bar' }, function() {
         assert.equal('abc123', jwt.credentials.access_token);
+        scope.done();
         done();
       });
     });
 
     it('should refresh token if the server returns 403', function(done) {
-      nock('http://example.com')
-          .log(console.log)
-          .get('/access')
-          .reply(403);
+      var scope = nock('http://example.com').persist().get('/access')
+        .reply(403);
 
       var auth = new GoogleAuth();
       var jwt = new auth.JWT(
@@ -296,6 +298,7 @@ describe('JWT auth client', function() {
       jwt.request({ uri : 'http://example.com/access' }, function() {
         assert.equal('abc123', jwt.credentials.access_token);
         nock.cleanAll();
+        scope.done();
         done();
       });
     });
@@ -305,6 +308,7 @@ describe('JWT auth client', function() {
           .log(console.log)
           .post('/o/oauth2/token', '*')
           .reply(200, { access_token: 'abc123', expires_in: 10000 });
+      var trg = nock('http://bar').get('/').once().reply(200, {});
 
       var auth = new GoogleAuth();
       var jwt = new auth.JWT(
@@ -323,6 +327,7 @@ describe('JWT auth client', function() {
       jwt.request({ uri : 'http://bar' }, function() {
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal(false, scope.isDone());
+        trg.done();
         nock.cleanAll();
         done();
       });
@@ -333,6 +338,7 @@ describe('JWT auth client', function() {
           .log(console.log)
           .post('/o/oauth2/token', '*')
           .reply(200, { access_token: 'abc123', expires_in: 10000 });
+        var trg = nock('http://bar').get('/').once().reply(200, {});
 
       var auth = new GoogleAuth();
       var jwt = new auth.JWT(
@@ -350,6 +356,7 @@ describe('JWT auth client', function() {
       jwt.request({ uri : 'http://bar' }, function() {
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal(false, scope.isDone());
+        trg.done();
         nock.cleanAll();
         done();
       });
