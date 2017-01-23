@@ -3,3 +3,6 @@ node_modules/*
 docs/
 npm-debug.log
 coverage
+.DS_Store
+.nyc_output
+

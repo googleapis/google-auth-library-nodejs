@@ -18,6 +18,7 @@
 
 var assert = require('assert');
 var GoogleAuth = require('../lib/auth/googleauth.js');
+var IAMAuth = require('../lib/auth/iam.js');
 
 describe('.getRequestMetadata', function() {
   var test_selector = 'a-test-selector';
@@ -27,7 +28,6 @@ describe('.getRequestMetadata', function() {
     var auth = new GoogleAuth();
     client = new auth.IAMAuth(test_selector, test_token);
   });
-
   it('passes the token and selector to the callback ', function(done) {
     var expect_request_metadata = function(err, creds) {
       assert.strictEqual(err, null, 'no error was expected: got\n' + err);
@@ -42,5 +42,12 @@ describe('.getRequestMetadata', function() {
     var unusedUri = null;
     client.getRequestMetadata(unusedUri, expect_request_metadata);
   });
+});
 
+describe('IAMAuth', function () {
+  describe('createScopedRequired', function () {
+    var i = new IAMAuth();
+    // IAM authorization does not use scopes.
+    assert.strictEqual(i.createScopedRequired(), false);
+  });
 });

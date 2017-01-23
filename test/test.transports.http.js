@@ -297,7 +297,7 @@ describe('HTTP/HTTPS transport API', function () {
     var getTransport = http.getTransport;
     describe('If given true', function () {
       it('Should return the https module', function () {
-        if (semver.gt(process.version, 'v0.12.18')) {
+        if (!semver.satisfies(process.version, '>1.6')) {
           // globalAgent.protocol is not available on 0.10.x
           this.skip();
           assert.strictEqual(getTransport(true).globalAgent.protocol, 'https:');
@@ -306,7 +306,7 @@ describe('HTTP/HTTPS transport API', function () {
     });
     describe('If given false', function () {
       it('Should return the http module', function () {
-        if (semver.gt(process.version, 'v0.12.18')) {
+        if (!semver.satisfies(process.version, '>1.6')) {
           // globalAgent.protocol is not available on 0.10.x
           this.skip();
           assert.strictEqual(getTransport(false).globalAgent.protocol, 'http:');

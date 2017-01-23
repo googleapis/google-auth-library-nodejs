@@ -94,7 +94,35 @@ describe('Compute auth client', function() {
     });
   });
 
+  describe('.refreshToken_', function () {
+    it('should not throw without a callback', function () {
+      var auth = new GoogleAuth();
+      var compute = new auth.Compute();
+      compute.transporter = {
+        request: function (opts, cb) {
+          setImmediate(function () {
+            cb(new Error('three token string'));
+          });
+        }
+      };
+      assert.doesNotThrow(function () {
+        compute.refreshToken_();
+      });
+    });
+  });
+
   describe('._injectErrorMessage', function () {
+    
+    it('should leave the error unmodified given an empty response', function (done) {
+      var auth = new GoogleAuth();
+      var compute = new auth.Compute();
+      var ERROR = new Error('three token string');
+      var cb = function (err) {
+        assert.strictEqual(ERROR.message, err.message);
+        done();
+      };
+      compute._injectErrorMessage(ERROR, null, null, cb);
+    });
     it('should return a helpful message on request response.statusCode 403', function (done) {
       var scope = nock('http://metadata.google.internal')
         .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')

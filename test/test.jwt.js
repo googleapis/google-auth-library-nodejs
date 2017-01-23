@@ -16,12 +16,15 @@
 
 'use strict';
 
+var Readable = require('stream').Readable;
+var noOp = require('lodash.noop');
 var assert = require('assert');
 var fs = require('fs');
 var GoogleAuth = require('../lib/auth/googleauth.js');
 var jws = require('jws');
 var keypair = require('keypair');
 var nock = require('nock');
+var pkgVersion = require('../package.json').version;
 
 nock.disableNetConnect();
 
@@ -51,6 +54,21 @@ describe('Initial credentials', function() {
 describe('JWT auth client', function() {
 
   describe('.authorize', function() {
+
+    it('should callback with an error if applicable', function (done) {
+      var auth = new GoogleAuth();
+      var jwt = new auth.JWT(
+        'foo@serviceaccount.com',
+        '/path/to/nonexistent/key.pem',
+        null,
+        ['http://bar', 'http://foo'],
+        'bar@subjectaccount.com'
+      );
+      jwt.authorize(function (err) {
+        assert(err instanceof Error);
+        done();
+      });
+    });
 
     it('should get an initial access token', function(done) {
       var auth = new GoogleAuth();
@@ -223,7 +241,10 @@ describe('JWT auth client', function() {
           null,
           ['http://bar', 'http://foo'],
           'bar@subjectaccount.com');
-      var scope = nock('http://bar').get('/').once().reply(200, {});
+      var scope = nock('http://bar.com').get('/')
+        .matchHeader('authorization', 'Bearer abc123')
+        .matchHeader('user-agent', 'google-api-nodejs-client/'+pkgVersion)
+        .matchHeader('host', 'bar.com').once().reply(200, {});
 
       jwt.credentials = {
         refresh_token: 'jwt-placeholder'
@@ -235,7 +256,7 @@ describe('JWT auth client', function() {
         }
       };
       
-      jwt.request({ uri : 'http://bar' }, function() {
+      jwt.request({ uri : 'http://bar.com' }, function() {
         assert.equal('abc123', jwt.credentials.access_token);
         scope.done();
         done();
@@ -250,7 +271,10 @@ describe('JWT auth client', function() {
           null,
           ['http://bar', 'http://foo'],
           'bar@subjectaccount.com');
-      var scope = nock('http://bar').get('/').once().reply(200, {});
+      var scope = nock('http://bar').get('/')
+        .matchHeader('authorization', 'Bearer abc123')
+        .matchHeader('user-agent', 'google-api-nodejs-client/'+pkgVersion)
+        .matchHeader('host', 'bar').once().reply(200, {});
 
       jwt.credentials = {
         access_token: 'woot',
@@ -272,8 +296,11 @@ describe('JWT auth client', function() {
     });
 
     it('should refresh token if the server returns 403', function(done) {
-      var scope = nock('http://example.com').persist().get('/access')
-        .reply(403);
+      var tokens = ['woot', 'abc123'];
+      var scope = nock('http://example.com').get('/access')
+        .matchHeader('authorization', function () {return tokens.shift();})
+        .matchHeader('user-agent', 'google-api-nodejs-client/'+pkgVersion)
+        .matchHeader('host', 'example.com').twice().reply(403);
 
       var auth = new GoogleAuth();
       var jwt = new auth.JWT(
@@ -392,6 +419,37 @@ describe('JWT auth client', function() {
     });
   });
 
+});
+
+describe('refreshToken', function () {
+  it('should callback with error if applicable', function (done) {
+    var auth = new GoogleAuth();
+    var jwt = new auth.JWT(
+      'foo@serviceaccount.com',
+      '/path/to/key.pem',
+      null,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com');
+    jwt._createGToken = function (cb) {
+      cb(new Error('an error string'));
+    };
+    jwt.refreshToken_(null, function (err) {
+      assert(err instanceof Error);
+      done();
+    });
+  });
+  it('should not throw without a callback', function () {
+    var auth = new GoogleAuth();
+    var jwt = new auth.JWT(
+      'foo@serviceaccount.com',
+      '/path/to/key.pem',
+      null,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com');
+    assert.doesNotThrow(function () {
+      jwt.refreshToken_(null);
+    });
+  });
 });
 
 describe('.createScoped', function() {
@@ -620,6 +678,12 @@ describe('.fromJson', function () {
     });
   });
 
+  it('should not throw without callback', function () {
+    assert.doesNotThrow(function () {
+      jwt.fromJSON(json);
+    });
+  });
+
   it('should create JWT with private_key', function (done) {
     jwt.fromJSON(json, function (err) {
       assert.equal(null, err);
@@ -669,6 +733,17 @@ describe('.fromStream', function () {
     });
   });
 
+  it('should callback with an error given malformed JSON in stream', function (done) {
+    var s = new Readable();
+    s._read = noOp;
+    jwt.fromStream(s, function (err) {
+      assert(err instanceof Error);
+      done();
+    });
+    s.push('{"malformed": always');
+    s.push(null);
+  });
+
   it('should read the stream and create a jwt', function (done) {
     // Read the contents of the file into a json object.
     var fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
@@ -689,6 +764,12 @@ describe('.fromStream', function () {
       assert.equal(null, jwt.scope);
 
       done();
+    });
+  });
+
+  it('should not throw if not given a callback', function () {
+    assert.doesNotThrow(function () {
+      jwt.fromStream(fs.createReadStream('./test/fixtures/private.json'));
     });
   });
 
@@ -716,12 +797,16 @@ describe('.fromAPIKey', function () {
     });
   });
   describe('Valid behaviour', function () {
-    
     it('should set the .apiKey property on the instance', function (done) {
       jwt.fromAPIKey(KEY, function (err) {
         assert.strictEqual(jwt.apiKey, KEY);
         assert.strictEqual(err, null);
         done();
+      });
+    });
+    it('should not throw sans callback', function () {
+      assert.doesNotThrow(function () {
+        jwt.fromAPIKey(KEY);
       });
     });
   });

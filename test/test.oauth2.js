@@ -175,6 +175,61 @@ describe('OAuth2 client', function() {
     done();
   });
 
+  it('should verify a valid certificate against a jwt without audience', function(done) {
+    var publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
+    var privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+
+    var maxLifetimeSecs = 86400;
+    var now = new Date().getTime() / 1000;
+    var expiry = now + (maxLifetimeSecs / 2);
+
+    var idToken = '{' +
+        '"iss":"testissuer",' +
+        '"aud":"testaudience",' +
+        '"azp":"testauthorisedparty",' +
+        '"email_verified":"true",' +
+        '"id":"123456789",' +
+        '"sub":"123456789",' +
+        '"email":"test@test.com",' +
+        '"iat":' + now + ',' +
+        '"exp":' + expiry +
+      '}';
+    var envelope = '{' +
+        '"kid":"keyid",' +
+        '"alg":"RS256"' +
+      '}';
+
+    var data = new Buffer(envelope).toString('base64') +
+      '.' + new Buffer(idToken).toString('base64');
+
+    var signer = crypto.createSign('sha256');
+    signer.update(data);
+    var signature = signer.sign(privateKey, 'base64');
+
+    data += '.' + signature;
+
+    var auth = new GoogleAuth();
+    var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    var login = oauth2client.verifySignedJwtWithCerts(data,
+        {keyid: publicKey});
+
+    assert.equal(login.getUserId(), '123456789');
+    done();
+  });
+
+  it('should callback with error if no evelope is present', function () {
+    var auth = new GoogleAuth();
+    var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    oauth2client.decodeBase64 = function (input) {
+      return input;
+    };
+    var fakeData = '{"test": true}.{"test": true}.';
+    assert.throws(function () {
+      oauth2client.verifySignedJwtWithCerts(fakeData,
+        {keyid: 'xyz'}, 'testaudience');
+    });
+  });
+
   it('should fail due to invalid audience', function(done) {
     var publicKey = fs.readFileSync('./test/fixtures/public.pem',
         'utf-8');
@@ -1011,6 +1066,25 @@ describe('OAuth2 client', function() {
       });
     });
 
+    it('should not throw without metadata setting extra headers', function (done) {
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      oauth2client.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'refresh-token-placeholder',
+        expiry_date: (new Date()).getTime() + 1000
+      };
+      // Stub the cb that amalgamates headers into final request options
+      oauth2client.getRequestMetadata = function (uri, authCb) {
+        authCb(null, null, null);
+      };
+       oauth2client.request({ uri : 'http://example.com' }, function() {
+        assert.equal('initial-access-token', oauth2client.credentials.access_token);
+        assert.equal(false, scope.isDone());
+        done();
+      });
+    });
+
     it('should not refresh if not expired', function(done) {
       var auth = new GoogleAuth();
       var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
@@ -1103,6 +1177,155 @@ describe('OAuth2 client', function() {
     });
   });
 
+  describe('refreshToken_', function () {
+    it('should not throw sans callback', function () {
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      var transporter = {
+        request: function (opts, cb) {
+          setImmediate(function () {
+            cb(new Error('three token string'));
+          });
+        }
+      };
+      oauth2client.transporter = transporter;
+      assert.doesNotThrow(function () {
+        oauth2client.refreshToken_(null);
+      });
+    });
+  });
+
+  describe('refreshAccessToken', function () {
+    it('should callback with error if applicable', function (done) {
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      oauth2client.credentials.refresh_token = 'stub_token';
+      var ERROR = new Error('three token string');
+      oauth2client.refreshToken_ = function (token, cb) {
+        setImmediate(function () {
+          cb(ERROR);
+        });
+      };
+      oauth2client.refreshAccessToken(function (err) {
+        assert(err instanceof Error);
+        assert.strictEqual(err.message, ERROR.message);
+        done();
+      });
+    });
+  });
+  describe('.getAccessToken', function () {
+    var auth, o2c;
+    beforeEach(function () {
+      auth = new GoogleAuth();
+      o2c = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    });
+    it(
+      'should callback with cached token given that it does not need to refresh',
+      function (done) {
+        // stub the token
+        o2c.credentials = {
+          expiry_date: new Date().getTime()+15000,
+          access_token: 'stub_access_token'
+        };
+        o2c.getAccessToken(function (err, token) {
+          assert.strictEqual(err, null);
+          assert.strictEqual(token, o2c.credentials.access_token);
+          done();
+        });
+      }
+    );
+    it('should callback with error if without access_token and refresh_token',
+      function (done) {
+        o2c.getAccessToken(function (err) {
+          assert(err instanceof Error);
+          assert.strictEqual(err.message, 'No access or refresh token is set.');
+          done();
+        });
+      }
+    );
+    it('should callback with error if error occurs in request lifecycle', 
+      function (done) {
+        o2c.credentials = {
+          expiry_date: new Date().getTime()-15000,
+          access_token: 'stub_access_token',
+          refresh_token: 'stub_refresh_token'
+        };
+        var ERROR = new Error('three token string');
+        o2c.refreshAccessToken = function (cb) {
+          setImmediate(function () {
+            cb(ERROR);
+          });
+        };
+        o2c.getAccessToken(function (err) {
+          assert(err instanceof Error);
+          assert.strictEqual(err.message, ERROR.message);
+          done();
+        });
+      }
+    );
+    it(
+      'should callback with error if response does not contain access_token prop',
+      function (done) {
+        o2c.credentials = {
+          expiry_date: new Date().getTime()-15000,
+          access_token: 'stub_access_token',
+          refresh_token: 'stub_refresh_token'
+        };
+        o2c.refreshAccessToken = function (cb) {
+          setImmediate(function () {
+            cb(null, {});
+          });
+        };
+        o2c.getAccessToken(function (err) {
+          assert(err instanceof Error);
+          assert.strictEqual(err.message, 'Could not refresh access token.');
+          done();
+        });
+      }
+    );
+    it(
+      'should callback with error if response is not correct object type',
+      function (done) {
+        o2c.credentials = {
+          expiry_date: new Date().getTime()-15000,
+          access_token: 'stub_access_token',
+          refresh_token: 'stub_refresh_token'
+        };
+        o2c.refreshAccessToken = function (cb) {
+          setImmediate(function () {
+            cb(null, null);
+          });
+        };
+        o2c.getAccessToken(function (err) {
+          assert(err instanceof Error);
+          assert.strictEqual(err.message, 'Could not refresh access token.');
+          done();
+        });
+      }
+    );
+  });
+  describe('getRequestMetadata', function () {
+    it('should callback with error if error occurs during refreshToken_', function (done) {
+      var ERROR = new Error('three token string');
+      var auth = new GoogleAuth();
+      var o2c = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      o2c.credentials = {
+        expiry_date: new Date().getTime()-15000,
+        access_token: 'stub_access_token',
+        refresh_token: 'stub_refresh_token'
+      };
+      o2c.refreshToken_ = function (refreshToken, cb) {
+        setImmediate(function () {
+          cb(ERROR);
+        });
+      };
+      o2c.getRequestMetadata(null, function (err) {
+        assert(err instanceof Error);
+        assert.strictEqual(ERROR.message, err.message);
+        done();
+      });
+    });
+  });
   describe('getToken()', function() {
     it('should return expiry_date', function(done) {
       var now = (new Date()).getTime();
@@ -1115,6 +1338,148 @@ describe('OAuth2 client', function() {
         assert(tokens.expiry_date >= now + (10 * 1000));
         assert(tokens.expiry_date <= now + (15 * 1000));
         scope.done();
+        done();
+      });
+    });
+    it('should not throw sans callback', function() {
+      var scope = nock('https://accounts.google.com')
+          .post('/o/oauth2/token')
+          .reply(200, { access_token: 'abc', refresh_token: '123', expires_in: 10 });
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      assert.doesNotThrow(function () {
+        oauth2client.getToken('code here');
+        scope.done();
+      });
+    });
+    it('should callback with error if applicable', function (done) {
+      var URI = 'http://test.com';
+      var auth = new GoogleAuth();
+      var oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      oauth2client.opts.tokenUrl = URI;
+      var scope = nock(URI).post('/').once()
+        .replyWithError('three token string');
+      oauth2client.getToken('code here', function(err) {
+        assert(err instanceof Error);
+        scope.done();
+        done();
+      });
+    });
+  });
+  describe('.verifyIdToken', function () {
+    var auth, o2c;
+    beforeEach(function () {
+      auth = new GoogleAuth();
+      o2c = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    });
+    it('Should throw without an idToken', function () {
+      assert.throws(function () {
+        o2c.verifyIdToken(null);
+      });
+    });
+    it('Should throw without a callback', function () {
+      assert.throws(function () {
+        o2c.verifyIdToken('test', null);
+      });
+    });
+    it('should callback with an error from getFederatedSignonCerts if applicable', function (done) {
+      // This path will callback to the callback given to verifyIdToken twice:
+      // both times with errors;
+      var doneFn = (function () {
+        var times = 0;
+        return function () {
+          times += 1;
+          if (times > 1) {
+            done();
+          }
+        };
+      })();
+      var ERROR = new Error('three token string');
+      o2c.getFederatedSignonCerts = function (cb) {
+        setImmediate(function () {
+          cb(ERROR);
+        });
+      };
+      o2c.verifySignedJwtWithCerts = function () {
+        throw ERROR;
+      };
+      o2c.verifyIdToken('test', 'test', function (err) {
+        assert(err instanceof Error);
+        assert.strictEqual(err.message, ERROR.message);
+        doneFn();
+      });
+    });
+    it('should callback with an error from verifySignedJwtWithCerts if applicable', 
+      function (done) {
+        var ERROR = new Error('three token string');
+        o2c.getFederatedSignonCerts = function (cb) {
+          setImmediate(function () {
+            cb(null);
+          });
+        };
+        o2c.verifySignedJwtWithCerts = function () {
+          throw ERROR;
+        };
+        o2c.verifyIdToken('test', 'test', function (err) {
+          assert(err instanceof Error);
+          assert.strictEqual(err.message, ERROR.message);
+          done();
+        });
+      }
+    );
+    it('should callback with the login value if successful', 
+      function (done) {
+        o2c.getFederatedSignonCerts = function (cb) {
+          setImmediate(function () {
+            cb(null);
+          });
+        };
+        o2c.verifySignedJwtWithCerts = function () {
+          return {stub: true};
+        };
+        o2c.verifyIdToken('test', 'test', function (err, login) {
+          assert.strictEqual(err, null);
+          assert.strictEqual(login.stub, true);
+          done();
+        });
+      }
+    );
+  });
+  describe('getFederatedSignonCerts', function () {
+    it('should callback with an error if applicable', function (done) {
+      var ERROR = new Error('three token string');
+      var auth = new GoogleAuth();
+      var o2c = new auth.OAuth2();
+      o2c.resetCertificateCache_();
+      o2c.transporter = {
+        request: function (opts, cb) {
+          setImmediate(function () {
+            cb(ERROR);
+          });
+        }
+      };
+      o2c.getFederatedSignonCerts(function (err) {
+        assert.strictEqual(err, 
+          'Failed to retrieve verification certificates: '+ERROR);
+        done();
+      });
+    });
+    it('should not set cache control in headers if not necessary', function (done) {
+      var auth = new GoogleAuth();
+      var o2c = new auth.OAuth2();
+      o2c.resetCertificateCache_();
+      o2c.transporter = {
+        request: function (opts, cb) {
+          setImmediate(function () {
+            cb(null, {}, {
+              headers: {
+                'cache-control': 'df'
+              }
+            });
+          });
+        }
+      };
+      o2c.getFederatedSignonCerts(function () {
         done();
       });
     });
