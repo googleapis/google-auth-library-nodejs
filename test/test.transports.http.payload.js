@@ -21,69 +21,6 @@ var assert = require('assert');
 var payload = require('../lib/transports/http/payload.js');
 
 describe('HTTP wrapper utils -- payload utils', function () {
-  describe('extractFormData', function () {
-    it('Should stringify a valid object', function () {
-      var DATA = {test: true, test2: 12, test3: 'test'};
-      var qs = payload.extractFormData(DATA);
-      assert(qs.indexOf('test=true') > -1);
-      assert(qs.indexOf('test2=12') > -1);
-      assert(qs.indexOf('test3=test') > -1);
-    });
-    it('Should not throw given an non-object', function () {
-      var DATA = null;
-      var qs = payload.extractFormData(DATA);
-      assert.strictEqual(qs, '');
-    });
-  });
-  describe('extractJsonData', function () {
-    describe('Invoked with no arguments', function () {
-      it('Should return an empty string', function () {
-        assert.strictEqual(payload.extractJsonData(), '');
-      });
-    });
-    describe('Given a string as the first arg', function () {
-      it('Should return the string', function () {
-        var str = 'test';
-        var out = payload.extractJsonData(str);
-        assert.strictEqual(str, out);
-      });
-    });
-    describe('Given a object as the first arg', function () {
-      it('Should attempt to stringify the provided object', function () {
-        var obj = {test: true};
-        var out = payload.extractJsonData(obj);
-        assert.strictEqual(JSON.stringify(obj), out);
-      });
-    });
-    describe('Given the boolean "true" as the first argument', function () {
-      describe('Given an object as the second argument', function () {
-        it('Should return a stringified version of the second argument',
-          function () {
-            var obj = {test: true};
-            var out = payload.extractJsonData(true, obj);
-            assert.strictEqual(JSON.stringify(obj), out);
-          }
-        );
-      });
-      describe(
-        'Given an object as the third argument and a non-object as the second',
-        function () {
-          it('Should return a stringified version of the third argument',
-            function () {
-              var obj = {test2: true};
-              var out = payload.extractJsonData(true, null, obj);
-              assert.strictEqual(JSON.stringify(obj), out);
-            }
-          );
-        }
-      );
-      describe('Given no usable payloads as arguments to invocation', function () {
-        it('Should return an empty string', function () {
-          assert.strictEqual(payload.extractJsonData(true), '');
-        });
-      });
-    });
-  });
   describe('generateRequestPayload', function () {
     describe('options containing json prop only', function () {
       it('Should return a requestPayload prop with JSON data', function () {
@@ -91,7 +28,7 @@ describe('HTTP wrapper utils -- payload utils', function () {
           json: true,
           form: {a: true, b: false}
         };
-        var out = payload.generateRequestPayload({}, GIVEN_OPTIONS);
+        var out = payload({}, GIVEN_OPTIONS);
         assert.deepEqual({
           requestPayload: {
             isJSON: true,
@@ -105,7 +42,7 @@ describe('HTTP wrapper utils -- payload utils', function () {
         var GIVEN_OPTIONS = {
           form: {a: false, b: true}
         };
-        var out = payload.generateRequestPayload({}, GIVEN_OPTIONS);
+        var out = payload({}, GIVEN_OPTIONS);
         assert.deepEqual({
           requestPayload: {
             isJSON: false,
@@ -118,7 +55,7 @@ describe('HTTP wrapper utils -- payload utils', function () {
       it('Should return a requestPayload prop with a queryString prop',
         function () {
           var GIVEN_OPTIONS = {qs: {a: true, b: false}};
-          var out = payload.generateRequestPayload({}, GIVEN_OPTIONS);
+          var out = payload({}, GIVEN_OPTIONS);
           assert.deepEqual({
             requestPayload: {
               queryString: queryString.stringify(GIVEN_OPTIONS.qs)
@@ -130,7 +67,7 @@ describe('HTTP wrapper utils -- payload utils', function () {
     describe('options containing no identifying payload props', function () {
       it('Should return an unmodified options object', function () {
         var GIVEN_OPTIONS = {url: 'https://www.xyz.com/get/'};
-        var out = payload.generateRequestPayload({}, GIVEN_OPTIONS);
+        var out = payload({}, GIVEN_OPTIONS);
         assert.deepEqual({}, out);
       });
     });

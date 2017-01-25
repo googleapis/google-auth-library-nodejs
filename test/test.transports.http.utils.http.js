@@ -18,7 +18,7 @@
 
 var assert = require('assert');
 var noOp = require('lodash.noop');
-var utils = require('../lib/transports/http/utils.js');
+var utils = require('../lib/transports/http/utils/http.js');
 var semver = require('semver');
 
 describe('HTTP/HTTPS utils API', function () {
