@@ -16,6 +16,8 @@
 
 'use strict';
 
+var Readable = require('stream').Readable;
+var noOp = require('lodash.noop');
 var assert = require('assert');
 var fs = require('fs');
 var GoogleAuth = require('../lib/auth/googleauth.js');
@@ -35,6 +37,21 @@ function createJSON() {
 }
 
 describe('.getRequestMetadata', function() {
+
+  it('should callback with an error is applicable', function (done) {
+    var keys = keypair(1024 /* bitsize of private key */);
+    var email = 'foo@serviceaccount.com';
+    var auth = new GoogleAuth();
+    var client = new auth.JWTAccess(email, keys['private']);
+    client._signJWT = function (assertion, cb) {
+      cb(new Error('an error string'));
+    };
+    client.getRequestMetadata('http://stub.com', function (err, metadata) {
+      assert(err instanceof Error);
+      assert.strictEqual(metadata, null);
+      done();
+    });
+  });
 
   it('create a signed JWT token as the access token', function(done) {
     var keys = keypair(1024 /* bitsize of private key */);
@@ -96,6 +113,12 @@ describe('.fromJson', function () {
     });
   });
 
+  it('should not throw on valid json with no callback', function () {
+    assert.doesNotThrow(function () {
+      client.fromJSON(json);
+    });
+  });
+
   it('should error on missing client_email', function (done) {
     delete json.client_email;
 
@@ -139,12 +162,23 @@ describe('.fromStream', function () {
     var auth = new GoogleAuth();
     client = new auth.JWTAccess();
   });
-
+  
   it('should error on null stream', function (done) {
     client.fromStream(null, function (err) {
-      assert.equal(true, err instanceof Error);
+      assert(err instanceof Error);
       done();
     });
+  });
+
+  it('should error on malformed JSON in stream', function (done) {
+    var s = new Readable();
+    s._read = noOp;
+    client.fromStream(s, function (err) {
+      assert(err instanceof Error);
+      done();
+    });
+    s.push('{"malformed": always');
+    s.push(null);
   });
 
   it('should construct a JWT Header instance from a stream', function (done) {
@@ -166,4 +200,23 @@ describe('.fromStream', function () {
     });
   });
 
+  it('should not throw on valid stream without callback', function () {
+    // Now open a stream on the same file.
+    var stream = fs.createReadStream('./test/fixtures/private.json');
+    // And pass it into the fromStream method.
+    assert.doesNotThrow(function () {
+      client.fromStream(stream);
+    });
+  });
+});
+
+describe('_signJWT', function () {
+  it('should callback with error on invalid assertion', function (done) {
+    var auth = new GoogleAuth();
+    var client = new auth.JWTAccess();
+    client._signJWT({malformed: true}, function (resp) {
+      assert(resp instanceof Error);
+      done();
+    });
+  });
 });

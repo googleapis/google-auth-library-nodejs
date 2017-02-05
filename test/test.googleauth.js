@@ -16,6 +16,9 @@
 
 'use strict';
 
+var Readable = require('stream').Readable;
+var noOp = require('lodash.noop');
+var platform = require('os').platform;
 var assert = require('assert');
 var GoogleAuth = require('../lib/auth/googleauth.js');
 var nock = require('nock');
@@ -350,6 +353,18 @@ describe('GoogleAuth', function() {
         assert.equal(true, err instanceof Error);
         done();
       });
+    });
+
+    it('should error on a stream of malformed json', function (done) {
+      var s = new Readable();
+      s._read = noOp;
+      var auth = new GoogleAuth();
+      auth.fromStream(s, function (err) {
+        assert(err instanceof Error);
+        done();
+      });
+      s.push('{"malformed": always');
+      s.push(null);
     });
 
     it('should read the stream and create a jwt', function (done) {
@@ -874,7 +889,24 @@ describe('GoogleAuth', function() {
   });
 
   describe('.getDefaultProjectId', function () {
-
+    it('should callback with an error if applicable', function (done) {
+      var auth = new GoogleAuth();
+      auth._cachedProjectId = null;
+      var ERROR = new Error('_getFileProjectId');
+      auth._getProductionProjectId = function () {
+        return false;
+      };
+      auth._getFileProjectId = function (cb) {
+        setImmediate(function () {
+          cb(ERROR);
+        });
+      };
+      auth.getDefaultProjectId(function (err) {
+        assert(err instanceof Error);
+        assert.strictEqual(ERROR.message, err.message);
+        done();
+      });
+    });
     it('should return a new projectId the first time and a cached projectId the second time',
       function (done) {
 
@@ -1031,10 +1063,52 @@ describe('GoogleAuth', function() {
   });
 
   describe('.getApplicationDefault', function () {
+    var service;
+    beforeEach(function () {
+      service = nock('http://169.254.169.254:80/computeMetadata/v1/project')
+        .persist().get('/project-id').reply(500);
+    });
+    afterEach(function () {
+      nock.cleanAll();
+    });
+
+    it('should execute without a callback', function () {
+      var auth = new GoogleAuth();
+      auth._cachedCredential = 'abc123';
+      auth._cachedProjectId = 'xyz';
+      assert.doesNotThrow(function () {
+        auth.getApplicationDefault();
+      });
+    });
+
+    it('should callback with an error if applicable', function (done) {
+      var auth = new GoogleAuth();
+      auth._cachedCredential = false;
+      var errorCb = function (cb) {
+        cb(new Error('a error string'), null);
+        return false;
+      };
+      var doneFunction = (function () {
+        var amt = 0;
+        return function () {
+          amt += 1;
+          if (amt === 2) {
+            done();
+          }
+        };
+      }());
+      auth._tryGetApplicationCredentialsFromEnvironmentVariable = errorCb;
+      auth._tryGetApplicationCredentialsFromWellKnownFile = errorCb;
+      auth._checkIsGCE = function (cb) {cb(false);};
+      auth.getApplicationDefault(function (err) {
+        assert(err instanceof Error);
+        doneFunction();
+      });
+    });
 
     it('should return a new credential the first time and a cached credential the second time',
       function (done) {
-
+        this.timeout(15000);
         // The test ends successfully after 3 steps have completed.
         var step = doneWhen(done, 3);
 
@@ -1246,6 +1320,95 @@ describe('GoogleAuth', function() {
         assert.equal(true, auth._checked_isGCE);
 
         done();
+      });
+    });
+
+    describe('_getFileProjectId', function () {
+      it('should error if env does not point to actual file', function (done) {
+        var auth = new GoogleAuth();
+        insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
+          './test/fixtures/shes_not_there.json');
+        auth._getFileProjectId(function (err) {
+          assert(err instanceof Error);
+          done();
+        });
+      });
+    });
+
+    describe('_getDefaultServiceProjectId', function () {
+      it('should callback with null given malformed json', function (done) {
+        var auth = new GoogleAuth();
+        // Stub out the underlying sdk call with malformed json
+        auth._getSDKDefaultProjectId = function (fn) {
+          fn(null, '{"malformed": true');
+        };
+        auth._getDefaultServiceProjectId(function (err, projectId) {
+          assert.strictEqual(err, null);
+          assert.strictEqual(projectId, null);
+          done();
+        });
+      });
+    });
+
+    describe('_getGCEProjectId', function () {
+      it('should callback with null given an error', function (done) {
+        var scope = nock('http://169.254.169.254/computeMetadata/v1/project')
+          .matchHeader('Metadata-Flavor', 'Google').get('/project-id').once()
+          .replyWithError('A bad error');
+        var auth = new GoogleAuth();
+        auth._getGCEProjectId(function (err, body) {
+          assert.strictEqual(err, null);
+          assert.strictEqual(body, undefined);
+          scope.done();
+          assert(scope.isDone());
+          done();
+        });
+      });
+    });
+
+    describe('_checkIsGCE', function () {
+      it('should callback with false given that it is not on GCE', function (done) {
+        var scope = nock('http://metadata.google.internal').get('/').once()
+          .replyWithError('A bad error');
+        var auth = new GoogleAuth();
+        auth._checked_isGCE = null;
+        auth._checkIsGCE(function (isGCE) {
+          assert.strictEqual(isGCE, false);
+          scope.done();
+          assert(scope.isDone());
+          done();
+        });
+      });
+    });
+
+    describe('_isWindows', function () {
+      it('should return false given not on windows', function () {
+        var auth = new GoogleAuth();
+        auth._osPlatform = function () {
+          return false;
+        };
+        assert(!auth._isWindows());
+      });
+    });
+
+    describe('_osPlatform', function () {
+      it('should return the current platform', function () {
+        var auth = new GoogleAuth();
+        assert.strictEqual(auth._osPlatform(), platform());
+      });
+    });
+
+    describe('_fileExists', function () {
+      it('should return true for a existing file path', function () {
+        var auth = new GoogleAuth();
+        assert(auth._fileExists('./test/fixtures/empty.json'));
+      });
+    });
+
+    describe('_pathJoin', function () {
+      it('should join two items with commas', function () {
+        var auth = new GoogleAuth();
+        assert.strictEqual(auth._pathJoin('1', '2'), '1/2');
       });
     });
 

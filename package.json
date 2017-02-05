@@ -21,19 +21,28 @@
   "dependencies": {
     "gtoken": "^1.2.1",
     "jws": "^3.1.4",
+    "lodash.has": "^4.5.2",
+    "lodash.isboolean": "^3.0.3",
+    "lodash.isfunction": "^3.0.8",
+    "lodash.isobject": "^3.0.2",
     "lodash.isstring": "^4.0.1",
     "lodash.merge": "^4.6.0",
     "lodash.noop": "^3.0.1",
+    "lodash.pick": "^4.4.0",
     "request": "^2.74.0"
   },
   "devDependencies": {
     "coveralls": "^2.11.15",
     "istanbul": "^0.4.5",
-    "keypair": "^1.0.0",
-    "jshint": "^2.9.4",
     "jsdoc": "^3.4.3",
+    "jshint": "^2.9.4",
+    "keypair": "^1.0.0",
+    "lodash.noop": "^3.0.1",
+    "lodash.omit": "^4.5.0",
+    "lodash.pick": "^4.4.0",
     "mocha": "^3.2.0",
-    "nock": "^9.0.2"
+    "nock": "^9.0.2",
+    "semver": "^5.3.0"
   },
   "scripts": {
     "lint": "jshint lib test",

@@ -16,6 +16,8 @@
 
 'use strict';
 
+var Readable = require('stream').Readable;
+var noOp = require('lodash.noop');
 var assert = require('assert');
 var GoogleAuth = require('../lib/auth/googleauth.js');
 var nock = require('nock');
@@ -32,10 +34,6 @@ function createJSON() {
     'type': 'authorized_user'
   };
 }
-
-describe('Refresh Token auth client', function() {
-
-});
 
 describe('.fromJson', function () {
 
@@ -159,5 +157,29 @@ describe('.fromStream', function () {
 
       done();
     });
+  });
+
+  it('should not error without callback on valid stream', function () {
+    // Now open a stream on the same file.
+    var stream = fs.createReadStream('./test/fixtures/refresh.json');
+    // And pass it into the fromStream method.
+    var auth = new GoogleAuth();
+    var refresh = new auth.UserRefreshClient();
+    assert.doesNotThrow(function () {
+      refresh.fromStream(stream, null);
+    });
+  });
+
+  it('should error on invalid stream', function (done) {
+    var auth = new GoogleAuth();
+    var refresh = new auth.UserRefreshClient();
+    var s = new Readable();
+    s._read = noOp;
+    refresh.fromStream(s, function (err) {
+      assert(err instanceof Error);
+      done();
+    });
+    s.push('{"malformed": always');
+    s.push(null);
   });
 });
