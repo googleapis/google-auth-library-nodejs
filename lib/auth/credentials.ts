@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-var crypto = require('crypto');
-
-function PemVerifier() {
-  this.verify = function(pubkey, data, signature, encoding) {
-    var verifier = crypto.createVerify('sha256');
-    verifier.update(data);
-    return verifier.verify(pubkey, signature, encoding);
-  };
+interface Credentials {
+  refresh_token?: string;
+  expiry_date?: number;
+  access_token?: string;
+  token_type?: string;
 }
-
-/**
- * Export PemVerifier.
- */
-module.exports = PemVerifier;
+export default Credentials;

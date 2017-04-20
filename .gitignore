@@ -1,5 +1,9 @@
 node_modules/*
 .idea
+.vscode
 docs/
 npm-debug.log
 coverage
+lib/**/*.js
+test/**/*.js
+*.js.map

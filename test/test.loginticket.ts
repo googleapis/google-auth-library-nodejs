@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2014 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-'use strict';
+import * as assert from 'assert';
+import LoginTicket from '../lib/auth/loginticket';
 
-var assert = require('assert');
-var LoginTicket = require('../lib/auth/loginticket.js');
+describe('LoginTicket', () => {
 
-describe('LoginTicket', function() {
-
-  it('should return null userId even if no payload', function() {
-    var ticket = new LoginTicket(null, null);
+  it('should return null userId even if no payload', () => {
+    const ticket = new LoginTicket();
     assert.equal(ticket.getUserId(), null);
   });
 
-  it('should return envelope', function() {
-    var ticket = new LoginTicket('myenvelope');
+  it('should return envelope', () => {
+    const ticket = new LoginTicket('myenvelope');
     assert.equal(ticket.getEnvelope(), 'myenvelope');
   });
 
-  it('should return attributes from getAttributes', function() {
-    var ticket = new LoginTicket('myenvelope', 'mypayload');
+  it('should return attributes from getAttributes', () => {
+    const ticket = new LoginTicket('myenvelope', 'mypayload');
     assert.deepEqual(ticket.getAttributes(), {
       envelope: 'myenvelope',
       payload: 'mypayload'
