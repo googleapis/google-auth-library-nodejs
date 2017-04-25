@@ -14,7 +14,7 @@
     "interface-name": [false],
     "interface-over-type-literal": true,
     "file-header": [true,
-      "Copyright 2014 Google Inc."
+      "Copyright "
     ],
     "max-classes-per-file": [false],
     "max-line-length": [true, 140],
