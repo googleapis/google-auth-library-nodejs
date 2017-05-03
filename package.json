@@ -1,10 +1,10 @@
 {
   "name": "google-auth-library",
-  "version": "0.10.0",
+  "version": "0.10.2",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
-    "node": ">=0.10"
+    "node": ">=4"
   },
   "main": "./lib/auth/googleauth",
   "repository": {
@@ -23,7 +23,7 @@
     "jws": "^3.1.4",
     "lodash.isstring": "^4.0.1",
     "lodash.merge": "^4.6.0",
-    "request": "^2.74.0"
+    "request": "^2.81.0"
   },
   "devDependencies": {
     "coveralls": "^2.11.15",
