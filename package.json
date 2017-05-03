@@ -26,22 +26,31 @@
     "request": "^2.74.0"
   },
   "devDependencies": {
-    "coveralls": "^2.11.15",
+    "@types/lodash.isstring": "^4.0.2",
+    "@types/lodash.merge": "^4.6.2",
+    "@types/mocha": "^2.2.41",
+    "@types/nock": "^8.2.1",
+    "@types/node": "^7.0.13",
+    "@types/request": "^0.0.42",
+    "coveralls": "^2.13.0",
     "istanbul": "^0.4.5",
     "keypair": "^1.0.0",
-    "jshint": "^2.9.4",
-    "jsdoc": "^3.4.3",
     "mocha": "^3.2.0",
-    "nock": "^9.0.2"
+    "nock": "^9.0.2",
+    "source-map-support": "^0.4.14",
+    "tslint": "^5.1.0",
+    "typedoc": "^0.5.10",
+    "typescript": "^2.2.2"
   },
   "scripts": {
-    "lint": "jshint lib test",
-    "mocha": "mocha --reporter spec --timeout 4000",
-    "generate-docs": "jsdoc -c jsdoc-conf.json ./README.md",
-    "prepare": "npm test && npm run lint && npm version patch",
+    "lint": "tslint -c tslint.json lib/**/*.ts test/**/*.ts",
+    "mocha": "mocha --reporter spec --timeout 4000 --require source-map-support/register",
+    "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md --exclude 'test/**'",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",
-    "test": "npm run lint && npm run coverage",
-    "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls"
+    "test": "npm run lint && npm run build && npm run coverage",
+    "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls",
+    "build": "tsc",
+    "clean": "find ./lib ./test -type f -name '*.js' -delete"
   },
   "license": "Apache-2.0"
 }

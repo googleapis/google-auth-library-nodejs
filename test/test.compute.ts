@@ -14,64 +14,62 @@
  * limitations under the License.
  */
 
-'use strict';
-
-var assert = require('assert');
-var GoogleAuth = require('../lib/auth/googleauth.js');
-var nock = require('nock');
+import * as assert from 'assert';
+import GoogleAuth from '../lib/auth/googleauth';
+import * as nock from 'nock';
 
 nock.disableNetConnect();
 
-describe('Initial credentials', function() {
+describe('Initial credentials', () => {
 
-  it('should create a dummy refresh token string', function () {
+  it('should create a dummy refresh token string', () => {
     // It is important that the compute client is created with a refresh token value filled
     // in, or else the rest of the logic will not work.
-    var auth = new GoogleAuth();
-    var compute = new auth.Compute();
+    const auth = new GoogleAuth();
+    const compute = new auth.Compute();
     assert.equal('compute-placeholder', compute.credentials.refresh_token);
   });
 });
 
-describe('Compute auth client', function() {
+describe('Compute auth client', () => {
   // set up compute client.
-  var compute;
-  beforeEach(function() {
-    var auth = new GoogleAuth();
+  let compute;
+  beforeEach(() => {
+    const auth = new GoogleAuth();
     compute = new auth.Compute();
   });
 
-  it('should get an access token for the first request', function (done) {
-    var scope = nock('http://metadata.google.internal')
+  it('should get an access token for the first request', (done) => {
+    const scope = nock('http://metadata.google.internal')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
-    compute.request({ uri: 'http://foo' }, function () {
+    compute.request({ uri: 'http://foo' }, () => {
       assert.equal(compute.credentials.access_token, 'abc123');
       scope.done();
       done();
     });
   });
 
-  it('should refresh if access token has expired', function (done) {
-    var scope = nock('http://metadata.google.internal')
+  it('should refresh if access token has expired', (done) => {
+    const scope = nock('http://metadata.google.internal')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() - 10000;
-    compute.request({ uri: 'http://foo' }, function () {
+    compute.request({ uri: 'http://foo' }, () => {
       assert.equal(compute.credentials.access_token, 'abc123');
       scope.done();
       done();
     });
   });
 
-  it('should not refresh if access token has not expired', function (done) {
-    var scope = nock('http://metadata.google.internal')
+  it('should not refresh if access token has not expired', (done) => {
+    const scope = nock('http://metadata.google.internal')
       .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
       .reply(200, { access_token: 'abc123', expires_in: 10000 });
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() + 10000;
-    compute.request({ uri: 'http://foo' }, function () {
+    compute.request({ uri: 'http://foo' }, () => {
       assert.equal(compute.credentials.access_token, 'initial-access-token');
       assert.equal(false, scope.isDone());
       nock.cleanAll();
@@ -79,16 +77,16 @@ describe('Compute auth client', function() {
     });
   });
 
-  describe('.createScopedRequired', function () {
-    it('should return false', function () {
-      var auth = new GoogleAuth();
-      var compute = new auth.Compute();
-      assert.equal(false, compute.createScopedRequired());
+  describe('.createScopedRequired', () => {
+    it('should return false', () => {
+      const auth = new GoogleAuth();
+      const c = new auth.Compute();
+      assert.equal(false, c.createScopedRequired());
     });
   });
 
-  describe('._injectErrorMessage', function () {
-    it('should return a helpful message on request response.statusCode 403', function (done) {
+  describe('._injectErrorMessage', () => {
+    it('should return a helpful message on request response.statusCode 403', (done) => {
       // Mock the credentials object.
       compute.credentials = {
         refresh_token: 'hello',
@@ -97,11 +95,11 @@ describe('Compute auth client', function() {
       };
 
       // Mock the _makeRequest method to return a 403.
-      compute._makeRequest = function (opts, callback) {
-        callback(null, 'a weird response body', { 'statusCode': 403 });
+      compute._makeRequest = (opts, callback) => {
+        callback(null, 'a weird response body', { statusCode: 403 });
       };
 
-      compute.request({ }, function (err, result, response) {
+      compute.request({ }, (err, result, response) => {
         assert.equal(403, response.statusCode);
         assert.equal('A Forbidden error was returned while attempting to retrieve an access ' +
             'token for the Compute Engine built-in service account. This may be because the ' +
@@ -111,7 +109,7 @@ describe('Compute auth client', function() {
       });
     });
 
-    it('should return a helpful message on request response.statusCode 404', function (done) {
+    it('should return a helpful message on request response.statusCode 404', (done) => {
       // Mock the credentials object.
       compute.credentials = {
         refresh_token: 'hello',
@@ -120,11 +118,11 @@ describe('Compute auth client', function() {
       };
 
       // Mock the _makeRequest method to return a 404.
-      compute._makeRequest = function (opts, callback) {
-        callback(null, 'a weird response body', { 'statusCode': 404 });
+      compute._makeRequest = (opts, callback) => {
+        callback(null, 'a weird response body', { statusCode: 404 });
       };
 
-      compute.request({ }, function (err, result, response) {
+      compute.request({ }, (err, result, response) => {
         assert.equal(404, response.statusCode);
         assert.equal('A Not Found error was returned while attempting to retrieve an access' +
             'token for the Compute Engine built-in service account. This may be because the ' +
@@ -135,7 +133,7 @@ describe('Compute auth client', function() {
     });
 
     it('should return a helpful message on token refresh response.statusCode 403',
-      function (done) {
+       (done) => {
         nock('http://metadata.google.internal')
             .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
             .reply(403, 'a weird response body');
@@ -147,7 +145,7 @@ describe('Compute auth client', function() {
           expiry_date: 1
         };
 
-        compute.request({ }, function (err, result, response) {
+        compute.request({ }, (err, result, response) => {
           assert.equal(403, response.statusCode);
           assert.equal('A Forbidden error was returned while attempting to retrieve an access ' +
               'token for the Compute Engine built-in service account. This may be because the ' +
@@ -160,7 +158,7 @@ describe('Compute auth client', function() {
       });
 
     it('should return a helpful message on token refresh response.statusCode 404',
-      function (done) {
+     (done) => {
         nock('http://metadata.google.internal')
             .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
             .reply(404, 'a weird body');
@@ -172,7 +170,7 @@ describe('Compute auth client', function() {
           expiry_date: 1
         };
 
-        compute.request({ }, function (err, result, response) {
+        compute.request({ }, (err, result, response) => {
           assert.equal(404, response.statusCode);
           assert.equal('A Not Found error was returned while attempting to retrieve an access' +
               'token for the Compute Engine built-in service account. This may be because the ' +

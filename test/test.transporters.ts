@@ -14,49 +14,49 @@
  * limitations under the License.
  */
 
-'use strict';
+import * as assert from 'assert';
+import * as nock from 'nock';
+import DefaultTransporter from '../lib/transporters';
 
-var assert = require('assert');
-var DefaultTransporter = require('../lib/transporters');
-var nock = require('nock');
-var version = require('../package.json').version;
+// tslint:disable-next-line
+const version = require('../package.json').version;
 
 nock.disableNetConnect();
 
-describe('Transporters', function() {
+describe('Transporters', () => {
 
-  var defaultUserAgentRE = 'google-api-nodejs-client/\\d+.\\d+.\\d+';
-  var transporter = new DefaultTransporter();
+  const defaultUserAgentRE = 'google-api-nodejs-client/\\d+.\\d+.\\d+';
+  const transporter = new DefaultTransporter();
 
-  it('should set default client user agent if none is set', function() {
-    var opts = transporter.configure({});
-    var re = new RegExp(defaultUserAgentRE);
+  it('should set default client user agent if none is set', () => {
+    const opts = transporter.configure({});
+    const re = new RegExp(defaultUserAgentRE);
     assert(re.test(opts.headers['User-Agent']));
   });
 
-  it('should append default client user agent to the existing user agent', function() {
-    var applicationName = 'MyTestApplication-1.0';
-    var opts = transporter.configure({
+  it('should append default client user agent to the existing user agent', () => {
+    const applicationName = 'MyTestApplication-1.0';
+    const opts = transporter.configure({
       headers: { 'User-Agent': applicationName }
     });
-    var re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
+    const re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
     assert(re.test(opts.headers['User-Agent']));
   });
 
   it('should not append default client user agent to the existing user ' +
-      'agent more than once', function() {
-    var applicationName = 'MyTestApplication-1.0 google-api-nodejs-client/' + version;
-    var opts = transporter.configure({
+      'agent more than once', () => {
+    const applicationName = 'MyTestApplication-1.0 google-api-nodejs-client/' + version;
+    const opts = transporter.configure({
       headers: { 'User-Agent': applicationName }
     });
     assert.equal(opts.headers['User-Agent'], applicationName);
   });
 
-  it('should create a single error from multiple response errors', function(done) {
-    var firstError = {
+  it('should create a single error from multiple response errors', (done) => {
+    const firstError = {
       message: 'Error 1'
     };
-    var secondError = {
+    const secondError = {
       message: 'Error 2'
     };
     nock('http://example.com')
@@ -70,10 +70,10 @@ describe('Transporters', function() {
 
     transporter.request({
       uri: 'http://example.com/api',
-    }, function(error) {
+    }, (error) => {
       assert(error.message === 'Error 1\nError 2');
-      assert(error.code, 500);
-      assert(error.errors.length, 2);
+      assert.equal(error.code, 500);
+      assert.equal(error.errors.length, 2);
       done();
     });
   });

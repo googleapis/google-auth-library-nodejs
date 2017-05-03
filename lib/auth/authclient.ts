@@ -14,29 +14,18 @@
  * limitations under the License.
  */
 
-'use strict';
+import DefaultTransporter from '../transporters';
+import Credentials from './credentials';
 
-/**
- * Export extend
- * @type {Object}
- */
-module.exports = {
+abstract class AuthClient {
+
+  public transporter = new DefaultTransporter();
+  public credentials: Credentials;
+
   /**
-   * Copy key/values to obj from all other objects passed in
-   *
-   * @param {object} a the destination object.
-   * @return {object} the destination object.
+   * Provides an alternative request
+   * implementations with auth credentials.
    */
-  extend: function(obj) {
-    var source, prop;
-    for (var i = 1, length = arguments.length; i < length; i++) {
-      source = arguments[i];
-      for (prop in source) {
-        if (source.hasOwnProperty(prop)) {
-          obj[prop] = source[prop];
-        }
-      }
-    }
-    return obj;
-  }
-};
+  public abstract request();
+}
+export default AuthClient;
