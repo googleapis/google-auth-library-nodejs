@@ -19,7 +19,6 @@ import LoginTicket from './loginticket';
 import PemVerifier from './../pemverifier';
 import { merge } from 'lodash';
 import * as querystring from 'querystring';
-import * as util from 'util';
 const noop = Function.prototype;
 
 export default class OAuth2Client extends AuthClient {
@@ -339,6 +338,7 @@ export default class OAuth2Client extends AuthClient {
         retry = false;
         // Force token refresh
         this.refreshAccessToken(() => {
+          // tslint:disable-next-line:no-use-before-declare
           this.getRequestMetadata(unusedUri, authCb);
         });
       } else {

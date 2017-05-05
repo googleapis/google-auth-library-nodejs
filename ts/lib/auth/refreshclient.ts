@@ -15,7 +15,6 @@
  */
 
 import Auth2Client from './oauth2client';
-import * as util from 'util';
 
 export default class UserRefreshClient extends Auth2Client {
 

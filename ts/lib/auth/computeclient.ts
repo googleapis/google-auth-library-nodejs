@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import * as util from 'util';
 import Auth2Client from './oauth2client';
 
 export default class Compute extends Auth2Client {

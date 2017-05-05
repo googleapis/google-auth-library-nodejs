@@ -21,7 +21,6 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import * as nock from 'nock';
 import * as path from 'path';
-import AuthClient from '../lib/auth/authclient';
 import GoogleAuth from '../lib/auth/googleauth';
 
 nock.disableNetConnect();

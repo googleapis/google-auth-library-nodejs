@@ -19,9 +19,40 @@ import * as nock from 'nock';
 import * as fs from 'fs';
 import * as path from 'path';
 import GoogleAuth from '../lib/auth/googleauth';
-import { Transporter, DefaultTransporter } from '../lib/transporters';
+import { DefaultTransporter } from '../lib/transporters';
 
 nock.disableNetConnect();
+
+// Mocks the transporter class to simulate GCE.
+class MockTransporter extends DefaultTransporter {
+  public isGCE: boolean;
+  public throw_error: boolean;
+  public executionCount: number;
+  constructor(simulate_gce, throw_error?) {
+    super();
+    this.isGCE = false;
+    if (simulate_gce) {
+      this.isGCE = true;
+    }
+    this.throw_error = throw_error;
+    this.executionCount = 0;
+  }
+  public request(options, callback) {
+    if (options.method === 'GET' && options.uri === 'http://metadata.google.internal') {
+      this.executionCount += 1;
+      let err = null;
+      const response = { headers: { } };
+      if (this.throw_error) {
+        err = new Error('blah');
+      } else if (this.isGCE) {
+        response.headers['metadata-flavor'] = 'Google';
+      }
+      return callback(err, null, response);
+    } else {
+      throw new Error('unexpected request');
+    }
+  }
+}
 
 // Creates a standard JSON auth object for testing.
 function createJwtJSON() {
@@ -1340,34 +1371,3 @@ describe('GoogleAuth', () => {
     });
   });
 });
-
-// Mocks the transporter class to simulate GCE.
-class MockTransporter extends DefaultTransporter {
-  public isGCE: boolean;
-  public throw_error: boolean;
-  public executionCount: number;
-  constructor(simulate_gce, throw_error?) {
-    super();
-    this.isGCE = false;
-    if (simulate_gce) {
-      this.isGCE = true;
-    }
-    this.throw_error = throw_error;
-    this.executionCount = 0;
-  }
-  public request(options, callback) {
-    if (options.method === 'GET' && options.uri === 'http://metadata.google.internal') {
-      this.executionCount += 1;
-      let err = null;
-      const response = { headers: { } };
-      if (this.throw_error) {
-        err = new Error('blah');
-      } else if (this.isGCE) {
-        response.headers['metadata-flavor'] = 'Google';
-      }
-      return callback(err, null, response);
-    } else {
-      throw new Error('unexpected request');
-    }
-  }
-}
