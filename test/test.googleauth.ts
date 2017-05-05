@@ -18,8 +18,8 @@ import * as assert from 'assert';
 import * as nock from 'nock';
 import * as fs from 'fs';
 import * as path from 'path';
-import GoogleAuth from '../lib/auth/googleauth';
-import DefaultTransporter from '../lib/transporters';
+import GoogleAuth from '../src/auth/googleauth';
+import DefaultTransporter from '../src/transporters';
 
 nock.disableNetConnect();
 

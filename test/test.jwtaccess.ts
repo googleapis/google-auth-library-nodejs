@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as keypair from 'keypair';
 import * as jws from 'jws';
-import GoogleAuth from '../lib/auth/googleauth';
+import GoogleAuth from '../src/auth/googleauth';
 
 // Creates a standard JSON credentials object for testing.
 function createJSON() {

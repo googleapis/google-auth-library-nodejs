@@ -5,6 +5,6 @@ build/
 docs/
 npm-debug.log
 coverage
-lib/**/*.js
+src/**/*.js
 test/**/*.js
 *.js.map
