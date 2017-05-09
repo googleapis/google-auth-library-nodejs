@@ -19,7 +19,11 @@ import * as request from 'request';
 // tslint:disable-next-line
 const pkg = require('../package.json');
 
-export default class DefaultTransporter {
+export interface Transporter {
+  request(opts, opt_callback): any;
+}
+
+export class DefaultTransporter {
 
   /**
    * Default user agent.

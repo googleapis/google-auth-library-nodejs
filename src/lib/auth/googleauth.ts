@@ -26,11 +26,11 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
-import DefaultTransporter from '../transporters';
+import { Transporter, DefaultTransporter } from '../transporters';
 
 export default class GoogleAuth {
 
-  public transporter: DefaultTransporter;
+  public transporter: Transporter;
 
   /**
    * Caches a value indicating whether the auth layer is running on Google Compute Engine.

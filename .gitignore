@@ -1,10 +1,10 @@
 node_modules/*
-build/
+lib/
+test/
+types/
 .idea
 .vscode
 docs/
 npm-debug.log
 coverage
-lib/**/*.js
-test/**/*.js
 *.js.map
