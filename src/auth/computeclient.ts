@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import * as request from 'request';
 import * as util from 'util';
 import Auth2Client from './oauth2client';
 
@@ -57,7 +58,7 @@ export default class Compute extends Auth2Client {
    * @param {object=} ignored_
    * @param {function=} opt_callback Optional callback.
    */
-  protected refreshToken(ignored, callback?) {
+  protected refreshToken(ignored, callback?) : request.Request {
     const uri = this._opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
     // request for new token
     return this.transporter.request({

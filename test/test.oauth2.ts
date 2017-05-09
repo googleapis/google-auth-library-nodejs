@@ -20,8 +20,8 @@ import * as qs from 'querystring';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 import * as nock from 'nock';
-import AuthClient from '../lib/auth/authclient';
-import GoogleAuth from '../lib/auth/googleauth';
+import AuthClient from '../src/auth/authclient';
+import GoogleAuth from '../src/auth/googleauth';
 
 nock.disableNetConnect();
 

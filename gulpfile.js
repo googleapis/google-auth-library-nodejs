@@ -12,7 +12,9 @@ const sourcemaps = require('gulp-sourcemaps');
 const ts = require('gulp-typescript');
 const tslint = require('gulp-tslint');
 
-const outDir = 'build';
+const jsOutDir = 'lib';
+const typesOutDir = 'types';
+const testOutDir = 'test-js';
 const sources = ['src/**/*.ts'];
 const tests = ['test/**/*.ts'];
 const allFiles = ['*.js'].concat(sources, tests);
@@ -44,7 +46,7 @@ gulp.task('test.check-lint', () => {
 });
 
 gulp.task('clean', () => {
-  return del([`${outDir}`]);
+  return del([jsOutDir, typesOutDir, testOutDir]);
 });
 
 gulp.task('compile', () => {
@@ -53,12 +55,12 @@ gulp.task('compile', () => {
                        .pipe(ts.createProject('tsconfig.json')())
                        .on('error', onError);
   return merge([
-    tsResult.dts.pipe(gulp.dest(`${outDir}/definitions`)),
+    tsResult.dts.pipe(gulp.dest(typesOutDir)),
     tsResult.js
         .pipe(sourcemaps.write(
-            '.', {includeContent: false, sourceRoot: '../../src'}))
-        .pipe(gulp.dest(`${outDir}/src`)),
-    tsResult.js.pipe(gulp.dest(`${outDir}/src`))
+            '.', {includeContent: false, sourceRoot: '../src'}))
+        .pipe(gulp.dest(jsOutDir)),
+    tsResult.js.pipe(gulp.dest(jsOutDir))
   ]);
 });
 
@@ -67,12 +69,12 @@ gulp.task('test.compile', ['compile'], () => {
       .pipe(sourcemaps.init())
       .pipe(ts.createProject('tsconfig.json')())
       .on('error', onError)
-      .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: '../..'}))
-      .pipe(gulp.dest(`${outDir}/`));
+      .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: '../test'}))
+      .pipe(gulp.dest(`${testOutDir}/`));
 });
 
 gulp.task('test.unit', ['test.compile'], () => {
-  return gulp.src([`${outDir}/test/**/*.js`]).pipe(mocha({verbose: true}));
+  return gulp.src([`${testOutDir}/**/*.js`]).pipe(mocha({verbose: true}));
 });
 
 gulp.task('watch', () => {

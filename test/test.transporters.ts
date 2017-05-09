@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 import * as nock from 'nock';
-import DefaultTransporter from '../lib/transporters';
+import DefaultTransporter from '../src/transporters';
 
 // tslint:disable-next-line
 const version = require('../package.json').version;

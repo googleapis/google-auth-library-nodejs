@@ -16,8 +16,8 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import GoogleAuth from '../lib/auth/googleauth';
-import JWT from '../lib/auth/jwtclient';
+import GoogleAuth from '../src/auth/googleauth';
+import JWT from '../src/auth/jwtclient';
 import * as jws from 'jws';
 import * as keypair from 'keypair';
 import * as nock from 'nock';

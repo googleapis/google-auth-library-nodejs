@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import GoogleAuth from '../lib/auth/googleauth';
+import GoogleAuth from '../src/auth/googleauth';
 import * as nock from 'nock';
 import * as fs from 'fs';
 

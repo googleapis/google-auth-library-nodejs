@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=0.10"
   },
-  "main": "./lib/auth/googleauth",
+  "main": "./src/auth/googleauth",
   "repository": {
     "type": "git",
     "url": "https://github.com/google/google-auth-library-nodejs.git"
@@ -51,14 +51,14 @@
     "typescript": "^2.2.2"
   },
   "scripts": {
-    "lint": "tslint -c tslint.json lib/**/*.ts test/**/*.ts",
+    "lint": "tslint -c tslint.json src/**/*.ts test/**/*.ts",
     "mocha": "mocha --reporter spec --timeout 4000 --require source-map-support/register",
     "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md --exclude 'test/**'",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",
     "test": "npm run lint && npm run build && npm run coverage",
     "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls",
     "build": "tsc",
-    "clean": "find ./lib ./test -type f -name '*.js' -delete"
+    "clean": "find ./src ./test -type f -name '*.js' -delete"
   },
   "license": "Apache-2.0"
 }
