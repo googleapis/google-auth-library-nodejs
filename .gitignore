@@ -1,5 +1,7 @@
 node_modules/*
-build/
+lib/
+types/
+test-js/
 .idea
 .vscode
 docs/

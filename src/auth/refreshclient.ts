@@ -15,6 +15,7 @@
  */
 
 import Auth2Client from './oauth2client';
+import * as request from 'request';
 import * as util from 'util';
 
 export default class UserRefreshClient extends Auth2Client {
@@ -48,7 +49,7 @@ export default class UserRefreshClient extends Auth2Client {
    * @param {function=} opt_callback Optional callback.
    * @private
    */
-  protected refreshToken(ignored_, opt_callback) {
+  protected refreshToken(ignored_, opt_callback) : request.Request {
     return super.refreshToken(this._refreshToken, opt_callback);
   }
 

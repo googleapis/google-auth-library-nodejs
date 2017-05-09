@@ -19,6 +19,7 @@ import LoginTicket from './loginticket';
 import PemVerifier from './../pemverifier';
 import { merge } from 'lodash';
 import * as querystring from 'querystring';
+import * as request from 'request';
 import * as util from 'util';
 const noop = Function.prototype;
 
@@ -143,7 +144,7 @@ export default class OAuth2Client extends AuthClient {
    * @param {function=} opt_callback Optional callback.
    * @private
    */
-  protected refreshToken(refresh_token: any, opt_callback) {
+  protected refreshToken(refresh_token: any, opt_callback) : request.Request {
     const uri = this._opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       refresh_token: refresh_token,
