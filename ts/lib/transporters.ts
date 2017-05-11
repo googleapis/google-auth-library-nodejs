@@ -74,7 +74,8 @@ export class DefaultTransporter {
       // responds without proper content-type.
       try {
         body = JSON.parse(body);
-      } catch (err) { /* no op */
+      } catch (err) {
+        /* no op */
       }
 
       if (body && body.error && res.statusCode !== 200) {
@@ -83,8 +84,8 @@ export class DefaultTransporter {
           err.code = res.statusCode;
 
         } else if (Array.isArray(body.error.errors)) {
-          err = new Error(
-              body.error.errors.map((err2) => err2.message).join('\n'));
+          err =
+              new Error(body.error.errors.map(err2 => err2.message).join('\n'));
           err.code = body.error.code;
           err.errors = body.error.errors;
 
