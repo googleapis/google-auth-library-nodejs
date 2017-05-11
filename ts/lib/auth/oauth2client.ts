@@ -17,8 +17,10 @@
 import AuthClient from './authclient';
 import LoginTicket from './loginticket';
 import PemVerifier from './../pemverifier';
-import { merge } from 'lodash';
 import * as querystring from 'querystring';
+
+const merge = require('lodash.merge');
+
 const noop = Function.prototype;
 
 export default class OAuth2Client extends AuthClient {
