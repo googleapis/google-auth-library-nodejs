@@ -16,8 +16,10 @@
 
 import Auth2Client from './oauth2client';
 import * as gToken from 'gtoken';
+
 import JWTAccess from './jwtaccess';
-import { isString } from 'lodash';
+
+const isString = require('lodash.isstring');
 
 const noop = Function.prototype;
 

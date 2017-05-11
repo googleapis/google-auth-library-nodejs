@@ -32,6 +32,7 @@
     "@types/nock": "^8.2.1",
     "@types/node": "^7.0.13",
     "@types/request": "^0.0.42",
+    "clang-format": "^1.0.50",
     "coveralls": "^2.13.0",
     "del": "^2.2.2",
     "gulp": "^3.9.1",
