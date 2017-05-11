@@ -5,7 +5,9 @@
         "noImplicitAny": false,
         "sourceMap": true,
         "alwaysStrict": true,
-        "outDir": "./"
+        "outDir": "./",
+        "declaration": true,
+        "declarationDir": "types/"
     },
     "include": [ "ts/**/*" ],
     "exclude": [ "node_modules" ]

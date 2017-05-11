@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as request from 'request';
+
 import Auth2Client from './oauth2client';
 
 export default class UserRefreshClient extends Auth2Client {
@@ -41,13 +43,14 @@ export default class UserRefreshClient extends Auth2Client {
         }
       }
 
-  /**
-   * Refreshes the access token.
-   * @param {object=} ignored_
-   * @param {function=} opt_callback Optional callback.
-   * @private
-   */
-  protected refreshToken(ignored_, opt_callback) {
+                         /**
+                          * Refreshes the access token.
+                          * @param {object=} ignored_
+                          * @param {function=} opt_callback Optional callback.
+                          * @private
+                          */
+                         protected refreshToken(ignored_, opt_callback):
+                             request.Request {
     return super.refreshToken(this._refreshToken, opt_callback);
   }
 
