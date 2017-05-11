@@ -29,7 +29,8 @@
     "radix": true,
     "semicolon": [true, "always"],
     "switch-default": true,
-    "triple-equals": [true, "allow-null-check"]
+    "triple-equals": [true, "allow-null-check"],
 //    "variable-name": [true, "check-format", "ban-keywords"]
+    "variable-name": [true, "ban-keywords"]
   }
 }
