@@ -51,7 +51,7 @@
     "typescript": "^2.2.2"
   },
   "scripts": {
-    "lint": "tslint -c tslint.json ts/**/*.ts",
+    "lint": "tslint --type-check -p tsconfig.json -c tslint.json ts/**/*.ts",
     "mocha": "mocha --reporter spec --timeout 4000 --require source-map-support/register",
     "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md ts/lib",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",

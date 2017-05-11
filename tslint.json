@@ -1,37 +1,36 @@
 {
-  "lintOptions": {
-    "typeCheck": true
-  },
-  "extends": "tslint:latest",
   "rules": {
-    "ban": [true,
-      ["describe", "only"],
-      ["it", "only"],
-      ["Object", "assign"]
-    ],
-
-    "callable-types": true,
-    "interface-name": [false],
-    "interface-over-type-literal": true,
-    "file-header": [true,
-      "Copyright "
-    ],
-    "max-classes-per-file": [false],
-    "max-line-length": [true, 140],
-    "member-ordering": [false],
-    "no-angle-bracket-type-assertion": true,
-    "no-empty-interface": true,
-    "no-string-throw": true,
+    "class-name": true,
+    "comment-format": [true, "check-space"],
+    "eofline": true,
+    "forin": true,
+    "indent": [true, "spaces"],
+    "jsdoc-format": true,
+    "label-position": true,
+//    "label-undefined": true,
+    "no-arg": true,
+    "no-conditional-assignment": true,
+    "no-construct": true,
+    "no-debugger": true,
+//    "no-duplicate-key": true,
+    "no-duplicate-variable": true,
+    "no-empty": true,
+    "no-inferrable-types": true,
+    "no-internal-module": true,
+    "no-shadowed-variable": true,
     "no-switch-case-fall-through": true,
-    "object-literal-sort-keys": false,
-    "object-literal-shorthand": false,
-    "ordered-imports": [
-      false
-    ],
-    "prefer-const": true,
-    "quotemark": [true, "single", "avoid-escape"],
-    "switch-default": false,
-    "trailing-comma": [false],
-    "variable-name": [false]
+    "no-trailing-whitespace": true,
+//    "no-unreachable": true,
+    "no-unused-expression": true,
+    "no-unused-variable": true,
+    "no-use-before-declare": true,
+    "no-var-keyword": true,
+    "quotemark": [true, "single"],
+    "radix": true,
+    "semicolon": [true, "always"],
+    "switch-default": true,
+    "triple-equals": [true, "allow-null-check"],
+//    "variable-name": [true, "check-format", "ban-keywords"]
+    "variable-name": [true, "ban-keywords"]
   }
 }
