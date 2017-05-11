@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import { exec } from 'child_process';
+import {exec} from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import * as util from 'util';
+
+import {DefaultTransporter, Transporter} from '../transporters';
+
 import Compute from './computeclient';
 import IAMAuth from './iam';
 import JWTAccess from './jwtaccess';
@@ -22,18 +29,13 @@ import JWTClient from './jwtclient';
 import JWT from './jwtclient';
 import OAuth2 from './oauth2client';
 import UserRefreshClient from './refreshclient';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import * as util from 'util';
-import { Transporter, DefaultTransporter } from '../transporters';
 
 export default class GoogleAuth {
-
   public transporter: Transporter;
 
   /**
-   * Caches a value indicating whether the auth layer is running on Google Compute Engine.
+   * Caches a value indicating whether the auth layer is running on Google
+   * Compute Engine.
    * @private
    */
   private _isGCE: boolean = undefined;
@@ -92,15 +94,16 @@ export default class GoogleAuth {
    * @param {function=} opt_callback Optional callback.
    */
   public getDefaultProjectId(callback) {
-    // In implicit case, supports three environments. In order of precedence, the
-    // implicit environments are:
+    // In implicit case, supports three environments. In order of precedence,
+    // the implicit environments are:
     //
     // * GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
     // * GOOGLE_APPLICATION_CREDENTIALS JSON file
     // * Get default service project from
     //  ``$ gcloud beta auth application-default login``
     // * Google App Engine application ID (Not implemented yet)
-    // * Google Compute Engine project ID (from metadata server) (Not implemented yet)
+    // * Google Compute Engine project ID (from metadata server) (Not
+    // implemented yet)
 
     if (this._cachedProjectId) {
       setImmediate(() => {
@@ -159,11 +162,13 @@ export default class GoogleAuth {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
       setImmediate(() => {
-        this.callback(opt_callback, null, this.cachedCredential, this._cachedProjectId);
+        this.callback(
+            opt_callback, null, this.cachedCredential, this._cachedProjectId);
       });
     } else {
-      // Inject our own callback routine, which will cache the credential once it's been created.
-      // It also allows us to ensure that the ultimate callback is always async.
+      // Inject our own callback routine, which will cache the credential once
+      // it's been created. It also allows us to ensure that the ultimate
+      // callback is always async.
       const my_callback = (err: Error, result?: any) => {
         if (!err && result) {
           this.cachedCredential = result;
@@ -181,8 +186,10 @@ export default class GoogleAuth {
       };
 
       // Check for the existence of a local environment variable pointing to the
-      // location of the credential file. This is typically used in local developer scenarios.
-      if (this._tryGetApplicationCredentialsFromEnvironmentVariable(my_callback)) {
+      // location of the credential file. This is typically used in local
+      // developer scenarios.
+      if (this._tryGetApplicationCredentialsFromEnvironmentVariable(
+              my_callback)) {
         return;
       }
 
@@ -194,13 +201,15 @@ export default class GoogleAuth {
       // Determine if we're running on GCE.
       this._checkIsGCE((gce) => {
         if (gce) {
-          // For GCE, just return a default ComputeClient. It will take care of the rest.
+          // For GCE, just return a default ComputeClient. It will take care of
+          // the rest.
           my_callback(null, new this.ComputeClient());
         } else {
           // We failed to find the default credentials. Bail out with an error.
-          my_callback(new Error('Could not load the default credentials. Browse to ' +
-            'https://developers.google.com/accounts/docs/application-default-credentials for ' +
-            'more information.'));
+          my_callback(new Error(
+              'Could not load the default credentials. Browse to ' +
+              'https://developers.google.com/accounts/docs/application-default-credentials for ' +
+              'more information.'));
         }
       });
     }
@@ -218,16 +227,14 @@ export default class GoogleAuth {
       if (!this.transporter) {
         this.transporter = new DefaultTransporter();
       }
-      this.transporter.request({
-        method: 'GET',
-        uri: 'http://metadata.google.internal',
-        json: true
-      }, (err, body, res) => {
-        if (!err && res && res.headers) {
-          this._isGCE = res.headers['metadata-flavor'] === 'Google';
-        }
-        callback(this._isGCE);
-      });
+      this.transporter.request(
+          {method: 'GET', uri: 'http://metadata.google.internal', json: true},
+          (err, body, res) => {
+            if (!err && res && res.headers) {
+              this._isGCE = res.headers['metadata-flavor'] === 'Google';
+            }
+            callback(this._isGCE);
+          });
     }
   }
 
@@ -247,8 +254,8 @@ export default class GoogleAuth {
       if (err) {
         wrappedError = this.createError(
             'Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS ' +
-            'environment variable.',
-          err);
+                'environment variable.',
+            err);
       }
       this.callback(opt_callback, wrappedError, result);
     });
@@ -277,7 +284,8 @@ export default class GoogleAuth {
     // If we found the root path, expand it.
     if (location) {
       location = this._pathJoin(location, 'gcloud');
-      location = this._pathJoin(location, 'application_default_credentials.json');
+      location =
+          this._pathJoin(location, 'application_default_credentials.json');
       location = this._mockWellKnownFilePath(location);
       // Check whether the file exists.
       if (!this._fileExists(location)) {
@@ -306,18 +314,23 @@ export default class GoogleAuth {
       error = new Error('The file path is invalid.');
     }
 
-    // Make sure there is a file at the path. lstatSync will throw if there is nothing there.
+    // Make sure there is a file at the path. lstatSync will throw if there is
+    // nothing there.
     if (!error) {
       try {
-        // Resolve path to actual file in case of symlink. Expect a thrown error if not resolvable.
+        // Resolve path to actual file in case of symlink. Expect a thrown error
+        // if not resolvable.
         filePath = fs.realpathSync(filePath);
 
         if (!fs.lstatSync(filePath).isFile()) {
           throw new Error();
         }
       } catch (err) {
-        error = this.createError(util.format('The file at %s does not exist, or it is not a file.',
-          filePath), err);
+        error = this.createError(
+            util.format(
+                'The file at %s does not exist, or it is not a file.',
+                filePath),
+            err);
       }
     }
     // Now open a read stream on the file, and parse it.
@@ -326,7 +339,8 @@ export default class GoogleAuth {
         const stream = this._createReadStream(filePath);
         this.fromStream(stream, opt_callback);
       } catch (err) {
-        error = this.createError(util.format('Unable to read the file at %s.', filePath), err);
+        error = this.createError(
+            util.format('Unable to read the file at %s.', filePath), err);
       }
     }
     if (error) {
@@ -342,8 +356,10 @@ export default class GoogleAuth {
   public fromJSON(json, opt_callback) {
     let client = null;
     if (!json) {
-      this.callback(opt_callback, new Error(
-        'Must pass in a JSON object containing the Google auth settings.'));
+      this.callback(
+          opt_callback,
+          new Error(
+              'Must pass in a JSON object containing the Google auth settings.'));
       return;
     }
     if (json.type === 'authorized_user') {
@@ -368,8 +384,10 @@ export default class GoogleAuth {
   public fromStream(stream, opt_callback) {
     if (!stream) {
       setImmediate(() => {
-        this.callback(opt_callback, new Error(
-            'Must pass in a stream containing the Google auth settings.'));
+        this.callback(
+            opt_callback,
+            new Error(
+                'Must pass in a stream containing the Google auth settings.'));
       });
       return;
     }
@@ -427,7 +445,8 @@ export default class GoogleAuth {
   }
 
   /**
-   * Gets the value of the environment variable with the given name. Allows mocking.
+   * Gets the value of the environment variable with the given name. Allows
+   * mocking.
    * @api private
    */
   private _getEnv(name) {
@@ -473,8 +492,8 @@ export default class GoogleAuth {
     }
   }
 
-  // Creates an Error containing the given message, and includes the message from the optional err
-  // passed in.
+  // Creates an Error containing the given message, and includes the message
+  // from the optional err passed in.
   private createError(message, err) {
     let s = message || '';
     if (err) {
@@ -515,7 +534,8 @@ export default class GoogleAuth {
    * @api private
    */
   private _getProductionProjectId(_callback) {
-    const projectId = this._getEnv('GCLOUD_PROJECT') || this._getEnv('GOOGLE_CLOUD_PROJECT');
+    const projectId =
+        this._getEnv('GCLOUD_PROJECT') || this._getEnv('GOOGLE_CLOUD_PROJECT');
     if (projectId) {
       setImmediate(() => {
         this.callback(_callback, null, projectId);
@@ -539,13 +559,15 @@ export default class GoogleAuth {
     }
 
     // Try to load a credentials file and read its project ID
-    const pathExists = this._tryGetApplicationCredentialsFromEnvironmentVariable((err, result) => {
-      if (!err && result) {
-        this.callback(_callback, null, result.projectId);
-        return;
-      }
-      this.callback(_callback, err);
-    });
+    const pathExists =
+        this._tryGetApplicationCredentialsFromEnvironmentVariable(
+            (err, result) => {
+              if (!err && result) {
+                this.callback(_callback, null, result.projectId);
+                return;
+              }
+              this.callback(_callback, err);
+            });
 
     if (!pathExists) {
       this.callback(_callback, null);
@@ -569,19 +591,19 @@ export default class GoogleAuth {
     if (!this.transporter) {
       this.transporter = new DefaultTransporter();
     }
-    this.transporter.request({
-      method: 'GET',
-      uri: 'http://169.254.169.254/computeMetadata/v1/project/project-id',
-      headers: {
-        'Metadata-Flavor': 'Google'
-      }
-    }, (err, body, res) => {
-      if (err || !res || res.statusCode !== 200 || !body) {
-        this.callback(_callback);
-        return;
-      }
-      // Ignore any errors
-      this.callback(_callback, null, body);
-    });
+    this.transporter.request(
+        {
+          method: 'GET',
+          uri: 'http://169.254.169.254/computeMetadata/v1/project/project-id',
+          headers: {'Metadata-Flavor': 'Google'}
+        },
+        (err, body, res) => {
+          if (err || !res || res.statusCode !== 200 || !body) {
+            this.callback(_callback);
+            return;
+          }
+          // Ignore any errors
+          this.callback(_callback, null, body);
+        });
   }
 }

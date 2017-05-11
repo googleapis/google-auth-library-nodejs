@@ -29,12 +29,9 @@ describe('.getRequestMetadata', () => {
   it('passes the token and selector to the callback ', (done) => {
     const expect_request_metadata = (err, creds) => {
       assert.strictEqual(err, null, 'no error was expected: got\n' + err);
-      assert.notStrictEqual(creds, null,
-                            'metadata should be present');
-      assert.strictEqual(creds['x-goog-iam-authority-selector'],
-                         test_selector);
-      assert.strictEqual(creds['x-goog-iam-authorization-token'],
-                         test_token);
+      assert.notStrictEqual(creds, null, 'metadata should be present');
+      assert.strictEqual(creds['x-goog-iam-authority-selector'], test_selector);
+      assert.strictEqual(creds['x-goog-iam-authorization-token'], test_token);
       done();
     };
     const unusedUri = null;

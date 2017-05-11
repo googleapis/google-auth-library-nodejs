@@ -19,12 +19,9 @@ import * as request from 'request';
 // tslint:disable-next-line
 const pkg = require('../package.json');
 
-export interface Transporter {
-  request(opts, opt_callback): any;
-}
+export interface Transporter { request(opts, opt_callback): any; }
 
 export class DefaultTransporter {
-
   /**
    * Default user agent.
    */
@@ -40,8 +37,11 @@ export class DefaultTransporter {
     opts.headers = opts.headers || {};
     if (!opts.headers['User-Agent']) {
       opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
-    } else if (opts.headers['User-Agent'].indexOf(DefaultTransporter.USER_AGENT) === -1) {
-      opts.headers['User-Agent'] = opts.headers['User-Agent'] + ' ' + DefaultTransporter.USER_AGENT;
+    } else if (
+        opts.headers['User-Agent'].indexOf(DefaultTransporter.USER_AGENT) ===
+        -1) {
+      opts.headers['User-Agent'] =
+          opts.headers['User-Agent'] + ' ' + DefaultTransporter.USER_AGENT;
     }
     return opts;
   }
@@ -54,7 +54,8 @@ export class DefaultTransporter {
    */
   public request(opts, opt_callback) {
     opts = this.configure(opts);
-    return request(opts.uri || opts.url, opts, this.wrapCallback_(opt_callback));
+    return request(
+        opts.uri || opts.url, opts, this.wrapCallback_(opt_callback));
   }
 
   /**
@@ -73,7 +74,9 @@ export class DefaultTransporter {
       // responds without proper content-type.
       try {
         body = JSON.parse(body);
-      } catch (err) { /* no op */ }
+      } catch (err) {
+        /* no op */
+      }
 
       if (body && body.error && res.statusCode !== 200) {
         if (typeof body.error === 'string') {
@@ -81,9 +84,8 @@ export class DefaultTransporter {
           err.code = res.statusCode;
 
         } else if (Array.isArray(body.error.errors)) {
-          err = new Error(body.error.errors.map(
-                          (err2) => err2.message
-                        ).join('\n'));
+          err =
+              new Error(body.error.errors.map(err2 => err2.message).join('\n'));
           err.code = body.error.code;
           err.errors = body.error.errors;
 

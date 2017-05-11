@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { Transporter, DefaultTransporter } from '../transporters';
+import {DefaultTransporter, Transporter} from '../transporters';
+
 import Credentials from './credentials';
 
 abstract class AuthClient {
-
   public transporter = new DefaultTransporter();
   public credentials: Credentials;
 

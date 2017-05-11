@@ -15,7 +15,6 @@
  */
 
 export default class IAMAuth {
-
   /**
    * IAM credentials.
    *
