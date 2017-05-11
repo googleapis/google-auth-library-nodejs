@@ -323,6 +323,10 @@ export default class OAuth2Client extends AuthClient {
     // Callbacks will close over this to ensure that we only retry once
     let retry = true;
     const unusedUri = null;
+    
+    // Declare authCb upfront to avoid the linter complaining about use before
+    // declaration.
+    let authCb;
 
     // Hook the callback routine to call the _postRequest method.
     const postRequestCb = (err, body, resp) => {
@@ -338,7 +342,6 @@ export default class OAuth2Client extends AuthClient {
         retry = false;
         // Force token refresh
         this.refreshAccessToken(() => {
-          // tslint:disable-next-line:no-use-before-declare
           this.getRequestMetadata(unusedUri, authCb);
         });
       } else {
@@ -346,7 +349,7 @@ export default class OAuth2Client extends AuthClient {
       }
     };
 
-    const authCb = (err, headers, response) => {
+    authCb = (err, headers, response) => {
       if (err) {
         postRequestCb(err, null, response);
       } else {
