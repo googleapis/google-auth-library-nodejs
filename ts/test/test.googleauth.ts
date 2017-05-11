@@ -19,7 +19,7 @@ import * as nock from 'nock';
 import * as fs from 'fs';
 import * as path from 'path';
 import GoogleAuth from '../lib/auth/googleauth';
-import DefaultTransporter from '../lib/transporters';
+import { Transporter, DefaultTransporter } from '../lib/transporters';
 
 nock.disableNetConnect();
 
@@ -357,11 +357,11 @@ describe('GoogleAuth', () => {
 
     it('should read the stream and create a jwt', (done) => {
       // Read the contents of the file into a json object.
-      const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+      const fileContents = fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
       const json = JSON.parse(fileContents);
 
       // Now open a stream on the same file.
-      const stream = fs.createReadStream('./test/fixtures/private.json');
+      const stream = fs.createReadStream('./ts/test/fixtures/private.json');
 
       // And pass it into the fromStream method.
       const auth = new GoogleAuth();
@@ -381,11 +381,11 @@ describe('GoogleAuth', () => {
 
     it('should read another stream and create a UserRefreshClient', (done) => {
       // Read the contents of the file into a json object.
-      const fileContents = fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
+      const fileContents = fs.readFileSync('./ts/test/fixtures/refresh.json', 'utf-8');
       const json = JSON.parse(fileContents);
 
       // Now open a stream on the same file.
-      const stream = fs.createReadStream('./test/fixtures/refresh.json');
+      const stream = fs.createReadStream('./ts/test/fixtures/refresh.json');
 
       // And pass it into the fromStream method.
       const auth = new GoogleAuth();
@@ -406,7 +406,7 @@ describe('GoogleAuth', () => {
 
     it('should not error on valid symlink', (done) => {
       const auth = new GoogleAuth();
-      auth._getApplicationCredentialsFromFilePath('./test/fixtures/goodlink', (err) => {
+      auth._getApplicationCredentialsFromFilePath('./ts/test/fixtures/goodlink', (err) => {
         assert.equal(false, err instanceof Error);
         done();
       });
@@ -414,7 +414,7 @@ describe('GoogleAuth', () => {
 
     it('should error on invalid symlink', (done) => {
       const auth = new GoogleAuth();
-      auth._getApplicationCredentialsFromFilePath('./test/fixtures/badlink', (err) => {
+      auth._getApplicationCredentialsFromFilePath('./ts/test/fixtures/badlink', (err) => {
         assert.equal(true, err instanceof Error);
         done();
       });
@@ -422,7 +422,7 @@ describe('GoogleAuth', () => {
 
     it('should error on valid link to invalid data', (done) => {
       const auth = new GoogleAuth();
-      auth._getApplicationCredentialsFromFilePath('./test/fixtures/emptylink', (err) => {
+      auth._getApplicationCredentialsFromFilePath('./ts/test/fixtures/emptylink', (err) => {
         assert.equal(true, err instanceof Error);
         done();
       });
@@ -464,7 +464,7 @@ describe('GoogleAuth', () => {
 
     it('should error on directory', (done) => {
       // Make sure that the following path actually does point to a directory.
-      const directory = './test/fixtures';
+      const directory = './ts/test/fixtures';
       assert.equal(true, fs.lstatSync(directory).isDirectory());
 
       // Execute.
@@ -485,7 +485,7 @@ describe('GoogleAuth', () => {
       };
 
       // Execute.
-      auth._getApplicationCredentialsFromFilePath('./test/fixtures/private.json', (err) => {
+      auth._getApplicationCredentialsFromFilePath('./ts/test/fixtures/private.json', (err) => {
 
         assert.equal(true, stringEndsWith(err.message, 'Hans and Chewbacca'));
         done();
@@ -500,7 +500,7 @@ describe('GoogleAuth', () => {
       };
 
       // Execute.
-      auth._getApplicationCredentialsFromFilePath('./test/fixtures/private.json', (err) => {
+      auth._getApplicationCredentialsFromFilePath('./ts/test/fixtures/private.json', (err) => {
 
         assert.equal(true, stringEndsWith(err.message, 'Darth Maul'));
         done();
@@ -515,7 +515,7 @@ describe('GoogleAuth', () => {
       };
 
       // Execute.
-      auth._getApplicationCredentialsFromFilePath('./test/fixtures/private.json', (err) => {
+      auth._getApplicationCredentialsFromFilePath('./ts/test/fixtures/private.json', (err) => {
 
         assert.equal(true, stringEndsWith(err.message, 'Princess Leia'));
         done();
@@ -524,12 +524,12 @@ describe('GoogleAuth', () => {
 
     it('should correctly read the file and create a valid JWT', (done) => {
       // Read the contents of the file into a json object.
-      const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+      const fileContents = fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
       const json = JSON.parse(fileContents);
 
       // Now pass the same path to the auth loader.
       const auth = new GoogleAuth();
-      auth._getApplicationCredentialsFromFilePath('./test/fixtures/private.json',
+      auth._getApplicationCredentialsFromFilePath('./ts/test/fixtures/private.json',
         (err, result) => {
 
           assert.equal(null, err);
@@ -602,10 +602,10 @@ describe('GoogleAuth', () => {
       // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
-        './test/fixtures/private.json');
+        './ts/test/fixtures/private.json');
 
       // Read the contents of the file into a json object.
-      const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+      const fileContents = fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
       const json = JSON.parse(fileContents);
 
       // The test ends successfully after 2 steps have completed.
@@ -973,7 +973,7 @@ describe('GoogleAuth', () => {
       insertEnvironmentVariableIntoAuth(
         auth,
         'GOOGLE_APPLICATION_CREDENTIALS',
-        path.join(__dirname, 'fixtures/private2.json')
+        path.join(__dirname, '../ts/test/fixtures/private2.json')
       );
 
       // Execute.
@@ -1019,8 +1019,8 @@ describe('GoogleAuth', () => {
       auth.transporter = {
         request: (reqOpts, callback) => {
           return callback(null, projectId, { body: projectId, statusCode: 200 });
-        }
-      } as DefaultTransporter;
+        },
+      };
 
       // Execute.
       auth.getDefaultProjectId((err, _projectId) => {
@@ -1043,7 +1043,7 @@ describe('GoogleAuth', () => {
         // an environment variable json file, but not on anything else.
         const setUpAuthForEnvironmentVariable = (creds) => {
           insertEnvironmentVariableIntoAuth(creds, 'GOOGLE_APPLICATION_CREDENTIALS',
-            './test/fixtures/private.json');
+            './ts/test/fixtures/private.json');
 
           creds._fileExists = returns(false);
           creds._checkIsGCE = callsBack(false);
@@ -1107,7 +1107,7 @@ describe('GoogleAuth', () => {
 
     it('should use environment variable when it is set', (done) => {
       // We expect private.json to be the file that is used.
-      const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+      const fileContents = fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
       const json = JSON.parse(fileContents);
 
       // Set up the creds.
@@ -1116,14 +1116,14 @@ describe('GoogleAuth', () => {
       // * Running on GCE is set to true.
       const auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
-        './test/fixtures/private.json');
+        './ts/test/fixtures/private.json');
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
       auth._osPlatform = returns('win32');
       auth._fileExists = returns(true);
       auth._checkIsGCE = callsBack(true);
       insertWellKnownFilePathIntoAuth(auth, 'foo:gcloud:application_default_credentials.json',
-        './test/fixtures/private2.json');
+        './ts/test/fixtures/private2.json');
 
       // Execute.
       auth.getApplicationDefault((err, result) => {
@@ -1139,7 +1139,7 @@ describe('GoogleAuth', () => {
 
     it('should use well-known file when it is available and env const is not set', (done) => {
       // We expect private2.json to be the file that is used.
-      const fileContents = fs.readFileSync('./test/fixtures/private2.json', 'utf-8');
+      const fileContents = fs.readFileSync('./ts/test/fixtures/private2.json', 'utf-8');
       const json = JSON.parse(fileContents);
 
       // Set up the creds.
@@ -1154,7 +1154,7 @@ describe('GoogleAuth', () => {
       auth._fileExists = returns(true);
       auth._checkIsGCE = callsBack(true);
       insertWellKnownFilePathIntoAuth(auth, 'foo:gcloud:application_default_credentials.json',
-        './test/fixtures/private2.json');
+        './ts/test/fixtures/private2.json');
 
       // Execute.
       auth.getApplicationDefault((err, result) => {
@@ -1193,7 +1193,7 @@ describe('GoogleAuth', () => {
 
     it('should also get project ID', (done) => {
       // We expect private.json to be the file that is used.
-      const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+      const fileContents = fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
       const json = JSON.parse(fileContents);
       const testProjectId = 'my-awesome-project';
 
@@ -1203,7 +1203,7 @@ describe('GoogleAuth', () => {
       // * Running on GCE is set to true.
       const auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS',
-        './test/fixtures/private.json');
+        './ts/test/fixtures/private.json');
       insertEnvironmentVariableIntoAuth(auth, 'GCLOUD_PROJECT', testProjectId);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
@@ -1211,7 +1211,7 @@ describe('GoogleAuth', () => {
       auth._fileExists = returns(true);
       auth._checkIsGCE = callsBack(true);
       insertWellKnownFilePathIntoAuth(auth, 'foo:gcloud:application_default_credentials.json',
-        './test/fixtures/private2.json');
+        './ts/test/fixtures/private2.json');
 
       // Execute.
       auth.getApplicationDefault((err, result, projectId) => {

@@ -13,8 +13,8 @@ const ts = require('gulp-typescript');
 const tslint = require('gulp-tslint');
 
 const outDir = 'build';
-const sources = ['src/**/*.ts'];
-const tests = ['test/**/*.ts'];
+const sources = ['ts/lib/**/*.ts'];
+const tests = ['ts/test/**/*.ts'];
 const allFiles = ['*.js'].concat(sources, tests);
 
 let exitOnError = true;

@@ -20,6 +20,7 @@ import * as qs from 'querystring';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 import * as nock from 'nock';
+import * as path from 'path';
 import AuthClient from '../lib/auth/authclient';
 import GoogleAuth from '../lib/auth/googleauth';
 
@@ -124,8 +125,8 @@ describe('OAuth2 client', () => {
 */
 
   it('should verify a valid certificate against a jwt', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -166,9 +167,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid audience', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -216,9 +217,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid array of audiences', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -267,9 +268,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid signature', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const idToken = '{' +
@@ -315,9 +316,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid envelope', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -366,9 +367,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid payload', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -417,7 +418,7 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid signature', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -461,9 +462,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to no expiration date', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const now = new Date().getTime() / 1000;
@@ -509,9 +510,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to no issue time', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -559,9 +560,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to certificate with expiration date in future', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -609,9 +610,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should pass due to expiration date in future with adjusted max expiry', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -657,9 +658,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to token being used to early', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -709,9 +710,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to token being used to late', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -761,9 +762,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid issuer', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -812,9 +813,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should pass due to valid issuer', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem',
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem',
         'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem',
+    const privateKey = fs.readFileSync('./ts/test/fixtures/private.pem',
         'utf-8');
 
     const maxLifetimeSecs = 86400;
@@ -860,7 +861,7 @@ describe('OAuth2 client', () => {
   it('should be able to retrieve a list of Google certificates', (done) => {
     const scope = nock('https://www.googleapis.com')
       .get('/oauth2/v1/certs')
-      .replyWithFile(200, __dirname + '/fixtures/oauthcerts.json');
+      .replyWithFile(200, path.join(__dirname, '../ts/test/fixtures/oauthcerts.json'));
     const auth = new GoogleAuth();
     const oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.getFederatedSignonCerts((err, certs) => {
@@ -881,7 +882,7 @@ describe('OAuth2 client', () => {
           })
           .get('/oauth2/v1/certs')
           .once()
-          .replyWithFile(200, __dirname + '/fixtures/oauthcerts.json');
+          .replyWithFile(200, path.join(__dirname, '../ts/test/fixtures/oauthcerts.json'));
       const auth = new GoogleAuth();
       const oauth2client = new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.getFederatedSignonCerts((err, certs) => {

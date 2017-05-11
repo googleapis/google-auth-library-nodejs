@@ -51,14 +51,14 @@
     "typescript": "^2.2.2"
   },
   "scripts": {
-    "lint": "tslint -c tslint.json lib/**/*.ts test/**/*.ts",
+    "lint": "tslint -c tslint.json ts/**/*.ts",
     "mocha": "mocha --reporter spec --timeout 4000 --require source-map-support/register",
-    "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md --exclude 'test/**'",
+    "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md ts/lib",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",
     "test": "npm run lint && npm run build && npm run coverage",
     "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls",
     "build": "tsc",
-    "clean": "find ./lib ./test -type f -name '*.js' -delete"
+    "clean": "rm -rf lib test types"
   },
   "license": "Apache-2.0"
 }

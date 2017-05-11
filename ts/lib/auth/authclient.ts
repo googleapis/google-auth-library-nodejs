@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import DefaultTransporter from '../transporters';
+import { Transporter, DefaultTransporter } from '../transporters';
 import Credentials from './credentials';
 
 abstract class AuthClient {
