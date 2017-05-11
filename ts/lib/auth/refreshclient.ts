@@ -36,21 +36,19 @@ export default class UserRefreshClient extends Auth2Client {
   }
 
   // Executes the given callback if it is not null.
-  private callback =
-      (c, err?, res?) => {
-        if (c) {
-          c(err, res);
-        }
-      }
+  private callback(c, err?, res?) {
+    if (c) {
+      c(err, res);
+    }
+  }
 
-                         /**
-                          * Refreshes the access token.
-                          * @param {object=} ignored_
-                          * @param {function=} opt_callback Optional callback.
-                          * @private
-                          */
-                         protected refreshToken(ignored_, opt_callback):
-                             request.Request {
+  /**
+   * Refreshes the access token.
+   * @param {object=} ignored_
+   * @param {function=} opt_callback Optional callback.
+   * @private
+   */
+  protected refreshToken(ignored_, opt_callback): request.Request {
     return super.refreshToken(this._refreshToken, opt_callback);
   }
 
