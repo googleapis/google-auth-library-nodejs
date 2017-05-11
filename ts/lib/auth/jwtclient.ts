@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-import Auth2Client from './oauth2client';
 import * as gToken from 'gtoken';
 
 import JWTAccess from './jwtaccess';
+import Auth2Client from './oauth2client';
 
 const isString = require('lodash.isstring');
 
 const noop = Function.prototype;
 
 export default class JWT extends Auth2Client {
-
   public email: string;
   public keyFile: string;
   public key: string;
-  public scopes: string | string[];
+  public scopes: string|string[];
   public subject: string;
   public gToken: any;
   public gtoken: any;
@@ -46,8 +45,9 @@ export default class JWT extends Auth2Client {
    * @param {string=} subject impersonated account's email address.
    * @constructor
    */
-  constructor(email?: string, keyFile?: string,
-              key?: string, scopes?: string | string[], subject?: string) {
+  constructor(
+      email?: string, keyFile?: string, key?: string, scopes?: string|string[],
+      subject?: string) {
     super();
     this.email = email;
     this.keyFile = keyFile;
@@ -56,10 +56,7 @@ export default class JWT extends Auth2Client {
     this.subject = subject;
     this.gToken = gToken;
 
-    this.credentials = {
-      refresh_token: 'jwt-placeholder',
-      expiry_date: 1
-    };
+    this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
   }
 
   /**
@@ -79,7 +76,8 @@ export default class JWT extends Auth2Client {
    */
   public getRequestMetadata(opt_uri: string, metadataCb) {
     if (this.createScopedRequired() && opt_uri) {
-      // no scopes have been set, but a uri has been provided.  Use JWTAccess credentials.
+      // no scopes have been set, but a uri has been provided.  Use JWTAccess
+      // credentials.
       const alt = new JWTAccess(this.email, this.key);
       return alt.getRequestMetadata(opt_uri, metadataCb);
     } else {
@@ -88,8 +86,8 @@ export default class JWT extends Auth2Client {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling createdScoped before
-   * use.
+   * Indicates whether the credential requires scopes to be created by calling
+   * createdScoped before use.
    * @return {boolean} false if createScoped does not need to be called.
    */
   public createScopedRequired() {
@@ -154,17 +152,17 @@ export default class JWT extends Auth2Client {
     const done = opt_callback || noop;
     if (!json) {
       done(new Error(
-        'Must pass in a JSON object containing the service account auth settings.'));
+          'Must pass in a JSON object containing the service account auth settings.'));
       return;
     }
     if (!json.client_email) {
       done(new Error(
-        'The incoming JSON object does not contain a client_email field'));
+          'The incoming JSON object does not contain a client_email field'));
       return;
     }
     if (!json.private_key) {
       done(new Error(
-        'The incoming JSON object does not contain a private_key field'));
+          'The incoming JSON object does not contain a private_key field'));
       return;
     }
     // Extract the relevant information from the json key file.
@@ -184,7 +182,7 @@ export default class JWT extends Auth2Client {
     if (!stream) {
       setImmediate(() => {
         done(new Error(
-          'Must pass in a stream containing the service account auth settings.'));
+            'Must pass in a stream containing the service account auth settings.'));
       });
       return;
     }

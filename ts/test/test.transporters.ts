@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 import * as nock from 'nock';
-import { DefaultTransporter } from '../lib/transporters';
+import {DefaultTransporter} from '../lib/transporters';
 
 // tslint:disable-next-line
 const version = require('../package.json').version;
@@ -34,47 +34,41 @@ describe('Transporters', () => {
     assert(re.test(opts.headers['User-Agent']));
   });
 
-  it('should append default client user agent to the existing user agent', () => {
-    const applicationName = 'MyTestApplication-1.0';
-    const opts = transporter.configure({
-      headers: { 'User-Agent': applicationName }
-    });
-    const re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
-    assert(re.test(opts.headers['User-Agent']));
-  });
+  it('should append default client user agent to the existing user agent',
+     () => {
+       const applicationName = 'MyTestApplication-1.0';
+       const opts =
+           transporter.configure({headers: {'User-Agent': applicationName}});
+       const re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
+       assert(re.test(opts.headers['User-Agent']));
+     });
 
   it('should not append default client user agent to the existing user ' +
-      'agent more than once', () => {
-    const applicationName = 'MyTestApplication-1.0 google-api-nodejs-client/' + version;
-    const opts = transporter.configure({
-      headers: { 'User-Agent': applicationName }
-    });
-    assert.equal(opts.headers['User-Agent'], applicationName);
-  });
+         'agent more than once',
+     () => {
+       const applicationName =
+           'MyTestApplication-1.0 google-api-nodejs-client/' + version;
+       const opts =
+           transporter.configure({headers: {'User-Agent': applicationName}});
+       assert.equal(opts.headers['User-Agent'], applicationName);
+     });
 
   it('should create a single error from multiple response errors', (done) => {
-    const firstError = {
-      message: 'Error 1'
-    };
-    const secondError = {
-      message: 'Error 2'
-    };
-    nock('http://example.com')
-      .get('/api')
-      .reply(400, {
-        error: {
-          code: 500,
-          errors: [ firstError, secondError ]
-        }
-      });
-
-    transporter.request({
-      uri: 'http://example.com/api',
-    }, (error) => {
-      assert(error.message === 'Error 1\nError 2');
-      assert.equal(error.code, 500);
-      assert.equal(error.errors.length, 2);
-      done();
+    const firstError = {message: 'Error 1'};
+    const secondError = {message: 'Error 2'};
+    nock('http://example.com').get('/api').reply(400, {
+      error: {code: 500, errors: [firstError, secondError]}
     });
+
+    transporter.request(
+        {
+          uri: 'http://example.com/api',
+        },
+        (error) => {
+          assert(error.message === 'Error 1\nError 2');
+          assert.equal(error.code, 500);
+          assert.equal(error.errors.length, 2);
+          done();
+        });
   });
 });

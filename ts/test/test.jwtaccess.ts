@@ -16,8 +16,9 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import * as keypair from 'keypair';
 import * as jws from 'jws';
+import * as keypair from 'keypair';
+
 import GoogleAuth from '../lib/auth/googleauth';
 
 // Creates a standard JSON credentials object for testing.
@@ -61,9 +62,7 @@ describe('.createScopedRequired', () => {
 
   it('should return false', () => {
     const auth = new GoogleAuth();
-    const client = new auth.JWTAccess(
-      'foo@serviceaccount.com',
-      null);
+    const client = new auth.JWTAccess('foo@serviceaccount.com', null);
 
     assert.equal(false, client.createScopedRequired());
   });
@@ -147,7 +146,8 @@ describe('.fromStream', () => {
 
   it('should construct a JWT Header instance from a stream', (done) => {
     // Read the contents of the file into a json object.
-    const fileContents = fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
+    const fileContents =
+        fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
     const json = JSON.parse(fileContents);
 
     // Now open a stream on the same file.

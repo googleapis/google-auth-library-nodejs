@@ -18,7 +18,6 @@ import * as jws from 'jws';
 const noop = Function.prototype;
 
 export default class JWTAccess {
-
   public email: string;
   public key: string;
   public projectId: string;
@@ -58,23 +57,15 @@ export default class JWTAccess {
    */
   public getRequestMetadata(authURI: string, metadataCb) {
     const iat = Math.floor(new Date().getTime() / 1000);
-    const exp = iat + 3600; // 3600 seconds = 1 hour
+    const exp = iat + 3600;  // 3600 seconds = 1 hour
 
     // The payload used for signed JWT headers has:
     // iss == sub == <client email>
     // aud == <the authorization uri>
-    const payload = {
-      iss: this.email,
-      sub: this.email,
-      aud: authURI,
-      exp: exp,
-      iat: iat
-    };
+    const payload =
+        {iss: this.email, sub: this.email, aud: authURI, exp: exp, iat: iat};
     const assertion = {
-      header: {
-        alg: 'RS256',
-        typ: 'JWT'
-      },
+      header: {alg: 'RS256', typ: 'JWT'},
       payload: payload,
       secret: this.key
     };
@@ -98,17 +89,17 @@ export default class JWTAccess {
     const done = opt_callback || noop;
     if (!json) {
       done(new Error(
-        'Must pass in a JSON object containing the service account auth settings.'));
+          'Must pass in a JSON object containing the service account auth settings.'));
       return;
     }
     if (!json.client_email) {
       done(new Error(
-        'The incoming JSON object does not contain a client_email field'));
+          'The incoming JSON object does not contain a client_email field'));
       return;
     }
     if (!json.private_key) {
       done(new Error(
-        'The incoming JSON object does not contain a private_key field'));
+          'The incoming JSON object does not contain a private_key field'));
       return;
     }
     // Extract the relevant information from the json key file.
@@ -127,9 +118,8 @@ export default class JWTAccess {
     const done = opt_callback || noop;
     if (!stream) {
       setImmediate(() => {
-          done(new Error(
-            'Must pass in a stream containing the service account auth settings.')
-          );
+        done(new Error(
+            'Must pass in a stream containing the service account auth settings.'));
       });
       return;
     }

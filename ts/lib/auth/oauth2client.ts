@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
+import * as querystring from 'querystring';
+
+import PemVerifier from './../pemverifier';
 import AuthClient from './authclient';
 import LoginTicket from './loginticket';
-import PemVerifier from './../pemverifier';
-import * as querystring from 'querystring';
 
 const merge = require('lodash.merge');
 
 const noop = Function.prototype;
 
 export default class OAuth2Client extends AuthClient {
-
   private _redirectUri: string;
   private _certificateCache = null;
   private _certificateExpiry = null;
@@ -42,7 +42,9 @@ export default class OAuth2Client extends AuthClient {
    * @param {Object=} opt_opts optional options for overriding the given parameters.
    * @constructor
    */
-  constructor(clientId?: string, clientSecret?: string, redirectUri?: string, opt_opts?: any) {
+  constructor(
+      clientId?: string, clientSecret?: string, redirectUri?: string,
+      opt_opts?: any) {
     super();
     this._clientId = clientId;
     this._clientSecret = clientSecret;
@@ -54,22 +56,26 @@ export default class OAuth2Client extends AuthClient {
   /**
    * The base URL for auth endpoints.
    */
-  private static readonly GOOGLE_OAUTH2_AUTH_BASE_URL_ = 'https://accounts.google.com/o/oauth2/auth';
+  private static readonly GOOGLE_OAUTH2_AUTH_BASE_URL_ =
+      'https://accounts.google.com/o/oauth2/auth';
 
   /**
    * The base endpoint for token retrieval.
    */
-  private static readonly GOOGLE_OAUTH2_TOKEN_URL_ = 'https://accounts.google.com/o/oauth2/token';
+  private static readonly GOOGLE_OAUTH2_TOKEN_URL_ =
+      'https://accounts.google.com/o/oauth2/token';
 
   /**
    * The base endpoint to revoke tokens.
    */
-  private static readonly GOOGLE_OAUTH2_REVOKE_URL_ = 'https://accounts.google.com/o/oauth2/revoke';
+  private static readonly GOOGLE_OAUTH2_REVOKE_URL_ =
+      'https://accounts.google.com/o/oauth2/revoke';
 
   /**
    * Google Sign on certificates.
    */
-  private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_ = 'https://www.googleapis.com/oauth2/v1/certs';
+  private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_ =
+      'https://www.googleapis.com/oauth2/v1/certs';
 
   /**
    * Clock skew - five minutes in seconds
@@ -84,7 +90,8 @@ export default class OAuth2Client extends AuthClient {
   /**
    * The allowed oauth token issuers.
    */
-  private static readonly ISSUERS_ = ['accounts.google.com', 'https://accounts.google.com'];
+  private static readonly ISSUERS_ =
+      ['accounts.google.com', 'https://accounts.google.com'];
 
   /**
    * Generates URL for consent page landing.
@@ -102,8 +109,8 @@ export default class OAuth2Client extends AuthClient {
       opts.scope = opts.scope.join(' ');
     }
 
-    const rootUrl = this._opts.authBaseUrl ||
-      OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
+    const rootUrl =
+        this._opts.authBaseUrl || OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
 
     return rootUrl + '?' + querystring.stringify(opts);
   }
@@ -123,19 +130,17 @@ export default class OAuth2Client extends AuthClient {
       grant_type: 'authorization_code'
     };
 
-    this.transporter.request({
-      method: 'POST',
-      uri: uri,
-      form: values,
-      json: true
-    }, (err, tokens, response) => {
-      if (!err && tokens && tokens.expires_in) {
-        tokens.expiry_date = ((new Date()).getTime() + (tokens.expires_in * 1000));
-        delete tokens.expires_in;
-      }
-      const done = opt_callback || noop;
-      done(err, tokens, response);
-    });
+    this.transporter.request(
+        {method: 'POST', uri: uri, form: values, json: true},
+        (err, tokens, response) => {
+          if (!err && tokens && tokens.expires_in) {
+            tokens.expiry_date =
+                ((new Date()).getTime() + (tokens.expires_in * 1000));
+            delete tokens.expires_in;
+          }
+          const done = opt_callback || noop;
+          done(err, tokens, response);
+        });
   }
 
   /**
@@ -154,19 +159,17 @@ export default class OAuth2Client extends AuthClient {
     };
 
     // request for new token
-    return this.transporter.request({
-      method: 'POST',
-      uri: uri,
-      form: values,
-      json: true
-    }, (err, tokens, response) => {
-      if (!err && tokens && tokens.expires_in) {
-        tokens.expiry_date = ((new Date()).getTime() + (tokens.expires_in * 1000));
-        delete tokens.expires_in;
-      }
-      const done = opt_callback || noop;
-      done(err, tokens, response);
-    });
+    return this.transporter.request(
+        {method: 'POST', uri: uri, form: values, json: true},
+        (err, tokens, response) => {
+          if (!err && tokens && tokens.expires_in) {
+            tokens.expiry_date =
+                ((new Date()).getTime() + (tokens.expires_in * 1000));
+            delete tokens.expires_in;
+          }
+          const done = opt_callback || noop;
+          done(err, tokens, response);
+        });
   }
 
   /**
@@ -181,16 +184,17 @@ export default class OAuth2Client extends AuthClient {
       return;
     }
 
-    this.refreshToken(this.credentials.refresh_token, (err, result, response) => {
-      if (err) {
-        callback(err, null, response);
-      } else {
-        const tokens = result;
-        tokens.refresh_token = this.credentials.refresh_token;
-        this.credentials = tokens;
-        callback(null, this.credentials, response);
-      }
-    });
+    this.refreshToken(
+        this.credentials.refresh_token, (err, result, response) => {
+          if (err) {
+            callback(err, null, response);
+          } else {
+            const tokens = result;
+            tokens.refresh_token = this.credentials.refresh_token;
+            this.credentials = tokens;
+            callback(null, this.credentials, response);
+          }
+        });
   }
 
   /**
@@ -202,7 +206,8 @@ export default class OAuth2Client extends AuthClient {
     const expiryDate = this.credentials.expiry_date;
 
     // if no expiry time, assume it's not expired
-    const isTokenExpired = expiryDate ? expiryDate <= (new Date()).getTime() : false;
+    const isTokenExpired =
+        expiryDate ? expiryDate <= (new Date()).getTime() : false;
 
     if (!this.credentials.access_token && !this.credentials.refresh_token) {
       return callback(new Error('No access or refresh token is set.'), null);
@@ -219,7 +224,8 @@ export default class OAuth2Client extends AuthClient {
           return callback(err, null, response);
         }
         if (!tokens || (tokens && !tokens.access_token)) {
-          return callback(new Error('Could not refresh access token.'), null, response);
+          return callback(
+              new Error('Could not refresh access token.'), null, response);
         }
         return callback(null, tokens.access_token, response);
       });
@@ -247,17 +253,20 @@ export default class OAuth2Client extends AuthClient {
     const thisCreds = this.credentials;
 
     if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
-      return metadataCb(new Error('No access, refresh token or API key is set.'),
-        null);
+      return metadataCb(
+          new Error('No access, refresh token or API key is set.'), null);
     }
 
     // if no expiry time, assume it's not expired
     const expiryDate = thisCreds.expiry_date;
-    const isTokenExpired = expiryDate ? expiryDate <= (new Date()).getTime() : false;
+    const isTokenExpired =
+        expiryDate ? expiryDate <= (new Date()).getTime() : false;
 
     if (thisCreds.access_token && !isTokenExpired) {
       thisCreds.token_type = thisCreds.token_type || 'Bearer';
-      const headers = {Authorization: thisCreds.token_type + ' ' + thisCreds.access_token };
+      const headers = {
+        Authorization: thisCreds.token_type + ' ' + thisCreds.access_token
+      };
       return metadataCb(null, headers, null);
     }
 
@@ -265,22 +274,26 @@ export default class OAuth2Client extends AuthClient {
       return metadataCb(null, {}, null);
     }
 
-    return this.refreshToken(thisCreds.refresh_token, (err, tokens, response) => {
-      if (err) {
-        return metadataCb(err, null, response);
-      } else {
-        if (!tokens || (tokens && !tokens.access_token)) {
-          return metadataCb(new Error('Could not refresh access token.'), null, response);
-        }
+    return this.refreshToken(
+        thisCreds.refresh_token, (err, tokens, response) => {
+          if (err) {
+            return metadataCb(err, null, response);
+          } else {
+            if (!tokens || (tokens && !tokens.access_token)) {
+              return metadataCb(
+                  new Error('Could not refresh access token.'), null, response);
+            }
 
-        const credentials = this.credentials;
-        credentials.token_type = credentials.token_type || 'Bearer';
-        tokens.refresh_token = credentials.refresh_token;
-        this.credentials = tokens;
-        const headers = {Authorization: credentials.token_type + ' ' + tokens.access_token };
-        return metadataCb(err, headers , response);
-      }
-    });
+            const credentials = this.credentials;
+            credentials.token_type = credentials.token_type || 'Bearer';
+            tokens.refresh_token = credentials.refresh_token;
+            this.credentials = tokens;
+            const headers = {
+              Authorization: credentials.token_type + ' ' + tokens.access_token
+            };
+            return metadataCb(err, headers, response);
+          }
+        });
   }
 
   /**
@@ -289,11 +302,13 @@ export default class OAuth2Client extends AuthClient {
    * @param {function=} opt_callback Optional callback fn.
    */
   public revokeToken(token: string, opt_callback) {
-    this.transporter.request({
-      uri: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ +
-        '?' + querystring.stringify({ token: token }),
-      json: true
-    }, opt_callback);
+    this.transporter.request(
+        {
+          uri: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
+              querystring.stringify({token: token}),
+          json: true
+        },
+        opt_callback);
   }
 
   /**
@@ -325,7 +340,7 @@ export default class OAuth2Client extends AuthClient {
     // Callbacks will close over this to ensure that we only retry once
     let retry = true;
     const unusedUri = null;
-    
+
     // Declare authCb upfront to avoid the linter complaining about use before
     // declaration.
     let authCb;
@@ -339,8 +354,8 @@ export default class OAuth2Client extends AuthClient {
       if (retry && (statusCode === 401 || statusCode === 403) &&
           (!err || err.code === statusCode)) {
         /* It only makes sense to retry once, because the retry is intended to
-        * handle expiration-related failures. If refreshing the token does not
-        * fix the failure, then refreshing again probably won't help */
+         * handle expiration-related failures. If refreshing the token does not
+         * fix the failure, then refreshing again probably won't help */
         retry = false;
         // Force token refresh
         this.refreshAccessToken(() => {
@@ -404,25 +419,27 @@ export default class OAuth2Client extends AuthClient {
    */
   public verifyIdToken(idToken: string, audience, callback) {
     if (!idToken || !callback) {
-      throw new Error('The verifyIdToken method requires both ' +
-        'an ID Token and a callback method');
+      throw new Error(
+          'The verifyIdToken method requires both ' +
+          'an ID Token and a callback method');
     }
 
     this.getFederatedSignonCerts(((err, certs) => {
-      if (err) {
-        callback(err, null);
-      }
-      let login;
-      try {
-        login = this.verifySignedJwtWithCerts(idToken, certs, audience,
-          OAuth2Client.ISSUERS_);
-      } catch (err) {
-        callback(err);
-        return;
-      }
+                                   if (err) {
+                                     callback(err, null);
+                                   }
+                                   let login;
+                                   try {
+                                     login = this.verifySignedJwtWithCerts(
+                                         idToken, certs, audience,
+                                         OAuth2Client.ISSUERS_);
+                                   } catch (err) {
+                                     callback(err);
+                                     return;
+                                   }
 
-      callback(null, login);
-    }).bind(this));
+                                   callback(null, login);
+                                 }).bind(this));
   }
 
   /**
@@ -433,37 +450,43 @@ export default class OAuth2Client extends AuthClient {
    */
   public getFederatedSignonCerts(callback) {
     const nowTime = (new Date()).getTime();
-    if (this._certificateExpiry && (nowTime < this._certificateExpiry.getTime())) {
+    if (this._certificateExpiry &&
+        (nowTime < this._certificateExpiry.getTime())) {
       callback(null, this._certificateCache);
       return;
     }
 
-    this.transporter.request({
-      method: 'GET',
-      uri: OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_,
-      json: true
-    }, (err, body, response) => {
-      if (err) {
-        callback('Failed to retrieve verification certificates: ' + err, null, response);
-        return;
-      }
+    this.transporter.request(
+        {
+          method: 'GET',
+          uri: OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_,
+          json: true
+        },
+        (err, body, response) => {
+          if (err) {
+            callback(
+                'Failed to retrieve verification certificates: ' + err, null,
+                response);
+            return;
+          }
 
-      const cacheControl = response.headers['cache-control'];
-      let cacheAge = -1;
-      if (cacheControl) {
-        const pattern = new RegExp('max-age=([0-9]*)');
-        const regexResult = pattern.exec(cacheControl);
-        if (regexResult.length === 2) {
-          // Cache results with max-age (in seconds)
-          cacheAge = Number(regexResult[1]) * 1000; // milliseconds
-        }
-      }
+          const cacheControl = response.headers['cache-control'];
+          let cacheAge = -1;
+          if (cacheControl) {
+            const pattern = new RegExp('max-age=([0-9]*)');
+            const regexResult = pattern.exec(cacheControl);
+            if (regexResult.length === 2) {
+              // Cache results with max-age (in seconds)
+              cacheAge = Number(regexResult[1]) * 1000;  // milliseconds
+            }
+          }
 
-      const now = new Date();
-      this._certificateExpiry = cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
-      this._certificateCache = body;
-      callback(null, body, response);
-    });
+          const now = new Date();
+          this._certificateExpiry =
+              cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
+          this._certificateCache = body;
+          callback(null, body, response);
+        });
   }
 
   /**
@@ -476,107 +499,112 @@ export default class OAuth2Client extends AuthClient {
    * @param {string} maxExpiry The max expiry the certificate can be (Optional).
    * @return {LoginTicket} Returns a LoginTicket on verification.
    */
-  public verifySignedJwtWithCerts(jwt: string, certs: any,
-                                  requiredAudience: string|string[],
-                                  issuers?, maxExpiry?: number) {
-
-      if (!maxExpiry) {
-        maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
-      }
-
-      const segments = jwt.split('.');
-      if (segments.length !== 3) {
-        throw new Error('Wrong number of segments in token: ' + jwt);
-      }
-      const signed = segments[0] + '.' + segments[1];
-      const signature = segments[2];
-
-      let envelope;
-      let payload;
-
-      try {
-        envelope = JSON.parse(this.decodeBase64(segments[0]));
-      } catch (err) {
-        throw new Error('Can\'t parse token envelope: ' + segments[0]);
-      }
-
-      if (!envelope) {
-        throw new Error('Can\'t parse token envelope: ' + segments[0]);
-      }
-
-      try {
-        payload = JSON.parse(this.decodeBase64(segments[1]));
-      } catch (err) {
-        throw new Error('Can\'t parse token payload: ' + segments[0]);
-      }
-
-      if (!payload) {
-        throw new Error('Can\'t parse token payload: ' + segments[1]);
-      }
-
-      if (!certs.hasOwnProperty(envelope.kid)) {
-        // If this is not present, then there's no reason to attempt verification
-        throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
-      }
-      const pem = certs[envelope.kid];
-      const pemVerifier = new PemVerifier();
-      const verified = pemVerifier.verify(pem, signed, signature, 'base64');
-
-      if (!verified) {
-        throw new Error('Invalid token signature: ' + jwt);
-      }
-
-      if (!payload.iat) {
-        throw new Error('No issue time in token: ' + JSON.stringify(payload));
-      }
-
-      if (!payload.exp) {
-        throw new Error('No expiration time in token: ' + JSON.stringify(payload));
-      }
-
-      const iat = parseInt(payload.iat, 10);
-      const exp = parseInt(payload.exp, 10);
-      const now = new Date().getTime() / 1000;
-
-      if (exp >= now + maxExpiry) {
-        throw new Error('Expiration time too far in future: ' +
-          JSON.stringify(payload));
-      }
-
-      const earliest = iat - OAuth2Client.CLOCK_SKEW_SECS_;
-      const latest = exp + OAuth2Client.CLOCK_SKEW_SECS_;
-
-      if (now < earliest) {
-        throw new Error('Token used too early, ' + now + ' < ' + earliest + ': ' +
-          JSON.stringify(payload));
-      }
-
-      if (now > latest) {
-        throw new Error('Token used too late, ' + now + ' > ' + latest + ': ' +
-          JSON.stringify(payload));
-      }
-
-      if (issuers && issuers.indexOf(payload.iss) < 0) {
-        throw new Error('Invalid issuer, expected one of [' + issuers +
-            '], but got ' + payload.iss);
-      }
-
-      // Check the audience matches if we have one
-      if (typeof requiredAudience !== 'undefined' && requiredAudience !== null) {
-        const aud = payload.aud;
-        let audVerified = false;
-        // If the requiredAudience is an array, check if it contains token audience
-        if (requiredAudience.constructor === Array) {
-          audVerified = (requiredAudience.indexOf(aud) > -1);
-        } else {
-          audVerified = (aud === requiredAudience);
-        }
-        if (!audVerified) {
-          throw new Error('Wrong recipient, payload audience != requiredAudience');
-        }
-      }
-      return new LoginTicket(envelope, payload);
+  public verifySignedJwtWithCerts(
+      jwt: string, certs: any, requiredAudience: string|string[], issuers?,
+      maxExpiry?: number) {
+    if (!maxExpiry) {
+      maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
     }
+
+    const segments = jwt.split('.');
+    if (segments.length !== 3) {
+      throw new Error('Wrong number of segments in token: ' + jwt);
+    }
+    const signed = segments[0] + '.' + segments[1];
+    const signature = segments[2];
+
+    let envelope;
+    let payload;
+
+    try {
+      envelope = JSON.parse(this.decodeBase64(segments[0]));
+    } catch (err) {
+      throw new Error('Can\'t parse token envelope: ' + segments[0]);
+    }
+
+    if (!envelope) {
+      throw new Error('Can\'t parse token envelope: ' + segments[0]);
+    }
+
+    try {
+      payload = JSON.parse(this.decodeBase64(segments[1]));
+    } catch (err) {
+      throw new Error('Can\'t parse token payload: ' + segments[0]);
+    }
+
+    if (!payload) {
+      throw new Error('Can\'t parse token payload: ' + segments[1]);
+    }
+
+    if (!certs.hasOwnProperty(envelope.kid)) {
+      // If this is not present, then there's no reason to attempt verification
+      throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
+    }
+    const pem = certs[envelope.kid];
+    const pemVerifier = new PemVerifier();
+    const verified = pemVerifier.verify(pem, signed, signature, 'base64');
+
+    if (!verified) {
+      throw new Error('Invalid token signature: ' + jwt);
+    }
+
+    if (!payload.iat) {
+      throw new Error('No issue time in token: ' + JSON.stringify(payload));
+    }
+
+    if (!payload.exp) {
+      throw new Error(
+          'No expiration time in token: ' + JSON.stringify(payload));
+    }
+
+    const iat = parseInt(payload.iat, 10);
+    const exp = parseInt(payload.exp, 10);
+    const now = new Date().getTime() / 1000;
+
+    if (exp >= now + maxExpiry) {
+      throw new Error(
+          'Expiration time too far in future: ' + JSON.stringify(payload));
+    }
+
+    const earliest = iat - OAuth2Client.CLOCK_SKEW_SECS_;
+    const latest = exp + OAuth2Client.CLOCK_SKEW_SECS_;
+
+    if (now < earliest) {
+      throw new Error(
+          'Token used too early, ' + now + ' < ' + earliest + ': ' +
+          JSON.stringify(payload));
+    }
+
+    if (now > latest) {
+      throw new Error(
+          'Token used too late, ' + now + ' > ' + latest + ': ' +
+          JSON.stringify(payload));
+    }
+
+    if (issuers && issuers.indexOf(payload.iss) < 0) {
+      throw new Error(
+          'Invalid issuer, expected one of [' + issuers + '], but got ' +
+          payload.iss);
+    }
+
+    // Check the audience matches if we have one
+    if (typeof requiredAudience !== 'undefined' && requiredAudience !== null) {
+      const aud = payload.aud;
+      let audVerified = false;
+      // If the requiredAudience is an array, check if it contains token
+      // audience
+      if (requiredAudience.constructor === Array) {
+        audVerified = (requiredAudience.indexOf(aud) > -1);
+      } else {
+        audVerified = (aud === requiredAudience);
+      }
+      if (!audVerified) {
+        throw new Error(
+            'Wrong recipient, payload audience != requiredAudience');
+      }
+    }
+    return new LoginTicket(envelope, payload);
+  }
 
   /**
    * This is a utils method to decode a base64 string

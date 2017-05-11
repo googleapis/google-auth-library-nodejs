@@ -15,9 +15,10 @@
  */
 
 import * as assert from 'assert';
-import GoogleAuth from '../lib/auth/googleauth';
-import * as nock from 'nock';
 import * as fs from 'fs';
+import * as nock from 'nock';
+
+import GoogleAuth from '../lib/auth/googleauth';
 
 nock.disableNetConnect();
 
@@ -134,7 +135,8 @@ describe('.fromStream', () => {
 
   it('should read the stream and create a UserRefreshClient', (done) => {
     // Read the contents of the file into a json object.
-    const fileContents = fs.readFileSync('./ts/test/fixtures/refresh.json', 'utf-8');
+    const fileContents =
+        fs.readFileSync('./ts/test/fixtures/refresh.json', 'utf-8');
     const json = JSON.parse(fileContents);
 
     // Now open a stream on the same file.

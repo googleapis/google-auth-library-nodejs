@@ -59,9 +59,6 @@ export default class LoginTicket {
    * @return {Object} The envelope and payload
    */
   public getAttributes() {
-    return {
-      envelope: this.getEnvelope(),
-      payload: this.getPayload()
-    };
+    return {envelope: this.getEnvelope(), payload: this.getPayload()};
   }
 }
