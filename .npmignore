@@ -1,12 +1,1 @@
-test
-examples
-docs
-node_modules
-coverage
-.github
-yarn.lock
-jsdoc-conf.json
-.travis.yml
-.gitignore
-*.js.map
-*.ts
+*.map

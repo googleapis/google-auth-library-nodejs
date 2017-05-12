@@ -52,6 +52,13 @@
     "typedoc": "^0.5.10",
     "typescript": "^2.2.2"
   },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "lib",
+    "package.json",
+    "types/lib"
+  ],
   "scripts": {
     "check-format": "gulp test.check-format",
     "lint": "tslint --type-check -p tsconfig.json -c tslint.json ts/**/*.ts",
