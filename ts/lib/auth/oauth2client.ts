@@ -15,6 +15,7 @@
  */
 
 import * as querystring from 'querystring';
+import * as request from 'request';
 
 import PemVerifier from './../pemverifier';
 import AuthClient from './authclient';
@@ -149,7 +150,7 @@ export default class OAuth2Client extends AuthClient {
    * @param {function=} opt_callback Optional callback.
    * @private
    */
-  protected refreshToken(refresh_token: any, opt_callback) {
+  protected refreshToken(refresh_token: any, opt_callback): request.Request {
     const uri = this._opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       refresh_token: refresh_token,
