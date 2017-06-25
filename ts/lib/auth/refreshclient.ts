@@ -15,7 +15,9 @@
  */
 
 import * as request from 'request';
+import * as stream from 'stream';
 
+import {RequestCallback} from './../transporters';
 import Auth2Client from './oauth2client';
 
 export default class UserRefreshClient extends Auth2Client {
@@ -36,7 +38,7 @@ export default class UserRefreshClient extends Auth2Client {
   }
 
   // Executes the given callback if it is not null.
-  private callback(c, err?, res?) {
+  private callback(c: Function, err?: Error, res?: request.RequestResponse) {
     if (c) {
       c(err, res);
     }
@@ -48,7 +50,8 @@ export default class UserRefreshClient extends Auth2Client {
    * @param {function=} opt_callback Optional callback.
    * @private
    */
-  protected refreshToken(ignored_, opt_callback): request.Request {
+  protected refreshToken(ignored_: any, opt_callback: RequestCallback):
+      request.Request|void {
     return super.refreshToken(this._refreshToken, opt_callback);
   }
 
@@ -58,7 +61,7 @@ export default class UserRefreshClient extends Auth2Client {
    * @param {object=} json The input object.
    * @param {function=} opt_callback Optional callback.
    */
-  public fromJSON(json, opt_callback) {
+  public fromJSON(json: any, opt_callback: (err?: Error) => void) {
     if (!json) {
       this.callback(
           opt_callback,
@@ -107,7 +110,8 @@ export default class UserRefreshClient extends Auth2Client {
    * @param {object=} stream The input stream.
    * @param {function=} opt_callback Optional callback.
    */
-  public fromStream(stream, opt_callback) {
+  public fromStream(
+      stream: stream.Readable, opt_callback: (err?: Error) => void) {
     if (!stream) {
       setImmediate(() => {
         this.callback(

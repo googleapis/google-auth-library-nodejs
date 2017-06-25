@@ -16,7 +16,17 @@
 
 import * as request from 'request';
 
+import {RequestCallback, RequestError} from './../transporters';
 import Auth2Client from './oauth2client';
+
+export interface Tokens {
+  expires_in: number;
+  expiry_date: number;
+}
+
+export interface RefreshTokenCallback {
+  (err: Error, tokens: Tokens, response: request.RequestResponse): void;
+}
 
 export default class Compute extends Auth2Client {
   /**
@@ -55,11 +65,13 @@ export default class Compute extends Auth2Client {
    * @param {object=} ignored_
    * @param {function=} opt_callback Optional callback.
    */
-  protected refreshToken(ignored, callback?): request.Request {
+  protected refreshToken(ignored: any, callback?: RefreshTokenCallback):
+      request.Request {
     const uri = this._opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
     // request for new token
     return this.transporter.request(
-        {method: 'GET', uri: uri, json: true}, (err, tokens, response) => {
+        {method: 'GET', uri: uri, json: true}, (err, body, response) => {
+          const tokens = body as Tokens;
           if (!err && tokens && tokens.expires_in) {
             tokens.expiry_date =
                 ((new Date()).getTime() + (tokens.expires_in * 1000));
@@ -79,7 +91,9 @@ export default class Compute extends Auth2Client {
    * @param {object} response The HTTP response.
    * @param {Function} callback The callback.
    */
-  protected postRequest(err, result, response, callback) {
+  protected postRequest(
+      err: Error, result: any, response: request.RequestResponse,
+      callback: RequestCallback) {
     if (response && response.statusCode) {
       let helpfulMessage = null;
       if (response.statusCode === 403) {
@@ -102,7 +116,7 @@ export default class Compute extends Auth2Client {
           err.message = helpfulMessage;
         } else {
           err = new Error(helpfulMessage);
-          err.code = response.statusCode;
+          (err as RequestError).code = response.statusCode;
         }
       }
     }

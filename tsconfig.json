@@ -2,12 +2,13 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es5",
-        "noImplicitAny": false,
+        "noImplicitAny": true,
         "sourceMap": true,
         "alwaysStrict": true,
         "outDir": "./",
         "declaration": true,
-        "declarationDir": "types/"
+        "declarationDir": "types/",
+        "skipLibCheck": true
     },
     "include": [ "ts/**/*" ],
     "exclude": [ "node_modules" ]

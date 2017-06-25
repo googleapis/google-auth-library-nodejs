@@ -16,8 +16,9 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import * as jws from 'jws';
-import * as keypair from 'keypair';
+const jws = require('jws');
+const keypair = require('keypair');
+import JWTAccess from './../lib/auth/jwtaccess';
 
 import GoogleAuth from '../lib/auth/googleauth';
 
@@ -42,7 +43,7 @@ describe('.getRequestMetadata', () => {
     const client = new auth.JWTAccess(email, keys.private);
 
     const retValue = 'dummy';
-    const expectAuth = (err, creds) => {
+    const expectAuth = (err: Error, creds: any) => {
       assert.strictEqual(null, err, 'no error was expected: got\n' + err);
       assert.notStrictEqual(null, creds, 'an creds object should be present');
       const decoded = jws.decode(creds.Authorization.replace('Bearer ', ''));
@@ -71,8 +72,8 @@ describe('.createScopedRequired', () => {
 
 describe('.fromJson', () => {
   // set up the test json and the client instance being tested.
-  let json;
-  let client;
+  let json: any;
+  let client: JWTAccess;
   beforeEach(() => {
     json = createJSON();
     const auth = new GoogleAuth();
@@ -131,7 +132,7 @@ describe('.fromJson', () => {
 
 describe('.fromStream', () => {
   // set up the client instance being tested.
-  let client;
+  let client: JWTAccess;
   beforeEach(() => {
     const auth = new GoogleAuth();
     client = new auth.JWTAccess();

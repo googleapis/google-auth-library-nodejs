@@ -16,25 +16,25 @@
 
 import * as assert from 'assert';
 import GoogleAuth from '../lib/auth/googleauth';
+import IAMAuth from './../lib/auth/iam';
 
 describe('.getRequestMetadata', () => {
   const test_selector = 'a-test-selector';
   const test_token = 'a-test-token';
-  let client;
+  let client: IAMAuth;
   beforeEach(() => {
     const auth = new GoogleAuth();
     client = new auth.IAMAuth(test_selector, test_token);
   });
 
   it('passes the token and selector to the callback ', (done) => {
-    const expect_request_metadata = (err, creds) => {
+    const expect_request_metadata = (err: Error, creds: any) => {
       assert.strictEqual(err, null, 'no error was expected: got\n' + err);
       assert.notStrictEqual(creds, null, 'metadata should be present');
       assert.strictEqual(creds['x-goog-iam-authority-selector'], test_selector);
       assert.strictEqual(creds['x-goog-iam-authorization-token'], test_token);
       done();
     };
-    const unusedUri = null;
-    client.getRequestMetadata(unusedUri, expect_request_metadata);
+    client.getRequestMetadata(null, expect_request_metadata);
   });
 });

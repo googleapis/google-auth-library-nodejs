@@ -19,7 +19,18 @@ import * as request from 'request';
 // tslint:disable-next-line
 const pkg = require('../package.json');
 
-export interface Transporter { request(opts, opt_callback): any; }
+export interface Transporter {
+  request(opts: any, opt_callback: RequestCallback): any;
+}
+
+export interface RequestCallback {
+  (err: Error, body: any, res?: request.RequestResponse): void;
+}
+
+export class RequestError extends Error {
+  public code: number;
+  public errors: Error[];
+}
 
 export class DefaultTransporter {
   /**
@@ -52,7 +63,7 @@ export class DefaultTransporter {
    * @param {Function=} opt_callback Optional callback.
    * @return {Request} Request object
    */
-  public request(opts, opt_callback) {
+  public request(opts: any, opt_callback: RequestCallback) {
     opts = this.configure(opts);
     return request(
         opts.uri || opts.url, opts, this.wrapCallback_(opt_callback));
@@ -64,8 +75,9 @@ export class DefaultTransporter {
    * @return {Function} Wrapped callback function.
    * @private
    */
-  private wrapCallback_(opt_callback) {
-    return (err, res, body) => {
+  private wrapCallback_(opt_callback: RequestCallback):
+      request.RequestCallback {
+    return (err: Error, res: request.RequestResponse, body: any) => {
       if (err || !body) {
         return opt_callback && opt_callback(err, body, res);
       }
@@ -80,26 +92,22 @@ export class DefaultTransporter {
 
       if (body && body.error && res.statusCode !== 200) {
         if (typeof body.error === 'string') {
-          err = new Error(body.error);
-          err.code = res.statusCode;
-
+          err = new RequestError(body.error);
+          (err as RequestError).code = res.statusCode;
         } else if (Array.isArray(body.error.errors)) {
-          err =
-              new Error(body.error.errors.map(err2 => err2.message).join('\n'));
-          err.code = body.error.code;
-          err.errors = body.error.errors;
-
+          err = new RequestError(
+              body.error.errors.map((err2: Error) => err2.message).join('\n'));
+          (err as RequestError).code = body.error.code;
+          (err as RequestError).errors = body.error.errors;
         } else {
-          err = new Error(body.error.message);
-          err.code = body.error.code || res.statusCode;
+          err = new RequestError(body.error.message);
+          (err as RequestError).code = body.error.code || res.statusCode;
         }
-
         body = null;
-
       } else if (res.statusCode >= 500) {
         // Consider all '500 responses' errors.
-        err = new Error(body);
-        err.code = res.statusCode;
+        err = new RequestError(body);
+        (err as RequestError).code = res.statusCode;
         body = null;
       }
 

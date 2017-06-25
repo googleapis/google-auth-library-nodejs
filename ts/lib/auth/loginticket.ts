@@ -17,7 +17,7 @@
 export default class LoginTicket {
   private static readonly USER_ATTR = 'sub';
   private _envelope: string;
-  private _payload: string;
+  private _payload: any;
 
   /**
    * Create a simple class to extract user ID from an ID Token

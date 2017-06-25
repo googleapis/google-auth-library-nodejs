@@ -16,10 +16,12 @@
 
 import * as crypto from 'crypto';
 
-export default function PemVerifier() {
-  this.verify = (pubkey, data, signature, encoding) => {
+export default class PemVerifier {
+  public verify(
+      pubkey: string, data: string|Buffer, signature: string,
+      encoding: crypto.HexBase64Latin1Encoding) {
     const verifier = crypto.createVerify('sha256');
     verifier.update(data);
     return verifier.verify(pubkey, signature, encoding);
-  };
+  }
 }
