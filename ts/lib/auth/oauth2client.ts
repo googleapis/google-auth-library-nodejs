@@ -18,7 +18,7 @@ import * as querystring from 'querystring';
 import * as request from 'request';
 
 import PemVerifier from './../pemverifier';
-import {RequestCallback, RequestError} from './../transporters';
+import {BodyResponseCallback, RequestError} from './../transporters';
 import AuthClient from './authclient';
 import Credentials from './credentials';
 import LoginTicket from './loginticket';
@@ -128,9 +128,9 @@ export default class OAuth2Client extends AuthClient {
   /**
    * Gets the access token for the given code.
    * @param {string} code The authorization code.
-   * @param {function=} opt_callback Optional callback fn.
+   * @param {function=} callback Optional callback fn.
    */
-  public getToken(code: string, opt_callback: RequestCallback) {
+  public getToken(code: string, callback?: BodyResponseCallback) {
     const uri = this._opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       code: code,
@@ -148,7 +148,7 @@ export default class OAuth2Client extends AuthClient {
                 ((new Date()).getTime() + (tokens.expires_in * 1000));
             delete tokens.expires_in;
           }
-          const done = opt_callback || noop;
+          const done = callback || noop;
           done(err, tokens, response);
         });
   }
@@ -156,10 +156,10 @@ export default class OAuth2Client extends AuthClient {
   /**
    * Refreshes the access token.
    * @param {string} refresh_token Existing refresh token.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    * @private
    */
-  protected refreshToken(refresh_token: any, opt_callback: RequestCallback):
+  protected refreshToken(refresh_token: any, callback?: BodyResponseCallback):
       request.Request|void {
     const uri = this._opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
@@ -178,7 +178,7 @@ export default class OAuth2Client extends AuthClient {
                 ((new Date()).getTime() + (tokens.expires_in * 1000));
             delete tokens.expires_in;
           }
-          const done = opt_callback || noop;
+          const done = callback || noop;
           done(err, tokens, response);
         });
   }
@@ -320,29 +320,29 @@ export default class OAuth2Client extends AuthClient {
   /**
    * Revokes the access given to token.
    * @param {string} token The existing token to be revoked.
-   * @param {function=} opt_callback Optional callback fn.
+   * @param {function=} callback Optional callback fn.
    */
-  public revokeToken(token: string, opt_callback: RequestCallback) {
+  public revokeToken(token: string, callback?: BodyResponseCallback) {
     this.transporter.request(
         {
           uri: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
               querystring.stringify({token: token}),
           json: true
         },
-        opt_callback);
+        callback);
   }
 
   /**
    * Revokes access token and clears the credentials object
    * @param  {Function=} callback callback
    */
-  public revokeCredentials(callback: RequestCallback) {
+  public revokeCredentials(callback: BodyResponseCallback) {
     const token = this.credentials.access_token;
     this.credentials = {};
     if (token) {
       this.revokeToken(token, callback);
     } else {
-      callback(new Error('No access token to revoke.'), null, null);
+      callback(new RequestError('No access token to revoke.'), null, null);
     }
   }
 
@@ -355,7 +355,7 @@ export default class OAuth2Client extends AuthClient {
    * @param {function} callback callback.
    * @return {Request} Request object
    */
-  public request(opts?: any, callback?: RequestCallback) {
+  public request(opts?: any, callback?: BodyResponseCallback) {
     /* jshint latedef:false */
 
     // Callbacks will close over this to ensure that we only retry once
@@ -364,7 +364,7 @@ export default class OAuth2Client extends AuthClient {
 
     // Declare authCb upfront to avoid the linter complaining about use before
     // declaration.
-    let authCb: RequestCallback;
+    let authCb: BodyResponseCallback;
 
     // Hook the callback routine to call the _postRequest method.
     const postRequestCb =
@@ -418,7 +418,7 @@ export default class OAuth2Client extends AuthClient {
    * @param  {Function} callback callback function
    * @return {Request}           The request object created
    */
-  public _makeRequest(opts: any, callback: RequestCallback) {
+  public _makeRequest(opts: any, callback: BodyResponseCallback) {
     return this.transporter.request(opts, callback);
   }
 
@@ -432,7 +432,7 @@ export default class OAuth2Client extends AuthClient {
    */
   protected postRequest(
       err: Error, result: any, response: request.RequestResponse,
-      callback: RequestCallback) {
+      callback: BodyResponseCallback) {
     callback(err, result, response);
   }
 
@@ -475,7 +475,7 @@ export default class OAuth2Client extends AuthClient {
    * are PEM encoded certificates.
    * @param {function=} callback Callback supplying the certificates
    */
-  public getFederatedSignonCerts(callback: RequestCallback) {
+  public getFederatedSignonCerts(callback: BodyResponseCallback) {
     const nowTime = (new Date()).getTime();
     if (this._certificateExpiry &&
         (nowTime < this._certificateExpiry.getTime())) {
@@ -492,7 +492,7 @@ export default class OAuth2Client extends AuthClient {
         (err, body, response) => {
           if (err) {
             callback(
-                new Error(
+                new RequestError(
                     'Failed to retrieve verification certificates: ' + err),
                 null, response);
             return;

@@ -52,7 +52,7 @@ export default class IAMAuth {
    */
   public getRequestMetadata(
       unused_uri: string,
-      metadataFn: (err: Error, metadata: RequestMetadata) => void) {
+      metadataFn: (err: Error, metadata?: RequestMetadata) => void) {
     metadataFn(null, {
       'x-goog-iam-authority-selector': this.selector,
       'x-goog-iam-authorization-token': this.token

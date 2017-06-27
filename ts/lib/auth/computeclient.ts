@@ -16,17 +16,16 @@
 
 import * as request from 'request';
 
-import {RequestCallback, RequestError} from './../transporters';
+import {BodyResponseCallback, RequestError} from './../transporters';
 import Auth2Client from './oauth2client';
 
-export interface Tokens {
+export interface Token {
   expires_in: number;
   expiry_date: number;
 }
 
-export interface RefreshTokenCallback {
-  (err: Error, tokens: Tokens, response: request.RequestResponse): void;
-}
+export declare type RefreshTokenCallback =
+    (err: Error, token: Token, response: request.RequestResponse) => void;
 
 export default class Compute extends Auth2Client {
   /**
@@ -63,7 +62,7 @@ export default class Compute extends Auth2Client {
   /**
    * Refreshes the access token.
    * @param {object=} ignored_
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
   protected refreshToken(ignored: any, callback?: RefreshTokenCallback):
       request.Request {
@@ -71,14 +70,14 @@ export default class Compute extends Auth2Client {
     // request for new token
     return this.transporter.request(
         {method: 'GET', uri: uri, json: true}, (err, body, response) => {
-          const tokens = body as Tokens;
-          if (!err && tokens && tokens.expires_in) {
-            tokens.expiry_date =
-                ((new Date()).getTime() + (tokens.expires_in * 1000));
-            delete tokens.expires_in;
+          const token = body as Token;
+          if (!err && token && token.expires_in) {
+            token.expiry_date =
+                ((new Date()).getTime() + (token.expires_in * 1000));
+            delete token.expires_in;
           }
           if (callback) {
-            callback(err, tokens, response);
+            callback(err, token, response);
           }
         });
   }
@@ -93,7 +92,7 @@ export default class Compute extends Auth2Client {
    */
   protected postRequest(
       err: Error, result: any, response: request.RequestResponse,
-      callback: RequestCallback) {
+      callback: BodyResponseCallback) {
     if (response && response.statusCode) {
       let helpfulMessage = null;
       if (response.statusCode === 403) {

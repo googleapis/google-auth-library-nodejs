@@ -20,10 +20,10 @@ import * as request from 'request';
 const pkg = require('../package.json');
 
 export interface Transporter {
-  request(opts: any, opt_callback: RequestCallback): any;
+  request(opts: any, callback?: BodyResponseCallback): any;
 }
 
-export interface RequestCallback {
+export interface BodyResponseCallback {
   (err: Error, body: any, res?: request.RequestResponse): void;
 }
 
@@ -60,26 +60,25 @@ export class DefaultTransporter {
   /**
    * Makes a request with given options and invokes callback.
    * @param {object} opts Options.
-   * @param {Function=} opt_callback Optional callback.
+   * @param {Function=} callback Optional callback.
    * @return {Request} Request object
    */
-  public request(opts: any, opt_callback: RequestCallback) {
+  public request(opts: any, callback?: BodyResponseCallback) {
     opts = this.configure(opts);
-    return request(
-        opts.uri || opts.url, opts, this.wrapCallback_(opt_callback));
+    return request(opts.uri || opts.url, opts, this.wrapCallback_(callback));
   }
 
   /**
    * Wraps the response callback.
-   * @param {Function=} opt_callback Optional callback.
+   * @param {Function=} callback Optional callback.
    * @return {Function} Wrapped callback function.
    * @private
    */
-  private wrapCallback_(opt_callback: RequestCallback):
+  private wrapCallback_(callback?: BodyResponseCallback):
       request.RequestCallback {
-    return (err: Error, res: request.RequestResponse, body: any) => {
+    return (err: RequestError, res: request.RequestResponse, body: any) => {
       if (err || !body) {
-        return opt_callback && opt_callback(err, body, res);
+        return callback && callback(err, body, res);
       }
       // Only and only application/json responses should
       // be decoded back to JSON, but there are cases API back-ends
@@ -111,8 +110,8 @@ export class DefaultTransporter {
         body = null;
       }
 
-      if (opt_callback) {
-        opt_callback(err, body, res);
+      if (callback) {
+        callback(err, body, res);
       }
     };
   }

@@ -19,8 +19,9 @@ import * as fs from 'fs';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as request from 'request';
+
 import GoogleAuth from '../lib/auth/googleauth';
-import {DefaultTransporter, RequestCallback} from '../lib/transporters';
+import {BodyResponseCallback, DefaultTransporter} from '../lib/transporters';
 
 nock.disableNetConnect();
 
@@ -38,7 +39,7 @@ class MockTransporter extends DefaultTransporter {
     this.throw_error = throw_error;
     this.executionCount = 0;
   }
-  public request(options: any, callback: RequestCallback) {
+  public request(options: any, callback: BodyResponseCallback) {
     if (options.method === 'GET' &&
         options.uri === 'http://metadata.google.internal') {
       this.executionCount += 1;
