@@ -18,17 +18,26 @@ import * as querystring from 'querystring';
 import * as request from 'request';
 
 import PemVerifier from './../pemverifier';
+import {BodyResponseCallback, RequestError} from './../transporters';
 import AuthClient from './authclient';
+import Credentials from './credentials';
 import LoginTicket from './loginticket';
 
 const merge = require('lodash.merge');
+
+export interface GenerateAuthUrlOpts {
+  response_type?: string;
+  client_id?: string;
+  redirect_uri?: string;
+  scope?: string[]|string;
+}
 
 const noop = Function.prototype;
 
 export default class OAuth2Client extends AuthClient {
   private _redirectUri: string;
-  private _certificateCache = null;
-  private _certificateExpiry = null;
+  private _certificateCache: any = null;
+  private _certificateExpiry: Date = null;
   protected _opts: any;
   public _clientId: string;
   public _clientSecret: string;
@@ -99,7 +108,7 @@ export default class OAuth2Client extends AuthClient {
    * @param {object=} opt_opts Options.
    * @return {string} URL to consent page.
    */
-  public generateAuthUrl(opt_opts?) {
+  public generateAuthUrl(opt_opts?: GenerateAuthUrlOpts) {
     const opts = opt_opts || {};
     opts.response_type = opts.response_type || 'code';
     opts.client_id = opts.client_id || this._clientId;
@@ -119,9 +128,9 @@ export default class OAuth2Client extends AuthClient {
   /**
    * Gets the access token for the given code.
    * @param {string} code The authorization code.
-   * @param {function=} opt_callback Optional callback fn.
+   * @param {function=} callback Optional callback fn.
    */
-  public getToken(code: string, opt_callback) {
+  public getToken(code: string, callback?: BodyResponseCallback) {
     const uri = this._opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       code: code,
@@ -139,7 +148,7 @@ export default class OAuth2Client extends AuthClient {
                 ((new Date()).getTime() + (tokens.expires_in * 1000));
             delete tokens.expires_in;
           }
-          const done = opt_callback || noop;
+          const done = callback || noop;
           done(err, tokens, response);
         });
   }
@@ -147,10 +156,11 @@ export default class OAuth2Client extends AuthClient {
   /**
    * Refreshes the access token.
    * @param {string} refresh_token Existing refresh token.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    * @private
    */
-  protected refreshToken(refresh_token: any, opt_callback): request.Request {
+  protected refreshToken(refresh_token: any, callback?: BodyResponseCallback):
+      request.Request|void {
     const uri = this._opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       refresh_token: refresh_token,
@@ -168,7 +178,7 @@ export default class OAuth2Client extends AuthClient {
                 ((new Date()).getTime() + (tokens.expires_in * 1000));
             delete tokens.expires_in;
           }
-          const done = opt_callback || noop;
+          const done = callback || noop;
           done(err, tokens, response);
         });
   }
@@ -179,7 +189,10 @@ export default class OAuth2Client extends AuthClient {
    * @deprecated use getRequestMetadata instead.
    * @param {function} callback callback
    */
-  public refreshAccessToken(callback) {
+  public refreshAccessToken(
+      callback:
+          (err: Error, credentials: Credentials,
+           response?: request.RequestResponse) => void) {
     if (!this.credentials.refresh_token) {
       callback(new Error('No refresh token is set.'), null);
       return;
@@ -203,7 +216,10 @@ export default class OAuth2Client extends AuthClient {
    *
    * @param {function} callback Callback to call with the access token
    */
-  public getAccessToken(callback) {
+  public getAccessToken(
+      callback:
+          (err: Error, access_token: string,
+           response?: request.RequestResponse) => void) {
     const expiryDate = this.credentials.expiry_date;
 
     // if no expiry time, assume it's not expired
@@ -250,7 +266,11 @@ export default class OAuth2Client extends AuthClient {
    * @param {string} opt_uri the Uri being authorized
    * @param {function} metadataCb the func described above
    */
-  public getRequestMetadata(opt_uri: string, metadataCb) {
+  public getRequestMetadata(
+      opt_uri: string,
+      metadataCb:
+          (err: Error, headers: any,
+           response?: request.RequestResponse) => void) {
     const thisCreds = this.credentials;
 
     if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
@@ -300,29 +320,29 @@ export default class OAuth2Client extends AuthClient {
   /**
    * Revokes the access given to token.
    * @param {string} token The existing token to be revoked.
-   * @param {function=} opt_callback Optional callback fn.
+   * @param {function=} callback Optional callback fn.
    */
-  public revokeToken(token: string, opt_callback) {
+  public revokeToken(token: string, callback?: BodyResponseCallback) {
     this.transporter.request(
         {
           uri: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
               querystring.stringify({token: token}),
           json: true
         },
-        opt_callback);
+        callback);
   }
 
   /**
    * Revokes access token and clears the credentials object
    * @param  {Function=} callback callback
    */
-  public revokeCredentials(callback) {
+  public revokeCredentials(callback: BodyResponseCallback) {
     const token = this.credentials.access_token;
     this.credentials = {};
     if (token) {
       this.revokeToken(token, callback);
     } else {
-      callback(new Error('No access token to revoke.'), null);
+      callback(new RequestError('No access token to revoke.'), null, null);
     }
   }
 
@@ -335,37 +355,39 @@ export default class OAuth2Client extends AuthClient {
    * @param {function} callback callback.
    * @return {Request} Request object
    */
-  public request(opts?, callback?) {
+  public request(opts?: any, callback?: BodyResponseCallback) {
     /* jshint latedef:false */
 
     // Callbacks will close over this to ensure that we only retry once
     let retry = true;
-    const unusedUri = null;
+    let unusedUri: string = null;
 
     // Declare authCb upfront to avoid the linter complaining about use before
     // declaration.
-    let authCb;
+    let authCb: BodyResponseCallback;
 
     // Hook the callback routine to call the _postRequest method.
-    const postRequestCb = (err, body, resp) => {
-      const statusCode = resp && resp.statusCode;
-      // Automatically retry 401 and 403 responses
-      // if err is set and is unrelated to response
-      // then getting credentials failed, and retrying won't help
-      if (retry && (statusCode === 401 || statusCode === 403) &&
-          (!err || err.code === statusCode)) {
-        /* It only makes sense to retry once, because the retry is intended to
-         * handle expiration-related failures. If refreshing the token does not
-         * fix the failure, then refreshing again probably won't help */
-        retry = false;
-        // Force token refresh
-        this.refreshAccessToken(() => {
-          this.getRequestMetadata(unusedUri, authCb);
-        });
-      } else {
-        this.postRequest(err, body, resp, callback);
-      }
-    };
+    const postRequestCb =
+        (err: Error, body: any, resp: request.RequestResponse) => {
+          const statusCode = resp && resp.statusCode;
+          // Automatically retry 401 and 403 responses
+          // if err is set and is unrelated to response
+          // then getting credentials failed, and retrying won't help
+          if (retry && (statusCode === 401 || statusCode === 403) &&
+              (!err || (err as RequestError).code === statusCode)) {
+            /* It only makes sense to retry once, because the retry is intended
+             * to handle expiration-related failures. If refreshing the token
+             * does not fix the failure, then refreshing again probably won't
+             * help */
+            retry = false;
+            // Force token refresh
+            this.refreshAccessToken(() => {
+              this.getRequestMetadata(unusedUri, authCb);
+            });
+          } else {
+            this.postRequest(err, body, resp, callback);
+          }
+        };
 
     authCb = (err, headers, response) => {
       if (err) {
@@ -396,7 +418,7 @@ export default class OAuth2Client extends AuthClient {
    * @param  {Function} callback callback function
    * @return {Request}           The request object created
    */
-  private _makeRequest(opts, callback) {
+  public _makeRequest(opts: any, callback: BodyResponseCallback) {
     return this.transporter.request(opts, callback);
   }
 
@@ -408,7 +430,9 @@ export default class OAuth2Client extends AuthClient {
    * @param {Function} callback The callback.
    * @private
    */
-  protected postRequest(err, result, response, callback) {
+  protected postRequest(
+      err: Error, result: any, response: request.RequestResponse,
+      callback: BodyResponseCallback) {
     callback(err, result, response);
   }
 
@@ -418,14 +442,16 @@ export default class OAuth2Client extends AuthClient {
    * @param {(string|Array.<string>)} audience The audience to verify against the ID Token
    * @param {function=} callback Callback supplying GoogleLogin if successful
    */
-  public verifyIdToken(idToken: string, audience, callback) {
+  public verifyIdToken(
+      idToken: string, audience: string|string[],
+      callback: (err: Error, login?: LoginTicket) => void) {
     if (!idToken || !callback) {
       throw new Error(
           'The verifyIdToken method requires both ' +
           'an ID Token and a callback method');
     }
 
-    this.getFederatedSignonCerts(((err, certs) => {
+    this.getFederatedSignonCerts(((err: Error, certs: any) => {
                                    if (err) {
                                      callback(err, null);
                                    }
@@ -449,7 +475,7 @@ export default class OAuth2Client extends AuthClient {
    * are PEM encoded certificates.
    * @param {function=} callback Callback supplying the certificates
    */
-  public getFederatedSignonCerts(callback) {
+  public getFederatedSignonCerts(callback: BodyResponseCallback) {
     const nowTime = (new Date()).getTime();
     if (this._certificateExpiry &&
         (nowTime < this._certificateExpiry.getTime())) {
@@ -466,11 +492,11 @@ export default class OAuth2Client extends AuthClient {
         (err, body, response) => {
           if (err) {
             callback(
-                'Failed to retrieve verification certificates: ' + err, null,
-                response);
+                new RequestError(
+                    'Failed to retrieve verification certificates: ' + err),
+                null, response);
             return;
           }
-
           const cacheControl = response.headers['cache-control'];
           let cacheAge = -1;
           if (cacheControl) {
@@ -501,8 +527,8 @@ export default class OAuth2Client extends AuthClient {
    * @return {LoginTicket} Returns a LoginTicket on verification.
    */
   public verifySignedJwtWithCerts(
-      jwt: string, certs: any, requiredAudience: string|string[], issuers?,
-      maxExpiry?: number) {
+      jwt: string, certs: any, requiredAudience: string|string[],
+      issuers?: string[], maxExpiry?: number) {
     if (!maxExpiry) {
       maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
     }
@@ -612,7 +638,7 @@ export default class OAuth2Client extends AuthClient {
    * @param {string} b64String The string to base64 decode
    * @return {string} The decoded string
    */
-  public decodeBase64(b64String) {
+  public decodeBase64(b64String: string) {
     const buffer = new Buffer(b64String, 'base64');
     return buffer.toString('utf8');
   }

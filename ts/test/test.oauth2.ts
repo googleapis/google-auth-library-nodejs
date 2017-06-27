@@ -887,7 +887,7 @@ describe('OAuth2 client', () => {
   });
 
   describe('request()', () => {
-    let scope;
+    let scope: nock.Scope;
 
     beforeEach(() => {
       scope = nock('https://accounts.google.com')

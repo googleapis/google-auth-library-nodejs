@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 import * as nock from 'nock';
-import {DefaultTransporter} from '../lib/transporters';
+import {DefaultTransporter, RequestError} from '../lib/transporters';
 
 // tslint:disable-next-line
 const version = require('../package.json').version;
@@ -66,8 +66,8 @@ describe('Transporters', () => {
         },
         (error) => {
           assert(error.message === 'Error 1\nError 2');
-          assert.equal(error.code, 500);
-          assert.equal(error.errors.length, 2);
+          assert.equal((error as RequestError).code, 500);
+          assert.equal((error as RequestError).errors.length, 2);
           done();
         });
   });

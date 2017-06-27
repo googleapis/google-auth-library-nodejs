@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+export interface RequestMetadata {
+  'x-goog-iam-authority-selector': string;
+  'x-goog-iam-authorization-token': string;
+}
+
 export default class IAMAuth {
   /**
    * IAM credentials.
@@ -45,7 +50,9 @@ export default class IAMAuth {
    * @param {function} metadataFn a callback invoked with object
    *                   containing request metadata.
    */
-  public getRequestMetadata(unused_uri: string, metadataFn) {
+  public getRequestMetadata(
+      unused_uri: string,
+      metadataFn: (err: Error, metadata?: RequestMetadata) => void) {
     metadataFn(null, {
       'x-goog-iam-authority-selector': this.selector,
       'x-goog-iam-authorization-token': this.token

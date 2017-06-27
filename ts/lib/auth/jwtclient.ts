@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import * as gToken from 'gtoken';
-
+const gToken = require('gtoken');
+import Credentials from './credentials';
 import JWTAccess from './jwtaccess';
 import Auth2Client from './oauth2client';
+import * as stream from 'stream';
+import * as request from 'request';
 
 const isString = require('lodash.isstring');
-
 const noop = Function.prototype;
 
 export default class JWT extends Auth2Client {
@@ -64,7 +65,7 @@ export default class JWT extends Auth2Client {
    * @param {(string|array)=} scopes List of requested scopes or a single scope.
    * @return {object} The cloned instance.
    */
-  public createScoped(scopes: string|string[]) {
+  public createScoped(scopes?: string|string[]) {
     return new JWT(this.email, this.keyFile, this.key, scopes, this.subject);
   }
 
@@ -74,7 +75,8 @@ export default class JWT extends Auth2Client {
    * @param {string} opt_uri the URI being authorized.
    * @param {function} metadataCb
    */
-  public getRequestMetadata(opt_uri: string, metadataCb) {
+  public getRequestMetadata(
+      opt_uri: string, metadataCb: (err: Error, result?: any) => void) {
     if (this.createScopedRequired() && opt_uri) {
       // no scopes have been set, but a uri has been provided.  Use JWTAccess
       // credentials.
@@ -105,10 +107,10 @@ export default class JWT extends Auth2Client {
 
   /**
    * Get the initial access token using gToken.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  public authorize(opt_callback?) {
-    const done = opt_callback || noop;
+  public authorize(callback?: (err: Error, result?: Credentials) => void) {
+    const done = callback || noop;
     this.refreshToken(null, (err, result) => {
       if (!err) {
         this.credentials = result;
@@ -123,16 +125,18 @@ export default class JWT extends Auth2Client {
   /**
    * Refreshes the access token.
    * @param {object=} ignored_
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    * @private
    */
-  public refreshToken(ignored_, opt_callback) {
-    const done = opt_callback || noop;
+  public refreshToken(
+      ignored_: any,
+      callback?: (err: Error, credentials?: Credentials) => void) {
+    const done = callback || noop;
     return this._createGToken((err, gToken) => {
       if (err) {
         return done(err);
       } else {
-        return gToken.getToken((err2, token) => {
+        return gToken.getToken((err2: Error, token: string) => {
           return done(err2, {
             access_token: token,
             token_type: 'Bearer',
@@ -146,10 +150,10 @@ export default class JWT extends Auth2Client {
   /**
    * Create a JWT credentials instance using the given input options.
    * @param {object=} json The input object.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  public fromJSON(json, opt_callback) {
-    const done = opt_callback || noop;
+  public fromJSON(json: any, callback?: (err?: Error) => void) {
+    const done = callback || noop;
     if (!json) {
       done(new Error(
           'Must pass in a JSON object containing the service account auth settings.'));
@@ -175,10 +179,10 @@ export default class JWT extends Auth2Client {
   /**
    * Create a JWT credentials instance using the given input stream.
    * @param {object=} stream The input stream.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  public fromStream(stream, opt_callback) {
-    const done = opt_callback || noop;
+  public fromStream(stream: stream.Readable, callback: (err: Error) => void) {
+    const done = callback || noop;
     if (!stream) {
       setImmediate(() => {
         done(new Error(
@@ -194,7 +198,7 @@ export default class JWT extends Auth2Client {
     stream.on('end', () => {
       try {
         const data = JSON.parse(s);
-        this.fromJSON(data, opt_callback);
+        this.fromJSON(data, callback);
       } catch (err) {
         done(err);
       }
@@ -204,11 +208,11 @@ export default class JWT extends Auth2Client {
   /**
    * Creates a JWT credentials instance using an API Key for authentication.
    * @param {string} apiKey - the API Key in string form.
-   * @param {function=} opt_callback - Optional callback to be invoked after
+   * @param {function=} callback - Optional callback to be invoked after
    *  initialization.
    */
-  public fromAPIKey(apiKey, opt_callback) {
-    const done = opt_callback || noop;
+  public fromAPIKey(apiKey: string, callback?: (err: Error) => void) {
+    const done = callback || noop;
     if (!isString(apiKey)) {
       setImmediate(() => {
         done(new Error('Must provide an API Key string.'));
@@ -224,7 +228,7 @@ export default class JWT extends Auth2Client {
    * @param {function=} callback Callback.
    * @private
    */
-  private _createGToken(callback) {
+  private _createGToken(callback: (err: Error, token: any) => void) {
     if (this.gtoken) {
       return callback(null, this.gtoken);
     } else {

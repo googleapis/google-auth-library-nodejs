@@ -24,7 +24,7 @@
     "jws": "^3.1.4",
     "lodash.isstring": "^4.0.1",
     "lodash.merge": "^4.6.0",
-    "request": "^2.74.0"
+    "request": "^2.81.0"
   },
   "devDependencies": {
     "@types/lodash.isstring": "^4.0.2",
@@ -50,10 +50,11 @@
     "source-map-support": "^0.4.14",
     "tslint": "^5.1.0",
     "typedoc": "^0.5.10",
-    "typescript": "^2.2.2"
+    "typescript": "^2.3.4"
   },
   "scripts": {
     "check-format": "gulp test.check-format",
+    "format": "gulp format",
     "lint": "tslint --type-check -p tsconfig.json -c tslint.json ts/**/*.ts",
     "mocha": "mocha --reporter spec --timeout 4000 --require source-map-support/register",
     "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md ts/lib",

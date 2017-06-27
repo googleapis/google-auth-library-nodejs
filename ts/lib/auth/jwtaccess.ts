@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-import * as jws from 'jws';
+const jws = require('jws');
+import * as stream from 'stream';
+
 const noop = Function.prototype;
 
 export default class JWTAccess {
@@ -55,7 +57,8 @@ export default class JWTAccess {
    * @param {function} metadataCb a callback invoked with the jwt
    *                   request metadata.
    */
-  public getRequestMetadata(authURI: string, metadataCb) {
+  public getRequestMetadata(
+      authURI: string, metadataCb: (err: Error, headers?: any) => void) {
     const iat = Math.floor(new Date().getTime() / 1000);
     const exp = iat + 3600;  // 3600 seconds = 1 hour
 
@@ -83,10 +86,10 @@ export default class JWTAccess {
   /**
    * Create a JWTAccess credentials instance using the given input options.
    * @param {object=} json The input object.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  public fromJSON(json, opt_callback) {
-    const done = opt_callback || noop;
+  public fromJSON(json: any, callback?: (err: Error) => void) {
+    const done = callback || noop;
     if (!json) {
       done(new Error(
           'Must pass in a JSON object containing the service account auth settings.'));
@@ -112,10 +115,10 @@ export default class JWTAccess {
   /**
    * Create a JWTAccess credentials instance using the given input stream.
    * @param {object=} stream The input stream.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  public fromStream(stream, opt_callback) {
-    const done = opt_callback || noop;
+  public fromStream(stream: stream.Readable, callback?: (err: Error) => void) {
+    const done = callback || noop;
     if (!stream) {
       setImmediate(() => {
         done(new Error(
@@ -131,7 +134,7 @@ export default class JWTAccess {
     stream.on('end', () => {
       try {
         const data = JSON.parse(s);
-        this.fromJSON(data, opt_callback);
+        this.fromJSON(data, callback);
       } catch (err) {
         done(err);
       }
@@ -147,7 +150,8 @@ export default class JWTAccess {
    * @param  {object}   assertion   The assertion to sign
    * @param  {Function} signedJwtFn  fn(err, signedJWT)
    */
-  private _signJWT(assertion, signedJwtFn) {
+  private _signJWT(
+      assertion: any, signedJwtFn: (err: Error, signedJwt?: any) => void) {
     try {
       return signedJwtFn(null, jws.sign(assertion));
     } catch (err) {

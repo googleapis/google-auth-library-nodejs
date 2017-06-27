@@ -16,14 +16,17 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import * as jws from 'jws';
-import * as keypair from 'keypair';
+const jws = require('jws');
+const keypair = require('keypair');
 import * as nock from 'nock';
 
 import GoogleAuth from '../lib/auth/googleauth';
 import JWT from '../lib/auth/jwtclient';
 
 const noop = Function.prototype;
+interface TokenCallback {
+  (err: Error, result: string): void;
+}
 
 nock.disableNetConnect();
 
@@ -59,7 +62,7 @@ describe('JWT auth client', () => {
       const jwt = new auth.JWT(
           'foo@serviceaccount.com', '/path/to/key.pem', null,
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
-      jwt.gToken = (opts) => {
+      jwt.gToken = (opts: any) => {
         assert.equal('foo@serviceaccount.com', opts.iss);
         assert.equal('/path/to/key.pem', opts.keyFile);
         assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
@@ -67,7 +70,7 @@ describe('JWT auth client', () => {
         return {
           key: 'private-key-data',
           iss: 'foo@subjectaccount.com',
-          getToken: (opt_callback) => {
+          getToken: (opt_callback: Function) => {
             return opt_callback(null, 'initial-access-token');
           }
         };
@@ -87,7 +90,7 @@ describe('JWT auth client', () => {
           'foo@serviceaccount.com', '/path/to/key.pem', null, 'http://foo',
           'bar@subjectaccount.com');
 
-      jwt.gToken = (opts) => {
+      jwt.gToken = (opts: any) => {
         assert.equal('http://foo', opts.scope);
         done();
         return {getToken: noop};
@@ -112,7 +115,7 @@ describe('JWT auth client', () => {
 
         const want = 'abc123';
         jwt.gtoken = {
-          getToken: (callback) => {
+          getToken: (callback: (err: Error, want: string) => void) => {
             return callback(null, want);
           }
         };
@@ -142,14 +145,13 @@ describe('JWT auth client', () => {
 
         const wanted_token = 'abc123';
         jwt.gtoken = {
-          getToken: (callback) => {
+          getToken: (callback: (err: Error, wanted_token: string) => void) => {
             return callback(null, wanted_token);
           }
         };
         const want = 'Bearer ' + wanted_token;
         const retValue = 'dummy';
-        const unusedUri = null;
-        const res = jwt.getRequestMetadata(unusedUri, (err, got) => {
+        const res = jwt.getRequestMetadata(null, (err, got) => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.strictEqual(
               want, got.Authorization,
@@ -204,7 +206,7 @@ describe('JWT auth client', () => {
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
       jwt.gtoken = {
-        getToken: (callback) => {
+        getToken: (callback: (err: Error, result: string) => void) => {
           callback(null, 'abc123');
         }
       };
@@ -228,7 +230,7 @@ describe('JWT auth client', () => {
       };
 
       jwt.gtoken = {
-        getToken: (callback) => {
+        getToken: (callback: TokenCallback) => {
           return callback(null, 'abc123');
         }
       };
@@ -254,7 +256,7 @@ describe('JWT auth client', () => {
       };
 
       jwt.gtoken = {
-        getToken: (callback) => {
+        getToken: (callback: TokenCallback) => {
           return callback(null, 'abc123');
         }
       };
@@ -330,7 +332,7 @@ describe('JWT auth client', () => {
     const dateInMillis = (new Date()).getTime();
 
     jwt.gtoken = {
-      getToken: (callback) => {
+      getToken: (callback: TokenCallback) => {
         return callback(null, 'token');
       },
       expires_at: dateInMillis
@@ -346,7 +348,7 @@ describe('JWT auth client', () => {
 
 describe('.createScoped', () => {
   // set up the auth module.
-  let auth;
+  let auth: GoogleAuth;
   beforeEach(() => {
     auth = new GoogleAuth();
   });
@@ -487,8 +489,8 @@ describe('.createScopedRequired', () => {
 
 describe('.fromJson', () => {
   // set up the test json and the jwt instance being tested.
-  let jwt;
-  let json;
+  let jwt: JWT;
+  let json: any;
   beforeEach(() => {
     json = createJSON();
     const auth = new GoogleAuth();
@@ -625,7 +627,7 @@ describe('.fromAPIKey', () => {
       });
     });
     it('should error with invalid api key type', (done) => {
-      jwt.fromAPIKey({key: KEY}, (err) => {
+      jwt.fromAPIKey({key: KEY} as any, (err) => {
         assert(err instanceof Error);
         done();
       });

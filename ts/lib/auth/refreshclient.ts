@@ -15,7 +15,9 @@
  */
 
 import * as request from 'request';
+import * as stream from 'stream';
 
+import {BodyResponseCallback} from './../transporters';
 import Auth2Client from './oauth2client';
 
 export default class UserRefreshClient extends Auth2Client {
@@ -36,7 +38,7 @@ export default class UserRefreshClient extends Auth2Client {
   }
 
   // Executes the given callback if it is not null.
-  private callback(c, err?, res?) {
+  private callback(c: Function, err?: Error, res?: request.RequestResponse) {
     if (c) {
       c(err, res);
     }
@@ -45,51 +47,52 @@ export default class UserRefreshClient extends Auth2Client {
   /**
    * Refreshes the access token.
    * @param {object=} ignored_
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    * @private
    */
-  protected refreshToken(ignored_, opt_callback): request.Request {
-    return super.refreshToken(this._refreshToken, opt_callback);
+  protected refreshToken(ignored_: any, callback?: BodyResponseCallback):
+      request.Request|void {
+    return super.refreshToken(this._refreshToken, callback);
   }
 
   /**
    * Create a UserRefreshClient credentials instance using the given input
    * options.
    * @param {object=} json The input object.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  public fromJSON(json, opt_callback) {
+  public fromJSON(json: any, callback?: (err?: Error) => void) {
     if (!json) {
       this.callback(
-          opt_callback,
+          callback,
           new Error(
               'Must pass in a JSON object containing the user refresh token'));
       return;
     }
     if (json.type !== 'authorized_user') {
       this.callback(
-          opt_callback,
+          callback,
           new Error(
               'The incoming JSON object does not have the "authorized_user" type'));
       return;
     }
     if (!json.client_id) {
       this.callback(
-          opt_callback,
+          callback,
           new Error(
               'The incoming JSON object does not contain a client_id field'));
       return;
     }
     if (!json.client_secret) {
       this.callback(
-          opt_callback,
+          callback,
           new Error(
               'The incoming JSON object does not contain a client_secret field'));
       return;
     }
     if (!json.refresh_token) {
       this.callback(
-          opt_callback,
+          callback,
           new Error(
               'The incoming JSON object does not contain a refresh_token field'));
       return;
@@ -98,20 +101,20 @@ export default class UserRefreshClient extends Auth2Client {
     this._clientSecret = json.client_secret;
     this._refreshToken = json.refresh_token;
     this.credentials.refresh_token = json.refresh_token;
-    this.callback(opt_callback);
+    this.callback(callback);
   }
 
   /**
    * Create a UserRefreshClient credentials instance using the given input
    * stream.
    * @param {object=} stream The input stream.
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  public fromStream(stream, opt_callback) {
+  public fromStream(stream: stream.Readable, callback?: (err?: Error) => void) {
     if (!stream) {
       setImmediate(() => {
         this.callback(
-            opt_callback,
+            callback,
             new Error(
                 'Must pass in a stream containing the user refresh token.'));
       });
@@ -125,9 +128,9 @@ export default class UserRefreshClient extends Auth2Client {
     stream.on('end', () => {
       try {
         const data = JSON.parse(s);
-        this.fromJSON(data, opt_callback);
+        this.fromJSON(data, callback);
       } catch (err) {
-        this.callback(opt_callback, err);
+        this.callback(callback, err);
       }
     });
   }

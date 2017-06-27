@@ -16,7 +16,16 @@
 
 import * as request from 'request';
 
+import {BodyResponseCallback, RequestError} from './../transporters';
 import Auth2Client from './oauth2client';
+
+export interface Token {
+  expires_in: number;
+  expiry_date: number;
+}
+
+export declare type RefreshTokenCallback =
+    (err: Error, token: Token, response: request.RequestResponse) => void;
 
 export default class Compute extends Auth2Client {
   /**
@@ -53,20 +62,22 @@ export default class Compute extends Auth2Client {
   /**
    * Refreshes the access token.
    * @param {object=} ignored_
-   * @param {function=} opt_callback Optional callback.
+   * @param {function=} callback Optional callback.
    */
-  protected refreshToken(ignored, callback?): request.Request {
+  protected refreshToken(ignored: any, callback?: RefreshTokenCallback):
+      request.Request {
     const uri = this._opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
     // request for new token
     return this.transporter.request(
-        {method: 'GET', uri: uri, json: true}, (err, tokens, response) => {
-          if (!err && tokens && tokens.expires_in) {
-            tokens.expiry_date =
-                ((new Date()).getTime() + (tokens.expires_in * 1000));
-            delete tokens.expires_in;
+        {method: 'GET', uri: uri, json: true}, (err, body, response) => {
+          const token = body as Token;
+          if (!err && token && token.expires_in) {
+            token.expiry_date =
+                ((new Date()).getTime() + (token.expires_in * 1000));
+            delete token.expires_in;
           }
           if (callback) {
-            callback(err, tokens, response);
+            callback(err, token, response);
           }
         });
   }
@@ -79,7 +90,9 @@ export default class Compute extends Auth2Client {
    * @param {object} response The HTTP response.
    * @param {Function} callback The callback.
    */
-  protected postRequest(err, result, response, callback) {
+  protected postRequest(
+      err: Error, result: any, response: request.RequestResponse,
+      callback: BodyResponseCallback) {
     if (response && response.statusCode) {
       let helpfulMessage = null;
       if (response.statusCode === 403) {
@@ -102,7 +115,7 @@ export default class Compute extends Auth2Client {
           err.message = helpfulMessage;
         } else {
           err = new Error(helpfulMessage);
-          err.code = response.statusCode;
+          (err as RequestError).code = response.statusCode;
         }
       }
     }

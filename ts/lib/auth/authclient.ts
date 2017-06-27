@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as request from 'request';
+
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import Credentials from './credentials';
@@ -26,6 +28,6 @@ abstract class AuthClient {
    * Provides an alternative request
    * implementations with auth credentials.
    */
-  public abstract request();
+  public abstract request(): request.Request|void;
 }
 export default AuthClient;

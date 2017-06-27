@@ -18,9 +18,10 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as nock from 'nock';
 import * as path from 'path';
+import * as request from 'request';
 
 import GoogleAuth from '../lib/auth/googleauth';
-import {DefaultTransporter} from '../lib/transporters';
+import {BodyResponseCallback, DefaultTransporter} from '../lib/transporters';
 
 nock.disableNetConnect();
 
@@ -29,7 +30,7 @@ class MockTransporter extends DefaultTransporter {
   public isGCE: boolean;
   public throw_error: boolean;
   public executionCount: number;
-  constructor(simulate_gce, throw_error?) {
+  constructor(simulate_gce: boolean, throw_error?: boolean) {
     super();
     this.isGCE = false;
     if (simulate_gce) {
@@ -38,18 +39,19 @@ class MockTransporter extends DefaultTransporter {
     this.throw_error = throw_error;
     this.executionCount = 0;
   }
-  public request(options, callback) {
+  public request(options: any, callback: BodyResponseCallback) {
     if (options.method === 'GET' &&
         options.uri === 'http://metadata.google.internal') {
       this.executionCount += 1;
       let err = null;
-      const response = {headers: {}};
+      const response: any = {headers: {}};
       if (this.throw_error) {
         err = new Error('blah');
       } else if (this.isGCE) {
         response.headers['metadata-flavor'] = 'Google';
       }
-      return callback(err, null, response);
+      callback(err, null, response as request.RequestResponse);
+      return null as request.Request;
     } else {
       throw new Error('unexpected request');
     }
@@ -77,41 +79,42 @@ function createRefreshJSON() {
 }
 
 // Matches the ending of a string.
-function stringEndsWith(str, suffix) {
+function stringEndsWith(str: string, suffix: string) {
   return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
 // Simulates a path join.
-function pathJoin(item1, item2) {
+function pathJoin(item1: string, item2: string) {
   return item1 + ':' + item2;
 }
 
 // Returns the value.
-function returns(value) {
+function returns(value: any) {
   return () => {
     return value;
   };
 }
 
-function callsBack(value) {
-  return (callback) => {
+function callsBack(value: any) {
+  return (callback: Function) => {
     callback(value);
   };
 }
 
 // Blocks the GOOGLE_APPLICATION_CREDENTIALS by default. This is necessary in
 // case it is actually set on the host machine executing the test.
-function blockGoogleApplicationCredentialEnvironmentVariable(auth) {
+function blockGoogleApplicationCredentialEnvironmentVariable(auth: any) {
   return insertEnvironmentVariableIntoAuth(
       auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
 }
 
 // Intercepts the specified environment variable, returning the specified value.
 function insertEnvironmentVariableIntoAuth(
-    auth, environmentVariableName, environmentVariableValue) {
+    auth: any, environmentVariableName: string,
+    environmentVariableValue: string) {
   const originalGetEnvironmentVariableFunction = auth._getEnv;
 
-  auth._getEnv = (name) => {
+  auth._getEnv = (name: string) => {
     if (name === environmentVariableName) {
       return environmentVariableValue;
     }
@@ -121,10 +124,11 @@ function insertEnvironmentVariableIntoAuth(
 }
 
 // Intercepts the specified file path and inserts the mock file path.
-function insertWellKnownFilePathIntoAuth(auth, filePath, mockFilePath) {
+function insertWellKnownFilePathIntoAuth(
+    auth: any, filePath: string, mockFilePath: string) {
   const originalMockWellKnownFilePathFunction = auth._mockWellKnownFilePath;
 
-  auth._mockWellKnownFilePath = (path) => {
+  auth._mockWellKnownFilePath = (path: string) => {
     if (path === filePath) {
       return mockFilePath;
     }
@@ -137,7 +141,7 @@ function insertWellKnownFilePathIntoAuth(auth, filePath, mockFilePath) {
 const noop = () => {};
 
 // Executes the doneCallback after the nTH call.
-function doneWhen(doneCallback, count) {
+function doneWhen(doneCallback: Function, count: number) {
   let i = 0;
 
   return () => {
@@ -166,7 +170,7 @@ describe('GoogleAuth', () => {
       const API_KEY = 'test-123';
       const STUB_PROJECT = 'my-awesome-project';
       describe('Exception behaviour', () => {
-        let auth;
+        let auth: GoogleAuth;
         before(() => {
           auth = new GoogleAuth();
         });
@@ -497,7 +501,7 @@ describe('GoogleAuth', () => {
 
     it('should error on non-string file path', (done) => {
       const auth = new GoogleAuth();
-      auth._getApplicationCredentialsFromFilePath(2, (err) => {
+      auth._getApplicationCredentialsFromFilePath(2 as any, (err: Error) => {
         assert.equal(true, err instanceof Error);
         done();
       });
@@ -957,7 +961,7 @@ describe('GoogleAuth', () => {
 
          // Create a function which will set up a GoogleAuth instance to match
          // on an environment variable json file, but not on anything else.
-         const setUpAuthForEnvironmentVariable = (creds) => {
+         const setUpAuthForEnvironmentVariable = (creds: any) => {
            insertEnvironmentVariableIntoAuth(
                creds, 'GCLOUD_PROJECT', projectId);
 
@@ -1002,7 +1006,7 @@ describe('GoogleAuth', () => {
                assert.equal(_projectId3, projectId);
 
                // Make sure we get a new (non-cached) projectId instance back.
-               assert.equal(_projectId3.specialTestBit, undefined);
+               assert.equal((_projectId3 as any).specialTestBit, undefined);
 
                // Step 3 has completed.
                step();
@@ -1070,7 +1074,7 @@ describe('GoogleAuth', () => {
          const auth = new GoogleAuth();
          blockGoogleApplicationCredentialEnvironmentVariable(auth);
          auth._getSDKDefaultProjectId = (callback) => {
-           callback(null, JSON.stringify({core: {project: projectId}}));
+           callback(null, JSON.stringify({core: {project: projectId}}), null);
          };
 
          // Execute.
@@ -1087,12 +1091,13 @@ describe('GoogleAuth', () => {
          const auth = new GoogleAuth();
          blockGoogleApplicationCredentialEnvironmentVariable(auth);
          auth._getSDKDefaultProjectId = (callback) => {
-           callback(null, '');
+           callback(null, '', null);
          };
          auth.transporter = {
            request: (reqOpts, callback) => {
              return callback(
-                 null, projectId, {body: projectId, statusCode: 200});
+                 null, projectId,
+                 {body: projectId, statusCode: 200} as request.RequestResponse);
            },
          };
 
@@ -1115,7 +1120,7 @@ describe('GoogleAuth', () => {
 
          // Create a function which will set up a GoogleAuth instance to match
          // on an environment variable json file, but not on anything else.
-         const setUpAuthForEnvironmentVariable = (creds) => {
+         const setUpAuthForEnvironmentVariable = (creds: any) => {
            insertEnvironmentVariableIntoAuth(
                creds, 'GOOGLE_APPLICATION_CREDENTIALS',
                './ts/test/fixtures/private.json');

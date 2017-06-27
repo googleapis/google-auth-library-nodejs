@@ -8,3 +8,4 @@ docs/
 npm-debug.log
 coverage
 *.js.map
+yarn-error.log

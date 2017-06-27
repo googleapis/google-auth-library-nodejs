@@ -16,8 +16,9 @@
 
 import * as assert from 'assert';
 import * as nock from 'nock';
-
+import * as request from 'request';
 import GoogleAuth from '../lib/auth/googleauth';
+import Compute from './../lib/auth/computeclient';
 
 nock.disableNetConnect();
 
@@ -34,7 +35,7 @@ describe('Initial credentials', () => {
 
 describe('Compute auth client', () => {
   // set up compute client.
-  let compute;
+  let compute: Compute;
   beforeEach(() => {
     const auth = new GoogleAuth();
     compute = new auth.Compute();
@@ -99,12 +100,15 @@ describe('Compute auth client', () => {
          compute.credentials = {
            refresh_token: 'hello',
            access_token: 'goodbye',
-           expiry_date: new Date(9999, 1, 1)
+           expiry_date: (new Date(9999, 1, 1)).getTime()
          };
 
          // Mock the _makeRequest method to return a 403.
          compute._makeRequest = (opts, callback) => {
-           callback(null, 'a weird response body', {statusCode: 403});
+           callback(
+               null, 'a weird response body',
+               {statusCode: 403} as request.RequestResponse);
+           return null as request.Request;
          };
 
          compute.request({}, (err, result, response) => {
@@ -124,12 +128,15 @@ describe('Compute auth client', () => {
          compute.credentials = {
            refresh_token: 'hello',
            access_token: 'goodbye',
-           expiry_date: new Date(9999, 1, 1)
+           expiry_date: (new Date(9999, 1, 1)).getTime()
          };
 
          // Mock the _makeRequest method to return a 404.
          compute._makeRequest = (opts, callback) => {
-           callback(null, 'a weird response body', {statusCode: 404});
+           callback(
+               null, 'a weird response body',
+               {statusCode: 404} as request.RequestResponse);
+           return null as request.Request;
          };
 
          compute.request({}, (err, result, response) => {
