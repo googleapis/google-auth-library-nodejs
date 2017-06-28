@@ -297,8 +297,8 @@ export default class OAuth2Client extends AuthClient {
 
     return this.refreshToken(
         thisCreds.refresh_token, (err, tokens, response) => {
-          // If the error code is 403 or 404, fall-through to replace the error
-          // message. Otherwise, return the error.
+          // If the error code is 403 or 404, go to the else so the error
+          // message is replaced. Otherwise, return the error.
           if (err && (err as RequestError).code != 403 &&
               (err as RequestError).code != 404) {
             return metadataCb(err, null, response);
