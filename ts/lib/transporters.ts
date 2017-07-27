@@ -103,8 +103,8 @@ export class DefaultTransporter {
           (err as RequestError).code = body.error.code || res.statusCode;
         }
         body = null;
-      } else if (res.statusCode >= 500) {
-        // Consider all '500 responses' errors.
+      } else if (res.statusCode >= 400) {
+        // Consider all 4xx and 5xx responses errors.
         err = new RequestError(body);
         (err as RequestError).code = res.statusCode;
         body = null;

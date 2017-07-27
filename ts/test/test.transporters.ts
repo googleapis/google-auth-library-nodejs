@@ -71,4 +71,18 @@ describe('Transporters', () => {
           done();
         });
   });
+
+  it('should return an error for a 404 response', (done) => {
+    nock('http://example.com').get('/api').reply(404, 'Not found');
+
+    transporter.request(
+        {
+          uri: 'http://example.com/api',
+        },
+        (error) => {
+          assert(error.message === 'Not found');
+          assert.equal((error as RequestError).code, 404);
+          done();
+        });
+  });
 });
