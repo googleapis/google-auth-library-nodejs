@@ -30,6 +30,7 @@ export interface GenerateAuthUrlOpts {
   client_id?: string;
   redirect_uri?: string;
   scope?: string[]|string;
+  state?: string;
 }
 
 const noop = Function.prototype;
