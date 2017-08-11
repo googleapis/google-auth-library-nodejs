@@ -55,7 +55,7 @@
   "files": [
     "LICENSE",
     "README.md",
-    "lib",
+    "lib/**/*.js",
     "package.json",
     "types/lib"
   ],
