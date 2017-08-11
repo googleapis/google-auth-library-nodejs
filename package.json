@@ -52,6 +52,13 @@
     "typedoc": "^0.5.10",
     "typescript": "^2.3.4"
   },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "lib/**/*.js",
+    "package.json",
+    "types/lib"
+  ],
   "scripts": {
     "check-format": "gulp test.check-format",
     "format": "gulp format",
