@@ -16,7 +16,7 @@
 
 import * as crypto from 'crypto';
 
-export default class PemVerifier {
+export class PemVerifier {
   public verify(
       pubkey: string, data: string|Buffer, signature: string,
       encoding: crypto.HexBase64Latin1Encoding) {

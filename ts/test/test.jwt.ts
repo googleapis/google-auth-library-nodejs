@@ -20,8 +20,8 @@ const jws = require('jws');
 const keypair = require('keypair');
 import * as nock from 'nock';
 
-import GoogleAuth from '../lib/auth/googleauth';
-import JWT from '../lib/auth/jwtclient';
+import {GoogleAuth} from '../lib/auth/googleauth';
+import {JWT} from '../lib/auth/jwtclient';
 
 const noop = Function.prototype;
 interface TokenCallback {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export default class LoginTicket {
+export class LoginTicket {
   private static readonly USER_ATTR = 'sub';
   private _envelope: string;
   private _payload: any;

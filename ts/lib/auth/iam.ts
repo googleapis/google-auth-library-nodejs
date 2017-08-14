@@ -19,7 +19,7 @@ export interface RequestMetadata {
   'x-goog-iam-authorization-token': string;
 }
 
-export default class IAMAuth {
+export class IAMAuth {
   /**
    * IAM credentials.
    *

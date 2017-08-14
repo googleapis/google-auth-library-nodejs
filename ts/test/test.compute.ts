@@ -17,8 +17,8 @@
 import * as assert from 'assert';
 import * as nock from 'nock';
 import * as request from 'request';
-import GoogleAuth from '../lib/auth/googleauth';
-import Compute from './../lib/auth/computeclient';
+import {GoogleAuth} from '../lib/auth/googleauth';
+import {Compute} from './../lib/auth/computeclient';
 
 nock.disableNetConnect();
 

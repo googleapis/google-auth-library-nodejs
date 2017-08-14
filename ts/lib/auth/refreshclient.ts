@@ -18,9 +18,9 @@ import * as request from 'request';
 import * as stream from 'stream';
 
 import {BodyResponseCallback} from './../transporters';
-import Auth2Client from './oauth2client';
+import {OAuth2Client} from './oauth2client';
 
-export default class UserRefreshClient extends Auth2Client {
+export class UserRefreshClient extends OAuth2Client {
   public _refreshToken: string;
 
   /**

@@ -19,7 +19,7 @@ import * as stream from 'stream';
 
 const noop = Function.prototype;
 
-export default class JWTAccess {
+export class JWTAccess {
   public email: string;
   public key: string;
   public projectId: string;

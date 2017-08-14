@@ -17,11 +17,11 @@
 import * as querystring from 'querystring';
 import * as request from 'request';
 
-import PemVerifier from './../pemverifier';
+import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback, RequestError} from './../transporters';
-import AuthClient from './authclient';
-import Credentials from './credentials';
-import LoginTicket from './loginticket';
+import {AuthClient} from './authclient';
+import {Credentials} from './credentials';
+import {LoginTicket} from './loginticket';
 
 const merge = require('lodash.merge');
 
@@ -34,7 +34,7 @@ export interface GenerateAuthUrlOpts {
 
 const noop = Function.prototype;
 
-export default class OAuth2Client extends AuthClient {
+export class OAuth2Client extends AuthClient {
   private _redirectUri: string;
   private _certificateCache: any = null;
   private _certificateExpiry: Date = null;

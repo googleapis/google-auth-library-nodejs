@@ -20,7 +20,7 @@ import * as nock from 'nock';
 import * as path from 'path';
 import * as request from 'request';
 
-import GoogleAuth from '../lib/auth/googleauth';
+import {GoogleAuth} from '../lib/auth/googleauth';
 import {BodyResponseCallback, DefaultTransporter} from '../lib/transporters';
 
 nock.disableNetConnect();
