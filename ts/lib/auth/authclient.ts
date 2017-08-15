@@ -18,9 +18,9 @@ import * as request from 'request';
 
 import {DefaultTransporter, Transporter} from '../transporters';
 
-import Credentials from './credentials';
+import {Credentials} from './credentials';
 
-abstract class AuthClient {
+export abstract class AuthClient {
   public transporter = new DefaultTransporter();
   public credentials: Credentials;
 
@@ -30,4 +30,3 @@ abstract class AuthClient {
    */
   public abstract request(): request.Request|void;
 }
-export default AuthClient;

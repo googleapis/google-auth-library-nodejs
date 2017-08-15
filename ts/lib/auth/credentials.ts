@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-interface Credentials {
+export interface Credentials {
   refresh_token?: string;
   expiry_date?: number;
   access_token?: string;
   token_type?: string;
 }
-export default Credentials;

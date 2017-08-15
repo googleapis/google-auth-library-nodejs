@@ -15,8 +15,8 @@
  */
 
 import * as assert from 'assert';
-import GoogleAuth from '../lib/auth/googleauth';
-import IAMAuth from './../lib/auth/iam';
+import {GoogleAuth} from '../lib/auth/googleauth';
+import {IAMAuth} from './../lib/auth/iam';
 
 describe('.getRequestMetadata', () => {
   const test_selector = 'a-test-selector';

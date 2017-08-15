@@ -24,17 +24,16 @@ import * as util from 'util';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {BodyResponseCallback} from './../transporters';
-import Compute from './computeclient';
-import IAMAuth from './iam';
-import JWTAccess from './jwtaccess';
-import JWTClient from './jwtclient';
-import JWT from './jwtclient';
-import OAuth2 from './oauth2client';
-import UserRefreshClient from './refreshclient';
+import {Compute} from './computeclient';
+import {IAMAuth} from './iam';
+import {JWTAccess} from './jwtaccess';
+import {JWT} from './jwtclient';
+import {OAuth2Client} from './oauth2client';
+import {UserRefreshClient} from './refreshclient';
 
 export interface ProjectIdCallback { (err: Error, projectId: string): void }
 
-export default class GoogleAuth {
+export class GoogleAuth {
   public transporter: Transporter;
 
   /**
@@ -60,7 +59,7 @@ export default class GoogleAuth {
 
   public cachedCredential: any = null;
 
-  protected JWTClient = JWTClient;
+  protected JWTClient = JWT;
   protected ComputeClient = Compute;
 
   /**
@@ -86,7 +85,7 @@ export default class GoogleAuth {
   /**
    * Convenience field mapping in the OAuth2 credential type.
    */
-  public OAuth2 = OAuth2;
+  public OAuth2 = OAuth2Client;
 
   /**
    * Convenience field mapping to the UserRefreshClient credential type.
@@ -363,7 +362,7 @@ export default class GoogleAuth {
    * @param {function=} callback Optional callback.
    */
   public fromJSON(json: any, callback?: (err: Error, client?: any) => void) {
-    let client: UserRefreshClient|JWTClient = null;
+    let client: UserRefreshClient|JWT = null;
     if (!json) {
       this.callback(
           callback,
@@ -374,7 +373,7 @@ export default class GoogleAuth {
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient();
     } else {
-      client = new JWTClient();
+      client = new JWT();
     }
 
     client.fromJSON(json, (err: Error) => {
@@ -423,7 +422,7 @@ export default class GoogleAuth {
    * @param {function=} - Optional callback function
    */
   public fromAPIKey(
-      apiKey: string, callback?: (err: Error, client?: JWTClient) => void) {
+      apiKey: string, callback?: (err: Error, client?: JWT) => void) {
     const client = new this.JWTClient();
     client.fromAPIKey(apiKey, (err) => {
       if (err) {

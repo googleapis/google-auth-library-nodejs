@@ -18,9 +18,9 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 const jws = require('jws');
 const keypair = require('keypair');
-import JWTAccess from './../lib/auth/jwtaccess';
+import {JWTAccess} from './../lib/auth/jwtaccess';
 
-import GoogleAuth from '../lib/auth/googleauth';
+import {GoogleAuth} from '../lib/auth/googleauth';
 
 // Creates a standard JSON credentials object for testing.
 function createJSON() {

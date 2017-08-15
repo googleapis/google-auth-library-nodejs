@@ -22,7 +22,7 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as url from 'url';
 
-import GoogleAuth from '../lib/auth/googleauth';
+import {GoogleAuth} from '../lib/auth/googleauth';
 
 nock.disableNetConnect();
 

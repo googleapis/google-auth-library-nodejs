@@ -17,7 +17,7 @@
 import * as request from 'request';
 
 import {BodyResponseCallback, RequestError} from './../transporters';
-import Auth2Client from './oauth2client';
+import {OAuth2Client} from './oauth2client';
 
 export interface Token {
   expires_in: number;
@@ -27,7 +27,7 @@ export interface Token {
 export declare type RefreshTokenCallback =
     (err: Error, token: Token, response: request.RequestResponse) => void;
 
-export default class Compute extends Auth2Client {
+export class Compute extends OAuth2Client {
   /**
    * Google Compute Engine metadata server token endpoint.
    */

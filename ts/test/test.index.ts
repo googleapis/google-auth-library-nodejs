@@ -15,7 +15,7 @@
  */
 import * as assert from 'assert';
 
-import GoogleAuth from '../lib/auth/googleauth';
+import {GoogleAuth} from '../lib/auth/googleauth';
 
 describe('module', () => {
   it('should export GoogleAuth as a function', () => {

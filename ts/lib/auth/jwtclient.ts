@@ -15,16 +15,16 @@
  */
 
 const gToken = require('gtoken');
-import Credentials from './credentials';
-import JWTAccess from './jwtaccess';
-import Auth2Client from './oauth2client';
+import {Credentials} from './credentials';
+import {JWTAccess} from './jwtaccess';
+import {OAuth2Client} from './oauth2client';
 import * as stream from 'stream';
 import * as request from 'request';
 
 const isString = require('lodash.isstring');
 const noop = Function.prototype;
 
-export default class JWT extends Auth2Client {
+export class JWT extends OAuth2Client {
   public email: string;
   public keyFile: string;
   public key: string;
