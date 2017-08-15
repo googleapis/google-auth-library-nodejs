@@ -69,7 +69,8 @@
     "test": "npm run lint && npm run build && npm run check-format && npm run coverage",
     "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls",
     "build": "tsc",
-    "clean": "rm -rf lib test types"
+    "clean": "rm -rf lib test types",
+    "prepare": "npm run build"
   },
   "license": "Apache-2.0"
 }
