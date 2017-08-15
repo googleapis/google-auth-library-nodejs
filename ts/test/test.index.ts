@@ -16,11 +16,17 @@
 import * as assert from 'assert';
 
 import {GoogleAuth} from '../lib/auth/googleauth';
+import {DefaultTransporter} from '../lib/transporters';
 
 describe('module', () => {
   it('should export GoogleAuth as a function', () => {
     const cjs = require('../');
     assert.strictEqual(typeof cjs, 'function');
     assert.strictEqual(cjs, GoogleAuth);
+  });
+
+  it('should publicly export DefaultTransporter', () => {
+    const cjs = require('../');
+    assert.strictEqual(cjs.DefaultTransporter, DefaultTransporter);
   });
 });
