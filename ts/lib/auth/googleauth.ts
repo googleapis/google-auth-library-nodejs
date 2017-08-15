@@ -93,6 +93,11 @@ export class GoogleAuth {
   public UserRefreshClient = UserRefreshClient;
 
   /**
+   * Export DefaultTransporter as a static property of the class.
+   */
+  public static DefaultTransporter = DefaultTransporter;
+
+  /**
    * Obtains the default project ID for the application..
    * @param {function=} callback Optional callback.
    */
