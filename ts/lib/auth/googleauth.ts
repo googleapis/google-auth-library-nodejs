@@ -209,11 +209,15 @@ export class GoogleAuth {
       }
 
       // Determine if we're running on GCE.
-      this._checkIsGCE((gce) => {
+      this._checkIsGCE((err, gce) => {
         if (gce) {
           // For GCE, just return a default ComputeClient. It will take care of
           // the rest.
           my_callback(null, new this.ComputeClient());
+        } else if (err) {
+          my_callback(new Error(
+              'Unexpected error while acquiring application default ' +
+              'credentials: ' + err.message));
         } else {
           // We failed to find the default credentials. Bail out with an error.
           my_callback(new Error(
@@ -230,20 +234,30 @@ export class GoogleAuth {
    * @param {function=} callback The callback.
    * @api private
    */
-  public _checkIsGCE(callback: (isGCE: boolean) => void) {
+  public _checkIsGCE(callback: (err: Error, isGCE?: boolean) => void) {
     if (this._isGCE !== undefined) {
-      callback(this._isGCE);
+      setImmediate(() => {
+        callback(null, this._isGCE);
+      });
     } else {
       if (!this.transporter) {
         this.transporter = new DefaultTransporter();
       }
       this.transporter.request(
           {method: 'GET', uri: 'http://metadata.google.internal', json: true},
-          (err, body, res) => {
-            if (!err && res && res.headers) {
-              this._isGCE = res.headers['metadata-flavor'] === 'Google';
+          (err: any, body, res) => {
+            if (err) {
+              if (err.code !== 'ENOTFOUND') {
+                // Unexpected error occurred. TODO(ofrobots): retry if this was
+                // a transient error.
+                return callback(err);
+              }
+              this._isGCE = false;
+              return callback(null, this._isGCE);
             }
-            callback(this._isGCE);
+            this._isGCE = res && res.headers &&
+                res.headers['metadata-flavor'] === 'Google';
+            callback(null, this._isGCE);
           });
     }
   }
