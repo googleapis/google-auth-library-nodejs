@@ -95,9 +95,9 @@ function returns(value: any) {
   };
 }
 
-function callsBack(value: any) {
+function callsBack(err: any, value: any) {
   return (callback: Function) => {
-    callback(value);
+    callback(err, value);
   };
 }
 
@@ -966,7 +966,7 @@ describe('GoogleAuth', () => {
                creds, 'GCLOUD_PROJECT', projectId);
 
            creds._fileExists = returns(false);
-           creds._checkIsGCE = callsBack(false);
+           creds._checkIsGCE = callsBack(null, false);
          };
 
          // Set up a new GoogleAuth and prepare it for local environment
@@ -1126,7 +1126,7 @@ describe('GoogleAuth', () => {
                './ts/test/fixtures/private.json');
 
            creds._fileExists = returns(false);
-           creds._checkIsGCE = callsBack(false);
+           creds._checkIsGCE = callsBack(null, false);
          };
 
          // Set up a new GoogleAuth and prepare it for local environment
@@ -1205,7 +1205,7 @@ describe('GoogleAuth', () => {
       auth._pathJoin = pathJoin;
       auth._osPlatform = returns('win32');
       auth._fileExists = returns(true);
-      auth._checkIsGCE = callsBack(true);
+      auth._checkIsGCE = callsBack(null, true);
       insertWellKnownFilePathIntoAuth(
           auth, 'foo:gcloud:application_default_credentials.json',
           './ts/test/fixtures/private2.json');
@@ -1239,7 +1239,7 @@ describe('GoogleAuth', () => {
          auth._pathJoin = pathJoin;
          auth._osPlatform = returns('win32');
          auth._fileExists = returns(true);
-         auth._checkIsGCE = callsBack(true);
+         auth._checkIsGCE = callsBack(null, true);
          insertWellKnownFilePathIntoAuth(
              auth, 'foo:gcloud:application_default_credentials.json',
              './ts/test/fixtures/private2.json');
@@ -1268,7 +1268,7 @@ describe('GoogleAuth', () => {
          auth._pathJoin = pathJoin;
          auth._osPlatform = returns('win32');
          auth._fileExists = returns(false);
-         auth._checkIsGCE = callsBack(true);
+         auth._checkIsGCE = callsBack(null, true);
 
          // Execute.
          auth.getApplicationDefault((err, result) => {
@@ -1281,6 +1281,27 @@ describe('GoogleAuth', () => {
            done();
          });
        });
+
+    it('should report GCE error when checking for GCE fails', (done) => {
+      // Set up the creds.
+      // * Environment variable is not set.
+      // * Well-known file is not set.
+      // * Running on GCE is set to true.
+      const auth = new GoogleAuth();
+      blockGoogleApplicationCredentialEnvironmentVariable(auth);
+      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+      auth._pathJoin = pathJoin;
+      auth._osPlatform = returns('win32');
+      auth._fileExists = returns(false);
+      auth._checkIsGCE = callsBack(new Error('fake error'), undefined);
+
+      // Execute.
+      auth.getApplicationDefault((err, result) => {
+        assert(err instanceof Error);
+        assert.equal(result, undefined);
+        done();
+      });
+    });
 
     it('should also get project ID', (done) => {
       // We expect private.json to be the file that is used.
@@ -1302,7 +1323,7 @@ describe('GoogleAuth', () => {
       auth._pathJoin = pathJoin;
       auth._osPlatform = returns('win32');
       auth._fileExists = returns(true);
-      auth._checkIsGCE = callsBack(true);
+      auth._checkIsGCE = callsBack(null, true);
       insertWellKnownFilePathIntoAuth(
           auth, 'foo:gcloud:application_default_credentials.json',
           './ts/test/fixtures/private2.json');
