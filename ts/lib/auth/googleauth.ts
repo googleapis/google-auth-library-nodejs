@@ -637,11 +637,15 @@ export class GoogleAuth {
         });
   }
 
+
   /**
    * Returns the contents of the metadata of GC instance
    * @return object representation of the service account JSON
    */
-  public getCredentials(): object {
+  public getCredentials(): {
+    [account_name: string]:
+        {aliases: string, email: string, scopes: string[]}
+  } {
     if (this._isGCE) {
       const uri =
           'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true';
@@ -652,8 +656,7 @@ export class GoogleAuth {
               return;
             }
             // Ignore any errors
-            return JSON.parse(body);
-            // this.callback(_callback, null, body);
+            return res.body;
           });
     } else {
       return;
