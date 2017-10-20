@@ -638,37 +638,25 @@ export class GoogleAuth {
   }
 
   /**
-   * Returns the contents of the service account JSON file
-   * @param {function=} _callback Optional error callback param.
+   * Returns the contents of the metadata of GC instance
    * @return object representation of the service account JSON
    */
-  public getCredentials():object {
-    if(this._isGCE){
-      const uri = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/";
+  public getCredentials(): object {
+    if (this._isGCE) {
+      const uri =
+          'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true';
       this.transporter.request(
-          {
-            method: 'GET',
-            uri: uri,
-            headers: {'Metadata-Flavor': 'Google'}
-          },
+          {method: 'GET', uri: uri, headers: {'Metadata-Flavor': 'Google'}},
           (err, body, res) => {
             if (err || !res || res.statusCode !== 200 || !body) {
               return;
             }
             // Ignore any errors
-            let serviceFileObject : {
-              email: string;
-              key: string;
-            };
-            serviceFileObject.email = body;
-            serviceFileObject.key = null;
-            return serviceFileObject;
+            return JSON.parse(body);
             // this.callback(_callback, null, body);
           });
     } else {
-      return new JWT().getJWTCredentials();
+      return;
     }
   }
-
-
 }

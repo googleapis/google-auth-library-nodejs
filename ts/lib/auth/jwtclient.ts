@@ -248,13 +248,15 @@ export class JWT extends OAuth2Client {
    * @return {object} The object repesenting the service file JSON
    * @public
    */
-  public getJWTCredentials(): object {
-    let serviceFileObject : {
-      email: string;
-      key: string;
-    };
-    serviceFileObject.email = this.email;
-    serviceFileObject.key = this.key;
-    return serviceFileObject;
-  }
+  /*
+ public getJWTCredentials(): object {
+   let serviceFileObject : {
+     email: string;
+     key: string;
+   };
+   serviceFileObject.email = this.email;
+   serviceFileObject.key = this.key;
+   return serviceFileObject;
+ }
+ */
 }
