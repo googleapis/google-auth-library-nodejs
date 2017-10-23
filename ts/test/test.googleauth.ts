@@ -128,8 +128,8 @@ function insertWellKnownFilePathIntoAuth(
     auth: any, filePath: string, mockFilePath: string) {
   const originalMockWellKnownFilePathFunction = auth._mockWellKnownFilePath;
 
-  auth._mockWellKnownFilePath = (path: string) => {
-    if (path === filePath) {
+  auth._mockWellKnownFilePath = (_path: string) => {
+    if (_path === filePath) {
       return mockFilePath;
     }
 
@@ -1477,20 +1477,23 @@ describe('GoogleAuth', () => {
     });
 
     it('should get the metadata as an object', (done) => {
-      const scope =
-          nock('http://metadata.google.internal')
-              .get(
-                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
-              .reply(200, response);
-      let credentials = auth.getCredentials();
-      /*assert.equal(
-          credentials['default']['email'],
-          'default@test-creds.iam.gserviceaccount.com');*/
-      assert.equal(
-          credentials['test-creds@test-creds.iam.gserviceaccount.com']['email'],
-          'test-creds@test-creds.iam.gserviceaccount.com');
-      scope.done();
-      done();
+      auth._checkIsGCE(() => {
+        assert.equal(true, auth.isGCE);
+        const scope =
+            nock('http://metadata.google.internal')
+                .get(
+                    '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+                .reply(200, response);
+        let credentials = auth.getCredentials();
+        /*assert.equal(
+            credentials['default']['email'],
+            'default@test-creds.iam.gserviceaccount.com');*/
+        assert.equal(
+            credentials['test-creds@test-creds.iam.gserviceaccount.com']['email'],
+            'test-creds@test-creds.iam.gserviceaccount.com');
+        scope.done();
+        done();
+      });
     });
   });
 });
