@@ -1454,46 +1454,4 @@ describe('GoogleAuth', () => {
       });
     });
   });
-
-  describe('.getCredentials', () => {
-    let response: string;
-    let auth: GoogleAuth;
-    beforeEach(() => {
-      auth = new GoogleAuth();
-      auth.transporter = new MockTransporter(true);
-      response = `{
-        "default":
-        {
-          "aliases":["default"],
-          "email":"default@test-creds.iam.gserviceaccount.com",
-          "scopes":["https://www.googleapis.com/auth/cloud-platform"]
-        },
-        "test-creds@test-creds.iam.gserviceaccount.com":
-        {
-          "aliases":["test-creds"],
-          "email":"test-creds@test-creds.iam.gserviceaccount.com",
-          "scopes":["https://www.googleapis.com/auth/cloud-platform"]}
-        }`;
-    });
-
-    it('should get the metadata as an object', (done) => {
-      auth._checkIsGCE(() => {
-        assert.equal(true, auth.isGCE);
-        const scope =
-            nock('http://metadata.google.internal')
-                .get(
-                    '/computeMetadata/v1/instance/service-accounts/?recursive=true')
-                .reply(200, response);
-        let credentials = auth.getCredentials();
-        /*assert.equal(
-            credentials['default']['email'],
-            'default@test-creds.iam.gserviceaccount.com');*/
-        assert.equal(
-            credentials['test-creds@test-creds.iam.gserviceaccount.com']['email'],
-            'test-creds@test-creds.iam.gserviceaccount.com');
-        scope.done();
-        done();
-      });
-    });
-  });
 });

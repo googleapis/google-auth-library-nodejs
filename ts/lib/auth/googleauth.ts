@@ -642,11 +642,10 @@ export class GoogleAuth {
    * Returns the contents of the metadata of GC instance
    * @return object representation of the service account JSON
    */
-  public getCredentials(): {
-    [account_name: string]:
-        {aliases: string, email: string, scopes: string[]}
-  } {
+  public getCredentials() {
+    console.log('Calling method');
     if (this._isGCE) {
+      console.log('This is GCE');
       const uri =
           'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true';
       this.transporter.request(
@@ -656,9 +655,9 @@ export class GoogleAuth {
               return;
             }
             // Ignore any errors
-            return res.body;
           });
     } else {
+      console.log('This is not GCE');
       return;
     }
   }
