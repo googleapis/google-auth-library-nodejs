@@ -644,21 +644,28 @@ export class GoogleAuth {
    */
   public getCredentials() {
     console.log('Calling method');
-    if (this._isGCE) {
-      console.log('This is GCE');
-      const uri =
-          'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true';
-      this.transporter.request(
-          {method: 'GET', uri: uri, headers: {'Metadata-Flavor': 'Google'}},
-          (err, body, res) => {
-            if (err || !res || res.statusCode !== 200 || !body) {
-              return;
-            }
-            // Ignore any errors
-          });
-    } else {
-      console.log('This is not GCE');
-      return;
-    }
+    this._checkIsGCE((err, gce) => {
+      if (gce) {
+        // For GCE, just return a default ComputeClient. It will take care of
+        // the rest.
+        console.log('This is GCE');
+        const uri =
+            'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true';
+        this.transporter.request(
+            {method: 'GET', uri: uri, headers: {'Metadata-Flavor': 'Google'}},
+            (err, body, res) => {
+              if (err || !res || res.statusCode !== 200 || !body) {
+                return;
+              }
+              // Ignore any errors
+            });
+      } else if (err) {
+        console.log('This is not GCE');
+        return;
+      } else {
+        // We failed to find the default credentials. Bail out with an error.
+        console.log('Could not determine GCE');
+      }
+    });
   }
 }
