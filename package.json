@@ -33,7 +33,6 @@
     "@types/nock": "^8.2.1",
     "@types/node": "^7.0.13",
     "@types/request": "^0.0.42",
-    "clang-format": "^1.0.50",
     "coveralls": "^2.13.0",
     "del": "^2.2.2",
     "gulp": "^3.9.1",
@@ -50,7 +49,8 @@
     "source-map-support": "^0.4.14",
     "tslint": "^5.1.0",
     "typedoc": "^0.5.10",
-    "typescript": "^2.3.4"
+    "typescript": "~2.6.0",
+    "gts": "latest"
   },
   "files": [
     "LICENSE",
@@ -60,17 +60,18 @@
     "types/lib"
   ],
   "scripts": {
-    "check-format": "gulp test.check-format",
-    "format": "gulp format",
-    "lint": "tslint --type-check -p tsconfig.json -c tslint.json ts/**/*.ts",
     "mocha": "mocha --reporter spec --timeout 4000 --require source-map-support/register",
-    "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md ts/lib",
+    "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md src/lib",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",
-    "test": "npm run lint && npm run build && npm run check-format && npm run coverage",
+    "test": "npm run lint && npm run compile && npm run check-format && npm run coverage",
     "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls",
-    "build": "tsc",
-    "clean": "rm -rf lib test types",
-    "prepare": "npm run build"
+    "clean": "gts clean",
+    "prepare": "npm run compile",
+    "check": "gts check",
+    "compile": "tsc -p .",
+    "fix": "gts fix",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
   },
   "license": "Apache-2.0"
 }
