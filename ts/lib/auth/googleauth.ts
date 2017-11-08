@@ -642,7 +642,7 @@ export class GoogleAuth {
    * Returns the contents of the metadata of GC instance
    * @return object representation of the service account JSON
    */
-  public getCredentials() {
+  public getCredentials(callback?: (err: Error, credentials?: any) => void) {
     console.log('Calling method');
     this._checkIsGCE((err, gce) => {
       if (gce) {
@@ -658,6 +658,8 @@ export class GoogleAuth {
                 return;
               }
               // Ignore any errors
+              this.callback(callback, null, body);
+
             });
       } else if (err) {
         console.log('This is not GCE');
