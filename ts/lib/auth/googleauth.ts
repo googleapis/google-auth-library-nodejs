@@ -643,7 +643,6 @@ export class GoogleAuth {
    * @return object representation of the service account JSON
    */
   public getCredentials(callback?: (err: Error, credentials?: any) => void) {
-    console.log('Calling method');
     this._checkIsGCE((err, gce) => {
       if (gce) {
         // For GCE, return the service account details from the metadata server
