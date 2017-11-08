@@ -1454,4 +1454,52 @@ describe('GoogleAuth', () => {
       });
     });
   });
+  describe('.getCredentials', () => {
+    it('should get metadata from the server when running on GCE', (done) => {
+      const auth = new GoogleAuth();
+      auth.transporter = new MockTransporter(true);
+      auth._checkIsGCE(() => {
+        // Assert that the flags are set.
+        assert.equal(true, auth.isGCE);
+        done();
+      });
+      const response = `{
+        "default":
+        {
+          "aliases":["default"],
+          "email":"default@test-creds.iam.gserviceaccount.com",
+          "scopes":["https://www.googleapis.com/auth/cloud-platform"]
+        },
+        "test-creds@test-creds.iam.gserviceaccount.com":
+        {
+          "aliases":["test-creds"],
+          "email":"test-creds@test-creds.iam.gserviceaccount.com",
+          "scopes":["https://www.googleapis.com/auth/cloud-platform"]}
+        }`;
+      const scope =
+          nock('http://metadata.google.internal')
+              .get(
+                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+              .reply(200, response);
+      auth.getCredentials((err, body) => {
+        assert.equal(
+            body['test-creds@test-creds.iam.gserviceaccount.com']['email'],
+            'test-creds@test-creds.iam.gserviceaccount.com');
+        scope.done();
+        done();
+      });
+    });
+    it('should return an error when not running on GCE', (done) => {
+      const auth = new GoogleAuth();
+      auth.transporter = new MockTransporter(false);
+      auth._checkIsGCE(() => {
+        // Assert that the flags are not set.
+        assert.equal(false, auth.isGCE);
+      });
+      auth.getCredentials((err, body) => {
+        assert.equal(true, err instanceof Error);
+        done();
+      });
+    });
+  });
 });

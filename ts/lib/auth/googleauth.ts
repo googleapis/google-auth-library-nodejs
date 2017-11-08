@@ -646,9 +646,7 @@ export class GoogleAuth {
     console.log('Calling method');
     this._checkIsGCE((err, gce) => {
       if (gce) {
-        // For GCE, just return a default ComputeClient. It will take care of
-        // the rest.
-        console.log('This is GCE');
+        // For GCE, return the service account details from the metadata server
         const uri =
             'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true';
         this.transporter.request(
@@ -657,16 +655,16 @@ export class GoogleAuth {
               if (err || !res || res.statusCode !== 200 || !body) {
                 return;
               }
-              // Ignore any errors
+              // Callback with the body
               this.callback(callback, null, body);
-
             });
       } else if (err) {
-        console.log('This is not GCE');
-        return;
+        // In case there is some error while accessing the metadata server
+        this.callback(callback, err, null);
       } else {
-        // We failed to find the default credentials. Bail out with an error.
-        console.log('Could not determine GCE');
+        // Return an error if the environment is not GCP.
+        this.callback(
+            callback, new Error('This is not a GCE environment.'), null);
       }
     });
   }
