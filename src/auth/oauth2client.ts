@@ -54,17 +54,17 @@ export class OAuth2Client extends AuthClient {
    * @param {string=} clientId The authentication client ID.
    * @param {string=} clientSecret The authentication client secret.
    * @param {string=} redirectUri The URI to redirect to after completing the auth request.
-   * @param {Object=} optOpts optional options for overriding the given parameters.
+   * @param {Object=} opts optional options for overriding the given parameters.
    * @constructor
    */
   constructor(
       clientId?: string, clientSecret?: string, redirectUri?: string,
-      optOpts?: any) {
+      opts: any = {}) {
     super();
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.redirectUri = redirectUri;
-    this.opts = optOpts || {};
+    this.opts = opts;
     this.credentials = {};
   }
 
@@ -110,11 +110,10 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Generates URL for consent page landing.
-   * @param {object=} optOpts Options.
+   * @param {object=} opts Options.
    * @return {string} URL to consent page.
    */
-  public generateAuthUrl(optOpts?: GenerateAuthUrlOpts) {
-    const opts = optOpts || {};
+  public generateAuthUrl(opts: GenerateAuthUrlOpts = {}) {
     opts.response_type = opts.response_type || 'code';
     opts.client_id = opts.client_id || this.clientId;
     opts.redirect_uri = opts.redirect_uri || this.redirectUri;

@@ -17,6 +17,6 @@
 export interface Credentials {
   refresh_token?: string;
   expiry_date?: number;
-  access_token?: string|null;
+  access_token?: string;
   token_type?: string;
 }

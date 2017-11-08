@@ -22,6 +22,8 @@ import {OAuth2Client} from './oauth2client';
 
 export class UserRefreshClient extends OAuth2Client {
   // TODO: refactor tests to make this private
+  // In a future gts release, the _propertyName rule will be lifted.
+  // This is also a hard one because `this.refreshToken` is a function.
   // tslint:disable-next-line
   public _refreshToken?: string;
 

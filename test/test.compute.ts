@@ -163,7 +163,7 @@ describe('Compute auth client', () => {
          // refresh.
          compute.credentials = {
            refresh_token: 'hello',
-           access_token: null,
+           access_token: undefined,
            expiry_date: 1
          };
 
@@ -191,7 +191,7 @@ describe('Compute auth client', () => {
          // refresh.
          compute.credentials = <Credentials>{
            refresh_token: 'hello',
-           access_token: null,
+           access_token: undefined,
            expiry_date: 1
          };
 

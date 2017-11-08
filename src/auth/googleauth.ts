@@ -49,12 +49,14 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  private intCachedProjectId: string;
+  // The _ rule goes away in the next gts release
+  // tslint:disable-next-line
+  private _cachedProjectId: string;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
   set cachedProjectId(projectId: string) {
-    this.intCachedProjectId = projectId;
+    this._cachedProjectId = projectId;
   }
 
   public cachedCredential: any = null;
@@ -82,6 +84,7 @@ export class GoogleAuth {
   /**
    * Convenience field mapping in the OAuth2 credential type.
    */
+  // lint is checking for camelCase properties, but OAuth is proper here
   // tslint:disable-next-line
   public OAuth2 = OAuth2Client;
 
@@ -111,14 +114,14 @@ export class GoogleAuth {
     // * Google Compute Engine project ID (from metadata server) (Not
     // implemented yet)
 
-    if (this.intCachedProjectId) {
+    if (this._cachedProjectId) {
       setImmediate(() => {
-        this.callback(callback, null, this.intCachedProjectId);
+        this.callback(callback, null, this._cachedProjectId);
       });
     } else {
       const myCallback = (err: Error|null, projectId: string) => {
         if (!err && projectId) {
-          this.intCachedProjectId = projectId;
+          this._cachedProjectId = projectId;
         }
         setImmediate(() => {
           this.callback(callback, err, projectId);
@@ -172,7 +175,7 @@ export class GoogleAuth {
     if (this.cachedCredential) {
       setImmediate(() => {
         this.callback(
-            callback, null, this.cachedCredential, this.intCachedProjectId);
+            callback, null, this.cachedCredential, this._cachedProjectId);
       });
     } else {
       // Inject our own callback routine, which will cache the credential once
