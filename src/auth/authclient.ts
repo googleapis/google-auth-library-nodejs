@@ -16,7 +16,7 @@
 
 import * as request from 'request';
 
-import {DefaultTransporter, Transporter} from '../transporters';
+import {DefaultTransporter} from '../transporters';
 
 import {Credentials} from './credentials';
 
