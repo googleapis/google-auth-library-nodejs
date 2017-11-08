@@ -128,8 +128,8 @@ function insertWellKnownFilePathIntoAuth(
     auth: any, filePath: string, mockFilePath: string) {
   const originalMockWellKnownFilePathFunction = auth._mockWellKnownFilePath;
 
-  auth._mockWellKnownFilePath = (path: string) => {
-    if (path === filePath) {
+  auth._mockWellKnownFilePath = (kfpath: string) => {
+    if (kfpath === filePath) {
       return mockFilePath;
     }
 
