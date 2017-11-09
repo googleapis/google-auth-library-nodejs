@@ -242,21 +242,4 @@ export class JWT extends OAuth2Client {
       return callback(null, this.gtoken);
     }
   }
-
-  /**
-   * Creates the gToken instance if it has not been created already.
-   * @return {object} The object repesenting the service file JSON
-   * @public
-   */
-  /*
- public getJWTCredentials(): object {
-   let serviceFileObject : {
-     email: string;
-     key: string;
-   };
-   serviceFileObject.email = this.email;
-   serviceFileObject.key = this.key;
-   return serviceFileObject;
- }
- */
 }
