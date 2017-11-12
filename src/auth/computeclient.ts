@@ -25,8 +25,8 @@ export interface Token {
 }
 
 export declare type RefreshTokenCallback =
-    (err: Error|null, token: Token, response?: request.RequestResponse|null) =>
-        void;
+    (err?: Error|null, token?: Token,
+     response?: request.RequestResponse|null) => void;
 
 export class Compute extends OAuth2Client {
   /**
@@ -53,7 +53,7 @@ export class Compute extends OAuth2Client {
    * createdScoped before use.
    * @return {object} The cloned instance.
    */
-  public createScopedRequired() {
+  createScopedRequired() {
     // On compute engine, scopes are specified at the compute instance's
     // creation time, and cannot be changed. For this reason, always return
     // false.
@@ -65,12 +65,12 @@ export class Compute extends OAuth2Client {
    * @param {object=} ignored_
    * @param {function=} callback Optional callback.
    */
-  protected refreshToken(ignored: any, callback?: RefreshTokenCallback):
+  protected refreshToken(ignored: null, callback?: BodyResponseCallback):
       request.Request {
     const uri = this.opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
     // request for new token
     return this.transporter.request(
-        {method: 'GET', uri: uri, json: true}, (err, body, response) => {
+        {method: 'GET', uri, json: true}, (err, body, response) => {
           const token = body as Token;
           if (!err && token && token.expires_in) {
             token.expiry_date =
@@ -92,7 +92,7 @@ export class Compute extends OAuth2Client {
    * @param {Function} callback The callback.
    */
   protected postRequest(
-      err: Error, result: any, response: request.RequestResponse,
+      err: Error, result: {}, response: request.RequestResponse,
       callback: BodyResponseCallback) {
     if (response && response.statusCode) {
       let helpfulMessage = null;

@@ -37,7 +37,9 @@ describe('.fromJson', () => {
   it('should error on null json', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(null, (err) => {
+    // Test verifies invalid parameter tests, which requires cast to any.
+    // tslint:disable-next-line no-any
+    (refresh as any).fromJSON(null, (err: Error) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -46,7 +48,9 @@ describe('.fromJson', () => {
   it('should error on empty json', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON({}, (err) => {
+    // Test verifies invalid parameter tests, which requires cast to any.
+    // tslint:disable-next-line no-any
+    refresh.fromJSON(({} as any), (err) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -94,7 +98,7 @@ describe('.fromJson', () => {
     const refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, (err) => {
       assert.ifError(err);
-      assert.equal(json.client_id, refresh.clientId);
+      assert.equal(json.client_id, refresh._clientId);
       done();
     });
   });
@@ -105,7 +109,7 @@ describe('.fromJson', () => {
     const refresh = new auth.UserRefreshClient();
     refresh.fromJSON(json, (err) => {
       assert.ifError(err);
-      assert.equal(json.client_secret, refresh.clientSecret);
+      assert.equal(json.client_secret, refresh._clientSecret);
       done();
     });
   });
@@ -127,7 +131,9 @@ describe('.fromStream', () => {
   it('should error on null stream', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    (<any>refresh).fromStream(null, (err: Error) => {
+    // Test verifies invalid parameter tests, which requires cast to any.
+    // tslint:disable-next-line no-any
+    (refresh as any).fromStream(null, (err: Error) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -149,8 +155,8 @@ describe('.fromStream', () => {
       assert.ifError(err);
 
       // Ensure that the correct bits were pulled from the stream.
-      assert.equal(json.client_id, refresh.clientId);
-      assert.equal(json.client_secret, refresh.clientSecret);
+      assert.equal(json.client_id, refresh._clientId);
+      assert.equal(json.client_secret, refresh._clientSecret);
       assert.equal(json.refresh_token, refresh._refreshToken);
 
       done();

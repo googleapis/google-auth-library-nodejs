@@ -20,6 +20,7 @@ import * as fs from 'fs';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as qs from 'querystring';
+import * as request from 'request';
 import * as url from 'url';
 
 import {GoogleAuth} from '../src/auth/googleauth';
@@ -854,7 +855,7 @@ describe('OAuth2 client', () => {
     const auth = new GoogleAuth();
     const oauth2client =
         new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    oauth2client.request({}, (err, result) => {
+    oauth2client.request(({} as request.OptionsWithUri), (err, result) => {
       assert(err);
       if (err) {
         assert.equal(

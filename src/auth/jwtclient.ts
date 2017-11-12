@@ -15,7 +15,7 @@
  */
 
 const gToken = require('gtoken');
-import {Credentials} from './credentials';
+import {Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {OAuth2Client} from './oauth2client';
 import * as stream from 'stream';
@@ -24,15 +24,39 @@ import * as request from 'request';
 const isString = require('lodash.isstring');
 const noop = Function.prototype;
 
+export interface TokenOptions {
+  key?: string|null;
+  iss?: string|null;
+  sub?: string|null;
+  scope?: string|string[]|null;
+  keyFile?: string|null;
+  // email: string;
+}
+
+export declare interface GoogleToken {
+  (opts: TokenOptions): GoogleToken;
+  getToken(callback: (err?: Error|null, token?: string|null) => void): void;
+  token: string|null;
+  expires_at: number|null;
+  key: string|undefined;
+  keyFile: string|undefined;
+  iss: string|undefined;
+  sub: string;
+  scope: string|undefined;
+  rawToken: string|null;
+  tokenExpires: number|null;
+  email: string;
+}
+
 export class JWT extends OAuth2Client {
-  public email?: string;
-  public keyFile?: string|null;
-  public key?: string|null;
-  public scopes?: string|string[]|null;
-  public subject?: string;
-  public gToken: any;
-  public gtoken: any;
-  public projectId: string;
+  email?: string;
+  keyFile?: string|null;
+  key?: string|null;
+  scopes?: string|string[]|null;
+  scope?: string|null;
+  subject?: string;
+  gToken: GoogleToken;
+  gtoken: GoogleToken;
 
   /**
    * JWT service account credentials.
@@ -65,7 +89,7 @@ export class JWT extends OAuth2Client {
    * @param {(string|array)=} scopes List of requested scopes or a single scope.
    * @return {object} The cloned instance.
    */
-  public createScoped(scopes?: string|string[]) {
+  createScoped(scopes?: string|string[]) {
     return new JWT(this.email, this.keyFile, this.key, scopes, this.subject);
   }
 
@@ -75,9 +99,9 @@ export class JWT extends OAuth2Client {
    * @param {string} optUri the URI being authorized.
    * @param {function} metadataCb
    */
-  public getRequestMetadata(
+  getRequestMetadata(
       optUri: string|null,
-      metadataCb: (err: Error|null, result?: any) => void) {
+      metadataCb: (err: Error|null, result?: {}|null) => void) {
     if (this.createScopedRequired() && optUri) {
       // no scopes have been set, but a uri has been provided.  Use JWTAccess
       // credentials.
@@ -93,7 +117,7 @@ export class JWT extends OAuth2Client {
    * createdScoped before use.
    * @return {boolean} false if createScoped does not need to be called.
    */
-  public createScopedRequired() {
+  createScopedRequired() {
     // If scopes is null, always return true.
     if (this.scopes) {
       // For arrays, check the array length.
@@ -110,7 +134,7 @@ export class JWT extends OAuth2Client {
    * Get the initial access token using gToken.
    * @param {function=} callback Optional callback.
    */
-  public authorize(callback?: (err: Error|null, result: Credentials) => void) {
+  authorize(callback?: (err: Error|null, result: Credentials) => void) {
     const done = callback || noop;
     this.refreshToken(null, (err, result) => {
       if (err) {
@@ -133,15 +157,15 @@ export class JWT extends OAuth2Client {
    * @param {function=} callback Optional callback.
    * @private
    */
-  public refreshToken(
-      ignored: any,
+  refreshToken(
+      ignored: string|null,
       callback?: (err: Error, credentials?: Credentials) => void) {
     const done = callback || noop;
     return this.createGToken((err, newGToken) => {
       if (err) {
         return done(err);
       } else {
-        return newGToken.getToken((err2: Error, token: string) => {
+        return newGToken.getToken((err2?: Error|null, token?: string|null) => {
           return done(err2, {
             access_token: token,
             token_type: 'Bearer',
@@ -157,7 +181,7 @@ export class JWT extends OAuth2Client {
    * @param {object=} json The input object.
    * @param {function=} callback Optional callback.
    */
-  public fromJSON(json: any, callback?: (err?: Error) => void) {
+  fromJSON(json: JWTInput, callback?: (err?: Error) => void) {
     const done = callback || noop;
     if (!json) {
       done(new Error(
@@ -186,7 +210,7 @@ export class JWT extends OAuth2Client {
    * @param {object=} inputStream The input stream.
    * @param {function=} callback Optional callback.
    */
-  public fromStream(
+  fromStream(
       inputStream: stream.Readable, callback: (err?: Error|null) => void) {
     const done = callback || noop;
     if (!inputStream) {
@@ -217,7 +241,7 @@ export class JWT extends OAuth2Client {
    * @param {function=} callback - Optional callback to be invoked after
    *  initialization.
    */
-  public fromAPIKey(apiKey: string, callback?: (err: Error) => void) {
+  fromAPIKey(apiKey: string, callback?: (err: Error) => void) {
     const done = callback || noop;
     if (!isString(apiKey)) {
       setImmediate(() => {
@@ -234,7 +258,8 @@ export class JWT extends OAuth2Client {
    * @param {function=} callback Callback.
    * @private
    */
-  private createGToken(callback: (err: Error|null, token: any) => void) {
+  private createGToken(
+      callback: (err: Error|null, token: GoogleToken) => void) {
     if (this.gtoken) {
       return callback(null, this.gtoken);
     } else {

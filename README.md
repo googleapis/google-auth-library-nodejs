@@ -98,23 +98,6 @@ authFactory.getApplicationDefault(function(err, authClient) {
 });
 ```
 
-## Changelog
-
-### 0.11.0 -> 1.0.0
-*Breaking Changes*
-
-- Support for Node.js 0.10 and 0.12 has officially been dropped.  This library is tested against Node.js version 4 and above.
-- The API has been optimized for ES Modules.  The `GoogleAuth` and `DefaultTransporter` objects are now properties of the module.  For example:
-
-```js
-// es6/TypeScript
-import {GoogleAuth, DefaultTransporter} from 'google-auth-library';
-
-// es5
-const GoogleAuth = require('google-auth-library').GoogleAuth;
-const DefaultTransporter = require('google-auth-library').DefaultTransporter;
-```
-
 ## Contributing
 
 See [CONTRIBUTING][contributing].

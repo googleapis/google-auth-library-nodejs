@@ -20,16 +20,20 @@ import * as nock from 'nock';
 import * as path from 'path';
 import * as request from 'request';
 
+import {Compute} from '../src/auth/computeclient';
 import {GoogleAuth} from '../src/auth/googleauth';
+import {JWT, TokenOptions} from '../src/auth/jwtclient';
+import {OAuth2Client} from '../src/auth/oauth2client';
+import {UserRefreshClient} from '../src/auth/refreshclient';
 import {BodyResponseCallback, DefaultTransporter} from '../src/transporters';
 
 nock.disableNetConnect();
 
 // Mocks the transporter class to simulate GCE.
 class MockTransporter extends DefaultTransporter {
-  public isGCE: boolean;
-  public throwError?: boolean;
-  public executionCount: number;
+  isGCE: boolean;
+  throwError?: boolean;
+  executionCount: number;
   constructor(simulateGCE: boolean, throwError?: boolean) {
     super();
     this.isGCE = false;
@@ -39,12 +43,12 @@ class MockTransporter extends DefaultTransporter {
     this.throwError = throwError;
     this.executionCount = 0;
   }
-  public request(options: any, callback: BodyResponseCallback) {
+  request(options: request.OptionsWithUri, callback: BodyResponseCallback) {
     if (options.method === 'GET' &&
         options.uri === 'http://metadata.google.internal') {
       this.executionCount += 1;
       let err = null;
-      const response: any = {headers: {}};
+      const response = {headers: {} as request.Headers};
       if (this.throwError) {
         err = new Error('blah');
       } else if (this.isGCE) {
@@ -89,13 +93,13 @@ function pathJoin(item1: string, item2: string) {
 }
 
 // Returns the value.
-function returns(value: any) {
+function returns(value: {}) {
   return () => {
     return value;
   };
 }
 
-function callsBack(err: any, value: any) {
+function callsBack(err: {}|null, value?: {}) {
   return (callback: Function) => {
     callback(err, value);
   };
@@ -103,17 +107,16 @@ function callsBack(err: any, value: any) {
 
 // Blocks the GOOGLE_APPLICATION_CREDENTIALS by default. This is necessary in
 // case it is actually set on the host machine executing the test.
-function blockGoogleApplicationCredentialEnvironmentVariable(auth: any) {
+function blockGoogleApplicationCredentialEnvironmentVariable(auth: GoogleAuth) {
   return insertEnvironmentVariableIntoAuth(
-      auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
+      auth, 'GOOGLE_APPLICATION_CREDENTIALS');
 }
 
 // Intercepts the specified environment variable, returning the specified value.
 function insertEnvironmentVariableIntoAuth(
-    auth: any, environmentVariableName: string,
-    environmentVariableValue: string|null) {
+    auth: GoogleAuth, environmentVariableName: string,
+    environmentVariableValue?: string) {
   const originalGetEnvironmentVariableFunction = auth._getEnv;
-
   auth._getEnv = (name: string) => {
     if (name === environmentVariableName) {
       return environmentVariableValue;
@@ -125,7 +128,7 @@ function insertEnvironmentVariableIntoAuth(
 
 // Intercepts the specified file path and inserts the mock file path.
 function insertWellKnownFilePathIntoAuth(
-    auth: any, filePath: string, mockFilePath: string) {
+    auth: GoogleAuth, filePath: string, mockFilePath: string) {
   const originalMockWellKnownFilePathFunction = auth._mockWellKnownFilePath;
 
   auth._mockWellKnownFilePath = (kfpath: string) => {
@@ -137,8 +140,7 @@ function insertWellKnownFilePathIntoAuth(
   };
 }
 
-// tslint:disable-next-line
-const noop = () => {};
+const noop = () => undefined;
 
 // Executes the doneCallback after the nTH call.
 function doneWhen(doneCallback: Function, count: number) {
@@ -160,7 +162,9 @@ describe('GoogleAuth', () => {
 
     it('should error on null json', (done) => {
       const auth = new GoogleAuth();
-      auth.fromJSON(null, (err) => {
+      // Test verifies invalid parameter tests, which requires cast to any.
+      // tslint:disable-next-line no-any
+      (auth as any).fromJSON(null, (err: Error) => {
         assert.equal(true, err instanceof Error);
         done();
       });
@@ -175,7 +179,9 @@ describe('GoogleAuth', () => {
           auth = new GoogleAuth();
         });
         it('Should error given an invalid api key', done => {
-          (<any>auth).fromAPIKey(null, (err: Error) => {
+          // Test verifies invalid parameter tests, which requires cast to any.
+          // tslint:disable-next-line no-any
+          (auth as any).fromAPIKey(null, (err: Error) => {
             assert(err instanceof Error);
             done();
           });
@@ -306,7 +312,10 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert.equal(json.client_email, result.email);
+          assert(result);
+          if (result) {
+            assert.equal(json.client_email, (result as JWT).email);
+          }
           done();
         });
       });
@@ -316,7 +325,10 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert.equal(json.private_key, result.key);
+          assert(result);
+          if (result) {
+            assert.equal(json.private_key, (result as JWT).key);
+          }
           done();
         });
       });
@@ -326,7 +338,10 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert.equal(null, result.scopes);
+          assert(result);
+          if (result) {
+            assert.equal(null, (result as JWT).scopes);
+          }
           done();
         });
       });
@@ -336,7 +351,10 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert.equal(null, result.subject);
+          assert(result);
+          if (result) {
+            assert.equal(null, (result as JWT).subject);
+          }
           done();
         });
       });
@@ -346,7 +364,10 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert.equal(null, result.keyFile);
+          assert(result);
+          if (result) {
+            assert.equal(null, (result as JWT).keyFile);
+          }
           done();
         });
       });
@@ -403,7 +424,9 @@ describe('GoogleAuth', () => {
 
     it('should error on null stream', (done) => {
       const auth = new GoogleAuth();
-      (<any>auth).fromStream(null, (err: Error) => {
+      // Test verifies invalid parameter tests, which requires cast to any.
+      // tslint:disable-next-line no-any
+      (auth as any).fromStream(null, (err: Error) => {
         assert.equal(true, err instanceof Error);
         done();
       });
@@ -422,14 +445,16 @@ describe('GoogleAuth', () => {
       const auth = new GoogleAuth();
       auth.fromStream(stream, (err, result) => {
         assert.equal(null, err);
-
-        // Ensure that the correct bits were pulled from the stream.
-        assert.equal(json.private_key, result.key);
-        assert.equal(json.client_email, result.email);
-        assert.equal(null, result.keyFile);
-        assert.equal(null, result.subject);
-        assert.equal(null, result.scope);
-
+        assert(result);
+        const jwt = result as JWT;
+        if (jwt) {
+          // Ensure that the correct bits were pulled from the stream.
+          assert.equal(json.private_key, jwt.key);
+          assert.equal(json.client_email, jwt.email);
+          assert.equal(null, jwt.keyFile);
+          assert.equal(null, jwt.subject);
+          assert.equal(null, jwt.scope);
+        }
         done();
       });
     });
@@ -447,12 +472,14 @@ describe('GoogleAuth', () => {
       const auth = new GoogleAuth();
       auth.fromStream(stream, (err, result) => {
         assert.ifError(err);
-
+        assert(result);
         // Ensure that the correct bits were pulled from the stream.
-        assert.equal(json.client_id, result.clientId);
-        assert.equal(json.client_secret, result.clientSecret);
-        assert.equal(json.refresh_token, result._refreshToken);
-
+        if (result) {
+          const rc = result as UserRefreshClient;
+          assert.equal(json.client_id, rc._clientId);
+          assert.equal(json.client_secret, rc._clientSecret);
+          assert.equal(json.refresh_token, rc._refreshToken);
+        }
         done();
       });
     });
@@ -489,10 +516,14 @@ describe('GoogleAuth', () => {
 
     it('should error on null file path', (done) => {
       const auth = new GoogleAuth();
-      (<any>auth)._getApplicationCredentialsFromFilePath(null, (err: Error) => {
-        assert.equal(true, err instanceof Error);
-        done();
-      });
+      (auth as
+           // Test verifies invalid parameter tests, which requires cast to any.
+           // tslint:disable-next-line no-any
+           any)
+          ._getApplicationCredentialsFromFilePath(null, (err: Error) => {
+            assert.equal(true, err instanceof Error);
+            done();
+          });
     });
 
     it('should error on empty file path', (done) => {
@@ -506,7 +537,9 @@ describe('GoogleAuth', () => {
     it('should error on non-string file path', (done) => {
       const auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath(
-          2 as any, (err: Error|null) => {
+          // Test verifies invalid parameter tests, which requires cast to any.
+          // tslint:disable-next-line no-any
+          (2 as any), (err: Error|null) => {
             assert.equal(true, err instanceof Error);
             done();
           });
@@ -597,13 +630,16 @@ describe('GoogleAuth', () => {
       const auth = new GoogleAuth();
       auth._getApplicationCredentialsFromFilePath(
           './test/fixtures/private.json', (err, result) => {
-
             assert.equal(null, err);
-            assert.equal(json.private_key, result.key);
-            assert.equal(json.client_email, result.email);
-            assert.equal(null, result.keyFile);
-            assert.equal(null, result.subject);
-            assert.equal(null, result.scope);
+            assert(result);
+            const jwt = result as JWT;
+            if (result) {
+              assert.equal(json.private_key, jwt.key);
+              assert.equal(json.client_email, jwt.email);
+              assert.equal(null, jwt.keyFile);
+              assert.equal(null, jwt.subject);
+              assert.equal(null, jwt.scope);
+            }
             done();
           });
     });
@@ -614,8 +650,7 @@ describe('GoogleAuth', () => {
     it('should return false when env const is not set', (done) => {
       // Set up a mock to return a null path string.
       const auth = new GoogleAuth();
-      insertEnvironmentVariableIntoAuth(
-          auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
+      insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS');
 
       // The test ends successfully after 1 step has completed.
       const step = doneWhen(done, 1);
@@ -687,12 +722,16 @@ describe('GoogleAuth', () => {
       // Execute.
       const handled = auth._tryGetApplicationCredentialsFromEnvironmentVariable(
           (err, result) => {
+            assert(result);
             assert.equal(null, err);
-            assert.equal(json.private_key, result.key);
-            assert.equal(json.client_email, result.email);
-            assert.equal(null, result.keyFile);
-            assert.equal(null, result.subject);
-            assert.equal(null, result.scope);
+            const jwt = result as JWT;
+            if (result) {
+              assert.equal(json.private_key, jwt.key);
+              assert.equal(json.client_email, jwt.email);
+              assert.equal(null, jwt.keyFile);
+              assert.equal(null, jwt.subject);
+              assert.equal(null, jwt.scope);
+            }
             step();
           });
 
@@ -711,8 +750,8 @@ describe('GoogleAuth', () => {
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('win32');
-      auth._fileExists = returns(true);
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => true;
 
       auth._getApplicationCredentialsFromFilePath = (filePath) => {
         if (filePath === 'foo:gcloud:application_default_credentials.json') {
@@ -735,8 +774,8 @@ describe('GoogleAuth', () => {
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('linux');
-      auth._fileExists = returns(true);
+      auth._osPlatform = () => 'linux';
+      auth._fileExists = () => true;
 
       auth._getApplicationCredentialsFromFilePath = (filePath) => {
         if (filePath ===
@@ -756,10 +795,10 @@ describe('GoogleAuth', () => {
       // Set up mocks.
       const auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', null);
+      insertEnvironmentVariableIntoAuth(auth, 'APPDATA');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('win32');
-      auth._fileExists = returns(true);
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => true;
       auth._getApplicationCredentialsFromFilePath = noop;
 
       // The test ends successfully after 1 step has completed.
@@ -779,10 +818,10 @@ describe('GoogleAuth', () => {
       // Set up mocks.
       const auth = new GoogleAuth();
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'HOME', null);
+      insertEnvironmentVariableIntoAuth(auth, 'HOME');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('linux');
-      auth._fileExists = returns(true);
+      auth._osPlatform = () => 'linux';
+      auth._fileExists = () => true;
       auth._getApplicationCredentialsFromFilePath = noop;
 
       // The test ends successfully after 1 step has completed.
@@ -804,8 +843,8 @@ describe('GoogleAuth', () => {
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('win32');
-      auth._fileExists = returns(false);
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => false;
       auth._getApplicationCredentialsFromFilePath = noop;
 
       // The test ends successfully after 1 step has completed.
@@ -827,8 +866,8 @@ describe('GoogleAuth', () => {
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('linux');
-      auth._fileExists = returns(false);
+      auth._osPlatform = () => 'linux';
+      auth._fileExists = () => false;
       auth._getApplicationCredentialsFromFilePath = noop;
 
       // The test ends successfully after 1 step has completed.
@@ -851,11 +890,14 @@ describe('GoogleAuth', () => {
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
     auth._pathJoin = pathJoin;
-    auth._osPlatform = returns('win32');
-    auth._fileExists = returns(true);
+    auth._osPlatform = () => 'win32';
+    auth._fileExists = () => true;
 
     auth._getApplicationCredentialsFromFilePath = (filePath, callback) => {
-      if (callback) callback(null, 'hello');
+      if (callback) {
+        const client = new JWT('hello');
+        callback(null, client);
+      }
     };
 
     // The test ends successfully after 2 steps have completed.
@@ -865,10 +907,12 @@ describe('GoogleAuth', () => {
     const handled =
         auth._tryGetApplicationCredentialsFromWellKnownFile((err, result) => {
           assert.equal(null, err);
-          assert.equal('hello', result);
+          assert(result);
+          if (result) {
+            assert.equal('hello', (result as JWT).email);
+          }
           step();
         });
-
     assert.equal(true, handled);
     step();
   });
@@ -879,11 +923,13 @@ describe('GoogleAuth', () => {
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
     auth._pathJoin = pathJoin;
-    auth._osPlatform = returns('linux');
-    auth._fileExists = returns(true);
+    auth._osPlatform = () => 'linux';
+    auth._fileExists = () => true;
 
     auth._getApplicationCredentialsFromFilePath = (filePath, callback) => {
-      if (callback) callback(null, 'hello');
+      if (callback) {
+        callback(null, new JWT('hello'));
+      }
     };
 
     // The test ends successfully after 2 steps have completed.
@@ -893,7 +939,7 @@ describe('GoogleAuth', () => {
     const handled =
         auth._tryGetApplicationCredentialsFromWellKnownFile((err, result) => {
           assert.equal(null, err);
-          assert.equal('hello', result);
+          assert.equal('hello', (result as JWT).email);
           step();
         });
 
@@ -907,8 +953,8 @@ describe('GoogleAuth', () => {
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
     auth._pathJoin = pathJoin;
-    auth._osPlatform = returns('win32');
-    auth._fileExists = returns(true);
+    auth._osPlatform = () => 'win32';
+    auth._fileExists = () => true;
 
     auth._getApplicationCredentialsFromFilePath = (filePath, callback) => {
       if (callback) callback(new Error('hello'));
@@ -936,8 +982,8 @@ describe('GoogleAuth', () => {
     blockGoogleApplicationCredentialEnvironmentVariable(auth);
     insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
     auth._pathJoin = pathJoin;
-    auth._osPlatform = returns('linux');
-    auth._fileExists = returns(true);
+    auth._osPlatform = () => 'linux';
+    auth._fileExists = () => true;
 
     auth._getApplicationCredentialsFromFilePath = (filePath, callback) => {
       if (callback) callback(new Error('hello'));
@@ -969,12 +1015,13 @@ describe('GoogleAuth', () => {
 
          // Create a function which will set up a GoogleAuth instance to match
          // on an environment variable json file, but not on anything else.
-         const setUpAuthForEnvironmentVariable = (creds: any) => {
+         const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
            insertEnvironmentVariableIntoAuth(
                creds, 'GCLOUD_PROJECT', fixedProjectId);
 
-           creds._fileExists = returns(false);
-           creds._checkIsGCE = callsBack(null, false);
+           creds._fileExists = () => false;
+           creds._checkIsGCE =
+               (callback: (err: Error|null, isGCE?: boolean) => void) => false;
          };
 
          // Set up a new GoogleAuth and prepare it for local environment
@@ -1014,6 +1061,9 @@ describe('GoogleAuth', () => {
                assert.equal(projectId3, fixedProjectId);
 
                // Make sure we get a new (non-cached) projectId instance back.
+               // Test verifies invalid parameter tests, which requires cast to
+               // any.
+               // tslint:disable-next-line no-any
                assert.equal((projectId3 as any).specialTestBit, undefined);
 
                // Step 3 has completed.
@@ -1103,8 +1153,10 @@ describe('GoogleAuth', () => {
          auth._getSDKDefaultProjectId = (callback) => {
            callback(null, '', null);
          };
-         auth.transporter = {
-           request: (reqOpts, callback) => {
+         // TODO: Provide a proper mock.
+         // tslint:disable-next-line no-any
+         (auth as any).transporter = {
+           request: (opts: {}, callback?: BodyResponseCallback) => {
              return callback ? callback(
                                    null, fixedProjectId,
                                    {body: fixedProjectId, statusCode: 200} as
@@ -1132,13 +1184,14 @@ describe('GoogleAuth', () => {
 
          // Create a function which will set up a GoogleAuth instance to match
          // on an environment variable json file, but not on anything else.
-         const setUpAuthForEnvironmentVariable = (creds: any) => {
+         const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
            insertEnvironmentVariableIntoAuth(
                creds, 'GOOGLE_APPLICATION_CREDENTIALS',
                './test/fixtures/private.json');
 
-           creds._fileExists = returns(false);
-           creds._checkIsGCE = callsBack(null, false);
+           creds._fileExists = () => false;
+           creds._checkIsGCE =
+               (callback: (err: Error|null, isGCE?: boolean) => void) => false;
          };
 
          // Set up a new GoogleAuth and prepare it for local environment
@@ -1156,10 +1209,14 @@ describe('GoogleAuth', () => {
 
            // Make sure our special test bit is not set yet, indicating that
            // this is a new credentials instance.
-           assert.equal(null, cachedCredential.specialTestBit);
+           // Test verifies invalid parameter tests, which requires cast to any.
+           // tslint:disable-next-line no-any
+           assert.equal(null, (cachedCredential as any).specialTestBit);
 
            // Now set the special test bit.
-           cachedCredential.specialTestBit = 'monkey';
+           // Test verifies invalid parameter tests, which requires cast to any.
+           // tslint:disable-next-line no-any
+           (cachedCredential as any).specialTestBit = 'monkey';
 
            // Step 1 has completed.
            step();
@@ -1173,7 +1230,10 @@ describe('GoogleAuth', () => {
              // Make sure the special test bit is set on the credentials we got
              // back, indicating that we got cached credentials. Also make sure
              // the object instance is the same.
-             assert.equal('monkey', result2.specialTestBit);
+             // Test verifies invalid parameter tests, which requires cast to
+             // any.
+             // tslint:disable-next-line no-any
+             assert.equal('monkey', (result2 as any).specialTestBit);
              assert.equal(cachedCredential, result2);
 
              // Now create a second GoogleAuth instance, and ask for
@@ -1189,7 +1249,10 @@ describe('GoogleAuth', () => {
                assert.notEqual(null, result3);
 
                // Make sure we get a new (non-cached) credential instance back.
-               assert.equal(null, result3.specialTestBit);
+               // Test verifies invalid parameter tests, which requires cast to
+               // any.
+               // tslint:disable-next-line no-any
+               assert.equal(null, (result3 as any).specialTestBit);
                assert.notEqual(cachedCredential, result3);
 
                // Step 3 has completed.
@@ -1215,8 +1278,9 @@ describe('GoogleAuth', () => {
           './test/fixtures/private.json');
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('win32');
-      auth._fileExists = returns(true);
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => true;
+
       auth._checkIsGCE = callsBack(null, true);
       insertWellKnownFilePathIntoAuth(
           auth, 'foo:gcloud:application_default_credentials.json',
@@ -1224,12 +1288,13 @@ describe('GoogleAuth', () => {
 
       // Execute.
       auth.getApplicationDefault((err, result) => {
+        const client = result as JWT;
         assert.equal(null, err);
-        assert.equal(json.private_key, result.key);
-        assert.equal(json.client_email, result.email);
-        assert.equal(null, result.keyFile);
-        assert.equal(null, result.subject);
-        assert.equal(null, result.scope);
+        assert.equal(json.private_key, client.key);
+        assert.equal(json.client_email, client.email);
+        assert.equal(null, client.keyFile);
+        assert.equal(null, client.subject);
+        assert.equal(null, client.scope);
         done();
       });
     });
@@ -1249,9 +1314,10 @@ describe('GoogleAuth', () => {
          blockGoogleApplicationCredentialEnvironmentVariable(auth);
          insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
          auth._pathJoin = pathJoin;
-         auth._osPlatform = returns('win32');
-         auth._fileExists = returns(true);
-         auth._checkIsGCE = callsBack(null, true);
+         auth._osPlatform = () => 'win32';
+         auth._fileExists = () => true;
+         auth._checkIsGCE =
+             (callback: (err: Error|null, isGCE?: boolean) => void) => true;
          insertWellKnownFilePathIntoAuth(
              auth, 'foo:gcloud:application_default_credentials.json',
              './test/fixtures/private2.json');
@@ -1259,11 +1325,12 @@ describe('GoogleAuth', () => {
          // Execute.
          auth.getApplicationDefault((err, result) => {
            assert.equal(null, err);
-           assert.equal(json.private_key, result.key);
-           assert.equal(json.client_email, result.email);
-           assert.equal(null, result.keyFile);
-           assert.equal(null, result.subject);
-           assert.equal(null, result.scope);
+           const client = result as JWT;
+           assert.equal(json.private_key, client.key);
+           assert.equal(json.client_email, client.email);
+           assert.equal(null, client.keyFile);
+           assert.equal(null, client.subject);
+           assert.equal(null, client.scope);
            done();
          });
        });
@@ -1278,8 +1345,8 @@ describe('GoogleAuth', () => {
          blockGoogleApplicationCredentialEnvironmentVariable(auth);
          insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
          auth._pathJoin = pathJoin;
-         auth._osPlatform = returns('win32');
-         auth._fileExists = returns(false);
+         auth._osPlatform = () => 'win32';
+         auth._fileExists = () => false;
          auth._checkIsGCE = callsBack(null, true);
 
          // Execute.
@@ -1303,8 +1370,8 @@ describe('GoogleAuth', () => {
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('win32');
-      auth._fileExists = returns(false);
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => false;
       auth._checkIsGCE = callsBack(new Error('fake error'), undefined);
 
       // Execute.
@@ -1333,9 +1400,10 @@ describe('GoogleAuth', () => {
       insertEnvironmentVariableIntoAuth(auth, 'GCLOUD_PROJECT', testProjectId);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('win32');
-      auth._fileExists = returns(true);
-      auth._checkIsGCE = callsBack(null, true);
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => true;
+      auth._checkIsGCE =
+          (callback: (err: Error|null, isGCE?: boolean) => void) => true;
       insertWellKnownFilePathIntoAuth(
           auth, 'foo:gcloud:application_default_credentials.json',
           './test/fixtures/private2.json');
@@ -1343,12 +1411,13 @@ describe('GoogleAuth', () => {
       // Execute.
       auth.getApplicationDefault((err, result, projectId) => {
         assert.equal(null, err);
-        assert.equal(json.private_key, result.key);
-        assert.equal(json.client_email, result.email);
+        const client = result as JWT;
+        assert.equal(json.private_key, client.key);
+        assert.equal(json.client_email, client.email);
         assert.equal(projectId, testProjectId);
-        assert.equal(null, result.keyFile);
-        assert.equal(null, result.subject);
-        assert.equal(null, result.scope);
+        assert.equal(null, client.keyFile);
+        assert.equal(null, client.subject);
+        assert.equal(null, client.scope);
         done();
       });
     });

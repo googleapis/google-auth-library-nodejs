@@ -38,7 +38,7 @@ export class IAMAuth {
    *
    * @return {boolean} always false
    */
-  public createScopedRequired() {
+  createScopedRequired() {
     // IAM authorization does not use scopes.
     return false;
   }
@@ -50,7 +50,7 @@ export class IAMAuth {
    * @param {function} metadataFn a callback invoked with object
    *                   containing request metadata.
    */
-  public getRequestMetadata(
+  getRequestMetadata(
       unusedUri: string|null,
       metadataFn: (err: Error|null, metadata?: RequestMetadata) => void) {
     metadataFn(null, {

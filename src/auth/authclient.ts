@@ -21,12 +21,12 @@ import {DefaultTransporter} from '../transporters';
 import {Credentials} from './credentials';
 
 export abstract class AuthClient {
-  public transporter = new DefaultTransporter();
-  public credentials: Credentials;
+  transporter = new DefaultTransporter();
+  credentials: Credentials;
 
   /**
    * Provides an alternative request
    * implementations with auth credentials.
    */
-  public abstract request(): request.Request|void;
+  abstract request(opts: request.Options): request.Request|void;
 }
