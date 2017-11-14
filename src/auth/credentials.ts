@@ -20,3 +20,13 @@ export interface Credentials {
   access_token?: string;
   token_type?: string;
 }
+
+export interface JWTInput {
+  type?: string;
+  client_email?: string;
+  private_key?: string;
+  project_id?: string;
+  client_id?: string;
+  client_secret?: string;
+  refresh_token?: string;
+}

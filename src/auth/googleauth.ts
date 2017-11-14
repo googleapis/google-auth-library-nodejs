@@ -21,34 +21,37 @@ import * as path from 'path';
 import * as stream from 'stream';
 import * as util from 'util';
 
-import {DefaultTransporter, Transporter} from '../transporters';
+import {BodyResponseCallback, DefaultTransporter, Transporter} from '../transporters';
 
-import {BodyResponseCallback} from './../transporters';
 import {Compute} from './computeclient';
+import {Credentials, JWTInput} from './credentials';
 import {IAMAuth} from './iam';
 import {JWTAccess} from './jwtaccess';
-import {JWT} from './jwtclient';
+import {JWT, TokenOptions} from './jwtclient';
 import {OAuth2Client} from './oauth2client';
 import {UserRefreshClient} from './refreshclient';
 
-export interface ProjectIdCallback { (err: Error, projectId: string): void }
+export interface ProjectIdCallback {
+  (err?: Error|null, projectId?: string): void;
+}
 
 export class GoogleAuth {
-  public transporter: Transporter;
+  transporter: Transporter;
 
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
    * @private
    */
-  private _isGCE: boolean = undefined;
+  private checkIsGCE?: boolean = undefined;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
   get isGCE() {
-    return this._isGCE;
+    return this.checkIsGCE;
   }
 
+  // The _ rule goes away in the next gts release
   private _cachedProjectId: string;
 
   // Note:  this properly is only public to satisify unit tests.
@@ -57,51 +60,50 @@ export class GoogleAuth {
     this._cachedProjectId = projectId;
   }
 
-  public cachedCredential: any = null;
-
-  protected JWTClient = JWT;
-  protected ComputeClient = Compute;
+  cachedCredential: OAuth2Client|null = null;
 
   /**
    * Convenience field mapping in the IAM credential type.
    */
-  public IAMAuth = IAMAuth;
+  IAMAuth = IAMAuth;
 
   /**
    * Convenience field mapping in the Compute credential type.
    */
-  public Compute = Compute;
+  Compute = Compute;
 
   /**
    * Convenience field mapping in the JWT credential type.
    */
-  public JWT = JWT;
+  JWT = JWT;
 
   /**
    * Convenience field mapping in the JWT Access credential type.
    */
-  public JWTAccess = JWTAccess;
+  JWTAccess = JWTAccess;
 
   /**
    * Convenience field mapping in the OAuth2 credential type.
    */
-  public OAuth2 = OAuth2Client;
+  // lint is checking for camelCase properties, but OAuth is proper here
+  // tslint:disable-next-line variable-name
+  OAuth2 = OAuth2Client;
 
   /**
    * Convenience field mapping to the UserRefreshClient credential type.
    */
-  public UserRefreshClient = UserRefreshClient;
+  UserRefreshClient = UserRefreshClient;
 
   /**
    * Export DefaultTransporter as a static property of the class.
    */
-  public static DefaultTransporter = DefaultTransporter;
+  static DefaultTransporter = DefaultTransporter;
 
   /**
    * Obtains the default project ID for the application..
    * @param {function=} callback Optional callback.
    */
-  public getDefaultProjectId(callback: ProjectIdCallback) {
+  getDefaultProjectId(callback: ProjectIdCallback) {
     // In implicit case, supports three environments. In order of precedence,
     // the implicit environments are:
     //
@@ -114,84 +116,79 @@ export class GoogleAuth {
     // implemented yet)
 
     if (this._cachedProjectId) {
-      setImmediate(() => {
-        this.callback(callback, null, this._cachedProjectId);
-      });
+      if (callback) setImmediate(callback, null, this._cachedProjectId);
     } else {
-      const my_callback = (err: Error, projectId: string) => {
+      const myCallback = (err?: Error|null, projectId?: string) => {
         if (!err && projectId) {
           this._cachedProjectId = projectId;
         }
-        setImmediate(() => {
-          this.callback(callback, err, projectId);
-        });
+        if (callback) setImmediate(callback, err, projectId);
       };
 
       // environment variable
-      if (this._getProductionProjectId(my_callback)) {
+      if (this._getProductionProjectId(myCallback)) {
         return;
       }
 
       // json file
-      this._getFileProjectId((err: Error, projectId: string) => {
+      this.getFileProjectId((err?: Error|null, projectId?: string) => {
         if (err || projectId) {
-          my_callback(err, projectId);
+          myCallback(err, projectId);
           return;
         }
 
         // Google Cloud SDK default project id
-        this._getDefaultServiceProjectId((err2: Error, projectId2: string) => {
-          if (err2 || projectId2) {
-            my_callback(err2, projectId2);
-            return;
-          }
+        this.getDefaultServiceProjectId(
+            (err2?: Error|null, projectId2?: string) => {
+              if (err2 || projectId2) {
+                myCallback(err2, projectId2);
+                return;
+              }
 
-          // Get project ID from Compute Engine metadata server
-          this._getGCEProjectId(my_callback);
-        });
+              // Get project ID from Compute Engine metadata server
+              this.getGCEProjectId(myCallback);
+            });
       });
     }
   }
 
   /**
    * Run the Google Cloud SDK command that prints the default project ID
-   * @param {function} _callback Callback.
+   * @param {function} callback Callback.
    * @api private
    */
-  public _getSDKDefaultProjectId(
-      _callback: (error: Error, stdout: string, stderr: string) => void) {
-    exec('gcloud -q config list core/project --format=json', _callback);
+  _getSDKDefaultProjectId(
+      callback:
+          (error: Error|null, stdout: string, stderr: string|null) => void) {
+    exec('gcloud -q config list core/project --format=json', callback);
   }
 
   /**
    * Obtains the default service-level credentials for the application..
    * @param {function=} callback Optional callback.
    */
-  public getApplicationDefault(
-      callback?: (err: Error, credential: any, projectId: string) => void) {
+  getApplicationDefault(
+      callback?:
+          (err: Error, credential: JWT|UserRefreshClient,
+           projectId: string) => void) {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
-      setImmediate(() => {
-        this.callback(
+      if (callback) {
+        setImmediate(
             callback, null, this.cachedCredential, this._cachedProjectId);
-      });
+      }
     } else {
       // Inject our own callback routine, which will cache the credential once
       // it's been created. It also allows us to ensure that the ultimate
       // callback is always async.
-      const my_callback = (err: Error, result?: any) => {
+      const myCallback = (err?: Error|null, result?: OAuth2Client) => {
         if (!err && result) {
           this.cachedCredential = result;
           this.getDefaultProjectId((err2, projectId) => {
-            setImmediate(() => {
-              // Ignore default project error
-              this.callback(callback, null, result, projectId);
-            });
+            if (callback) setImmediate(callback, null, result, projectId);
           });
         } else {
-          setImmediate(() => {
-            this.callback(callback, err, result);
-          });
+          if (callback) setImmediate(callback, err, result);
         }
       };
 
@@ -199,12 +196,12 @@ export class GoogleAuth {
       // location of the credential file. This is typically used in local
       // developer scenarios.
       if (this._tryGetApplicationCredentialsFromEnvironmentVariable(
-              my_callback)) {
+              myCallback)) {
         return;
       }
 
       // Look in the well-known credential file location.
-      if (this._tryGetApplicationCredentialsFromWellKnownFile(my_callback)) {
+      if (this._tryGetApplicationCredentialsFromWellKnownFile(myCallback)) {
         return;
       }
 
@@ -213,14 +210,14 @@ export class GoogleAuth {
         if (gce) {
           // For GCE, just return a default ComputeClient. It will take care of
           // the rest.
-          my_callback(null, new this.ComputeClient());
+          myCallback(null, new Compute());
         } else if (err) {
-          my_callback(new Error(
+          myCallback(new Error(
               'Unexpected error while acquiring application default ' +
               'credentials: ' + err.message));
         } else {
           // We failed to find the default credentials. Bail out with an error.
-          my_callback(new Error(
+          myCallback(new Error(
               'Could not load the default credentials. Browse to ' +
               'https://developers.google.com/accounts/docs/application-default-credentials for ' +
               'more information.'));
@@ -234,10 +231,10 @@ export class GoogleAuth {
    * @param {function=} callback The callback.
    * @api private
    */
-  public _checkIsGCE(callback: (err: Error, isGCE?: boolean) => void) {
-    if (this._isGCE !== undefined) {
+  _checkIsGCE(callback: (err: Error|null, isGCE?: boolean) => void) {
+    if (this.checkIsGCE !== undefined) {
       setImmediate(() => {
-        callback(null, this._isGCE);
+        callback(null, this.checkIsGCE);
       });
     } else {
       if (!this.transporter) {
@@ -245,19 +242,19 @@ export class GoogleAuth {
       }
       this.transporter.request(
           {method: 'GET', uri: 'http://metadata.google.internal', json: true},
-          (err: any, body, res) => {
+          (err, body, res) => {
             if (err) {
-              if (err.code !== 'ENOTFOUND') {
+              if ((err as NodeJS.ErrnoException).code !== 'ENOTFOUND') {
                 // Unexpected error occurred. TODO(ofrobots): retry if this was
                 // a transient error.
                 return callback(err);
               }
-              this._isGCE = false;
-              return callback(null, this._isGCE);
+              this.checkIsGCE = false;
+              return callback(null, this.checkIsGCE);
             }
-            this._isGCE = res && res.headers &&
-                res.headers['metadata-flavor'] === 'Google';
-            callback(null, this._isGCE);
+            this.checkIsGCE = res !== null && res !== undefined &&
+                res.headers && res.headers['metadata-flavor'] === 'Google';
+            callback(null, this.checkIsGCE);
           });
     }
   }
@@ -268,8 +265,8 @@ export class GoogleAuth {
    * @return {boolean} Returns true if the callback has been executed; false otherwise.
    * @api private
    */
-  public _tryGetApplicationCredentialsFromEnvironmentVariable(
-      callback?: (err: Error, result: any) => void) {
+  _tryGetApplicationCredentialsFromEnvironmentVariable(
+      callback?: (err?: Error|null, result?: JWT|UserRefreshClient) => void) {
     const credentialsPath = this._getEnv('GOOGLE_APPLICATION_CREDENTIALS');
     if (!credentialsPath || credentialsPath.length === 0) {
       return false;
@@ -282,7 +279,7 @@ export class GoogleAuth {
                 'environment variable.',
             err);
       }
-      this.callback(callback, wrappedError, result);
+      if (callback) callback(wrappedError, result);
     });
     return true;
   }
@@ -293,8 +290,8 @@ export class GoogleAuth {
    * @return {boolean} Returns true if the callback has been executed; false otherwise.
    * @api private
    */
-  public _tryGetApplicationCredentialsFromWellKnownFile(
-      callback?: (err: Error, result?: any) => void) {
+  _tryGetApplicationCredentialsFromWellKnownFile(
+      callback?: (err?: Error|null, result?: JWT|UserRefreshClient) => void) {
     // First, figure out the location of the file, depending upon the OS type.
     let location = null;
     if (this._isWindows()) {
@@ -333,8 +330,9 @@ export class GoogleAuth {
    * @param {function=} callback Optional callback.
    * @api private
    */
-  public _getApplicationCredentialsFromFilePath(
-      filePath: string, callback: (err: Error, result?: any) => void) {
+  _getApplicationCredentialsFromFilePath(
+      filePath: string,
+      callback?: (err: Error|null, result?: JWT|UserRefreshClient) => void) {
     let error = null;
     // Make sure the path looks like a string.
     if (!filePath || filePath.length === 0) {
@@ -363,15 +361,15 @@ export class GoogleAuth {
     // Now open a read stream on the file, and parse it.
     if (!error) {
       try {
-        const stream = this._createReadStream(filePath);
-        this.fromStream(stream, callback);
+        const readStream = this._createReadStream(filePath);
+        this.fromStream(readStream, callback);
       } catch (err) {
         error = this.createError(
             util.format('Unable to read the file at %s.', filePath), err);
       }
     }
     if (error) {
-      this.callback(callback, error);
+      if (callback) callback(error);
     }
   }
 
@@ -380,13 +378,15 @@ export class GoogleAuth {
    * @param {object=} json The input object.
    * @param {function=} callback Optional callback.
    */
-  public fromJSON(json: any, callback?: (err: Error, client?: any) => void) {
-    let client: UserRefreshClient|JWT = null;
+  fromJSON(
+      json: JWTInput,
+      callback?: (err: Error|null, client?: UserRefreshClient|JWT) => void) {
+    let client: UserRefreshClient|JWT;
     if (!json) {
-      this.callback(
-          callback,
-          new Error(
-              'Must pass in a JSON object containing the Google auth settings.'));
+      if (callback) {
+        callback(new Error(
+            'Must pass in a JSON object containing the Google auth settings.'));
+      }
       return;
     }
     if (json.type === 'authorized_user') {
@@ -395,42 +395,45 @@ export class GoogleAuth {
       client = new JWT();
     }
 
-    client.fromJSON(json, (err: Error) => {
-      if (err) {
-        this.callback(callback, err);
-      } else {
-        this.callback(callback, null, client);
+    client.fromJSON(json, (err?: Error|null) => {
+      if (callback) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, client);
+        }
       }
     });
   }
 
   /**
    * Create a credentials instance using the given input stream.
-   * @param {object=} stream The input stream.
+   * @param {object=} inputStream The input stream.
    * @param {function=} callback Optional callback.
    */
-  public fromStream(
-      stream: stream.Readable, callback?: (err: Error, result?: any) => void) {
-    if (!stream) {
-      setImmediate(() => {
-        this.callback(
+  fromStream(
+      inputStream: stream.Readable,
+      callback?: (err: Error|null, result?: UserRefreshClient|JWT) => void) {
+    if (!inputStream) {
+      if (callback) {
+        setImmediate(
             callback,
             new Error(
                 'Must pass in a stream containing the Google auth settings.'));
-      });
+      }
       return;
     }
     let s = '';
-    stream.setEncoding('utf8');
-    stream.on('data', (chunk) => {
+    inputStream.setEncoding('utf8');
+    inputStream.on('data', (chunk) => {
       s += chunk;
     });
-    stream.on('end', () => {
+    inputStream.on('end', () => {
       try {
         const data = JSON.parse(s);
         this.fromJSON(data, callback);
       } catch (err) {
-        this.callback(callback, err);
+        if (callback) callback(err);
       }
     });
   }
@@ -440,14 +443,14 @@ export class GoogleAuth {
    * @param {string} - The API key string
    * @param {function=} - Optional callback function
    */
-  public fromAPIKey(
-      apiKey: string, callback?: (err: Error, client?: JWT) => void) {
-    const client = new this.JWTClient();
+  fromAPIKey(
+      apiKey: string, callback?: (err?: Error|null, client?: JWT) => void) {
+    const client = new JWT();
     client.fromAPIKey(apiKey, (err) => {
       if (err) {
-        this.callback(callback, err);
+        if (callback) callback(err);
       } else {
-        this.callback(callback, null, client);
+        if (callback) callback(null, client);
       }
     });
   }
@@ -470,7 +473,7 @@ export class GoogleAuth {
    * Creates a file stream. Allows mocking.
    * @api private
    */
-  public _createReadStream(filePath: string) {
+  _createReadStream(filePath: string) {
     return fs.createReadStream(filePath);
   }
 
@@ -479,7 +482,7 @@ export class GoogleAuth {
    * mocking.
    * @api private
    */
-  private _getEnv(name: string) {
+  _getEnv(name: string) {
     return process.env[name];
   }
 
@@ -487,7 +490,7 @@ export class GoogleAuth {
    * Gets the current operating system platform. Allows mocking.
    * @api private
    */
-  public _osPlatform() {
+  _osPlatform() {
     return os.platform();
   }
 
@@ -495,7 +498,7 @@ export class GoogleAuth {
    * Determines whether a file exists. Allows mocking.
    * @api private
    */
-  public _fileExists(filePath: string) {
+  _fileExists(filePath: string) {
     return fs.existsSync(filePath);
   }
 
@@ -503,7 +506,7 @@ export class GoogleAuth {
    * Joins two parts of a path. Allows mocking.
    * @api private
    */
-  public _pathJoin(item1: string, item2: string) {
+  _pathJoin(item1: string, item2: string) {
     return path.join(item1, item2);
   }
 
@@ -511,15 +514,8 @@ export class GoogleAuth {
    * Allows mocking of the path to a well-known file.
    * @api private
    */
-  private _mockWellKnownFilePath(filePath: string) {
+  _mockWellKnownFilePath(filePath: string) {
     return filePath;
-  }
-
-  // Executes the given callback if it is not null.
-  private callback(c: Function, err?: Error, ...args: any[]) {
-    if (c) {
-      return c.apply(null, Array.prototype.slice.call(arguments, 1));
-    }
   }
 
   // Creates an Error containing the given message, and includes the message
@@ -540,10 +536,10 @@ export class GoogleAuth {
 
   /**
    * Loads the default project of the Google Cloud SDK.
-   * @param {function} _callback Callback.
+   * @param {function} callback Callback.
    * @api private
    */
-  private _getDefaultServiceProjectId(_callback: ProjectIdCallback) {
+  private getDefaultServiceProjectId(callback: ProjectIdCallback) {
     this._getSDKDefaultProjectId((err, stdout) => {
       let projectId = null;
       if (!err && stdout) {
@@ -554,53 +550,55 @@ export class GoogleAuth {
         }
       }
       // Ignore any errors
-      this.callback(_callback, null, projectId);
+      if (callback) callback(null, projectId);
     });
   }
 
   /**
    * Loads the project id from environment variables.
-   * @param {function} _callback Callback.
+   * @param {function} callback Callback.
    * @api private
    */
-  private _getProductionProjectId(_callback: ProjectIdCallback) {
+  private _getProductionProjectId(callback: ProjectIdCallback) {
     const projectId =
         this._getEnv('GCLOUD_PROJECT') || this._getEnv('GOOGLE_CLOUD_PROJECT');
     if (projectId) {
-      setImmediate(() => {
-        this.callback(_callback, null, projectId);
-      });
+      if (callback) setImmediate(callback, null, projectId);
     }
     return projectId;
   }
 
   /**
    * Loads the project id from the GOOGLE_APPLICATION_CREDENTIALS json file.
-   * @param {function} _callback Callback.
+   * @param {function} callback Callback.
    * @api private
    */
-  private _getFileProjectId(_callback: ProjectIdCallback) {
+  private getFileProjectId(callback: ProjectIdCallback) {
     if (this.cachedCredential) {
       // Try to read the project ID from the cached credentials file
-      setImmediate(() => {
-        this.callback(_callback, null, this.cachedCredential.projectId);
-      });
+      if (callback) {
+        setImmediate(callback, null, this.cachedCredential.projectId);
+      }
       return;
     }
 
     // Try to load a credentials file and read its project ID
     const pathExists =
         this._tryGetApplicationCredentialsFromEnvironmentVariable(
-            (err, result) => {
+            (err, result?: JWT|UserRefreshClient) => {
               if (!err && result) {
-                this.callback(_callback, null, result.projectId);
+                if (callback) {
+                  callback(null, result.projectId);
+                }
                 return;
               }
-              this.callback(_callback, err);
+              if (callback) {
+                callback(err);
+              }
             });
 
     if (!pathExists) {
-      this.callback(_callback, null);
+      if (callback) callback();
     }
   }
 
@@ -614,10 +612,10 @@ export class GoogleAuth {
    * See https://github.com/google/oauth2client/issues/93 for context about
    * DNS latency.
    *
-   * @param {function} _callback Callback.
+   * @param {function} callback Callback.
    * @api private
    */
-  private _getGCEProjectId(_callback: BodyResponseCallback) {
+  private getGCEProjectId(callback?: BodyResponseCallback) {
     if (!this.transporter) {
       this.transporter = new DefaultTransporter();
     }
@@ -629,11 +627,11 @@ export class GoogleAuth {
         },
         (err, body, res) => {
           if (err || !res || res.statusCode !== 200 || !body) {
-            this.callback(_callback);
+            if (callback) callback(null);
             return;
           }
           // Ignore any errors
-          this.callback(_callback, null, body);
+          if (callback) callback(null, body);
         });
   }
 }
