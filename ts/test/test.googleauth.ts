@@ -1464,17 +1464,8 @@ describe('GoogleAuth', () => {
         done();
       });
       const response = `{
-        "default":
-        {
-          "aliases":["default"],
-          "email":"default@test-creds.iam.gserviceaccount.com",
-          "scopes":["https://www.googleapis.com/auth/cloud-platform"]
-        },
-        "test-creds@test-creds.iam.gserviceaccount.com":
-        {
-          "aliases":["test-creds"],
           "email":"test-creds@test-creds.iam.gserviceaccount.com",
-          "scopes":["https://www.googleapis.com/auth/cloud-platform"]}
+          "private_key": null
         }`;
       const scope =
           nock('http://metadata.google.internal')
@@ -1483,22 +1474,45 @@ describe('GoogleAuth', () => {
               .reply(200, response);
       auth.getCredentials((err, body) => {
         assert.equal(
-            body['test-creds@test-creds.iam.gserviceaccount.com']['email'],
-            'test-creds@test-creds.iam.gserviceaccount.com');
+            body.email, 'test-creds@test-creds.iam.gserviceaccount.com');
+        assert.equal(body.private_key, null);
         scope.done();
         done();
       });
     });
-    it('should return an error when not running on GCE', (done) => {
+    it('should handle valid environment variable', (done) => {
+      // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
       auth.transporter = new MockTransporter(false);
       auth._checkIsGCE(() => {
         // Assert that the flags are not set.
         assert.equal(false, auth.isGCE);
       });
-      auth.getCredentials((err, body) => {
-        assert.equal(true, err instanceof Error);
-        done();
+      insertEnvironmentVariableIntoAuth(
+          auth, 'GOOGLE_APPLICATION_CREDENTIALS',
+          './ts/test/fixtures/private.json');
+      // Execute.
+      auth._tryGetApplicationCredentialsFromEnvironmentVariable(
+          (err, result) => {
+            auth.getCredentials((_err, body) => {
+              assert.notEqual(null, body);
+              assert.equal(result.email, body.client_email);
+              assert.equal(result.key, body.private_key);
+              done();
+            });
+          });
+    });
+    it('should return error when env const is not set', (done) => {
+      // Set up a mock to return a null path string
+      const auth = new GoogleAuth();
+      insertEnvironmentVariableIntoAuth(
+          auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
+      auth._tryGetApplicationCredentialsFromEnvironmentVariable(() => {
+        auth.getCredentials((_err, body) => {
+          assert.notEqual(null, body);
+          assert.equal(true, _err instanceof Error);
+          done();
+        });
       });
     });
   });

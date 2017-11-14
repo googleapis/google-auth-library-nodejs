@@ -643,6 +643,7 @@ export class GoogleAuth {
    * @return object representation of the service account JSON
    */
   public getCredentials(callback?: (err: Error, credentials?: any) => void) {
+    let credential: {'client_email': string, 'private_key': string};
     this._checkIsGCE((err, gce) => {
       if (gce) {
         // For GCE, return the service account details from the metadata server
@@ -655,15 +656,42 @@ export class GoogleAuth {
                 return;
               }
               // Callback with the body
-              this.callback(callback, null, body);
+              credential.client_email = body['default']['email'];
+              credential.private_key = null;
+              this.callback(callback, null, credential);
             });
       } else if (err) {
         // In case there is some error while accessing the metadata server
         this.callback(callback, err, null);
       } else {
         // Return an error if the environment is not GCP.
-        this.callback(
-            callback, new Error('This is not a GCE environment.'), null);
+        // Inject our own callback routine, which will cache the credential once
+        // it's been created. It also allows us to ensure that the ultimate
+        // callback is always async.
+        const my_callback = (err: Error, result?: any) => {
+          if (!err && result) {
+            let credential = {
+              client_email: result.email,
+              private_key: result.key
+            };
+            this.callback(callback, null, credential);
+          } else {
+            setImmediate(() => {
+              this.callback(callback, err, null);
+            });
+          }
+        };
+
+        // Check for the existence of a local environment variable pointing to
+        // the location of the credential file. This is typically used in local
+        // developer scenarios.
+        if (this._tryGetApplicationCredentialsFromEnvironmentVariable(
+                my_callback)) {
+          return;
+        } else
+          this.callback(
+              callback, new Error('Cannot find JSON file in default location.'),
+              null);
       }
     });
   }
