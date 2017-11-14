@@ -56,6 +56,16 @@ export class GoogleAuth {
   set cachedProjectId(projectId: string) {
     this._cachedProjectId = projectId;
   }
+  // To save the contents of the JSON credential file
+  private _jsonContent: any = undefined;
+
+  get jsonContent(): any {
+    return this._jsonContent;
+  }
+
+  set jsonContent(jsonContent: any) {
+    this._jsonContent = jsonContent;
+  }
 
   public cachedCredential: any = null;
 
@@ -389,6 +399,8 @@ export class GoogleAuth {
               'Must pass in a JSON object containing the Google auth settings.'));
       return;
     }
+    // Set the JSON contents
+    this.jsonContent = json;
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient();
     } else {
@@ -660,38 +672,17 @@ export class GoogleAuth {
               credential.private_key = null;
               this.callback(callback, null, credential);
             });
+      } else if (this.jsonContent) {
+        let credential = {
+          client_email: this.jsonContent.client_email,
+          private_key: this.jsonContent.private_key
+        };
+        this.callback(callback, null, this.jsonContent);
       } else if (err) {
-        // In case there is some error while accessing the metadata server
         this.callback(callback, err, null);
       } else {
-        // Return an error if the environment is not GCP.
-        // Inject our own callback routine, which will cache the credential once
-        // it's been created. It also allows us to ensure that the ultimate
-        // callback is always async.
-        const my_callback = (err: Error, result?: any) => {
-          if (!err && result) {
-            let credential = {
-              client_email: result.email,
-              private_key: result.key
-            };
-            this.callback(callback, null, credential);
-          } else {
-            setImmediate(() => {
-              this.callback(callback, err, null);
-            });
-          }
-        };
-
-        // Check for the existence of a local environment variable pointing to
-        // the location of the credential file. This is typically used in local
-        // developer scenarios.
-        if (this._tryGetApplicationCredentialsFromEnvironmentVariable(
-                my_callback)) {
-          return;
-        } else
-          this.callback(
-              callback, new Error('Cannot find JSON file in default location.'),
-              null);
+        this.callback(
+            callback, new Error('Could not find credential file.'), null);
       }
     });
   }

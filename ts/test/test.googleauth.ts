@@ -1501,18 +1501,53 @@ describe('GoogleAuth', () => {
             });
           });
     });
+    it('should handle valid file path', (done) => {
+      // Set up a mock to return path to a valid credentials file.
+      const auth = new GoogleAuth();
+      /*
+      const fileContents =
+          fs.readFileSync('./ts/test/fixtures/private2.json', 'utf-8');
+      const json = JSON.parse(fileContents);
+      */
+      blockGoogleApplicationCredentialEnvironmentVariable(auth);
+      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+      auth._pathJoin = pathJoin;
+      auth._osPlatform = returns('win32');
+      auth._fileExists = returns(true);
+      auth._checkIsGCE = callsBack(null, true);
+      insertWellKnownFilePathIntoAuth(
+          auth, 'foo:gcloud:application_default_credentials.json',
+          './ts/test/fixtures/private2.json');
+      // Execute.
+      auth.getApplicationDefault((err, result) => {
+        assert.notEqual(true, err instanceof Error);
+        it('should return the credentials from file', (done2) => {
+          auth.getCredentials((_err, body) => {
+            assert.notEqual(null, body);
+            assert.equal(result.client_email, body.client_email);
+            assert.equal(result.private_key, body.private_key);
+            done2();
+          });
+        });
+        done();
+      });
+    });
     it('should return error when env const is not set', (done) => {
       // Set up a mock to return a null path string
       const auth = new GoogleAuth();
       insertEnvironmentVariableIntoAuth(
           auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
-      auth._tryGetApplicationCredentialsFromEnvironmentVariable(() => {
-        auth.getCredentials((_err, body) => {
-          assert.notEqual(null, body);
-          assert.equal(true, _err instanceof Error);
-          done();
-        });
-      });
+      auth._tryGetApplicationCredentialsFromEnvironmentVariable(
+          (err, result) => {
+            assert.notEqual(true, err instanceof Error);
+            it('should return the credentials from file', (done2) => {
+              auth.getCredentials((_err, body) => {
+                assert.equal(true, _err instanceof Error);
+                done2();
+              });
+            });
+            done();
+          });
     });
   });
 });
