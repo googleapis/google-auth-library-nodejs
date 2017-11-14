@@ -1535,19 +1535,16 @@ describe('GoogleAuth', () => {
     it('should return error when env const is not set', (done) => {
       // Set up a mock to return a null path string
       const auth = new GoogleAuth();
+      let credential_flag: boolean;
       insertEnvironmentVariableIntoAuth(
           auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
-      auth._tryGetApplicationCredentialsFromEnvironmentVariable(
-          (err, result) => {
-            assert.notEqual(true, err instanceof Error);
-            it('should return the credentials from file', (done2) => {
-              auth.getCredentials((_err, body) => {
-                assert.equal(true, _err instanceof Error);
-                done2();
-              });
-            });
-            done();
-          });
+      credential_flag =
+          auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      assert.equal(false, credential_flag);
+      auth.getCredentials((_err, body) => {
+        assert.equal(true, _err instanceof Error);
+        done();
+      });
     });
   });
 });
