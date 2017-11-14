@@ -127,9 +127,8 @@ function insertEnvironmentVariableIntoAuth(
 function insertWellKnownFilePathIntoAuth(
     auth: any, filePath: string, mockFilePath: string) {
   const originalMockWellKnownFilePathFunction = auth._mockWellKnownFilePath;
-
-  auth._mockWellKnownFilePath = (_path: string) => {
-    if (_path === filePath) {
+  auth._mockWellKnownFilePath = (kfpath: string) => {
+    if (kfpath === filePath) {
       return mockFilePath;
     }
 
