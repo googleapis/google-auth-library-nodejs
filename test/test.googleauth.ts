@@ -1553,9 +1553,10 @@ describe('GoogleAuth', () => {
                   '/computeMetadata/v1/instance/service-accounts/?recursive=true')
               .reply(200, response);
       auth.getCredentials((err, body) => {
+        assert(body);
         assert.equal(
-            body.email, 'test-creds@test-creds.iam.gserviceaccount.com');
-        assert.equal(body.private_key, null);
+            body!.client_email, 'test-creds@test-creds.iam.gserviceaccount.com');
+        assert.equal(body!.private_key, null);
         scope.done();
         done();
       });
@@ -1563,50 +1564,50 @@ describe('GoogleAuth', () => {
     it('should handle valid environment variable', (done) => {
       // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
-      auth.transporter = new MockTransporter(false);
-      auth._checkIsGCE(() => {
-        // Assert that the flags are not set.
-        assert.equal(false, auth.isGCE);
-      });
+      blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(
           auth, 'GOOGLE_APPLICATION_CREDENTIALS',
-          './ts/test/fixtures/private.json');
+          './test/fixtures/private.json');
       // Execute.
       auth._tryGetApplicationCredentialsFromEnvironmentVariable(
           (err, result) => {
-            auth.getCredentials((_err, body) => {
-              assert.notEqual(null, body);
-              assert.equal(result.email, body.client_email);
-              assert.equal(result.key, body.private_key);
-              done();
+            assert(result);
+            assert.equal(null, err);
+            const jwt = result as JWT;
+            it('should return the credentials from file', (done2) => {
+              auth.getCredentials((_err, body) => {
+                assert.notEqual(null, body);
+                assert.equal(jwt.email, body!.client_email);
+                assert.equal(jwt.key, body!.private_key);
+                done2();
+              });
             });
+            done();
           });
     });
     it('should handle valid file path', (done) => {
       // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
-      /*
-      const fileContents =
-          fs.readFileSync('./ts/test/fixtures/private2.json', 'utf-8');
-      const json = JSON.parse(fileContents);
-      */
       blockGoogleApplicationCredentialEnvironmentVariable(auth);
       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
       auth._pathJoin = pathJoin;
-      auth._osPlatform = returns('win32');
-      auth._fileExists = returns(true);
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => true;
       auth._checkIsGCE = callsBack(null, true);
       insertWellKnownFilePathIntoAuth(
           auth, 'foo:gcloud:application_default_credentials.json',
-          './ts/test/fixtures/private2.json');
+          './test/fixtures/private2.json');
       // Execute.
       auth.getApplicationDefault((err, result) => {
         assert.notEqual(true, err instanceof Error);
+        assert(result);
+        assert.equal(null, err);
+        const jwt = result as JWT;
         it('should return the credentials from file', (done2) => {
           auth.getCredentials((_err, body) => {
             assert.notEqual(null, body);
-            assert.equal(result.client_email, body.client_email);
-            assert.equal(result.private_key, body.private_key);
+            assert.equal(jwt.email, body!.client_email);
+            assert.equal(jwt.key, body!.private_key);
             done2();
           });
         });
@@ -1616,12 +1617,12 @@ describe('GoogleAuth', () => {
     it('should return error when env const is not set', (done) => {
       // Set up a mock to return a null path string
       const auth = new GoogleAuth();
-      let credential_flag: boolean;
+      let credentialFlag: boolean;
       insertEnvironmentVariableIntoAuth(
-          auth, 'GOOGLE_APPLICATION_CREDENTIALS', null);
-      credential_flag =
+          auth, 'GOOGLE_APPLICATION_CREDENTIALS');
+      credentialFlag =
           auth._tryGetApplicationCredentialsFromEnvironmentVariable();
-      assert.equal(false, credential_flag);
+      assert.equal(false, credentialFlag);
       auth.getCredentials((_err, body) => {
         assert.equal(true, _err instanceof Error);
         done();
