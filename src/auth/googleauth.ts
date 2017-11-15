@@ -657,14 +657,16 @@ export class GoogleAuth {
    * Returns the contents of the metadata of GC instance
    * @return object representation of the service account JSON
    */
-  getCredentials(callback?: (err: Error|null, credentials?: CredentialBody) => void) {
+  getCredentials(
+      callback?: (err: Error|null, credentials?: CredentialBody) => void) {
     this._checkIsGCE((err, gce) => {
       if (gce) {
         // For GCE, return the service account details from the metadata server
         this.transporter.request(
             {
               method: 'GET',
-              uri: 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
+              uri:
+                  'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
               headers: {'Metadata-Flavor': 'Google'}
             },
             (err, body, res) => {
@@ -672,32 +674,27 @@ export class GoogleAuth {
                 return;
               } else {
                 // Callback with the body
-                const credential: CredentialBody = {
-                  client_email: body['default']['email']
-                };
-                // credential.client_email = body['default']['email'];
-                // credential.private_key = undefined;
-                if(callback){
-                    callback(null, credential);
+                const credential:
+                    CredentialBody = {client_email: body['default']['email']};
+                if (callback) {
+                  callback(null, credential);
                 }
               }
             });
       } else if (this.jsonContent) {
-          const credential: CredentialBody = {
-            client_email: this.jsonContent.client_email,
-            private_key: this.jsonContent.private_key
-          };
-          // credential.client_email = this.jsonContent.client_email;
-          // credential.private_key = this.jsonContent.private_key;
-          if (callback){
-            callback(null, credential);
-          }
+        const credential: CredentialBody = {
+          client_email: this.jsonContent.client_email,
+          private_key: this.jsonContent.private_key
+        };
+        if (callback) {
+          callback(null, credential);
+        }
       } else if (err) {
-        if (callback){
+        if (callback) {
           callback(err, undefined);
         }
       } else {
-        if (callback){
+        if (callback) {
           callback(new Error('Could not find credential file.'), undefined);
         }
       }

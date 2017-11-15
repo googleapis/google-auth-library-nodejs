@@ -1555,7 +1555,8 @@ describe('GoogleAuth', () => {
       auth.getCredentials((err, body) => {
         assert(body);
         assert.equal(
-            body!.client_email, 'test-creds@test-creds.iam.gserviceaccount.com');
+            body!.client_email,
+            'test-creds@test-creds.iam.gserviceaccount.com');
         assert.equal(body!.private_key, null);
         scope.done();
         done();
@@ -1618,8 +1619,7 @@ describe('GoogleAuth', () => {
       // Set up a mock to return a null path string
       const auth = new GoogleAuth();
       let credentialFlag: boolean;
-      insertEnvironmentVariableIntoAuth(
-          auth, 'GOOGLE_APPLICATION_CREDENTIALS');
+      insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS');
       credentialFlag =
           auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.equal(false, credentialFlag);
