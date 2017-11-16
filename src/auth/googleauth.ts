@@ -35,6 +35,11 @@ export interface ProjectIdCallback {
   (err?: Error|null, projectId?: string): void;
 }
 
+export interface CredentialBody {
+  client_email?: string;
+  private_key?: string;
+}
+
 export class GoogleAuth {
   transporter: Transporter;
 
@@ -58,6 +63,16 @@ export class GoogleAuth {
   // https://github.com/Microsoft/TypeScript/issues/5228
   set cachedProjectId(projectId: string) {
     this._cachedProjectId = projectId;
+  }
+  // To save the contents of the JSON credential file
+  private _jsonContent: JWTInput;
+
+  get jsonContent(): JWTInput {
+    return this._jsonContent;
+  }
+
+  set jsonContent(jsonContent: JWTInput) {
+    this._jsonContent = jsonContent;
   }
 
   cachedCredential: OAuth2Client|null = null;
@@ -389,6 +404,8 @@ export class GoogleAuth {
       }
       return;
     }
+    // Set the JSON contents
+    this.jsonContent = json;
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient();
     } else {
@@ -633,5 +650,54 @@ export class GoogleAuth {
           // Ignore any errors
           if (callback) callback(null, body);
         });
+  }
+
+
+  /**
+   * Returns the contents of the metadata of GC instance
+   * @return object representation of the service account JSON
+   */
+  getCredentials(
+      callback?: (err: Error|null, credentials?: CredentialBody) => void) {
+    this._checkIsGCE((err, gce) => {
+      if (gce) {
+        // For GCE, return the service account details from the metadata server
+        this.transporter.request(
+            {
+              method: 'GET',
+              uri:
+                  'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
+              headers: {'Metadata-Flavor': 'Google'}
+            },
+            (err, body, res) => {
+              if (err || !res || res.statusCode !== 200 || !body) {
+                return;
+              } else {
+                // Callback with the body
+                const credential:
+                    CredentialBody = {client_email: body['default']['email']};
+                if (callback) {
+                  callback(null, credential);
+                }
+              }
+            });
+      } else if (this.jsonContent) {
+        const credential: CredentialBody = {
+          client_email: this.jsonContent.client_email,
+          private_key: this.jsonContent.private_key
+        };
+        if (callback) {
+          callback(null, credential);
+        }
+      } else if (err) {
+        if (callback) {
+          callback(err, undefined);
+        }
+      } else {
+        if (callback) {
+          callback(new Error('Could not find credential file.'), undefined);
+        }
+      }
+    });
   }
 }
