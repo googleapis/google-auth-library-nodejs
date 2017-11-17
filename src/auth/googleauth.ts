@@ -65,15 +65,7 @@ export class GoogleAuth {
     this._cachedProjectId = projectId;
   }
   // To save the contents of the JSON credential file
-  private _jsonContent: JWTInput;
-
-  get jsonContent(): JWTInput {
-    return this._jsonContent;
-  }
-
-  set jsonContent(jsonContent: JWTInput) {
-    this._jsonContent = jsonContent;
-  }
+  jsonContent: JWTInput|null = null;
 
   cachedCredential: OAuth2Client|null = null;
 
@@ -659,45 +651,51 @@ export class GoogleAuth {
    */
   getCredentials(
       callback?: (err: Error|null, credentials?: CredentialBody) => void) {
-    this._checkIsGCE((err, gce) => {
-      if (gce) {
-        // For GCE, return the service account details from the metadata server
-        this.transporter.request(
-            {
-              method: 'GET',
-              uri:
-                  'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
-              headers: {'Metadata-Flavor': 'Google'}
-            },
-            (err, body, res) => {
-              if (err || !res || res.statusCode !== 200 || !body) {
-                return;
-              } else {
-                // Callback with the body
-                const credential:
-                    CredentialBody = {client_email: body['default']['email']};
-                if (callback) {
-                  callback(null, credential);
-                }
-              }
-            });
-      } else if (this.jsonContent) {
-        const credential: CredentialBody = {
-          client_email: this.jsonContent.client_email,
-          private_key: this.jsonContent.private_key
-        };
-        if (callback) {
-          callback(null, credential);
-        }
-      } else if (err) {
-        if (callback) {
-          callback(err, undefined);
-        }
-      } else {
-        if (callback) {
-          callback(new Error('Could not find credential file.'), undefined);
-        }
+    if (this.jsonContent) {
+      const credential: CredentialBody = {
+        client_email: this.jsonContent.client_email,
+        private_key: this.jsonContent.private_key
+      };
+      if (callback) {
+        callback(null, credential);
       }
-    });
+    } else {
+      this._checkIsGCE((err, gce) => {
+        if (err) {
+          if (callback) {
+            callback(err, undefined);
+          }
+        } else if (gce) {
+          // For GCE, return the service account details from the metadata
+          // server
+          this.transporter.request(
+              {
+                method: 'GET',
+                uri:
+                    'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
+                headers: {'Metadata-Flavor': 'Google'}
+              },
+              (err, body, res) => {
+                if (err || !res || res.statusCode !== 200 || !body ||
+                    !body.default || !body.default.email) {
+                  if (callback) {
+                    callback(new Error('Failure from metadata server.'));
+                  }
+                } else {
+                  // Callback with the body
+                  const credential:
+                      CredentialBody = {client_email: body.default.email};
+                  if (callback) {
+                    callback(null, credential);
+                  }
+                }
+              });
+        } else {
+          if (callback) {
+            callback(new Error('Unknown error.'), undefined);
+          }
+        }
+      });
+    }
   }
 }
