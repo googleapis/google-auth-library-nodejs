@@ -1562,6 +1562,44 @@ describe('GoogleAuth', () => {
         done();
       });
     });
+    it('should error if metadata server is not reachable', (done) => {
+      const auth = new GoogleAuth();
+      auth.transporter = new MockTransporter(true);
+      auth._checkIsGCE(() => {
+        // Assert that the flags are set.
+        assert.equal(true, auth.isGCE);
+        done();
+      });
+      const scope =
+          nock('http://metadata.google.internal')
+              .get(
+                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+              .reply(404);
+      auth.getCredentials((err, body) => {
+        assert.equal(true, err instanceof Error);
+        scope.done();
+        done();
+      });
+    });
+    it('should error if body is empty', (done) => {
+      const auth = new GoogleAuth();
+      auth.transporter = new MockTransporter(true);
+      auth._checkIsGCE(() => {
+        // Assert that the flags are set.
+        assert.equal(true, auth.isGCE);
+        done();
+      });
+      const scope =
+          nock('http://metadata.google.internal')
+              .get(
+                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+              .reply(200, {});
+      auth.getCredentials((err, body) => {
+        assert.equal(true, err instanceof Error);
+        scope.done();
+        done();
+      });
+    });
     it('should handle valid environment variable', (done) => {
       // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
