@@ -15,12 +15,12 @@
  */
 
 import * as assert from 'assert';
+import {AxiosRequestConfig} from 'axios';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as qs from 'querystring';
-import * as request from 'request';
 import * as url from 'url';
 
 import {GoogleAuth} from '../src/auth/googleauth';
@@ -855,7 +855,7 @@ describe('OAuth2 client', () => {
     const auth = new GoogleAuth();
     const oauth2client =
         new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    oauth2client.request(({} as request.OptionsWithUri), (err, result) => {
+    oauth2client.request(({} as AxiosRequestConfig), (err, result) => {
       assert(err);
       if (err) {
         assert.equal(
@@ -902,7 +902,7 @@ describe('OAuth2 client', () => {
 
       oauth2client.credentials = {refresh_token: 'refresh-token-placeholder'};
 
-      oauth2client.request({uri: 'http://example.com'}, () => {
+      oauth2client.request({url: 'http://example.com'}, () => {
         assert.equal('abc123', oauth2client.credentials.access_token);
         done();
       });
@@ -919,7 +919,7 @@ describe('OAuth2 client', () => {
         expiry_date: (new Date()).getTime() - 1000
       };
 
-      oauth2client.request({uri: 'http://example.com'}, () => {
+      oauth2client.request({url: 'http://example.com'}, () => {
         assert.equal('abc123', oauth2client.credentials.access_token);
         done();
       });
@@ -936,7 +936,7 @@ describe('OAuth2 client', () => {
         expiry_date: (new Date()).getTime() + 1000
       };
 
-      oauth2client.request({uri: 'http://example.com'}, () => {
+      oauth2client.request({url: 'http://example.com'}, () => {
         assert.equal(
             'initial-access-token', oauth2client.credentials.access_token);
         assert.equal(false, scope.isDone());
@@ -954,7 +954,7 @@ describe('OAuth2 client', () => {
         refresh_token: 'refresh-token-placeholder'
       };
 
-      oauth2client.request({uri: 'http://example.com'}, () => {
+      oauth2client.request({url: 'http://example.com'}, () => {
         assert.equal(
             'initial-access-token', oauth2client.credentials.access_token);
         assert.equal(false, scope.isDone());
@@ -977,7 +977,7 @@ describe('OAuth2 client', () => {
           refresh_token: 'refresh-token-placeholder'
         };
 
-        oauth2client.request({uri: 'http://example.com/access'}, () => {
+        oauth2client.request({url: 'http://example.com/access'}, () => {
           assert.equal('abc123', oauth2client.credentials.access_token);
           done();
         });
@@ -1034,8 +1034,11 @@ describe('OAuth2 client', () => {
       const oauth2client =
           new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.getToken('code here', (err, tokens) => {
-        assert(tokens.expiry_date >= now + (10 * 1000));
-        assert(tokens.expiry_date <= now + (15 * 1000));
+        assert(tokens);
+        if (tokens && tokens.expiry_date) {
+          assert(tokens.expiry_date >= now + (10 * 1000));
+          assert(tokens.expiry_date <= now + (15 * 1000));
+        }
         scope.done();
         done();
       });

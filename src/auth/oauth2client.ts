@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
+import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as querystring from 'querystring';
-import * as request from 'request';
 
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback, RequestError} from './../transporters';
-import {AuthClient} from './authclient';
+import {AuthClient, BodyResponse} from './authclient';
 import {Credentials} from './credentials';
 import {LoginTicket} from './loginticket';
-
-const merge = require('lodash.merge');
 
 export interface GenerateAuthUrlOpts {
   response_type?: string;
@@ -37,9 +35,40 @@ export interface AuthClientOpts {
   tokenUrl?: string;
 }
 
-export interface OAuthTokens {
-  expires_in: number;
-  expiry_date: number;
+export interface GetTokenCallback {
+  (err: AxiosError|null, token?: Credentials|null,
+   res?: AxiosResponse|null): void;
+}
+
+export interface GetTokenResponse {
+  tokens: Credentials;
+  res: AxiosResponse|null;
+}
+
+
+export interface GetAccessTokenCallback {
+  (err: AxiosError|null, token?: string|null, res?: AxiosResponse|null): void;
+}
+
+export interface GetAccessTokenResponse {
+  token?: string;
+  res?: AxiosResponse|null;
+}
+
+export interface RefreshAccessTokenCallback {
+  (err: AxiosError|null, credentials?: Credentials|null,
+   response?: AxiosResponse|null): void;
+}
+
+export interface RefreshAccessTokenResponse {
+  credentials: Credentials;
+  res: AxiosResponse|null;
+}
+
+export interface RequestMetadataResponse {
+  // tslint:disable-next-line no-any
+  headers: any;
+  res?: AxiosResponse|null;
 }
 
 const noop = Function.prototype;
@@ -146,8 +175,21 @@ export class OAuth2Client extends AuthClient {
    * @param {string} code The authorization code.
    * @param {function=} callback Optional callback fn.
    */
-  getToken(code: string, callback?: BodyResponseCallback) {
-    const uri = this.opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
+  getToken(code: string): Promise<GetTokenResponse>;
+  getToken(code: string, callback: GetTokenCallback): void;
+  getToken(code: string, callback?: GetTokenCallback):
+      Promise<GetTokenResponse>|void {
+    if (callback) {
+      this.getTokenAsync(code)
+          .then(r => callback(null, r.tokens, r.res))
+          .catch(e => callback(e, null, (e as AxiosError).response));
+    } else {
+      return this.getTokenAsync(code);
+    }
+  }
+
+  private async getTokenAsync(code: string): Promise<GetTokenResponse> {
+    const url = this.opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       code,
       client_id: this._clientId,
@@ -156,18 +198,17 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'authorization_code'
     };
 
-    this.transporter.request(
-        {method: 'POST', uri, form: values, json: true},
-        (err, body, response) => {
-          const tokens = body as OAuthTokens;
-          if (!err && tokens && tokens.expires_in) {
-            tokens.expiry_date =
-                ((new Date()).getTime() + (tokens.expires_in * 1000));
-            delete tokens.expires_in;
-          }
-          const done = callback || noop;
-          done(err, tokens, response);
-        });
+    const res =
+        await this.transporter.request({method: 'POST', url, data: values});
+
+    const tokens = res.data as Credentials;
+    if (tokens && tokens.expires_in) {
+      tokens.expiry_date =
+          ((new Date()).getTime() + (tokens.expires_in * 1000));
+      delete tokens.expires_in;
+    }
+
+    return {tokens, res};
   }
 
   /**
@@ -176,11 +217,10 @@ export class OAuth2Client extends AuthClient {
    * @param {function=} callback Optional callback.
    * @private
    */
-  protected refreshToken(
-      refreshToken?: string|null,
-      callback?: BodyResponseCallback): request.Request|void {
-    const uri = this.opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
-    const values = {
+  protected async refreshToken(refreshToken?: string|
+                               null): Promise<GetTokenResponse> {
+    const url = this.opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
+    const data = {
       refresh_token: refreshToken,
       client_id: this._clientId,
       client_secret: this._clientSecret,
@@ -188,18 +228,14 @@ export class OAuth2Client extends AuthClient {
     };
 
     // request for new token
-    return this.transporter.request(
-        {method: 'POST', uri, form: values, json: true},
-        (err, body, response) => {
-          const tokens = body as OAuthTokens;
-          if (!err && tokens && tokens.expires_in) {
-            tokens.expiry_date =
-                ((new Date()).getTime() + (tokens.expires_in * 1000));
-            delete tokens.expires_in;
-          }
-          const done = callback || noop;
-          done(err, tokens, response);
-        });
+    const res = await this.transporter.request({method: 'POST', url, data});
+    const tokens = res.data as Credentials;
+    if (tokens && tokens.expires_in) {
+      tokens.expiry_date =
+          ((new Date()).getTime() + (tokens.expires_in * 1000));
+      delete tokens.expires_in;
+    }
+    return {tokens, res};
   }
 
   /**
@@ -208,26 +244,29 @@ export class OAuth2Client extends AuthClient {
    * @deprecated use getRequestMetadata instead.
    * @param {function} callback callback
    */
-  refreshAccessToken(
-      callback:
-          (err: Error|null, credentials: Credentials|null,
-           response?: request.RequestResponse|null) => void) {
-    if (!this.credentials.refresh_token) {
-      callback(new Error('No refresh token is set.'), null);
-      return;
-    }
 
-    this.refreshToken(
-        this.credentials.refresh_token, (err, result, response) => {
-          if (err) {
-            callback(err, null, response);
-          } else {
-            const tokens = result as Credentials;
-            tokens.refresh_token = this.credentials.refresh_token;
-            this.credentials = tokens;
-            callback(null, this.credentials, response);
-          }
-        });
+  refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
+  refreshAccessToken(callback: RefreshAccessTokenCallback): void;
+  refreshAccessToken(callback?: RefreshAccessTokenCallback):
+      Promise<RefreshAccessTokenResponse>|void {
+    if (callback) {
+      this.refreshAccessTokenAsync()
+          .then(r => callback(null, r.credentials, r.res))
+          .catch(callback);
+    } else {
+      return this.refreshAccessTokenAsync();
+    }
+  }
+
+  private async refreshAccessTokenAsync() {
+    if (!this.credentials.refresh_token) {
+      throw new Error('No refresh token is set.');
+    }
+    const r = await this.refreshToken(this.credentials.refresh_token);
+    const tokens = r.tokens as Credentials;
+    tokens.refresh_token = this.credentials.refresh_token;
+    this.credentials = tokens;
+    return {credentials: this.credentials, res: r.res};
   }
 
   /**
@@ -235,38 +274,42 @@ export class OAuth2Client extends AuthClient {
    *
    * @param {function} callback Callback to call with the access token
    */
-  getAccessToken(
-      callback:
-          (err: Error|null, accessToken?: string|null,
-           response?: request.RequestResponse|null) => void) {
+  getAccessToken(): Promise<GetAccessTokenResponse>;
+  getAccessToken(callback: GetAccessTokenCallback): void;
+  getAccessToken(callback?: GetAccessTokenCallback):
+      Promise<GetAccessTokenResponse>|void {
+    if (callback) {
+      this.getAccessTokenAsync()
+          .then(r => callback(null, r.token, r.res))
+          .catch(callback);
+    } else {
+      return this.getAccessTokenAsync();
+    }
+  }
+
+  private async getAccessTokenAsync(): Promise<GetAccessTokenResponse> {
     const expiryDate = this.credentials.expiry_date;
 
     // if no expiry time, assume it's not expired
     const isTokenExpired =
         expiryDate ? expiryDate <= (new Date()).getTime() : false;
-
     if (!this.credentials.access_token && !this.credentials.refresh_token) {
-      return callback(new Error('No access or refresh token is set.'), null);
+      throw new Error('No access or refresh token is set.');
     }
 
     const shouldRefresh = !this.credentials.access_token || isTokenExpired;
     if (shouldRefresh && this.credentials.refresh_token) {
       if (!this.credentials.refresh_token) {
-        return callback(new Error('No refresh token is set.'), null);
+        throw new Error('No refresh token is set.');
       }
 
-      this.refreshAccessToken((err, tokens, response) => {
-        if (err) {
-          return callback(err, null, response);
-        }
-        if (!tokens || (tokens && !tokens.access_token)) {
-          return callback(
-              new Error('Could not refresh access token.'), null, response);
-        }
-        return callback(null, tokens.access_token, response);
-      });
+      const r = await this.refreshAccessToken();
+      if (!r.credentials || (r.credentials && !r.credentials.access_token)) {
+        throw new Error('Could not refresh access token.');
+      }
+      return {token: r.credentials.access_token, res: r.res};
     } else {
-      return callback(null, this.credentials.access_token, null);
+      return {token: this.credentials.access_token, res: undefined};
     }
   }
 
@@ -285,16 +328,24 @@ export class OAuth2Client extends AuthClient {
    * @param {string} optUri the Uri being authorized
    * @param {function} metadataCb the func described above
    */
-  getRequestMetadata(
-      optUri: string|null,
-      metadataCb:
-          (err: Error|null, headers?: {}|null,
-           response?: request.RequestResponse|null) => void) {
-    const thisCreds = this.credentials;
+  getRequestMetadata(url?: string|null): Promise<RequestMetadataResponse>;
+  getRequestMetadata(url: string|null, callback: BodyResponseCallback): void;
+  getRequestMetadata(url: string|null, callback?: BodyResponseCallback):
+      Promise<RequestMetadataResponse>|void {
+    if (callback) {
+      this.getRequestMetadataAsync(url)
+          .then(r => callback(null, r.headers, r.res))
+          .catch(callback);
+    } else {
+      return this.getRequestMetadataAsync(url);
+    }
+  }
 
+  protected async getRequestMetadataAsync(url?: string|null):
+      Promise<RequestMetadataResponse> {
+    const thisCreds = this.credentials;
     if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
-      return metadataCb(
-          new Error('No access, refresh token or API key is set.'), null);
+      throw new Error('No access, refresh token or API key is set.');
     }
 
     // if no expiry time, assume it's not expired
@@ -307,36 +358,34 @@ export class OAuth2Client extends AuthClient {
       const headers = {
         Authorization: thisCreds.token_type + ' ' + thisCreds.access_token
       };
-      return metadataCb(null, headers, null);
+      return {headers};
     }
 
     if (this.apiKey) {
-      return metadataCb(null, {}, null);
+      return {headers: {}};
+    }
+    let r: GetTokenResponse|null = null;
+    let tokens: Credentials|null = null;
+    try {
+      r = await this.refreshToken(thisCreds.refresh_token);
+      tokens = r.tokens;
+    } catch (err) {
+      const e = err as AxiosError;
+      if (e.response &&
+          (e.response.status === 403 || e.response.status === 404)) {
+        e.message = 'Could not refresh access token.';
+      }
+      throw e;
     }
 
-    return this.refreshToken(thisCreds.refresh_token, (err, body, response) => {
-      // If the error code is 403 or 404, go to the else so the error
-      // message is replaced. Otherwise, return the error.
-      const tokens = body as Credentials;
-      if (err && (err as RequestError).code !== 403 &&
-          (err as RequestError).code !== 404) {
-        return metadataCb(err, null, response);
-      } else {
-        if (!tokens || (tokens && !tokens.access_token)) {
-          return metadataCb(
-              new Error('Could not refresh access token.'), null, response);
-        }
-
-        const credentials = this.credentials;
-        credentials.token_type = credentials.token_type || 'Bearer';
-        tokens.refresh_token = credentials.refresh_token;
-        this.credentials = tokens;
-        const headers = {
-          Authorization: credentials.token_type + ' ' + tokens.access_token
-        };
-        return metadataCb(err, headers, response);
-      }
-    });
+    const credentials = this.credentials;
+    credentials.token_type = credentials.token_type || 'Bearer';
+    tokens.refresh_token = credentials.refresh_token;
+    this.credentials = tokens;
+    const headers = {
+      Authorization: credentials.token_type + ' ' + tokens.access_token
+    };
+    return {headers, res: r ? r.res : null};
   }
 
   /**
@@ -344,27 +393,49 @@ export class OAuth2Client extends AuthClient {
    * @param {string} token The existing token to be revoked.
    * @param {function=} callback Optional callback fn.
    */
-  revokeToken(token: string, callback?: BodyResponseCallback) {
-    this.transporter.request(
-        {
-          uri: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
-              querystring.stringify({token}),
-          json: true
-        },
-        callback);
+  revokeToken(token: string): AxiosPromise;
+  revokeToken(token: string, callback: BodyResponseCallback): void;
+  revokeToken(token: string, callback?: BodyResponseCallback): AxiosPromise|
+      void {
+    const opts = {
+      url: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
+          querystring.stringify({token})
+    };
+    if (callback) {
+      this.transporter.request(opts)
+          .then(res => {
+            callback(null, null, res);
+          })
+          .catch(callback);
+    } else {
+      return this.transporter.request(opts);
+    }
   }
+
 
   /**
    * Revokes access token and clears the credentials object
    * @param  {Function=} callback callback
    */
-  revokeCredentials(callback: BodyResponseCallback) {
+  revokeCredentials(): AxiosPromise;
+  revokeCredentials(callback: BodyResponseCallback): void;
+  revokeCredentials(callback?: BodyResponseCallback): AxiosPromise|void {
+    if (callback) {
+      this.revokeCredentialsAsync()
+          .then(res => callback(null, res.data, res))
+          .catch(callback);
+    } else {
+      return this.revokeCredentialsAsync();
+    }
+  }
+
+  private async revokeCredentialsAsync() {
     const token = this.credentials.access_token;
     this.credentials = {};
     if (token) {
-      this.revokeToken(token, callback);
+      return this.revokeToken(token);
     } else {
-      callback(new RequestError('No access token to revoke.'), null, null);
+      throw new Error('No access token to revoke.');
     }
   }
 
@@ -377,62 +448,56 @@ export class OAuth2Client extends AuthClient {
    * @param {function} callback callback.
    * @return {Request} Request object
    */
-  request(opts: request.Options, callback?: BodyResponseCallback) {
-    // Callbacks will close over this to ensure that we only retry once
-    let retry = true;
-    const unusedUri: string|null = null;
+  request(opts: AxiosRequestConfig): Promise<BodyResponse>;
+  request(opts: AxiosRequestConfig, callback: BodyResponseCallback): void;
+  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback):
+      Promise<BodyResponse>|void {
+    if (callback) {
+      this.requestAsync(opts)
+          .then(r => callback(null, r.body, r.res))
+          .catch(e => {
+            const err = e as AxiosError;
+            const body = err.response ? err.response.data : null;
+            return callback(e, body, err.response);
+          });
+    } else {
+      return this.requestAsync(opts);
+    }
+  }
 
-    // Declare authCb upfront to avoid the linter complaining about use before
-    // declaration.
-    let authCb: BodyResponseCallback;
-
-    // Hook the callback routine to call the _postRequest method.
-    const postRequestCb =
-        (err: Error|null, body: {}|null,
-         resp?: request.RequestResponse|null) => {
-          const statusCode = resp && resp.statusCode;
-          // Automatically retry 401 and 403 responses
-          // if err is set and is unrelated to response
-          // then getting credentials failed, and retrying won't help
-          if (retry && (statusCode === 401 || statusCode === 403) &&
-              (!err || (err as RequestError).code === statusCode)) {
-            /* It only makes sense to retry once, because the retry is intended
-             * to handle expiration-related failures. If refreshing the token
-             * does not fix the failure, then refreshing again probably won't
-             * help */
-            retry = false;
-            // Force token refresh
-            this.refreshAccessToken(() => {
-              this.getRequestMetadata(unusedUri, authCb);
-            });
-          } else {
-            this.postRequest(err, body, resp, callback);
-          }
-        };
-
-    authCb = (err, headers, response) => {
-      if (err) {
-        postRequestCb(err, null, response);
-        return null;
-      } else {
-        if (headers) {
-          opts.headers = opts.headers || {};
-          opts.headers.Authorization = (headers as {
-                                         Authorization: string;
-                                       }).Authorization;
-        }
-        if (this.apiKey) {
-          if (opts.qs) {
-            opts.qs = merge({}, opts.qs, {key: this.apiKey});
-          } else {
-            opts.qs = {key: this.apiKey};
-          }
-        }
-        return this._makeRequest(opts, postRequestCb);
+  protected async requestAsync(opts: AxiosRequestConfig, retry = false):
+      Promise<BodyResponse> {
+    let r2: AxiosResponse;
+    try {
+      const r = await this.getRequestMetadataAsync(null);
+      if (r.headers && r.headers.Authorization) {
+        opts.headers = opts.headers || {};
+        opts.headers.Authorization = r.headers.Authorization;
       }
-    };
 
-    return this.getRequestMetadata(unusedUri, authCb);
+      if (this.apiKey) {
+        opts.params = Object.assign(opts.params || {}, {key: this.apiKey});
+      }
+      r2 = await this._makeRequest(opts);
+    } catch (e) {
+      const res = (e as AxiosError).response;
+      if (res) {
+        const statusCode = res.status;
+        // Automatically retry 401 and 403 responses if err is set and is
+        // unrelated to response then getting credentials failed, and retrying
+        // won't help
+        if (!retry && (statusCode === 401 || statusCode === 403)) {
+          /* It only makes sense to retry once, because the retry is intended
+           * to handle expiration-related failures. If refreshing the token
+           * does not fix the failure, then refreshing again probably won't
+           * help */
+          await this.refreshAccessTokenAsync();
+          return this.requestAsync(opts, true);
+        }
+      }
+      throw e;
+    }
+    return {body: r2 ? r2.data : null, res: r2};
   }
 
   /**
@@ -442,22 +507,8 @@ export class OAuth2Client extends AuthClient {
    * @param  {Function} callback callback function
    * @return {Request}           The request object created
    */
-  _makeRequest(opts: request.Options, callback: BodyResponseCallback) {
-    return this.transporter.request(opts, callback);
-  }
-
-  /**
-   * Allows inheriting classes to inspect and alter the request result.
-   * @param {object} err Error result.
-   * @param {object} result The result.
-   * @param {object} result The HTTP response.
-   * @param {Function} callback The callback.
-   * @private
-   */
-  protected postRequest(
-      err: Error|null, result: {}|null, response?: request.RequestResponse|null,
-      callback?: BodyResponseCallback) {
-    if (callback) callback(err, result, response);
+  private async _makeRequest(opts: AxiosRequestConfig): Promise<AxiosResponse> {
+    return this.transporter.request(opts);
   }
 
   /**
@@ -466,31 +517,34 @@ export class OAuth2Client extends AuthClient {
    * @param {(string|Array.<string>)} audience The audience to verify against the ID Token
    * @param {function=} callback Callback supplying GoogleLogin if successful
    */
+  verifyIdToken(idToken: string, audience: string|string[]):
+      Promise<LoginTicket|null>;
   verifyIdToken(
       idToken: string, audience: string|string[],
-      callback: (err: Error|null, login?: LoginTicket|null) => void) {
-    if (!idToken || !callback) {
-      throw new Error(
-          'The verifyIdToken method requires both ' +
-          'an ID Token and a callback method');
+      callback: (err: Error|null, login?: LoginTicket|null) => void): void;
+  verifyIdToken(
+      idToken: string, audience: string|string[],
+      callback?: (err: Error|null, login?: LoginTicket|null) => void):
+      void|Promise<LoginTicket|null> {
+    if (callback) {
+      this.verifyIdTokenAsync(idToken, audience)
+          .then(r => callback(null, r))
+          .catch(callback);
+    } else {
+      return this.verifyIdTokenAsync(idToken, audience);
+    }
+  }
+
+  private async verifyIdTokenAsync(idToken: string, audience: string|string[]):
+      Promise<LoginTicket|null> {
+    if (!idToken) {
+      throw new Error('The verifyIdToken method requires an ID Token');
     }
 
-    this.getFederatedSignonCerts(((err: Error, certs: {}) => {
-                                   if (err) {
-                                     callback(err, null);
-                                   }
-                                   let login;
-                                   try {
-                                     login = this.verifySignedJwtWithCerts(
-                                         idToken, certs, audience,
-                                         OAuth2Client.ISSUERS_);
-                                   } catch (err) {
-                                     callback(err);
-                                     return;
-                                   }
-
-                                   callback(null, login);
-                                 }).bind(this));
+    const certs = await this.getFederatedSignonCertsAsync();
+    const login = this.verifySignedJwtWithCerts(
+        idToken, certs, audience, OAuth2Client.ISSUERS_);
+    return login;
   }
 
   /**
@@ -499,47 +553,49 @@ export class OAuth2Client extends AuthClient {
    * are PEM encoded certificates.
    * @param {function=} callback Callback supplying the certificates
    */
-  getFederatedSignonCerts(callback: BodyResponseCallback) {
+  getFederatedSignonCerts(): Promise<BodyResponse>;
+  getFederatedSignonCerts(callback: BodyResponseCallback): void;
+  getFederatedSignonCerts(callback?: BodyResponseCallback):
+      Promise<BodyResponse>|void {
+    if (callback) {
+      this.getFederatedSignonCertsAsync()
+          .then(r => callback(null, r.body, r.res))
+          .catch(callback);
+    } else {
+      return this.getFederatedSignonCertsAsync();
+    }
+  }
+
+  async getFederatedSignonCertsAsync(): Promise<BodyResponse> {
     const nowTime = (new Date()).getTime();
     if (this.certificateExpiry &&
         (nowTime < this.certificateExpiry.getTime())) {
-      callback(null, this.certificateCache);
-      return;
+      return {body: this.certificateCache};
+    }
+    let res: AxiosResponse;
+    try {
+      res = await this.transporter.request(
+          {url: OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_});
+    } catch (e) {
+      throw new Error('Failed to retrieve verification certificates: ' + e);
     }
 
-    this.transporter.request(
-        {
-          method: 'GET',
-          uri: OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_,
-          json: true
-        },
-        (err, body, response) => {
-          if (err) {
-            callback(
-                new RequestError(
-                    'Failed to retrieve verification certificates: ' + err),
-                null, response);
-            return;
-          }
+    const cacheControl = res ? res.headers['cache-control'] : undefined;
+    let cacheAge = -1;
+    if (cacheControl) {
+      const pattern = new RegExp('max-age=([0-9]*)');
+      const regexResult = pattern.exec(cacheControl as string);
+      if (regexResult && regexResult.length === 2) {
+        // Cache results with max-age (in seconds)
+        cacheAge = Number(regexResult[1]) * 1000;  // milliseconds
+      }
+    }
 
-          const cacheControl =
-              response ? response.headers['cache-control'] : undefined;
-          let cacheAge = -1;
-          if (cacheControl) {
-            const pattern = new RegExp('max-age=([0-9]*)');
-            const regexResult = pattern.exec(cacheControl as string);
-            if (regexResult && regexResult.length === 2) {
-              // Cache results with max-age (in seconds)
-              cacheAge = Number(regexResult[1]) * 1000;  // milliseconds
-            }
-          }
-
-          const now = new Date();
-          this.certificateExpiry =
-              cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
-          this.certificateCache = body;
-          callback(null, body, response);
-        });
+    const now = new Date();
+    this.certificateExpiry =
+        cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
+    this.certificateCache = res.data;
+    return {body: res.data, res};
   }
 
   /**

@@ -15,8 +15,9 @@
  */
 
 import * as assert from 'assert';
+import {AxiosRequestConfig} from 'axios';
 import * as nock from 'nock';
-import * as request from 'request';
+
 import {DefaultTransporter, RequestError} from '../src/transporters';
 
 // tslint:disable-next-line no-var-requires
@@ -30,7 +31,7 @@ describe('Transporters', () => {
   const transporter = new DefaultTransporter();
 
   it('should set default client user agent if none is set', () => {
-    const opts = transporter.configure(({} as request.OptionsWithUrl));
+    const opts = transporter.configure(({} as AxiosRequestConfig));
     const re = new RegExp(defaultUserAgentRE);
     assert(opts.headers);
     if (opts.headers) {
@@ -71,7 +72,7 @@ describe('Transporters', () => {
 
     transporter.request(
         {
-          uri: 'http://example.com/api',
+          url: 'http://example.com/api',
         },
         (error) => {
           assert(error);
@@ -89,7 +90,7 @@ describe('Transporters', () => {
 
     transporter.request(
         {
-          uri: 'http://example.com/api',
+          url: 'http://example.com/api',
         },
         (error) => {
           assert(error);

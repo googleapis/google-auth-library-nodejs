@@ -14,34 +14,25 @@
  * limitations under the License.
  */
 
-import * as request from 'request';
+import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
 
 export interface Transporter {
-  request(opts: request.Options, callback?: BodyResponseCallback):
-      request.Request;
+  request(opts: AxiosRequestConfig): AxiosPromise;
+  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback): void;
+  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback):
+      AxiosPromise|void;
 }
 
 export interface BodyResponseCallback {
   // The `body` object is a truly dynamic type.  It must be `any`.
   // tslint:disable-next-line no-any
-  (err: Error|null, body?: any, res?: request.RequestResponse|null): void;
+  (err: Error|null, body?: any, res?: AxiosResponse|null): void;
 }
 
-export class RequestError extends Error {
-  code?: number;
-  errors: Error[];
-}
-
-export interface BodyResponse {
-  error?: string|{
-    code?: number;
-    message?: string;
-    errors: Error[];
-  };
-}
+export interface RequestError extends AxiosError { errors: Error[]; }
 
 export class DefaultTransporter {
   /**
@@ -54,9 +45,9 @@ export class DefaultTransporter {
    * @param {object} opts Options to configure.
    * @return {object} Configured options.
    */
-  configure(opts: request.Options): request.Options {
+  configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
     // set transporter user agent
-    opts.headers = opts.headers || {};
+    if (!opts.headers) opts.headers = {};
     if (!opts.headers['User-Agent']) {
       opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
     } else if (
@@ -74,11 +65,25 @@ export class DefaultTransporter {
    * @param {Function=} callback Optional callback.
    * @return {Request} Request object
    */
-  request(opts: request.Options, callback?: BodyResponseCallback) {
+  request(opts: AxiosRequestConfig): AxiosPromise;
+  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback): void;
+  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback):
+      AxiosPromise|void {
     opts = this.configure(opts);
-    const uri = (opts as request.OptionsWithUri).uri as string ||
-        (opts as request.OptionsWithUrl).url as string;
-    return request(uri, opts, this.wrapCallback_(callback));
+    if (callback) {
+      axios(opts)
+          .then(r => {
+            callback(null, r);
+            return;
+          })
+          .catch(e => {
+            callback(this.processError(e));
+          });
+    } else {
+      return axios(opts).catch(e => {
+        throw this.processError(e);
+      });
+    }
   }
 
   /**
@@ -87,48 +92,28 @@ export class DefaultTransporter {
    * @return {Function} Wrapped callback function.
    * @private
    */
-  private wrapCallback_(callback?: BodyResponseCallback):
-      request.RequestCallback {
-    return (err: RequestError, res: request.RequestResponse,
-            // the body is either a string or a JSON object
-            // tslint:disable-next-line no-any
-            body: string|any) => {
-      if (err || !body) {
-        return callback && callback(err, body, res);
+  private processError(e: AxiosError): RequestError {
+    const res = e.response;
+    const err = e as RequestError;
+    const body = res ? res.data : null;
+    if (res && body && body.error && res.status !== 200) {
+      if (typeof body.error === 'string') {
+        err.message = body.error;
+        err.code = res.status.toString();
+      } else if (Array.isArray(body.error.errors)) {
+        err.message =
+            body.error.errors.map((err2: Error) => err2.message).join('\n');
+        err.code = body.error.code;
+        err.errors = body.error.errors;
+      } else {
+        err.message = body.error.message;
+        err.code = body.error.code || res.status;
       }
-      // Only and only application/json responses should
-      // be decoded back to JSON, but there are cases API back-ends
-      // responds without proper content-type.
-      try {
-        body = JSON.parse(body as string);
-      } catch (err) {
-        /* no op */
-      }
-
-      if (body && body.error && res.statusCode !== 200) {
-        if (typeof body.error === 'string') {
-          err = new RequestError(body.error);
-          (err as RequestError).code = res.statusCode;
-        } else if (Array.isArray(body.error.errors)) {
-          err = new RequestError(
-              body.error.errors.map((err2: Error) => err2.message).join('\n'));
-          (err as RequestError).code = body.error.code;
-          (err as RequestError).errors = body.error.errors;
-        } else {
-          err = new RequestError(body.error.message);
-          (err as RequestError).code = body.error.code || res.statusCode;
-        }
-        body = null;
-      } else if (res.statusCode && res.statusCode >= 400) {
-        // Consider all 4xx and 5xx responses errors.
-        err = new RequestError(body);
-        (err as RequestError).code = res.statusCode;
-        body = null;
-      }
-
-      if (callback) {
-        callback(err, body, res);
-      }
-    };
+    } else if (res && res.status >= 400) {
+      // Consider all 4xx and 5xx responses errors.
+      err.message = body;
+      err.code = res.status.toString();
+    }
+    return err;
   }
 }

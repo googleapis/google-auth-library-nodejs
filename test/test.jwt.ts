@@ -153,9 +153,8 @@ describe('JWT auth client', () => {
 
         const wantedToken = 'abc123';
         const want = 'Bearer ' + wantedToken;
-        const retValue = 'dummy';
         createGTokenMock({access_token: wantedToken});
-        const res = jwt.getRequestMetadata(null, (err, result) => {
+        jwt.getRequestMetadata(null, (err, result) => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           const got = result as {
             Authorization: string;
@@ -185,8 +184,7 @@ describe('JWT auth client', () => {
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
         const testUri = 'http:/example.com/my_test_service';
-        const retValue = 'dummy';
-        const res = jwt.getRequestMetadata(testUri, (err, result) => {
+        jwt.getRequestMetadata(testUri, (err, result) => {
           const got = result as {
             Authorization: string;
           };
@@ -198,9 +196,7 @@ describe('JWT auth client', () => {
           assert.strictEqual(email, payload.sub);
           assert.strictEqual(testUri, payload.aud);
           done();
-          return retValue;
         });
-        assert.strictEqual(res, retValue);
       });
 
     });
@@ -218,7 +214,7 @@ describe('JWT auth client', () => {
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
       createGTokenMock({access_token: 'abc123'});
 
-      jwt.request({uri: 'http://bar'}, () => {
+      jwt.request({url: 'http://bar'}, () => {
         assert.equal('abc123', jwt.credentials.access_token);
         done();
       });
@@ -237,14 +233,14 @@ describe('JWT auth client', () => {
       };
 
       createGTokenMock({access_token: 'abc123'});
-      jwt.request({uri: 'http://bar'}, () => {
+      jwt.request({url: 'http://bar'}, () => {
         assert.equal('abc123', jwt.credentials.access_token);
         done();
       });
     });
 
     it('should refresh token if the server returns 403', (done) => {
-      nock('http://example.com').log(console.log).get('/access').reply(403);
+      nock('http://example.com').get('/access').twice().reply(403);
 
       const auth = new GoogleAuth();
       const jwt = new auth.JWT(
@@ -259,7 +255,7 @@ describe('JWT auth client', () => {
 
       createGTokenMock({access_token: 'abc123'});
 
-      jwt.request({uri: 'http://example.com/access'}, () => {
+      jwt.request({url: 'http://example.com/access'}, () => {
         assert.equal('abc123', jwt.credentials.access_token);
         done();
       });
@@ -268,7 +264,6 @@ describe('JWT auth client', () => {
     it('should not refresh if not expired', (done) => {
       const scope =
           nock('https://accounts.google.com')
-              .log(console.log)
               .post('/o/oauth2/token', '*')
               .reply(200, {access_token: 'abc123', expires_in: 10000});
 
@@ -283,7 +278,7 @@ describe('JWT auth client', () => {
         expiry_date: (new Date()).getTime() + 5000
       };
 
-      jwt.request({uri: 'http://bar'}, () => {
+      jwt.request({url: 'http://bar'}, () => {
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal(false, scope.isDone());
         done();
@@ -293,7 +288,6 @@ describe('JWT auth client', () => {
     it('should assume access token is not expired', (done) => {
       const scope =
           nock('https://accounts.google.com')
-              .log(console.log)
               .post('/o/oauth2/token', '*')
               .reply(200, {access_token: 'abc123', expires_in: 10000});
 
@@ -307,7 +301,7 @@ describe('JWT auth client', () => {
         refresh_token: 'jwt-placeholder'
       };
 
-      jwt.request({uri: 'http://bar'}, () => {
+      jwt.request({url: 'http://bar'}, () => {
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal(false, scope.isDone());
         done();
@@ -316,7 +310,7 @@ describe('JWT auth client', () => {
 
   });
 
-  it('should return expiry_date in milliseconds', (done) => {
+  it('should return expiry_date in milliseconds', async () => {
     const auth = new GoogleAuth();
     const jwt = new auth.JWT(
         'foo@serviceaccount.com', PEM_PATH, null, ['http://bar', 'http://foo'],
@@ -325,19 +319,16 @@ describe('JWT auth client', () => {
     jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
     createGTokenMock({access_token: 'token', expires_in: 100});
-    jwt.refreshToken(null, (err, creds) => {
-      const dateInMillis = (new Date()).getTime();
-      assert(creds);
-      if (creds && creds.expiry_date) {
-        const expiryDate = new Date(creds.expiry_date);
-        assert.equal(
-            dateInMillis.toString().length,
-            creds.expiry_date.toString().length);
-      }
-      done();
-    });
+    const result = await jwt.refreshToken(null);
+    const creds = result.tokens;
+    const dateInMillis = (new Date()).getTime();
+    assert(creds);
+    if (creds && creds.expiry_date) {
+      const expiryDate = new Date(creds.expiry_date);
+      assert.equal(
+          dateInMillis.toString().length, creds.expiry_date.toString().length);
+    }
   });
-
 });
 
 describe('.createScoped', () => {
@@ -643,7 +634,7 @@ describe('.fromAPIKey', () => {
     it('should set the .apiKey property on the instance', (done) => {
       jwt.fromAPIKey(KEY, (err) => {
         assert.strictEqual(jwt.apiKey, KEY);
-        assert.strictEqual(err, null);
+        assert.equal(err, null);
         done();
       });
     });

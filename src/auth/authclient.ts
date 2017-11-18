@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-import * as request from 'request';
+import axios, {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 
 import {DefaultTransporter} from '../transporters';
 
 import {Credentials} from './credentials';
+
+export interface BodyResponse {
+  // tslint:disable-next-line no-any
+  body: any;
+  res?: AxiosResponse|null;
+}
 
 export abstract class AuthClient {
   transporter = new DefaultTransporter();
@@ -28,5 +34,5 @@ export abstract class AuthClient {
    * Provides an alternative request
    * implementations with auth credentials.
    */
-  abstract request(opts: request.Options): request.Request|void;
+  abstract request(opts: AxiosRequestConfig): Promise<BodyResponse>;
 }

@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-import * as request from 'request';
+import axios, {AxiosError, AxiosRequestConfig} from 'axios';
 
 import {BodyResponseCallback, RequestError} from './../transporters';
-import {OAuth2Client} from './oauth2client';
+import {BodyResponse} from './authclient';
+import {GetTokenResponse, OAuth2Client} from './oauth2client';
 
 export interface Token {
   expires_in: number;
   expiry_date: number;
 }
-
-export declare type RefreshTokenCallback =
-    (err?: Error|null, token?: Token,
-     response?: request.RequestResponse|null) => void;
 
 export class Compute extends OAuth2Client {
   /**
@@ -65,61 +62,56 @@ export class Compute extends OAuth2Client {
    * @param {object=} ignored_
    * @param {function=} callback Optional callback.
    */
-  protected refreshToken(ignored: null, callback?: BodyResponseCallback):
-      request.Request {
-    const uri = this.opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
-    // request for new token
-    return this.transporter.request(
-        {method: 'GET', uri, json: true}, (err, body, response) => {
-          const token = body as Token;
-          if (!err && token && token.expires_in) {
-            token.expiry_date =
-                ((new Date()).getTime() + (token.expires_in * 1000));
-            delete token.expires_in;
-          }
-          if (callback) {
-            callback(err, token, response);
-          }
-        });
+  protected async refreshToken(refreshToken?: string|
+                               null): Promise<GetTokenResponse> {
+    try {
+      const url = this.opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
+      // request for new token
+      const res = await this.transporter.request({url});
+      const tokens = res.data as Token;
+      if (tokens && tokens.expires_in) {
+        tokens.expiry_date =
+            ((new Date()).getTime() + (tokens.expires_in * 1000));
+        delete tokens.expires_in;
+      }
+      return {tokens, res};
+    } catch (e) {
+      e.message = 'Could not refresh access token.';
+      throw e;
+    }
   }
 
-  /**
-   * Inserts a helpful error message guiding the user toward fixing common auth
-   * issues.
-   * @param {object} err Error result.
-   * @param {object} result The result.
-   * @param {object} response The HTTP response.
-   * @param {Function} callback The callback.
-   */
-  protected postRequest(
-      err: Error, result: {}, response: request.RequestResponse,
-      callback: BodyResponseCallback) {
-    if (response && response.statusCode) {
-      let helpfulMessage = null;
-      if (response.statusCode === 403) {
-        helpfulMessage =
-            'A Forbidden error was returned while attempting to retrieve an access ' +
-            'token for the Compute Engine built-in service account. This may be because the Compute ' +
-            'Engine instance does not have the correct permission scopes specified.';
-      } else if (response.statusCode === 404) {
-        helpfulMessage =
-            'A Not Found error was returned while attempting to retrieve an access' +
-            'token for the Compute Engine built-in service account. This may be because the Compute ' +
-            'Engine instance does not have any permission scopes specified.';
-      }
-      if (helpfulMessage) {
-        if (err && err.message) {
-          helpfulMessage += ' ' + err.message;
-        }
 
-        if (err) {
-          err.message = helpfulMessage;
-        } else {
-          err = new Error(helpfulMessage);
-          (err as RequestError).code = response.statusCode;
+  protected async requestAsync(opts: AxiosRequestConfig, retry = false):
+      Promise<BodyResponse> {
+    return super.requestAsync(opts, retry).catch(e => {
+      const res = (e as AxiosError).response;
+      if (res && res.status) {
+        let helpfulMessage = null;
+        if (res.status === 403) {
+          helpfulMessage =
+              'A Forbidden error was returned while attempting to retrieve an access ' +
+              'token for the Compute Engine built-in service account. This may be because the Compute ' +
+              'Engine instance does not have the correct permission scopes specified.';
+        } else if (res.status === 404) {
+          helpfulMessage =
+              'A Not Found error was returned while attempting to retrieve an access' +
+              'token for the Compute Engine built-in service account. This may be because the Compute ' +
+              'Engine instance does not have any permission scopes specified.';
+        }
+        if (helpfulMessage) {
+          if (e && e.message && !retry) {
+            helpfulMessage += ' ' + e.message;
+          }
+          if (e) {
+            e.message = helpfulMessage;
+          } else {
+            e = new Error(helpfulMessage);
+            (e as RequestError).code = res.status.toString();
+          }
         }
       }
-    }
-    callback(err, result, response);
+      throw e;
+    });
   }
 }
