@@ -16,15 +16,13 @@
 
 const jws = require('jws');
 import * as stream from 'stream';
-import {JWTInput} from './credentials';
-import * as http from 'http';
 
 const noop = Function.prototype;
 
 export class JWTAccess {
-  email?: string|null;
-  key?: string|null;
-  projectId?: string;
+  public email: string;
+  public key: string;
+  public projectId: string;
 
   /**
    * JWTAccess service account credentials.
@@ -36,7 +34,7 @@ export class JWTAccess {
    * @param {string=} key the private key that will be used to sign the token.
    * @constructor
    */
-  constructor(email?: string|null, key?: string|null) {
+  constructor(email?: string, key?: string) {
     this.email = email;
     this.key = key;
   }
@@ -47,7 +45,7 @@ export class JWTAccess {
    *
    * @return {boolean} always false
    */
-  createScopedRequired(): boolean {
+  public createScopedRequired(): boolean {
     // JWT Header authentication does not use scopes.
     return false;
   }
@@ -59,20 +57,19 @@ export class JWTAccess {
    * @param {function} metadataCb a callback invoked with the jwt
    *                   request metadata.
    */
-  getRequestMetadata(
-      authURI: string,
-      metadataCb:
-          (err: Error|null, headers?: http.IncomingHttpHeaders|null) => void) {
+  public getRequestMetadata(
+      authURI: string, metadataCb: (err: Error, headers?: any) => void) {
     const iat = Math.floor(new Date().getTime() / 1000);
     const exp = iat + 3600;  // 3600 seconds = 1 hour
 
     // The payload used for signed JWT headers has:
     // iss == sub == <client email>
     // aud == <the authorization uri>
-    const payload = {iss: this.email, sub: this.email, aud: authURI, exp, iat};
+    const payload =
+        {iss: this.email, sub: this.email, aud: authURI, exp: exp, iat: iat};
     const assertion = {
       header: {alg: 'RS256', typ: 'JWT'},
-      payload,
+      payload: payload,
       secret: this.key
     };
 
@@ -86,14 +83,12 @@ export class JWTAccess {
     });
   }
 
-
-
   /**
    * Create a JWTAccess credentials instance using the given input options.
    * @param {object=} json The input object.
    * @param {function=} callback Optional callback.
    */
-  fromJSON(json: JWTInput, callback?: (err: Error) => void) {
+  public fromJSON(json: any, callback?: (err: Error) => void) {
     const done = callback || noop;
     if (!json) {
       done(new Error(
@@ -119,12 +114,12 @@ export class JWTAccess {
 
   /**
    * Create a JWTAccess credentials instance using the given input stream.
-   * @param {object=} inputStream The input stream.
+   * @param {object=} stream The input stream.
    * @param {function=} callback Optional callback.
    */
-  fromStream(inputStream: stream.Readable, callback?: (err: Error) => void) {
+  public fromStream(stream: stream.Readable, callback?: (err: Error) => void) {
     const done = callback || noop;
-    if (!inputStream) {
+    if (!stream) {
       setImmediate(() => {
         done(new Error(
             'Must pass in a stream containing the service account auth settings.'));
@@ -132,11 +127,11 @@ export class JWTAccess {
       return;
     }
     let s = '';
-    inputStream.setEncoding('utf8');
-    inputStream.on('data', (chunk) => {
+    stream.setEncoding('utf8');
+    stream.on('data', (chunk) => {
       s += chunk;
     });
-    inputStream.on('end', () => {
+    stream.on('end', () => {
       try {
         const data = JSON.parse(s);
         this.fromJSON(data, callback);
@@ -156,7 +151,7 @@ export class JWTAccess {
    * @param  {Function} signedJwtFn  fn(err, signedJWT)
    */
   private _signJWT(
-      assertion: {}, signedJwtFn: (err: Error|null, signedJwt?: {}) => void) {
+      assertion: any, signedJwtFn: (err: Error, signedJwt?: any) => void) {
     try {
       return signedJwtFn(null, jws.sign(assertion));
     } catch (err) {

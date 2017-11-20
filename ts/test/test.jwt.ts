@@ -19,13 +19,13 @@ import * as fs from 'fs';
 const jws = require('jws');
 const keypair = require('keypair');
 import * as nock from 'nock';
-import {JWTInput} from '../src/auth/credentials';
-import {GoogleAuth} from '../src/auth/googleauth';
-import {JWT, GoogleToken, TokenOptions} from '../src/auth/jwtclient';
+
+import {GoogleAuth} from '../lib/auth/googleauth';
+import {JWT} from '../lib/auth/jwtclient';
 
 const noop = Function.prototype;
 interface TokenCallback {
-  (err: Error|null, result: string): void;
+  (err: Error, result: string): void;
 }
 
 nock.disableNetConnect();
@@ -57,16 +57,12 @@ describe('JWT auth client', () => {
 
   describe('.authorize', () => {
 
-    it('should get an initial access token', done => {
+    it('should get an initial access token', (done) => {
       const auth = new GoogleAuth();
       const jwt = new auth.JWT(
           'foo@serviceaccount.com', '/path/to/key.pem', null,
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
-
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gToken as any) = (opts: TokenOptions) => {
+      jwt.gToken = (opts: any) => {
         assert.equal('foo@serviceaccount.com', opts.iss);
         assert.equal('/path/to/key.pem', opts.keyFile);
         assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
@@ -74,8 +70,8 @@ describe('JWT auth client', () => {
         return {
           key: 'private-key-data',
           iss: 'foo@subjectaccount.com',
-          getToken: (optCallback: Function) => {
-            return optCallback(null, 'initial-access-token');
+          getToken: (opt_callback: Function) => {
+            return opt_callback(null, 'initial-access-token');
           }
         };
       };
@@ -88,15 +84,13 @@ describe('JWT auth client', () => {
       });
     });
 
-    it('should accept scope as string', done => {
+    it('should accept scope as string', (done) => {
       const auth = new GoogleAuth();
       const jwt = new auth.JWT(
           'foo@serviceaccount.com', '/path/to/key.pem', null, 'http://foo',
           'bar@subjectaccount.com');
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gToken as any) = (opts: GoogleToken) => {
+
+      jwt.gToken = (opts: any) => {
         assert.equal('http://foo', opts.scope);
         done();
         return {getToken: noop};
@@ -120,11 +114,8 @@ describe('JWT auth client', () => {
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
         const want = 'abc123';
-        // Lazy mocking the gToken object.  Gets easier when new module
-        // is released.
-        // tslint:disable-next-line no-any
-        (jwt.gtoken as any) = {
-          getToken: (callback: (err: Error|null, want: string) => void) => {
+        jwt.gtoken = {
+          getToken: (callback: (err: Error, want: string) => void) => {
             return callback(null, want);
           }
         };
@@ -152,29 +143,19 @@ describe('JWT auth client', () => {
 
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
-        const wantedToken = 'abc123';
-        // Lazy mocking the gToken object.  Gets easier when new module
-        // is released.
-        // tslint:disable-next-line no-any
-        (jwt.gtoken as any) = {
-          getToken:
-              (callback: (err: Error|null, wantedToken: string) => void) => {
-                return callback(null, wantedToken);
-              }
-        };
-        const want = 'Bearer ' + wantedToken;
-        const retValue = 'dummy';
-        const res = jwt.getRequestMetadata(null, (err, result) => {
-          assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-          const got = result as {
-            Authorization: string;
-          };
-          assert(got);
-          if (got) {
-            assert.strictEqual(
-                want, got.Authorization,
-                'the authorization header was wrong: ' + got.Authorization);
+        const wanted_token = 'abc123';
+        jwt.gtoken = {
+          getToken: (callback: (err: Error, wanted_token: string) => void) => {
+            return callback(null, wanted_token);
           }
+        };
+        const want = 'Bearer ' + wanted_token;
+        const retValue = 'dummy';
+        const res = jwt.getRequestMetadata(null, (err, got) => {
+          assert.strictEqual(null, err, 'no error was expected: got\n' + err);
+          assert.strictEqual(
+              want, got.Authorization,
+              'the authorization header was wrong: ' + got.Authorization);
           done();
           return retValue;
         });
@@ -197,10 +178,7 @@ describe('JWT auth client', () => {
 
         const testUri = 'http:/example.com/my_test_service';
         const retValue = 'dummy';
-        const res = jwt.getRequestMetadata(testUri, (err, result) => {
-          const got = result as {
-            Authorization: string;
-          };
+        const res = jwt.getRequestMetadata(testUri, (err, got) => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.notStrictEqual(null, got, 'the creds should be present');
           const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
@@ -226,11 +204,9 @@ describe('JWT auth client', () => {
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gtoken as any) = {
-        getToken: (callback: (err: Error|null, result: string) => void) => {
+
+      jwt.gtoken = {
+        getToken: (callback: (err: Error, result: string) => void) => {
           callback(null, 'abc123');
         }
       };
@@ -253,10 +229,7 @@ describe('JWT auth client', () => {
         expiry_date: (new Date()).getTime() - 1000
       };
 
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gtoken as any) = {
+      jwt.gtoken = {
         getToken: (callback: TokenCallback) => {
           return callback(null, 'abc123');
         }
@@ -282,10 +255,7 @@ describe('JWT auth client', () => {
         expiry_date: (new Date()).getTime() + 5000
       };
 
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gtoken as any) = {
+      jwt.gtoken = {
         getToken: (callback: TokenCallback) => {
           return callback(null, 'abc123');
         }
@@ -361,18 +331,15 @@ describe('JWT auth client', () => {
 
     const dateInMillis = (new Date()).getTime();
 
-    // Lazy mocking the gToken object.  Gets easier when new module
-    // is released.
-    // tslint:disable-next-line no-any
-    (jwt.gtoken as any) = {
+    jwt.gtoken = {
       getToken: (callback: TokenCallback) => {
         return callback(null, 'token');
       },
       expires_at: dateInMillis
     };
 
-    jwt.refreshToken(null, (err, creds) => {
-      assert.equal(dateInMillis, creds ? creds.expiry_date : null);
+    jwt.refreshToken({uri: 'http://bar'}, (err, creds) => {
+      assert.equal(dateInMillis, creds.expiry_date);
       done();
     });
   });
@@ -414,13 +381,10 @@ describe('.createScoped', () => {
         ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
     const clone = jwt.createScoped(['gorilla', 'chimpanzee', 'orangutan']);
-    assert(clone.scopes);
-    if (clone.scopes) {
-      assert.equal(3, clone.scopes.length);
-      assert.equal('gorilla', clone.scopes[0]);
-      assert.equal('chimpanzee', clone.scopes[1]);
-      assert.equal('orangutan', clone.scopes[2]);
-    }
+    assert.equal(3, clone.scopes.length);
+    assert.equal('gorilla', clone.scopes[0]);
+    assert.equal('chimpanzee', clone.scopes[1]);
+    assert.equal('orangutan', clone.scopes[2]);
   });
 
   it('should handle null scope', () => {
@@ -526,7 +490,7 @@ describe('.createScopedRequired', () => {
 describe('.fromJson', () => {
   // set up the test json and the jwt instance being tested.
   let jwt: JWT;
-  let json: JWTInput;
+  let json: any;
   beforeEach(() => {
     json = createJSON();
     const auth = new GoogleAuth();
@@ -534,9 +498,7 @@ describe('.fromJson', () => {
   });
 
   it('should error on null json', (done) => {
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    (jwt as any).fromJSON(null, (err: Error) => {
+    jwt.fromJSON(null, (err) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -618,9 +580,7 @@ describe('.fromStream', () => {
   });
 
   it('should error on null stream', (done) => {
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    (jwt as any).fromStream(null, (err: Error) => {
+    jwt.fromStream(null, (err) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -629,11 +589,11 @@ describe('.fromStream', () => {
   it('should read the stream and create a jwt', (done) => {
     // Read the contents of the file into a json object.
     const fileContents =
-        fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+        fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
     const json = JSON.parse(fileContents);
 
     // Now open a stream on the same file.
-    const stream = fs.createReadStream('./test/fixtures/private.json');
+    const stream = fs.createReadStream('./ts/test/fixtures/private.json');
 
     // And pass it into the fromStream method.
     jwt.fromStream(stream, (err) => {
@@ -661,17 +621,13 @@ describe('.fromAPIKey', () => {
   });
   describe('exception behaviour', () => {
     it('should error without api key', (done) => {
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      (jwt as any).fromAPIKey(undefined, (err: Error) => {
+      jwt.fromAPIKey(undefined, (err) => {
         assert(err instanceof Error);
         done();
       });
     });
     it('should error with invalid api key type', (done) => {
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      jwt.fromAPIKey(({key: KEY} as any), (err) => {
+      jwt.fromAPIKey({key: KEY} as any, (err) => {
         assert(err instanceof Error);
         done();
       });

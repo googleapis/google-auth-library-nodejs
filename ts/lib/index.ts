@@ -13,5 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export {GoogleAuth} from './auth/googleauth';
-export {DefaultTransporter} from './transporters';
+import {GoogleAuth} from './auth/googleauth';
+
+// We re-export GoogleAuth as a CommonJS style module.exports to keep compat
+// with existing JS users of the library.
+export = GoogleAuth;

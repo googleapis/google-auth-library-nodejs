@@ -17,10 +17,8 @@
 import * as assert from 'assert';
 import * as nock from 'nock';
 import * as request from 'request';
-
-import {Compute} from '../src/auth/computeclient';
-import {Credentials} from '../src/auth/credentials';
-import {GoogleAuth} from '../src/auth/googleauth';
+import {GoogleAuth} from '../lib/auth/googleauth';
+import {Compute} from './../lib/auth/computeclient';
 
 nock.disableNetConnect();
 
@@ -43,7 +41,7 @@ describe('Compute auth client', () => {
     compute = new auth.Compute();
   });
 
-  it('should get an access token for the first request', done => {
+  it('should get an access token for the first request', (done) => {
     const scope =
         nock('http://metadata.google.internal')
             .get(
@@ -96,60 +94,61 @@ describe('Compute auth client', () => {
   });
 
   describe('._injectErrorMessage', () => {
-    it('should return a helpful message on request response.statusCode 403', done => {
-      // Mock the credentials object.
-      compute.credentials = {
-        refresh_token: 'hello',
-        access_token: 'goodbye',
-        expiry_date: (new Date(9999, 1, 1)).getTime()
-      };
+    it('should return a helpful message on request response.statusCode 403',
+       (done) => {
+         // Mock the credentials object.
+         compute.credentials = {
+           refresh_token: 'hello',
+           access_token: 'goodbye',
+           expiry_date: (new Date(9999, 1, 1)).getTime()
+         };
 
-      // Mock the _makeRequest method to return a 403.
-      compute._makeRequest = (opts, callback) => {
-        callback(
-            null, 'a weird response body',
-            {statusCode: 403} as request.RequestResponse);
-        return {} as request.Request;
-      };
+         // Mock the _makeRequest method to return a 403.
+         compute._makeRequest = (opts, callback) => {
+           callback(
+               null, 'a weird response body',
+               {statusCode: 403} as request.RequestResponse);
+           return null as request.Request;
+         };
 
-      compute.request(({} as request.OptionsWithUrl), (err, result, response) => {
-        assert(response);
-        assert.equal(403, response ? response.statusCode : 0);
-        assert.equal(
-            'A Forbidden error was returned while attempting to retrieve an access ' +
-                'token for the Compute Engine built-in service account. This may be because the ' +
-                'Compute Engine instance does not have the correct permission scopes specified.',
-            err ? err.message : null);
-        done();
-      });
-    });
+         compute.request({}, (err, result, response) => {
+           assert.equal(403, response.statusCode);
+           assert.equal(
+               'A Forbidden error was returned while attempting to retrieve an access ' +
+                   'token for the Compute Engine built-in service account. This may be because the ' +
+                   'Compute Engine instance does not have the correct permission scopes specified.',
+               err.message);
+           done();
+         });
+       });
 
-    it('should return a helpful message on request response.statusCode 404', (done) => {
-      // Mock the credentials object.
-      compute.credentials = {
-        refresh_token: 'hello',
-        access_token: 'goodbye',
-        expiry_date: (new Date(9999, 1, 1)).getTime()
-      };
+    it('should return a helpful message on request response.statusCode 404',
+       (done) => {
+         // Mock the credentials object.
+         compute.credentials = {
+           refresh_token: 'hello',
+           access_token: 'goodbye',
+           expiry_date: (new Date(9999, 1, 1)).getTime()
+         };
 
-      // Mock the _makeRequest method to return a 404.
-      compute._makeRequest = (opts, callback) => {
-        callback(
-            null, 'a weird response body',
-            {statusCode: 404} as request.RequestResponse);
-        return {} as request.Request;
-      };
+         // Mock the _makeRequest method to return a 404.
+         compute._makeRequest = (opts, callback) => {
+           callback(
+               null, 'a weird response body',
+               {statusCode: 404} as request.RequestResponse);
+           return null as request.Request;
+         };
 
-      compute.request(({} as request.OptionsWithUri), (err, result, response) => {
-        assert.equal(404, response ? response.statusCode : 0);
-        assert.equal(
-            'A Not Found error was returned while attempting to retrieve an access' +
-                'token for the Compute Engine built-in service account. This may be because the ' +
-                'Compute Engine instance does not have any permission scopes specified.',
-            err ? err.message : null);
-        done();
-      });
-    });
+         compute.request({}, (err, result, response) => {
+           assert.equal(404, response.statusCode);
+           assert.equal(
+               'A Not Found error was returned while attempting to retrieve an access' +
+                   'token for the Compute Engine built-in service account. This may be because the ' +
+                   'Compute Engine instance does not have any permission scopes specified.',
+               err.message);
+           done();
+         });
+       });
 
     it('should return a helpful message on token refresh response.statusCode 403',
        (done) => {
@@ -162,47 +161,48 @@ describe('Compute auth client', () => {
          // refresh.
          compute.credentials = {
            refresh_token: 'hello',
-           access_token: undefined,
+           access_token: null,
            expiry_date: 1
          };
 
-         compute.request(({} as request.OptionsWithUri), (err, result, response) => {
-           assert.equal(403, response ? response.statusCode : null);
+         compute.request({}, (err, result, response) => {
+           assert.equal(403, response.statusCode);
            assert.equal(
                'A Forbidden error was returned while attempting to retrieve an access ' +
                    'token for the Compute Engine built-in service account. This may be because the ' +
                    'Compute Engine instance does not have the correct permission scopes specified. ' +
                    'Could not refresh access token.',
-               err ? err.message : null);
+               err.message);
            nock.cleanAll();
            done();
          });
        });
 
-    it('should return a helpful message on token refresh response.statusCode 404', done => {
-      nock('http://metadata.google.internal')
-          .get(
-              '/computeMetadata/v1beta1/instance/service-accounts/default/token')
-          .reply(404, 'a weird body');
+    it('should return a helpful message on token refresh response.statusCode 404',
+       (done) => {
+         nock('http://metadata.google.internal')
+             .get(
+                 '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+             .reply(404, 'a weird body');
 
-      // Mock the credentials object with a null access token, to force a
-      // refresh.
-      compute.credentials = {
-        refresh_token: 'hello',
-        access_token: undefined,
-        expiry_date: 1
-      } as Credentials;
+         // Mock the credentials object with a null access token, to force a
+         // refresh.
+         compute.credentials = {
+           refresh_token: 'hello',
+           access_token: null,
+           expiry_date: 1
+         };
 
-      compute.request(({} as request.OptionsWithUri), (err, result, response) => {
-        assert.equal(404, response ? response.statusCode : null);
-        assert.equal(
-            'A Not Found error was returned while attempting to retrieve an access' +
-                'token for the Compute Engine built-in service account. This may be because the ' +
-                'Compute Engine instance does not have any permission scopes specified. Could not ' +
-                'refresh access token.',
-            err ? err.message : null);
-        done();
-      });
-    });
+         compute.request({}, (err, result, response) => {
+           assert.equal(404, response.statusCode);
+           assert.equal(
+               'A Not Found error was returned while attempting to retrieve an access' +
+                   'token for the Compute Engine built-in service account. This may be because the ' +
+                   'Compute Engine instance does not have any permission scopes specified. Could not ' +
+                   'refresh access token.',
+               err.message);
+           done();
+         });
+       });
   });
 });

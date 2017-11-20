@@ -1,5 +1,6 @@
 node_modules/*
-build/
+/lib/
+/test/
 types/
 .idea
 .vscode
@@ -8,4 +9,3 @@ npm-debug.log
 coverage
 *.js.map
 yarn-error.log
-**/*.js

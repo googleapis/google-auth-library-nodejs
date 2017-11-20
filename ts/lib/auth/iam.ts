@@ -38,7 +38,7 @@ export class IAMAuth {
    *
    * @return {boolean} always false
    */
-  createScopedRequired() {
+  public createScopedRequired() {
     // IAM authorization does not use scopes.
     return false;
   }
@@ -50,9 +50,9 @@ export class IAMAuth {
    * @param {function} metadataFn a callback invoked with object
    *                   containing request metadata.
    */
-  getRequestMetadata(
-      unusedUri: string|null,
-      metadataFn: (err: Error|null, metadata?: RequestMetadata) => void) {
+  public getRequestMetadata(
+      unused_uri: string,
+      metadataFn: (err: Error, metadata?: RequestMetadata) => void) {
     metadataFn(null, {
       'x-goog-iam-authority-selector': this.selector,
       'x-goog-iam-authorization-token': this.token
