@@ -16,17 +16,21 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-const jws = require('jws');
-const keypair = require('keypair');
+import * as jws from 'jws';
 import * as nock from 'nock';
 import {JWTInput} from '../src/auth/credentials';
 import {GoogleAuth} from '../src/auth/googleauth';
-import {JWT, GoogleToken, TokenOptions} from '../src/auth/jwtclient';
+import {JWT} from '../src/auth/jwtclient';
 
+const keypair = require('keypair');
 const noop = Function.prototype;
+
 interface TokenCallback {
   (err: Error|null, result: string): void;
 }
+
+const PEM_PATH = './test/fixtures/private.pem';
+const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
 
 nock.disableNetConnect();
 
@@ -40,6 +44,23 @@ function createJSON() {
     type: 'service_account'
   };
 }
+
+interface GTokenResult {
+  access_token?: string;
+  expires_in?: number;
+}
+
+function createGTokenMock(body: GTokenResult = {
+  access_token: 'initial-access-token'
+}) {
+  nock('https://accounts.google.com:443')
+      .post('/o/oauth2/token')
+      .reply(200, body);
+}
+
+afterEach(() => {
+  nock.cleanAll();
+});
 
 describe('Initial credentials', () => {
 
@@ -58,32 +79,22 @@ describe('JWT auth client', () => {
   describe('.authorize', () => {
 
     it('should get an initial access token', done => {
+
       const auth = new GoogleAuth();
       const jwt = new auth.JWT(
-          'foo@serviceaccount.com', '/path/to/key.pem', null,
+          'foo@serviceaccount.com', PEM_PATH, null,
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gToken as any) = (opts: TokenOptions) => {
-        assert.equal('foo@serviceaccount.com', opts.iss);
-        assert.equal('/path/to/key.pem', opts.keyFile);
-        assert.deepEqual(['http://bar', 'http://foo'], opts.scope);
-        assert.equal('bar@subjectaccount.com', opts.sub);
-        return {
-          key: 'private-key-data',
-          iss: 'foo@subjectaccount.com',
-          getToken: (optCallback: Function) => {
-            return optCallback(null, 'initial-access-token');
-          }
-        };
-      };
+      createGTokenMock();
       jwt.authorize(() => {
+        assert.equal('foo@serviceaccount.com', jwt.gtoken.iss);
+        assert.equal(PEM_PATH, jwt.gtoken.keyFile);
+        assert.equal(['http://bar', 'http://foo'].join(' '), jwt.gtoken.scope);
+        assert.equal('bar@subjectaccount.com', jwt.gtoken.sub);
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
-        assert.equal('private-key-data', jwt.key);
-        assert.equal('foo@subjectaccount.com', jwt.email);
+        assert.equal(PEM_CONTENTS, jwt.key);
+        assert.equal('foo@serviceaccount.com', jwt.email);
         done();
       });
     });
@@ -93,16 +104,12 @@ describe('JWT auth client', () => {
       const jwt = new auth.JWT(
           'foo@serviceaccount.com', '/path/to/key.pem', null, 'http://foo',
           'bar@subjectaccount.com');
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gToken as any) = (opts: GoogleToken) => {
-        assert.equal('http://foo', opts.scope);
-        done();
-        return {getToken: noop};
-      };
 
-      jwt.authorize();
+      createGTokenMock();
+      jwt.authorize((err, creds) => {
+        assert.equal('http://foo', jwt.gtoken.scope);
+        done();
+      });
     });
 
   });
@@ -114,24 +121,16 @@ describe('JWT auth client', () => {
       it('can get obtain new access token', (done) => {
         const auth = new GoogleAuth();
         const jwt = new auth.JWT(
-            'foo@serviceaccount.com', '/path/to/key.pem', null,
+            'foo@serviceaccount.com', PEM_PATH, null,
             ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
-
-        const want = 'abc123';
-        // Lazy mocking the gToken object.  Gets easier when new module
-        // is released.
-        // tslint:disable-next-line no-any
-        (jwt.gtoken as any) = {
-          getToken: (callback: (err: Error|null, want: string) => void) => {
-            return callback(null, want);
-          }
-        };
-
+        createGTokenMock();
         jwt.getAccessToken((err, got) => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-          assert.strictEqual(want, got, 'the access token was wrong: ' + got);
+          assert.strictEqual(
+              'initial-access-token', got,
+              'the access token was wrong: ' + got);
           done();
         });
       });
@@ -147,23 +146,15 @@ describe('JWT auth client', () => {
       it('can obtain new access token', (done) => {
         const auth = new GoogleAuth();
         const jwt = new auth.JWT(
-            'foo@serviceaccount.com', '/path/to/key.pem', null,
+            'foo@serviceaccount.com', PEM_PATH, null,
             ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
         const wantedToken = 'abc123';
-        // Lazy mocking the gToken object.  Gets easier when new module
-        // is released.
-        // tslint:disable-next-line no-any
-        (jwt.gtoken as any) = {
-          getToken:
-              (callback: (err: Error|null, wantedToken: string) => void) => {
-                return callback(null, wantedToken);
-              }
-        };
         const want = 'Bearer ' + wantedToken;
         const retValue = 'dummy';
+        createGTokenMock({access_token: wantedToken});
         const res = jwt.getRequestMetadata(null, (err, result) => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           const got = result as {
@@ -176,9 +167,7 @@ describe('JWT auth client', () => {
                 'the authorization header was wrong: ' + got.Authorization);
           }
           done();
-          return retValue;
         });
-        assert.strictEqual(res, retValue);
       });
 
     });
@@ -204,9 +193,10 @@ describe('JWT auth client', () => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.notStrictEqual(null, got, 'the creds should be present');
           const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
-          assert.strictEqual(email, decoded.payload.iss);
-          assert.strictEqual(email, decoded.payload.sub);
-          assert.strictEqual(testUri, decoded.payload.aud);
+          const payload = JSON.parse(decoded.payload);
+          assert.strictEqual(email, payload.iss);
+          assert.strictEqual(email, payload.sub);
+          assert.strictEqual(testUri, payload.aud);
           done();
           return retValue;
         });
@@ -222,18 +212,11 @@ describe('JWT auth client', () => {
     it('should refresh token if missing access token', (done) => {
       const auth = new GoogleAuth();
       const jwt = new auth.JWT(
-          'foo@serviceaccount.com', '/path/to/key.pem', null,
+          'foo@serviceaccount.com', PEM_PATH, null,
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gtoken as any) = {
-        getToken: (callback: (err: Error|null, result: string) => void) => {
-          callback(null, 'abc123');
-        }
-      };
+      createGTokenMock({access_token: 'abc123'});
 
       jwt.request({uri: 'http://bar'}, () => {
         assert.equal('abc123', jwt.credentials.access_token);
@@ -244,7 +227,7 @@ describe('JWT auth client', () => {
     it('should refresh token if expired', (done) => {
       const auth = new GoogleAuth();
       const jwt = new auth.JWT(
-          'foo@serviceaccount.com', '/path/to/key.pem', null,
+          'foo@serviceaccount.com', PEM_PATH, null,
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
       jwt.credentials = {
@@ -253,15 +236,7 @@ describe('JWT auth client', () => {
         expiry_date: (new Date()).getTime() - 1000
       };
 
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gtoken as any) = {
-        getToken: (callback: TokenCallback) => {
-          return callback(null, 'abc123');
-        }
-      };
-
+      createGTokenMock({access_token: 'abc123'});
       jwt.request({uri: 'http://bar'}, () => {
         assert.equal('abc123', jwt.credentials.access_token);
         done();
@@ -273,8 +248,8 @@ describe('JWT auth client', () => {
 
       const auth = new GoogleAuth();
       const jwt = new auth.JWT(
-          'foo@serviceaccount.com', '/path/to/key.pem', null,
-          ['http://example.com'], 'bar@subjectaccount.com');
+          'foo@serviceaccount.com', PEM_PATH, null, ['http://example.com'],
+          'bar@subjectaccount.com');
 
       jwt.credentials = {
         access_token: 'woot',
@@ -282,18 +257,10 @@ describe('JWT auth client', () => {
         expiry_date: (new Date()).getTime() + 5000
       };
 
-      // Lazy mocking the gToken object.  Gets easier when new module
-      // is released.
-      // tslint:disable-next-line no-any
-      (jwt.gtoken as any) = {
-        getToken: (callback: TokenCallback) => {
-          return callback(null, 'abc123');
-        }
-      };
+      createGTokenMock({access_token: 'abc123'});
 
       jwt.request({uri: 'http://example.com/access'}, () => {
         assert.equal('abc123', jwt.credentials.access_token);
-        nock.cleanAll();
         done();
       });
     });
@@ -319,7 +286,6 @@ describe('JWT auth client', () => {
       jwt.request({uri: 'http://bar'}, () => {
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal(false, scope.isDone());
-        nock.cleanAll();
         done();
       });
     });
@@ -344,7 +310,6 @@ describe('JWT auth client', () => {
       jwt.request({uri: 'http://bar'}, () => {
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal(false, scope.isDone());
-        nock.cleanAll();
         done();
       });
     });
@@ -354,25 +319,21 @@ describe('JWT auth client', () => {
   it('should return expiry_date in milliseconds', (done) => {
     const auth = new GoogleAuth();
     const jwt = new auth.JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null,
-        ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+        'foo@serviceaccount.com', PEM_PATH, null, ['http://bar', 'http://foo'],
+        'bar@subjectaccount.com');
 
     jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
-    const dateInMillis = (new Date()).getTime();
-
-    // Lazy mocking the gToken object.  Gets easier when new module
-    // is released.
-    // tslint:disable-next-line no-any
-    (jwt.gtoken as any) = {
-      getToken: (callback: TokenCallback) => {
-        return callback(null, 'token');
-      },
-      expires_at: dateInMillis
-    };
-
+    createGTokenMock({access_token: 'token', expires_in: 100});
     jwt.refreshToken(null, (err, creds) => {
-      assert.equal(dateInMillis, creds ? creds.expiry_date : null);
+      const dateInMillis = (new Date()).getTime();
+      assert(creds);
+      if (creds && creds.expiry_date) {
+        const expiryDate = new Date(creds.expiry_date);
+        assert.equal(
+            dateInMillis.toString().length,
+            creds.expiry_date.toString().length);
+      }
       done();
     });
   });

@@ -16,13 +16,14 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-const jws = require('jws');
-const keypair = require('keypair');
-import {JWTInput} from '../src/auth/credentials';
-import {JWTAccess} from '../src/auth/jwtaccess';
 import * as http from 'http';
+import * as jws from 'jws';
 
+import {JWTInput} from '../src/auth/credentials';
 import {GoogleAuth} from '../src/auth/googleauth';
+import {JWTAccess} from '../src/auth/jwtaccess';
+
+const keypair = require('keypair');
 
 // Creates a standard JSON credentials object for testing.
 function createJSON() {
@@ -53,9 +54,10 @@ describe('.getRequestMetadata', () => {
           if (headers) {
             const decoded = jws.decode(
                 (headers.Authorization as string).replace('Bearer ', ''));
-            assert.strictEqual(email, decoded.payload.iss);
-            assert.strictEqual(email, decoded.payload.sub);
-            assert.strictEqual(testUri, decoded.payload.aud);
+            const payload = JSON.parse(decoded.payload);
+            assert.strictEqual(email, payload.iss);
+            assert.strictEqual(email, payload.sub);
+            assert.strictEqual(testUri, payload.aud);
           }
           done();
           return retValue;

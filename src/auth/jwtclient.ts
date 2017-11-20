@@ -14,39 +14,16 @@
  * limitations under the License.
  */
 
-const gToken = require('gtoken');
+import {GoogleToken, TokenOptions} from 'gtoken';
+import * as request from 'request';
+import * as stream from 'stream';
+
 import {Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {OAuth2Client} from './oauth2client';
-import * as stream from 'stream';
-import * as request from 'request';
 
 const isString = require('lodash.isstring');
 const noop = Function.prototype;
-
-export interface TokenOptions {
-  key?: string|null;
-  iss?: string|null;
-  sub?: string|null;
-  scope?: string|string[]|null;
-  keyFile?: string|null;
-  // email: string;
-}
-
-export declare interface GoogleToken {
-  (opts: TokenOptions): GoogleToken;
-  getToken(callback: (err?: Error|null, token?: string|null) => void): void;
-  token: string|null;
-  expires_at: number|null;
-  key: string|undefined;
-  keyFile: string|undefined;
-  iss: string|undefined;
-  sub: string;
-  scope: string|undefined;
-  rawToken: string|null;
-  tokenExpires: number|null;
-  email: string;
-}
 
 export class JWT extends OAuth2Client {
   email?: string;
@@ -55,7 +32,6 @@ export class JWT extends OAuth2Client {
   scopes?: string|string[]|null;
   scope?: string|null;
   subject?: string;
-  gToken: GoogleToken;
   gtoken: GoogleToken;
 
   /**
@@ -79,8 +55,6 @@ export class JWT extends OAuth2Client {
     this.key = key;
     this.scopes = scopes;
     this.subject = subject;
-    this.gToken = gToken;
-
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
   }
 
@@ -169,7 +143,7 @@ export class JWT extends OAuth2Client {
           return done(err2, {
             access_token: token,
             token_type: 'Bearer',
-            expiry_date: newGToken.expires_at
+            expiry_date: newGToken.expiresAt
           });
         });
       }
@@ -263,13 +237,14 @@ export class JWT extends OAuth2Client {
     if (this.gtoken) {
       return callback(null, this.gtoken);
     } else {
-      this.gtoken = this.gToken({
+      const opts = {
         iss: this.email,
         sub: this.subject,
         scope: this.scopes,
         keyFile: this.keyFile,
         key: this.key
-      });
+      } as TokenOptions;
+      this.gtoken = new GoogleToken(opts);
       return callback(null, this.gtoken);
     }
   }
