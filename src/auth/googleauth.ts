@@ -666,9 +666,9 @@ export class GoogleAuth {
     } else {
       this._checkIsGCE((err, gce) => {
         if (err) {
-          callback(err, undefined);
+          callback(err);
         } else if (!gce) {
-          callback(new Error('Unknown error.'), undefined);
+          callback(new Error('Unknown error.'));
         } else {
           // For GCE, return the service account details from the metadata
           // server
