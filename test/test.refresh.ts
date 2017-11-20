@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as nock from 'nock';
 
-import {GoogleAuth} from '../lib/auth/googleauth';
+import {GoogleAuth} from '../src/auth/googleauth';
 
 nock.disableNetConnect();
 
@@ -37,7 +37,9 @@ describe('.fromJson', () => {
   it('should error on null json', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(null, (err) => {
+    // Test verifies invalid parameter tests, which requires cast to any.
+    // tslint:disable-next-line no-any
+    (refresh as any).fromJSON(null, (err: Error) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -46,7 +48,9 @@ describe('.fromJson', () => {
   it('should error on empty json', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON({}, (err) => {
+    // Test verifies invalid parameter tests, which requires cast to any.
+    // tslint:disable-next-line no-any
+    refresh.fromJSON(({} as any), (err) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -127,7 +131,9 @@ describe('.fromStream', () => {
   it('should error on null stream', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromStream(null, (err) => {
+    // Test verifies invalid parameter tests, which requires cast to any.
+    // tslint:disable-next-line no-any
+    (refresh as any).fromStream(null, (err: Error) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -136,11 +142,11 @@ describe('.fromStream', () => {
   it('should read the stream and create a UserRefreshClient', (done) => {
     // Read the contents of the file into a json object.
     const fileContents =
-        fs.readFileSync('./ts/test/fixtures/refresh.json', 'utf-8');
+        fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
     const json = JSON.parse(fileContents);
 
     // Now open a stream on the same file.
-    const stream = fs.createReadStream('./ts/test/fixtures/refresh.json');
+    const stream = fs.createReadStream('./test/fixtures/refresh.json');
 
     // And pass it into the fromStream method.
     const auth = new GoogleAuth();

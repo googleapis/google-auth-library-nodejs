@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import {LoginTicket} from '../lib/auth/loginticket';
+import {LoginTicket} from '../src/auth/loginticket';
 
 describe('LoginTicket', () => {
 
