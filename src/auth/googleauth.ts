@@ -646,58 +646,54 @@ export class GoogleAuth {
 
 
   /**
-   * Returns the client_email and private_key (if exists).
-   * It checks for these values from the user JSON at first.
+   * The callback function handles a credential object that contains the
+   * client_email and private_key (if exists).
+   * getCredentials checks for these values from the user JSON at first.
    * If it doesn't exist, and the environment is on GCE, it gets the
    * client_email from the cloud metadata server.
-   * @param {function} callback Callback.
-   * @return object representation of the service account JSON
+   * @param callback Callback that handles the credential object that contains
+   * a client_email and optional private key, or the error.
+   * returned
    */
   getCredentials(
-      callback?: (err: Error|null, credentials?: CredentialBody) => void) {
+      callback: (err: Error|null, credentials?: CredentialBody) => void) {
     if (this.jsonContent) {
       const credential: CredentialBody = {
         client_email: this.jsonContent.client_email,
         private_key: this.jsonContent.private_key
       };
-      if (callback) {
-        callback(null, credential);
-      }
+      callback(null, credential);
     } else {
       this._checkIsGCE((err, gce) => {
         if (err) {
-          if (callback) {
-            callback(err, undefined);
-          }
+          callback(err, undefined);
         } else if (!gce) {
-          if (callback) {
-            callback(new Error('Unknown error.'), undefined);
-          } else {
-            // For GCE, return the service account details from the metadata
-            // server
-            this.transporter.request(
-                {
-                  method: 'GET',
-                  uri:
-                      'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
-                  headers: {'Metadata-Flavor': 'Google'}
-                },
-                (err, body, res) => {
-                  if (err || !res || res.statusCode !== 200 || !body ||
-                      !body.default || !body.default.email) {
-                    if (callback) {
-                      callback(new Error('Failure from metadata server.'));
-                    }
-                  } else {
-                    // Callback with the body
-                    const credential:
-                        CredentialBody = {client_email: body.default.email};
-                    if (callback) {
-                      callback(null, credential);
-                    }
+          callback(new Error('Unknown error.'), undefined);
+        } else {
+          // For GCE, return the service account details from the metadata
+          // server
+          this.transporter.request(
+              {
+                method: 'GET',
+                uri:
+                    'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
+                headers: {'Metadata-Flavor': 'Google'}
+              },
+              (err, body, res) => {
+                if (err || !res || res.statusCode !== 200 || !body ||
+                    !body.default || !body.default.email) {
+                  if (callback) {
+                    callback(new Error('Failure from metadata server.'));
                   }
-                });
-          }
+                } else {
+                  // Callback with the body
+                  const credential:
+                      CredentialBody = {client_email: body.default.email};
+                  if (callback) {
+                    callback(null, credential);
+                  }
+                }
+              });
         }
       });
     }
