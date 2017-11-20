@@ -130,7 +130,6 @@ function insertEnvironmentVariableIntoAuth(
 function insertWellKnownFilePathIntoAuth(
     auth: GoogleAuth, filePath: string, mockFilePath: string) {
   const originalMockWellKnownFilePathFunction = auth._mockWellKnownFilePath;
-
   auth._mockWellKnownFilePath = (kfpath: string) => {
     if (kfpath === filePath) {
       return mockFilePath;
@@ -1532,6 +1531,139 @@ describe('GoogleAuth', () => {
 
           done2();
         });
+      });
+    });
+  });
+  describe('.getCredentials', () => {
+    it('should get metadata from the server when running on GCE', (done) => {
+      const auth = new GoogleAuth();
+      auth.transporter = new MockTransporter(true);
+      auth._checkIsGCE(() => {
+        // Assert that the flags are set.
+        assert.equal(true, auth.isGCE);
+        done();
+      });
+      const response = `{
+          "email":"test-creds@test-creds.iam.gserviceaccount.com",
+          "private_key": null
+        }`;
+      const scope =
+          nock('http://metadata.google.internal')
+              .get(
+                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+              .reply(200, response);
+      auth.getCredentials((err, body) => {
+        assert(body);
+        assert.equal(
+            body!.client_email,
+            'test-creds@test-creds.iam.gserviceaccount.com');
+        assert.equal(body!.private_key, null);
+        scope.done();
+        done();
+      });
+    });
+    it('should error if metadata server is not reachable', (done) => {
+      const auth = new GoogleAuth();
+      auth.transporter = new MockTransporter(true);
+      auth._checkIsGCE(() => {
+        // Assert that the flags are set.
+        assert.equal(true, auth.isGCE);
+        done();
+      });
+      const scope =
+          nock('http://metadata.google.internal')
+              .get(
+                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+              .reply(404);
+      auth.getCredentials((err, body) => {
+        assert.equal(true, err instanceof Error);
+        scope.done();
+        done();
+      });
+    });
+    it('should error if body is empty', (done) => {
+      const auth = new GoogleAuth();
+      auth.transporter = new MockTransporter(true);
+      auth._checkIsGCE(() => {
+        // Assert that the flags are set.
+        assert.equal(true, auth.isGCE);
+        done();
+      });
+      const scope =
+          nock('http://metadata.google.internal')
+              .get(
+                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+              .reply(200, {});
+      auth.getCredentials((err, body) => {
+        assert.equal(true, err instanceof Error);
+        scope.done();
+        done();
+      });
+    });
+    it('should handle valid environment variable', (done) => {
+      // Set up a mock to return path to a valid credentials file.
+      const auth = new GoogleAuth();
+      blockGoogleApplicationCredentialEnvironmentVariable(auth);
+      insertEnvironmentVariableIntoAuth(
+          auth, 'GOOGLE_APPLICATION_CREDENTIALS',
+          './test/fixtures/private.json');
+      // Execute.
+      auth._tryGetApplicationCredentialsFromEnvironmentVariable(
+          (err, result) => {
+            assert(result);
+            assert.equal(null, err);
+            const jwt = result as JWT;
+            it('should return the credentials from file', (done2) => {
+              auth.getCredentials((_err, body) => {
+                assert.notEqual(null, body);
+                assert.equal(jwt.email, body!.client_email);
+                assert.equal(jwt.key, body!.private_key);
+                done2();
+              });
+            });
+            done();
+          });
+    });
+    it('should handle valid file path', (done) => {
+      // Set up a mock to return path to a valid credentials file.
+      const auth = new GoogleAuth();
+      blockGoogleApplicationCredentialEnvironmentVariable(auth);
+      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+      auth._pathJoin = pathJoin;
+      auth._osPlatform = () => 'win32';
+      auth._fileExists = () => true;
+      auth._checkIsGCE = callsBack(null, true);
+      insertWellKnownFilePathIntoAuth(
+          auth, 'foo:gcloud:application_default_credentials.json',
+          './test/fixtures/private2.json');
+      // Execute.
+      auth.getApplicationDefault((err, result) => {
+        assert.notEqual(true, err instanceof Error);
+        assert(result);
+        assert.equal(null, err);
+        const jwt = result as JWT;
+        it('should return the credentials from file', (done2) => {
+          auth.getCredentials((_err, body) => {
+            assert.notEqual(null, body);
+            assert.equal(jwt.email, body!.client_email);
+            assert.equal(jwt.key, body!.private_key);
+            done2();
+          });
+        });
+        done();
+      });
+    });
+    it('should return error when env const is not set', (done) => {
+      // Set up a mock to return a null path string
+      const auth = new GoogleAuth();
+      let credentialFlag: boolean;
+      insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS');
+      credentialFlag =
+          auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      assert.equal(false, credentialFlag);
+      auth.getCredentials((_err, body) => {
+        assert.equal(true, _err instanceof Error);
+        done();
       });
     });
   });

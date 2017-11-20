@@ -35,6 +35,11 @@ export interface ProjectIdCallback {
   (err?: Error|null, projectId?: string): void;
 }
 
+export interface CredentialBody {
+  client_email?: string;
+  private_key?: string;
+}
+
 export class GoogleAuth {
   transporter: Transporter;
 
@@ -59,6 +64,8 @@ export class GoogleAuth {
   set cachedProjectId(projectId: string) {
     this._cachedProjectId = projectId;
   }
+  // To save the contents of the JSON credential file
+  jsonContent: JWTInput|null = null;
 
   cachedCredential: OAuth2Client|null = null;
 
@@ -389,6 +396,8 @@ export class GoogleAuth {
       }
       return;
     }
+    // Set the JSON contents
+    this.jsonContent = json;
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient();
     } else {
@@ -633,5 +642,60 @@ export class GoogleAuth {
           // Ignore any errors
           if (callback) callback(null, body);
         });
+  }
+
+
+  /**
+   * The callback function handles a credential object that contains the
+   * client_email and private_key (if exists).
+   * getCredentials checks for these values from the user JSON at first.
+   * If it doesn't exist, and the environment is on GCE, it gets the
+   * client_email from the cloud metadata server.
+   * @param callback Callback that handles the credential object that contains
+   * a client_email and optional private key, or the error.
+   * returned
+   */
+  getCredentials(
+      callback: (err: Error|null, credentials?: CredentialBody) => void) {
+    if (this.jsonContent) {
+      const credential: CredentialBody = {
+        client_email: this.jsonContent.client_email,
+        private_key: this.jsonContent.private_key
+      };
+      callback(null, credential);
+    } else {
+      this._checkIsGCE((err, gce) => {
+        if (err) {
+          callback(err);
+        } else if (!gce) {
+          callback(new Error('Unknown error.'));
+        } else {
+          // For GCE, return the service account details from the metadata
+          // server
+          this.transporter.request(
+              {
+                method: 'GET',
+                uri:
+                    'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
+                headers: {'Metadata-Flavor': 'Google'}
+              },
+              (err, body, res) => {
+                if (err || !res || res.statusCode !== 200 || !body ||
+                    !body.default || !body.default.email) {
+                  if (callback) {
+                    callback(new Error('Failure from metadata server.'));
+                  }
+                } else {
+                  // Callback with the body
+                  const credential:
+                      CredentialBody = {client_email: body.default.email};
+                  if (callback) {
+                    callback(null, credential);
+                  }
+                }
+              });
+        }
+      });
+    }
   }
 }
