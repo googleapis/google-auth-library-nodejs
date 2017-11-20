@@ -20,10 +20,9 @@ import * as fs from 'fs';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as qs from 'querystring';
-import * as request from 'request';
 import * as url from 'url';
 
-import {GoogleAuth} from '../src/auth/googleauth';
+import {GoogleAuth} from '../lib/auth/googleauth';
 
 nock.disableNetConnect();
 
@@ -130,8 +129,9 @@ describe('OAuth2 client', () => {
 */
 
   it('should verify a valid certificate against a jwt', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -172,8 +172,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid audience', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -214,8 +215,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid array of audiences', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -257,8 +259,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid signature', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const idToken = '{' +
         '"iss":"testissuer",' +
@@ -298,8 +301,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid envelope', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -341,8 +345,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid payload', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -384,7 +389,7 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid signature', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -421,8 +426,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to no expiration date', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const now = new Date().getTime() / 1000;
 
@@ -461,8 +467,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to no issue time', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = new Date().getTime() / 1000;
@@ -504,9 +511,10 @@ describe('OAuth2 client', () => {
 
   it('should fail due to certificate with expiration date in future',
      (done) => {
-       const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
+       const publicKey =
+           fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
        const privateKey =
-           fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+           fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
        const maxLifetimeSecs = 86400;
        const now = new Date().getTime() / 1000;
@@ -548,9 +556,10 @@ describe('OAuth2 client', () => {
 
   it('should pass due to expiration date in future with adjusted max expiry',
      (done) => {
-       const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
+       const publicKey =
+           fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
        const privateKey =
-           fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+           fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
        const maxLifetimeSecs = 86400;
        const now = new Date().getTime() / 1000;
@@ -590,8 +599,9 @@ describe('OAuth2 client', () => {
      });
 
   it('should fail due to token being used to early', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const clockSkews = 300;
@@ -634,8 +644,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to token being used to late', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const clockSkews = 300;
@@ -678,8 +689,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should fail due to invalid issuer', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = (new Date().getTime() / 1000);
@@ -720,8 +732,9 @@ describe('OAuth2 client', () => {
   });
 
   it('should pass due to valid issuer', (done) => {
-    const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-    const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+    const publicKey = fs.readFileSync('./ts/test/fixtures/public.pem', 'utf-8');
+    const privateKey =
+        fs.readFileSync('./ts/test/fixtures/private.pem', 'utf-8');
 
     const maxLifetimeSecs = 86400;
     const now = (new Date().getTime() / 1000);
@@ -765,7 +778,7 @@ describe('OAuth2 client', () => {
             .get('/oauth2/v1/certs')
             .replyWithFile(
                 200,
-                path.join(__dirname, '../../test/fixtures/oauthcerts.json'));
+                path.join(__dirname, '../ts/test/fixtures/oauthcerts.json'));
     const auth = new GoogleAuth();
     const oauth2client =
         new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
@@ -792,7 +805,7 @@ describe('OAuth2 client', () => {
                .once()
                .replyWithFile(
                    200,
-                   path.join(__dirname, '../../test/fixtures/oauthcerts.json'));
+                   path.join(__dirname, '../ts/test/fixtures/oauthcerts.json'));
        const auth = new GoogleAuth();
        const oauth2client =
            new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
@@ -855,12 +868,8 @@ describe('OAuth2 client', () => {
     const auth = new GoogleAuth();
     const oauth2client =
         new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    oauth2client.request(({} as request.OptionsWithUri), (err, result) => {
-      assert(err);
-      if (err) {
-        assert.equal(
-            err.message, 'No access, refresh token or API key is set.');
-      }
+    oauth2client.request({}, (err, result) => {
+      assert.equal(err.message, 'No access, refresh token or API key is set.');
       assert.equal(result, null);
       done();
     });
@@ -871,10 +880,7 @@ describe('OAuth2 client', () => {
     const oauth2client =
         new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.refreshAccessToken((err, result) => {
-      assert(err);
-      if (err) {
-        assert.equal(err.message, 'No refresh token is set.');
-      }
+      assert.equal(err.message, 'No refresh token is set.');
       assert.equal(result, null);
       done();
     });
@@ -1010,10 +1016,7 @@ describe('OAuth2 client', () => {
              new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
          oauth2client.credentials = {refresh_token: 'abc'};
          oauth2client.revokeCredentials((err, result) => {
-           assert(err);
-           if (err) {
-             assert.equal(err.message, 'No access token to revoke.');
-           }
+           assert.equal(err.message, 'No access token to revoke.');
            assert.equal(result, null);
            assert.equal(JSON.stringify(oauth2client.credentials), '{}');
            done();

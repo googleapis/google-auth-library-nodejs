@@ -60,7 +60,7 @@ the following snippet should work.
 
 ```js
 var google = require('googleapis');
-var GoogleAuth = require('google-auth-library').GoogleAuth;
+var GoogleAuth = require('google-auth-library');
 
 var authFactory = new GoogleAuth();
 var dns = google.dns('v1');

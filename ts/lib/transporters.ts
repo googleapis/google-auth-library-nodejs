@@ -16,45 +16,34 @@
 
 import * as request from 'request';
 
-// tslint:disable-next-line no-var-requires
-const pkg = require('../../package.json');
+// tslint:disable-next-line
+const pkg = require('../package.json');
 
 export interface Transporter {
-  request(opts: request.Options, callback?: BodyResponseCallback):
-      request.Request;
+  request(opts: any, callback?: BodyResponseCallback): any;
 }
 
 export interface BodyResponseCallback {
-  // The `body` object is a truly dynamic type.  It must be `any`.
-  // tslint:disable-next-line no-any
-  (err: Error|null, body?: any, res?: request.RequestResponse|null): void;
+  (err: Error, body: any, res?: request.RequestResponse): void;
 }
 
 export class RequestError extends Error {
-  code?: number;
-  errors: Error[];
-}
-
-export interface BodyResponse {
-  error?: string|{
-    code?: number;
-    message?: string;
-    errors: Error[];
-  };
+  public code: number;
+  public errors: Error[];
 }
 
 export class DefaultTransporter {
   /**
    * Default user agent.
    */
-  static readonly USER_AGENT = 'google-api-nodejs-client/' + pkg.version;
+  public static readonly USER_AGENT = 'google-api-nodejs-client/' + pkg.version;
 
   /**
    * Configures request options before making a request.
    * @param {object} opts Options to configure.
    * @return {object} Configured options.
    */
-  configure(opts: request.Options): request.Options {
+  public configure(opts: any): any {
     // set transporter user agent
     opts.headers = opts.headers || {};
     if (!opts.headers['User-Agent']) {
@@ -74,11 +63,9 @@ export class DefaultTransporter {
    * @param {Function=} callback Optional callback.
    * @return {Request} Request object
    */
-  request(opts: request.Options, callback?: BodyResponseCallback) {
+  public request(opts: any, callback?: BodyResponseCallback) {
     opts = this.configure(opts);
-    const uri = (opts as request.OptionsWithUri).uri as string ||
-        (opts as request.OptionsWithUrl).url as string;
-    return request(uri, opts, this.wrapCallback_(callback));
+    return request(opts.uri || opts.url, opts, this.wrapCallback_(callback));
   }
 
   /**
@@ -89,10 +76,7 @@ export class DefaultTransporter {
    */
   private wrapCallback_(callback?: BodyResponseCallback):
       request.RequestCallback {
-    return (err: RequestError, res: request.RequestResponse,
-            // the body is either a string or a JSON object
-            // tslint:disable-next-line no-any
-            body: string|any) => {
+    return (err: RequestError, res: request.RequestResponse, body: any) => {
       if (err || !body) {
         return callback && callback(err, body, res);
       }
@@ -100,7 +84,7 @@ export class DefaultTransporter {
       // be decoded back to JSON, but there are cases API back-ends
       // responds without proper content-type.
       try {
-        body = JSON.parse(body as string);
+        body = JSON.parse(body);
       } catch (err) {
         /* no op */
       }
@@ -119,7 +103,7 @@ export class DefaultTransporter {
           (err as RequestError).code = body.error.code || res.statusCode;
         }
         body = null;
-      } else if (res.statusCode && res.statusCode >= 400) {
+      } else if (res.statusCode >= 400) {
         // Consider all 4xx and 5xx responses errors.
         err = new RequestError(body);
         (err as RequestError).code = res.statusCode;

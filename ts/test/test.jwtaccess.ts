@@ -18,11 +18,9 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 const jws = require('jws');
 const keypair = require('keypair');
-import {JWTInput} from '../src/auth/credentials';
-import {JWTAccess} from '../src/auth/jwtaccess';
-import * as http from 'http';
+import {JWTAccess} from './../lib/auth/jwtaccess';
 
-import {GoogleAuth} from '../src/auth/googleauth';
+import {GoogleAuth} from '../lib/auth/googleauth';
 
 // Creates a standard JSON credentials object for testing.
 function createJSON() {
@@ -45,21 +43,16 @@ describe('.getRequestMetadata', () => {
     const client = new auth.JWTAccess(email, keys.private);
 
     const retValue = 'dummy';
-    const expectAuth =
-        (err: Error|null, headers?: http.IncomingHttpHeaders|null) => {
-          assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-          assert.notStrictEqual(
-              null, headers, 'an creds object should be present');
-          if (headers) {
-            const decoded = jws.decode(
-                (headers.Authorization as string).replace('Bearer ', ''));
-            assert.strictEqual(email, decoded.payload.iss);
-            assert.strictEqual(email, decoded.payload.sub);
-            assert.strictEqual(testUri, decoded.payload.aud);
-          }
-          done();
-          return retValue;
-        };
+    const expectAuth = (err: Error, creds: any) => {
+      assert.strictEqual(null, err, 'no error was expected: got\n' + err);
+      assert.notStrictEqual(null, creds, 'an creds object should be present');
+      const decoded = jws.decode(creds.Authorization.replace('Bearer ', ''));
+      assert.strictEqual(email, decoded.payload.iss);
+      assert.strictEqual(email, decoded.payload.sub);
+      assert.strictEqual(testUri, decoded.payload.aud);
+      done();
+      return retValue;
+    };
     const res = client.getRequestMetadata(testUri, expectAuth);
     assert.strictEqual(res, retValue);
   });
@@ -67,16 +60,19 @@ describe('.getRequestMetadata', () => {
 });
 
 describe('.createScopedRequired', () => {
+
   it('should return false', () => {
     const auth = new GoogleAuth();
     const client = new auth.JWTAccess('foo@serviceaccount.com', null);
+
     assert.equal(false, client.createScopedRequired());
   });
+
 });
 
 describe('.fromJson', () => {
   // set up the test json and the client instance being tested.
-  let json = ({} as JWTInput);
+  let json: any;
   let client: JWTAccess;
   beforeEach(() => {
     json = createJSON();
@@ -85,9 +81,7 @@ describe('.fromJson', () => {
   });
 
   it('should error on null json', (done) => {
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    (client as any).fromJSON(null, (err: Error) => {
+    client.fromJSON(null, (err) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -145,9 +139,7 @@ describe('.fromStream', () => {
   });
 
   it('should error on null stream', (done) => {
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    (client as any).fromStream(null, (err: Error) => {
+    client.fromStream(null, (err) => {
       assert.equal(true, err instanceof Error);
       done();
     });
@@ -156,11 +148,11 @@ describe('.fromStream', () => {
   it('should construct a JWT Header instance from a stream', (done) => {
     // Read the contents of the file into a json object.
     const fileContents =
-        fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+        fs.readFileSync('./ts/test/fixtures/private.json', 'utf-8');
     const json = JSON.parse(fileContents);
 
     // Now open a stream on the same file.
-    const stream = fs.createReadStream('./test/fixtures/private.json');
+    const stream = fs.createReadStream('./ts/test/fixtures/private.json');
 
     // And pass it into the fromStream method.
     client.fromStream(stream, (err) => {

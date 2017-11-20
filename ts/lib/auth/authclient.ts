@@ -16,17 +16,17 @@
 
 import * as request from 'request';
 
-import {DefaultTransporter} from '../transporters';
+import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Credentials} from './credentials';
 
 export abstract class AuthClient {
-  transporter = new DefaultTransporter();
-  credentials: Credentials;
+  public transporter = new DefaultTransporter();
+  public credentials: Credentials;
 
   /**
    * Provides an alternative request
    * implementations with auth credentials.
    */
-  abstract request(opts: request.Options): request.Request|void;
+  public abstract request(): request.Request|void;
 }

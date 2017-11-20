@@ -16,8 +16,8 @@
 
 export class LoginTicket {
   private static readonly USER_ATTR = 'sub';
-  private envelope?: string;
-  private payload?: string;
+  private _envelope: string;
+  private _payload: any;
 
   /**
    * Create a simple class to extract user ID from an ID Token
@@ -27,16 +27,16 @@ export class LoginTicket {
    * @constructor
    */
   constructor(env?: string, pay?: string) {
-    this.envelope = env;
-    this.payload = pay;
+    this._envelope = env;
+    this._payload = pay;
   }
 
-  getEnvelope() {
-    return this.envelope;
+  public getEnvelope() {
+    return this._envelope;
   }
 
-  getPayload() {
-    return this.payload;
+  public getPayload() {
+    return this._payload;
   }
 
   /**
@@ -44,7 +44,7 @@ export class LoginTicket {
    *
    * @return {string} The user ID
    */
-  getUserId() {
+  public getUserId() {
     const payload = this.getPayload();
     if (payload && payload[LoginTicket.USER_ATTR]) {
       return payload[LoginTicket.USER_ATTR];
@@ -58,7 +58,7 @@ export class LoginTicket {
    *
    * @return {Object} The envelope and payload
    */
-  getAttributes() {
+  public getAttributes() {
     return {envelope: this.getEnvelope(), payload: this.getPayload()};
   }
 }
