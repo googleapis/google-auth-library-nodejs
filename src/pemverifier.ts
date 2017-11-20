@@ -17,7 +17,7 @@
 import * as crypto from 'crypto';
 
 export class PemVerifier {
-  public verify(
+  verify(
       pubkey: string, data: string|Buffer, signature: string,
       encoding: crypto.HexBase64Latin1Encoding) {
     const verifier = crypto.createVerify('sha256');
