@@ -27,7 +27,7 @@ import {Compute} from './computeclient';
 import {Credentials, JWTInput} from './credentials';
 import {IAMAuth} from './iam';
 import {JWTAccess} from './jwtaccess';
-import {JWT, TokenOptions} from './jwtclient';
+import {JWT} from './jwtclient';
 import {OAuth2Client} from './oauth2client';
 import {UserRefreshClient} from './refreshclient';
 

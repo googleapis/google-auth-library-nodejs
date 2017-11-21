@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-const jws = require('jws');
-import * as stream from 'stream';
-import {JWTInput} from './credentials';
 import * as http from 'http';
+import * as jws from 'jws';
+import * as stream from 'stream';
+
+import {JWTInput} from './credentials';
 
 const noop = Function.prototype;
 
@@ -71,7 +72,7 @@ export class JWTAccess {
     // aud == <the authorization uri>
     const payload = {iss: this.email, sub: this.email, aud: authURI, exp, iat};
     const assertion = {
-      header: {alg: 'RS256', typ: 'JWT'},
+      header: {alg: 'RS256'} as jws.Header,
       payload,
       secret: this.key
     };
@@ -156,7 +157,8 @@ export class JWTAccess {
    * @param  {Function} signedJwtFn  fn(err, signedJWT)
    */
   private _signJWT(
-      assertion: {}, signedJwtFn: (err: Error|null, signedJwt?: {}) => void) {
+      assertion: jws.SignOptions,
+      signedJwtFn: (err: Error|null, signedJwt?: {}) => void) {
     try {
       return signedJwtFn(null, jws.sign(assertion));
     } catch (err) {

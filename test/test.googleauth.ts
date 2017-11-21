@@ -22,7 +22,7 @@ import * as request from 'request';
 
 import {Compute} from '../src/auth/computeclient';
 import {GoogleAuth} from '../src/auth/googleauth';
-import {JWT, TokenOptions} from '../src/auth/jwtclient';
+import {JWT} from '../src/auth/jwtclient';
 import {OAuth2Client} from '../src/auth/oauth2client';
 import {UserRefreshClient} from '../src/auth/refreshclient';
 import {BodyResponseCallback, DefaultTransporter} from '../src/transporters';
