@@ -3,6 +3,7 @@
 [![Build Status][travisimg]][travis]
 [![Code Coverage][coverallsimg]][coveralls]
 [![Dependencies][david-dm-img]][david-dm]
+[![Greenkeeper badge](https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg)](https://greenkeeper.io/)
 
 This is Google's officially supported [node.js][node] client library for using
 OAuth 2.0 authorization and authentication with Google APIs.
