@@ -33,6 +33,12 @@ afterEach(() => {
   nock.cleanAll();
 });
 
+function createIsGCENock(isGCE = true) {
+  nock('http://metadata.google.internal').get('/').reply(200, null, {
+    'metadata-flavor': 'Google'
+  });
+}
+
 // Mocks the transporter class to simulate GCE.
 class MockTransporter extends DefaultTransporter {
   isGCE: boolean;
@@ -77,6 +83,8 @@ class MockTransporter extends DefaultTransporter {
   }
 }
 
+
+
 // Creates a standard JSON auth object for testing.
 function createJwtJSON() {
   return {
@@ -105,19 +113,6 @@ function stringEndsWith(str: string, suffix: string) {
 // Simulates a path join.
 function pathJoin(item1: string, item2: string) {
   return item1 + ':' + item2;
-}
-
-// Returns the value.
-function returns(value: {}) {
-  return () => {
-    return value;
-  };
-}
-
-function callsBack(err: {}|null, value?: {}) {
-  return (callback: Function) => {
-    callback(err, value);
-  };
 }
 
 // Blocks the GOOGLE_APPLICATION_CREDENTIALS by default. This is necessary in
@@ -151,23 +146,6 @@ function insertWellKnownFilePathIntoAuth(
     }
 
     return originalMockWellKnownFilePathFunction(filePath);
-  };
-}
-
-const noop = () => undefined;
-
-// Executes the doneCallback after the nTH call.
-function doneWhen(doneCallback: Function, count: number) {
-  let i = 0;
-
-  return () => {
-    ++i;
-
-    if (i === count) {
-      doneCallback();
-    } else if (i > count) {
-      throw new Error('Called too many times. Test error?');
-    }
   };
 }
 
@@ -1090,10 +1068,7 @@ describe('GoogleAuth', () => {
 describe('.getApplicationDefault', () => {
 
   it('should return a new credential the first time and a cached credential the second time',
-     (done) => {
-
-       // The test ends successfully after 3 steps have completed.
-       const step = doneWhen(done, 3);
+     async () => {
 
        // Create a function which will set up a GoogleAuth instance to match
        // on an environment variable json file, but not on anything else.
@@ -1112,66 +1087,51 @@ describe('.getApplicationDefault', () => {
        setUpAuthForEnvironmentVariable(auth);
 
        // Ask for credentials, the first time.
-       auth.getApplicationDefault((err, result) => {
-         assert.equal(null, err);
-         assert.notEqual(null, result);
+       const result = await auth.getApplicationDefault();
+       assert.notEqual(null, result);
 
-         // Capture the returned credential.
-         const cachedCredential = result;
+       // Capture the returned credential.
+       const cachedCredential = result.credential;
 
-         // Make sure our special test bit is not set yet, indicating that
-         // this is a new credentials instance.
-         // Test verifies invalid parameter tests, which requires cast to any.
-         // tslint:disable-next-line no-any
-         assert.equal(null, (cachedCredential as any).specialTestBit);
+       // Make sure our special test bit is not set yet, indicating that
+       // this is a new credentials instance.
+       // Test verifies invalid parameter tests, which requires cast to any.
+       // tslint:disable-next-line no-any
+       assert.equal(null, (cachedCredential as any).specialTestBit);
 
-         // Now set the special test bit.
-         // Test verifies invalid parameter tests, which requires cast to any.
-         // tslint:disable-next-line no-any
-         (cachedCredential as any).specialTestBit = 'monkey';
+       // Now set the special test bit.
+       // Test verifies invalid parameter tests, which requires cast to any.
+       // tslint:disable-next-line no-any
+       (cachedCredential as any).specialTestBit = 'monkey';
 
-         // Step 1 has completed.
-         step();
+       // Ask for credentials again, from the same auth instance. We expect
+       // a cached instance this time.
+       const result2 = (await auth.getApplicationDefault()).credential;
+       assert.notEqual(null, result2);
 
-         // Ask for credentials again, from the same auth instance. We expect
-         // a cached instance this time.
-         auth.getApplicationDefault((err2, result2) => {
-           assert.equal(null, err2);
-           assert.notEqual(null, result2);
+       // Make sure the special test bit is set on the credentials we got
+       // back, indicating that we got cached credentials. Also make sure
+       // the object instance is the same.
+       // Test verifies invalid parameter tests, which requires cast to
+       // any.
+       // tslint:disable-next-line no-any
+       assert.equal('monkey', (result2 as any).specialTestBit);
+       assert.equal(cachedCredential, result2);
 
-           // Make sure the special test bit is set on the credentials we got
-           // back, indicating that we got cached credentials. Also make sure
-           // the object instance is the same.
-           // Test verifies invalid parameter tests, which requires cast to
-           // any.
-           // tslint:disable-next-line no-any
-           assert.equal('monkey', (result2 as any).specialTestBit);
-           assert.equal(cachedCredential, result2);
+       // Now create a second GoogleAuth instance, and ask for
+       // credentials. We should get a new credentials instance this time.
+       const auth2 = new GoogleAuth();
+       setUpAuthForEnvironmentVariable(auth2);
 
-           // Now create a second GoogleAuth instance, and ask for
-           // credentials. We should get a new credentials instance this time.
-           const auth2 = new GoogleAuth();
-           setUpAuthForEnvironmentVariable(auth2);
+       const result3 = (await auth2.getApplicationDefault()).credential;
+       assert.notEqual(null, result3);
 
-           // Step 2 has completed.
-           step();
-
-           auth2.getApplicationDefault((err3, result3) => {
-             assert.equal(null, err3);
-             assert.notEqual(null, result3);
-
-             // Make sure we get a new (non-cached) credential instance back.
-             // Test verifies invalid parameter tests, which requires cast to
-             // any.
-             // tslint:disable-next-line no-any
-             assert.equal(null, (result3 as any).specialTestBit);
-             assert.notEqual(cachedCredential, result3);
-
-             // Step 3 has completed.
-             step();
-           });
-         });
-       });
+       // Make sure we get a new (non-cached) credential instance back.
+       // Test verifies invalid parameter tests, which requires cast to
+       // any.
+       // tslint:disable-next-line no-any
+       assert.equal(null, (result3 as any).specialTestBit);
+       assert.notEqual(cachedCredential, result3);
      });
 
   it('should use environment variable when it is set', (done) => {
@@ -1433,23 +1393,25 @@ describe('._checkIsGCE', () => {
   });
 
   describe('.getCredentials', () => {
-    it.only('should get metadata from the server when running on GCE', async () => {
+    it('should get metadata from the server when running on GCE', async () => {
       const auth = new GoogleAuth();
-      auth.transporter = new MockTransporter(true);
+
+      createIsGCENock();
       const isGCE = await auth._checkIsGCE();
 
       // Assert that the flags are set.
       assert.equal(true, auth.isGCE);
 
-      const response = `{
-          "email":"test-creds@test-creds.iam.gserviceaccount.com",
-          "private_key": null
-        }`;
+      const response = {
+        default: {
+          email: 'test-creds@test-creds.iam.gserviceaccount.com',
+          private_key: null
+        }
+      };
 
-
-      nock('http://metadata.google.internal').log(console.log)
-          .get(
-              '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+      nock('http://metadata.google.internal')
+          .log(console.log)
+          .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
           .reply(200, response);
 
       const body = await auth.getCredentials();
@@ -1461,15 +1423,14 @@ describe('._checkIsGCE', () => {
 
     it('should error if metadata server is not reachable', async () => {
       const auth = new GoogleAuth();
-      auth.transporter = new MockTransporter(true);
+      createIsGCENock();
       await auth._checkIsGCE();
       // Assert that the flags are set.
       assert.equal(true, auth.isGCE);
 
-          nock('http://metadata.google.internal')
-              .get(
-                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
-              .reply(404);
+      nock('http://metadata.google.internal')
+          .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
+          .reply(404);
 
       try {
         await auth.getCredentials();
@@ -1481,14 +1442,14 @@ describe('._checkIsGCE', () => {
 
     it('should error if body is empty', async () => {
       const auth = new GoogleAuth();
-      auth.transporter = new MockTransporter(true);
+      createIsGCENock();
       await auth._checkIsGCE();
       // Assert that the flags are set.
       assert.equal(true, auth.isGCE);
 
-      nock('http://metadata.google.internal').log(console.log)
-          .get(
-              '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+      nock('http://metadata.google.internal')
+          .log(console.log)
+          .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
           .reply(200, {});
 
       try {
@@ -1528,7 +1489,7 @@ describe('._checkIsGCE', () => {
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'win32';
       auth._fileExists = () => true;
-      await auth._checkIsGCE();
+      auth._checkIsGCE = () => Promise.resolve(true);
       insertWellKnownFilePathIntoAuth(
           auth, 'foo:gcloud:application_default_credentials.json',
           './test/fixtures/private2.json');

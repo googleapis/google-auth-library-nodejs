@@ -216,7 +216,7 @@ export class GoogleAuth {
           .then(r => callback(null, r.credential, r.projectId))
           .catch(callback);
     } else {
-      return this.getApplicationDefault();
+      return this.getApplicationDefaultAsync();
     }
   }
 
