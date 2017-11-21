@@ -20,13 +20,14 @@
     "client library"
   ],
   "dependencies": {
-    "gtoken": "^1.2.3",
+    "gtoken": "^2.0.1",
     "jws": "^3.1.4",
     "lodash.isstring": "^4.0.1",
     "lodash.merge": "^4.6.0",
     "request": "^2.81.0"
   },
   "devDependencies": {
+    "@types/jws": "^3.1.0",
     "@types/lodash.isstring": "^4.0.2",
     "@types/lodash.merge": "^4.6.2",
     "@types/mocha": "^2.2.41",
