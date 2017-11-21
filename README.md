@@ -1,8 +1,8 @@
 <img src="https://avatars0.githubusercontent.com/u/1342004?v=3&s=96" alt="Google Inc. logo" title="Google" align="right" height="96" width="96"/>
 
 # Google Auth Library
-
 [![npm version][npmimg]][npm]
+[![Greenkeeper badge](https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg)](https://greenkeeper.io/)
 [![Build Status][travisimg]][travis]
 [![Code Coverage][coverallsimg]][coveralls]
 [![Dependencies][david-dm-img]][david-dm]
