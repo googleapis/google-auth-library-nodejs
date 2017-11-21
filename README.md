@@ -1,5 +1,7 @@
 # Google APIs Node.js Client
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg)](https://greenkeeper.io/)
+
 [![Build Status][travisimg]][travis]
 [![Code Coverage][coverallsimg]][coveralls]
 [![Dependencies][david-dm-img]][david-dm]
