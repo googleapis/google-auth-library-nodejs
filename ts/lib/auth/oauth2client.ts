@@ -24,12 +24,14 @@ import {Credentials} from './credentials';
 import {LoginTicket} from './loginticket';
 
 const merge = require('lodash.merge');
+const isString = require('lodash.isstring');
 
 export interface GenerateAuthUrlOpts {
   response_type?: string;
   client_id?: string;
   redirect_uri?: string;
   scope?: string[]|string;
+  state?: string;
 }
 
 const noop = Function.prototype;
@@ -299,8 +301,8 @@ export class OAuth2Client extends AuthClient {
         thisCreds.refresh_token, (err, tokens, response) => {
           // If the error code is 403 or 404, go to the else so the error
           // message is replaced. Otherwise, return the error.
-          if (err && (err as RequestError).code != 403 &&
-              (err as RequestError).code != 404) {
+          if (err && (err as RequestError).code !== 403 &&
+              (err as RequestError).code !== 404) {
             return metadataCb(err, null, response);
           } else {
             if (!tokens || (tokens && !tokens.access_token)) {
@@ -454,7 +456,11 @@ export class OAuth2Client extends AuthClient {
           'an ID Token and a callback method');
     }
 
-    this.getFederatedSignonCerts(((err: Error, certs: any) => {
+    if (!isString(idToken)) {
+      throw new Error('The ID Token has to be a string');
+    }
+
+    this.getFederatedSignonCerts(((err: Error, certs: {}) => {
                                    if (err) {
                                      callback(err, null);
                                    }
