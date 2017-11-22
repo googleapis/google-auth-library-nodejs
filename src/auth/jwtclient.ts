@@ -22,7 +22,6 @@ import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RequestMetadataResponse} from './oauth2client';
 
 const isString = require('lodash.isstring');
-const noop = Function.prototype;
 
 export class JWT extends OAuth2Client {
   email?: string;
@@ -70,7 +69,6 @@ export class JWT extends OAuth2Client {
    * Obtains the metadata to be sent with the request.
    *
    * @param {string} optUri the URI being authorized.
-   * @param {function} metadataCb
    */
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
@@ -105,6 +103,7 @@ export class JWT extends OAuth2Client {
   /**
    * Get the initial access token using gToken.
    * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with credentials
    */
   authorize(): Promise<Credentials>;
   authorize(callback: (err: Error|null, result?: Credentials) => void): void;
@@ -133,7 +132,6 @@ export class JWT extends OAuth2Client {
   /**
    * Refreshes the access token.
    * @param {object=} ignored
-   * @param {function=} callback Optional callback.
    * @private
    */
   async refreshToken(refreshToken?: string|null) {

@@ -1411,7 +1411,6 @@ describe('._checkIsGCE', () => {
       };
 
       nock('http://metadata.google.internal')
-          .log(console.log)
           .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
           .reply(200, response);
 
@@ -1449,7 +1448,6 @@ describe('._checkIsGCE', () => {
       assert.equal(true, auth.isGCE);
 
       nock('http://metadata.google.internal')
-          .log(console.log)
           .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
           .reply(200, {});
 

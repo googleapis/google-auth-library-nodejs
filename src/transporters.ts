@@ -15,6 +15,7 @@
  */
 
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {validate} from './options';
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
@@ -43,8 +44,8 @@ export class DefaultTransporter {
 
   /**
    * Configures request options before making a request.
-   * @param {object} opts Options to configure.
-   * @return {object} Configured options.
+   * @param opts AxiosRequestConfig options.
+   * @return Configured options.
    */
   configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
     // set transporter user agent
@@ -61,17 +62,28 @@ export class DefaultTransporter {
   }
 
   /**
-   * Makes a request with given options and invokes callback.
-   * @param {object} opts Options.
-   * @param {Function=} callback Optional callback.
-   * @return {Request} Request object
+   * Makes a request using Axios with given options.
+   * @param opts AxiosRequestConfig options.
+   * @param callback optional callback that contains AxiosResponse object.
+   * @return AxiosPromise, assuming no callback is passed.
    */
   request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
   request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
       void;
   request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
       AxiosPromise|void {
+    // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
+    try {
+      validate(opts);
+    } catch (e) {
+      if (callback) {
+        return callback(e);
+      } else {
+        throw e;
+      }
+    }
+
     if (callback) {
       axios(opts)
           .then(r => {
@@ -88,11 +100,10 @@ export class DefaultTransporter {
     }
   }
 
+
+
   /**
-   * Wraps the response callback.
-   * @param {Function=} callback Optional callback.
-   * @return {Function} Wrapped callback function.
-   * @private
+   * Changes the error to include details from the body.
    */
   private processError(e: AxiosError): RequestError {
     const res = e.response;

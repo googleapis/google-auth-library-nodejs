@@ -23,8 +23,7 @@ export abstract class AuthClient {
   credentials: Credentials;
 
   /**
-   * Provides an alternative request
-   * implementations with auth credentials.
+   * Provides an alternative Axios request implementation with auth credentials
    */
   abstract request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
 }

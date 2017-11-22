@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as http from 'http';
 import * as querystring from 'querystring';
 

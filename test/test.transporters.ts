@@ -101,4 +101,21 @@ describe('Transporters', () => {
           done();
         });
   });
+
+  it('should return an error if you try to use request config options', (done) => {
+    const expected =
+        '\'uri\' is not a valid configuration option. Please use \'url\' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.';
+    transporter.request(
+        {
+          uri: 'http://example.com/api',
+        } as AxiosRequestConfig,
+        (error) => {
+          assert(error);
+          if (error) {
+            assert.equal(error.message, expected);
+          }
+          done();
+        });
+  });
+
 });

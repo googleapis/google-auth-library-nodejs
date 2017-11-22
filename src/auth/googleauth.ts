@@ -21,10 +21,9 @@ import * as path from 'path';
 import * as stream from 'stream';
 import * as util from 'util';
 
-import {BodyResponseCallback, DefaultTransporter, Transporter} from '../transporters';
-
+import {DefaultTransporter, Transporter} from '../transporters';
 import {Compute} from './computeclient';
-import {Credentials, JWTInput} from './credentials';
+import {JWTInput} from './credentials';
 import {IAMAuth} from './iam';
 import {JWTAccess} from './jwtaccess';
 import {JWT} from './jwtclient';
@@ -73,7 +72,6 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  // The _ rule goes away in the next gts release
   private _cachedProjectId: string;
 
   // Note:  this properly is only public to satisify unit tests.
@@ -125,7 +123,8 @@ export class GoogleAuth {
 
   /**
    * Obtains the default project ID for the application..
-   * @param {function=} callback Optional callback.
+   * @param callback Optional callback
+   * @returns Promise that resolves with project Id (if used without callback)
    */
   getDefaultProjectId(): Promise<string>;
   getDefaultProjectId(callback: ProjectIdCallback): void;
@@ -190,8 +189,6 @@ export class GoogleAuth {
 
   /**
    * Run the Google Cloud SDK command that prints the default project ID
-   * @param {function} callback Callback.
-   * @api private
    */
   _getSDKDefaultProjectId():
       Promise<{stdout: string | null, stderr: string|null}> {
@@ -209,8 +206,10 @@ export class GoogleAuth {
   }
 
   /**
-   * Obtains the default service-level credentials for the application..
+   * Obtains the default service-level credentials for the application.
    * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with the ADCResponse (if no callback was
+   * passed).
    */
   getApplicationDefault(): Promise<ADCResponse>;
   getApplicationDefault(callback: ADCCallback): void;
@@ -275,7 +274,7 @@ export class GoogleAuth {
 
   /**
    * Determines whether the auth layer is running on Google Compute Engine.
-   * @param {function=} callback The callback.
+   * @returns A promise that resolves with the boolean.
    * @api private
    */
   async _checkIsGCE(): Promise<boolean> {
@@ -303,8 +302,7 @@ export class GoogleAuth {
 
   /**
    * Attempts to load default credentials from the environment variable path..
-   * @param {function=} callback Optional callback.
-   * @return {boolean} Returns true if the callback has been executed; false otherwise.
+   * @returns Promise that resolves with the OAuth2Client or null.
    * @api private
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable():
@@ -324,8 +322,7 @@ export class GoogleAuth {
 
   /**
    * Attempts to load default credentials from a well-known file location
-   * @param {function=} callback Optional callback.
-   * @return {boolean} Returns true if the callback has been executed; false otherwise.
+   * @return Promise that resolves with the OAuth2Client or null.
    * @api private
    */
   async _tryGetApplicationCredentialsFromWellKnownFile():
@@ -364,7 +361,7 @@ export class GoogleAuth {
   /**
    * Attempts to load default credentials from a file at the given path..
    * @param {string=} filePath The path to the file to read.
-   * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with the OAuth2Client
    * @api private
    */
   async _getApplicationCredentialsFromFilePath(filePath: string):
@@ -405,6 +402,8 @@ export class GoogleAuth {
    * Create a credentials instance using the given input options.
    * @param {object=} json The input object.
    * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with the OAuth2Client (if no callback is
+   * passed)
    */
   fromJSON(json: JWTInput): JWT|UserRefreshClient;
   fromJSON(json: JWTInput, callback: CredentialCallback): void;
@@ -587,7 +586,6 @@ export class GoogleAuth {
 
   /**
    * Loads the default project of the Google Cloud SDK.
-   * @param {function} callback Callback.
    * @api private
    */
   private async getDefaultServiceProjectId(): Promise<string|null> {
@@ -613,7 +611,6 @@ export class GoogleAuth {
 
   /**
    * Loads the project id from the GOOGLE_APPLICATION_CREDENTIALS json file.
-   * @param {function} callback Callback.
    * @api private
    */
   private async getFileProjectId(): Promise<string|undefined|null> {
@@ -641,7 +638,6 @@ export class GoogleAuth {
    * See https://github.com/google/oauth2client/issues/93 for context about
    * DNS latency.
    *
-   * @param {function} callback Callback.
    * @api private
    */
   private async getGCEProjectId() {
@@ -656,7 +652,6 @@ export class GoogleAuth {
       return r.data;
     } catch (e) {
       // Ignore any errors
-      console.error(e);
       return null;
     }
   }

@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-import * as http from 'http';
 import * as jws from 'jws';
 import * as stream from 'stream';
-
-import {BodyResponseCallback} from '../transporters';
-
 import {JWTInput} from './credentials';
 import {RequestMetadataCallback, RequestMetadataResponse} from './oauth2client';
-
-const noop = Function.prototype;
 
 export class JWTAccess {
   email?: string|null;
@@ -60,8 +54,8 @@ export class JWTAccess {
    * Get a non-expired access token, after refreshing if necessary
    *
    * @param {string} authURI the URI being authorized
-   * @param {function} metadataCb a callback invoked with the jwt
-   *                   request metadata.
+   * @param {function} metadataCb a callback invoked with the jwt request metadata.
+   * @returns a Promise that resolves with the request metadata response
    */
   getRequestMetadata(authURI: string): RequestMetadataResponse;
   getRequestMetadata(authURI: string, callback: RequestMetadataCallback): void;

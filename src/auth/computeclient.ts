@@ -15,7 +15,6 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios';
-
 import {RequestError} from './../transporters';
 import {GetTokenResponse, OAuth2Client} from './oauth2client';
 
@@ -47,7 +46,7 @@ export class Compute extends OAuth2Client {
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
-   * @return {object} The cloned instance.
+   * @return Boolean indicating if scope is required.
    */
   createScopedRequired() {
     // On compute engine, scopes are specified at the compute instance's
@@ -58,8 +57,7 @@ export class Compute extends OAuth2Client {
 
   /**
    * Refreshes the access token.
-   * @param {object=} ignored_
-   * @param {function=} callback Optional callback.
+   * @param refreshToken Unused parameter
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
