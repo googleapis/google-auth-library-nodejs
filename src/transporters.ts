@@ -20,16 +20,17 @@ import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from
 const pkg = require('../../package.json');
 
 export interface Transporter {
-  request(opts: AxiosRequestConfig): AxiosPromise;
-  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback): void;
-  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback):
+  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      void;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
       AxiosPromise|void;
 }
 
-export interface BodyResponseCallback {
+export interface BodyResponseCallback<T> {
   // The `body` object is a truly dynamic type.  It must be `any`.
   // tslint:disable-next-line no-any
-  (err: Error|null, body?: any, res?: AxiosResponse|null): void;
+  (err: Error|null, res?: AxiosResponse<T>|null): void;
 }
 
 export interface RequestError extends AxiosError { errors: Error[]; }
@@ -65,9 +66,10 @@ export class DefaultTransporter {
    * @param {Function=} callback Optional callback.
    * @return {Request} Request object
    */
-  request(opts: AxiosRequestConfig): AxiosPromise;
-  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback): void;
-  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback):
+  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      void;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
       AxiosPromise|void {
     opts = this.configure(opts);
     if (callback) {

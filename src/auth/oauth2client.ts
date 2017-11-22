@@ -15,11 +15,12 @@
  */
 
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import * as http from 'http';
 import * as querystring from 'querystring';
 
 import {PemVerifier} from './../pemverifier';
-import {BodyResponseCallback, RequestError} from './../transporters';
-import {AuthClient, BodyResponse} from './authclient';
+import {BodyResponseCallback} from './../transporters';
+import {AuthClient} from './authclient';
 import {Credentials} from './credentials';
 import {LoginTicket} from './loginticket';
 
@@ -45,7 +46,6 @@ export interface GetTokenResponse {
   res: AxiosResponse|null;
 }
 
-
 export interface GetAccessTokenCallback {
   (err: AxiosError|null, token?: string|null, res?: AxiosResponse|null): void;
 }
@@ -57,7 +57,7 @@ export interface GetAccessTokenResponse {
 
 export interface RefreshAccessTokenCallback {
   (err: AxiosError|null, credentials?: Credentials|null,
-   response?: AxiosResponse|null): void;
+   res?: AxiosResponse|null): void;
 }
 
 export interface RefreshAccessTokenResponse {
@@ -66,12 +66,28 @@ export interface RefreshAccessTokenResponse {
 }
 
 export interface RequestMetadataResponse {
-  // tslint:disable-next-line no-any
-  headers: any;
-  res?: AxiosResponse|null;
+  headers: http.IncomingHttpHeaders;
+  res?: AxiosResponse<void>|null;
 }
 
-const noop = Function.prototype;
+export interface RequestMetadataCallback {
+  (err: AxiosError|null, headers?: http.IncomingHttpHeaders,
+   res?: AxiosResponse<void>|null): void;
+}
+
+export interface GetFederatedSignonCertsCallback {
+  // tslint:disable-next-line no-any
+  (err: AxiosError|null, certs?: any,
+   response?: AxiosResponse<void>|null): void;
+}
+
+export interface FederatedSignonCertsResponse {
+  // tslint:disable-next-line no-any
+  certs: any;
+  res?: AxiosResponse<void>|null;
+}
+
+export interface RevokeCredentialsResult { success: boolean; }
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
@@ -329,8 +345,8 @@ export class OAuth2Client extends AuthClient {
    * @param {function} metadataCb the func described above
    */
   getRequestMetadata(url?: string|null): Promise<RequestMetadataResponse>;
-  getRequestMetadata(url: string|null, callback: BodyResponseCallback): void;
-  getRequestMetadata(url: string|null, callback?: BodyResponseCallback):
+  getRequestMetadata(url: string|null, callback: RequestMetadataCallback): void;
+  getRequestMetadata(url: string|null, callback?: RequestMetadataCallback):
       Promise<RequestMetadataResponse>|void {
     if (callback) {
       this.getRequestMetadataAsync(url)
@@ -393,22 +409,25 @@ export class OAuth2Client extends AuthClient {
    * @param {string} token The existing token to be revoked.
    * @param {function=} callback Optional callback fn.
    */
-  revokeToken(token: string): AxiosPromise;
-  revokeToken(token: string, callback: BodyResponseCallback): void;
-  revokeToken(token: string, callback?: BodyResponseCallback): AxiosPromise|
-      void {
+  revokeToken(token: string): AxiosPromise<RevokeCredentialsResult>;
+  revokeToken(
+      token: string,
+      callback: BodyResponseCallback<RevokeCredentialsResult>): void;
+  revokeToken(
+      token: string, callback?: BodyResponseCallback<RevokeCredentialsResult>):
+      AxiosPromise<RevokeCredentialsResult>|void {
     const opts = {
       url: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
           querystring.stringify({token})
     };
     if (callback) {
-      this.transporter.request(opts)
+      this.transporter.request<RevokeCredentialsResult>(opts)
           .then(res => {
-            callback(null, null, res);
+            callback(null, res);
           })
           .catch(callback);
     } else {
-      return this.transporter.request(opts);
+      return this.transporter.request<RevokeCredentialsResult>(opts);
     }
   }
 
@@ -417,12 +436,14 @@ export class OAuth2Client extends AuthClient {
    * Revokes access token and clears the credentials object
    * @param  {Function=} callback callback
    */
-  revokeCredentials(): AxiosPromise;
-  revokeCredentials(callback: BodyResponseCallback): void;
-  revokeCredentials(callback?: BodyResponseCallback): AxiosPromise|void {
+  revokeCredentials(): AxiosPromise<RevokeCredentialsResult>;
+  revokeCredentials(callback: BodyResponseCallback<RevokeCredentialsResult>):
+      void;
+  revokeCredentials(callback?: BodyResponseCallback<RevokeCredentialsResult>):
+      AxiosPromise<RevokeCredentialsResult>|void {
     if (callback) {
       this.revokeCredentialsAsync()
-          .then(res => callback(null, res.data, res))
+          .then(res => callback(null, res))
           .catch(callback);
     } else {
       return this.revokeCredentialsAsync();
@@ -448,25 +469,23 @@ export class OAuth2Client extends AuthClient {
    * @param {function} callback callback.
    * @return {Request} Request object
    */
-  request(opts: AxiosRequestConfig): Promise<BodyResponse>;
-  request(opts: AxiosRequestConfig, callback: BodyResponseCallback): void;
-  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback):
-      Promise<BodyResponse>|void {
+  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
+  request<T>(opts: AxiosRequestConfig, callback: BodyResponseCallback<T>): void;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      AxiosPromise<T>|void {
     if (callback) {
-      this.requestAsync(opts)
-          .then(r => callback(null, r.body, r.res))
-          .catch(e => {
-            const err = e as AxiosError;
-            const body = err.response ? err.response.data : null;
-            return callback(e, body, err.response);
-          });
+      this.requestAsync<T>(opts).then(r => callback(null, r)).catch(e => {
+        const err = e as AxiosError;
+        const body = err.response ? err.response.data : null;
+        return callback(e, err.response);
+      });
     } else {
-      return this.requestAsync(opts);
+      return this.requestAsync<T>(opts);
     }
   }
 
-  protected async requestAsync(opts: AxiosRequestConfig, retry = false):
-      Promise<BodyResponse> {
+  protected async requestAsync<T>(opts: AxiosRequestConfig, retry = false):
+      Promise<AxiosResponse<T>> {
     let r2: AxiosResponse;
     try {
       const r = await this.getRequestMetadataAsync(null);
@@ -478,7 +497,7 @@ export class OAuth2Client extends AuthClient {
       if (this.apiKey) {
         opts.params = Object.assign(opts.params || {}, {key: this.apiKey});
       }
-      r2 = await this._makeRequest(opts);
+      r2 = await this._makeRequest<T>(opts);
     } catch (e) {
       const res = (e as AxiosError).response;
       if (res) {
@@ -492,12 +511,12 @@ export class OAuth2Client extends AuthClient {
            * does not fix the failure, then refreshing again probably won't
            * help */
           await this.refreshAccessTokenAsync();
-          return this.requestAsync(opts, true);
+          return this.requestAsync<T>(opts, true);
         }
       }
       throw e;
     }
-    return {body: r2 ? r2.data : null, res: r2};
+    return r2;
   }
 
   /**
@@ -507,8 +526,9 @@ export class OAuth2Client extends AuthClient {
    * @param  {Function} callback callback function
    * @return {Request}           The request object created
    */
-  private async _makeRequest(opts: AxiosRequestConfig): Promise<AxiosResponse> {
-    return this.transporter.request(opts);
+  private async _makeRequest<T>(opts: AxiosRequestConfig):
+      Promise<AxiosResponse<T>> {
+    return this.transporter.request<T>(opts);
   }
 
   /**
@@ -553,24 +573,24 @@ export class OAuth2Client extends AuthClient {
    * are PEM encoded certificates.
    * @param {function=} callback Callback supplying the certificates
    */
-  getFederatedSignonCerts(): Promise<BodyResponse>;
-  getFederatedSignonCerts(callback: BodyResponseCallback): void;
-  getFederatedSignonCerts(callback?: BodyResponseCallback):
-      Promise<BodyResponse>|void {
+  getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
+  getFederatedSignonCerts(callback: GetFederatedSignonCertsCallback): void;
+  getFederatedSignonCerts(callback?: GetFederatedSignonCertsCallback):
+      Promise<FederatedSignonCertsResponse>|void {
     if (callback) {
       this.getFederatedSignonCertsAsync()
-          .then(r => callback(null, r.body, r.res))
+          .then(r => callback(null, r.certs, r.res))
           .catch(callback);
     } else {
       return this.getFederatedSignonCertsAsync();
     }
   }
 
-  async getFederatedSignonCertsAsync(): Promise<BodyResponse> {
+  async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
     const nowTime = (new Date()).getTime();
     if (this.certificateExpiry &&
         (nowTime < this.certificateExpiry.getTime())) {
-      return {body: this.certificateCache};
+      return {certs: this.certificateCache};
     }
     let res: AxiosResponse;
     try {
@@ -595,7 +615,7 @@ export class OAuth2Client extends AuthClient {
     this.certificateExpiry =
         cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
     this.certificateCache = res.data;
-    return {body: res.data, res};
+    return {certs: res.data, res};
   }
 
   /**

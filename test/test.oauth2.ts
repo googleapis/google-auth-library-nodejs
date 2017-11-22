@@ -996,7 +996,10 @@ describe('OAuth2 client', () => {
       oauth2client.credentials = {access_token: 'abc', refresh_token: 'abc'};
       oauth2client.revokeCredentials((err, result) => {
         assert.equal(err, null);
-        assert.equal(result.success, true);
+        assert(result);
+        if (result && result.data) {
+          assert.equal(result.data.success, true);
+        }
         assert.equal(JSON.stringify(oauth2client.credentials), '{}');
         scope.done();
         done();

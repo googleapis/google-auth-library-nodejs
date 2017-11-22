@@ -39,6 +39,12 @@ function createIsGCENock(isGCE = true) {
   });
 }
 
+function createGetProjectIdNock(projectId: string) {
+  nock('http://169.254.169.254')
+      .get('/computeMetadata/v1/project/project-id')
+      .reply(200, projectId);
+}
+
 // Mocks the transporter class to simulate GCE.
 class MockTransporter extends DefaultTransporter {
   isGCE: boolean;
@@ -53,10 +59,11 @@ class MockTransporter extends DefaultTransporter {
     this.throwError = throwError;
     this.executionCount = 0;
   }
-  request(opts: AxiosRequestConfig): AxiosPromise;
-  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback): void;
-  request(opts: AxiosRequestConfig, callback?: BodyResponseCallback):
-      AxiosPromise|void {
+  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      void;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      AxiosPromise<T>|void {
     if (opts.url === 'http://metadata.google.internal') {
       this.executionCount += 1;
       let err = null;
@@ -68,7 +75,7 @@ class MockTransporter extends DefaultTransporter {
         response.headers['metadata-flavor'] = 'Google';
       }
       if (callback) {
-        return callback(err, null, response);
+        return callback(err, response);
       } else {
         return Promise.resolve(response);
       }
@@ -215,9 +222,12 @@ describe('GoogleAuth', () => {
                       method: 'POST',
                       data: {'test': true}
                     },
-                    (err2, body) => {
+                    (err2, res) => {
                       assert.strictEqual(err2, null);
-                      assert.strictEqual(RESPONSE_BODY, body);
+                      assert(res);
+                      if (res) {
+                        assert.strictEqual(RESPONSE_BODY, res.data);
+                      }
                       fakeService.done();
                       done();
                     });
@@ -251,9 +261,12 @@ describe('GoogleAuth', () => {
                          data: {'test': true},
                          params: OTHER_QS_PARAM
                        },
-                       (err2, body) => {
+                       (err2, res) => {
                          assert.strictEqual(err2, null);
-                         assert.strictEqual(RESPONSE_BODY, body);
+                         assert(res);
+                         if (res) {
+                           assert.strictEqual(RESPONSE_BODY, res.data);
+                         }
                          fakeService.done();
                          done();
                        });
@@ -1042,19 +1055,7 @@ describe('GoogleAuth', () => {
        auth._getSDKDefaultProjectId = () => {
          return Promise.resolve({stdout: '', stderr: null});
        };
-       // TODO: Provide a proper mock.
-       // tslint:disable-next-line no-any
-       (auth as any).transporter = {
-         request:
-             (opts: AxiosRequestConfig, callback?: BodyResponseCallback) => {
-               return callback ?
-                   callback(
-                       null, fixedProjectId,
-                       {data: fixedProjectId, status: 200} as AxiosResponse) :
-                   Promise.resolve(
-                       {data: fixedProjectId, status: 200} as AxiosResponse);
-             },
-       };
+       createGetProjectIdNock(fixedProjectId);
 
        // Execute.
        auth.getDefaultProjectId((err, projectId) => {

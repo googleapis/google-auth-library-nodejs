@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-
 import * as stream from 'stream';
-
-import {BodyResponseCallback} from './../transporters';
 import {JWTInput} from './credentials';
 import {GetTokenResponse, OAuth2Client} from './oauth2client';
 

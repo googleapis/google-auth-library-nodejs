@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-import axios, {AxiosError, AxiosRequestConfig} from 'axios';
+import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios';
 
-import {BodyResponseCallback, RequestError} from './../transporters';
-import {BodyResponse} from './authclient';
+import {RequestError} from './../transporters';
 import {GetTokenResponse, OAuth2Client} from './oauth2client';
 
 export interface Token {
@@ -82,9 +81,9 @@ export class Compute extends OAuth2Client {
   }
 
 
-  protected async requestAsync(opts: AxiosRequestConfig, retry = false):
-      Promise<BodyResponse> {
-    return super.requestAsync(opts, retry).catch(e => {
+  protected requestAsync<T>(opts: AxiosRequestConfig, retry = false):
+      AxiosPromise<T> {
+    return super.requestAsync<T>(opts, retry).catch(e => {
       const res = (e as AxiosError).response;
       if (res && res.status) {
         let helpfulMessage = null;

@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {AxiosRequestConfig} from 'axios';
 import * as nock from 'nock';
 
 import {Compute} from '../src/auth/computeclient';
@@ -110,7 +110,7 @@ describe('Compute auth client', () => {
               '/computeMetadata/v1beta1/instance/service-accounts/default/token')
           .reply(403, 'a weird response body');
 
-      compute.request({url: 'http://foo'}, (err, result, response) => {
+      compute.request({url: 'http://foo'}, (err, response) => {
         assert(response);
         assert.equal(403, response ? response.status : 0);
         const expected =
@@ -138,7 +138,7 @@ describe('Compute auth client', () => {
              .twice()
              .reply(404, 'a weird response body');
 
-         compute.request({url: 'http://foo'}, (err, result, response) => {
+         compute.request({url: 'http://foo'}, (err, response) => {
            assert.equal(404, response ? response.status : 0);
            assert.equal(
                'A Not Found error was returned while attempting to retrieve an access' +
@@ -166,7 +166,7 @@ describe('Compute auth client', () => {
            expiry_date: 1
          };
 
-         compute.request(({} as AxiosRequestConfig), (err, result, response) => {
+         compute.request(({} as AxiosRequestConfig), (err, response) => {
            assert.equal(403, response ? response.status : null);
            const expected =
                'A Forbidden error was returned while attempting to retrieve an access ' +
@@ -194,7 +194,7 @@ describe('Compute auth client', () => {
            expiry_date: 1
          } as Credentials;
 
-         compute.request(({} as AxiosRequestConfig), (err, result, response) => {
+         compute.request(({} as AxiosRequestConfig), (err, response) => {
            assert.equal(404, response ? response.status : null);
            assert.equal(
                'A Not Found error was returned while attempting to retrieve an access' +

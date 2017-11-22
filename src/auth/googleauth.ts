@@ -53,6 +53,10 @@ export interface CredentialBody {
   private_key?: string;
 }
 
+interface CredentialResult {
+  default: {email: string;};
+}
+
 export class GoogleAuth {
   transporter: Transporter;
 
@@ -645,13 +649,14 @@ export class GoogleAuth {
       this.transporter = new DefaultTransporter();
     }
     try {
-      const r = await this.transporter.request({
+      const r = await this.transporter.request<string>({
         url: 'http://169.254.169.254/computeMetadata/v1/project/project-id',
         headers: {'Metadata-Flavor': 'Google'}
       });
       return r.data;
     } catch (e) {
       // Ignore any errors
+      console.error(e);
       return null;
     }
   }
@@ -695,7 +700,7 @@ export class GoogleAuth {
     }
 
     // For GCE, return the service account details from the metadata server
-    const result = await this.transporter.request({
+    const result = await this.transporter.request<CredentialResult>({
       url:
           'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
       headers: {'Metadata-Flavor': 'Google'}

@@ -21,7 +21,7 @@ import * as stream from 'stream';
 import {BodyResponseCallback} from '../transporters';
 
 import {JWTInput} from './credentials';
-import {RequestMetadataResponse} from './oauth2client';
+import {RequestMetadataCallback, RequestMetadataResponse} from './oauth2client';
 
 const noop = Function.prototype;
 
@@ -64,8 +64,8 @@ export class JWTAccess {
    *                   request metadata.
    */
   getRequestMetadata(authURI: string): RequestMetadataResponse;
-  getRequestMetadata(authURI: string, callback: BodyResponseCallback): void;
-  getRequestMetadata(authURI: string, callback?: BodyResponseCallback):
+  getRequestMetadata(authURI: string, callback: RequestMetadataCallback): void;
+  getRequestMetadata(authURI: string, callback?: RequestMetadataCallback):
       void|RequestMetadataResponse {
     try {
       const iat = Math.floor(new Date().getTime() / 1000);
