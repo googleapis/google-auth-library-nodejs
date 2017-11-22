@@ -499,7 +499,7 @@ export class OAuth2Client extends AuthClient {
       if (this.apiKey) {
         opts.params = Object.assign(opts.params || {}, {key: this.apiKey});
       }
-      r2 = await this._makeRequest<T>(opts);
+      r2 = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as AxiosError).response;
       if (res) {
@@ -519,18 +519,6 @@ export class OAuth2Client extends AuthClient {
       throw e;
     }
     return r2;
-  }
-
-  /**
-   * Makes a request without paying attention to refreshing or anything
-   * Assumes that all credentials are set correctly.
-   * @param  {object}   opts     Options for request
-   * @param  {Function} callback callback function
-   * @return {Request}           The request object created
-   */
-  private async _makeRequest<T>(opts: AxiosRequestConfig):
-      Promise<AxiosResponse<T>> {
-    return this.transporter.request<T>(opts);
   }
 
   /**
