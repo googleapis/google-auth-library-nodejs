@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios';
-import {RequestError} from './../transporters';
-import {GetTokenResponse, OAuth2Client} from './oauth2client';
+import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 
-export interface Token {
-  expires_in: number;
-  expiry_date: number;
-}
+import {RequestError} from './../transporters';
+import {CredentialRequest, Credentials} from './credentials';
+import {GetTokenResponse, OAuth2Client} from './oauth2client';
 
 export class Compute extends OAuth2Client {
   /**
@@ -61,21 +58,23 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
+    const url = this.opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
+    let res: AxiosResponse<CredentialRequest>|null = null;
+    // request for new token
     try {
-      const url = this.opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
-      // request for new token
-      const res = await this.transporter.request({url});
-      const tokens = res.data as Token;
-      if (tokens && tokens.expires_in) {
-        tokens.expiry_date =
-            ((new Date()).getTime() + (tokens.expires_in * 1000));
-        delete tokens.expires_in;
-      }
-      return {tokens, res};
+      res = await this.transporter.request<CredentialRequest>({url});
     } catch (e) {
       e.message = 'Could not refresh access token.';
       throw e;
     }
+    console.log(res.data);
+    const tokens = res.data as Credentials;
+    if (res.data && res.data.expires_in) {
+      tokens.expiry_date =
+          ((new Date()).getTime() + (res.data.expires_in * 1000));
+      delete (tokens as CredentialRequest).expires_in;
+    }
+    return {tokens, res};
   }
 
 

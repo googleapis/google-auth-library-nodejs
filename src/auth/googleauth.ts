@@ -154,37 +154,13 @@ export class GoogleAuth {
       return this._cachedProjectId;
     }
 
-    let projectId: string|null|undefined;
-
-    // environment variable
-    projectId = this.getProductionProjectId();
+    const projectId = this.getProductionProjectId() ||
+        await this.getFileProjectId() ||
+        await this.getDefaultServiceProjectId() || await this.getGCEProjectId();
     if (projectId) {
       this._cachedProjectId = projectId;
-      return projectId;
     }
-
-    // json file
-    projectId = await this.getFileProjectId();
-    if (projectId) {
-      this._cachedProjectId = projectId;
-      return projectId;
-    }
-
-    // Google Cloud SDK default project id
-    projectId = await this.getDefaultServiceProjectId();
-    if (projectId) {
-      this._cachedProjectId = projectId;
-      return projectId;
-    }
-
-    // Get project ID from Compute Engine metadata server
-    projectId = await this.getGCEProjectId();
-    if (projectId) {
-      this._cachedProjectId = projectId;
-      return projectId;
-    }
-
-    return null;
+    return projectId;
   }
 
   /**

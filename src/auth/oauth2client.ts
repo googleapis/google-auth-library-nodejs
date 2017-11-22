@@ -21,7 +21,7 @@ import * as querystring from 'querystring';
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
-import {Credentials} from './credentials';
+import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket} from './loginticket';
 
 export interface GenerateAuthUrlOpts {
@@ -214,14 +214,15 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'authorization_code'
     };
 
-    const res =
-        await this.transporter.request({method: 'POST', url, data: values});
+    const res = await this.transporter.request<CredentialRequest>(
+        {method: 'POST', url, data: values});
 
+    console.log(res.data);
     const tokens = res.data as Credentials;
-    if (tokens && tokens.expires_in) {
+    if (res.data && res.data.expires_in) {
       tokens.expiry_date =
-          ((new Date()).getTime() + (tokens.expires_in * 1000));
-      delete tokens.expires_in;
+          ((new Date()).getTime() + (res.data.expires_in * 1000));
+      delete (tokens as CredentialRequest).expires_in;
     }
 
     return {tokens, res};
@@ -244,12 +245,13 @@ export class OAuth2Client extends AuthClient {
     };
 
     // request for new token
-    const res = await this.transporter.request({method: 'POST', url, data});
+    const res = await this.transporter.request<CredentialRequest>(
+        {method: 'POST', url, data});
     const tokens = res.data as Credentials;
-    if (tokens && tokens.expires_in) {
+    if (res.data && res.data.expires_in) {
       tokens.expiry_date =
-          ((new Date()).getTime() + (tokens.expires_in * 1000));
-      delete tokens.expires_in;
+          ((new Date()).getTime() + (res.data.expires_in * 1000));
+      delete (tokens as CredentialRequest).expires_in;
     }
     return {tokens, res};
   }
