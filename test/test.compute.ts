@@ -25,7 +25,6 @@ import {GoogleAuth} from '../src/auth/googleauth';
 nock.disableNetConnect();
 
 describe('Initial credentials', () => {
-
   it('should create a dummy refresh token string', () => {
     // It is important that the compute client is created with a refresh token
     // value filled in, or else the rest of the logic will not work.
@@ -36,7 +35,6 @@ describe('Initial credentials', () => {
 });
 
 describe('Compute auth client', () => {
-
   afterEach(() => {
     nock.cleanAll();
   });
@@ -59,7 +57,6 @@ describe('Compute auth client', () => {
   });
 
   it('should refresh if access token has expired', (done) => {
-
     nock('http://metadata.google.internal')
         .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
         .reply(200, {access_token: 'abc123', expires_in: 10000});

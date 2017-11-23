@@ -28,7 +28,6 @@ import {GoogleAuth} from '../src/auth/googleauth';
 nock.disableNetConnect();
 
 describe('OAuth2 client', () => {
-
   const CLIENT_ID = 'CLIENT_ID';
   const CLIENT_SECRET = 'CLIENT_SECRET';
   const REDIRECT_URI = 'REDIRECT';

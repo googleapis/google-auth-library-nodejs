@@ -33,7 +33,6 @@ function createJSON() {
 }
 
 describe('.fromJson', () => {
-
   it('should error on null json', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
@@ -127,7 +126,6 @@ describe('.fromJson', () => {
 });
 
 describe('.fromStream', () => {
-
   it('should error on null stream', (done) => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();

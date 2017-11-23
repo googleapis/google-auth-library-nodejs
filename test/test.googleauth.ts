@@ -158,7 +158,6 @@ function insertWellKnownFilePathIntoAuth(
 
 describe('GoogleAuth', () => {
   describe('.fromJson', () => {
-
     it('should error on null json', (done) => {
       const auth = new GoogleAuth();
       // Test verifies invalid parameter tests, which requires cast to any.
@@ -278,7 +277,6 @@ describe('GoogleAuth', () => {
     });
 
     describe('JWT token', () => {
-
       it('should error on empty json', (done) => {
         const auth = new GoogleAuth();
         auth.fromJSON({}, (err) => {
@@ -423,7 +421,6 @@ describe('GoogleAuth', () => {
   });
 
   describe('.fromStream', () => {
-
     it('should error on null stream', (done) => {
       const auth = new GoogleAuth();
       // Test verifies invalid parameter tests, which requires cast to any.
@@ -488,7 +485,6 @@ describe('GoogleAuth', () => {
   });
 
   describe('._getApplicationCredentialsFromFilePath', () => {
-
     it('should not error on valid symlink', async () => {
       const auth = new GoogleAuth();
       await auth._getApplicationCredentialsFromFilePath(
@@ -646,7 +642,6 @@ describe('GoogleAuth', () => {
   });
 
   describe('._tryGetApplicationCredentialsFromEnvironmentVariable', () => {
-
     it('should return null when env const is not set', async () => {
       // Set up a mock to return a null path string.
       const auth = new GoogleAuth();
@@ -708,7 +703,6 @@ describe('GoogleAuth', () => {
   });
 
   describe('._tryGetApplicationCredentialsFromWellKnownFile', () => {
-
     it('should build the correct directory for Windows', async () => {
       let correctLocation = false;
 
@@ -922,10 +916,8 @@ describe('GoogleAuth', () => {
   });
 
   describe('.getDefaultProjectId', () => {
-
     it('should return a new projectId the first time and a cached projectId the second time',
        async () => {
-
          const fixedProjectId = 'my-awesome-project';
 
          // Create a function which will set up a GoogleAuth instance to match
@@ -1067,10 +1059,8 @@ describe('GoogleAuth', () => {
 });
 
 describe('.getApplicationDefault', () => {
-
   it('should return a new credential the first time and a cached credential the second time',
      async () => {
-
        // Create a function which will set up a GoogleAuth instance to match
        // on an environment variable json file, but not on anything else.
        const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
@@ -1297,7 +1287,6 @@ describe('.getApplicationDefault', () => {
 });
 
 describe('._checkIsGCE', () => {
-
   it('should set the _isGCE flag when running on GCE', async () => {
     const auth = new GoogleAuth();
 

@@ -26,7 +26,6 @@ const version = require('../../package.json').version;
 nock.disableNetConnect();
 
 describe('Transporters', () => {
-
   const defaultUserAgentRE = 'google-api-nodejs-client/\\d+.\\d+.\\d+';
   const transporter = new DefaultTransporter();
 
@@ -117,5 +116,4 @@ describe('Transporters', () => {
           done();
         });
   });
-
 });
