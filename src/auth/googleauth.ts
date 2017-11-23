@@ -235,6 +235,7 @@ export class GoogleAuth {
       if (gce) {
         // For GCE, just return a default ComputeClient. It will take care of
         // the rest.
+        // TODO: cache the result
         return {projectId: null, credential: new Compute()};
       } else {
         // We failed to find the default credentials. Bail out with an error.
@@ -381,6 +382,7 @@ export class GoogleAuth {
    * @returns Promise that resolves with the OAuth2Client (if no callback is
    * passed)
    */
+  // TODO: Remove the overloads and just keep this a sync API
   fromJSON(json: JWTInput): JWT|UserRefreshClient;
   fromJSON(json: JWTInput, callback: CredentialCallback): void;
   fromJSON(json: JWTInput, callback?: CredentialCallback): JWT|UserRefreshClient

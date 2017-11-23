@@ -51,7 +51,7 @@ export interface GetAccessTokenCallback {
 }
 
 export interface GetAccessTokenResponse {
-  token?: string;
+  token?: string|null;
   res?: AxiosResponse|null;
 }
 

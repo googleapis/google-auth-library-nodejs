@@ -120,13 +120,12 @@ export class JWT extends OAuth2Client {
     const result = await this.refreshToken();
     if (!result) {
       throw new Error('No result returned');
-    } else {
-      this.credentials = result.tokens;
-      this.credentials.refresh_token = 'jwt-placeholder';
-      this.key = this.gtoken.key;
-      this.email = this.gtoken.iss;
-      return result.tokens;
     }
+    this.credentials = result.tokens;
+    this.credentials.refresh_token = 'jwt-placeholder';
+    this.key = this.gtoken.key;
+    this.email = this.gtoken.iss;
+    return result.tokens;
   }
 
   /**
@@ -134,23 +133,15 @@ export class JWT extends OAuth2Client {
    * @param {object=} ignored
    * @private
    */
-  async refreshToken(refreshToken?: string|null) {
-    return new Promise<GetTokenResponse>((resolve, reject) => {
-      const newGToken = this.createGToken();
-      newGToken.getToken((err?: Error|null, token?: string|null) => {
-        if (err) {
-          return reject(err);
-        } else {
-          const creds = {
-            access_token: token,
-            token_type: 'Bearer',
-            expiry_date: newGToken.expiresAt
-          } as Credentials;
-          const result = {res: null, tokens: creds} as GetTokenResponse;
-          return resolve(result);
-        }
-      });
-    });
+  async refreshToken(refreshToken?: string|null): Promise<GetTokenResponse> {
+    const newGToken = this.createGToken();
+    const token = await newGToken.getToken();
+    const tokens = {
+      access_token: token,
+      token_type: 'Bearer',
+      expiry_date: newGToken.expiresAt
+    };
+    return {res: null, tokens};
   }
 
   /**
@@ -204,7 +195,7 @@ export class JWT extends OAuth2Client {
     }
   }
 
-  private async fromStreamAsync(inputStream: stream.Readable) {
+  private fromStreamAsync(inputStream: stream.Readable) {
     return new Promise<void>((resolve, reject) => {
       if (!inputStream) {
         throw new Error(
