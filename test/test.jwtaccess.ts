@@ -50,14 +50,12 @@ describe('.getRequestMetadata', () => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.notStrictEqual(
               null, headers, 'an creds object should be present');
-          if (headers) {
-            const decoded = jws.decode(
-                (headers.Authorization as string).replace('Bearer ', ''));
-            const payload = JSON.parse(decoded.payload);
-            assert.strictEqual(email, payload.iss);
-            assert.strictEqual(email, payload.sub);
-            assert.strictEqual(testUri, payload.aud);
-          }
+          const decoded = jws.decode(
+              (headers!.Authorization as string).replace('Bearer ', ''));
+          const payload = JSON.parse(decoded.payload);
+          assert.strictEqual(email, payload.iss);
+          assert.strictEqual(email, payload.sub);
+          assert.strictEqual(testUri, payload.aud);
           done();
           return retValue;
         };

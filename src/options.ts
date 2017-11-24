@@ -1,5 +1,3 @@
-import {AxiosRequestConfig} from 'axios';
-
 /**
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
@@ -16,6 +14,10 @@ import {AxiosRequestConfig} from 'axios';
  * limitations under the License.
  */
 
+// Accepts an options object passed from the user to the API.  In the
+// previous version of the API, it referred to a `Request` options object.
+// Now it refers to an Axiox Request Config object.  This is here to help
+// ensure users don't pass invalid options when they upgrade from 0.x to 1.x.
 // tslint:disable-next-line no-any
 export function validate(options: any) {
   const vpairs = [

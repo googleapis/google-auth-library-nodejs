@@ -163,7 +163,7 @@ describe('Compute auth client', () => {
            expiry_date: 1
          };
 
-         compute.request(({} as AxiosRequestConfig), (err, response) => {
+         compute.request({}, (err, response) => {
            assert.equal(403, response ? response.status : null);
            const expected =
                'A Forbidden error was returned while attempting to retrieve an access ' +
@@ -191,7 +191,7 @@ describe('Compute auth client', () => {
            expiry_date: 1
          } as Credentials;
 
-         compute.request(({} as AxiosRequestConfig), (err, response) => {
+         compute.request({}, (err, response) => {
            assert.equal(404, response ? response.status : null);
            assert.equal(
                'A Not Found error was returned while attempting to retrieve an access' +

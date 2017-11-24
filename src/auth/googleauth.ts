@@ -168,6 +168,7 @@ export class GoogleAuth {
    */
   _getSDKDefaultProjectId():
       Promise<{stdout: string | null, stderr: string|null}> {
+    // TODO: make this a proper async function
     return new Promise((resolve, reject) => {
       exec(
           'gcloud -q config list core/project --format=json',

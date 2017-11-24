@@ -854,12 +854,8 @@ describe('OAuth2 client', () => {
     const auth = new GoogleAuth();
     const oauth2client =
         new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    oauth2client.request(({} as AxiosRequestConfig), (err, result) => {
-      assert(err);
-      if (err) {
-        assert.equal(
-            err.message, 'No access, refresh token or API key is set.');
-      }
+    oauth2client.request({}, (err, result) => {
+      assert.equal(err!.message, 'No access, refresh token or API key is set.');
       assert.equal(result, null);
       done();
     });
@@ -870,10 +866,7 @@ describe('OAuth2 client', () => {
     const oauth2client =
         new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.refreshAccessToken((err, result) => {
-      assert(err);
-      if (err) {
-        assert.equal(err.message, 'No refresh token is set.');
-      }
+      assert.equal(err!.message, 'No refresh token is set.');
       assert.equal(result, null);
       done();
     });
@@ -995,10 +988,7 @@ describe('OAuth2 client', () => {
       oauth2client.credentials = {access_token: 'abc', refresh_token: 'abc'};
       oauth2client.revokeCredentials((err, result) => {
         assert.equal(err, null);
-        assert(result);
-        if (result && result.data) {
-          assert.equal(result.data.success, true);
-        }
+        assert.equal(result!.data!.success, true);
         assert.equal(JSON.stringify(oauth2client.credentials), '{}');
         scope.done();
         done();
@@ -1012,10 +1002,7 @@ describe('OAuth2 client', () => {
              new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
          oauth2client.credentials = {refresh_token: 'abc'};
          oauth2client.revokeCredentials((err, result) => {
-           assert(err);
-           if (err) {
-             assert.equal(err.message, 'No access token to revoke.');
-           }
+           assert.equal(err!.message, 'No access token to revoke.');
            assert.equal(result, null);
            assert.equal(JSON.stringify(oauth2client.credentials), '{}');
            done();
@@ -1036,11 +1023,8 @@ describe('OAuth2 client', () => {
       const oauth2client =
           new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.getToken('code here', (err, tokens) => {
-        assert(tokens);
-        if (tokens && tokens.expiry_date) {
-          assert(tokens.expiry_date >= now + (10 * 1000));
-          assert(tokens.expiry_date <= now + (15 * 1000));
-        }
+        assert(tokens!.expiry_date! >= now + (10 * 1000));
+        assert(tokens!.expiry_date! <= now + (15 * 1000));
         scope.done();
         done();
       });

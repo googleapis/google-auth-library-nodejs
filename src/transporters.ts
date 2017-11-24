@@ -49,7 +49,7 @@ export class DefaultTransporter {
    */
   configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
     // set transporter user agent
-    if (!opts.headers) opts.headers = {};
+    opts.headers = opts.headers || {};
     if (!opts.headers['User-Agent']) {
       opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
     } else if (
@@ -88,7 +88,6 @@ export class DefaultTransporter {
       axios(opts)
           .then(r => {
             callback(null, r);
-            return;
           })
           .catch(e => {
             callback(this.processError(e));

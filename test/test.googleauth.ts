@@ -223,10 +223,7 @@ describe('GoogleAuth', () => {
                     },
                     (err2, res) => {
                       assert.strictEqual(err2, null);
-                      assert(res);
-                      if (res) {
-                        assert.strictEqual(RESPONSE_BODY, res.data);
-                      }
+                      assert.strictEqual(RESPONSE_BODY, res!.data);
                       fakeService.done();
                       done();
                     });
@@ -262,10 +259,7 @@ describe('GoogleAuth', () => {
                        },
                        (err2, res) => {
                          assert.strictEqual(err2, null);
-                         assert(res);
-                         if (res) {
-                           assert.strictEqual(RESPONSE_BODY, res.data);
-                         }
+                         assert.strictEqual(RESPONSE_BODY, res!.data);
                          fakeService.done();
                          done();
                        });
@@ -312,10 +306,7 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert(result);
-          if (result) {
-            assert.equal(json.client_email, (result as JWT).email);
-          }
+          assert.equal(json.client_email, (result as JWT).email);
           done();
         });
       });
@@ -325,10 +316,7 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert(result);
-          if (result) {
-            assert.equal(json.private_key, (result as JWT).key);
-          }
+          assert.equal(json.private_key, (result as JWT).key);
           done();
         });
       });
@@ -338,10 +326,7 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert(result);
-          if (result) {
-            assert.equal(null, (result as JWT).scopes);
-          }
+          assert.equal(null, (result as JWT).scopes);
           done();
         });
       });
@@ -351,10 +336,7 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert(result);
-          if (result) {
-            assert.equal(null, (result as JWT).subject);
-          }
+          assert.equal(null, (result as JWT).subject);
           done();
         });
       });
@@ -364,10 +346,7 @@ describe('GoogleAuth', () => {
         const auth = new GoogleAuth();
         auth.fromJSON(json, (err, result) => {
           assert.equal(null, err);
-          assert(result);
-          if (result) {
-            assert.equal(null, (result as JWT).keyFile);
-          }
+          assert.equal(null, (result as JWT).keyFile);
           done();
         });
       });
@@ -444,16 +423,13 @@ describe('GoogleAuth', () => {
       const auth = new GoogleAuth();
       auth.fromStream(stream, (err, result) => {
         assert.equal(null, err);
-        assert(result);
         const jwt = result as JWT;
-        if (jwt) {
-          // Ensure that the correct bits were pulled from the stream.
-          assert.equal(json.private_key, jwt.key);
-          assert.equal(json.client_email, jwt.email);
-          assert.equal(null, jwt.keyFile);
-          assert.equal(null, jwt.subject);
-          assert.equal(null, jwt.scope);
-        }
+        // Ensure that the correct bits were pulled from the stream.
+        assert.equal(json.private_key, jwt.key);
+        assert.equal(json.client_email, jwt.email);
+        assert.equal(null, jwt.keyFile);
+        assert.equal(null, jwt.subject);
+        assert.equal(null, jwt.scope);
         done();
       });
     });
@@ -471,14 +447,11 @@ describe('GoogleAuth', () => {
       const auth = new GoogleAuth();
       auth.fromStream(stream, (err, result) => {
         assert.ifError(err);
-        assert(result);
         // Ensure that the correct bits were pulled from the stream.
-        if (result) {
-          const rc = result as UserRefreshClient;
-          assert.equal(json.client_id, rc._clientId);
-          assert.equal(json.client_secret, rc._clientSecret);
-          assert.equal(json.refresh_token, rc._refreshToken);
-        }
+        const rc = result as UserRefreshClient;
+        assert.equal(json.client_id, rc._clientId);
+        assert.equal(json.client_secret, rc._clientSecret);
+        assert.equal(json.refresh_token, rc._refreshToken);
         done();
       });
     });
@@ -575,14 +548,14 @@ describe('GoogleAuth', () => {
       // Set up a mock to throw from the createReadStream method.
       const auth = new GoogleAuth();
       auth._createReadStream = () => {
-        throw new Error('Hans and Chewbacca');
+        throw new Error('Han and Chewbacca');
       };
 
       try {
         await auth._getApplicationCredentialsFromFilePath(
             './test/fixtures/private.json');
       } catch (e) {
-        assert.equal(true, stringEndsWith(e.message, 'Hans and Chewbacca'));
+        assert.equal(true, stringEndsWith(e.message, 'Han and Chewbacca'));
         return;
       }
       assert.fail('failed to throw');
@@ -690,15 +663,12 @@ describe('GoogleAuth', () => {
       // Execute.
       const result =
           await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
-      assert(result);
       const jwt = result as JWT;
-      if (result) {
-        assert.equal(json.private_key, jwt.key);
-        assert.equal(json.client_email, jwt.email);
-        assert.equal(null, jwt.keyFile);
-        assert.equal(null, jwt.subject);
-        assert.equal(null, jwt.scope);
-      }
+      assert.equal(json.private_key, jwt.key);
+      assert.equal(json.client_email, jwt.email);
+      assert.equal(null, jwt.keyFile);
+      assert.equal(null, jwt.subject);
+      assert.equal(null, jwt.scope);
     });
   });
 
@@ -844,10 +814,7 @@ describe('GoogleAuth', () => {
 
     // Execute.
     const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
-    assert(result);
-    if (result) {
-      assert.equal('hello', (result as JWT).email);
-    }
+    assert.equal('hello', (result as JWT)!.email);
   });
 
   it('should succeeds on non-Windows', async () => {
@@ -1213,13 +1180,9 @@ describe('.getApplicationDefault', () => {
        // Execute.
        auth.getApplicationDefault((err, result) => {
          assert.equal(null, err);
-         assert(result);
          // This indicates that we got a ComputeClient instance back, rather
          // than a JWTClient.
-         if (result) {
-           assert.equal(
-               'compute-placeholder', result.credentials.refresh_token);
-         }
+         assert.equal('compute-placeholder', result!.credentials.refresh_token);
          done();
        });
      });

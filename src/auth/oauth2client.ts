@@ -248,6 +248,7 @@ export class OAuth2Client extends AuthClient {
     const res = await this.transporter.request<CredentialRequest>(
         {method: 'POST', url, data});
     const tokens = res.data as Credentials;
+    // TODO: de-duplicate this code from a few spots
     if (res.data && res.data.expires_in) {
       tokens.expiry_date =
           ((new Date()).getTime() + (res.data.expires_in * 1000));
@@ -327,7 +328,7 @@ export class OAuth2Client extends AuthClient {
       }
       return {token: r.credentials.access_token, res: r.res};
     } else {
-      return {token: this.credentials.access_token, res: undefined};
+      return {token: this.credentials.access_token};
     }
   }
 
@@ -403,7 +404,7 @@ export class OAuth2Client extends AuthClient {
     const headers = {
       Authorization: credentials.token_type + ' ' + tokens.access_token
     };
-    return {headers, res: r ? r.res : null};
+    return {headers, res: r.res};
   }
 
   /**

@@ -30,12 +30,9 @@ describe('Transporters', () => {
   const transporter = new DefaultTransporter();
 
   it('should set default client user agent if none is set', () => {
-    const opts = transporter.configure(({} as AxiosRequestConfig));
+    const opts = transporter.configure();
     const re = new RegExp(defaultUserAgentRE);
-    assert(opts.headers);
-    if (opts.headers) {
-      assert(re.test(opts.headers['User-Agent']));
-    }
+    assert(re.test(opts.headers!['User-Agent']));
   });
 
   it('should append default client user agent to the existing user agent',
@@ -44,10 +41,7 @@ describe('Transporters', () => {
        const opts = transporter.configure(
            {headers: {'User-Agent': applicationName}, url: ''});
        const re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
-       assert(opts.headers);
-       if (opts.headers) {
-         assert(re.test(opts.headers['User-Agent']));
-       }
+       assert(re.test(opts.headers!['User-Agent']));
      });
 
   it('should not append default client user agent to the existing user agent more than once',
@@ -56,10 +50,7 @@ describe('Transporters', () => {
            'MyTestApplication-1.0 google-api-nodejs-client/' + version;
        const opts = transporter.configure(
            {headers: {'User-Agent': applicationName}, url: ''});
-       assert(opts.headers);
-       if (opts.headers) {
-         assert.equal(opts.headers['User-Agent'], applicationName);
-       }
+       assert.equal(opts.headers!['User-Agent'], applicationName);
      });
 
   it('should create a single error from multiple response errors', (done) => {
@@ -74,12 +65,9 @@ describe('Transporters', () => {
           url: 'http://example.com/api',
         },
         (error) => {
-          assert(error);
-          if (error) {
-            assert(error.message === 'Error 1\nError 2');
-            assert.equal((error as RequestError).code, 500);
-            assert.equal((error as RequestError).errors.length, 2);
-          }
+          assert(error!.message === 'Error 1\nError 2');
+          assert.equal((error as RequestError).code, 500);
+          assert.equal((error as RequestError).errors.length, 2);
           done();
         });
   });
@@ -92,11 +80,8 @@ describe('Transporters', () => {
           url: 'http://example.com/api',
         },
         (error) => {
-          assert(error);
-          if (error) {
-            assert(error.message === 'Not found');
-            assert.equal((error as RequestError).code, 404);
-          }
+          assert(error!.message === 'Not found');
+          assert.equal((error as RequestError).code, 404);
           done();
         });
   });
@@ -109,10 +94,7 @@ describe('Transporters', () => {
           uri: 'http://example.com/api',
         } as AxiosRequestConfig,
         (error) => {
-          assert(error);
-          if (error) {
-            assert.equal(error.message, expected);
-          }
+          assert.equal(error!.message, expected);
           done();
         });
   });

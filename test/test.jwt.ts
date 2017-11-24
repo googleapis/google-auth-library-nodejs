@@ -147,12 +147,9 @@ describe('JWT auth client', () => {
           const got = result as {
             Authorization: string;
           };
-          assert(got);
-          if (got) {
-            assert.strictEqual(
-                want, got.Authorization,
-                'the authorization header was wrong: ' + got.Authorization);
-          }
+          assert.strictEqual(
+              want, got.Authorization,
+              'the authorization header was wrong: ' + got.Authorization);
           done();
         });
       });
@@ -304,12 +301,9 @@ describe('JWT auth client', () => {
     const result = await jwt.refreshToken(null);
     const creds = result.tokens;
     const dateInMillis = (new Date()).getTime();
-    assert(creds);
-    if (creds && creds.expiry_date) {
-      const expiryDate = new Date(creds.expiry_date);
-      assert.equal(
-          dateInMillis.toString().length, creds.expiry_date.toString().length);
-    }
+    const expiryDate = new Date(creds.expiry_date!);
+    assert.equal(
+        dateInMillis.toString().length, creds.expiry_date!.toString().length);
   });
 });
 
@@ -348,13 +342,10 @@ describe('.createScoped', () => {
         ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
     const clone = jwt.createScoped(['gorilla', 'chimpanzee', 'orangutan']);
-    assert(clone.scopes);
-    if (clone.scopes) {
-      assert.equal(3, clone.scopes.length);
-      assert.equal('gorilla', clone.scopes[0]);
-      assert.equal('chimpanzee', clone.scopes[1]);
-      assert.equal('orangutan', clone.scopes[2]);
-    }
+    assert.equal(3, clone.scopes!.length);
+    assert.equal('gorilla', clone.scopes![0]);
+    assert.equal('chimpanzee', clone.scopes![1]);
+    assert.equal('orangutan', clone.scopes![2]);
   });
 
   it('should handle null scope', () => {
