@@ -15,15 +15,13 @@
  */
 
 import {GoogleToken, TokenOptions} from 'gtoken';
-import * as request from 'request';
 import * as stream from 'stream';
 
 import {Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
-import {OAuth2Client} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RequestMetadataResponse} from './oauth2client';
 
 const isString = require('lodash.isstring');
-const noop = Function.prototype;
 
 export class JWT extends OAuth2Client {
   email?: string;
@@ -71,18 +69,16 @@ export class JWT extends OAuth2Client {
    * Obtains the metadata to be sent with the request.
    *
    * @param {string} optUri the URI being authorized.
-   * @param {function} metadataCb
    */
-  getRequestMetadata(
-      optUri: string|null,
-      metadataCb: (err: Error|null, result?: {}|null) => void) {
-    if (this.createScopedRequired() && optUri) {
+  protected async getRequestMetadataAsync(url?: string|null):
+      Promise<RequestMetadataResponse> {
+    if (this.createScopedRequired() && url) {
       // no scopes have been set, but a uri has been provided.  Use JWTAccess
       // credentials.
       const alt = new JWTAccess(this.email, this.key);
-      return alt.getRequestMetadata(optUri, metadataCb);
+      return alt.getRequestMetadata(url);
     } else {
-      return super.getRequestMetadata(optUri, metadataCb);
+      return super.getRequestMetadataAsync(url);
     }
   }
 
@@ -107,47 +103,45 @@ export class JWT extends OAuth2Client {
   /**
    * Get the initial access token using gToken.
    * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with credentials
    */
-  authorize(callback?: (err: Error|null, result: Credentials) => void) {
-    const done = callback || noop;
-    this.refreshToken(null, (err, result) => {
-      if (err) {
-        done(err);
-      } else if (!result) {
-        done(new Error('No result returned'));
-      } else {
-        this.credentials = result;
-        this.credentials.refresh_token = 'jwt-placeholder';
-        this.key = this.gtoken.key;
-        this.email = this.gtoken.iss;
-        done(null, result);
-      }
-    });
+  authorize(): Promise<Credentials>;
+  authorize(callback: (err: Error|null, result?: Credentials) => void): void;
+  authorize(callback?: (err: Error|null, result?: Credentials) => void):
+      Promise<Credentials>|void {
+    if (callback) {
+      this.authorizeAsync().then(r => callback(null, r)).catch(callback);
+    } else {
+      return this.authorizeAsync();
+    }
+  }
+
+  private async authorizeAsync(): Promise<Credentials> {
+    const result = await this.refreshToken();
+    if (!result) {
+      throw new Error('No result returned');
+    }
+    this.credentials = result.tokens;
+    this.credentials.refresh_token = 'jwt-placeholder';
+    this.key = this.gtoken.key;
+    this.email = this.gtoken.iss;
+    return result.tokens;
   }
 
   /**
    * Refreshes the access token.
    * @param {object=} ignored
-   * @param {function=} callback Optional callback.
    * @private
    */
-  refreshToken(
-      ignored: string|null,
-      callback?: (err: Error, credentials?: Credentials) => void) {
-    const done = callback || noop;
-    return this.createGToken((err, newGToken) => {
-      if (err) {
-        return done(err);
-      } else {
-        return newGToken.getToken((err2?: Error|null, token?: string|null) => {
-          return done(err2, {
-            access_token: token,
-            token_type: 'Bearer',
-            expiry_date: newGToken.expiresAt
-          });
-        });
-      }
-    });
+  async refreshToken(refreshToken?: string|null): Promise<GetTokenResponse> {
+    const newGToken = this.createGToken();
+    const token = await newGToken.getToken();
+    const tokens = {
+      access_token: token,
+      token_type: 'Bearer',
+      expiry_date: newGToken.expiresAt
+    };
+    return {res: null, tokens};
   }
 
   /**
@@ -155,28 +149,32 @@ export class JWT extends OAuth2Client {
    * @param {object=} json The input object.
    * @param {function=} callback Optional callback.
    */
-  fromJSON(json: JWTInput, callback?: (err?: Error) => void) {
-    const done = callback || noop;
-    if (!json) {
-      done(new Error(
-          'Must pass in a JSON object containing the service account auth settings.'));
-      return;
+  fromJSON(json: JWTInput, callback?: (err?: Error) => void): void {
+    try {
+      if (!json) {
+        throw new Error(
+            'Must pass in a JSON object containing the service account auth settings.');
+      }
+      if (!json.client_email) {
+        throw new Error(
+            'The incoming JSON object does not contain a client_email field');
+      }
+      if (!json.private_key) {
+        throw new Error(
+            'The incoming JSON object does not contain a private_key field');
+      }
+      // Extract the relevant information from the json key file.
+      this.email = json.client_email;
+      this.key = json.private_key;
+      this.projectId = json.project_id;
+    } catch (e) {
+      if (callback) {
+        callback(e);
+      } else {
+        throw e;
+      }
     }
-    if (!json.client_email) {
-      done(new Error(
-          'The incoming JSON object does not contain a client_email field'));
-      return;
-    }
-    if (!json.private_key) {
-      done(new Error(
-          'The incoming JSON object does not contain a private_key field'));
-      return;
-    }
-    // Extract the relevant information from the json key file.
-    this.email = json.client_email;
-    this.key = json.private_key;
-    this.projectId = json.project_id;
-    done();
+    if (callback) callback();
   }
 
   /**
@@ -184,28 +182,39 @@ export class JWT extends OAuth2Client {
    * @param {object=} inputStream The input stream.
    * @param {function=} callback Optional callback.
    */
+  fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(
-      inputStream: stream.Readable, callback: (err?: Error|null) => void) {
-    const done = callback || noop;
-    if (!inputStream) {
-      setImmediate(() => {
-        done(new Error(
-            'Must pass in a stream containing the service account auth settings.'));
-      });
-      return;
+      inputStream: stream.Readable, callback: (err?: Error|null) => void): void;
+  fromStream(
+      inputStream: stream.Readable,
+      callback?: (err?: Error|null) => void): void|Promise<void> {
+    if (callback) {
+      this.fromStreamAsync(inputStream).then(r => callback()).catch(callback);
+    } else {
+      return this.fromStreamAsync(inputStream);
     }
-    let s = '';
-    inputStream.setEncoding('utf8');
-    inputStream.on('data', (chunk) => {
-      s += chunk;
-    });
-    inputStream.on('end', () => {
-      try {
-        const data = JSON.parse(s);
-        this.fromJSON(data, callback);
-      } catch (err) {
-        done(err);
+  }
+
+  private fromStreamAsync(inputStream: stream.Readable) {
+    return new Promise<void>((resolve, reject) => {
+      if (!inputStream) {
+        throw new Error(
+            'Must pass in a stream containing the service account auth settings.');
       }
+      let s = '';
+      inputStream.setEncoding('utf8');
+      inputStream.on('data', (chunk) => {
+        s += chunk;
+      });
+      inputStream.on('end', () => {
+        try {
+          const data = JSON.parse(s);
+          this.fromJSON(data);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
     });
   }
 
@@ -215,16 +224,19 @@ export class JWT extends OAuth2Client {
    * @param {function=} callback - Optional callback to be invoked after
    *  initialization.
    */
-  fromAPIKey(apiKey: string, callback?: (err: Error) => void) {
-    const done = callback || noop;
+  fromAPIKey(apiKey: string, callback?: (err?: Error) => void): void {
     if (!isString(apiKey)) {
-      setImmediate(() => {
-        done(new Error('Must provide an API Key string.'));
-      });
-      return;
+      const e = new Error('Must provide an API Key string.');
+      if (callback) {
+        return setImmediate(callback, e);
+      } else {
+        throw e;
+      }
     }
     this.apiKey = apiKey;
-    done(null);
+    if (callback) {
+      return callback();
+    }
   }
 
   /**
@@ -232,20 +244,16 @@ export class JWT extends OAuth2Client {
    * @param {function=} callback Callback.
    * @private
    */
-  private createGToken(
-      callback: (err: Error|null, token: GoogleToken) => void) {
-    if (this.gtoken) {
-      return callback(null, this.gtoken);
-    } else {
-      const opts = {
+  private createGToken() {
+    if (!this.gtoken) {
+      this.gtoken = new GoogleToken({
         iss: this.email,
         sub: this.subject,
         scope: this.scopes,
         keyFile: this.keyFile,
         key: this.key
-      } as TokenOptions;
-      this.gtoken = new GoogleToken(opts);
-      return callback(null, this.gtoken);
+      } as TokenOptions);
     }
+    return this.gtoken;
   }
 }

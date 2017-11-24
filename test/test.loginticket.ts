@@ -18,7 +18,6 @@ import * as assert from 'assert';
 import {LoginTicket} from '../src/auth/loginticket';
 
 describe('LoginTicket', () => {
-
   it('should return null userId even if no payload', () => {
     const ticket = new LoginTicket();
     assert.equal(ticket.getUserId(), null);

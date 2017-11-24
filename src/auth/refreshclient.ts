@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-import * as request from 'request';
 import * as stream from 'stream';
-
-import {BodyResponseCallback} from './../transporters';
 import {JWTInput} from './credentials';
-import {OAuth2Client} from './oauth2client';
+import {GetTokenResponse, OAuth2Client} from './oauth2client';
 
 export class UserRefreshClient extends OAuth2Client {
   // TODO: refactor tests to make this private
@@ -46,9 +43,9 @@ export class UserRefreshClient extends OAuth2Client {
    * @param {function=} callback Optional callback.
    * @private
    */
-  protected refreshToken(ignored: null, callback?: BodyResponseCallback):
-      request.Request|void {
-    return super.refreshToken(this._refreshToken, callback);
+  protected async refreshToken(refreshToken?: string|
+                               null): Promise<GetTokenResponse> {
+    return super.refreshToken(this._refreshToken);
   }
 
   /**
@@ -58,45 +55,38 @@ export class UserRefreshClient extends OAuth2Client {
    * @param {function=} callback Optional callback.
    */
   fromJSON(json: JWTInput, callback?: (err?: Error) => void) {
-    if (!json) {
-      if (callback) {
-        callback(new Error(
-            'Must pass in a JSON object containing the user refresh token'));
+    try {
+      if (!json) {
+        throw new Error(
+            'Must pass in a JSON object containing the user refresh token');
       }
-      return;
-    }
-    if (json.type !== 'authorized_user') {
-      if (callback) {
-        callback(new Error(
-            'The incoming JSON object does not have the "authorized_user" type'));
+      if (json.type !== 'authorized_user') {
+        throw new Error(
+            'The incoming JSON object does not have the "authorized_user" type');
       }
-      return;
-    }
-    if (!json.client_id) {
-      if (callback) {
-        callback(new Error(
-            'The incoming JSON object does not contain a client_id field'));
+      if (!json.client_id) {
+        throw new Error(
+            'The incoming JSON object does not contain a client_id field');
       }
-      return;
-    }
-    if (!json.client_secret) {
-      if (callback) {
-        callback(new Error(
-            'The incoming JSON object does not contain a client_secret field'));
+      if (!json.client_secret) {
+        throw new Error(
+            'The incoming JSON object does not contain a client_secret field');
       }
-      return;
-    }
-    if (!json.refresh_token) {
-      if (callback) {
-        callback(new Error(
-            'The incoming JSON object does not contain a refresh_token field'));
+      if (!json.refresh_token) {
+        throw new Error(
+            'The incoming JSON object does not contain a refresh_token field');
       }
-      return;
+      this._clientId = json.client_id;
+      this._clientSecret = json.client_secret;
+      this._refreshToken = json.refresh_token;
+      this.credentials.refresh_token = json.refresh_token;
+    } catch (e) {
+      if (callback) {
+        callback(e);
+      } else {
+        throw e;
+      }
     }
-    this._clientId = json.client_id;
-    this._clientSecret = json.client_secret;
-    this._refreshToken = json.refresh_token;
-    this.credentials.refresh_token = json.refresh_token;
     if (callback) callback();
   }
 
@@ -106,28 +96,38 @@ export class UserRefreshClient extends OAuth2Client {
    * @param {object=} inputStream The input stream.
    * @param {function=} callback Optional callback.
    */
-  fromStream(inputStream: stream.Readable, callback?: (err?: Error) => void) {
-    if (!inputStream) {
-      if (callback) {
-        setImmediate(
-            callback,
-            new Error(
-                'Must pass in a stream containing the user refresh token.'));
-      }
-      return;
+  fromStream(inputStream: stream.Readable): Promise<void>;
+  fromStream(inputStream: stream.Readable, callback: (err?: Error) => void):
+      void;
+  fromStream(inputStream: stream.Readable, callback?: (err?: Error) => void):
+      void|Promise<void> {
+    if (callback) {
+      this.fromStreamAsync(inputStream).then(r => callback()).catch(callback);
+    } else {
+      return this.fromStreamAsync(inputStream);
     }
-    let s = '';
-    inputStream.setEncoding('utf8');
-    inputStream.on('data', (chunk) => {
-      s += chunk;
-    });
-    inputStream.on('end', () => {
-      try {
-        const data = JSON.parse(s);
-        this.fromJSON(data, callback);
-      } catch (err) {
-        if (callback) callback(err);
+  }
+
+  private async fromStreamAsync(inputStream: stream.Readable): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!inputStream) {
+        return reject(new Error(
+            'Must pass in a stream containing the user refresh token.'));
       }
+      let s = '';
+      inputStream.setEncoding('utf8');
+      inputStream.on('data', (chunk) => {
+        s += chunk;
+      });
+      inputStream.on('end', () => {
+        try {
+          const data = JSON.parse(s);
+          this.fromJSON(data);
+          return resolve();
+        } catch (err) {
+          return reject(err);
+        }
+      });
     });
   }
 }

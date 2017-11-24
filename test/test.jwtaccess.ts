@@ -37,7 +37,6 @@ function createJSON() {
 }
 
 describe('.getRequestMetadata', () => {
-
   it('create a signed JWT token as the access token', (done) => {
     const keys = keypair(1024 /* bitsize of private key */);
     const testUri = 'http:/example.com/my_test_service';
@@ -51,21 +50,18 @@ describe('.getRequestMetadata', () => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.notStrictEqual(
               null, headers, 'an creds object should be present');
-          if (headers) {
-            const decoded = jws.decode(
-                (headers.Authorization as string).replace('Bearer ', ''));
-            const payload = JSON.parse(decoded.payload);
-            assert.strictEqual(email, payload.iss);
-            assert.strictEqual(email, payload.sub);
-            assert.strictEqual(testUri, payload.aud);
-          }
+          const decoded = jws.decode(
+              (headers!.Authorization as string).replace('Bearer ', ''));
+          const payload = JSON.parse(decoded.payload);
+          assert.strictEqual(email, payload.iss);
+          assert.strictEqual(email, payload.sub);
+          assert.strictEqual(testUri, payload.aud);
           done();
           return retValue;
         };
     const res = client.getRequestMetadata(testUri, expectAuth);
     assert.strictEqual(res, retValue);
   });
-
 });
 
 describe('.createScopedRequired', () => {
@@ -135,7 +131,6 @@ describe('.fromJson', () => {
       done();
     });
   });
-
 });
 
 describe('.fromStream', () => {
@@ -174,5 +169,4 @@ describe('.fromStream', () => {
       done();
     });
   });
-
 });

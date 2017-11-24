@@ -15,8 +15,9 @@
  */
 
 import * as assert from 'assert';
+import {AxiosRequestConfig} from 'axios';
 import * as nock from 'nock';
-import * as request from 'request';
+
 import {DefaultTransporter, RequestError} from '../src/transporters';
 
 // tslint:disable-next-line no-var-requires
@@ -25,17 +26,13 @@ const version = require('../../package.json').version;
 nock.disableNetConnect();
 
 describe('Transporters', () => {
-
   const defaultUserAgentRE = 'google-api-nodejs-client/\\d+.\\d+.\\d+';
   const transporter = new DefaultTransporter();
 
   it('should set default client user agent if none is set', () => {
-    const opts = transporter.configure(({} as request.OptionsWithUrl));
+    const opts = transporter.configure();
     const re = new RegExp(defaultUserAgentRE);
-    assert(opts.headers);
-    if (opts.headers) {
-      assert(re.test(opts.headers['User-Agent']));
-    }
+    assert(re.test(opts.headers!['User-Agent']));
   });
 
   it('should append default client user agent to the existing user agent',
@@ -44,10 +41,7 @@ describe('Transporters', () => {
        const opts = transporter.configure(
            {headers: {'User-Agent': applicationName}, url: ''});
        const re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
-       assert(opts.headers);
-       if (opts.headers) {
-         assert(re.test(opts.headers['User-Agent']));
-       }
+       assert(re.test(opts.headers!['User-Agent']));
      });
 
   it('should not append default client user agent to the existing user agent more than once',
@@ -56,10 +50,7 @@ describe('Transporters', () => {
            'MyTestApplication-1.0 google-api-nodejs-client/' + version;
        const opts = transporter.configure(
            {headers: {'User-Agent': applicationName}, url: ''});
-       assert(opts.headers);
-       if (opts.headers) {
-         assert.equal(opts.headers['User-Agent'], applicationName);
-       }
+       assert.equal(opts.headers!['User-Agent'], applicationName);
      });
 
   it('should create a single error from multiple response errors', (done) => {
@@ -71,15 +62,12 @@ describe('Transporters', () => {
 
     transporter.request(
         {
-          uri: 'http://example.com/api',
+          url: 'http://example.com/api',
         },
         (error) => {
-          assert(error);
-          if (error) {
-            assert(error.message === 'Error 1\nError 2');
-            assert.equal((error as RequestError).code, 500);
-            assert.equal((error as RequestError).errors.length, 2);
-          }
+          assert(error!.message === 'Error 1\nError 2');
+          assert.equal((error as RequestError).code, 500);
+          assert.equal((error as RequestError).errors.length, 2);
           done();
         });
   });
@@ -89,14 +77,24 @@ describe('Transporters', () => {
 
     transporter.request(
         {
-          uri: 'http://example.com/api',
+          url: 'http://example.com/api',
         },
         (error) => {
-          assert(error);
-          if (error) {
-            assert(error.message === 'Not found');
-            assert.equal((error as RequestError).code, 404);
-          }
+          assert(error!.message === 'Not found');
+          assert.equal((error as RequestError).code, 404);
+          done();
+        });
+  });
+
+  it('should return an error if you try to use request config options', (done) => {
+    const expected =
+        '\'uri\' is not a valid configuration option. Please use \'url\' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.';
+    transporter.request(
+        {
+          uri: 'http://example.com/api',
+        } as AxiosRequestConfig,
+        (error) => {
+          assert.equal(error!.message, expected);
           done();
         });
   });
