@@ -52,42 +52,32 @@ export class UserRefreshClient extends OAuth2Client {
    * Create a UserRefreshClient credentials instance using the given input
    * options.
    * @param {object=} json The input object.
-   * @param {function=} callback Optional callback.
    */
-  fromJSON(json: JWTInput, callback?: (err?: Error) => void) {
-    try {
-      if (!json) {
-        throw new Error(
-            'Must pass in a JSON object containing the user refresh token');
-      }
-      if (json.type !== 'authorized_user') {
-        throw new Error(
-            'The incoming JSON object does not have the "authorized_user" type');
-      }
-      if (!json.client_id) {
-        throw new Error(
-            'The incoming JSON object does not contain a client_id field');
-      }
-      if (!json.client_secret) {
-        throw new Error(
-            'The incoming JSON object does not contain a client_secret field');
-      }
-      if (!json.refresh_token) {
-        throw new Error(
-            'The incoming JSON object does not contain a refresh_token field');
-      }
-      this._clientId = json.client_id;
-      this._clientSecret = json.client_secret;
-      this._refreshToken = json.refresh_token;
-      this.credentials.refresh_token = json.refresh_token;
-    } catch (e) {
-      if (callback) {
-        callback(e);
-      } else {
-        throw e;
-      }
+  fromJSON(json: JWTInput): void {
+    if (!json) {
+      throw new Error(
+          'Must pass in a JSON object containing the user refresh token');
     }
-    if (callback) callback();
+    if (json.type !== 'authorized_user') {
+      throw new Error(
+          'The incoming JSON object does not have the "authorized_user" type');
+    }
+    if (!json.client_id) {
+      throw new Error(
+          'The incoming JSON object does not contain a client_id field');
+    }
+    if (!json.client_secret) {
+      throw new Error(
+          'The incoming JSON object does not contain a client_secret field');
+    }
+    if (!json.refresh_token) {
+      throw new Error(
+          'The incoming JSON object does not contain a refresh_token field');
+    }
+    this._clientId = json.client_id;
+    this._clientSecret = json.client_secret;
+    this._refreshToken = json.refresh_token;
+    this.credentials.refresh_token = json.refresh_token;
   }
 
   /**

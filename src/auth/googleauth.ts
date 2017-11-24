@@ -379,42 +379,22 @@ export class GoogleAuth {
   /**
    * Create a credentials instance using the given input options.
    * @param {object=} json The input object.
-   * @param {function=} callback Optional callback.
-   * @returns Promise that resolves with the OAuth2Client (if no callback is
-   * passed)
+   * @returns JWT or UserRefresh Client with data
    */
-  // TODO: Remove the overloads and just keep this a sync API
-  fromJSON(json: JWTInput): JWT|UserRefreshClient;
-  fromJSON(json: JWTInput, callback: CredentialCallback): void;
-  fromJSON(json: JWTInput, callback?: CredentialCallback): JWT|UserRefreshClient
-      |void {
+  fromJSON(json: JWTInput): JWT|UserRefreshClient {
     let client: UserRefreshClient|JWT;
-    try {
-      if (!json) {
-        throw new Error(
-            'Must pass in a JSON object containing the Google auth settings.');
-      }
-
-      this.jsonContent = json;
-      if (json.type === 'authorized_user') {
-        client = new UserRefreshClient();
-      } else {
-        client = new JWT();
-      }
-      client.fromJSON(json);
-      if (callback) {
-        return callback(null, client);
-      } else {
-        return client;
-      }
-
-    } catch (e) {
-      if (callback) {
-        return callback(e);
-      } else {
-        throw e;
-      }
+    if (!json) {
+      throw new Error(
+          'Must pass in a JSON object containing the Google auth settings.');
     }
+    this.jsonContent = json;
+    if (json.type === 'authorized_user') {
+      client = new UserRefreshClient();
+    } else {
+      client = new JWT();
+    }
+    client.fromJSON(json);
+    return client;
   }
 
   /**
@@ -462,26 +442,12 @@ export class GoogleAuth {
   /**
    * Create a credentials instance using the given API key string.
    * @param {string} - The API key string
-   * @param {function=} - Optional callback function
+   * @returns A JWT loaded from the key
    */
-  fromAPIKey(
-      apiKey: string,
-      callback?: (err?: Error|null, client?: JWT) => void): void|JWT {
+  fromAPIKey(apiKey: string): JWT {
     const client = new JWT();
-    try {
-      client.fromAPIKey(apiKey);
-      if (callback) {
-        callback(null, client);
-      } else {
-        return client;
-      }
-    } catch (e) {
-      if (callback) {
-        callback(e);
-      } else {
-        throw e;
-      }
-    }
+    client.fromAPIKey(apiKey);
+    return client;
   }
 
   /**
