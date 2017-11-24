@@ -14,34 +14,27 @@
  * limitations under the License.
  */
 
-import * as request from 'request';
+import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {validate} from './options';
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
 
 export interface Transporter {
-  request(opts: request.Options, callback?: BodyResponseCallback):
-      request.Request;
+  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      void;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      AxiosPromise|void;
 }
 
-export interface BodyResponseCallback {
+export interface BodyResponseCallback<T> {
   // The `body` object is a truly dynamic type.  It must be `any`.
   // tslint:disable-next-line no-any
-  (err: Error|null, body?: any, res?: request.RequestResponse|null): void;
+  (err: Error|null, res?: AxiosResponse<T>|null): void;
 }
 
-export class RequestError extends Error {
-  code?: number;
-  errors: Error[];
-}
-
-export interface BodyResponse {
-  error?: string|{
-    code?: number;
-    message?: string;
-    errors: Error[];
-  };
-}
+export interface RequestError extends AxiosError { errors: Error[]; }
 
 export class DefaultTransporter {
   /**
@@ -51,10 +44,10 @@ export class DefaultTransporter {
 
   /**
    * Configures request options before making a request.
-   * @param {object} opts Options to configure.
-   * @return {object} Configured options.
+   * @param opts AxiosRequestConfig options.
+   * @return Configured options.
    */
-  configure(opts: request.Options): request.Options {
+  configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
     // set transporter user agent
     opts.headers = opts.headers || {};
     if (!opts.headers['User-Agent']) {
@@ -69,66 +62,70 @@ export class DefaultTransporter {
   }
 
   /**
-   * Makes a request with given options and invokes callback.
-   * @param {object} opts Options.
-   * @param {Function=} callback Optional callback.
-   * @return {Request} Request object
+   * Makes a request using Axios with given options.
+   * @param opts AxiosRequestConfig options.
+   * @param callback optional callback that contains AxiosResponse object.
+   * @return AxiosPromise, assuming no callback is passed.
    */
-  request(opts: request.Options, callback?: BodyResponseCallback) {
+  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      void;
+  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
+      AxiosPromise|void {
+    // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
-    const uri = (opts as request.OptionsWithUri).uri as string ||
-        (opts as request.OptionsWithUrl).url as string;
-    return request(uri, opts, this.wrapCallback_(callback));
+    try {
+      validate(opts);
+    } catch (e) {
+      if (callback) {
+        return callback(e);
+      } else {
+        throw e;
+      }
+    }
+
+    if (callback) {
+      axios(opts)
+          .then(r => {
+            callback(null, r);
+          })
+          .catch(e => {
+            callback(this.processError(e));
+          });
+    } else {
+      return axios(opts).catch(e => {
+        throw this.processError(e);
+      });
+    }
   }
 
+
+
   /**
-   * Wraps the response callback.
-   * @param {Function=} callback Optional callback.
-   * @return {Function} Wrapped callback function.
-   * @private
+   * Changes the error to include details from the body.
    */
-  private wrapCallback_(callback?: BodyResponseCallback):
-      request.RequestCallback {
-    return (err: RequestError, res: request.RequestResponse,
-            // the body is either a string or a JSON object
-            // tslint:disable-next-line no-any
-            body: string|any) => {
-      if (err || !body) {
-        return callback && callback(err, body, res);
+  private processError(e: AxiosError): RequestError {
+    const res = e.response;
+    const err = e as RequestError;
+    const body = res ? res.data : null;
+    if (res && body && body.error && res.status !== 200) {
+      if (typeof body.error === 'string') {
+        err.message = body.error;
+        err.code = res.status.toString();
+      } else if (Array.isArray(body.error.errors)) {
+        err.message =
+            body.error.errors.map((err2: Error) => err2.message).join('\n');
+        err.code = body.error.code;
+        err.errors = body.error.errors;
+      } else {
+        err.message = body.error.message;
+        err.code = body.error.code || res.status;
       }
-      // Only and only application/json responses should
-      // be decoded back to JSON, but there are cases API back-ends
-      // responds without proper content-type.
-      try {
-        body = JSON.parse(body as string);
-      } catch (err) {
-        /* no op */
-      }
-
-      if (body && body.error && res.statusCode !== 200) {
-        if (typeof body.error === 'string') {
-          err = new RequestError(body.error);
-          (err as RequestError).code = res.statusCode;
-        } else if (Array.isArray(body.error.errors)) {
-          err = new RequestError(
-              body.error.errors.map((err2: Error) => err2.message).join('\n'));
-          (err as RequestError).code = body.error.code;
-          (err as RequestError).errors = body.error.errors;
-        } else {
-          err = new RequestError(body.error.message);
-          (err as RequestError).code = body.error.code || res.statusCode;
-        }
-        body = null;
-      } else if (res.statusCode && res.statusCode >= 400) {
-        // Consider all 4xx and 5xx responses errors.
-        err = new RequestError(body);
-        (err as RequestError).code = res.statusCode;
-        body = null;
-      }
-
-      if (callback) {
-        callback(err, body, res);
-      }
-    };
+    } else if (res && res.status >= 400) {
+      // Consider all 4xx and 5xx responses errors.
+      err.message = body;
+      err.code = res.status.toString();
+    }
+    return err;
   }
 }

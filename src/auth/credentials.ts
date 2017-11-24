@@ -15,10 +15,17 @@
  */
 
 export interface Credentials {
+  refresh_token?: string|null;
+  expiry_date?: number|null;
+  access_token?: string|null;
+  token_type?: string|null;
+}
+
+export interface CredentialRequest {
   refresh_token?: string;
-  expiry_date?: number;
   access_token?: string;
   token_type?: string;
+  expires_in?: number;
 }
 
 export interface JWTInput {

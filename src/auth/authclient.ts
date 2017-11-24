@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import * as request from 'request';
-
+import {AxiosPromise, AxiosRequestConfig} from 'axios';
 import {DefaultTransporter} from '../transporters';
-
 import {Credentials} from './credentials';
 
 export abstract class AuthClient {
@@ -25,8 +23,7 @@ export abstract class AuthClient {
   credentials: Credentials;
 
   /**
-   * Provides an alternative request
-   * implementations with auth credentials.
+   * Provides an alternative Axios request implementation with auth credentials
    */
-  abstract request(opts: request.Options): request.Request|void;
+  abstract request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
 }

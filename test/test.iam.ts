@@ -32,12 +32,10 @@ describe('.getRequestMetadata', () => {
         (err: Error|null, creds?: RequestMetadata) => {
           assert.strictEqual(err, null, 'no error was expected: got\n' + err);
           assert.notStrictEqual(creds, null, 'metadata should be present');
-          if (creds) {
-            assert.strictEqual(
-                creds['x-goog-iam-authority-selector'], testSelector);
-            assert.strictEqual(
-                creds['x-goog-iam-authorization-token'], testToken);
-          }
+          assert.strictEqual(
+              creds!['x-goog-iam-authority-selector'], testSelector);
+          assert.strictEqual(
+              creds!['x-goog-iam-authorization-token'], testToken);
           done();
         };
     client.getRequestMetadata(null, expectRequestMetadata);

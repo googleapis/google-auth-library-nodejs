@@ -21,10 +21,9 @@ import * as path from 'path';
 import * as stream from 'stream';
 import * as util from 'util';
 
-import {BodyResponseCallback, DefaultTransporter, Transporter} from '../transporters';
-
+import {DefaultTransporter, Transporter} from '../transporters';
 import {Compute} from './computeclient';
-import {Credentials, JWTInput} from './credentials';
+import {JWTInput} from './credentials';
 import {IAMAuth} from './iam';
 import {JWTAccess} from './jwtaccess';
 import {JWT} from './jwtclient';
@@ -32,12 +31,29 @@ import {OAuth2Client} from './oauth2client';
 import {UserRefreshClient} from './refreshclient';
 
 export interface ProjectIdCallback {
-  (err?: Error|null, projectId?: string): void;
+  (err?: Error|null, projectId?: string|null): void;
+}
+
+export interface CredentialCallback {
+  (err: Error|null, result?: UserRefreshClient|JWT): void;
+}
+
+export interface ADCCallback {
+  (err: Error|null, credential?: OAuth2Client, projectId?: string|null): void;
+}
+
+export interface ADCResponse {
+  credential: OAuth2Client;
+  projectId: string|null;
 }
 
 export interface CredentialBody {
   client_email?: string;
   private_key?: string;
+}
+
+interface CredentialResult {
+  default: {email: string;};
 }
 
 export class GoogleAuth {
@@ -56,7 +72,6 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  // The _ rule goes away in the next gts release
   private _cachedProjectId: string;
 
   // Note:  this properly is only public to satisify unit tests.
@@ -108,9 +123,22 @@ export class GoogleAuth {
 
   /**
    * Obtains the default project ID for the application..
-   * @param {function=} callback Optional callback.
+   * @param callback Optional callback
+   * @returns Promise that resolves with project Id (if used without callback)
    */
-  getDefaultProjectId(callback: ProjectIdCallback) {
+  getDefaultProjectId(): Promise<string>;
+  getDefaultProjectId(callback: ProjectIdCallback): void;
+  getDefaultProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+    if (callback) {
+      this.getDefaultProjectIdAsync()
+          .then(r => callback(null, r))
+          .catch(callback);
+    } else {
+      return this.getDefaultProjectIdAsync();
+    }
+  }
+
+  private async getDefaultProjectIdAsync(): Promise<string|null> {
     // In implicit case, supports three environments. In order of precedence,
     // the implicit environments are:
     //
@@ -123,182 +151,160 @@ export class GoogleAuth {
     // implemented yet)
 
     if (this._cachedProjectId) {
-      if (callback) setImmediate(callback, null, this._cachedProjectId);
-    } else {
-      const myCallback = (err?: Error|null, projectId?: string) => {
-        if (!err && projectId) {
-          this._cachedProjectId = projectId;
-        }
-        if (callback) setImmediate(callback, err, projectId);
-      };
-
-      // environment variable
-      if (this._getProductionProjectId(myCallback)) {
-        return;
-      }
-
-      // json file
-      this.getFileProjectId((err?: Error|null, projectId?: string) => {
-        if (err || projectId) {
-          myCallback(err, projectId);
-          return;
-        }
-
-        // Google Cloud SDK default project id
-        this.getDefaultServiceProjectId(
-            (err2?: Error|null, projectId2?: string) => {
-              if (err2 || projectId2) {
-                myCallback(err2, projectId2);
-                return;
-              }
-
-              // Get project ID from Compute Engine metadata server
-              this.getGCEProjectId(myCallback);
-            });
-      });
+      return this._cachedProjectId;
     }
+
+    const projectId = this.getProductionProjectId() ||
+        await this.getFileProjectId() ||
+        await this.getDefaultServiceProjectId() || await this.getGCEProjectId();
+    if (projectId) {
+      this._cachedProjectId = projectId;
+    }
+    return projectId;
   }
 
   /**
    * Run the Google Cloud SDK command that prints the default project ID
-   * @param {function} callback Callback.
-   * @api private
    */
-  _getSDKDefaultProjectId(
-      callback:
-          (error: Error|null, stdout: string, stderr: string|null) => void) {
-    exec('gcloud -q config list core/project --format=json', callback);
+  _getSDKDefaultProjectId():
+      Promise<{stdout: string | null, stderr: string|null}> {
+    // TODO: make this a proper async function
+    return new Promise((resolve, reject) => {
+      exec(
+          'gcloud -q config list core/project --format=json',
+          (err, stdout, stderr) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve({stdout, stderr});
+            }
+          });
+    });
   }
 
   /**
-   * Obtains the default service-level credentials for the application..
+   * Obtains the default service-level credentials for the application.
    * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with the ADCResponse (if no callback was
+   * passed).
    */
-  getApplicationDefault(
-      callback?:
-          (err: Error, credential: JWT|UserRefreshClient,
-           projectId: string) => void) {
+  getApplicationDefault(): Promise<ADCResponse>;
+  getApplicationDefault(callback: ADCCallback): void;
+  getApplicationDefault(callback?: ADCCallback): void|Promise<ADCResponse> {
+    if (callback) {
+      this.getApplicationDefaultAsync()
+          .then(r => callback(null, r.credential, r.projectId))
+          .catch(callback);
+    } else {
+      return this.getApplicationDefaultAsync();
+    }
+  }
+
+  private async getApplicationDefaultAsync(): Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
-      if (callback) {
-        setImmediate(
-            callback, null, this.cachedCredential, this._cachedProjectId);
-      }
-    } else {
-      // Inject our own callback routine, which will cache the credential once
-      // it's been created. It also allows us to ensure that the ultimate
-      // callback is always async.
-      const myCallback = (err?: Error|null, result?: OAuth2Client) => {
-        if (!err && result) {
-          this.cachedCredential = result;
-          this.getDefaultProjectId((err2, projectId) => {
-            if (callback) setImmediate(callback, null, result, projectId);
-          });
-        } else {
-          if (callback) setImmediate(callback, err, result);
-        }
+      return {
+        credential: this.cachedCredential as JWT | UserRefreshClient,
+        projectId: this._cachedProjectId
       };
+    }
 
-      // Check for the existence of a local environment variable pointing to the
-      // location of the credential file. This is typically used in local
-      // developer scenarios.
-      if (this._tryGetApplicationCredentialsFromEnvironmentVariable(
-              myCallback)) {
-        return;
-      }
+    let credential: OAuth2Client|null;
+    let projectId: string|null;
+    // Check for the existence of a local environment variable pointing to the
+    // location of the credential file. This is typically used in local
+    // developer scenarios.
+    credential =
+        await this._tryGetApplicationCredentialsFromEnvironmentVariable();
+    if (credential) {
+      this.cachedCredential = credential;
+      projectId = await this.getDefaultProjectId();
+      return {credential, projectId};
+    }
 
-      // Look in the well-known credential file location.
-      if (this._tryGetApplicationCredentialsFromWellKnownFile(myCallback)) {
-        return;
-      }
+    // Look in the well-known credential file location.
+    credential = await this._tryGetApplicationCredentialsFromWellKnownFile();
+    if (credential) {
+      this.cachedCredential = credential;
+      projectId = await this.getDefaultProjectId();
+      return {credential, projectId};
+    }
 
+    try {
       // Determine if we're running on GCE.
-      this._checkIsGCE((err, gce) => {
-        if (gce) {
-          // For GCE, just return a default ComputeClient. It will take care of
-          // the rest.
-          myCallback(null, new Compute());
-        } else if (err) {
-          myCallback(new Error(
-              'Unexpected error while acquiring application default ' +
-              'credentials: ' + err.message));
-        } else {
-          // We failed to find the default credentials. Bail out with an error.
-          myCallback(new Error(
-              'Could not load the default credentials. Browse to ' +
-              'https://developers.google.com/accounts/docs/application-default-credentials for ' +
-              'more information.'));
-        }
-      });
+      const gce = await this._checkIsGCE();
+      if (gce) {
+        // For GCE, just return a default ComputeClient. It will take care of
+        // the rest.
+        // TODO: cache the result
+        return {projectId: null, credential: new Compute()};
+      } else {
+        // We failed to find the default credentials. Bail out with an error.
+        throw new Error(
+            'Could not load the default credentials. Browse to https://developers.google.com/accounts/docs/application-default-credentials for more information.');
+      }
+    } catch (e) {
+      throw new Error(
+          'Unexpected error while acquiring application default credentials: ' +
+          e.message);
     }
   }
 
   /**
    * Determines whether the auth layer is running on Google Compute Engine.
-   * @param {function=} callback The callback.
+   * @returns A promise that resolves with the boolean.
    * @api private
    */
-  _checkIsGCE(callback: (err: Error|null, isGCE?: boolean) => void) {
+  async _checkIsGCE(): Promise<boolean> {
     if (this.checkIsGCE !== undefined) {
-      setImmediate(() => {
-        callback(null, this.checkIsGCE);
-      });
-    } else {
-      if (!this.transporter) {
-        this.transporter = new DefaultTransporter();
-      }
-      this.transporter.request(
-          {method: 'GET', uri: 'http://metadata.google.internal', json: true},
-          (err, body, res) => {
-            if (err) {
-              if ((err as NodeJS.ErrnoException).code !== 'ENOTFOUND') {
-                // Unexpected error occurred. TODO(ofrobots): retry if this was
-                // a transient error.
-                return callback(err);
-              }
-              this.checkIsGCE = false;
-              return callback(null, this.checkIsGCE);
-            }
-            this.checkIsGCE = res !== null && res !== undefined &&
-                res.headers && res.headers['metadata-flavor'] === 'Google';
-            callback(null, this.checkIsGCE);
-          });
+      return this.checkIsGCE;
     }
+    if (!this.transporter) {
+      this.transporter = new DefaultTransporter();
+    }
+    try {
+      const res = await this.transporter.request(
+          {url: 'http://metadata.google.internal'});
+      this.checkIsGCE =
+          res && res.headers && res.headers['metadata-flavor'] === 'Google';
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'ENOTFOUND') {
+        // Unexpected error occurred. TODO(ofrobots): retry if this was a
+        // transient error.
+        throw e;
+      }
+      this.checkIsGCE = false;
+    }
+    return this.checkIsGCE;
   }
 
   /**
    * Attempts to load default credentials from the environment variable path..
-   * @param {function=} callback Optional callback.
-   * @return {boolean} Returns true if the callback has been executed; false otherwise.
+   * @returns Promise that resolves with the OAuth2Client or null.
    * @api private
    */
-  _tryGetApplicationCredentialsFromEnvironmentVariable(
-      callback?: (err?: Error|null, result?: JWT|UserRefreshClient) => void) {
+  async _tryGetApplicationCredentialsFromEnvironmentVariable():
+      Promise<JWT|UserRefreshClient|null> {
     const credentialsPath = this._getEnv('GOOGLE_APPLICATION_CREDENTIALS');
     if (!credentialsPath || credentialsPath.length === 0) {
-      return false;
+      return null;
     }
-    this._getApplicationCredentialsFromFilePath(credentialsPath, (err, result) => {
-      let wrappedError = null;
-      if (err) {
-        wrappedError = this.createError(
-            'Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS ' +
-                'environment variable.',
-            err);
-      }
-      if (callback) callback(wrappedError, result);
-    });
-    return true;
+    try {
+      return this._getApplicationCredentialsFromFilePath(credentialsPath);
+    } catch (e) {
+      throw this.createError(
+          'Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable.',
+          e);
+    }
   }
 
   /**
    * Attempts to load default credentials from a well-known file location
-   * @param {function=} callback Optional callback.
-   * @return {boolean} Returns true if the callback has been executed; false otherwise.
+   * @return Promise that resolves with the OAuth2Client or null.
    * @api private
    */
-  _tryGetApplicationCredentialsFromWellKnownFile(
-      callback?: (err?: Error|null, result?: JWT|UserRefreshClient) => void) {
+  async _tryGetApplicationCredentialsFromWellKnownFile():
+      Promise<JWT|UserRefreshClient|null> {
     // First, figure out the location of the file, depending upon the OS type.
     let location = null;
     if (this._isWindows()) {
@@ -324,59 +330,49 @@ export class GoogleAuth {
     }
     // The file does not exist.
     if (!location) {
-      return false;
+      return null;
     }
     // The file seems to exist. Try to use it.
-    this._getApplicationCredentialsFromFilePath(location, callback);
-    return true;
+    return this._getApplicationCredentialsFromFilePath(location);
   }
 
   /**
    * Attempts to load default credentials from a file at the given path..
    * @param {string=} filePath The path to the file to read.
-   * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with the OAuth2Client
    * @api private
    */
-  _getApplicationCredentialsFromFilePath(
-      filePath: string,
-      callback?: (err: Error|null, result?: JWT|UserRefreshClient) => void) {
-    let error = null;
+  async _getApplicationCredentialsFromFilePath(filePath: string):
+      Promise<JWT|UserRefreshClient> {
     // Make sure the path looks like a string.
     if (!filePath || filePath.length === 0) {
-      error = new Error('The file path is invalid.');
+      throw new Error('The file path is invalid.');
     }
 
     // Make sure there is a file at the path. lstatSync will throw if there is
     // nothing there.
-    if (!error) {
-      try {
-        // Resolve path to actual file in case of symlink. Expect a thrown error
-        // if not resolvable.
-        filePath = fs.realpathSync(filePath);
+    try {
+      // Resolve path to actual file in case of symlink. Expect a thrown error
+      // if not resolvable.
+      filePath = fs.realpathSync(filePath);
 
-        if (!fs.lstatSync(filePath).isFile()) {
-          throw new Error();
-        }
-      } catch (err) {
-        error = this.createError(
-            util.format(
-                'The file at %s does not exist, or it is not a file.',
-                filePath),
-            err);
+      if (!fs.lstatSync(filePath).isFile()) {
+        throw new Error();
       }
+    } catch (err) {
+      throw this.createError(
+          util.format(
+              'The file at %s does not exist, or it is not a file.', filePath),
+          err);
     }
+
     // Now open a read stream on the file, and parse it.
-    if (!error) {
-      try {
-        const readStream = this._createReadStream(filePath);
-        this.fromStream(readStream, callback);
-      } catch (err) {
-        error = this.createError(
-            util.format('Unable to read the file at %s.', filePath), err);
-      }
-    }
-    if (error) {
-      if (callback) callback(error);
+    try {
+      const readStream = this._createReadStream(filePath);
+      return this.fromStream(readStream);
+    } catch (err) {
+      throw this.createError(
+          util.format('Unable to read the file at %s.', filePath), err);
     }
   }
 
@@ -384,35 +380,41 @@ export class GoogleAuth {
    * Create a credentials instance using the given input options.
    * @param {object=} json The input object.
    * @param {function=} callback Optional callback.
+   * @returns Promise that resolves with the OAuth2Client (if no callback is
+   * passed)
    */
-  fromJSON(
-      json: JWTInput,
-      callback?: (err: Error|null, client?: UserRefreshClient|JWT) => void) {
+  // TODO: Remove the overloads and just keep this a sync API
+  fromJSON(json: JWTInput): JWT|UserRefreshClient;
+  fromJSON(json: JWTInput, callback: CredentialCallback): void;
+  fromJSON(json: JWTInput, callback?: CredentialCallback): JWT|UserRefreshClient
+      |void {
     let client: UserRefreshClient|JWT;
-    if (!json) {
-      if (callback) {
-        callback(new Error(
-            'Must pass in a JSON object containing the Google auth settings.'));
+    try {
+      if (!json) {
+        throw new Error(
+            'Must pass in a JSON object containing the Google auth settings.');
       }
-      return;
-    }
-    // Set the JSON contents
-    this.jsonContent = json;
-    if (json.type === 'authorized_user') {
-      client = new UserRefreshClient();
-    } else {
-      client = new JWT();
-    }
 
-    client.fromJSON(json, (err?: Error|null) => {
-      if (callback) {
-        if (err) {
-          callback(err);
-        } else {
-          callback(null, client);
-        }
+      this.jsonContent = json;
+      if (json.type === 'authorized_user') {
+        client = new UserRefreshClient();
+      } else {
+        client = new JWT();
       }
-    });
+      client.fromJSON(json);
+      if (callback) {
+        return callback(null, client);
+      } else {
+        return client;
+      }
+
+    } catch (e) {
+      if (callback) {
+        return callback(e);
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**
@@ -420,30 +422,40 @@ export class GoogleAuth {
    * @param {object=} inputStream The input stream.
    * @param {function=} callback Optional callback.
    */
-  fromStream(
-      inputStream: stream.Readable,
-      callback?: (err: Error|null, result?: UserRefreshClient|JWT) => void) {
-    if (!inputStream) {
-      if (callback) {
-        setImmediate(
-            callback,
-            new Error(
-                'Must pass in a stream containing the Google auth settings.'));
-      }
-      return;
+  fromStream(inputStream: stream.Readable): Promise<JWT|UserRefreshClient>;
+  fromStream(inputStream: stream.Readable, callback: CredentialCallback): void;
+  fromStream(inputStream: stream.Readable, callback?: CredentialCallback):
+      Promise<JWT|UserRefreshClient>|void {
+    if (callback) {
+      this.fromStreamAsync(inputStream)
+          .then(r => callback(null, r))
+          .catch(callback);
+    } else {
+      return this.fromStreamAsync(inputStream);
     }
-    let s = '';
-    inputStream.setEncoding('utf8');
-    inputStream.on('data', (chunk) => {
-      s += chunk;
-    });
-    inputStream.on('end', () => {
-      try {
-        const data = JSON.parse(s);
-        this.fromJSON(data, callback);
-      } catch (err) {
-        if (callback) callback(err);
+  }
+
+  private fromStreamAsync(inputStream: stream.Readable):
+      Promise<JWT|UserRefreshClient> {
+    return new Promise((resolve, reject) => {
+      if (!inputStream) {
+        throw new Error(
+            'Must pass in a stream containing the Google auth settings.');
       }
+      let s = '';
+      inputStream.setEncoding('utf8');
+      inputStream.on('data', (chunk) => {
+        s += chunk;
+      });
+      inputStream.on('end', () => {
+        try {
+          const data = JSON.parse(s);
+          const r = this.fromJSON(data);
+          return resolve(r);
+        } catch (err) {
+          return reject(err);
+        }
+      });
     });
   }
 
@@ -453,15 +465,23 @@ export class GoogleAuth {
    * @param {function=} - Optional callback function
    */
   fromAPIKey(
-      apiKey: string, callback?: (err?: Error|null, client?: JWT) => void) {
+      apiKey: string,
+      callback?: (err?: Error|null, client?: JWT) => void): void|JWT {
     const client = new JWT();
-    client.fromAPIKey(apiKey, (err) => {
-      if (err) {
-        if (callback) callback(err);
+    try {
+      client.fromAPIKey(apiKey);
+      if (callback) {
+        callback(null, client);
       } else {
-        if (callback) callback(null, client);
+        return client;
       }
-    });
+    } catch (e) {
+      if (callback) {
+        callback(e);
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**
@@ -545,69 +565,45 @@ export class GoogleAuth {
 
   /**
    * Loads the default project of the Google Cloud SDK.
-   * @param {function} callback Callback.
    * @api private
    */
-  private getDefaultServiceProjectId(callback: ProjectIdCallback) {
-    this._getSDKDefaultProjectId((err, stdout) => {
-      let projectId = null;
-      if (!err && stdout) {
-        try {
-          projectId = JSON.parse(stdout).core.project;
-        } catch (err) {
-          projectId = null;
-        }
+  private async getDefaultServiceProjectId(): Promise<string|null> {
+    try {
+      const r = await this._getSDKDefaultProjectId();
+      if (r.stdout) {
+        return JSON.parse(r.stdout).core.project;
       }
+    } catch (e) {
       // Ignore any errors
-      if (callback) callback(null, projectId);
-    });
+    }
+    return null;
   }
 
   /**
    * Loads the project id from environment variables.
-   * @param {function} callback Callback.
    * @api private
    */
-  private _getProductionProjectId(callback: ProjectIdCallback) {
-    const projectId =
-        this._getEnv('GCLOUD_PROJECT') || this._getEnv('GOOGLE_CLOUD_PROJECT');
-    if (projectId) {
-      if (callback) setImmediate(callback, null, projectId);
-    }
-    return projectId;
+  private getProductionProjectId() {
+    return this._getEnv('GCLOUD_PROJECT') ||
+        this._getEnv('GOOGLE_CLOUD_PROJECT');
   }
 
   /**
    * Loads the project id from the GOOGLE_APPLICATION_CREDENTIALS json file.
-   * @param {function} callback Callback.
    * @api private
    */
-  private getFileProjectId(callback: ProjectIdCallback) {
+  private async getFileProjectId(): Promise<string|undefined|null> {
     if (this.cachedCredential) {
       // Try to read the project ID from the cached credentials file
-      if (callback) {
-        setImmediate(callback, null, this.cachedCredential.projectId);
-      }
-      return;
+      return this.cachedCredential.projectId;
     }
 
     // Try to load a credentials file and read its project ID
-    const pathExists =
-        this._tryGetApplicationCredentialsFromEnvironmentVariable(
-            (err, result?: JWT|UserRefreshClient) => {
-              if (!err && result) {
-                if (callback) {
-                  callback(null, result.projectId);
-                }
-                return;
-              }
-              if (callback) {
-                callback(err);
-              }
-            });
-
-    if (!pathExists) {
-      if (callback) callback();
+    const r = await this._tryGetApplicationCredentialsFromEnvironmentVariable();
+    if (r) {
+      return r.projectId;
+    } else {
+      return null;
     }
   }
 
@@ -621,27 +617,22 @@ export class GoogleAuth {
    * See https://github.com/google/oauth2client/issues/93 for context about
    * DNS latency.
    *
-   * @param {function} callback Callback.
    * @api private
    */
-  private getGCEProjectId(callback?: BodyResponseCallback) {
+  private async getGCEProjectId() {
     if (!this.transporter) {
       this.transporter = new DefaultTransporter();
     }
-    this.transporter.request(
-        {
-          method: 'GET',
-          uri: 'http://169.254.169.254/computeMetadata/v1/project/project-id',
-          headers: {'Metadata-Flavor': 'Google'}
-        },
-        (err, body, res) => {
-          if (err || !res || res.statusCode !== 200 || !body) {
-            if (callback) callback(null);
-            return;
-          }
-          // Ignore any errors
-          if (callback) callback(null, body);
-        });
+    try {
+      const r = await this.transporter.request<string>({
+        url: 'http://169.254.169.254/computeMetadata/v1/project/project-id',
+        headers: {'Metadata-Flavor': 'Google'}
+      });
+      return r.data;
+    } catch (e) {
+      // Ignore any errors
+      return null;
+    }
   }
 
 
@@ -655,47 +646,47 @@ export class GoogleAuth {
    * a client_email and optional private key, or the error.
    * returned
    */
+  getCredentials(): Promise<CredentialBody>;
   getCredentials(
-      callback: (err: Error|null, credentials?: CredentialBody) => void) {
+      callback: (err: Error|null, credentials?: CredentialBody) => void): void;
+  getCredentials(
+      callback?: (err: Error|null, credentials?: CredentialBody) => void):
+      void|Promise<CredentialBody> {
+    if (callback) {
+      this.getCredentialsAsync().then(r => callback(null, r)).catch(callback);
+    } else {
+      return this.getCredentialsAsync();
+    }
+  }
+
+  private async getCredentialsAsync(): Promise<CredentialBody> {
     if (this.jsonContent) {
       const credential: CredentialBody = {
         client_email: this.jsonContent.client_email,
         private_key: this.jsonContent.private_key
       };
-      callback(null, credential);
-    } else {
-      this._checkIsGCE((err, gce) => {
-        if (err) {
-          callback(err);
-        } else if (!gce) {
-          callback(new Error('Unknown error.'));
-        } else {
-          // For GCE, return the service account details from the metadata
-          // server
-          this.transporter.request(
-              {
-                method: 'GET',
-                uri:
-                    'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
-                headers: {'Metadata-Flavor': 'Google'}
-              },
-              (err, body, res) => {
-                if (err || !res || res.statusCode !== 200 || !body ||
-                    !body.default || !body.default.email) {
-                  if (callback) {
-                    callback(new Error('Failure from metadata server.'));
-                  }
-                } else {
-                  // Callback with the body
-                  const credential:
-                      CredentialBody = {client_email: body.default.email};
-                  if (callback) {
-                    callback(null, credential);
-                  }
-                }
-              });
-        }
-      });
+      return credential;
     }
+
+    const isGCE = await this._checkIsGCE();
+    if (!isGCE) {
+      throw new Error('Unknown error.');
+    }
+
+    // For GCE, return the service account details from the metadata server
+    const result = await this.transporter.request<CredentialResult>({
+      url:
+          'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
+      headers: {'Metadata-Flavor': 'Google'}
+    });
+
+    if (!result.data || !result.data.default || !result.data.default.email) {
+      throw new Error('Failure from metadata server.');
+    }
+
+    // Callback with the body
+    const credential:
+        CredentialBody = {client_email: result.data.default.email};
+    return credential;
   }
 }

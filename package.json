@@ -21,15 +21,13 @@
   ],
   "dependencies": {
     "gtoken": "^2.0.1",
+    "axios": "^0.17.1",
     "jws": "^3.1.4",
-    "lodash.isstring": "^4.0.1",
-    "lodash.merge": "^4.6.0",
-    "request": "^2.81.0"
+    "lodash.isstring": "^4.0.1"
   },
   "devDependencies": {
     "@types/jws": "^3.1.0",
     "@types/lodash.isstring": "^4.0.2",
-    "@types/lodash.merge": "^4.6.2",
     "@types/mocha": "^2.2.41",
     "@types/nock": "^8.2.1",
     "@types/node": "^8.0.49",
