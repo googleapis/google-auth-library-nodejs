@@ -37,30 +37,21 @@ function createJSON() {
 }
 
 describe('.getRequestMetadata', () => {
-  it('create a signed JWT token as the access token', (done) => {
+  it('create a signed JWT token as the access token', () => {
     const keys = keypair(1024 /* bitsize of private key */);
     const testUri = 'http:/example.com/my_test_service';
     const email = 'foo@serviceaccount.com';
     const auth = new GoogleAuth();
     const client = new auth.JWTAccess(email, keys.private);
-
-    const retValue = 'dummy';
-    const expectAuth =
-        (err: Error|null, headers?: http.IncomingHttpHeaders|null) => {
-          assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-          assert.notStrictEqual(
-              null, headers, 'an creds object should be present');
-          const decoded = jws.decode(
-              (headers!.Authorization as string).replace('Bearer ', ''));
-          const payload = JSON.parse(decoded.payload);
-          assert.strictEqual(email, payload.iss);
-          assert.strictEqual(email, payload.sub);
-          assert.strictEqual(testUri, payload.aud);
-          done();
-          return retValue;
-        };
-    const res = client.getRequestMetadata(testUri, expectAuth);
-    assert.strictEqual(res, retValue);
+    const res = client.getRequestMetadata(testUri);
+    assert.notStrictEqual(
+        null, res.headers, 'an creds object should be present');
+    const decoded = jws.decode(
+        (res.headers!.Authorization as string).replace('Bearer ', ''));
+    const payload = JSON.parse(decoded.payload);
+    assert.strictEqual(email, payload.iss);
+    assert.strictEqual(email, payload.sub);
+    assert.strictEqual(testUri, payload.aud);
   });
 });
 
@@ -82,54 +73,42 @@ describe('.fromJson', () => {
     client = new auth.JWTAccess();
   });
 
-  it('should error on null json', (done) => {
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    (client as any).fromJSON(null, (err: Error) => {
-      assert.equal(true, err instanceof Error);
-      done();
+  it('should error on null json', () => {
+    assert.throws(() => {
+      // Test verifies invalid parameter tests, which requires cast to any.
+      // tslint:disable-next-line no-any
+      (client as any).fromJSON(null);
     });
   });
 
-  it('should error on empty json', (done) => {
-    client.fromJSON({}, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+  it('should error on empty json', () => {
+    assert.throws(() => {
+      client.fromJSON({});
     });
   });
 
-  it('should error on missing client_email', (done) => {
+  it('should error on missing client_email', () => {
     delete json.client_email;
-
-    client.fromJSON(json, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      client.fromJSON(json);
     });
   });
 
-  it('should error on missing private_key', (done) => {
+  it('should error on missing private_key', () => {
     delete json.private_key;
-
-    client.fromJSON(json, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      client.fromJSON(json);
     });
   });
 
-  it('should create JWT with client_email', (done) => {
-    client.fromJSON(json, (err) => {
-      assert.equal(null, err);
-      assert.equal(json.client_email, client.email);
-      done();
-    });
+  it('should create JWT with client_email', () => {
+    const result = client.fromJSON(json);
+    assert.equal(json.client_email, client.email);
   });
 
-  it('should create JWT with private_key', (done) => {
-    client.fromJSON(json, (err) => {
-      assert.equal(null, err);
-      assert.equal(json.private_key, client.key);
-      done();
-    });
+  it('should create JWT with private_key', () => {
+    const result = client.fromJSON(json);
+    assert.equal(json.private_key, client.key);
   });
 });
 

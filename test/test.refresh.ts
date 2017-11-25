@@ -33,95 +33,78 @@ function createJSON() {
 }
 
 describe('.fromJson', () => {
-  it('should error on null json', (done) => {
+  it('should error on null json', () => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    (refresh as any).fromJSON(null, (err: Error) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      // Test verifies invalid parameter tests, which requires cast to any.
+      // tslint:disable-next-line no-any
+      (refresh as any).fromJSON(null);
     });
   });
 
-  it('should error on empty json', (done) => {
+  it('should error on empty json', () => {
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    refresh.fromJSON(({} as any), (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      // Test verifies invalid parameter tests, which requires cast to any.
+      // tslint:disable-next-line no-any
+      refresh.fromJSON({});
     });
   });
 
-  it('should error on missing client_id', (done) => {
+  it('should error on missing client_id', () => {
     const json = createJSON();
     delete json.client_id;
-
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(json, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      refresh.fromJSON(json);
     });
   });
 
-  it('should error on missing client_secret', (done) => {
+  it('should error on missing client_secret', () => {
     const json = createJSON();
     delete json.client_secret;
-
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(json, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      refresh.fromJSON(json);
     });
   });
 
-  it('should error on missing refresh_token', (done) => {
+  it('should error on missing refresh_token', () => {
     const json = createJSON();
     delete json.refresh_token;
-
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(json, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      refresh.fromJSON(json);
     });
   });
 
-  it('should create UserRefreshClient with clientId_', (done) => {
+  it('should create UserRefreshClient with clientId_', () => {
     const json = createJSON();
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(json, (err) => {
-      assert.ifError(err);
-      assert.equal(json.client_id, refresh._clientId);
-      done();
-    });
+    const result = refresh.fromJSON(json);
+    assert.equal(json.client_id, refresh._clientId);
   });
 
-  it('should create UserRefreshClient with clientSecret_', (done) => {
+  it('should create UserRefreshClient with clientSecret_', () => {
     const json = createJSON();
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(json, (err) => {
-      assert.ifError(err);
-      assert.equal(json.client_secret, refresh._clientSecret);
-      done();
-    });
+    const result = refresh.fromJSON(json);
+    assert.equal(json.client_secret, refresh._clientSecret);
   });
 
-  it('should create UserRefreshClient with _refreshToken', (done) => {
+  it('should create UserRefreshClient with _refreshToken', () => {
     const json = createJSON();
     const auth = new GoogleAuth();
     const refresh = new auth.UserRefreshClient();
-    refresh.fromJSON(json, (err) => {
-      assert.ifError(err);
-      assert.equal(json.refresh_token, refresh._refreshToken);
-      done();
-    });
+    const result = refresh.fromJSON(json);
+    assert.equal(json.refresh_token, refresh._refreshToken);
   });
 });
 

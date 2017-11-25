@@ -158,13 +158,12 @@ function insertWellKnownFilePathIntoAuth(
 
 describe('GoogleAuth', () => {
   describe('.fromJson', () => {
-    it('should error on null json', (done) => {
+    it('should error on null json', () => {
       const auth = new GoogleAuth();
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      (auth as any).fromJSON(null, (err: Error) => {
-        assert.equal(true, err instanceof Error);
-        done();
+      assert.throws(() => {
+        // Test verifies invalid parameter tests, which requires cast to any.
+        // tslint:disable-next-line no-any
+        (auth as any).fromJSON(null);
       });
     });
 
@@ -176,12 +175,12 @@ describe('GoogleAuth', () => {
         before(() => {
           auth = new GoogleAuth();
         });
-        it('Should error given an invalid api key', done => {
-          // Test verifies invalid parameter tests, which requires cast to any.
-          // tslint:disable-next-line no-any
-          (auth as any).fromAPIKey(null, (err: Error) => {
-            assert(err instanceof Error);
-            done();
+        it('Should error given an invalid api key', () => {
+          assert.throws(() => {
+            // Test verifies invalid parameter tests, which requires cast to
+            // any.
+            // tslint:disable-next-line no-any
+            (auth as any).fromAPIKey(null);
           });
         });
       });
@@ -212,23 +211,19 @@ describe('GoogleAuth', () => {
                       return [200, RESPONSE_BODY];
                     });
 
-            auth.fromAPIKey(API_KEY, (err, client) => {
-              assert.strictEqual(err, null);
-              if (client) {
-                client.request(
-                    {
-                      url: BASE_URL + ENDPOINT,
-                      method: 'POST',
-                      data: {'test': true}
-                    },
-                    (err2, res) => {
-                      assert.strictEqual(err2, null);
-                      assert.strictEqual(RESPONSE_BODY, res!.data);
-                      fakeService.done();
-                      done();
-                    });
-              }
-            });
+            const client = auth.fromAPIKey(API_KEY);
+            client.request(
+                {
+                  url: BASE_URL + ENDPOINT,
+                  method: 'POST',
+                  data: {'test': true}
+                },
+                (err2, res) => {
+                  assert.strictEqual(err2, null);
+                  assert.strictEqual(RESPONSE_BODY, res!.data);
+                  fakeService.done();
+                  done();
+                });
           });
         });
 
@@ -247,153 +242,128 @@ describe('GoogleAuth', () => {
                              uri.indexOf('test=' + OTHER_QS_PARAM.test) > -1);
                          return [200, RESPONSE_BODY];
                        });
-               auth.fromAPIKey(API_KEY, (err, client) => {
-                 assert.strictEqual(err, null);
-                 if (client) {
-                   client.request(
-                       {
-                         url: BASE_URL + ENDPOINT,
-                         method: 'POST',
-                         data: {'test': true},
-                         params: OTHER_QS_PARAM
-                       },
-                       (err2, res) => {
-                         assert.strictEqual(err2, null);
-                         assert.strictEqual(RESPONSE_BODY, res!.data);
-                         fakeService.done();
-                         done();
-                       });
-                 }
-               });
+               const client = auth.fromAPIKey(API_KEY);
+               client.request(
+                   {
+                     url: BASE_URL + ENDPOINT,
+                     method: 'POST',
+                     data: {'test': true},
+                     params: OTHER_QS_PARAM
+                   },
+                   (err2, res) => {
+                     assert.strictEqual(err2, null);
+                     assert.strictEqual(RESPONSE_BODY, res!.data);
+                     fakeService.done();
+                     done();
+                   });
              });
         });
       });
     });
 
     describe('JWT token', () => {
-      it('should error on empty json', (done) => {
+      it('should error on empty json', () => {
         const auth = new GoogleAuth();
-        auth.fromJSON({}, (err) => {
-          assert.equal(true, err instanceof Error);
-          done();
+        assert.throws(() => {
+          auth.fromJSON({});
         });
       });
 
-      it('should error on missing client_email', (done) => {
+      it('should error on missing client_email', () => {
         const json = createJwtJSON();
         delete json.client_email;
 
         const auth = new GoogleAuth();
-        auth.fromJSON(json, (err) => {
-          assert.equal(true, err instanceof Error);
-          done();
+        assert.throws(() => {
+          auth.fromJSON(json);
         });
       });
 
-      it('should error on missing private_key', (done) => {
+      it('should error on missing private_key', () => {
         const json = createJwtJSON();
         delete json.private_key;
 
         const auth = new GoogleAuth();
-        auth.fromJSON(json, (err) => {
-          assert.equal(true, err instanceof Error);
-          done();
+        assert.throws(() => {
+          auth.fromJSON(json);
         });
       });
 
-      it('should create JWT with client_email', (done) => {
+      it('should create JWT with client_email', () => {
         const json = createJwtJSON();
         const auth = new GoogleAuth();
-        auth.fromJSON(json, (err, result) => {
-          assert.equal(null, err);
-          assert.equal(json.client_email, (result as JWT).email);
-          done();
-        });
+        const result = auth.fromJSON(json);
+        assert.equal(json.client_email, (result as JWT).email);
       });
 
-      it('should create JWT with private_key', (done) => {
+      it('should create JWT with private_key', () => {
         const json = createJwtJSON();
         const auth = new GoogleAuth();
-        auth.fromJSON(json, (err, result) => {
-          assert.equal(null, err);
-          assert.equal(json.private_key, (result as JWT).key);
-          done();
-        });
+        const result = auth.fromJSON(json);
+        assert.equal(json.private_key, (result as JWT).key);
       });
 
-      it('should create JWT with null scopes', (done) => {
+      it('should create JWT with null scopes', () => {
         const json = createJwtJSON();
         const auth = new GoogleAuth();
-        auth.fromJSON(json, (err, result) => {
-          assert.equal(null, err);
-          assert.equal(null, (result as JWT).scopes);
-          done();
-        });
+        const result = auth.fromJSON(json);
+        assert.equal(null, (result as JWT).scopes);
       });
 
-      it('should create JWT with null subject', (done) => {
+      it('should create JWT with null subject', () => {
         const json = createJwtJSON();
         const auth = new GoogleAuth();
-        auth.fromJSON(json, (err, result) => {
-          assert.equal(null, err);
-          assert.equal(null, (result as JWT).subject);
-          done();
-        });
+        const result = auth.fromJSON(json);
+        assert.equal(null, (result as JWT).subject);
       });
 
-      it('should create JWT with null keyFile', (done) => {
+      it('should create JWT with null keyFile', () => {
         const json = createJwtJSON();
         const auth = new GoogleAuth();
-        auth.fromJSON(json, (err, result) => {
-          assert.equal(null, err);
-          assert.equal(null, (result as JWT).keyFile);
-          done();
-        });
+        const result = auth.fromJSON(json);
+        assert.equal(null, (result as JWT).keyFile);
       });
     });
+
     describe('Refresh token', () => {
-      it('should error on empty json', (done) => {
+      it('should error on empty json', () => {
         const auth = new GoogleAuth();
         const jwt = new auth.JWT();
-        jwt.fromJSON({}, (err) => {
-          assert.equal(true, err instanceof Error);
-          done();
+        assert.throws(() => {
+          jwt.fromJSON({});
         });
       });
 
-      it('should error on missing client_id', (done) => {
+      it('should error on missing client_id', () => {
         const json = createRefreshJSON();
         delete json.client_id;
 
         const auth = new GoogleAuth();
         const jwt = new auth.JWT();
-        jwt.fromJSON(json, (err) => {
-          assert.equal(true, err instanceof Error);
-          done();
+        assert.throws(() => {
+          jwt.fromJSON(json);
         });
       });
 
-      it('should error on missing client_secret', (done) => {
+      it('should error on missing client_secret', () => {
         const json = createRefreshJSON();
         delete json.client_secret;
 
         const auth = new GoogleAuth();
         const jwt = new auth.JWT();
-        jwt.fromJSON(json, (err) => {
-          assert.equal(true, err instanceof Error);
-          done();
+        assert.throws(() => {
+          jwt.fromJSON(json);
         });
       });
 
-      it('should error on missing refresh_token', done => {
+      it('should error on missing refresh_token', () => {
         const json = createRefreshJSON();
         delete json.refresh_token;
 
         const auth = new GoogleAuth();
         const jwt = new auth.JWT();
-        jwt.fromJSON(json, (err) => {
-          assert.equal(true, err instanceof Error);
-          done();
+        assert.throws(() => {
+          jwt.fromJSON(json);
         });
       });
     });

@@ -456,78 +456,57 @@ describe('.fromJson', () => {
     jwt = new auth.JWT();
   });
 
-  it('should error on null json', (done) => {
-    // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
-    (jwt as any).fromJSON(null, (err: Error) => {
-      assert.equal(true, err instanceof Error);
-      done();
+  it('should error on null json', () => {
+    assert.throws(() => {
+      // Test verifies invalid parameter tests, which requires cast to any.
+      // tslint:disable-next-line no-any
+      (jwt as any).fromJSON(null);
     });
   });
 
-  it('should error on empty json', (done) => {
-    jwt.fromJSON({}, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+  it('should error on empty json', () => {
+    assert.throws(() => {
+      jwt.fromJSON({});
     });
   });
 
-  it('should error on missing client_email', (done) => {
+  it('should error on missing client_email', () => {
     delete json.client_email;
-
-    jwt.fromJSON(json, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      jwt.fromJSON(json);
     });
   });
 
-  it('should error on missing private_key', (done) => {
+  it('should error on missing private_key', () => {
     delete json.private_key;
-
-    jwt.fromJSON(json, (err) => {
-      assert.equal(true, err instanceof Error);
-      done();
+    assert.throws(() => {
+      jwt.fromJSON(json);
     });
   });
 
-  it('should create JWT with client_email', (done) => {
-    jwt.fromJSON(json, (err) => {
-      assert.equal(null, err);
-      assert.equal(json.client_email, jwt.email);
-      done();
-    });
+  it('should create JWT with client_email', () => {
+    const result = jwt.fromJSON(json);
+    assert.equal(json.client_email, jwt.email);
   });
 
-  it('should create JWT with private_key', (done) => {
-    jwt.fromJSON(json, (err) => {
-      assert.equal(null, err);
-      assert.equal(json.private_key, jwt.key);
-      done();
-    });
+  it('should create JWT with private_key', () => {
+    const result = jwt.fromJSON(json);
+    assert.equal(json.private_key, jwt.key);
   });
 
-  it('should create JWT with null scopes', (done) => {
-    jwt.fromJSON(json, (err) => {
-      assert.equal(null, err);
-      assert.equal(null, jwt.scopes);
-      done();
-    });
+  it('should create JWT with null scopes', () => {
+    const result = jwt.fromJSON(json);
+    assert.equal(null, jwt.scopes);
   });
 
-  it('should create JWT with null subject', (done) => {
-    jwt.fromJSON(json, (err) => {
-      assert.equal(null, err);
-      assert.equal(null, jwt.subject);
-      done();
-    });
+  it('should create JWT with null subject', () => {
+    const result = jwt.fromJSON(json);
+    assert.equal(null, jwt.subject);
   });
 
-  it('should create JWT with null keyFile', (done) => {
-    jwt.fromJSON(json, (err) => {
-      assert.equal(null, err);
-      assert.equal(null, jwt.keyFile);
-      done();
-    });
+  it('should create JWT with null keyFile', () => {
+    const result = jwt.fromJSON(json);
+    assert.equal(null, jwt.keyFile);
   });
 });
 
@@ -581,31 +560,26 @@ describe('.fromAPIKey', () => {
     jwt = new auth.JWT();
   });
   describe('exception behaviour', () => {
-    it('should error without api key', (done) => {
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      (jwt as any).fromAPIKey(undefined, (err: Error) => {
-        assert(err instanceof Error);
-        done();
+    it('should error without api key', () => {
+      assert.throws(() => {
+        // Test verifies invalid parameter tests, which requires cast to any.
+        // tslint:disable-next-line no-any
+        (jwt as any).fromAPIKey(undefined);
       });
     });
-    it('should error with invalid api key type', (done) => {
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      jwt.fromAPIKey(({key: KEY} as any), (err) => {
-        assert(err instanceof Error);
-        done();
+    it('should error with invalid api key type', () => {
+      assert.throws(() => {
+        // Test verifies invalid parameter tests, which requires cast to any.
+        // tslint:disable-next-line no-any
+        jwt.fromAPIKey({key: KEY} as any);
       });
     });
   });
 
   describe('Valid behaviour', () => {
-    it('should set the .apiKey property on the instance', (done) => {
-      jwt.fromAPIKey(KEY, (err) => {
-        assert.strictEqual(jwt.apiKey, KEY);
-        assert.equal(err, null);
-        done();
-      });
+    it('should set the .apiKey property on the instance', () => {
+      const result = jwt.fromAPIKey(KEY);
+      assert.strictEqual(jwt.apiKey, KEY);
     });
   });
 });

@@ -147,34 +147,24 @@ export class JWT extends OAuth2Client {
   /**
    * Create a JWT credentials instance using the given input options.
    * @param {object=} json The input object.
-   * @param {function=} callback Optional callback.
    */
-  fromJSON(json: JWTInput, callback?: (err?: Error) => void): void {
-    try {
-      if (!json) {
-        throw new Error(
-            'Must pass in a JSON object containing the service account auth settings.');
-      }
-      if (!json.client_email) {
-        throw new Error(
-            'The incoming JSON object does not contain a client_email field');
-      }
-      if (!json.private_key) {
-        throw new Error(
-            'The incoming JSON object does not contain a private_key field');
-      }
-      // Extract the relevant information from the json key file.
-      this.email = json.client_email;
-      this.key = json.private_key;
-      this.projectId = json.project_id;
-    } catch (e) {
-      if (callback) {
-        callback(e);
-      } else {
-        throw e;
-      }
+  fromJSON(json: JWTInput): void {
+    if (!json) {
+      throw new Error(
+          'Must pass in a JSON object containing the service account auth settings.');
     }
-    if (callback) callback();
+    if (!json.client_email) {
+      throw new Error(
+          'The incoming JSON object does not contain a client_email field');
+    }
+    if (!json.private_key) {
+      throw new Error(
+          'The incoming JSON object does not contain a private_key field');
+    }
+    // Extract the relevant information from the json key file.
+    this.email = json.client_email;
+    this.key = json.private_key;
+    this.projectId = json.project_id;
   }
 
   /**
@@ -221,22 +211,12 @@ export class JWT extends OAuth2Client {
   /**
    * Creates a JWT credentials instance using an API Key for authentication.
    * @param {string} apiKey - the API Key in string form.
-   * @param {function=} callback - Optional callback to be invoked after
-   *  initialization.
    */
-  fromAPIKey(apiKey: string, callback?: (err?: Error) => void): void {
+  fromAPIKey(apiKey: string): void {
     if (!isString(apiKey)) {
-      const e = new Error('Must provide an API Key string.');
-      if (callback) {
-        return setImmediate(callback, e);
-      } else {
-        throw e;
-      }
+      throw new Error('Must provide an API Key string.');
     }
     this.apiKey = apiKey;
-    if (callback) {
-      return callback();
-    }
   }
 
   /**
