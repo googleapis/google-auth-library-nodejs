@@ -57,74 +57,47 @@ export class JWTAccess {
    * @param {function} metadataCb a callback invoked with the jwt request metadata.
    * @returns a Promise that resolves with the request metadata response
    */
-  getRequestMetadata(authURI: string): RequestMetadataResponse;
-  getRequestMetadata(authURI: string, callback: RequestMetadataCallback): void;
-  getRequestMetadata(authURI: string, callback?: RequestMetadataCallback):
-      void|RequestMetadataResponse {
-    try {
-      const iat = Math.floor(new Date().getTime() / 1000);
-      const exp = iat + 3600;  // 3600 seconds = 1 hour
+  getRequestMetadata(authURI: string): RequestMetadataResponse {
+    const iat = Math.floor(new Date().getTime() / 1000);
+    const exp = iat + 3600;  // 3600 seconds = 1 hour
 
-      // The payload used for signed JWT headers has:
-      // iss == sub == <client email>
-      // aud == <the authorization uri>
-      const payload =
-          {iss: this.email, sub: this.email, aud: authURI, exp, iat};
-      const assertion = {
-        header: {alg: 'RS256'} as jws.Header,
-        payload,
-        secret: this.key
-      };
+    // The payload used for signed JWT headers has:
+    // iss == sub == <client email>
+    // aud == <the authorization uri>
+    const payload = {iss: this.email, sub: this.email, aud: authURI, exp, iat};
+    const assertion = {
+      header: {alg: 'RS256'} as jws.Header,
+      payload,
+      secret: this.key
+    };
 
-      // Sign the jwt and invoke metadataCb with it.
-      const signedJWT =
-          jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
-      const result = {
-        res: null,
-        headers: {Authorization: 'Bearer ' + signedJWT}
-      };
-      if (callback) {
-        callback(null, result.headers, null);
-      } else {
-        return result;
-      }
-    } catch (e) {
-      if (callback) {
-        callback(e);
-      } else {
-        throw e;
-      }
-    }
+    // Sign the jwt and invoke metadataCb with it.
+    const signedJWT =
+        jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
+    return {headers: {Authorization: 'Bearer ' + signedJWT}};
   }
 
   /**
    * Create a JWTAccess credentials instance using the given input options.
    * @param {object=} json The input object.
-   * @param {function=} callback Optional callback.
    */
-  fromJSON(json: JWTInput, callback?: (err: Error|null) => void) {
-    try {
-      if (!json) {
-        throw new Error(
-            'Must pass in a JSON object containing the service account auth settings.');
-      }
-      if (!json.client_email) {
-        throw new Error(
-            'The incoming JSON object does not contain a client_email field');
-      }
-      if (!json.private_key) {
-        throw new Error(
-            'The incoming JSON object does not contain a private_key field');
-      }
-      // Extract the relevant information from the json key file.
-      this.email = json.client_email;
-      this.key = json.private_key;
-      this.projectId = json.project_id;
-      if (callback) callback(null);
-    } catch (e) {
-      if (callback) return callback(e);
-      throw e;
+  fromJSON(json: JWTInput): void {
+    if (!json) {
+      throw new Error(
+          'Must pass in a JSON object containing the service account auth settings.');
     }
+    if (!json.client_email) {
+      throw new Error(
+          'The incoming JSON object does not contain a client_email field');
+    }
+    if (!json.private_key) {
+      throw new Error(
+          'The incoming JSON object does not contain a private_key field');
+    }
+    // Extract the relevant information from the json key file.
+    this.email = json.client_email;
+    this.key = json.private_key;
+    this.projectId = json.project_id;
   }
 
   /**
