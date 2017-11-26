@@ -171,7 +171,7 @@ export class GoogleAuth {
     // TODO: make this a proper async function
     return new Promise((resolve, reject) => {
       exec(
-          'gcloud -q config list core/project --format=json',
+          'gcloud config config-helper --format json',
           (err, stdout, stderr) => {
             if (err) {
               reject(err);
@@ -537,7 +537,7 @@ export class GoogleAuth {
     try {
       const r = await this._getSDKDefaultProjectId();
       if (r.stdout) {
-        return JSON.parse(r.stdout).core.project;
+        return JSON.parse(r.stdout).configuration.properties.core.project;
       }
     } catch (e) {
       // Ignore any errors
