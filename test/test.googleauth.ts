@@ -1252,6 +1252,20 @@ describe('._checkIsGCE', () => {
     assert.equal(false, auth.isGCE);
   });
 
+  it('should retry the check for isGCE if it fails the first time',
+     async () => {
+       const auth = new GoogleAuth();
+       assert.notEqual(true, auth.isGCE);
+       // the first request will fail
+       nock('http://metadata.google.internal').get('/').reply(500);
+       // the second one will succeed
+       nock('http://metadata.google.internal').get('/').reply(200, null, {
+         'metadata-flavor': 'Google'
+       });
+       const isGCE = await auth._checkIsGCE();
+       assert.equal(true, auth.isGCE);
+     });
+
   it('Does not execute the second time when running on GCE', async () => {
     const auth = new GoogleAuth();
 

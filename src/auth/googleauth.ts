@@ -255,7 +255,7 @@ export class GoogleAuth {
    * @returns A promise that resolves with the boolean.
    * @api private
    */
-  async _checkIsGCE(): Promise<boolean> {
+  async _checkIsGCE(isRetry = false): Promise<boolean> {
     if (this.checkIsGCE !== undefined) {
       return this.checkIsGCE;
     }
@@ -269,8 +269,10 @@ export class GoogleAuth {
           res && res.headers && res.headers['metadata-flavor'] === 'Google';
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== 'ENOTFOUND') {
-        // Unexpected error occurred. TODO(ofrobots): retry if this was a
-        // transient error.
+        // Unexpected error occurred. Retry once.
+        if (!isRetry) {
+          return this._checkIsGCE(true);
+        }
         throw e;
       }
       this.checkIsGCE = false;
