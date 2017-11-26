@@ -58,7 +58,7 @@ describe('kitchen sink', async () => {
     await rename(tarball, `${stagingPath}/google-auth-library.tgz`);
     await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
     await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-  }).timeout(20000);
+  }).timeout(40000);
 });
 
 /**
