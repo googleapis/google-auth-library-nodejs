@@ -81,12 +81,17 @@ describe('JWT auth client', () => {
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
 
       createGTokenMock();
-      jwt.authorize(() => {
+      jwt.authorize((err, creds) => {
+        assert.equal(err, null);
+        assert.notEqual(creds, null);
         assert.equal('foo@serviceaccount.com', jwt.gtoken.iss);
         assert.equal(PEM_PATH, jwt.gtoken.keyFile);
         assert.equal(['http://bar', 'http://foo'].join(' '), jwt.gtoken.scope);
         assert.equal('bar@subjectaccount.com', jwt.gtoken.sub);
         assert.equal('initial-access-token', jwt.credentials.access_token);
+        assert.equal(creds!.access_token, jwt.credentials.access_token);
+        assert.equal(creds!.refresh_token, jwt.credentials.refresh_token);
+        assert.equal(creds!.token_type, jwt.credentials.token_type);
         assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
         assert.equal(PEM_CONTENTS, jwt.key);
         assert.equal('foo@serviceaccount.com', jwt.email);
