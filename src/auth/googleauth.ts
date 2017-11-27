@@ -271,7 +271,7 @@ export class GoogleAuth {
       if ((e as NodeJS.ErrnoException).code !== 'ENOTFOUND') {
         // Unexpected error occurred. Retry once.
         if (!isRetry) {
-          return this._checkIsGCE(true);
+          return await this._checkIsGCE(true);
         }
         throw e;
       }

@@ -1257,13 +1257,17 @@ describe('._checkIsGCE', () => {
        const auth = new GoogleAuth();
        assert.notEqual(true, auth.isGCE);
        // the first request will fail
-       nock('http://metadata.google.internal').get('/').reply(500);
+       const scope1 =
+           nock('http://metadata.google.internal').get('/').reply(500);
        // the second one will succeed
-       nock('http://metadata.google.internal').get('/').reply(200, null, {
-         'metadata-flavor': 'Google'
-       });
+       const scope2 =
+           nock('http://metadata.google.internal').get('/').reply(200, null, {
+             'metadata-flavor': 'Google'
+           });
        const isGCE = await auth._checkIsGCE();
        assert.equal(true, auth.isGCE);
+       assert(scope1.isDone());
+       assert(scope2.isDone());
      });
 
   it('Does not execute the second time when running on GCE', async () => {
