@@ -12,9 +12,7 @@
     "posttest": "npm run check",
     "start": "node build/src/index.js"
   },
-  "keywords": [],
-  "author": "Justin Beckwith <justin.beckwith@gmail.com>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "google-auth-library": "file:./google-auth-library.tgz"
   },
