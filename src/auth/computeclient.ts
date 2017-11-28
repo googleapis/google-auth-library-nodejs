@@ -67,7 +67,6 @@ export class Compute extends OAuth2Client {
       e.message = 'Could not refresh access token.';
       throw e;
     }
-    console.log(res.data);
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
       tokens.expiry_date =
