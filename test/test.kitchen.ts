@@ -36,7 +36,8 @@ const spawnp = (command: string, args: string[], options: cp.SpawnOptions = {}):
                   if (code === 0) {
                     resolve();
                   } else {
-                    reject(`Spawn failed with an exit code of ${code}`);
+                    reject(
+                        new Error(`Spawn failed with an exit code of ${code}`));
                   }
                 })
             .on('error', err => {
