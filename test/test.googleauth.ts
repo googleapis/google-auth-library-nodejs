@@ -963,7 +963,9 @@ describe('GoogleAuth', () => {
        blockGoogleApplicationCredentialEnvironmentVariable(auth);
        auth._getSDKDefaultProjectId = () => {
          return Promise.resolve({
-           stdout: JSON.stringify({core: {project: fixedProjectId}}),
+           stdout: JSON.stringify({
+             configuration: {properties: {core: {project: fixedProjectId}}}
+           }),
            stderr: null
          });
        };
