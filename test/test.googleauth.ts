@@ -1270,6 +1270,43 @@ describe('._checkIsGCE', () => {
        assert(scope2.isDone());
      });
 
+  it('should not retry the check for isGCE if it fails with a 404',
+     async () => {
+       const auth = new GoogleAuth();
+       assert.notEqual(true, auth.isGCE);
+       // the first request will fail
+       const scope1 =
+           nock('http://metadata.google.internal').get('/').reply(404);
+       // the second one should never happen
+       const scope2 =
+           nock('http://metadata.google.internal').get('/').reply(404);
+       const isGCE = await auth._checkIsGCE();
+       assert.notEqual(true, auth.isGCE);
+       assert(scope1.isDone());
+       assert(!scope2.isDone());
+     });
+
+  it('should not retry the check for isGCE if it fails with an ETIMEDOUT',
+     async () => {
+       const auth = new GoogleAuth();
+       assert.notEqual(true, auth.isGCE);
+       // the first request will fail
+       const scope1 =
+           nock('http://metadata.google.internal').get('/').replyWithError({
+             code: 'ENOTFOUND'
+           });
+       // the second one should never happen
+       const scope2 =
+           nock('http://metadata.google.internal').get('/').replyWithError({
+             code: 'ENOTFOUND'
+           });
+
+       const isGCE = await auth._checkIsGCE();
+       assert.notEqual(true, auth.isGCE);
+       assert(scope1.isDone());
+       assert(!scope2.isDone());
+     });
+
   it('Does not execute the second time when running on GCE', async () => {
     const auth = new GoogleAuth();
 

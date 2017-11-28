@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {AxiosError} from 'axios';
 import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -22,6 +23,7 @@ import * as stream from 'stream';
 import * as util from 'util';
 
 import {DefaultTransporter, Transporter} from '../transporters';
+
 import {Compute} from './computeclient';
 import {JWTInput} from './credentials';
 import {IAMAuth} from './iam';
@@ -268,7 +270,10 @@ export class GoogleAuth {
       this.checkIsGCE =
           res && res.headers && res.headers['metadata-flavor'] === 'Google';
     } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOTFOUND') {
+      const isDNSError = (e as NodeJS.ErrnoException).code === 'ENOTFOUND';
+      const ae = e as AxiosError;
+      const is404 = ae.response && (ae.response.status === 404);
+      if (!isDNSError && !is404) {
         // Unexpected error occurred. Retry once.
         if (!isRetry) {
           return await this._checkIsGCE(true);
