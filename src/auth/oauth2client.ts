@@ -224,7 +224,6 @@ export class OAuth2Client extends AuthClient {
     const res = await this.transporter.request<CredentialRequest>(
         {method: 'POST', url, data: values});
 
-    console.log(res.data);
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
       tokens.expiry_date =

@@ -29,9 +29,11 @@
     "@types/jws": "^3.1.0",
     "@types/lodash.isstring": "^4.0.2",
     "@types/mocha": "^2.2.41",
+    "@types/ncp": "^2.0.1",
     "@types/nock": "^8.2.1",
     "@types/node": "^8.0.49",
-    "@types/request": "^2.0.7",
+    "@types/pify": "^3.0.0",
+    "@types/tmp": "0.0.33",
     "clang-format": "^1.0.50",
     "coveralls": "^3.0.0",
     "del": "^3.0.0",
@@ -44,10 +46,12 @@
     "gulp-typescript": "^3.1.6",
     "istanbul": "^0.4.5",
     "keypair": "^1.0.0",
-    "merge2": "^1.0.3",
     "mocha": "^4.0.1",
+    "ncp": "^2.0.0",
     "nock": "^9.0.2",
+    "pify": "^3.0.0",
     "source-map-support": "^0.5.0",
+    "tmp": "0.0.33",
     "tslint": "^5.1.0",
     "typedoc": "^0.9.0",
     "typescript": "~2.6.0"
@@ -55,9 +59,8 @@
   "files": [
     "LICENSE",
     "README.md",
-    "src/**/*.js",
-    "package.json",
-    "types/lib"
+    "build/src",
+    "package.json"
   ],
   "scripts": {
     "coverage": "istanbul cover -x 'apis/**' _mocha build/test -- --reporter spec --timeout 4000",
