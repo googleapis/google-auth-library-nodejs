@@ -905,11 +905,11 @@ describe('OAuth2 client', () => {
       const oauth2client =
           new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
-      oauth2client.credentials = {
+      oauth2client.setCredentials({
         access_token: 'initial-access-token',
         refresh_token: 'refresh-token-placeholder',
         expiry_date: (new Date()).getTime() - 1000
-      };
+      });
 
       oauth2client.request({url: 'http://example.com'}, () => {
         assert.equal('abc123', oauth2client.credentials.access_token);
