@@ -272,8 +272,9 @@ export class GoogleAuth {
     } catch (e) {
       const isDNSError = (e as NodeJS.ErrnoException).code === 'ENOTFOUND';
       const ae = e as AxiosError;
-      const is404 = ae.response && (ae.response.status === 404);
-      if (!isDNSError && !is404) {
+      const is5xx = ae.response &&
+          (ae.response.status >= 500 && ae.response.status < 600);
+      if (!isDNSError && is5xx) {
         // Unexpected error occurred. Retry once.
         if (!isRetry) {
           return await this._checkIsGCE(true);
