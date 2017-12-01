@@ -214,8 +214,12 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'authorization_code'
     };
 
-    const res = await this.transporter.request<CredentialRequest>(
-        {method: 'POST', url, data: values});
+    const res = await this.transporter.request<CredentialRequest>({
+      method: 'POST',
+      url,
+      data: querystring.stringify(values),
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+    });
 
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
@@ -244,8 +248,12 @@ export class OAuth2Client extends AuthClient {
     };
 
     // request for new token
-    const res = await this.transporter.request<CredentialRequest>(
-        {method: 'POST', url, data});
+    const res = await this.transporter.request<CredentialRequest>({
+      method: 'POST',
+      url,
+      data: querystring.stringify(data),
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+    });
     const tokens = res.data as Credentials;
     // TODO: de-duplicate this code from a few spots
     if (res.data && res.data.expires_in) {
