@@ -23,7 +23,7 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as url from 'url';
 
-import {GoogleAuth} from '../src/auth/googleauth';
+import {GoogleAuth, OAuth2Client} from '../src/index';
 
 nock.disableNetConnect();
 
@@ -44,7 +44,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl(opts);
     const parsed = url.parse(generated);
     const query = qs.parse(parsed.query);
@@ -66,7 +66,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl(opts);
     const parsed = url.parse(generated);
     const query = qs.parse(parsed.query);
@@ -80,7 +80,7 @@ describe('OAuth2 client', () => {
      (done) => {
        const auth = new GoogleAuth();
        const oauth2client =
-           new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+           new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
        const generated = oauth2client.generateAuthUrl();
        const parsed = url.parse(generated);
        const query = qs.parse(parsed.query);
@@ -101,7 +101,7 @@ describe('OAuth2 client', () => {
   });
 
   it('should not throw any exceptions if only refresh token is set', () => {
-    const oauth2client = new googleapis.auth.OAuth2(CLIENT_ID, CLIENT_SECRET,
+    const oauth2client = new googleapis.OAuth2Client(CLIENT_ID, CLIENT_SECRET,
   REDIRECT_URI); oauth2client.credentials = { refresh_token: 'refresh_token' };
     assert.doesNotThrow(() => {
       const google = new googleapis.GoogleApis();
@@ -111,7 +111,7 @@ describe('OAuth2 client', () => {
   });
 
   it('should set access token type to Bearer if none is set', (done) => {
-    const oauth2client = new googleapis.auth.OAuth2(CLIENT_ID, CLIENT_SECRET,
+    const oauth2client = new googleapis.OAuth2Client(CLIENT_ID, CLIENT_SECRET,
   REDIRECT_URI); oauth2client.credentials = { access_token: 'foo',
   refresh_token: '' };
 
@@ -162,7 +162,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const login = oauth2client.verifySignedJwtWithCerts(
         data, {keyid: publicKey}, 'testaudience');
 
@@ -204,7 +204,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -247,7 +247,7 @@ describe('OAuth2 client', () => {
     const validAudiences = ['testaudience', 'extra-audience'];
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, validAudiences);
@@ -287,7 +287,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -330,7 +330,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -373,7 +373,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -410,7 +410,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -450,7 +450,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -492,7 +492,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -536,7 +536,7 @@ describe('OAuth2 client', () => {
 
        const auth = new GoogleAuth();
        const oauth2client =
-           new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+           new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
        assert.throws(() => {
          oauth2client.verifySignedJwtWithCerts(
              data, {keyid: publicKey}, 'testaudience');
@@ -581,7 +581,7 @@ describe('OAuth2 client', () => {
 
        const auth = new GoogleAuth();
        const oauth2client =
-           new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+           new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
        oauth2client.verifySignedJwtWithCerts(
            data, {keyid: publicKey}, 'testaudience', ['testissuer'], maxExpiry);
 
@@ -623,7 +623,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -667,7 +667,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience');
@@ -709,7 +709,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     assert.throws(() => {
       oauth2client.verifySignedJwtWithCerts(
           data, {keyid: publicKey}, 'testaudience', ['testissuer']);
@@ -751,7 +751,7 @@ describe('OAuth2 client', () => {
 
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.verifySignedJwtWithCerts(
         data, {keyid: publicKey}, 'testaudience', ['testissuer']);
 
@@ -767,7 +767,7 @@ describe('OAuth2 client', () => {
                 path.join(__dirname, '../../test/fixtures/oauthcerts.json'));
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.getFederatedSignonCerts((err, certs) => {
       assert.equal(err, null);
       assert.equal(Object.keys(certs).length, 2);
@@ -794,7 +794,7 @@ describe('OAuth2 client', () => {
                    path.join(__dirname, '../../test/fixtures/oauthcerts.json'));
        const auth = new GoogleAuth();
        const oauth2client =
-           new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+           new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
        oauth2client.getFederatedSignonCerts((err, certs) => {
          assert.equal(err, null);
          assert.equal(Object.keys(certs).length, 2);
@@ -811,7 +811,7 @@ describe('OAuth2 client', () => {
   it('should set redirect_uri if not provided in options', () => {
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl({});
     const parsed = url.parse(generated);
     const query = qs.parse(parsed.query);
@@ -821,7 +821,7 @@ describe('OAuth2 client', () => {
   it('should set client_id if not provided in options', () => {
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl({});
     const parsed = url.parse(generated);
     const query = qs.parse(parsed.query);
@@ -831,7 +831,7 @@ describe('OAuth2 client', () => {
   it('should override redirect_uri if provided in options', () => {
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated =
         oauth2client.generateAuthUrl({redirect_uri: 'overridden'});
     const parsed = url.parse(generated);
@@ -842,7 +842,7 @@ describe('OAuth2 client', () => {
   it('should override client_id if provided in options', () => {
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated =
         oauth2client.generateAuthUrl({client_id: 'client_override'});
     const parsed = url.parse(generated);
@@ -853,7 +853,7 @@ describe('OAuth2 client', () => {
   it('should return error in callback on request', (done) => {
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.request({}, (err, result) => {
       assert.equal(err!.message, 'No access, refresh token or API key is set.');
       assert.equal(result, null);
@@ -864,7 +864,7 @@ describe('OAuth2 client', () => {
   it('should return error in callback on refreshAccessToken', (done) => {
     const auth = new GoogleAuth();
     const oauth2client =
-        new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     oauth2client.refreshAccessToken((err, result) => {
       assert.equal(err!.message, 'No refresh token is set.');
       assert.equal(result, null);
@@ -890,7 +890,7 @@ describe('OAuth2 client', () => {
     it('should refresh token if missing access token', (done) => {
       const auth = new GoogleAuth();
       const oauth2client =
-          new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+          new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
       oauth2client.credentials = {refresh_token: 'refresh-token-placeholder'};
 
@@ -903,7 +903,7 @@ describe('OAuth2 client', () => {
     it('should refresh if access token is expired', (done) => {
       const auth = new GoogleAuth();
       const oauth2client =
-          new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+          new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
       oauth2client.setCredentials({
         access_token: 'initial-access-token',
@@ -920,7 +920,7 @@ describe('OAuth2 client', () => {
     it('should not refresh if not expired', (done) => {
       const auth = new GoogleAuth();
       const oauth2client =
-          new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+          new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
       oauth2client.credentials = {
         access_token: 'initial-access-token',
@@ -939,7 +939,7 @@ describe('OAuth2 client', () => {
     it('should assume access token is not expired', (done) => {
       const auth = new GoogleAuth();
       const oauth2client =
-          new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+          new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
       oauth2client.credentials = {
         access_token: 'initial-access-token',
@@ -962,7 +962,7 @@ describe('OAuth2 client', () => {
 
         const auth = new GoogleAuth();
         const oauth2client =
-            new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+            new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
         oauth2client.credentials = {
           access_token: 'initial-access-token',
@@ -984,7 +984,7 @@ describe('OAuth2 client', () => {
                         .reply(200, {success: true});
       const auth = new GoogleAuth();
       const oauth2client =
-          new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+          new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.credentials = {access_token: 'abc', refresh_token: 'abc'};
       oauth2client.revokeCredentials((err, result) => {
         assert.equal(err, null);
@@ -999,7 +999,7 @@ describe('OAuth2 client', () => {
        (done) => {
          const auth = new GoogleAuth();
          const oauth2client =
-             new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+             new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
          oauth2client.credentials = {refresh_token: 'abc'};
          oauth2client.revokeCredentials((err, result) => {
            assert.equal(err!.message, 'No access token to revoke.');
@@ -1021,7 +1021,7 @@ describe('OAuth2 client', () => {
                   {access_token: 'abc', refresh_token: '123', expires_in: 10});
       const auth = new GoogleAuth();
       const oauth2client =
-          new auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+          new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
       oauth2client.getToken('code here', (err, tokens) => {
         assert(tokens!.expiry_date! >= now + (10 * 1000));
         assert(tokens!.expiry_date! <= now + (15 * 1000));

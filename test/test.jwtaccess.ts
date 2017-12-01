@@ -20,8 +20,7 @@ import * as http from 'http';
 import * as jws from 'jws';
 
 import {JWTInput} from '../src/auth/credentials';
-import {GoogleAuth} from '../src/auth/googleauth';
-import {JWTAccess} from '../src/auth/jwtaccess';
+import {GoogleAuth, JWTAccess} from '../src/index';
 
 const keypair = require('keypair');
 
@@ -41,8 +40,7 @@ describe('.getRequestMetadata', () => {
     const keys = keypair(1024 /* bitsize of private key */);
     const testUri = 'http:/example.com/my_test_service';
     const email = 'foo@serviceaccount.com';
-    const auth = new GoogleAuth();
-    const client = new auth.JWTAccess(email, keys.private);
+    const client = new JWTAccess(email, keys.private);
     const res = client.getRequestMetadata(testUri);
     assert.notStrictEqual(
         null, res.headers, 'an creds object should be present');
@@ -57,8 +55,7 @@ describe('.getRequestMetadata', () => {
 
 describe('.createScopedRequired', () => {
   it('should return false', () => {
-    const auth = new GoogleAuth();
-    const client = new auth.JWTAccess('foo@serviceaccount.com', null);
+    const client = new JWTAccess('foo@serviceaccount.com', null);
     assert.equal(false, client.createScopedRequired());
   });
 });
@@ -69,8 +66,7 @@ describe('.fromJson', () => {
   let client: JWTAccess;
   beforeEach(() => {
     json = createJSON();
-    const auth = new GoogleAuth();
-    client = new auth.JWTAccess();
+    client = new JWTAccess();
   });
 
   it('should error on null json', () => {
@@ -116,8 +112,7 @@ describe('.fromStream', () => {
   // set up the client instance being tested.
   let client: JWTAccess;
   beforeEach(() => {
-    const auth = new GoogleAuth();
-    client = new auth.JWTAccess();
+    client = new JWTAccess();
   });
 
   it('should error on null stream', (done) => {
