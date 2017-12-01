@@ -13,5 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export {Compute} from './auth/computeclient';
 export {GoogleAuth} from './auth/googleauth';
+export {IAMAuth} from './auth/iam';
+export {JWTAccess} from './auth/jwtaccess';
+export {JWT} from './auth/jwtclient';
+export {OAuth2Client} from './auth/oauth2client';
+export {UserRefreshClient} from './auth/refreshclient';
 export {DefaultTransporter} from './transporters';

@@ -85,38 +85,6 @@ export class GoogleAuth {
   cachedCredential: OAuth2Client|null = null;
 
   /**
-   * Convenience field mapping in the IAM credential type.
-   */
-  IAMAuth = IAMAuth;
-
-  /**
-   * Convenience field mapping in the Compute credential type.
-   */
-  Compute = Compute;
-
-  /**
-   * Convenience field mapping in the JWT credential type.
-   */
-  JWT = JWT;
-
-  /**
-   * Convenience field mapping in the JWT Access credential type.
-   */
-  JWTAccess = JWTAccess;
-
-  /**
-   * Convenience field mapping in the OAuth2 credential type.
-   */
-  // lint is checking for camelCase properties, but OAuth is proper here
-  // tslint:disable-next-line variable-name
-  OAuth2 = OAuth2Client;
-
-  /**
-   * Convenience field mapping to the UserRefreshClient credential type.
-   */
-  UserRefreshClient = UserRefreshClient;
-
-  /**
    * Export DefaultTransporter as a static property of the class.
    */
   static DefaultTransporter = DefaultTransporter;

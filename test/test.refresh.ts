@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as nock from 'nock';
 
-import {GoogleAuth} from '../src/auth/googleauth';
+import {GoogleAuth, UserRefreshClient} from '../src/index';
 
 nock.disableNetConnect();
 
@@ -34,8 +34,7 @@ function createJSON() {
 
 describe('.fromJson', () => {
   it('should error on null json', () => {
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
       // tslint:disable-next-line no-any
@@ -44,8 +43,7 @@ describe('.fromJson', () => {
   });
 
   it('should error on empty json', () => {
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
       // tslint:disable-next-line no-any
@@ -56,8 +54,7 @@ describe('.fromJson', () => {
   it('should error on missing client_id', () => {
     const json = createJSON();
     delete json.client_id;
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     assert.throws(() => {
       refresh.fromJSON(json);
     });
@@ -66,8 +63,7 @@ describe('.fromJson', () => {
   it('should error on missing client_secret', () => {
     const json = createJSON();
     delete json.client_secret;
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     assert.throws(() => {
       refresh.fromJSON(json);
     });
@@ -76,8 +72,7 @@ describe('.fromJson', () => {
   it('should error on missing refresh_token', () => {
     const json = createJSON();
     delete json.refresh_token;
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     assert.throws(() => {
       refresh.fromJSON(json);
     });
@@ -85,24 +80,21 @@ describe('.fromJson', () => {
 
   it('should create UserRefreshClient with clientId_', () => {
     const json = createJSON();
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     const result = refresh.fromJSON(json);
     assert.equal(json.client_id, refresh._clientId);
   });
 
   it('should create UserRefreshClient with clientSecret_', () => {
     const json = createJSON();
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     const result = refresh.fromJSON(json);
     assert.equal(json.client_secret, refresh._clientSecret);
   });
 
   it('should create UserRefreshClient with _refreshToken', () => {
     const json = createJSON();
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     const result = refresh.fromJSON(json);
     assert.equal(json.refresh_token, refresh._refreshToken);
   });
@@ -110,8 +102,7 @@ describe('.fromJson', () => {
 
 describe('.fromStream', () => {
   it('should error on null stream', (done) => {
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     // Test verifies invalid parameter tests, which requires cast to any.
     // tslint:disable-next-line no-any
     (refresh as any).fromStream(null, (err: Error) => {
@@ -130,8 +121,7 @@ describe('.fromStream', () => {
     const stream = fs.createReadStream('./test/fixtures/refresh.json');
 
     // And pass it into the fromStream method.
-    const auth = new GoogleAuth();
-    const refresh = new auth.UserRefreshClient();
+    const refresh = new UserRefreshClient();
     refresh.fromStream(stream, (err) => {
       assert.ifError(err);
 

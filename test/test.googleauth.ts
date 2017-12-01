@@ -22,10 +22,8 @@ import * as nock from 'nock';
 import * as path from 'path';
 import * as stream from 'stream';
 
-import {GoogleAuth} from '../src/auth/googleauth';
-import {JWT} from '../src/auth/jwtclient';
-import {UserRefreshClient} from '../src/auth/refreshclient';
-import {BodyResponseCallback, DefaultTransporter} from '../src/transporters';
+import {DefaultTransporter, GoogleAuth, JWT, UserRefreshClient} from '../src/index';
+import {BodyResponseCallback} from '../src/transporters';
 
 nock.disableNetConnect();
 
@@ -327,8 +325,7 @@ describe('GoogleAuth', () => {
 
     describe('Refresh token', () => {
       it('should error on empty json', () => {
-        const auth = new GoogleAuth();
-        const jwt = new auth.JWT();
+        const jwt = new JWT();
         assert.throws(() => {
           jwt.fromJSON({});
         });
@@ -337,9 +334,7 @@ describe('GoogleAuth', () => {
       it('should error on missing client_id', () => {
         const json = createRefreshJSON();
         delete json.client_id;
-
-        const auth = new GoogleAuth();
-        const jwt = new auth.JWT();
+        const jwt = new JWT();
         assert.throws(() => {
           jwt.fromJSON(json);
         });
@@ -348,9 +343,7 @@ describe('GoogleAuth', () => {
       it('should error on missing client_secret', () => {
         const json = createRefreshJSON();
         delete json.client_secret;
-
-        const auth = new GoogleAuth();
-        const jwt = new auth.JWT();
+        const jwt = new JWT();
         assert.throws(() => {
           jwt.fromJSON(json);
         });
@@ -359,9 +352,7 @@ describe('GoogleAuth', () => {
       it('should error on missing refresh_token', () => {
         const json = createRefreshJSON();
         delete json.refresh_token;
-
-        const auth = new GoogleAuth();
-        const jwt = new auth.JWT();
+        const jwt = new JWT();
         assert.throws(() => {
           jwt.fromJSON(json);
         });
