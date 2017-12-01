@@ -15,16 +15,16 @@
  */
 
 import * as assert from 'assert';
-import {GoogleAuth} from '../src/auth/googleauth';
-import {IAMAuth, RequestMetadata} from '../src/auth/iam';
+
+import {RequestMetadata} from '../src/auth/iam';
+import {GoogleAuth, IAMAuth} from '../src/index';
 
 describe('.getRequestMetadata', () => {
   const testSelector = 'a-test-selector';
   const testToken = 'a-test-token';
   let client: IAMAuth;
   beforeEach(() => {
-    const auth = new GoogleAuth();
-    client = new auth.IAMAuth(testSelector, testToken);
+    client = new IAMAuth(testSelector, testToken);
   });
 
   it('passes the token and selector to the callback ', (done) => {

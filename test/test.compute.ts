@@ -18,9 +18,9 @@ import * as assert from 'assert';
 import {AxiosRequestConfig} from 'axios';
 import * as nock from 'nock';
 
-import {Compute} from '../src/auth/computeclient';
 import {Credentials} from '../src/auth/credentials';
 import {GoogleAuth} from '../src/auth/googleauth';
+import {Compute} from '../src/index';
 
 nock.disableNetConnect();
 
@@ -28,8 +28,7 @@ describe('Initial credentials', () => {
   it('should create a dummy refresh token string', () => {
     // It is important that the compute client is created with a refresh token
     // value filled in, or else the rest of the logic will not work.
-    const auth = new GoogleAuth();
-    const compute = new auth.Compute();
+    const compute = new Compute();
     assert.equal('compute-placeholder', compute.credentials.refresh_token);
   });
 });
@@ -42,8 +41,7 @@ describe('Compute auth client', () => {
   // set up compute client.
   let compute: Compute;
   beforeEach(() => {
-    const auth = new GoogleAuth();
-    compute = new auth.Compute();
+    compute = new Compute();
   });
 
   it('should get an access token for the first request', done => {
@@ -86,8 +84,7 @@ describe('Compute auth client', () => {
 
   describe('.createScopedRequired', () => {
     it('should return false', () => {
-      const auth = new GoogleAuth();
-      const c = new auth.Compute();
+      const c = new Compute();
       assert.equal(false, c.createScopedRequired());
     });
   });
