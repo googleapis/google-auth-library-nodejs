@@ -20,7 +20,7 @@
     "client library"
   ],
   "dependencies": {
-    "gtoken": "^2.0.1",
+    "gtoken": "^2.0.2",
     "axios": "^0.17.1",
     "jws": "^3.1.4",
     "lodash.isstring": "^4.0.1"
