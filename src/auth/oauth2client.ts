@@ -17,18 +17,20 @@
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as http from 'http';
 import * as querystring from 'querystring';
-
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket} from './loginticket';
 
+const isString = require('lodash.isstring');
+
 export interface GenerateAuthUrlOpts {
   response_type?: string;
   client_id?: string;
   redirect_uri?: string;
   scope?: string[]|string;
+  state?: string;
 }
 
 export interface AuthClientOpts {
@@ -557,6 +559,10 @@ export class OAuth2Client extends AuthClient {
       Promise<LoginTicket|null> {
     if (!idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
+    }
+
+    if (!isString(idToken)) {
+      throw new Error('The ID Token has to be a string');
     }
 
     const certs = await this.getFederatedSignonCertsAsync();
