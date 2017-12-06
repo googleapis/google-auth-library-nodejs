@@ -1280,10 +1280,15 @@ describe('._checkIsGCE', () => {
        // the second one should never happen
        const scope2 =
            nock('http://metadata.google.internal').get('/').reply(404);
-       const isGCE = await auth._checkIsGCE();
-       assert.notEqual(true, auth.isGCE);
+       try {
+         const isGCE = await auth._checkIsGCE();
+         assert.notEqual(true, auth.isGCE);
+       } catch (e) {
+         return;
+       }
        assert(scope1.isDone());
        assert(!scope2.isDone());
+       assert.fail('Expected to throw');
      });
 
   it('should not retry the check for isGCE if it fails with an ETIMEDOUT',

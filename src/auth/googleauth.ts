@@ -274,11 +274,13 @@ export class GoogleAuth {
       const ae = e as AxiosError;
       const is5xx = ae.response &&
           (ae.response.status >= 500 && ae.response.status < 600);
-      if (!isDNSError && is5xx) {
+      if (is5xx) {
         // Unexpected error occurred. Retry once.
         if (!isRetry) {
           return await this._checkIsGCE(true);
         }
+        throw e;
+      } else if (!isDNSError) {
         throw e;
       }
       this.checkIsGCE = false;
