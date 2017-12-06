@@ -11,12 +11,14 @@
 This is Google's officially supported [node.js][node] client library for using OAuth 2.0 authorization and authentication with Google APIs.
 
 ## Installation
-
 This library is distributed on `npm`. To add it as a dependency, run the following command:
 
 ``` sh
 $ npm install google-auth-library
 ```
+
+## Upgrading to 1.x
+The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/google/google-auth-library-nodejs/releases/tag/1.0.0-alpha.1) for a list of breaking changes, and the upgrade guide.
 
 ## Application Default Credentials
 This library provides an implementation of [Application Default Credentials][] for Node.js. The [Application Default Credentials][] provide a simple way to get authorization credentials for use in calling Google APIs.
