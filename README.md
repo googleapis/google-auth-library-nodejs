@@ -135,7 +135,7 @@ async function main() {
  * Create a new OAuth2Client, and go through the OAuth2 content
  * workflow.  Return the full client to the callback.
  */
-async function getAuthenticatedClient() {
+function getAuthenticatedClient() {
   return new Promise((resolve, reject) => {
     // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
     // which should be downloaded from the Google Developers Console.
