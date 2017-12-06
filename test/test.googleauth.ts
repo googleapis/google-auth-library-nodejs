@@ -1291,7 +1291,7 @@ describe('._checkIsGCE', () => {
        assert.fail('Expected to throw');
      });
 
-  it('should not retry the check for isGCE if it fails with an ETIMEDOUT',
+  it('should not retry the check for isGCE if it fails with an ENOTFOUND',
      async () => {
        const auth = new GoogleAuth();
        assert.notEqual(true, auth.isGCE);
