@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {AxiosError} from 'axios';
 import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -22,6 +23,7 @@ import * as stream from 'stream';
 import * as util from 'util';
 
 import {DefaultTransporter, Transporter} from '../transporters';
+
 import {Compute} from './computeclient';
 import {JWTInput} from './credentials';
 import {IAMAuth} from './iam';
@@ -223,7 +225,7 @@ export class GoogleAuth {
    * @returns A promise that resolves with the boolean.
    * @api private
    */
-  async _checkIsGCE(): Promise<boolean> {
+  async _checkIsGCE(isRetry = false): Promise<boolean> {
     if (this.checkIsGCE !== undefined) {
       return this.checkIsGCE;
     }
@@ -236,9 +238,17 @@ export class GoogleAuth {
       this.checkIsGCE =
           res && res.headers && res.headers['metadata-flavor'] === 'Google';
     } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOTFOUND') {
-        // Unexpected error occurred. TODO(ofrobots): retry if this was a
-        // transient error.
+      const isDNSError = (e as NodeJS.ErrnoException).code === 'ENOTFOUND';
+      const ae = e as AxiosError;
+      const is5xx = ae.response &&
+          (ae.response.status >= 500 && ae.response.status < 600);
+      if (is5xx) {
+        // Unexpected error occurred. Retry once.
+        if (!isRetry) {
+          return await this._checkIsGCE(true);
+        }
+        throw e;
+      } else if (!isDNSError) {
         throw e;
       }
       this.checkIsGCE = false;
