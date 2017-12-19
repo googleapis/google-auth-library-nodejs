@@ -20,6 +20,12 @@ $ npm install google-auth-library
 ## Upgrading to 1.x
 The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/google/google-auth-library-nodejs/releases/tag/1.0.0-alpha.1) for a list of breaking changes, and the upgrade guide.
 
+## Ways to authenticate
+This library provides a variety of ways to authenticate to your Google services.
+- [Application Default Credentials](#choosing-the-correct-credential-type-automatically) - Use Application Default Credentials when you use a single identity for all users in your application. Especially useful for applications running on Google Cloud.
+- [OAuth 2](#oauth2-client) - Use OAuth2 when you need to perform actions on behalf of the end user.
+- [JSON Web Tokens](#using-json-web-tokens) - Use JWT when you are using a single identity for all users.  Especially useful for server->server or server->API communication.
+
 ## Application Default Credentials
 This library provides an implementation of [Application Default Credentials][] for Node.js. The [Application Default Credentials][] provide a simple way to get authorization credentials for use in calling Google APIs.
 
@@ -98,7 +104,7 @@ main();
 
 This client comes with an [OAuth2][oauth] client that allows you to retrieve an access token and refreshes the token and retry the request seamlessly if you also provide an `expiry_date` and the token is expired. The basics of Google's OAuth2 implementation is explained on [Google Authorization and Authentication documentation][authdocs].
 
-In the following examples, you may need a `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URL`. You can find these pieces of information by going to the [Developer Console][devconsole], clicking your project --> APIs & auth --> credentials.
+In the following examples, you may need a `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URL`. You can find these pieces of information by going to the [Developer Console][devconsole], clicking your project > APIs & auth > credentials.
 
 For more information about OAuth2 and how it works, [see here][oauth].
 
@@ -203,7 +209,7 @@ const tokens = await oauth2Client.refreshAccessToken();
 // store these new tokens in a safe place (e.g. database)
 ```
 
-#### Using JWT (Service Tokens)
+#### Using JSON Web Tokens
 The Google Developers Console provides `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
 ``` js
