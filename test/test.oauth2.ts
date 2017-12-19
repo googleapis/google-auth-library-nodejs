@@ -17,6 +17,7 @@
 import * as assert from 'assert';
 import {AxiosRequestConfig} from 'axios';
 import * as crypto from 'crypto';
+import {randomBytes} from 'crypto';
 import * as fs from 'fs';
 import * as nock from 'nock';
 import * as path from 'path';
@@ -46,8 +47,10 @@ describe('OAuth2 client', () => {
         new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl(opts);
     const parsed = url.parse(generated);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
     const query = qs.parse(parsed.query);
-
     assert.equal(query.response_type, 'code token');
     assert.equal(query.access_type, ACCESS_TYPE);
     assert.equal(query.scope, SCOPE);
@@ -67,8 +70,10 @@ describe('OAuth2 client', () => {
         new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl(opts);
     const parsed = url.parse(generated);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
     const query = qs.parse(parsed.query);
-
     assert.equal(query.scope, SCOPE_ARRAY.join(' '));
     done();
   });
@@ -80,8 +85,10 @@ describe('OAuth2 client', () => {
            new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
        const generated = oauth2client.generateAuthUrl();
        const parsed = url.parse(generated);
+       if (typeof parsed.query !== 'string') {
+         throw new Error('Unable to parse querystring');
+       }
        const query = qs.parse(parsed.query);
-
        assert.equal(query.response_type, 'code');
        done();
      });
@@ -793,6 +800,9 @@ describe('OAuth2 client', () => {
         new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl({});
     const parsed = url.parse(generated);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
     const query = qs.parse(parsed.query);
     assert.equal(query.redirect_uri, REDIRECT_URI);
   });
@@ -802,6 +812,9 @@ describe('OAuth2 client', () => {
         new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const generated = oauth2client.generateAuthUrl({});
     const parsed = url.parse(generated);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
     const query = qs.parse(parsed.query);
     assert.equal(query.client_id, CLIENT_ID);
   });
@@ -812,6 +825,9 @@ describe('OAuth2 client', () => {
     const generated =
         oauth2client.generateAuthUrl({redirect_uri: 'overridden'});
     const parsed = url.parse(generated);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
     const query = qs.parse(parsed.query);
     assert.equal(query.redirect_uri, 'overridden');
   });
@@ -822,6 +838,9 @@ describe('OAuth2 client', () => {
     const generated =
         oauth2client.generateAuthUrl({client_id: 'client_override'});
     const parsed = url.parse(generated);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
     const query = qs.parse(parsed.query);
     assert.equal(query.client_id, 'client_override');
   });
