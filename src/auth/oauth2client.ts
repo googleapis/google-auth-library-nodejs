@@ -566,9 +566,10 @@ export class OAuth2Client extends AuthClient {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
 
-    const certs = await this.getFederatedSignonCertsAsync();
+    const response = await this.getFederatedSignonCertsAsync();
     const login = this.verifySignedJwtWithCerts(
-        idToken, certs, audience, OAuth2Client.ISSUERS_);
+        idToken, response.certs, audience, OAuth2Client.ISSUERS_);
+
     return login;
   }
 
