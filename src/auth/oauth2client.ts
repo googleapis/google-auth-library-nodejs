@@ -25,6 +25,7 @@ import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket} from './loginticket';
 
 export interface GenerateAuthUrlOpts {
+  access_type?: string;
   response_type?: string;
   client_id?: string;
   redirect_uri?: string;
