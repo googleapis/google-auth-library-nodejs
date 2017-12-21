@@ -9,3 +9,5 @@ coverage
 *.js.map
 yarn-error.log
 **/*.js
+examples/*.keys.json
+!examples/*.js

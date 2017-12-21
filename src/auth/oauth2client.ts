@@ -31,6 +31,7 @@ const isString = require('lodash.isstring');
 =======
 >>>>>>> 98b2b1a... chore: switch to axios (#182)
 export interface GenerateAuthUrlOpts {
+  access_type?: string;
   response_type?: string;
   client_id?: string;
   redirect_uri?: string;
