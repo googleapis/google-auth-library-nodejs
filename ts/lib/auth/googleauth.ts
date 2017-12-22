@@ -106,6 +106,11 @@ export class GoogleAuth {
   public static DefaultTransporter = DefaultTransporter;
 
   /**
+   * @param {number=} refreshTokeEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
+   */
+  constructor(private refreshTokenEarlyMillis?: number) {}
+
+  /**
    * Obtains the default project ID for the application..
    * @param {function=} callback Optional callback.
    */
@@ -221,7 +226,8 @@ export class GoogleAuth {
         if (gce) {
           // For GCE, just return a default ComputeClient. It will take care of
           // the rest.
-          my_callback(null, new this.ComputeClient());
+          my_callback(
+              null, new this.ComputeClient(this.refreshTokenEarlyMillis));
         } else if (err) {
           my_callback(new Error(
               'Unexpected error while acquiring application default ' +
@@ -400,9 +406,12 @@ export class GoogleAuth {
     // Set the JSON contents
     this.jsonContent = json;
     if (json.type === 'authorized_user') {
-      client = new UserRefreshClient();
+      client = new UserRefreshClient(
+          undefined, undefined, undefined, this.refreshTokenEarlyMillis);
     } else {
-      client = new JWT();
+      client = new JWT(
+          undefined, undefined, undefined, undefined, undefined,
+          this.refreshTokenEarlyMillis);
     }
 
     client.fromJSON(json, (err: Error) => {
@@ -452,7 +461,9 @@ export class GoogleAuth {
    */
   public fromAPIKey(
       apiKey: string, callback?: (err: Error, client?: JWT) => void) {
-    const client = new this.JWTClient();
+    const client = new this.JWTClient(
+        undefined, undefined, undefined, undefined, undefined,
+        this.refreshTokenEarlyMillis);
     client.fromAPIKey(apiKey, (err) => {
       if (err) {
         this.callback(callback, err);
