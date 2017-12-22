@@ -106,9 +106,9 @@ export class GoogleAuth {
   public static DefaultTransporter = DefaultTransporter;
 
   /**
-   * @param {number=} refreshTokeEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
+   * @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
    */
-  constructor(private refreshTokenEarlyMillis?: number) {}
+  constructor(public refreshTokenEarlyMillis?: number) {}
 
   /**
    * Obtains the default project ID for the application..

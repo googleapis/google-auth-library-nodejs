@@ -40,7 +40,7 @@ export class Compute extends OAuth2Client {
    * Retrieve access token from the metadata server.
    * See: https://developers.google.com/compute/docs/authentication
    *
-   * @param {number=} refreshTokeEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
+   * @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
    */
   constructor(refreshTokenEarlyMillis?: number) {
     super(undefined, undefined, undefined, undefined, refreshTokenEarlyMillis);

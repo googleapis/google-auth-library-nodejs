@@ -53,7 +53,7 @@ export class OAuth2Client extends AuthClient {
    * @param {string=} clientSecret The authentication client secret.
    * @param {string=} redirectUri The URI to redirect to after completing the auth request.
    * @param {Object=} opt_opts optional options for overriding the given parameters.
-   * @param {number=} refreshTokeEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
+   * @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
    * @constructor
    */
   constructor(
