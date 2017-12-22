@@ -44,6 +44,7 @@ export class OAuth2Client extends AuthClient {
   public _clientId: string;
   public _clientSecret: string;
   public apiKey: string;
+  public refreshTokenEarlyMillis: number;
 
   /**
    * Handles OAuth2 flow for Google APIs.
@@ -52,17 +53,19 @@ export class OAuth2Client extends AuthClient {
    * @param {string=} clientSecret The authentication client secret.
    * @param {string=} redirectUri The URI to redirect to after completing the auth request.
    * @param {Object=} opt_opts optional options for overriding the given parameters.
+   * @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
    * @constructor
    */
   constructor(
       clientId?: string, clientSecret?: string, redirectUri?: string,
-      opt_opts?: any) {
+      opt_opts?: any, refreshTokenEarlyMillis?: number) {
     super();
     this._clientId = clientId;
     this._clientSecret = clientSecret;
     this._redirectUri = redirectUri;
     this._opts = opt_opts || {};
     this.credentials = {};
+    this.refreshTokenEarlyMillis = refreshTokenEarlyMillis || 0;
   }
 
   /**
@@ -222,17 +225,13 @@ export class OAuth2Client extends AuthClient {
       callback:
           (err: Error, access_token: string,
            response?: request.RequestResponse) => void) {
-    const expiryDate = this.credentials.expiry_date;
-
-    // if no expiry time, assume it's not expired
-    const isTokenExpired =
-        expiryDate ? expiryDate <= (new Date()).getTime() : false;
-
     if (!this.credentials.access_token && !this.credentials.refresh_token) {
       return callback(new Error('No access or refresh token is set.'), null);
     }
 
-    const shouldRefresh = !this.credentials.access_token || isTokenExpired;
+    const shouldRefresh =
+        !this.credentials.access_token || this.isTokenExpiring();
+
     if (shouldRefresh && this.credentials.refresh_token) {
       if (!this.credentials.refresh_token) {
         return callback(new Error('No refresh token is set.'), null);
@@ -280,12 +279,7 @@ export class OAuth2Client extends AuthClient {
           new Error('No access, refresh token or API key is set.'), null);
     }
 
-    // if no expiry time, assume it's not expired
-    const expiryDate = thisCreds.expiry_date;
-    const isTokenExpired =
-        expiryDate ? expiryDate <= (new Date()).getTime() : false;
-
-    if (thisCreds.access_token && !isTokenExpired) {
+    if (thisCreds.access_token && !this.isTokenExpiring()) {
       thisCreds.token_type = thisCreds.token_type || 'Bearer';
       const headers = {
         Authorization: thisCreds.token_type + ' ' + thisCreds.access_token
@@ -650,5 +644,17 @@ export class OAuth2Client extends AuthClient {
   public decodeBase64(b64String: string) {
     const buffer = new Buffer(b64String, 'base64');
     return buffer.toString('utf8');
+  }
+
+  /**
+   * Returns true iff a token is expired or will expire within
+   * refreshTokenEarlyMillis milliseconds.
+   * If there is no expiry time, assumes the token is not expired or expiring.
+   */
+  protected isTokenExpiring(): boolean {
+    const expiryDate = this.credentials.expiry_date;
+    return expiryDate ?
+        expiryDate <= ((new Date()).getTime() + this.refreshTokenEarlyMillis) :
+        false;
   }
 }

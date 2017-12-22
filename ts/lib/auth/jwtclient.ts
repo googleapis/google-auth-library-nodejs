@@ -44,12 +44,13 @@ export class JWT extends OAuth2Client {
    * @param {string=} key value of key
    * @param {(string|array)=} scopes list of requested scopes or a single scope.
    * @param {string=} subject impersonated account's email address.
+   * @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
    * @constructor
    */
   constructor(
       email?: string, keyFile?: string, key?: string, scopes?: string|string[],
-      subject?: string) {
-    super();
+      subject?: string, refreshTokenEarlyMillis?: number) {
+    super(undefined, undefined, undefined, undefined, refreshTokenEarlyMillis);
     this.email = email;
     this.keyFile = keyFile;
     this.key = key;
