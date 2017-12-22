@@ -24,6 +24,7 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as url from 'url';
 
+import {LoginTicket} from '../src/auth/loginticket';
 import {GoogleAuth, OAuth2Client} from '../src/index';
 
 nock.disableNetConnect();
@@ -57,6 +58,30 @@ describe('OAuth2 client', () => {
     assert.equal(query.client_id, CLIENT_ID);
     assert.equal(query.redirect_uri, REDIRECT_URI);
     done();
+  });
+
+  it('should verifyIdToken properly', async () => {
+    const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    const fakeCerts = {a: 'a', b: 'b'};
+    const fakeIdToken = 'idToken';
+    const fakeAudience = 'fakeAudience';
+    nock('https://www.googleapis.com')
+        .get('/oauth2/v1/certs')
+        .reply(200, fakeCerts);
+    client.verifySignedJwtWithCerts =
+        (jwt: string, certs: {}, requiredAudience: string|string[],
+         issuers?: string[], maxExpiry?: number) => {
+          assert.equal(jwt, fakeIdToken);
+          assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
+          assert.equal(requiredAudience, fakeAudience);
+          return new LoginTicket('c', 'd');
+        };
+    const result = await client.verifyIdToken(fakeIdToken, fakeAudience);
+    assert.notEqual(result, null);
+    if (result) {
+      assert.equal(result.getEnvelope(), 'c');
+      assert.equal(result.getPayload(), 'd');
+    }
   });
 
   it('should allow scopes to be specified as array', (done) => {
