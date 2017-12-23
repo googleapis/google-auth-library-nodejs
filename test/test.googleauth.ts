@@ -864,33 +864,56 @@ describe('GoogleAuth', () => {
          setUpAuthForEnvironmentVariable(auth);
 
          // Ask for credentials, the first time.
-         const projectId = await auth.getDefaultProjectId();
+         const projectIdPromise = auth.getDefaultProjectId();
+         const projectId = await projectIdPromise;
          assert.equal(projectId, fixedProjectId);
 
-         // Manually change the value of the cached projectId
-         auth.cachedProjectId = 'monkey';
+         // Null out all the private functions that make this method work
+         // tslint:disable-next-line no-any
+         const anyd = (auth as any);
+         anyd.getProductionProjectId = null;
+         anyd.getFileProjectId = null;
+         anyd.getDefaultServiceProjectId = null;
+         anyd.getGCEProjectId = null;
 
-         // Ask for projectId again, from the same auth instance. We expect a
-         // cached instance this time.
+         // Ask for projectId again, from the same auth instance. If it isn't
+         // cached, this will crash.
          const projectId2 = await auth.getDefaultProjectId();
 
-         // Make sure we get the changed cached projectId back
-         assert.equal('monkey', projectId2);
+         // Make sure we get the original cached projectId back
+         assert.equal(fixedProjectId, projectId2);
 
          // Now create a second GoogleAuth instance, and ask for projectId.
          // We should get a new projectId instance this time.
          const auth2 = new GoogleAuth();
          setUpAuthForEnvironmentVariable(auth2);
 
-         const projectId3 = await auth2.getDefaultProjectId();
-         assert.equal(projectId3, fixedProjectId);
-
-         // Make sure we get a new (non-cached) projectId instance back.
-         // Test verifies invalid parameter tests, which requires cast to
-         // any.
-         // tslint:disable-next-line no-any
-         assert.equal((projectId3 as any).specialTestBit, undefined);
+         const getProjectIdPromise = await auth2.getDefaultProjectId();
+         assert.notEqual(getProjectIdPromise, projectIdPromise);
        });
+
+    it('should return the same promise for subsequent calls', async () => {
+      const fixedProjectId = 'my-awesome-project';
+
+      // Create a function which will set up a GoogleAuth instance to match
+      // on an environment variable json file, but not on anything else.
+      const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
+        insertEnvironmentVariableIntoAuth(
+            creds, 'GCLOUD_PROJECT', fixedProjectId);
+        creds._fileExists = () => false;
+        creds._checkIsGCE = async () => Promise.resolve(false);
+      };
+
+      // Set up a new GoogleAuth and prepare it for local environment
+      // variable handling.
+      const auth = new GoogleAuth();
+      setUpAuthForEnvironmentVariable(auth);
+
+      // Ask for credentials, the first time.
+      const p1 = auth.getDefaultProjectId();
+      const p2 = auth.getDefaultProjectId();
+      assert.equal(p1, p2);
+    });
   });
 
   it('should use GCLOUD_PROJECT environment variable when it is set',
