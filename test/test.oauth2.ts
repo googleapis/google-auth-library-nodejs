@@ -101,7 +101,11 @@ describe('OAuth2 client', () => {
       code_challenge: codes.codeChallenge,
       code_challenge_method: CodeChallengeMethod.S256
     });
-    const props = qs.parse(url.parse(authUrl).query as string);
+    const parsed = url.parse(authUrl);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
+    const props = qs.parse(parsed.query);
     assert.equal(props.code_challenge, codes.codeChallenge);
     assert.equal(props.code_challenge_method, CodeChallengeMethod.S256);
   });
