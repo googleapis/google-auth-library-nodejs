@@ -18,6 +18,6 @@ export {GoogleAuth} from './auth/googleauth';
 export {IAMAuth} from './auth/iam';
 export {JWTAccess} from './auth/jwtaccess';
 export {JWT} from './auth/jwtclient';
-export {OAuth2Client} from './auth/oauth2client';
+export {CodeChallengeMethod, OAuth2Client} from './auth/oauth2client';
 export {UserRefreshClient} from './auth/refreshclient';
 export {DefaultTransporter} from './transporters';
