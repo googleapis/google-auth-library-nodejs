@@ -246,6 +246,51 @@ main();
 
 The parameters for the JWT auth client including how to use it with a `.pem` file are explained in [samples/jwt.js](samples/jwt.js).
 
+#### Loading credentials from environment variables
+
+Instead of loading credentials from a key file, you can also provide them using an environment variable and the `GoogleAuth.fromJSON()` method.  This is particularly convenient for systems that deploy directly from source control (Heroku, App Engine, etc).
+
+Start by exporting your credentials:
+
+```
+$ export CREDS='{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "your-private-key-id",
+  "private_key": "your-private-key",
+  "client_email": "your-client-email",
+  "client_id": "your-client-id",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "your-cert-url"
+}'
+```
+Now you can create a new client from the credentials:
+
+```js
+const {GoogleAuth} = require('google-auth-library');
+
+// load the environment variable with our keys
+const keysEnvVar = process.env['CREDS'];
+if (!keysEnvVar) {
+  throw new Error('The $CREDS environment variable was not found!');
+}
+const keys = JSON.parse(keysEnvVar);
+
+async function main() {
+  const auth = new GoogleAuth();
+  // load the JWT or UserRefreshClient from the keys
+  const client = auth.fromJSON(keys);
+  client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+  await client.authorize();
+  const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
+  const res = await client.request({url});
+  console.log(res.data);
+}
+
+main().catch(console.error);
+```
 
 ### Questions/problems?
 
