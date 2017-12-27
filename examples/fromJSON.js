@@ -47,18 +47,13 @@ if (!keysEnvVar) {
 const keys = JSON.parse(keysEnvVar);
 
 async function main() {
-  try {
-    const auth = new GoogleAuth();
-    const client = auth.fromJSON(keys);
-    client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-    await client.authorize();
-    const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-    const res = await client.request({url});
-    console.log(res.data);
-  } catch(e) {
-    console.error(e);
-  }
-  process.exit();
+  const auth = new GoogleAuth();
+  const client = auth.fromJSON(keys);
+  client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+  await client.authorize();
+  const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
+  const res = await client.request({url});
+  console.log(res.data);
 }
 
-main();
+main().catch(console.error);
