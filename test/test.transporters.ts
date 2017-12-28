@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import {AxiosRequestConfig} from 'axios';
+import {AxiosProxyConfig, AxiosRequestConfig} from 'axios';
 import * as nock from 'nock';
 
 import {DefaultTransporter, RequestError} from '../src/transporters';
@@ -97,5 +97,54 @@ describe('Transporters', () => {
           assert.equal(error!.message, expected);
           done();
         });
+  });
+});
+
+describe('transporter proxy', () => {
+  let savedEnv: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    savedEnv = process.env;
+    process.env = {};
+  });
+
+  afterEach(() => {
+    process.env = savedEnv;
+  });
+
+  it('should use the http proxy if one is configured', async () => {
+    process.env['http_proxy'] = 'http://han:solo@proxy-server:1234';
+    const transporter = new DefaultTransporter();
+    nock('http://proxy-server:1234')
+        .get('http://example.com/fake', undefined, {
+          reqheaders: {
+            'host': 'example.com',
+            'accept': /.*/g,
+            'user-agent': /google-api-nodejs-client\/.*/g,
+            'proxy-authorization': /.*/g
+          }
+        })
+        .reply(200);
+    const url = 'http://example.com/fake';
+    const result = await transporter.request({url});
+    assert.equal(result.status, 200);
+  });
+
+  it('should use the https proxy if one is configured', async () => {
+    process.env['https_proxy'] = 'https://han:solo@proxy-server:1234';
+    const transporter = new DefaultTransporter();
+    nock('https://proxy-server:1234')
+        .get('https://example.com/fake', undefined, {
+          reqheaders: {
+            'host': 'example.com',
+            'accept': /.*/g,
+            'user-agent': /google-api-nodejs-client\/.*/g,
+            'proxy-authorization': /.*/g
+          }
+        })
+        .reply(200);
+    const url = 'https://example.com/fake';
+    const result = await transporter.request({url});
+    assert.equal(result.status, 200);
   });
 });
