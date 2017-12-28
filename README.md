@@ -247,7 +247,6 @@ main();
 The parameters for the JWT auth client including how to use it with a `.pem` file are explained in [samples/jwt.js](samples/jwt.js).
 
 #### Loading credentials from environment variables
-
 Instead of loading credentials from a key file, you can also provide them using an environment variable and the `GoogleAuth.fromJSON()` method.  This is particularly convenient for systems that deploy directly from source control (Heroku, App Engine, etc).
 
 Start by exporting your credentials:
@@ -291,6 +290,13 @@ async function main() {
 
 main().catch(console.error);
 ```
+#### Using a Proxy
+You can use the following environment variables to proxy HTTP and HTTPS requests:
+
+- HTTP_PROXY / http_proxy
+- HTTPS_PROXY / https_proxy
+
+When HTTP_PROXY / http_proxy are set, they will be used to proxy non-SSL requests that do not have an explicit proxy configuration option present. Similarly, HTTPS_PROXY / https_proxy will be respected for SSL requests that do not have an explicit proxy configuration option. It is valid to define a proxy in one of the environment variables, but then override it for a specific request, using the proxy configuration option.
 
 ### Questions/problems?
 
