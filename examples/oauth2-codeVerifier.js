@@ -26,17 +26,12 @@ const keys = require('./oauth2.keys.json');
  * Start by acquiring a pre-authenticated oAuth2 client.
  */
 async function main() {
-  try {
-    const oAuth2Client = await getAuthenticatedClient();
-    // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
-    // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
-    const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
-    const res = await oAuth2Client.request({url})
-    console.log(res.data);
-  } catch (e) {
-    console.error(e);
-  }
-  process.exit();
+  const oAuth2Client = await getAuthenticatedClient();
+  // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
+  // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
+  const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
+  const res = await oAuth2Client.request({url})
+  console.log(res.data);
 }
 
 /**
@@ -96,4 +91,4 @@ function getAuthenticatedClient() {
   });
 }
 
-main();
+main().catch(console.error);
