@@ -98,6 +98,19 @@ describe('Transporters', () => {
           done();
         });
   });
+});
+
+describe('transporter proxy', () => {
+  let savedEnv: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    savedEnv = process.env;
+    process.env = {};
+  });
+
+  afterEach(() => {
+    process.env = savedEnv;
+  });
 
   it('should use the http proxy if one is configured', async () => {
     process.env['http_proxy'] = 'http://han:solo@proxy-server:1234';
@@ -115,7 +128,6 @@ describe('Transporters', () => {
     const url = 'http://example.com/fake';
     const result = await transporter.request({url});
     assert.equal(result.status, 200);
-    process.env['http_proxy'] = undefined;
   });
 
   it('should use the https proxy if one is configured', async () => {
@@ -134,6 +146,5 @@ describe('Transporters', () => {
     const url = 'https://example.com/fake';
     const result = await transporter.request({url});
     assert.equal(result.status, 200);
-    process.env['https_proxy'] = undefined;
   });
 });
