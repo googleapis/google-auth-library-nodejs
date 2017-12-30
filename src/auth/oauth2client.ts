@@ -17,6 +17,7 @@
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as http from 'http';
 import * as querystring from 'querystring';
+import {isObject} from 'util';
 
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
@@ -89,6 +90,12 @@ export interface FederatedSignonCertsResponse {
 }
 
 export interface RevokeCredentialsResult { success: boolean; }
+
+export interface VerifyIdTokenOptions {
+  idToken: string;
+  audience: string|string[];
+  maxExpiry?: number;
+}
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
@@ -532,37 +539,43 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Verify id token is token by checking the certs and audience
-   * @param {string} idToken ID Token.
-   * @param {(string|Array.<string>)} audience The audience to verify against the ID Token
+   * @param {VerifyIdTokenOptions} Object that contains all options.
    * @param {function=} callback Callback supplying GoogleLogin if successful
    */
-  verifyIdToken(idToken: string, audience: string|string[]):
-      Promise<LoginTicket|null>;
+  verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket|null>;
   verifyIdToken(
-      idToken: string, audience: string|string[],
+      options: VerifyIdTokenOptions,
       callback: (err: Error|null, login?: LoginTicket|null) => void): void;
   verifyIdToken(
-      idToken: string, audience: string|string[],
+      options: VerifyIdTokenOptions,
       callback?: (err: Error|null, login?: LoginTicket|null) => void):
       void|Promise<LoginTicket|null> {
+    // This funtion used to accept two arguments instead of an options object.
+    // Check the types to help users upgrade with less pain.
+    if (callback && typeof callback !== 'function') {
+      throw new Error(
+          'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.');
+    }
+
     if (callback) {
-      this.verifyIdTokenAsync(idToken, audience)
+      this.verifyIdTokenAsync(options)
           .then(r => callback(null, r))
           .catch(callback);
     } else {
-      return this.verifyIdTokenAsync(idToken, audience);
+      return this.verifyIdTokenAsync(options);
     }
   }
 
-  private async verifyIdTokenAsync(idToken: string, audience: string|string[]):
+  private async verifyIdTokenAsync(options: VerifyIdTokenOptions):
       Promise<LoginTicket|null> {
-    if (!idToken) {
+    if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
 
     const response = await this.getFederatedSignonCertsAsync();
     const login = this.verifySignedJwtWithCerts(
-        idToken, response.certs, audience, OAuth2Client.ISSUERS_);
+        options.idToken, response.certs, options.audience,
+        OAuth2Client.ISSUERS_, options.maxExpiry);
 
     return login;
   }

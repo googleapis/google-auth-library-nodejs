@@ -63,26 +63,56 @@ describe('OAuth2 client', () => {
   it('should verifyIdToken properly', async () => {
     const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     const fakeCerts = {a: 'a', b: 'b'};
-    const fakeIdToken = 'idToken';
-    const fakeAudience = 'fakeAudience';
+    const idToken = 'idToken';
+    const audience = 'fakeAudience';
+    const maxExpiry = 5;
     nock('https://www.googleapis.com')
         .get('/oauth2/v1/certs')
         .reply(200, fakeCerts);
     client.verifySignedJwtWithCerts =
         (jwt: string, certs: {}, requiredAudience: string|string[],
-         issuers?: string[], maxExpiry?: number) => {
-          assert.equal(jwt, fakeIdToken);
+         issuers?: string[], theMaxExpiry?: number) => {
+          assert.equal(jwt, idToken);
           assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
-          assert.equal(requiredAudience, fakeAudience);
+          assert.equal(requiredAudience, audience);
+          assert.equal(theMaxExpiry, maxExpiry);
           return new LoginTicket('c', 'd');
         };
-    const result = await client.verifyIdToken(fakeIdToken, fakeAudience);
+    const result = await client.verifyIdToken({idToken, audience, maxExpiry});
     assert.notEqual(result, null);
     if (result) {
       assert.equal(result.getEnvelope(), 'c');
       assert.equal(result.getPayload(), 'd');
     }
   });
+
+  it('should provide a reasonable error in verifyIdToken with wrong parameters',
+     async () => {
+       const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+       const fakeCerts = {a: 'a', b: 'b'};
+       const idToken = 'idToken';
+       const audience = 'fakeAudience';
+       nock('https://www.googleapis.com')
+           .get('/oauth2/v1/certs')
+           .reply(200, fakeCerts);
+       client.verifySignedJwtWithCerts =
+           (jwt: string, certs: {}, requiredAudience: string|string[],
+            issuers?: string[], theMaxExpiry?: number) => {
+             assert.equal(jwt, idToken);
+             assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
+             assert.equal(requiredAudience, audience);
+             return new LoginTicket('c', 'd');
+           };
+       try {
+         // tslint:disable-next-line no-any
+         await (client as any).verifyIdToken(idToken, audience);
+         throw new Error('Expected to throw');
+       } catch (e) {
+         assert.equal(
+             e.message,
+             'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.');
+       }
+     });
 
   it('should allow scopes to be specified as array', (done) => {
     const opts = {
