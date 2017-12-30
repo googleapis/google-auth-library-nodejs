@@ -38,7 +38,7 @@
     "del": "^3.0.0",
     "gulp": "^3.9.1",
     "gulp-clang-format": "^1.0.23",
-    "gulp-mocha": "^4.3.1",
+    "gulp-mocha": "^5.0.0",
     "gulp-sourcemaps": "^2.6.0",
     "gulp-tslint": "^8.0.0",
     "gulp-typescript": "^3.1.6",
