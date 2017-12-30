@@ -17,8 +17,6 @@
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as http from 'http';
 import * as querystring from 'querystring';
-import {isObject} from 'util';
-
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
