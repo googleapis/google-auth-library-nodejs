@@ -548,8 +548,9 @@ export class OAuth2Client extends AuthClient {
       options: VerifyIdTokenOptions,
       callback?: (err: Error|null, login?: LoginTicket|null) => void):
       void|Promise<LoginTicket|null> {
-    // This funtion used to accept two arguments instead of an options object.
+    // This function used to accept two arguments instead of an options object.
     // Check the types to help users upgrade with less pain.
+    // This check can be removed after a 2.0 release.
     if (callback && typeof callback !== 'function') {
       throw new Error(
           'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.');
