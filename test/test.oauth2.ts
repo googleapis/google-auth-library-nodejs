@@ -25,7 +25,7 @@ import * as qs from 'querystring';
 import * as url from 'url';
 
 import {LoginTicket} from '../src/auth/loginticket';
-import {GoogleAuth, OAuth2Client} from '../src/index';
+import {CodeChallengeMethod, GoogleAuth, OAuth2Client} from '../src/index';
 
 nock.disableNetConnect();
 
@@ -58,6 +58,56 @@ describe('OAuth2 client', () => {
     assert.equal(query.client_id, CLIENT_ID);
     assert.equal(query.redirect_uri, REDIRECT_URI);
     done();
+  });
+
+  it('should throw an error if generateAuthUrl is called with invalid parameters',
+     () => {
+       const opts = {
+         access_type: ACCESS_TYPE,
+         scope: SCOPE,
+         code_challenge_method: CodeChallengeMethod.S256
+       };
+
+       const oauth2client =
+           new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+       try {
+         const generated = oauth2client.generateAuthUrl(opts);
+         assert.fail('Expected to throw');
+       } catch (e) {
+         assert.equal(
+             e.message,
+             'If a code_challenge_method is provided, code_challenge must be included.');
+       }
+     });
+
+  it('should generate a valid code verifier and resulting challenge', () => {
+    const oauth2client =
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    const codes = oauth2client.generateCodeVerifier();
+
+    // ensure the code_verifier matches all requirements
+    assert.equal(codes.codeVerifier.length, 128);
+    const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
+    assert(match);
+    if (!match) return;
+    assert(match.length > 0 && match[0] === codes.codeVerifier);
+  });
+
+  it('should include code challenge and method in the url', () => {
+    const oauth2client =
+        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    const codes = oauth2client.generateCodeVerifier();
+    const authUrl = oauth2client.generateAuthUrl({
+      code_challenge: codes.codeChallenge,
+      code_challenge_method: CodeChallengeMethod.S256
+    });
+    const parsed = url.parse(authUrl);
+    if (typeof parsed.query !== 'string') {
+      throw new Error('Unable to parse querystring');
+    }
+    const props = qs.parse(parsed.query);
+    assert.equal(props.code_challenge, codes.codeChallenge);
+    assert.equal(props.code_challenge_method, CodeChallengeMethod.S256);
   });
 
   it('should verifyIdToken properly', async () => {
@@ -1053,6 +1103,23 @@ describe('OAuth2 client', () => {
   });
 
   describe('getToken()', () => {
+    it('should allow a code_verifier to be passed', async () => {
+      const oauth2client =
+          new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      nock('https://www.googleapis.com')
+          .post('/oauth2/v4/token', undefined, {
+            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
+          })
+          .reply(
+              200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
+      const res = await oauth2client.getToken(
+          {code: 'code here', codeVerifier: 'its_verified'});
+      assert(res.res);
+      if (!res.res) return;
+      const params = qs.parse(res.res.config.data);
+      assert(params.code_verifier === 'its_verified');
+    });
+
     it('should return expiry_date', (done) => {
       const now = (new Date()).getTime();
       const scope =
