@@ -19,7 +19,7 @@ const url = require('url');
 const querystring = require('querystring');
 const opn = require('opn');
 
-// Download your OAuth2 configuration from the Google
+// Download your OAuth2 configuration from the Google Developer Console.
 const keys = require('./oauth2.keys.json');
 
 /**
