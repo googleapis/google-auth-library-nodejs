@@ -15,6 +15,7 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import * as crypto from 'crypto';
 import * as http from 'http';
 import * as querystring from 'querystring';
 import {PemVerifier} from './../pemverifier';
@@ -22,6 +23,16 @@ import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket} from './loginticket';
+
+export enum CodeChallengeMethod {
+  Plain = 'plain',
+  S256 = 'S256'
+}
+
+export interface GetTokenOptions {
+  code: string;
+  codeVerifier?: string;
+}
 
 export interface GenerateAuthUrlOpts {
   /**
@@ -72,9 +83,6 @@ export interface GenerateAuthUrlOpts {
    * requesting.
    */
   scope?: string[]|string;
-<<<<<<< HEAD
-  state?: string;
-=======
 
   /**
    * Recommended. Specifies any string value that your application uses to
@@ -125,7 +133,23 @@ export interface GenerateAuthUrlOpts {
    * 'select_account' - Prompt the user to select an account.
    */
   prompt?: string;
->>>>>>> 18bfdd9... chore: docs and samples for refresh token, update uris (#215)
+
+  /**
+   * Recommended. Specifies what method was used to encode a 'code_verifier'
+   * that will be used during authorization code exchange. This parameter must
+   * be used with the 'code_challenge' parameter. The value of the
+   * 'code_challenge_method' defaults to "plain" if not present in the request
+   * that includes a 'code_challenge'. The only supported values for this
+   * parameter are "S256" or "plain".
+   */
+  code_challenge_method?: CodeChallengeMethod;
+
+  /**
+   * Recommended. Specifies an encoded 'code_verifier' that will be used as a
+   * server-side challenge during authorization code exchange. This parameter
+   * must be used with the 'code_challenge' parameter described above.
+   */
+  code_challenge?: string;
 }
 
 export interface AuthClientOpts {
@@ -274,6 +298,10 @@ export class OAuth2Client extends AuthClient {
    * @return {string} URL to consent page.
    */
   generateAuthUrl(opts: GenerateAuthUrlOpts = {}) {
+    if (opts.code_challenge_method && !opts.code_challenge) {
+      throw new Error(
+          'If a code_challenge_method is provided, code_challenge must be included.');
+    }
     opts.response_type = opts.response_type || 'code';
     opts.client_id = opts.client_id || this._clientId;
     opts.redirect_uri = opts.redirect_uri || this.redirectUri;
@@ -281,11 +309,34 @@ export class OAuth2Client extends AuthClient {
     if (opts.scope instanceof Array) {
       opts.scope = opts.scope.join(' ');
     }
-
     const rootUrl =
         this.opts.authBaseUrl || OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
 
     return rootUrl + '?' + querystring.stringify(opts);
+  }
+
+  /**
+   * Convenience method to automatically generate a code_verifier, and it's
+   * resulting SHA256. If used, this must be paired with a S256
+   * code_challenge_method.
+   */
+  generateCodeVerifier() {
+    // base64 encoding uses 6 bits per character, and we want to generate128
+    // characters. 6*128/8 = 96.
+    const randomString = crypto.randomBytes(96).toString('base64');
+    // The valid characters in the code_verifier are [A-Z]/[a-z]/[0-9]/
+    // "-"/"."/"_"/"~". Base64 encoded strings are pretty close, so we're just
+    // swapping out a few chars.
+    const codeVerifier =
+        randomString.replace(/\+/g, '~').replace(/=/g, '_').replace(/\//g, '-');
+    // Generate the base64 encoded SHA256
+    const unencodedCodeChallenge =
+        crypto.createHash('sha256').update(codeVerifier).digest('base64');
+    // We need to use base64UrlEncoding instead of standard base64
+    const codeChallenge = unencodedCodeChallenge.split('=')[0]
+                              .replace(/\+/g, '-')
+                              .replace(/\//g, '_');
+    return {codeVerifier, codeChallenge};
   }
 
   /**
@@ -294,28 +345,34 @@ export class OAuth2Client extends AuthClient {
    * @param {function=} callback Optional callback fn.
    */
   getToken(code: string): Promise<GetTokenResponse>;
+  getToken(options: GetTokenOptions): Promise<GetTokenResponse>;
   getToken(code: string, callback: GetTokenCallback): void;
-  getToken(code: string, callback?: GetTokenCallback):
+  getToken(options: GetTokenOptions, callback: GetTokenCallback): void;
+  getToken(codeOrOptions: string|GetTokenOptions, callback?: GetTokenCallback):
       Promise<GetTokenResponse>|void {
+    const options = (typeof codeOrOptions === 'string') ?
+        {code: codeOrOptions} :
+        codeOrOptions;
     if (callback) {
-      this.getTokenAsync(code)
+      this.getTokenAsync(options)
           .then(r => callback(null, r.tokens, r.res))
           .catch(e => callback(e, null, (e as AxiosError).response));
     } else {
-      return this.getTokenAsync(code);
+      return this.getTokenAsync(options);
     }
   }
 
-  private async getTokenAsync(code: string): Promise<GetTokenResponse> {
+  private async getTokenAsync(options: GetTokenOptions):
+      Promise<GetTokenResponse> {
     const url = this.opts.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
-      code,
+      code: options.code,
       client_id: this._clientId,
       client_secret: this._clientSecret,
       redirect_uri: this.redirectUri,
-      grant_type: 'authorization_code'
+      grant_type: 'authorization_code',
+      code_verifier: options.codeVerifier
     };
-
     const res = await this.transporter.request<CredentialRequest>({
       method: 'POST',
       url,
@@ -328,7 +385,6 @@ export class OAuth2Client extends AuthClient {
           ((new Date()).getTime() + (res.data.expires_in * 1000));
       delete (tokens as CredentialRequest).expires_in;
     }
-
     return {tokens, res};
   }
 

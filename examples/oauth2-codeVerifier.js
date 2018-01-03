@@ -19,24 +19,19 @@ const url = require('url');
 const querystring = require('querystring');
 const opn = require('opn');
 
-// Download your OAuth2 configuration from the Google
+// Download your OAuth2 configuration from the Google Developer Console.
 const keys = require('./oauth2.keys.json');
 
 /**
  * Start by acquiring a pre-authenticated oAuth2 client.
  */
 async function main() {
-  try {
-    const oAuth2Client = await getAuthenticatedClient();
-    // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
-    // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
-    const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
-    const res = await oAuth2Client.request({url})
-    console.log(res.data);
-  } catch (e) {
-    console.error(e);
-  }
-  process.exit();
+  const oAuth2Client = await getAuthenticatedClient();
+  // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
+  // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
+  const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
+  const res = await oAuth2Client.request({url})
+  console.log(res.data);
 }
 
 /**
@@ -53,10 +48,18 @@ function getAuthenticatedClient() {
       keys.web.redirect_uris[0]
     );
 
+    // Generate a code_verifier and code_challenge
+    const codes = oAuth2Client.generateCodeVerifier();
+    console.log(codes);
+
     // Generate the url that will be used for the consent dialog.
     const authorizeUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: 'https://www.googleapis.com/auth/plus.me'
+      scope: 'https://www.googleapis.com/auth/plus.me',
+      // When using `generateCodeVerifier`, make sure to use code_challenge_method 'S256'.
+      code_challenge_method: 'S256',
+      // Pass along the generated code challenge.
+      code_challenge: codes.codeChallenge
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the
@@ -70,7 +73,12 @@ function getAuthenticatedClient() {
         server.close();
 
         // Now that we have the code, use that to acquire tokens.
-        const r = await oAuth2Client.getToken(qs.code)
+        // Pass along the generated code verifier that matches our code challenge.
+        const r = await oAuth2Client.getToken({
+          code: qs.code,
+          codeVerifier: codes.codeVerifier
+        });
+
         // Make sure to set the credentials on the OAuth2 client.
         oAuth2Client.setCredentials(r.tokens);
         console.info('Tokens acquired.');
@@ -83,4 +91,4 @@ function getAuthenticatedClient() {
   });
 }
 
-main();
+main().catch(console.error);
