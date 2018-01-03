@@ -924,8 +924,8 @@ describe('OAuth2 client', () => {
     let scope: nock.Scope;
 
     beforeEach(() => {
-      scope = nock('https://accounts.google.com')
-                  .post('/o/oauth2/token', undefined, {
+      scope = nock('https://www.googleapis.com')
+                  .post('/oauth2/v4/token', undefined, {
                     reqheaders:
                         {'content-type': 'application/x-www-form-urlencoded'}
                   })
@@ -1056,8 +1056,8 @@ describe('OAuth2 client', () => {
     it('should return expiry_date', (done) => {
       const now = (new Date()).getTime();
       const scope =
-          nock('https://accounts.google.com')
-              .post('/o/oauth2/token', undefined, {
+          nock('https://www.googleapis.com')
+              .post('/oauth2/v4/token', undefined, {
                 reqheaders:
                     {'Content-Type': 'application/x-www-form-urlencoded'}
               })
