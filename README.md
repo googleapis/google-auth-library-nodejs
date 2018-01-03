@@ -202,7 +202,24 @@ oauth2Client.setCredentials(tokens);
 ```
 
 ##### Manually refreshing access token
-If you need to manually refresh the `access_token` associated with your OAuth2 client, make sure you have a `refresh_token` set in your credentials first and then call:
+If you need to manually refresh the `access_token` associated with your OAuth2 client, ensure the call to `generateAuthUrl` sets the `access_type` to `offline`.  The refresh token will only be returned for the first authorization by the user.  To force consent, set the `prompt` property to `consent`:
+
+```js
+// Generate the url that will be used for the consent dialog.
+const authorizeUrl = oAuth2Client.generateAuthUrl({
+  // To get a refresh token, you MUST set access_type to `offline`.
+  access_type: 'offline',
+  // set the appropriate scopes
+  scope: 'https://www.googleapis.com/auth/plus.me',
+  // A refresh token is only returned the first time the user
+  // consents to providing access.  For illustration purposes,
+  // setting the prompt to 'consent' will force this consent
+  // every time, forcing a refresh_token to be returned.
+  prompt: 'consent'
+});
+```
+
+If a refresh_token is set again on `OAuth2Client.credentials.refresh_token`, you can can `refreshAccessToken()`:
 
 ``` js
 const tokens = await oauth2Client.refreshAccessToken();
