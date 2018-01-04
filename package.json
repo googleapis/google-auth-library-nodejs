@@ -43,6 +43,7 @@
     "gulp-tslint": "^8.0.0",
     "gulp-typescript": "^3.1.6",
     "istanbul": "^0.4.5",
+    "js-green-licenses": "^0.2.0",
     "keypair": "^1.0.0",
     "merge2": "^1.0.3",
     "mocha": "^4.0.1",
@@ -67,10 +68,12 @@
     "generate-docs": "typedoc --name 'Google Node.js OAuth 2.0 Client' --out docs --readme README.md ts/lib",
     "coverage": "istanbul cover -x 'apis/**' _mocha -- --reporter spec --timeout 4000",
     "test": "npm run lint && npm run build && npm run check-format && npm run coverage",
+    "posttest": "npm run license-check",
     "coveralls": "istanbul cover -x 'apis/**' _mocha --report lcovonly -- --reporter spec --timeout 4000 && cat coverage/lcov.info | coveralls",
     "build": "tsc",
     "clean": "rm -rf lib test types",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "license-check": "jsgl --local ."
   },
   "license": "Apache-2.0"
 }
