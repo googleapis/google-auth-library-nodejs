@@ -29,8 +29,9 @@ describe('LoginTicket', () => {
   });
 
   it('should return attributes from getAttributes', () => {
-    const ticket = new LoginTicket('myenvelope', 'mypayload');
-    assert.deepEqual(
-        ticket.getAttributes(), {envelope: 'myenvelope', payload: 'mypayload'});
+    const payload =
+        {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
+    const ticket = new LoginTicket('myenvelope', payload);
+    assert.deepEqual(ticket.getAttributes(), {envelope: 'myenvelope', payload});
   });
 });

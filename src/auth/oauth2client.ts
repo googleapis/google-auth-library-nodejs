@@ -22,7 +22,7 @@ import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
-import {LoginTicket} from './loginticket';
+import {LoginTicket, TokenPayload} from './loginticket';
 
 export enum CodeChallengeMethod {
   Plain = 'plain',
@@ -806,7 +806,7 @@ export class OAuth2Client extends AuthClient {
     const signature = segments[2];
 
     let envelope;
-    let payload;
+    let payload: TokenPayload;
 
     try {
       envelope = JSON.parse(this.decodeBase64(segments[0]));

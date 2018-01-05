@@ -19,6 +19,7 @@ export interface Credentials {
   expiry_date?: number|null;
   access_token?: string|null;
   token_type?: string|null;
+  id_token?: string|null;
 }
 
 export interface CredentialRequest {

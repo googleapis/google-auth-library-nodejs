@@ -116,6 +116,8 @@ describe('OAuth2 client', () => {
     const idToken = 'idToken';
     const audience = 'fakeAudience';
     const maxExpiry = 5;
+    const payload =
+        {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
     nock('https://www.googleapis.com')
         .get('/oauth2/v1/certs')
         .reply(200, fakeCerts);
@@ -126,13 +128,13 @@ describe('OAuth2 client', () => {
           assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
           assert.equal(requiredAudience, audience);
           assert.equal(theMaxExpiry, maxExpiry);
-          return new LoginTicket('c', 'd');
+          return new LoginTicket('c', payload);
         };
     const result = await client.verifyIdToken({idToken, audience, maxExpiry});
     assert.notEqual(result, null);
     if (result) {
       assert.equal(result.getEnvelope(), 'c');
-      assert.equal(result.getPayload(), 'd');
+      assert.equal(result.getPayload(), payload);
     }
   });
 
@@ -142,6 +144,13 @@ describe('OAuth2 client', () => {
        const fakeCerts = {a: 'a', b: 'b'};
        const idToken = 'idToken';
        const audience = 'fakeAudience';
+       const payload = {
+         aud: 'aud',
+         sub: 'sub',
+         iss: 'iss',
+         iat: 1514162443,
+         exp: 1514166043
+       };
        nock('https://www.googleapis.com')
            .get('/oauth2/v1/certs')
            .reply(200, fakeCerts);
@@ -151,7 +160,7 @@ describe('OAuth2 client', () => {
              assert.equal(jwt, idToken);
              assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
              assert.equal(requiredAudience, audience);
-             return new LoginTicket('c', 'd');
+             return new LoginTicket('c', payload);
            };
        try {
          // tslint:disable-next-line no-any
