@@ -29,21 +29,18 @@ async function main() {
   try {
     const client = await getJWTClient();
     const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-    const res = await client.request({url});
+    const res = await client.request({ url });
     console.log(res.data);
-  } catch(e) {
+  } catch (e) {
     console.error(e);
   }
   process.exit();
 }
 
 async function getJWTClient() {
-  const client = new JWTClient(
-    keys.client_email,
-    null,
-    keys.private_key,
-    ['https://www.googleapis.com/auth/cloud-platform'],
-  );
+  const client = new JWTClient(keys.client_email, null, keys.private_key, [
+    'https://www.googleapis.com/auth/cloud-platform'
+  ]);
   await client.authorize();
   return client;
 }

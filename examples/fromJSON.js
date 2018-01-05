@@ -13,7 +13,7 @@
 
 'use strict';
 
-const {GoogleAuth} = require('../build/src/index');
+const { GoogleAuth } = require('../build/src/index');
 
 /**
  * Instead of loading credentials from a key file, you can also provide
@@ -33,8 +33,9 @@ const {GoogleAuth} = require('../build/src/index');
  *       "client_id": "your-client-id",
  *       "auth_uri": "https://accounts.google.com/o/oauth2/auth",
  *       "token_uri": "https://accounts.google.com/o/oauth2/token",
- *       "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
- *       "client_x509_cert_url": "your-cert-url"
+ *       "auth_provider_x509_cert_url":
+ *"https://www.googleapis.com/oauth2/v1/certs", "client_x509_cert_url":
+ *"your-cert-url"
  *     }'
  * $ node fromJSON.js
  *
@@ -52,7 +53,7 @@ async function main() {
   client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
   await client.authorize();
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({url});
+  const res = await client.request({ url });
   console.log(res.data);
 }
 
