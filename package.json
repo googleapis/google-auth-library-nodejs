@@ -38,6 +38,7 @@
     "coveralls": "^3.0.0",
     "gts": "^0.5.3",
     "istanbul": "^0.4.5",
+    "js-green-licenses": "^0.2.0",
     "keypair": "^1.0.1",
     "mocha": "^4.1.0",
     "ncp": "^2.0.0",
@@ -64,7 +65,8 @@
     "compile": "tsc -p .",
     "fix": "gts fix",
     "pretest": "npm run compile",
-    "posttest": "npm run check"
+    "posttest": "npm run check && npm run license-check",
+    "license-check": "jsgl --local ."
   },
   "license": "Apache-2.0"
 }
