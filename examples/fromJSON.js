@@ -37,6 +37,7 @@ const { GoogleAuth } = require('../build/src/index');
  *       "client_x509_cert_url": "your-cert-url"
  *     }'
  * $ node fromJSON.js
+ *
  **/
 
 const keysEnvVar = process.env['CREDS'];

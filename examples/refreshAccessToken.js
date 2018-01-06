@@ -33,7 +33,7 @@ async function main() {
     console.log(`Refresh Token: ${oAuth2Client.credentials.refresh_token}`);
     console.log(`Expiration: ${oAuth2Client.credentials.expiry_date}`);
     console.log('Refreshing access token ...');
-    await oAuth2Client.refreshAccessToken();
+    const res = await oAuth2Client.refreshAccessToken();
     console.log(`New expiration: ${oAuth2Client.credentials.expiry_date}`);
   } catch (e) {
     console.error(e);
@@ -47,9 +47,8 @@ async function main() {
  */
 function getAuthenticatedClient() {
   return new Promise((resolve, reject) => {
-    // create an oAuth client to authorize the API call.  Secrets are kept in a
-    // `keys.json` file, which should be downloaded from the Google Developers
-    // Console.
+    // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
+    // which should be downloaded from the Google Developers Console.
     const oAuth2Client = new OAuth2Client(
       keys.web.client_id,
       keys.web.client_secret,
@@ -69,13 +68,12 @@ function getAuthenticatedClient() {
       prompt: 'consent'
     });
 
-    // Open an http server to accept the oauth callback. In this simple example,
-    // the only request to our webserver is to /oauth2callback?code=<code>
+    // Open an http server to accept the oauth callback. In this simple example, the
+    // only request to our webserver is to /oauth2callback?code=<code>
     const server = http
       .createServer(async (req, res) => {
         if (req.url.indexOf('/oauth2callback') > -1) {
-          // acquire the code from the querystring, and close the web
-          // server.
+          // acquire the code from the querystring, and close the web server.
           const qs = querystring.parse(url.parse(req.url).query);
           console.log(`Code is ${qs.code}`);
           res.end('Authentication successful! Please return to the console.');
