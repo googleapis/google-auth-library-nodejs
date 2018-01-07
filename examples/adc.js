@@ -19,7 +19,6 @@
  * easiest way to get started.
  */
 
-
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
@@ -33,7 +32,7 @@ async function main() {
   try {
     const adc = await getADC();
     const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
-    const res = await adc.client.request({url});
+    const res = await adc.client.request({ url });
     console.log(res.data);
   } catch (e) {
     console.error('Error making request.');
@@ -63,7 +62,7 @@ async function getADC() {
   return {
     client: client,
     projectId: res.projectId
-  }
+  };
 }
 
 main();

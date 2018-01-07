@@ -20,7 +20,6 @@
  * used across multiple requests.
  */
 
-
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
@@ -42,14 +41,14 @@ async function main() {
     // use the agent as an Axios config param to make the request
     const res = await adc.client.request({
       url,
-      httpsAgent: agent,
+      httpsAgent: agent
     });
     console.log(res.data);
 
     // Re-use the same agent to make the next request over the same connection
     const res2 = await adc.client.request({
       url,
-      httpsAgent: agent,
+      httpsAgent: agent
     });
     console.log(res2.data);
   } catch (e) {
@@ -80,7 +79,7 @@ async function getADC() {
   return {
     client: client,
     projectId: res.projectId
-  }
+  };
 }
 
 main();

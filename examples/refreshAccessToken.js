@@ -70,25 +70,27 @@ function getAuthenticatedClient() {
 
     // Open an http server to accept the oauth callback. In this simple example, the
     // only request to our webserver is to /oauth2callback?code=<code>
-    const server = http.createServer(async (req, res) => {
-      if (req.url.indexOf('/oauth2callback') > -1) {
-        // acquire the code from the querystring, and close the web server.
-        const qs = querystring.parse(url.parse(req.url).query);
-        console.log(`Code is ${qs.code}`);
-        res.end('Authentication successful! Please return to the console.');
-        server.close();
+    const server = http
+      .createServer(async (req, res) => {
+        if (req.url.indexOf('/oauth2callback') > -1) {
+          // acquire the code from the querystring, and close the web server.
+          const qs = querystring.parse(url.parse(req.url).query);
+          console.log(`Code is ${qs.code}`);
+          res.end('Authentication successful! Please return to the console.');
+          server.close();
 
-        // Now that we have the code, use that to acquire tokens.
-        const r = await oAuth2Client.getToken(qs.code)
-        // Make sure to set the credentials on the OAuth2 client.
-        oAuth2Client.setCredentials(r.tokens);
-        console.info('Tokens acquired.');
-        resolve(oAuth2Client);
-      }
-    }).listen(3000, () => {
-      // open the browser to the authorize url to start the workflow
-      opn(authorizeUrl);
-    });
+          // Now that we have the code, use that to acquire tokens.
+          const r = await oAuth2Client.getToken(qs.code);
+          // Make sure to set the credentials on the OAuth2 client.
+          oAuth2Client.setCredentials(r.tokens);
+          console.info('Tokens acquired.');
+          resolve(oAuth2Client);
+        }
+      })
+      .listen(3000, () => {
+        // open the browser to the authorize url to start the workflow
+        opn(authorizeUrl);
+      });
   });
 }
 
