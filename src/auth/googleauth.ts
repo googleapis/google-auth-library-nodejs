@@ -75,6 +75,7 @@ export class GoogleAuth {
   }
 
   private _getDefaultProjectIdPromise: Promise<string|null>;
+  private _cachedProjectId: string|null;
 
   // To save the contents of the JSON credential file
   jsonContent: JWTInput|null = null;
@@ -114,6 +115,11 @@ export class GoogleAuth {
     // * Google App Engine application ID (Not implemented yet)
     // * Google Compute Engine project ID (from metadata server) (Not
     // implemented yet)
+
+    if (this._cachedProjectId) {
+      return Promise.resolve(this._cachedProjectId);
+    }
+
     if (!this._getDefaultProjectIdPromise) {
       this._getDefaultProjectIdPromise =
           new Promise(async (resolve, reject) => {
@@ -122,6 +128,7 @@ export class GoogleAuth {
                   await this.getFileProjectId() ||
                   await this.getDefaultServiceProjectId() ||
                   await this.getGCEProjectId();
+              this._cachedProjectId = projectId;
               resolve(projectId);
             } catch (e) {
               reject(e);

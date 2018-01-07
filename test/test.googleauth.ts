@@ -21,6 +21,7 @@ import * as http from 'http';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as stream from 'stream';
+import {PassThrough} from 'stream';
 
 import {DefaultTransporter, GoogleAuth, JWT, UserRefreshClient} from '../src/index';
 import {BodyResponseCallback} from '../src/transporters';
@@ -891,29 +892,6 @@ describe('GoogleAuth', () => {
          const getProjectIdPromise = await auth2.getDefaultProjectId();
          assert.notEqual(getProjectIdPromise, projectIdPromise);
        });
-
-    it('should return the same promise for subsequent calls', async () => {
-      const fixedProjectId = 'my-awesome-project';
-
-      // Create a function which will set up a GoogleAuth instance to match
-      // on an environment variable json file, but not on anything else.
-      const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
-        insertEnvironmentVariableIntoAuth(
-            creds, 'GCLOUD_PROJECT', fixedProjectId);
-        creds._fileExists = () => false;
-        creds._checkIsGCE = async () => Promise.resolve(false);
-      };
-
-      // Set up a new GoogleAuth and prepare it for local environment
-      // variable handling.
-      const auth = new GoogleAuth();
-      setUpAuthForEnvironmentVariable(auth);
-
-      // Ask for credentials, the first time.
-      const p1 = auth.getDefaultProjectId();
-      const p2 = auth.getDefaultProjectId();
-      assert.equal(p1, p2);
-    });
   });
 
   it('should use GCLOUD_PROJECT environment variable when it is set',
