@@ -45,6 +45,7 @@
     "nock": "^9.1.5",
     "opn": "^5.1.0",
     "pify": "^3.0.0",
+    "prettier": "^1.9.2",
     "source-map-support": "^0.5.0",
     "tmp": "0.0.33",
     "typescript": "~2.6.2"
@@ -63,7 +64,8 @@
     "prepare": "npm run compile",
     "check": "gts check",
     "compile": "tsc -p .",
-    "fix": "gts fix",
+    "fix": "gts fix && npm run fix-samples",
+    "fix-samples": "prettier --write --single-quote examples/*.js",
     "pretest": "npm run compile",
     "posttest": "npm run check && npm run license-check",
     "license-check": "jsgl --local ."
