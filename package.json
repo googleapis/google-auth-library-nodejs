@@ -31,7 +31,7 @@
     "@types/mocha": "^2.2.45",
     "@types/ncp": "^2.0.1",
     "@types/nock": "^9.1.1",
-    "@types/node": "^8.5.5",
+    "@types/node": "^9.3.0",
     "@types/pify": "^3.0.0",
     "@types/tmp": "0.0.33",
     "clang-format": "^1.0.50",
