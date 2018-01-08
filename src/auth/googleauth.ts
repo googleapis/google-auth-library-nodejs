@@ -74,13 +74,9 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  private _cachedProjectId: string;
+  private _getDefaultProjectIdPromise: Promise<string|null>;
+  private _cachedProjectId: string|null;
 
-  // Note:  this properly is only public to satisify unit tests.
-  // https://github.com/Microsoft/TypeScript/issues/5228
-  set cachedProjectId(projectId: string) {
-    this._cachedProjectId = projectId;
-  }
   // To save the contents of the JSON credential file
   jsonContent: JWTInput|null = null;
 
@@ -108,7 +104,7 @@ export class GoogleAuth {
     }
   }
 
-  private async getDefaultProjectIdAsync(): Promise<string|null> {
+  private getDefaultProjectIdAsync(): Promise<string|null> {
     // In implicit case, supports three environments. In order of precedence,
     // the implicit environments are:
     //
@@ -121,16 +117,25 @@ export class GoogleAuth {
     // implemented yet)
 
     if (this._cachedProjectId) {
-      return this._cachedProjectId;
+      return Promise.resolve(this._cachedProjectId);
     }
 
-    const projectId = this.getProductionProjectId() ||
-        await this.getFileProjectId() ||
-        await this.getDefaultServiceProjectId() || await this.getGCEProjectId();
-    if (projectId) {
-      this._cachedProjectId = projectId;
+    if (!this._getDefaultProjectIdPromise) {
+      this._getDefaultProjectIdPromise =
+          new Promise(async (resolve, reject) => {
+            try {
+              const projectId = this.getProductionProjectId() ||
+                  await this.getFileProjectId() ||
+                  await this.getDefaultServiceProjectId() ||
+                  await this.getGCEProjectId();
+              this._cachedProjectId = projectId;
+              resolve(projectId);
+            } catch (e) {
+              reject(e);
+            }
+          });
     }
-    return projectId;
+    return this._getDefaultProjectIdPromise;
   }
 
   /**
@@ -175,7 +180,7 @@ export class GoogleAuth {
     if (this.cachedCredential) {
       return {
         credential: this.cachedCredential as JWT | UserRefreshClient,
-        projectId: this._cachedProjectId
+        projectId: await this.getDefaultProjectIdAsync()
       };
     }
 
