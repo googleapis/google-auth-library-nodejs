@@ -321,6 +321,15 @@ describe('GoogleAuth', () => {
         const result = auth.fromJSON(json);
         assert.equal(null, (result as JWT).keyFile);
       });
+
+      it('should create JWT which refreshTokenEarlyMillis set when this is' +
+             ' set for GoogleAuth',
+         () => {
+           const json = createJwtJSON();
+           const auth = new GoogleAuth(1000);
+           const result = auth.fromJSON(json);
+           assert.equal(1000, (result as JWT).refreshTokenEarlyMillis);
+         });
     });
 
     describe('Refresh token', () => {

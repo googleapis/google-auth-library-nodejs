@@ -82,6 +82,25 @@ describe('Compute auth client', () => {
     });
   });
 
+  it('should refresh if access token will expired soon and time to refresh' +
+         ' before expiration is set',
+     (done) => {
+       const auth = new GoogleAuth();
+       compute = new Compute(10000);
+       const scope =
+           nock('http://metadata.google.internal')
+               .get(
+                   '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+               .reply(200, {access_token: 'abc123', expires_in: 10000});
+       compute.credentials.access_token = 'initial-access-token';
+       compute.credentials.expiry_date = (new Date()).getTime() + 5000;
+       compute.request({url: 'http://foo'}, () => {
+         assert.equal(compute.credentials.access_token, 'abc123');
+         scope.done();
+         done();
+       });
+     });
+
   describe('.createScopedRequired', () => {
     it('should return false', () => {
       const c = new Compute();

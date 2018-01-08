@@ -1023,6 +1023,25 @@ describe('OAuth2 client', () => {
       });
     });
 
+    it('should refresh if access token will expired soon and time to refresh' +
+           ' before expiration is set',
+       (done) => {
+         const auth = new GoogleAuth();
+         const oauth2client = new OAuth2Client(
+             CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, undefined, 5000);
+
+         oauth2client.credentials = {
+           access_token: 'initial-access-token',
+           refresh_token: 'refresh-token-placeholder',
+           expiry_date: (new Date()).getTime() + 3000
+         };
+
+         oauth2client.request({url: 'http://example.com'}, () => {
+           assert.equal('abc123', oauth2client.credentials.access_token);
+           done();
+         });
+       });
+
     it('should not refresh if not expired', (done) => {
       const oauth2client =
           new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);

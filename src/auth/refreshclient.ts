@@ -30,10 +30,14 @@ export class UserRefreshClient extends OAuth2Client {
    * @param {string} clientId The authentication client ID.
    * @param {string} clientSecret The authentication client secret.
    * @param {string} refreshToken The authentication refresh token.
+   * @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
    * @constructor
    */
-  constructor(clientId?: string, clientSecret?: string, refreshToken?: string) {
-    super(clientId, clientSecret);
+  constructor(
+      clientId?: string, clientSecret?: string, refreshToken?: string,
+      refreshTokenEarlyMillis?: number) {
+    super(
+        clientId, clientSecret, undefined, undefined, refreshTokenEarlyMillis);
     this._refreshToken = refreshToken;
   }
 
