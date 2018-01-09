@@ -13,7 +13,7 @@
 
 'use strict';
 
-const {JWT} = require('../build/src/index');
+const { JWT } = require('../build/src/index');
 
 /**
  * The JWT authorization is ideal for performing server-to-server
@@ -33,7 +33,7 @@ async function main() {
   });
   await client.authorize();
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({url});
+  const res = await client.request({ url });
   console.log(res.data);
 }
 
