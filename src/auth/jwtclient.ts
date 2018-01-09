@@ -23,12 +23,20 @@ import {GetTokenResponse, OAuth2Client, RequestMetadataResponse} from './oauth2c
 
 const isString = require('lodash.isstring');
 
+export interface JWTOptions {
+  email?: string;
+  keyFile?: string;
+  key?: string;
+  scopes?: string|string[];
+  subject?: string;
+}
+
 export class JWT extends OAuth2Client {
   email?: string;
-  keyFile?: string|null;
-  key?: string|null;
-  scopes?: string|string[]|null;
-  scope?: string|null;
+  keyFile?: string;
+  key?: string;
+  scopes?: string|string[];
+  scope?: string;
   subject?: string;
   gtoken: GoogleToken;
 
@@ -44,15 +52,22 @@ export class JWT extends OAuth2Client {
    * @param {string=} subject impersonated account's email address.
    * @constructor
    */
+  constructor(options: JWTOptions);
   constructor(
-      email?: string, keyFile?: string|null, key?: string|null,
-      scopes?: string|string[]|null, subject?: string) {
+      email?: string, keyFile?: string, key?: string, scopes?: string|string[],
+      subject?: string);
+  constructor(
+      optionsOrEmail?: string|JWTOptions, keyFile?: string, key?: string,
+      scopes?: string|string[], subject?: string) {
     super();
-    this.email = email;
-    this.keyFile = keyFile;
-    this.key = key;
-    this.scopes = scopes;
-    this.subject = subject;
+    const opts = (optionsOrEmail && typeof optionsOrEmail === 'object') ?
+        optionsOrEmail :
+        {email: optionsOrEmail, keyFile, key, scopes, subject};
+    this.email = opts.email;
+    this.keyFile = opts.keyFile;
+    this.key = opts.key;
+    this.scopes = opts.scopes;
+    this.subject = opts.subject;
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
   }
 
@@ -62,7 +77,13 @@ export class JWT extends OAuth2Client {
    * @return {object} The cloned instance.
    */
   createScoped(scopes?: string|string[]) {
-    return new JWT(this.email, this.keyFile, this.key, scopes, this.subject);
+    return new JWT({
+      email: this.email,
+      keyFile: this.keyFile,
+      key: this.key,
+      scopes,
+      subject: this.subject
+    });
   }
 
   /**
