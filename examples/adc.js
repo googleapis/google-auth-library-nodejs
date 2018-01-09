@@ -22,7 +22,7 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const GoogleAuth = require('../build/src/index').GoogleAuth;
+const { GoogleAuth } = require('../build/src/index');
 const auth = new GoogleAuth();
 
 /**

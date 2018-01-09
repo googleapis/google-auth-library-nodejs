@@ -13,7 +13,7 @@
 
 'use strict';
 
-const OAuth2Client = require('../build/src/index').OAuth2Client;
+const { OAuth2Client } = require('../build/src/index');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');

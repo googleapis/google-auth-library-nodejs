@@ -2,7 +2,7 @@
 
 # Google Auth Library
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg)](https://greenkeeper.io/)
+[![Greenkeeper badge][greenkeeperimg]][greenkeeper]
 [![npm version][npmimg]][npm]
 [![Build Status][travisimg]][travis]
 [![Code Coverage][coverallsimg]][coveralls]
@@ -55,7 +55,7 @@ For example, a JWT auth client will be created when your code is running on your
 The code below shows how to retrieve a default credential type, depending upon the runtime environment. The createScopedRequired must be called to determine when you need to pass in the scopes manually, and when they have been set for you automatically based on the configured runtime environment.
 
 ```js
-const GoogleAuth = require('google-auth-library').GoogleAuth;
+const {GoogleAuth} = require('google-auth-library');
 const auth = new GoogleAuth();
 
 /**
@@ -114,7 +114,7 @@ For more information about OAuth2 and how it works, [see here][oauth].
 Let's take a look at a complete example.
 
 ``` js
-const OAuth2Client = require('google-auth-library').OAuth2Client;
+const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
@@ -231,33 +231,23 @@ const tokens = await oauth2Client.refreshAccessToken();
 The Google Developers Console provides `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
 ``` js
-const JWTClient = require('../build/src/index').JWT;
+const {JWT} = require('../build/src/index');
 const keys = require('./jwt.keys.json');
 
 async function main() {
-  try {
-    const client = await getJWTClient();
-    const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-    const res = await client.request({url});
-    console.log(res.data);
-  } catch(e) {
-    console.error(e);
-  }
-  process.exit();
-}
-
-async function getJWTClient() {
-  const client = new JWTClient(
+  const client = new JWT(
     keys.client_email,
     null,
     keys.private_key,
     ['https://www.googleapis.com/auth/cloud-platform'],
   );
   await client.authorize();
-  return client;
+  const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
+  const res = await client.request({url});
+  console.log(res.data);
 }
 
-main();
+main().catch(console.error);
 
 ```
 
@@ -340,13 +330,15 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [coverallsimg]: https://img.shields.io/coveralls/google/google-auth-library-nodejs.svg
 [david-dm-img]: https://david-dm.org/google/google-auth-library-nodejs/status.svg
 [david-dm]: https://david-dm.org/google/google-auth-library-nodejs
+[greenkeeperimg]: https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg
+[greenkeeper]: https://greenkeeper.io/
 [node]: http://nodejs.org/
 [npmimg]: https://img.shields.io/npm/v/google-auth-library.svg
 [npm]: https://www.npmjs.org/package/google-auth-library
 [oauth]: https://developers.google.com/identity/protocols/OAuth2
 [overflowimg]: https://googledrive.com/host/0ByfSjdPVs9MZbkhjeUhMYzRTeEE/stackoveflow-tag.png
-[snyk-image]: https://snyk.io/test/github/google/google-auth-library/badge.svg
-[snyk-url]: https://snyk.io/test/github/google/google-auth-library
+[snyk-image]: https://snyk.io/test/github/google/google-auth-library-nodejs/badge.svg
+[snyk-url]: https://snyk.io/test/github/google/google-auth-library-nodejs
 [stability]: http://nodejs.org/api/stream.html#stream_stream
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
 [stream]: http://nodejs.org/api/stream.html#stream_class_stream_readable
