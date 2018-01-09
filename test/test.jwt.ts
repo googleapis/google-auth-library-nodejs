@@ -74,9 +74,8 @@ describe('JWT auth client', () => {
   describe('.authorize', () => {
     it('should get an initial access token', done => {
       const jwt = new JWT(
-          'foo@serviceaccount.com', PEM_PATH, null,
+          'foo@serviceaccount.com', PEM_PATH, undefined,
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
-
       createGTokenMock();
       jwt.authorize((err, creds) => {
         assert.equal(err, null);
@@ -97,9 +96,12 @@ describe('JWT auth client', () => {
     });
 
     it('should accept scope as string', done => {
-      const jwt = new JWT(
-          'foo@serviceaccount.com', '/path/to/key.pem', null, 'http://foo',
-          'bar@subjectaccount.com');
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: '/path/to/key.pem',
+        scopes: 'http://foo',
+        subject: 'bar@subjectaccount.com'
+      });
 
       createGTokenMock();
       jwt.authorize((err, creds) => {
@@ -112,9 +114,12 @@ describe('JWT auth client', () => {
   describe('.getAccessToken', () => {
     describe('when scopes are set', () => {
       it('can get obtain new access token', (done) => {
-        const jwt = new JWT(
-            'foo@serviceaccount.com', PEM_PATH, null,
-            ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+        const jwt = new JWT({
+          email: 'foo@serviceaccount.com',
+          keyFile: PEM_PATH,
+          scopes: ['http://bar', 'http://foo'],
+          subject: 'bar@subjectaccount.com'
+        });
 
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
         createGTokenMock();
@@ -132,10 +137,12 @@ describe('JWT auth client', () => {
   describe('.getRequestMetadata', () => {
     describe('when scopes are set', () => {
       it('can obtain new access token', (done) => {
-        const jwt = new JWT(
-            'foo@serviceaccount.com', PEM_PATH, null,
-            ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
-
+        const jwt = new JWT({
+          email: 'foo@serviceaccount.com',
+          keyFile: PEM_PATH,
+          scopes: ['http://bar', 'http://foo'],
+          subject: 'bar@subjectaccount.com'
+        });
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
         const wantedToken = 'abc123';
@@ -158,10 +165,11 @@ describe('JWT auth client', () => {
       it('gets a jwt header access token', (done) => {
         const keys = keypair(1024 /* bitsize of private key */);
         const email = 'foo@serviceaccount.com';
-        const jwt = new JWT(
-            'foo@serviceaccount.com', null, keys.private, null,
-            'ignored@subjectaccount.com');
-
+        const jwt = new JWT({
+          email: 'foo@serviceaccount.com',
+          key: keys.private,
+          subject: 'ignored@subjectaccount.com'
+        });
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
         const testUri = 'http:/example.com/my_test_service';
@@ -184,10 +192,12 @@ describe('JWT auth client', () => {
 
   describe('.request', () => {
     it('should refresh token if missing access token', (done) => {
-      const jwt = new JWT(
-          'foo@serviceaccount.com', PEM_PATH, null,
-          ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
-
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: ['http://bar', 'http://foo'],
+        subject: 'bar@subjectaccount.com'
+      });
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
       createGTokenMock({access_token: 'abc123'});
 
@@ -198,9 +208,12 @@ describe('JWT auth client', () => {
     });
 
     it('should refresh token if expired', (done) => {
-      const jwt = new JWT(
-          'foo@serviceaccount.com', PEM_PATH, null,
-          ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: ['http://bar', 'http://foo'],
+        subject: 'bar@subjectaccount.com'
+      });
 
       jwt.credentials = {
         access_token: 'woot',
@@ -217,9 +230,12 @@ describe('JWT auth client', () => {
 
     it('should refresh token if the server returns 403', (done) => {
       nock('http://example.com').get('/access').twice().reply(403);
-      const jwt = new JWT(
-          'foo@serviceaccount.com', PEM_PATH, null, ['http://example.com'],
-          'bar@subjectaccount.com');
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: ['http://example.com'],
+        subject: 'bar@subjectaccount.com'
+      });
 
       jwt.credentials = {
         access_token: 'woot',
@@ -241,9 +257,12 @@ describe('JWT auth client', () => {
               .post('/o/oauth2/token', '*')
               .reply(200, {access_token: 'abc123', expires_in: 10000});
 
-      const jwt = new JWT(
-          'foo@serviceaccount.com', '/path/to/key.pem', null,
-          ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: '/path/to/key.pem',
+        scopes: ['http://bar', 'http://foo'],
+        subject: 'bar@subjectaccount.com'
+      });
 
       jwt.credentials = {
         access_token: 'initial-access-token',
@@ -264,9 +283,12 @@ describe('JWT auth client', () => {
               .post('/o/oauth2/token', '*')
               .reply(200, {access_token: 'abc123', expires_in: 10000});
 
-      const jwt = new JWT(
-          'foo@serviceaccount.com', '/path/to/key.pem', null,
-          ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: '/path/to/key.pem',
+        scopes: ['http://bar', 'http://foo'],
+        subject: 'bar@subjectaccount.com'
+      });
 
       jwt.credentials = {
         access_token: 'initial-access-token',
@@ -282,9 +304,12 @@ describe('JWT auth client', () => {
   });
 
   it('should return expiry_date in milliseconds', async () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', PEM_PATH, null, ['http://bar', 'http://foo'],
-        'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: PEM_PATH,
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com'
+    });
 
     jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
@@ -300,9 +325,12 @@ describe('JWT auth client', () => {
 
 describe('.createScoped', () => {
   it('should clone stuff', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null,
-        ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com'
+    });
 
     const clone = jwt.createScoped('x');
 
@@ -313,18 +341,24 @@ describe('.createScoped', () => {
   });
 
   it('should handle string scope', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null,
-        ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com'
+    });
 
     const clone = jwt.createScoped('newscope');
     assert.equal('newscope', clone.scopes);
   });
 
   it('should handle array scope', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null,
-        ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com'
+    });
 
     const clone = jwt.createScoped(['gorilla', 'chimpanzee', 'orangutan']);
     assert.equal(3, clone.scopes!.length);
@@ -334,18 +368,23 @@ describe('.createScoped', () => {
   });
 
   it('should handle null scope', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null,
-        ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com'
+    });
 
     const clone = jwt.createScoped();
     assert.equal(null, clone.scopes);
   });
 
   it('should set scope when scope was null', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null, null,
-        'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      subject: 'bar@subjectaccount.com'
+    });
 
     const clone = jwt.createScoped('hi');
     assert.equal('hi', clone.scopes);
@@ -363,9 +402,12 @@ describe('.createScoped', () => {
   });
 
   it('should not return the original instance', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null,
-        ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com'
+    });
 
     const clone = jwt.createScoped('hi');
     assert.notEqual(jwt, clone);
@@ -374,51 +416,63 @@ describe('.createScoped', () => {
 
 describe('.createScopedRequired', () => {
   it('should return true when scopes is null', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null, null,
-        'bar@subjectaccount.com');
-
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      subject: 'bar@subjectaccount.com'
+    });
     assert.equal(true, jwt.createScopedRequired());
   });
 
   it('should return true when scopes is an empty array', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null, [],
-        'bar@subjectaccount.com');
-
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: [],
+      subject: 'bar@subjectaccount.com'
+    });
     assert.equal(true, jwt.createScopedRequired());
   });
 
   it('should return true when scopes is an empty string', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null, '',
-        'bar@subjectaccount.com');
-
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: '',
+      subject: 'bar@subjectaccount.com'
+    });
     assert.equal(true, jwt.createScopedRequired());
   });
 
   it('should return false when scopes is a filled-in string', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null, 'http://foo',
-        'bar@subjectaccount.com');
-
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: 'http://foo',
+      subject: 'bar@subjectaccount.com'
+    });
     assert.equal(false, jwt.createScopedRequired());
   });
 
   it('should return false when scopes is a filled-in array', () => {
-    const jwt = new JWT(
-        'foo@serviceaccount.com', '/path/to/key.pem', null,
-        ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: '/path/to/key.pem',
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com'
+    });
 
     assert.equal(false, jwt.createScopedRequired());
   });
 
   it('should return false when scopes is not an array or a string, but can be used as a string',
      () => {
-       const jwt = new JWT(
-           'foo@serviceaccount.com', '/path/to/key.pem', null, '2',
-           'bar@subjectaccount.com');
-
+       const jwt = new JWT({
+         email: 'foo@serviceaccount.com',
+         keyFile: '/path/to/key.pem',
+         scopes: '2',
+         subject: 'bar@subjectaccount.com'
+       });
        assert.equal(false, jwt.createScopedRequired());
      });
 });

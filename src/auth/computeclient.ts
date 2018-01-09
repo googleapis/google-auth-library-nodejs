@@ -58,7 +58,7 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
-    const url = this.opts.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
+    const url = this.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
     let res: AxiosResponse<CredentialRequest>|null = null;
     // request for new token
     try {

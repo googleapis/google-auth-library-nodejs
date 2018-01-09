@@ -44,8 +44,12 @@ describe('OAuth2 client', () => {
       response_type: 'code token'
     };
 
-    const oauth2client =
-        new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    const oauth2client = new OAuth2Client({
+      clientId: CLIENT_ID,
+      clientSecret: CLIENT_SECRET,
+      redirectUri: REDIRECT_URI
+    });
+
     const generated = oauth2client.generateAuthUrl(opts);
     const parsed = url.parse(generated);
     if (typeof parsed.query !== 'string') {
@@ -1148,6 +1152,22 @@ describe('OAuth2 client', () => {
         scope.done();
         done();
       });
+    });
+
+    it('should accept custom authBaseUrl and tokenUrl', async () => {
+      const authBaseUrl = 'http://authBaseUrl.com';
+      const tokenUrl = 'http://tokenUrl.com';
+      const oauth2client = new OAuth2Client(
+          CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, {authBaseUrl, tokenUrl});
+
+      const authUrl = oauth2client.generateAuthUrl();
+      const authUrlParts = url.parse(authUrl);
+      assert.equal(
+          authBaseUrl.toLowerCase(),
+          authUrlParts.protocol + '//' + authUrlParts.hostname);
+
+      nock(tokenUrl).post('/').reply(200, {});
+      const result = await oauth2client.getToken('12345');
     });
   });
 });
