@@ -26,6 +26,7 @@
     "lodash.isstring": "^4.0.1"
   },
   "devDependencies": {
+    "@justinbeckwith/typedoc": "^0.10.1",
     "@types/jws": "^3.1.0",
     "@types/lodash.isstring": "^4.0.3",
     "@types/mocha": "^2.2.45",
@@ -36,6 +37,7 @@
     "@types/tmp": "0.0.33",
     "clang-format": "^1.0.50",
     "coveralls": "^3.0.0",
+    "gh-pages": "^1.1.0",
     "gts": "^0.5.3",
     "istanbul": "^0.4.5",
     "js-green-licenses": "^0.2.0",
@@ -68,7 +70,9 @@
     "fix-samples": "prettier --write --single-quote examples/*.js",
     "pretest": "npm run compile",
     "posttest": "npm run check && npm run license-check",
-    "license-check": "jsgl --local ."
+    "license-check": "jsgl --local .",
+    "generate-docs": "typedoc --excludePrivate --excludeExternals --mode modules --out docs src && touch docs/.nojekyll",
+    "publish-docs": "gh-pages --dotfiles --dist docs --remote upstream"
   },
   "license": "Apache-2.0"
 }
