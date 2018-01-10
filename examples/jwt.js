@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { JWT } = require('../build/src/index');
+const { JWT } = require('google-auth-library');
 
 /**
  * The JWT authorization is ideal for performing server-to-server
