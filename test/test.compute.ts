@@ -70,7 +70,7 @@ describe('Compute auth client', () => {
     nock('http://metadata.google.internal')
         .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
         .reply(200, {access_token: 'abc123', expires_in: 10000});
-    compute = new Compute(10000);
+    compute = new Compute({refreshTokenEarlyMillis: 10000});
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() + 5000;
     compute.request({url: 'http://foo'}, () => {

@@ -18,6 +18,14 @@ import * as stream from 'stream';
 import {JWTInput} from './credentials';
 import {GetTokenResponse, OAuth2Client} from './oauth2client';
 
+export interface UserRefreshClientOptions {
+  clientId?: string;
+  clientSecret?: string;
+  refreshToken?: string;
+  refreshTokenEarlyMillis?: number;
+}
+
+
 export class UserRefreshClient extends OAuth2Client {
   // TODO: refactor tests to make this private
   // In a future gts release, the _propertyName rule will be lifted.
@@ -34,9 +42,30 @@ export class UserRefreshClient extends OAuth2Client {
    */
   constructor(
       clientId?: string, clientSecret?: string, refreshToken?: string,
+      refreshTokenEarlyMillis?: number);
+
+  constructor(options: UserRefreshClientOptions);
+  constructor(
+      clientId?: string, clientSecret?: string, refreshToken?: string,
+      refreshTokenEarlyMillis?: number);
+  constructor(
+      optionsOrClientId?: string|UserRefreshClientOptions,
+      clientSecret?: string, refreshToken?: string,
       refreshTokenEarlyMillis?: number) {
-    super({clientId, clientSecret, refreshTokenEarlyMillis});
-    this._refreshToken = refreshToken;
+    const opts = (optionsOrClientId && typeof optionsOrClientId === 'object') ?
+        optionsOrClientId :
+        {
+          clientId: optionsOrClientId,
+          clientSecret,
+          refreshToken,
+          refreshTokenEarlyMillis
+        };
+    super({
+      clientId: opts.clientId,
+      clientSecret: opts.clientSecret,
+      refreshTokenEarlyMillis: opts.refreshTokenEarlyMillis
+    });
+    this._refreshToken = opts.refreshToken;
   }
 
   /**

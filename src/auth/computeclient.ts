@@ -20,6 +20,8 @@ import {RequestError} from './../transporters';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client} from './oauth2client';
 
+export interface ComputeOptions { refreshTokenEarlyMillis?: number; }
+
 export class Compute extends OAuth2Client {
   /**
    * Google Compute Engine metadata server token endpoint.
@@ -33,8 +35,9 @@ export class Compute extends OAuth2Client {
    * Retrieve access token from the metadata server.
    * See: https://developers.google.com/compute/docs/authentication
    */
-  constructor(refreshTokenEarlyMillis?: number) {
-    super({refreshTokenEarlyMillis});
+  constructor(options?: ComputeOptions) {
+    options = options || {};
+    super({refreshTokenEarlyMillis: options.refreshTokenEarlyMillis});
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};

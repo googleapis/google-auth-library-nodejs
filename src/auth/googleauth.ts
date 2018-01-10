@@ -219,7 +219,8 @@ export class GoogleAuth {
         // TODO: cache the result
         return {
           projectId: null,
-          credential: new Compute(this.refreshTokenEarlyMillis)
+          credential: new Compute(
+              {refreshTokenEarlyMillis: this.refreshTokenEarlyMillis})
         };
       } else {
         // We failed to find the default credentials. Bail out with an error.
@@ -381,7 +382,7 @@ export class GoogleAuth {
     this.jsonContent = json;
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(
-          undefined, undefined, undefined, this.refreshTokenEarlyMillis);
+          {refreshTokenEarlyMillis: this.refreshTokenEarlyMillis});
     } else {
       client = new JWT({refreshTokenEarlyMillis: this.refreshTokenEarlyMillis});
     }
