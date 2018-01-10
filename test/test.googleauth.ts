@@ -328,7 +328,7 @@ describe('GoogleAuth', () => {
              ' set for GoogleAuth',
          () => {
            const json = createJwtJSON();
-           const auth = new GoogleAuth(1000);
+           const auth = new GoogleAuth({refreshTokenEarlyMillis: 1000});
            const result = auth.fromJSON(json);
            assert.equal(1000, (result as JWT).refreshTokenEarlyMillis);
          });

@@ -58,6 +58,8 @@ interface CredentialResult {
   default: {email: string;};
 }
 
+export interface GoogleAuthOptions { refreshTokenEarlyMillis?: number; }
+
 export class GoogleAuth {
   transporter: Transporter;
 
@@ -82,15 +84,17 @@ export class GoogleAuth {
 
   cachedCredential: OAuth2Client|null = null;
 
+  private refreshTokenEarlyMillis: number|undefined;
+
   /**
    * Export DefaultTransporter as a static property of the class.
    */
   static DefaultTransporter = DefaultTransporter;
 
-  /**
-   *  @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
-   */
-  constructor(public refreshTokenEarlyMillis?: number) {}
+  constructor(options?: GoogleAuthOptions) {
+    options = options || {};
+    this.refreshTokenEarlyMillis = options.refreshTokenEarlyMillis;
+  }
 
   /**
    * Obtains the default project ID for the application..
