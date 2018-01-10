@@ -1051,6 +1051,29 @@ describe('OAuth2 client', () => {
          });
        });
 
+    it('should not refresh if access token will not expire soon and time to' +
+           ' refresh before expiration is set',
+       (done) => {
+         const oauth2client = new OAuth2Client({
+           clientId: CLIENT_ID,
+           clientSecret: CLIENT_SECRET,
+           redirectUri: REDIRECT_URI,
+           refreshTokenEarlyMillis: 5000
+         });
+
+         oauth2client.credentials = {
+           access_token: 'initial-access-token',
+           refresh_token: 'refresh-token-placeholder',
+           expiry_date: (new Date()).getTime() + 10000,
+         };
+
+         oauth2client.request({url: 'http://example.com'}, () => {
+           assert.equal(
+               'initial-access-token', oauth2client.credentials.access_token);
+           assert.equal(false, scope.isDone());
+           done();
+         });
+       });
 
     it('should not refresh if not expired', (done) => {
       const oauth2client =

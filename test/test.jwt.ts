@@ -227,6 +227,7 @@ describe('JWT auth client', () => {
         done();
       });
     });
+
     it('should refresh if access token will expired soon and time to refresh' +
            ' before expiration is set',
        (done) => {
@@ -248,6 +249,35 @@ describe('JWT auth client', () => {
          createGTokenMock({access_token: 'abc123'});
          jwt.request({url: 'http://bar'}, () => {
            assert.equal('abc123', jwt.credentials.access_token);
+           done();
+         });
+       });
+
+    it('should not refresh if access token will not expire soon and time to' +
+           ' refresh before expiration is set',
+       (done) => {
+         const scope =
+             nock('https://accounts.google.com')
+                 .post('/o/oauth2/token', '*')
+                 .reply(200, {access_token: 'abc123', expires_in: 10000});
+
+         const jwt = new JWT({
+           email: 'foo@serviceaccount.com',
+           keyFile: '/path/to/key.pem',
+           scopes: ['http://bar', 'http://foo'],
+           subject: 'bar@subjectaccount.com',
+           refreshTokenEarlyMillis: 1000
+         });
+
+         jwt.credentials = {
+           access_token: 'initial-access-token',
+           refresh_token: 'jwt-placeholder',
+           expiry_date: (new Date()).getTime() + 5000
+         };
+
+         jwt.request({url: 'http://bar'}, () => {
+           assert.equal('initial-access-token', jwt.credentials.access_token);
+           assert.equal(false, scope.isDone());
            done();
          });
        });

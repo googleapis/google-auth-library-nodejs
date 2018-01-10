@@ -66,18 +66,39 @@ describe('Compute auth client', () => {
     });
   });
 
-  it('should refresh if access token has expired', (done) => {
-    nock('http://metadata.google.internal')
-        .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
-        .reply(200, {access_token: 'abc123', expires_in: 10000});
-    compute = new Compute({refreshTokenEarlyMillis: 10000});
-    compute.credentials.access_token = 'initial-access-token';
-    compute.credentials.expiry_date = (new Date()).getTime() + 5000;
-    compute.request({url: 'http://foo'}, () => {
-      assert.equal(compute.credentials.access_token, 'abc123');
-      done();
-    });
-  });
+  it('should refresh if access token will expired soon and time to refresh' +
+         ' before expiration is set',
+     (done) => {
+       nock('http://metadata.google.internal')
+           .get(
+               '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+           .reply(200, {access_token: 'abc123', expires_in: 10000});
+       compute = new Compute({refreshTokenEarlyMillis: 10000});
+       compute.credentials.access_token = 'initial-access-token';
+       compute.credentials.expiry_date = (new Date()).getTime() + 5000;
+       compute.request({url: 'http://foo'}, () => {
+         assert.equal(compute.credentials.access_token, 'abc123');
+         done();
+       });
+     });
+
+  it('should not refresh if access token will not expire soon and time to' +
+         ' refresh before expiration is set',
+     (done) => {
+       const scope =
+           nock('http://metadata.google.internal')
+               .get(
+                   '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+               .reply(200, {access_token: 'abc123', expires_in: 10000});
+       compute.credentials.access_token = 'initial-access-token';
+       compute.credentials.expiry_date = (new Date()).getTime() + 11000;
+       compute.request({url: 'http://foo'}, () => {
+         assert.equal(compute.credentials.access_token, 'initial-access-token');
+         assert.equal(false, scope.isDone());
+         nock.cleanAll();
+         done();
+       });
+     });
 
   it('should not refresh if access token has not expired', (done) => {
     const scope =
@@ -165,8 +186,8 @@ describe('Compute auth client', () => {
              .twice()
              .reply(403, 'a weird response body');
 
-         // Mock the credentials object with a null access token, to force a
-         // refresh.
+         // Mock the credentials object with a null access token, to force
+         // a refresh.
          compute.credentials = {
            refresh_token: 'hello',
            access_token: undefined,
@@ -193,8 +214,8 @@ describe('Compute auth client', () => {
                  '/computeMetadata/v1beta1/instance/service-accounts/default/token')
              .reply(404, 'a weird body');
 
-         // Mock the credentials object with a null access token, to force a
-         // refresh.
+         // Mock the credentials object with a null access token, to force
+         // a refresh.
          compute.credentials = {
            refresh_token: 'hello',
            access_token: undefined,
