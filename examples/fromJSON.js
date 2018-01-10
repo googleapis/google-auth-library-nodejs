@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { GoogleAuth } = require('../build/src/index');
+const { GoogleAuth } = require('google-auth-library');
 
 /**
  * Instead of loading credentials from a key file, you can also provide
