@@ -19,17 +19,16 @@ import * as stream from 'stream';
 
 import {Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
-import {GetTokenResponse, OAuth2Client, RequestMetadataResponse} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
 
 const isString = require('lodash.isstring');
 
-export interface JWTOptions {
+export interface JWTOptions extends RefreshOptions {
   email?: string;
   keyFile?: string;
   key?: string;
   scopes?: string|string[];
   subject?: string;
-  refreshTokenEarlyMillis?: number;
 }
 
 export class JWT extends OAuth2Client {

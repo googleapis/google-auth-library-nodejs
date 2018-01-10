@@ -16,15 +16,13 @@
 
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {GetTokenResponse, OAuth2Client} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
-export interface UserRefreshClientOptions {
+export interface UserRefreshClientOptions extends RefreshOptions {
   clientId?: string;
   clientSecret?: string;
   refreshToken?: string;
-  refreshTokenEarlyMillis?: number;
 }
-
 
 export class UserRefreshClient extends OAuth2Client {
   // TODO: refactor tests to make this private
@@ -43,7 +41,6 @@ export class UserRefreshClient extends OAuth2Client {
   constructor(
       clientId?: string, clientSecret?: string, refreshToken?: string,
       refreshTokenEarlyMillis?: number);
-
   constructor(options: UserRefreshClientOptions);
   constructor(
       clientId?: string, clientSecret?: string, refreshToken?: string,

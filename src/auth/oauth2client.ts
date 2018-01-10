@@ -216,12 +216,17 @@ export interface VerifyIdTokenOptions {
   maxExpiry?: number;
 }
 
-export interface OAuth2ClientOptions {
+export interface OAuth2ClientOptions extends RefreshOptions {
   clientId?: string;
   clientSecret?: string;
   redirectUri?: string;
   authBaseUrl?: string;
   tokenUrl?: string;
+}
+
+export interface RefreshOptions {
+  // The token should be refreshed if it will expire within this many
+  // milliseconds.
   refreshTokenEarlyMillis?: number;
 }
 

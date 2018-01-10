@@ -18,9 +18,9 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios
 
 import {RequestError} from './../transporters';
 import {CredentialRequest, Credentials} from './credentials';
-import {GetTokenResponse, OAuth2Client} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
-export interface ComputeOptions { refreshTokenEarlyMillis?: number; }
+export interface ComputeOptions extends RefreshOptions {}
 
 export class Compute extends OAuth2Client {
   /**

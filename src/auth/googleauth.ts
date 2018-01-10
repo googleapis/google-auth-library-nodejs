@@ -29,7 +29,7 @@ import {JWTInput} from './credentials';
 import {IAMAuth} from './iam';
 import {JWTAccess} from './jwtaccess';
 import {JWT} from './jwtclient';
-import {OAuth2Client} from './oauth2client';
+import {OAuth2Client, RefreshOptions} from './oauth2client';
 import {UserRefreshClient} from './refreshclient';
 
 export interface ProjectIdCallback {
@@ -58,7 +58,7 @@ interface CredentialResult {
   default: {email: string;};
 }
 
-export interface GoogleAuthOptions { refreshTokenEarlyMillis?: number; }
+export interface GoogleAuthOptions extends RefreshOptions {}
 
 export class GoogleAuth {
   transporter: Transporter;
