@@ -29,6 +29,7 @@ export interface JWTOptions {
   key?: string;
   scopes?: string|string[];
   subject?: string;
+  refreshTokenEarlyMillis?: number;
 }
 
 export class JWT extends OAuth2Client {
@@ -59,10 +60,10 @@ export class JWT extends OAuth2Client {
   constructor(
       optionsOrEmail?: string|JWTOptions, keyFile?: string, key?: string,
       scopes?: string|string[], subject?: string) {
-    super();
     const opts = (optionsOrEmail && typeof optionsOrEmail === 'object') ?
         optionsOrEmail :
         {email: optionsOrEmail, keyFile, key, scopes, subject};
+    super({refreshTokenEarlyMillis: opts.refreshTokenEarlyMillis});
     this.email = opts.email;
     this.keyFile = opts.keyFile;
     this.key = opts.key;

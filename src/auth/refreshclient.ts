@@ -32,8 +32,10 @@ export class UserRefreshClient extends OAuth2Client {
    * @param {string} refreshToken The authentication refresh token.
    * @constructor
    */
-  constructor(clientId?: string, clientSecret?: string, refreshToken?: string) {
-    super(clientId, clientSecret);
+  constructor(
+      clientId?: string, clientSecret?: string, refreshToken?: string,
+      refreshTokenEarlyMillis?: number) {
+    super({clientId, clientSecret, refreshTokenEarlyMillis});
     this._refreshToken = refreshToken;
   }
 

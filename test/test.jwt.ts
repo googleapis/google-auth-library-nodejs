@@ -227,6 +227,30 @@ describe('JWT auth client', () => {
         done();
       });
     });
+    it('should refresh if access token will expired soon and time to refresh' +
+           ' before expiration is set',
+       (done) => {
+         const auth = new GoogleAuth();
+         const jwt = new JWT({
+           email: 'foo@serviceaccount.com',
+           keyFile: PEM_PATH,
+           scopes: ['http://bar', 'http://foo'],
+           subject: 'bar@subjectaccount.com',
+           refreshTokenEarlyMillis: 1000
+         });
+
+         jwt.credentials = {
+           access_token: 'woot',
+           refresh_token: 'jwt-placeholder',
+           expiry_date: (new Date()).getTime() + 800
+         };
+
+         createGTokenMock({access_token: 'abc123'});
+         jwt.request({url: 'http://bar'}, () => {
+           assert.equal('abc123', jwt.credentials.access_token);
+           done();
+         });
+       });
 
     it('should refresh token if the server returns 403', (done) => {
       nock('http://example.com').get('/access').twice().reply(403);

@@ -88,6 +88,11 @@ export class GoogleAuth {
   static DefaultTransporter = DefaultTransporter;
 
   /**
+   *  @param {number=} refreshTokenEarlyMillis The token should be refreshed if it will expire within this many milliseconds.
+   */
+  constructor(public refreshTokenEarlyMillis?: number) {}
+
+  /**
    * Obtains the default project ID for the application..
    * @param callback Optional callback
    * @returns Promise that resolves with project Id (if used without callback)
@@ -212,7 +217,10 @@ export class GoogleAuth {
         // For GCE, just return a default ComputeClient. It will take care of
         // the rest.
         // TODO: cache the result
-        return {projectId: null, credential: new Compute()};
+        return {
+          projectId: null,
+          credential: new Compute(this.refreshTokenEarlyMillis)
+        };
       } else {
         // We failed to find the default credentials. Bail out with an error.
         throw new Error(
@@ -372,9 +380,10 @@ export class GoogleAuth {
     }
     this.jsonContent = json;
     if (json.type === 'authorized_user') {
-      client = new UserRefreshClient();
+      client = new UserRefreshClient(
+          undefined, undefined, undefined, this.refreshTokenEarlyMillis);
     } else {
-      client = new JWT();
+      client = new JWT({refreshTokenEarlyMillis: this.refreshTokenEarlyMillis});
     }
     client.fromJSON(json);
     return client;
@@ -428,7 +437,8 @@ export class GoogleAuth {
    * @returns A JWT loaded from the key
    */
   fromAPIKey(apiKey: string): JWT {
-    const client = new JWT();
+    const client =
+        new JWT({refreshTokenEarlyMillis: this.refreshTokenEarlyMillis});
     client.fromAPIKey(apiKey);
     return client;
   }
