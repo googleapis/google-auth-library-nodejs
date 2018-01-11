@@ -1030,7 +1030,7 @@ describe('OAuth2 client', () => {
 
     it('should refresh if access token will expired soon and time to refresh' +
            ' before expiration is set',
-       (done) => {
+       async () => {
          const auth = new GoogleAuth();
          const oauth2client = new OAuth2Client({
            clientId: CLIENT_ID,
@@ -1045,15 +1045,13 @@ describe('OAuth2 client', () => {
            expiry_date: (new Date()).getTime() + 3000
          };
 
-         oauth2client.request({url: 'http://example.com'}, () => {
-           assert.equal('abc123', oauth2client.credentials.access_token);
-           done();
-         });
+         await oauth2client.request({url: 'http://example.com'});
+         assert.equal('abc123', oauth2client.credentials.access_token);
        });
 
     it('should not refresh if access token will not expire soon and time to' +
            ' refresh before expiration is set',
-       (done) => {
+       async () => {
          const oauth2client = new OAuth2Client({
            clientId: CLIENT_ID,
            clientSecret: CLIENT_SECRET,
@@ -1067,12 +1065,11 @@ describe('OAuth2 client', () => {
            expiry_date: (new Date()).getTime() + 10000,
          };
 
-         oauth2client.request({url: 'http://example.com'}, () => {
-           assert.equal(
-               'initial-access-token', oauth2client.credentials.access_token);
-           assert.equal(false, scope.isDone());
-           done();
-         });
+         await oauth2client.request({url: 'http://example.com'});
+
+         assert.equal(
+             'initial-access-token', oauth2client.credentials.access_token);
+         assert.equal(false, scope.isDone());
        });
 
     it('should not refresh if not expired', (done) => {
