@@ -58,8 +58,6 @@ interface CredentialResult {
   default: {email: string;};
 }
 
-export interface GoogleAuthOptions extends RefreshOptions {}
-
 export class GoogleAuth {
   transporter: Transporter;
 
@@ -90,11 +88,6 @@ export class GoogleAuth {
    * Export DefaultTransporter as a static property of the class.
    */
   static DefaultTransporter = DefaultTransporter;
-
-  constructor(options?: GoogleAuthOptions) {
-    options = options || {};
-    this.eagerRefreshThresholdMillis= options.eagerRefreshThresholdMillis;
-  }
 
   /**
    * Obtains the default project ID for the application..
@@ -236,6 +229,14 @@ export class GoogleAuth {
           'Unexpected error while acquiring application default credentials: ' +
           e.message);
     }
+  }
+
+  /**
+   * Sets time to eagerly refresh tokens before they are expired.
+   * @param {number=} eagerRefreshThresholdMillis Time in ms to refresh an unexpired token before it expires.
+   */
+  setEagerRefreshThresholdMillis(eagerRefreshThresholdMillis: number) {
+    this.eagerRefreshThresholdMillis = eagerRefreshThresholdMillis;
   }
 
   /**
@@ -388,7 +389,8 @@ export class GoogleAuth {
       client = new UserRefreshClient(
           {eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
     } else {
-      client = new JWT({eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
+      client = new JWT(
+          {eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
     }
     client.fromJSON(json);
     return client;
@@ -442,8 +444,8 @@ export class GoogleAuth {
    * @returns A JWT loaded from the key
    */
   fromAPIKey(apiKey: string): JWT {
-    const client =
-        new JWT({eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
+    const client = new JWT(
+        {eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
     client.fromAPIKey(apiKey);
     return client;
   }

@@ -225,8 +225,8 @@ export interface OAuth2ClientOptions extends RefreshOptions {
 }
 
 export interface RefreshOptions {
-  // Eagerly refresh unexpired tokens when they are within this many 
-  // milliseconds from expiring". 
+  // Eagerly refresh unexpired tokens when they are within this many
+  // milliseconds from expiring".
   // Defaults to a value of 1000 (1 second).
   eagerRefreshThresholdMillis?: number;
 }
@@ -259,7 +259,7 @@ export class OAuth2Client extends AuthClient {
    * @param {Object=} opts optional options for overriding the given parameters.
    * @constructor
    */
-  constructor(options: OAuth2ClientOptions);
+  constructor(options?: OAuth2ClientOptions);
   constructor(
       clientId?: string, clientSecret?: string, redirectUri?: string,
       opts?: AuthClientOpts);
@@ -282,7 +282,7 @@ export class OAuth2Client extends AuthClient {
     this.authBaseUrl = opts.authBaseUrl;
     this.tokenUrl = opts.tokenUrl;
     this.credentials = {};
-    this.eagerRefreshThresholdMillis= opts.eagerRefreshThresholdMillis|| 1000;
+    this.eagerRefreshThresholdMillis = opts.eagerRefreshThresholdMillis || 1000;
   }
 
   /**
@@ -935,14 +935,14 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * Returns true iff a token is expired or will expire within
+   * Returns true if a token is expired or will expire within
    * eagerRefreshThresholdMillismilliseconds.
    * If there is no expiry time, assumes the token is not expired or expiring.
    */
   protected isTokenExpiring(): boolean {
     const expiryDate = this.credentials.expiry_date;
-    return expiryDate ?
-        expiryDate <= ((new Date()).getTime() + this.eagerRefreshThresholdMillis) :
-        false;
+    return expiryDate ? expiryDate <=
+            ((new Date()).getTime() + this.eagerRefreshThresholdMillis) :
+                        false;
   }
 }
