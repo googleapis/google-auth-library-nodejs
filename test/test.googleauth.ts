@@ -334,12 +334,12 @@ describe('GoogleAuth', () => {
            assert.equal(5000, (result as JWT).eagerRefreshThresholdMillis);
          });
 
-      it('should create JWT with 1s as value for eagerRefreshThresholdMillis',
+      it('should create JWT with 5min as value for eagerRefreshThresholdMillis',
          () => {
            const json = createJwtJSON();
            const auth = new GoogleAuth();
            const result = auth.fromJSON(json);
-           assert.equal(1000, (result as JWT).eagerRefreshThresholdMillis);
+           assert.equal(300000, (result as JWT).eagerRefreshThresholdMillis);
          });
     });
 

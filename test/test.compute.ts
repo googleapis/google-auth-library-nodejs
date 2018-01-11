@@ -90,8 +90,9 @@ describe('Compute auth client', () => {
                .get(
                    '/computeMetadata/v1beta1/instance/service-accounts/default/token')
                .reply(200, {access_token: 'abc123', expires_in: 10000});
+       compute = new Compute({eagerRefreshThresholdMillis: 1000});
        compute.credentials.access_token = 'initial-access-token';
-       compute.credentials.expiry_date = (new Date()).getTime() + 11000;
+       compute.credentials.expiry_date = (new Date()).getTime() + 12000;
        compute.request({url: 'http://foo'}, () => {
          assert.equal(compute.credentials.access_token, 'initial-access-token');
          assert.equal(false, scope.isDone());
@@ -107,7 +108,7 @@ describe('Compute auth client', () => {
                 '/computeMetadata/v1beta1/instance/service-accounts/default/token')
             .reply(200, {access_token: 'abc123', expires_in: 10000});
     compute.credentials.access_token = 'initial-access-token';
-    compute.credentials.expiry_date = (new Date()).getTime() + 10000;
+    compute.credentials.expiry_date = (new Date()).getTime() + 10 * 60 * 1000;
     compute.request({url: 'http://foo'}, () => {
       assert.equal(compute.credentials.access_token, 'initial-access-token');
       assert.equal(false, scope.isDone());

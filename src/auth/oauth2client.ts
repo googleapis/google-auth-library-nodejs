@@ -227,7 +227,7 @@ export interface OAuth2ClientOptions extends RefreshOptions {
 export interface RefreshOptions {
   // Eagerly refresh unexpired tokens when they are within this many
   // milliseconds from expiring".
-  // Defaults to a value of 1000 (1 second).
+  // Defaults to a value of 300000 (5 minutes).
   eagerRefreshThresholdMillis?: number;
 }
 
@@ -282,7 +282,8 @@ export class OAuth2Client extends AuthClient {
     this.authBaseUrl = opts.authBaseUrl;
     this.tokenUrl = opts.tokenUrl;
     this.credentials = {};
-    this.eagerRefreshThresholdMillis = opts.eagerRefreshThresholdMillis || 1000;
+    this.eagerRefreshThresholdMillis =
+        opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
   }
 
   /**
