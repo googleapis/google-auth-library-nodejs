@@ -1036,7 +1036,7 @@ describe('OAuth2 client', () => {
            clientId: CLIENT_ID,
            clientSecret: CLIENT_SECRET,
            redirectUri: REDIRECT_URI,
-           refreshTokenEarlyMillis: 5000
+           eagerRefreshThresholdMillis: 5000
          });
 
          oauth2client.credentials = {
@@ -1058,7 +1058,7 @@ describe('OAuth2 client', () => {
            clientId: CLIENT_ID,
            clientSecret: CLIENT_SECRET,
            redirectUri: REDIRECT_URI,
-           refreshTokenEarlyMillis: 5000
+           eagerRefreshThresholdMillis: 5000
          });
 
          oauth2client.credentials = {
@@ -1082,7 +1082,7 @@ describe('OAuth2 client', () => {
       oauth2client.credentials = {
         access_token: 'initial-access-token',
         refresh_token: 'refresh-token-placeholder',
-        expiry_date: (new Date()).getTime() + 1000
+        expiry_date: (new Date()).getTime() + 1500
       };
 
       oauth2client.request({url: 'http://example.com'}, () => {

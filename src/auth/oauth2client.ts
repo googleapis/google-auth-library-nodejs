@@ -225,9 +225,10 @@ export interface OAuth2ClientOptions extends RefreshOptions {
 }
 
 export interface RefreshOptions {
-  // The token should be refreshed if it will expire within this many
-  // milliseconds.
-  refreshTokenEarlyMillis?: number;
+  // Eagerly refresh unexpired tokens when they are within this many 
+  // milliseconds from expiring". 
+  // Defaults to a value of 1000 (1 second).
+  eagerRefreshThresholdMillis?: number;
 }
 
 export class OAuth2Client extends AuthClient {
@@ -247,7 +248,7 @@ export class OAuth2Client extends AuthClient {
 
   projectId?: string;
 
-  refreshTokenEarlyMillis: number;
+  eagerRefreshThresholdMillis: number;
 
   /**
    * Handles OAuth2 flow for Google APIs.
@@ -281,7 +282,7 @@ export class OAuth2Client extends AuthClient {
     this.authBaseUrl = opts.authBaseUrl;
     this.tokenUrl = opts.tokenUrl;
     this.credentials = {};
-    this.refreshTokenEarlyMillis = opts.refreshTokenEarlyMillis || 0;
+    this.eagerRefreshThresholdMillis= opts.eagerRefreshThresholdMillis|| 1000;
   }
 
   /**
@@ -935,13 +936,13 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Returns true iff a token is expired or will expire within
-   * refreshTokenEarlyMillis milliseconds.
+   * eagerRefreshThresholdMillismilliseconds.
    * If there is no expiry time, assumes the token is not expired or expiring.
    */
   protected isTokenExpiring(): boolean {
     const expiryDate = this.credentials.expiry_date;
     return expiryDate ?
-        expiryDate <= ((new Date()).getTime() + this.refreshTokenEarlyMillis) :
+        expiryDate <= ((new Date()).getTime() + this.eagerRefreshThresholdMillis) :
         false;
   }
 }

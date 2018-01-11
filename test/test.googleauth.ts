@@ -324,13 +324,13 @@ describe('GoogleAuth', () => {
         assert.equal(null, (result as JWT).keyFile);
       });
 
-      it('should create JWT which refreshTokenEarlyMillis set when this is' +
+      it('should create JWT which eagerRefreshThresholdMillisset when this is' +
              ' set for GoogleAuth',
          () => {
            const json = createJwtJSON();
-           const auth = new GoogleAuth({refreshTokenEarlyMillis: 1000});
+           const auth = new GoogleAuth({eagerRefreshThresholdMillis: 1000});
            const result = auth.fromJSON(json);
-           assert.equal(1000, (result as JWT).refreshTokenEarlyMillis);
+           assert.equal(1000, (result as JWT).eagerRefreshThresholdMillis);
          });
     });
 

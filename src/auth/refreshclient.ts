@@ -40,27 +40,27 @@ export class UserRefreshClient extends OAuth2Client {
    */
   constructor(
       clientId?: string, clientSecret?: string, refreshToken?: string,
-      refreshTokenEarlyMillis?: number);
+      eagerRefreshThresholdMillis?: number);
   constructor(options: UserRefreshClientOptions);
   constructor(
       clientId?: string, clientSecret?: string, refreshToken?: string,
-      refreshTokenEarlyMillis?: number);
+      eagerRefreshThresholdMillis?: number);
   constructor(
       optionsOrClientId?: string|UserRefreshClientOptions,
       clientSecret?: string, refreshToken?: string,
-      refreshTokenEarlyMillis?: number) {
+      eagerRefreshThresholdMillis?: number) {
     const opts = (optionsOrClientId && typeof optionsOrClientId === 'object') ?
         optionsOrClientId :
         {
           clientId: optionsOrClientId,
           clientSecret,
           refreshToken,
-          refreshTokenEarlyMillis
+          eagerRefreshThresholdMillis
         };
     super({
       clientId: opts.clientId,
       clientSecret: opts.clientSecret,
-      refreshTokenEarlyMillis: opts.refreshTokenEarlyMillis
+      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis
     });
     this._refreshToken = opts.refreshToken;
   }

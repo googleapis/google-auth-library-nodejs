@@ -37,7 +37,7 @@ export class Compute extends OAuth2Client {
    */
   constructor(options?: ComputeOptions) {
     options = options || {};
-    super({refreshTokenEarlyMillis: options.refreshTokenEarlyMillis});
+    super({eagerRefreshThresholdMillis: options.eagerRefreshThresholdMillis});
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};

@@ -84,7 +84,7 @@ export class GoogleAuth {
 
   cachedCredential: OAuth2Client|null = null;
 
-  private refreshTokenEarlyMillis: number|undefined;
+  private eagerRefreshThresholdMillis: number|undefined;
 
   /**
    * Export DefaultTransporter as a static property of the class.
@@ -93,7 +93,7 @@ export class GoogleAuth {
 
   constructor(options?: GoogleAuthOptions) {
     options = options || {};
-    this.refreshTokenEarlyMillis = options.refreshTokenEarlyMillis;
+    this.eagerRefreshThresholdMillis= options.eagerRefreshThresholdMillis;
   }
 
   /**
@@ -224,7 +224,7 @@ export class GoogleAuth {
         return {
           projectId: null,
           credential: new Compute(
-              {refreshTokenEarlyMillis: this.refreshTokenEarlyMillis})
+              {eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis})
         };
       } else {
         // We failed to find the default credentials. Bail out with an error.
@@ -386,9 +386,9 @@ export class GoogleAuth {
     this.jsonContent = json;
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(
-          {refreshTokenEarlyMillis: this.refreshTokenEarlyMillis});
+          {eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
     } else {
-      client = new JWT({refreshTokenEarlyMillis: this.refreshTokenEarlyMillis});
+      client = new JWT({eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
     }
     client.fromJSON(json);
     return client;
@@ -443,7 +443,7 @@ export class GoogleAuth {
    */
   fromAPIKey(apiKey: string): JWT {
     const client =
-        new JWT({refreshTokenEarlyMillis: this.refreshTokenEarlyMillis});
+        new JWT({eagerRefreshThresholdMillis: this.eagerRefreshThresholdMillis});
     client.fromAPIKey(apiKey);
     return client;
   }

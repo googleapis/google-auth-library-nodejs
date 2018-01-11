@@ -237,7 +237,7 @@ describe('JWT auth client', () => {
            keyFile: PEM_PATH,
            scopes: ['http://bar', 'http://foo'],
            subject: 'bar@subjectaccount.com',
-           refreshTokenEarlyMillis: 1000
+           eagerRefreshThresholdMillis: 1000
          });
 
          jwt.credentials = {
@@ -266,7 +266,7 @@ describe('JWT auth client', () => {
            keyFile: '/path/to/key.pem',
            scopes: ['http://bar', 'http://foo'],
            subject: 'bar@subjectaccount.com',
-           refreshTokenEarlyMillis: 1000
+           eagerRefreshThresholdMillis: 1000
          });
 
          jwt.credentials = {
