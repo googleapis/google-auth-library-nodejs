@@ -1133,25 +1133,20 @@ describe('OAuth2 client', () => {
       assert(params.code_verifier === 'its_verified');
     });
 
-    it('should return expiry_date', (done) => {
-      const now = (new Date()).getTime();
-      const scope =
-          nock('https://www.googleapis.com')
-              .post('/oauth2/v4/token', undefined, {
-                reqheaders:
-                    {'Content-Type': 'application/x-www-form-urlencoded'}
-              })
-              .reply(
-                  200,
-                  {access_token: 'abc', refresh_token: '123', expires_in: 10});
+    it('should return expiry_date', async () => {
+      nock('https://www.googleapis.com')
+          .post('/oauth2/v4/token', undefined, {
+            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
+          })
+          .reply(
+              200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
       const oauth2client =
           new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-      oauth2client.getToken('code here', (err, tokens) => {
-        assert(tokens!.expiry_date! >= now + (10 * 1000));
-        assert(tokens!.expiry_date! <= now + (15 * 1000));
-        scope.done();
-        done();
-      });
+      // we expect the token to expire 1 second early.
+      const exp = (new Date()).getTime() + (10 * 1000) - 1000;
+      const res = await oauth2client.getToken('code here');
+      assert(res.tokens.expiry_date! >= exp);
+      assert(res.tokens.expiry_date! <= (exp + 5000));
     });
 
     it('should accept custom authBaseUrl and tokenUrl', async () => {
