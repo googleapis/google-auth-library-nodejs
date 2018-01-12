@@ -23,38 +23,32 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const { GoogleAuth } = require('google-auth-library');
-const auth = new GoogleAuth();
+const { auth } = require('google-auth-library');
 const https = require('https');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  try {
-    const adc = await getADC();
-    const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
+  const adc = await getADC();
+  const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
 
-    // create a new agent with keepAlive enabled
-    const agent = new https.Agent({ keepAlive: true });
+  // create a new agent with keepAlive enabled
+  const agent = new https.Agent({ keepAlive: true });
 
-    // use the agent as an Axios config param to make the request
-    const res = await adc.client.request({
-      url,
-      httpsAgent: agent
-    });
-    console.log(res.data);
+  // use the agent as an Axios config param to make the request
+  const res = await adc.client.request({
+    url,
+    httpsAgent: agent
+  });
+  console.log(res.data);
 
-    // Re-use the same agent to make the next request over the same connection
-    const res2 = await adc.client.request({
-      url,
-      httpsAgent: agent
-    });
-    console.log(res2.data);
-  } catch (e) {
-    console.error('Error making request.');
-    console.error(e);
-  }
+  // Re-use the same agent to make the next request over the same connection
+  const res2 = await adc.client.request({
+    url,
+    httpsAgent: agent
+  });
+  console.log(res2.data);
 }
 
 /**
@@ -82,4 +76,4 @@ async function getADC() {
   };
 }
 
-main();
+main().catch(console.error);
