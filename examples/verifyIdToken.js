@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { OAuth2Client } = require('../build/src/index');
+const { OAuth2Client } = require('google-auth-library');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
