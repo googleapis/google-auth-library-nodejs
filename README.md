@@ -55,22 +55,16 @@ For example, a JWT auth client will be created when your code is running on your
 The code below shows how to retrieve a default credential type, depending upon the runtime environment. The createScopedRequired must be called to determine when you need to pass in the scopes manually, and when they have been set for you automatically based on the configured runtime environment.
 
 ```js
-const {GoogleAuth} = require('google-auth-library');
-const auth = new GoogleAuth();
+const {auth} = require('google-auth-library');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  try {
-    const adc = await getADC();
-    const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
-    const res = await adc.client.request({url});
-    console.log(res.data);
-  } catch (e) {
-    console.error('Error making request.');
-    console.error(e);
-  }
+  const adc = await getADC();
+  const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
+  const res = await adc.client.request({url});
+  console.log(res.data);
 }
 
 /**
@@ -98,7 +92,7 @@ async function getADC() {
   }
 }
 
-main();
+main().catch(console.error);
 ```
 
 #### OAuth2 client
@@ -275,7 +269,7 @@ $ export CREDS='{
 Now you can create a new client from the credentials:
 
 ```js
-const {GoogleAuth} = require('google-auth-library');
+const {auth} = require('google-auth-library');
 
 // load the environment variable with our keys
 const keysEnvVar = process.env['CREDS'];
@@ -285,7 +279,6 @@ if (!keysEnvVar) {
 const keys = JSON.parse(keysEnvVar);
 
 async function main() {
-  const auth = new GoogleAuth();
   // load the JWT or UserRefreshClient from the keys
   const client = auth.fromJSON(keys);
   client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];

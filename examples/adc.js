@@ -22,22 +22,16 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const { GoogleAuth } = require('google-auth-library');
-const auth = new GoogleAuth();
+const { auth } = require('google-auth-library');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  try {
-    const adc = await getADC();
-    const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
-    const res = await adc.client.request({ url });
-    console.log(res.data);
-  } catch (e) {
-    console.error('Error making request.');
-    console.error(e);
-  }
+  const adc = await getADC();
+  const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
+  const res = await adc.client.request({ url });
+  console.log(res.data);
 }
 
 /**
@@ -65,4 +59,4 @@ async function getADC() {
   };
 }
 
-main();
+main().catch(console.error);

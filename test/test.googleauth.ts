@@ -21,9 +21,7 @@ import * as http from 'http';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as stream from 'stream';
-import {PassThrough} from 'stream';
-
-import {DefaultTransporter, GoogleAuth, JWT, UserRefreshClient} from '../src/index';
+import {auth, DefaultTransporter, GoogleAuth, JWT, UserRefreshClient} from '../src/index';
 import {BodyResponseCallback} from '../src/transporters';
 
 nock.disableNetConnect();
@@ -88,8 +86,6 @@ class MockTransporter extends DefaultTransporter {
     }
   }
 }
-
-
 
 // Creates a standard JSON auth object for testing.
 function createJwtJSON() {
@@ -156,6 +152,11 @@ function insertWellKnownFilePathIntoAuth(
 }
 
 describe('GoogleAuth', () => {
+  it('should support the instantiated named export', () => {
+    const result = auth.fromJSON(createJwtJSON());
+    assert(result);
+  });
+
   describe('.fromJson', () => {
     it('should error on null json', () => {
       const auth = new GoogleAuth();
