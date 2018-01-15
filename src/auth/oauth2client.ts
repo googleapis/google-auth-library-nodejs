@@ -404,8 +404,7 @@ export class OAuth2Client extends AuthClient {
     });
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
-      tokens.expiry_date =
-          ((new Date()).getTime() + (res.data.expires_in * 1000));
+      tokens.expiry_date = this.getExpirationDate(res.data.expires_in);
       delete (tokens as CredentialRequest).expires_in;
     }
     return {tokens, res};
@@ -435,10 +434,8 @@ export class OAuth2Client extends AuthClient {
       headers: {'Content-Type': 'application/x-www-form-urlencoded'}
     });
     const tokens = res.data as Credentials;
-    // TODO: de-duplicate this code from a few spots
     if (res.data && res.data.expires_in) {
-      tokens.expiry_date =
-          ((new Date()).getTime() + (res.data.expires_in * 1000));
+      tokens.expiry_date = this.getExpirationDate(res.data.expires_in);
       delete (tokens as CredentialRequest).expires_in;
     }
     return {tokens, res};
@@ -935,5 +932,18 @@ export class OAuth2Client extends AuthClient {
   decodeBase64(b64String: string) {
     const buffer = new Buffer(b64String, 'base64');
     return buffer.toString('utf8');
+  }
+
+  /**
+   * Given an expiration window in seconds, calculate the date when
+   * the token will expore. Due to network latency, this calculation
+   * can be slightly off, causing intermittent 401s in consumer
+   * applications.  To avoid that condition, subtract a second from
+   * the expiration time.
+   * @param expiresIn Time left in seconds.
+   * @returns The datetime when the token expires.
+   */
+  protected getExpirationDate(expiresIn: number) {
+    return ((new Date()).getTime() + (expiresIn * 1000)) - 1000;
   }
 }

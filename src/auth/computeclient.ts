@@ -69,8 +69,7 @@ export class Compute extends OAuth2Client {
     }
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
-      tokens.expiry_date =
-          ((new Date()).getTime() + (res.data.expires_in * 1000));
+      tokens.expiry_date = this.getExpirationDate(res.data.expires_in);
       delete (tokens as CredentialRequest).expires_in;
     }
     return {tokens, res};
