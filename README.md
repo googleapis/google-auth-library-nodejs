@@ -19,7 +19,7 @@ $ npm install google-auth-library
 ```
 
 ## Upgrading to 1.x
-The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/google/google-auth-library-nodejs/releases/tag/1.0.0-alpha.1) for a list of breaking changes, and the upgrade guide.
+The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/google/google-auth-library-nodejs/releases/tag/v1.0.0) for a list of breaking changes, and the upgrade guide.
 
 ## Ways to authenticate
 This library provides a variety of ways to authenticate to your Google services.
