@@ -30,10 +30,10 @@ async function main() {
     const oAuth2Client = await getAuthenticatedClient();
 
     // Verify the id_token, and access the claims.
-    const ticket = await oAuth2Client.verifyIdToken(
-      oAuth2Client.credentials.id_token,
-      keys.web.client_id
-    );
+    const ticket = await oAuth2Client.verifyIdToken({
+      idToken: oAuth2Client.credentials.id_token,
+      audience: keys.web.client_id,
+    });
     console.log(ticket);
 
     // You can use this info to get user information too.
