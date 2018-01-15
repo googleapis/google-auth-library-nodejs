@@ -16,7 +16,6 @@
 import {GoogleAuth} from './auth/googleauth';
 
 export {Compute} from './auth/computeclient';
-export {GoogleAuth} from './auth/googleauth';
 export {IAMAuth} from './auth/iam';
 export {JWTAccess} from './auth/jwtaccess';
 export {JWT} from './auth/jwtclient';
@@ -25,4 +24,4 @@ export {UserRefreshClient} from './auth/refreshclient';
 export {DefaultTransporter} from './transporters';
 
 const auth = new GoogleAuth();
-export {auth};
+export {auth, GoogleAuth};
