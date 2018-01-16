@@ -258,6 +258,14 @@ describe('GoogleAuth', () => {
                    });
              });
         });
+
+        describe('With eager retry', () => {
+          it('should make client with eagerRetryThresholdMillis set', () => {
+            const client =
+                auth.fromAPIKey(API_KEY, {eagerRefreshThresholdMillis: 100});
+            assert.equal(100, client.eagerRefreshThresholdMillis);
+          });
+        });
       });
     });
 
@@ -323,6 +331,24 @@ describe('GoogleAuth', () => {
         const result = auth.fromJSON(json);
         assert.equal(null, (result as JWT).keyFile);
       });
+
+      it('should create JWT which eagerRefreshThresholdMillisset when this is' +
+             ' set for GoogleAuth',
+         () => {
+           const json = createJwtJSON();
+           const auth = new GoogleAuth();
+           const result =
+               auth.fromJSON(json, {eagerRefreshThresholdMillis: 5000});
+           assert.equal(5000, (result as JWT).eagerRefreshThresholdMillis);
+         });
+
+      it('should create JWT with 5min as value for eagerRefreshThresholdMillis',
+         () => {
+           const json = createJwtJSON();
+           const auth = new GoogleAuth();
+           const result = auth.fromJSON(json);
+           assert.equal(300000, (result as JWT).eagerRefreshThresholdMillis);
+         });
     });
 
     describe('Refresh token', () => {
@@ -397,6 +423,31 @@ describe('GoogleAuth', () => {
       });
     });
 
+
+    it('should read the stream and create a jwt with eager refresh',
+       async () => {
+         // Read the contents of the file into a json object.
+         const fileContents =
+             fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+         const json = JSON.parse(fileContents);
+
+         // Now open a stream on the same file.
+         const stream = fs.createReadStream('./test/fixtures/private.json');
+
+         // And pass it into the fromStream method.
+         const auth = new GoogleAuth();
+         const result = await auth.fromStream(
+             stream, {eagerRefreshThresholdMillis: 1000 * 60 * 60});
+         const jwt = result as JWT;
+         // Ensure that the correct bits were pulled from the stream.
+         assert.equal(json.private_key, jwt.key);
+         assert.equal(json.client_email, jwt.email);
+         assert.equal(null, jwt.keyFile);
+         assert.equal(null, jwt.subject);
+         assert.equal(null, jwt.scope);
+         assert.equal(1000 * 60 * 60, jwt.eagerRefreshThresholdMillis);
+       });
+
     it('should read another stream and create a UserRefreshClient', (done) => {
       // Read the contents of the file into a json object.
       const fileContents =
@@ -418,6 +469,28 @@ describe('GoogleAuth', () => {
         done();
       });
     });
+
+    it('should read another stream and create a UserRefreshClient with eager refresh',
+       async () => {
+         // Read the contents of the file into a json object.
+         const fileContents =
+             fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
+         const json = JSON.parse(fileContents);
+
+         // Now open a stream on the same file.
+         const stream = fs.createReadStream('./test/fixtures/refresh.json');
+
+         // And pass it into the fromStream method.
+         const auth = new GoogleAuth();
+         const result =
+             await auth.fromStream(stream, {eagerRefreshThresholdMillis: 100});
+         // Ensure that the correct bits were pulled from the stream.
+         const rc = result as UserRefreshClient;
+         assert.equal(json.client_id, rc._clientId);
+         assert.equal(json.client_secret, rc._clientSecret);
+         assert.equal(json.refresh_token, rc._refreshToken);
+         assert.equal(100, rc.eagerRefreshThresholdMillis);
+       });
   });
 
   describe('._getApplicationCredentialsFromFilePath', () => {
@@ -575,6 +648,28 @@ describe('GoogleAuth', () => {
       assert.equal(null, jwt.subject);
       assert.equal(null, jwt.scope);
     });
+
+    it('should correctly read the file and create a valid JWT with eager refresh',
+       async () => {
+         // Read the contents of the file into a json object.
+         const fileContents =
+             fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+         const json = JSON.parse(fileContents);
+
+         // Now pass the same path to the auth loader.
+         const auth = new GoogleAuth();
+         const result = await auth._getApplicationCredentialsFromFilePath(
+             './test/fixtures/private.json',
+             {eagerRefreshThresholdMillis: 7000});
+         assert(result);
+         const jwt = result as JWT;
+         assert.equal(json.private_key, jwt.key);
+         assert.equal(json.client_email, jwt.email);
+         assert.equal(null, jwt.keyFile);
+         assert.equal(null, jwt.subject);
+         assert.equal(null, jwt.scope);
+         assert.equal(7000, jwt.eagerRefreshThresholdMillis);
+       });
   });
 
   describe('._tryGetApplicationCredentialsFromEnvironmentVariable', () => {
@@ -633,6 +728,32 @@ describe('GoogleAuth', () => {
       assert.equal(null, jwt.subject);
       assert.equal(null, jwt.scope);
     });
+
+    it('should handle valid environment variable when there is eager refresh set',
+       async () => {
+         // Set up a mock to return path to a valid credentials file.
+         const auth = new GoogleAuth();
+         insertEnvironmentVariableIntoAuth(
+             auth, 'GOOGLE_APPLICATION_CREDENTIALS',
+             './test/fixtures/private.json');
+
+         // Read the contents of the file into a json object.
+         const fileContents =
+             fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+         const json = JSON.parse(fileContents);
+
+         // Execute.
+         const result =
+             await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
+                 {eagerRefreshThresholdMillis: 60 * 60 * 1000});
+         const jwt = result as JWT;
+         assert.equal(json.private_key, jwt.key);
+         assert.equal(json.client_email, jwt.email);
+         assert.equal(null, jwt.keyFile);
+         assert.equal(null, jwt.subject);
+         assert.equal(null, jwt.scope);
+         assert.equal(60 * 60 * 1000, jwt.eagerRefreshThresholdMillis);
+       });
   });
 
   describe('._tryGetApplicationCredentialsFromWellKnownFile', () => {

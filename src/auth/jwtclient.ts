@@ -19,11 +19,11 @@ import * as stream from 'stream';
 
 import {Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
-import {GetTokenResponse, OAuth2Client, RequestMetadataResponse} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
 
 const isString = require('lodash.isstring');
 
-export interface JWTOptions {
+export interface JWTOptions extends RefreshOptions {
   email?: string;
   keyFile?: string;
   key?: string;
@@ -59,10 +59,10 @@ export class JWT extends OAuth2Client {
   constructor(
       optionsOrEmail?: string|JWTOptions, keyFile?: string, key?: string,
       scopes?: string|string[], subject?: string) {
-    super();
     const opts = (optionsOrEmail && typeof optionsOrEmail === 'object') ?
         optionsOrEmail :
         {email: optionsOrEmail, keyFile, key, scopes, subject};
+    super({eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis});
     this.email = opts.email;
     this.keyFile = opts.keyFile;
     this.key = opts.key;

@@ -216,12 +216,19 @@ export interface VerifyIdTokenOptions {
   maxExpiry?: number;
 }
 
-export interface OAuth2ClientOptions {
+export interface OAuth2ClientOptions extends RefreshOptions {
   clientId?: string;
   clientSecret?: string;
   redirectUri?: string;
   authBaseUrl?: string;
   tokenUrl?: string;
+}
+
+export interface RefreshOptions {
+  // Eagerly refresh unexpired tokens when they are within this many
+  // milliseconds from expiring".
+  // Defaults to a value of 300000 (5 minutes).
+  eagerRefreshThresholdMillis?: number;
 }
 
 export class OAuth2Client extends AuthClient {
@@ -241,6 +248,8 @@ export class OAuth2Client extends AuthClient {
 
   projectId?: string;
 
+  eagerRefreshThresholdMillis: number;
+
   /**
    * Handles OAuth2 flow for Google APIs.
    *
@@ -250,7 +259,7 @@ export class OAuth2Client extends AuthClient {
    * @param {Object=} opts optional options for overriding the given parameters.
    * @constructor
    */
-  constructor(options: OAuth2ClientOptions);
+  constructor(options?: OAuth2ClientOptions);
   constructor(
       clientId?: string, clientSecret?: string, redirectUri?: string,
       opts?: AuthClientOpts);
@@ -273,6 +282,8 @@ export class OAuth2Client extends AuthClient {
     this.authBaseUrl = opts.authBaseUrl;
     this.tokenUrl = opts.tokenUrl;
     this.credentials = {};
+    this.eagerRefreshThresholdMillis =
+        opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
   }
 
   /**
@@ -494,16 +505,8 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async getAccessTokenAsync(): Promise<GetAccessTokenResponse> {
-    const expiryDate = this.credentials.expiry_date;
-
-    // if no expiry time, assume it's not expired
-    const isTokenExpired =
-        expiryDate ? expiryDate <= (new Date()).getTime() : false;
-    if (!this.credentials.access_token && !this.credentials.refresh_token) {
-      throw new Error('No access or refresh token is set.');
-    }
-
-    const shouldRefresh = !this.credentials.access_token || isTokenExpired;
+    const shouldRefresh =
+        !this.credentials.access_token || this.isTokenExpiring();
     if (shouldRefresh && this.credentials.refresh_token) {
       if (!this.credentials.refresh_token) {
         throw new Error('No refresh token is set.');
@@ -554,12 +557,7 @@ export class OAuth2Client extends AuthClient {
       throw new Error('No access, refresh token or API key is set.');
     }
 
-    // if no expiry time, assume it's not expired
-    const expiryDate = thisCreds.expiry_date;
-    const isTokenExpired =
-        expiryDate ? expiryDate <= (new Date()).getTime() : false;
-
-    if (thisCreds.access_token && !isTokenExpired) {
+    if (thisCreds.access_token && !this.isTokenExpiring()) {
       thisCreds.token_type = thisCreds.token_type || 'Bearer';
       const headers = {
         Authorization: thisCreds.token_type + ' ' + thisCreds.access_token
@@ -935,5 +933,17 @@ export class OAuth2Client extends AuthClient {
   decodeBase64(b64String: string) {
     const buffer = new Buffer(b64String, 'base64');
     return buffer.toString('utf8');
+  }
+
+  /**
+   * Returns true if a token is expired or will expire within
+   * eagerRefreshThresholdMillismilliseconds.
+   * If there is no expiry time, assumes the token is not expired or expiring.
+   */
+  protected isTokenExpiring(): boolean {
+    const expiryDate = this.credentials.expiry_date;
+    return expiryDate ? expiryDate <=
+            ((new Date()).getTime() + this.eagerRefreshThresholdMillis) :
+                        false;
   }
 }

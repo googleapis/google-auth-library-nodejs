@@ -29,7 +29,7 @@ import {JWTInput} from './credentials';
 import {IAMAuth} from './iam';
 import {JWTAccess} from './jwtaccess';
 import {JWT} from './jwtclient';
-import {OAuth2Client} from './oauth2client';
+import {OAuth2Client, RefreshOptions} from './oauth2client';
 import {UserRefreshClient} from './refreshclient';
 
 export interface ProjectIdCallback {
@@ -165,17 +165,28 @@ export class GoogleAuth {
    */
   getApplicationDefault(): Promise<ADCResponse>;
   getApplicationDefault(callback: ADCCallback): void;
-  getApplicationDefault(callback?: ADCCallback): void|Promise<ADCResponse> {
+  getApplicationDefault(options: RefreshOptions): Promise<ADCResponse>;
+  getApplicationDefault(options: RefreshOptions, callback: ADCCallback): void;
+  getApplicationDefault(
+      optionsOrCallback: ADCCallback|RefreshOptions = {},
+      callback?: ADCCallback): void|Promise<ADCResponse> {
+    let options: RefreshOptions|undefined;
+    if (typeof optionsOrCallback === 'function') {
+      callback = optionsOrCallback;
+    } else {
+      options = optionsOrCallback;
+    }
     if (callback) {
-      this.getApplicationDefaultAsync()
-          .then(r => callback(null, r.credential, r.projectId))
+      this.getApplicationDefaultAsync(options)
+          .then(r => callback!(null, r.credential, r.projectId))
           .catch(callback);
     } else {
-      return this.getApplicationDefaultAsync();
+      return this.getApplicationDefaultAsync(options);
     }
   }
 
-  private async getApplicationDefaultAsync(): Promise<ADCResponse> {
+  private async getApplicationDefaultAsync(options?: RefreshOptions):
+      Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
       return {
@@ -190,7 +201,8 @@ export class GoogleAuth {
     // location of the credential file. This is typically used in local
     // developer scenarios.
     credential =
-        await this._tryGetApplicationCredentialsFromEnvironmentVariable();
+        await this._tryGetApplicationCredentialsFromEnvironmentVariable(
+            options);
     if (credential) {
       this.cachedCredential = credential;
       projectId = await this.getDefaultProjectId();
@@ -198,7 +210,8 @@ export class GoogleAuth {
     }
 
     // Look in the well-known credential file location.
-    credential = await this._tryGetApplicationCredentialsFromWellKnownFile();
+    credential =
+        await this._tryGetApplicationCredentialsFromWellKnownFile(options);
     if (credential) {
       this.cachedCredential = credential;
       projectId = await this.getDefaultProjectId();
@@ -212,7 +225,7 @@ export class GoogleAuth {
         // For GCE, just return a default ComputeClient. It will take care of
         // the rest.
         // TODO: cache the result
-        return {projectId: null, credential: new Compute()};
+        return {projectId: null, credential: new Compute(options)};
       } else {
         // We failed to find the default credentials. Bail out with an error.
         throw new Error(
@@ -266,14 +279,15 @@ export class GoogleAuth {
    * @returns Promise that resolves with the OAuth2Client or null.
    * @api private
    */
-  async _tryGetApplicationCredentialsFromEnvironmentVariable():
-      Promise<JWT|UserRefreshClient|null> {
+  async _tryGetApplicationCredentialsFromEnvironmentVariable(
+      options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
     const credentialsPath = this._getEnv('GOOGLE_APPLICATION_CREDENTIALS');
     if (!credentialsPath || credentialsPath.length === 0) {
       return null;
     }
     try {
-      return this._getApplicationCredentialsFromFilePath(credentialsPath);
+      return this._getApplicationCredentialsFromFilePath(
+          credentialsPath, options);
     } catch (e) {
       throw this.createError(
           'Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable.',
@@ -286,8 +300,8 @@ export class GoogleAuth {
    * @return Promise that resolves with the OAuth2Client or null.
    * @api private
    */
-  async _tryGetApplicationCredentialsFromWellKnownFile():
-      Promise<JWT|UserRefreshClient|null> {
+  async _tryGetApplicationCredentialsFromWellKnownFile(
+      options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
     // First, figure out the location of the file, depending upon the OS type.
     let location = null;
     if (this._isWindows()) {
@@ -316,7 +330,7 @@ export class GoogleAuth {
       return null;
     }
     // The file seems to exist. Try to use it.
-    return this._getApplicationCredentialsFromFilePath(location);
+    return this._getApplicationCredentialsFromFilePath(location, options);
   }
 
   /**
@@ -325,8 +339,9 @@ export class GoogleAuth {
    * @returns Promise that resolves with the OAuth2Client
    * @api private
    */
-  async _getApplicationCredentialsFromFilePath(filePath: string):
-      Promise<JWT|UserRefreshClient> {
+  async _getApplicationCredentialsFromFilePath(
+      filePath: string,
+      options: RefreshOptions = {}): Promise<JWT|UserRefreshClient> {
     // Make sure the path looks like a string.
     if (!filePath || filePath.length === 0) {
       throw new Error('The file path is invalid.');
@@ -352,7 +367,7 @@ export class GoogleAuth {
     // Now open a read stream on the file, and parse it.
     try {
       const readStream = this._createReadStream(filePath);
-      return this.fromStream(readStream);
+      return this.fromStream(readStream, options);
     } catch (err) {
       throw this.createError(
           util.format('Unable to read the file at %s.', filePath), err);
@@ -364,17 +379,18 @@ export class GoogleAuth {
    * @param {object=} json The input object.
    * @returns JWT or UserRefresh Client with data
    */
-  fromJSON(json: JWTInput): JWT|UserRefreshClient {
+  fromJSON(json: JWTInput, options?: RefreshOptions): JWT|UserRefreshClient {
     let client: UserRefreshClient|JWT;
     if (!json) {
       throw new Error(
           'Must pass in a JSON object containing the Google auth settings.');
     }
     this.jsonContent = json;
+    options = options || {};
     if (json.type === 'authorized_user') {
-      client = new UserRefreshClient();
+      client = new UserRefreshClient(options);
     } else {
-      client = new JWT();
+      client = new JWT(options);
     }
     client.fromJSON(json);
     return client;
@@ -387,19 +403,33 @@ export class GoogleAuth {
    */
   fromStream(inputStream: stream.Readable): Promise<JWT|UserRefreshClient>;
   fromStream(inputStream: stream.Readable, callback: CredentialCallback): void;
-  fromStream(inputStream: stream.Readable, callback?: CredentialCallback):
-      Promise<JWT|UserRefreshClient>|void {
+  fromStream(inputStream: stream.Readable, options: RefreshOptions):
+      Promise<JWT|UserRefreshClient>;
+  fromStream(
+      inputStream: stream.Readable, options: RefreshOptions,
+      callback: CredentialCallback): void;
+  fromStream(
+      inputStream: stream.Readable,
+      optionsOrCallback: RefreshOptions|CredentialCallback = {},
+      callback?: CredentialCallback): Promise<JWT|UserRefreshClient>|void {
+    let options: RefreshOptions = {};
+    if (typeof optionsOrCallback === 'function') {
+      callback = optionsOrCallback;
+    } else {
+      options = optionsOrCallback;
+    }
     if (callback) {
-      this.fromStreamAsync(inputStream)
-          .then(r => callback(null, r))
+      this.fromStreamAsync(inputStream, options)
+          .then(r => callback!(null, r))
           .catch(callback);
     } else {
-      return this.fromStreamAsync(inputStream);
+      return this.fromStreamAsync(inputStream, options);
     }
   }
 
-  private fromStreamAsync(inputStream: stream.Readable):
-      Promise<JWT|UserRefreshClient> {
+  private fromStreamAsync(
+      inputStream: stream.Readable,
+      options?: RefreshOptions): Promise<JWT|UserRefreshClient> {
     return new Promise((resolve, reject) => {
       if (!inputStream) {
         throw new Error(
@@ -413,7 +443,7 @@ export class GoogleAuth {
       inputStream.on('end', () => {
         try {
           const data = JSON.parse(s);
-          const r = this.fromJSON(data);
+          const r = this.fromJSON(data, options);
           return resolve(r);
         } catch (err) {
           return reject(err);
@@ -427,8 +457,9 @@ export class GoogleAuth {
    * @param {string} - The API key string
    * @returns A JWT loaded from the key
    */
-  fromAPIKey(apiKey: string): JWT {
-    const client = new JWT();
+  fromAPIKey(apiKey: string, options?: RefreshOptions): JWT {
+    options = options || {};
+    const client = new JWT(options);
     client.fromAPIKey(apiKey);
     return client;
   }

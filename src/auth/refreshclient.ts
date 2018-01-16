@@ -16,7 +16,13 @@
 
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {GetTokenResponse, OAuth2Client} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+
+export interface UserRefreshClientOptions extends RefreshOptions {
+  clientId?: string;
+  clientSecret?: string;
+  refreshToken?: string;
+}
 
 export class UserRefreshClient extends OAuth2Client {
   // TODO: refactor tests to make this private
@@ -32,9 +38,27 @@ export class UserRefreshClient extends OAuth2Client {
    * @param {string} refreshToken The authentication refresh token.
    * @constructor
    */
-  constructor(clientId?: string, clientSecret?: string, refreshToken?: string) {
-    super(clientId, clientSecret);
-    this._refreshToken = refreshToken;
+  constructor(clientId?: string, clientSecret?: string, refreshToken?: string);
+  constructor(options: UserRefreshClientOptions);
+  constructor(clientId?: string, clientSecret?: string, refreshToken?: string);
+  constructor(
+      optionsOrClientId?: string|UserRefreshClientOptions,
+      clientSecret?: string, refreshToken?: string,
+      eagerRefreshThresholdMillis?: number) {
+    const opts = (optionsOrClientId && typeof optionsOrClientId === 'object') ?
+        optionsOrClientId :
+        {
+          clientId: optionsOrClientId,
+          clientSecret,
+          refreshToken,
+          eagerRefreshThresholdMillis
+        };
+    super({
+      clientId: opts.clientId,
+      clientSecret: opts.clientSecret,
+      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis
+    });
+    this._refreshToken = opts.refreshToken;
   }
 
   /**
