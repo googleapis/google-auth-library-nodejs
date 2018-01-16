@@ -1,7 +1,3 @@
-## 0.10.1 (01/16/2018)
-### Changes
-
-* Fix samples/jwt.js link in README.md ([@njseeto][])
 ## 0.10.0 (12/29/2016)
 
 ### Breaking bug fixes
