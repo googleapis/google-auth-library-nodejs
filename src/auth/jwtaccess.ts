@@ -19,10 +19,17 @@ import * as stream from 'stream';
 import {JWTInput} from './credentials';
 import {RequestMetadataCallback, RequestMetadataResponse} from './oauth2client';
 
+interface CachedToken {
+  expires: number;
+  res: RequestMetadataResponse;
+}
+
 export class JWTAccess {
   email?: string|null;
   key?: string|null;
   projectId?: string;
+
+  private cache = new Map<string, CachedToken>();
 
   /**
    * JWTAccess service account credentials.
@@ -51,13 +58,17 @@ export class JWTAccess {
   }
 
   /**
-   * Get a non-expired access token, after refreshing if necessary
+   * Get a non-expired access token, after refreshing if necessary.
    *
    * @param {string} authURI the URI being authorized
-   * @param {function} metadataCb a callback invoked with the jwt request metadata.
-   * @returns a Promise that resolves with the request metadata response
+   * @returns An object that includes the authorization header.
    */
   getRequestMetadata(authURI: string): RequestMetadataResponse {
+    this.cleanupCache();
+    const cachedToken = this.cache.get(authURI);
+    if (cachedToken) {
+      return cachedToken.res;
+    }
     const iat = Math.floor(new Date().getTime() / 1000);
     const exp = iat + 3600;  // 3600 seconds = 1 hour
 
@@ -71,10 +82,24 @@ export class JWTAccess {
       secret: this.key
     };
 
-    // Sign the jwt and invoke metadataCb with it.
+    // Sign the jwt and add it to the cache
     const signedJWT =
         jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
-    return {headers: {Authorization: 'Bearer ' + signedJWT}};
+    const res = {headers: {Authorization: 'Bearer ' + signedJWT}};
+    this.cache.set(authURI, {res, expires: Date.now() + 60 * 60 * 1000});
+    return res;
+  }
+
+  /**
+   * Delete any token in the cache which has expired.
+   */
+  private cleanupCache() {
+    const now = Date.now();
+    this.cache.forEach((value, key) => {
+      if (now > value.expires) {
+        this.cache.delete(key);
+      }
+    });
   }
 
   /**
