@@ -33,17 +33,6 @@ export class IAMAuth {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   *
-   * @return {boolean} always false
-   */
-  createScopedRequired() {
-    // IAM authorization does not use scopes.
-    return false;
-  }
-
-  /**
    * Pass the selector and token to the metadataFn callback.
    *
    * @param {string} unused_uri is required of the credentials interface

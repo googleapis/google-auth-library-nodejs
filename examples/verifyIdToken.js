@@ -32,7 +32,7 @@ async function main() {
     // Verify the id_token, and access the claims.
     const ticket = await oAuth2Client.verifyIdToken({
       idToken: oAuth2Client.credentials.id_token,
-      audience: keys.web.client_id,
+      audience: keys.web.client_id
     });
     console.log(ticket);
 

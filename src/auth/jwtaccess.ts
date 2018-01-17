@@ -40,17 +40,6 @@ export class JWTAccess {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   *
-   * @return {boolean} always false
-   */
-  createScopedRequired(): boolean {
-    // JWT Header authentication does not use scopes.
-    return false;
-  }
-
-  /**
    * Get a non-expired access token, after refreshing if necessary
    *
    * @param {string} authURI the URI being authorized

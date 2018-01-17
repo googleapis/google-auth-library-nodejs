@@ -52,44 +52,26 @@ Rather than manually creating an OAuth2 client, JWT client, or Compute client, t
 
 For example, a JWT auth client will be created when your code is running on your local developer machine, and a Compute client will be created when the same code is running on Google Cloud Platform.
 
-The code below shows how to retrieve a default credential type, depending upon the runtime environment. The createScopedRequired must be called to determine when you need to pass in the scopes manually, and when they have been set for you automatically based on the configured runtime environment.
+The code below shows how to retrieve a default credential type, depending upon the runtime environment.
 
 ```js
-const {auth} = require('google-auth-library');
+/**
+ * Import the GoogleAuth library, and create a new GoogleAuth client.
+ */
+const { auth } = require('google-auth-library');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  const adc = await getADC();
-  const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
-  const res = await adc.client.request({url});
-  console.log(res.data);
-}
-
-/**
- * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
- * this library will automatically choose the right client based on the environment.
- */
-async function getADC() {
   // Acquire a client and the projectId based on the environment. This method looks
   // for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables.
   const res = await auth.getApplicationDefault();
-  let client = res.credential;
-
-  // The createScopedRequired method returns true when running on GAE or a local developer
-  // machine. In that case, the desired scopes must be passed in manually. When the code is
-  // running in GCE or a Managed VM, the scopes are pulled from the GCE metadata server.
-  // See https://cloud.google.com/compute/docs/authentication for more information.
-  if (client.createScopedRequired && client.createScopedRequired()) {
-    // Scopes can be specified either as an array or as a single, space-delimited string.
-    const scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-    client = client.createScoped(scopes);
-  }
-  return {
-    client: client,
-    projectId: res.projectId
-  }
+  const client = res.credential;
+  client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+  const url = `https://www.googleapis.com/dns/v1/projects/${res.projectId}`;
+  const res2 = await client.request({ url });
+  console.log(res2.data);
 }
 
 main().catch(console.error);

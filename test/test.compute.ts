@@ -117,13 +117,6 @@ describe('Compute auth client', () => {
     });
   });
 
-  describe('.createScopedRequired', () => {
-    it('should return false', () => {
-      const c = new Compute();
-      assert.equal(false, c.createScopedRequired());
-    });
-  });
-
   describe('._injectErrorMessage', () => {
     it('should return a helpful message on request response.statusCode 403', done => {
       // Mock the credentials object.

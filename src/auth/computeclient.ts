@@ -15,7 +15,6 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-
 import {RequestError} from './../transporters';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
@@ -40,18 +39,6 @@ export class Compute extends OAuth2Client {
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};
-  }
-
-  /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   * @return Boolean indicating if scope is required.
-   */
-  createScopedRequired() {
-    // On compute engine, scopes are specified at the compute instance's
-    // creation time, and cannot be changed. For this reason, always return
-    // false.
-    return false;
   }
 
   /**
