@@ -4,8 +4,8 @@
 
 [![Greenkeeper badge][greenkeeperimg]][greenkeeper]
 [![npm version][npmimg]][npm]
-[![Build Status][travisimg]][travis]
-[![Code Coverage][coverallsimg]][coveralls]
+[![CircleCI][circle-image]][circle-url]
+[![codecov][codecov-image]][codecov-url]
 [![Dependencies][david-dm-img]][david-dm]
 [![Known Vulnerabilities][snyk-image]][snyk-url]
 
@@ -317,10 +317,12 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [axios]: https://github.com/axios/axios
 [axiosOpts]: https://github.com/axios/axios#request-config
 [bugs]: https://github.com/google/google-auth-library-nodejs/issues
+[circle-image]: https://circleci.com/gh/google/js-green-licenses.svg?style=svg
+[circle-url]: https://circleci.com/gh/google/js-green-licenses
+[codecov-image]: https://codecov.io/gh/google/js-green-licenses/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/google/js-green-licenses
 [contributing]: https://github.com/google/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
 [copying]: https://github.com/google/google-auth-library-nodejs/tree/master/LICENSE
-[coveralls]: https://coveralls.io/r/google/google-auth-library-nodejs?branch=master
-[coverallsimg]: https://img.shields.io/coveralls/google/google-auth-library-nodejs.svg
 [david-dm-img]: https://david-dm.org/google/google-auth-library-nodejs/status.svg
 [david-dm]: https://david-dm.org/google/google-auth-library-nodejs
 [greenkeeperimg]: https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg
@@ -335,8 +337,6 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [stability]: http://nodejs.org/api/stream.html#stream_stream
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
 [stream]: http://nodejs.org/api/stream.html#stream_class_stream_readable
-[travisimg]: https://api.travis-ci.org/google/google-auth-library-nodejs.svg
-[travis]: https://travis-ci.org/google/google-auth-library-nodejs
 [urlshort]: https://developers.google.com/url-shortener/
 [usingkeys]: https://developers.google.com/console/help/#UsingKeys
 [devconsole]: https://console.developer.google.com
