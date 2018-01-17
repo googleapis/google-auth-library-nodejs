@@ -418,7 +418,7 @@ describe('GoogleAuth', () => {
         assert.equal(json.client_email, jwt.email);
         assert.equal(null, jwt.keyFile);
         assert.equal(null, jwt.subject);
-        assert.equal(null, jwt.scope);
+        assert.equal(null, jwt.scopes);
         done();
       });
     });
@@ -444,7 +444,7 @@ describe('GoogleAuth', () => {
          assert.equal(json.client_email, jwt.email);
          assert.equal(null, jwt.keyFile);
          assert.equal(null, jwt.subject);
-         assert.equal(null, jwt.scope);
+         assert.equal(null, jwt.scopes);
          assert.equal(1000 * 60 * 60, jwt.eagerRefreshThresholdMillis);
        });
 
@@ -646,7 +646,7 @@ describe('GoogleAuth', () => {
       assert.equal(json.client_email, jwt.email);
       assert.equal(null, jwt.keyFile);
       assert.equal(null, jwt.subject);
-      assert.equal(null, jwt.scope);
+      assert.equal(null, jwt.scopes);
     });
 
     it('should correctly read the file and create a valid JWT with eager refresh',
@@ -667,7 +667,7 @@ describe('GoogleAuth', () => {
          assert.equal(json.client_email, jwt.email);
          assert.equal(null, jwt.keyFile);
          assert.equal(null, jwt.subject);
-         assert.equal(null, jwt.scope);
+         assert.equal(null, jwt.scopes);
          assert.equal(7000, jwt.eagerRefreshThresholdMillis);
        });
   });
@@ -726,7 +726,7 @@ describe('GoogleAuth', () => {
       assert.equal(json.client_email, jwt.email);
       assert.equal(null, jwt.keyFile);
       assert.equal(null, jwt.subject);
-      assert.equal(null, jwt.scope);
+      assert.equal(null, jwt.scopes);
     });
 
     it('should handle valid environment variable when there is eager refresh set',
@@ -751,7 +751,7 @@ describe('GoogleAuth', () => {
          assert.equal(json.client_email, jwt.email);
          assert.equal(null, jwt.keyFile);
          assert.equal(null, jwt.subject);
-         assert.equal(null, jwt.scope);
+         assert.equal(null, jwt.scopes);
          assert.equal(60 * 60 * 1000, jwt.eagerRefreshThresholdMillis);
        });
   });
@@ -1209,7 +1209,7 @@ describe('.getApplicationDefault', () => {
       assert.equal(json.client_email, client.email);
       assert.equal(null, client.keyFile);
       assert.equal(null, client.subject);
-      assert.equal(null, client.scope);
+      assert.equal(null, client.scopes);
       done();
     });
   });
@@ -1244,7 +1244,7 @@ describe('.getApplicationDefault', () => {
          assert.equal(json.client_email, client.email);
          assert.equal(null, client.keyFile);
          assert.equal(null, client.subject);
-         assert.equal(null, client.scope);
+         assert.equal(null, client.scopes);
          done();
        });
      });
@@ -1329,7 +1329,7 @@ describe('.getApplicationDefault', () => {
       assert.equal(projectId, testProjectId);
       assert.equal(null, client.keyFile);
       assert.equal(null, client.subject);
-      assert.equal(null, client.scope);
+      assert.equal(null, client.scopes);
       done();
     });
   });
