@@ -11,3 +11,4 @@ yarn-error.log
 **/*.js
 examples/*.keys.json
 !examples/*.js
+.nyc_output
