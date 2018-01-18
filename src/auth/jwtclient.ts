@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import * as stream from 'stream';
 import {GoogleToken, TokenOptions} from 'gtoken';
+import * as stream from 'stream';
+
 import {Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
@@ -227,7 +228,7 @@ export class JWT extends OAuth2Client {
    * Creates the gToken instance if it has not been created already.
    */
   private createGToken() {
-    if (!this.gtoken || this.gtoken.scope != this.scopes) {
+    if (!this.gtoken || this.gtoken.scope !== this.scopes) {
       this.gtoken = new GoogleToken({
         iss: this.email,
         sub: this.subject,
