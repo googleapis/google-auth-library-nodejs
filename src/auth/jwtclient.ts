@@ -36,7 +36,6 @@ export class JWT extends OAuth2Client {
   keyFile?: string;
   key?: string;
   scopes?: string|string[];
-  scope?: string;
   subject?: string;
   gtoken: GoogleToken;
 
@@ -72,28 +71,13 @@ export class JWT extends OAuth2Client {
   }
 
   /**
-   * Creates a copy of the credential with the specified scopes.
-   * @param {(string|array)=} scopes List of requested scopes or a single scope.
-   * @return {object} The cloned instance.
-   */
-  createScoped(scopes?: string|string[]) {
-    return new JWT({
-      email: this.email,
-      keyFile: this.keyFile,
-      key: this.key,
-      scopes,
-      subject: this.subject
-    });
-  }
-
-  /**
    * Obtains the metadata to be sent with the request.
    *
    * @param {string} optUri the URI being authorized.
    */
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
-    if (this.createScopedRequired() && url) {
+    if (!this.hasScopes() && url) {
       // no scopes have been set, but a uri has been provided.  Use JWTAccess
       // credentials.
       const alt = new JWTAccess(this.email, this.key);
@@ -106,19 +90,19 @@ export class JWT extends OAuth2Client {
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
-   * @return {boolean} false if createScoped does not need to be called.
+   * @return {boolean} true if scopes are assigned.
    */
-  createScopedRequired() {
+  private hasScopes() {
     // If scopes is null, always return true.
     if (this.scopes) {
       // For arrays, check the array length.
       if (this.scopes instanceof Array) {
-        return this.scopes.length === 0;
+        return this.scopes.length > 0;
       }
       // For others, convert to a string and check the length.
-      return String(this.scopes).length === 0;
+      return String(this.scopes).length > 0;
     }
-    return true;
+    return false;
   }
 
   /**
@@ -242,11 +226,9 @@ export class JWT extends OAuth2Client {
 
   /**
    * Creates the gToken instance if it has not been created already.
-   * @param {function=} callback Callback.
-   * @private
    */
   private createGToken() {
-    if (!this.gtoken) {
+    if (!this.gtoken || this.gtoken.scope !== this.scopes) {
       this.gtoken = new GoogleToken({
         iss: this.email,
         sub: this.subject,

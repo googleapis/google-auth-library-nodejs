@@ -53,13 +53,6 @@ describe('.getRequestMetadata', () => {
   });
 });
 
-describe('.createScopedRequired', () => {
-  it('should return false', () => {
-    const client = new JWTAccess('foo@serviceaccount.com', null);
-    assert.equal(false, client.createScopedRequired());
-  });
-});
-
 describe('.fromJson', () => {
   // set up the test json and the client instance being tested.
   let json = ({} as JWTInput);
