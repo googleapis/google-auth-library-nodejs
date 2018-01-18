@@ -73,11 +73,10 @@ describe('.getRequestMetadata', () => {
       Date.now = () => realDateNow() + (1000 * 60 * 60) + 10;
       const res2 = client.getRequestMetadata(testUri);
       assert.notEqual(res, res2);
-    } catch (e) {
-      assert.fail(e);
+    } finally {
+      // return date.now to it's normally scheduled programming
+      Date.now = realDateNow;
     }
-    // return date.now to it's normally scheduled programming
-    Date.now = realDateNow;
   });
 });
 
