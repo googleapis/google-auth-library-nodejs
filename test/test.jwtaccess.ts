@@ -20,6 +20,7 @@ import * as http from 'http';
 import * as jws from 'jws';
 
 import {JWTInput} from '../src/auth/credentials';
+import {RequestMetadataResponse} from '../src/auth/oauth2client';
 import {GoogleAuth, JWTAccess} from '../src/index';
 
 const keypair = require('keypair');
@@ -36,12 +37,20 @@ function createJSON() {
 }
 
 describe('.getRequestMetadata', () => {
+  let keys: {private: string};
+  let testUri: string;
+  let email: string;
+  let client: JWTAccess;
+  let res: RequestMetadataResponse;
+  beforeEach(() => {
+    keys = keypair(1024 /* bitsize of private key */);
+    testUri = 'http:/example.com/my_test_service';
+    email = 'foo@serviceaccount.com';
+    client = new JWTAccess(email, keys.private);
+    res = client.getRequestMetadata(testUri);
+  });
+
   it('create a signed JWT token as the access token', () => {
-    const keys = keypair(1024 /* bitsize of private key */);
-    const testUri = 'http:/example.com/my_test_service';
-    const email = 'foo@serviceaccount.com';
-    const client = new JWTAccess(email, keys.private);
-    const res = client.getRequestMetadata(testUri);
     assert.notStrictEqual(
         null, res.headers, 'an creds object should be present');
     const decoded = jws.decode(
@@ -50,6 +59,24 @@ describe('.getRequestMetadata', () => {
     assert.strictEqual(email, payload.iss);
     assert.strictEqual(email, payload.sub);
     assert.strictEqual(testUri, payload.aud);
+  });
+
+  it('should return a cached token on the second request', () => {
+    const res2 = client.getRequestMetadata(testUri);
+    assert.strictEqual(res, res2);
+  });
+
+  it('should not return cached tokens older than an hour', () => {
+    const realDateNow = Date.now;
+    try {
+      // go forward in time one hour (plus a little)
+      Date.now = () => realDateNow() + (1000 * 60 * 60) + 10;
+      const res2 = client.getRequestMetadata(testUri);
+      assert.notEqual(res, res2);
+    } finally {
+      // return date.now to it's normally scheduled programming
+      Date.now = realDateNow;
+    }
   });
 });
 

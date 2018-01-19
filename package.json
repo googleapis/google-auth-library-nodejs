@@ -23,12 +23,14 @@
     "axios": "^0.17.1",
     "gtoken": "^2.0.2",
     "jws": "^3.1.4",
-    "lodash.isstring": "^4.0.1"
+    "lodash.isstring": "^4.0.1",
+    "lru-cache": "^4.1.1"
   },
   "devDependencies": {
     "@justinbeckwith/typedoc": "^0.10.1",
     "@types/jws": "^3.1.0",
     "@types/lodash.isstring": "^4.0.3",
+    "@types/lru-cache": "^4.1.0",
     "@types/mocha": "^2.2.45",
     "@types/ncp": "^2.0.1",
     "@types/nock": "^9.1.1",
