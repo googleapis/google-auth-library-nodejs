@@ -81,7 +81,7 @@ export class JWTAccess {
     // Sign the jwt and add it to the cache
     const signedJWT =
         jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
-    const res = {headers: {Authorization: 'Bearer ' + signedJWT}};
+    const res = {headers: {Authorization: `Bearer ${signedJWT}`}};
     this.cache.set(authURI, res);
     return res;
   }
