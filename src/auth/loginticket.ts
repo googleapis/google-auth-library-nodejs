@@ -133,6 +133,24 @@ export interface TokenPayload {
    * records. Note that this claim is never guaranteed to be present.
    */
   name?: string;
+  
+  /**
+   * The user's given name, in a displayable form. Might be provided when:
+   * - The request scope included the string "profile"
+   * - The ID token is returned from a token refresh
+   * - When name claims are present, you can use them to update your app's user
+   * records. Note that this claim is never guaranteed to be present.
+   */
+  given_name?: string;
+  
+  /**
+   * The user's family name, in a displayable form. Might be provided when:
+   * - The request scope included the string "profile"
+   * - The ID token is returned from a token refresh
+   * - When name claims are present, you can use them to update your app's user
+   * records. Note that this claim is never guaranteed to be present.
+   */
+  family_name?: string;
 
   /**
    * Identifies the audience that this ID token is intended for. It must be one
