@@ -60,6 +60,11 @@
     "build/src",
     "package.json"
   ],
+  "nyc": {
+    "exclude": [
+      "build/test"
+    ]
+  },
   "scripts": {
     "test": "nyc mocha build/test",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json",
