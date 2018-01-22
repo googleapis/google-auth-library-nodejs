@@ -293,14 +293,14 @@ main().catch(console.error);
 #### Using a Proxy
 You can use the following environment variables to proxy HTTP and HTTPS requests:
 
-- HTTP_PROXY / http_proxy
-- HTTPS_PROXY / https_proxy
+- `HTTP_PROXY` / `http_proxy`
+- `HTTPS_PROXY` / `https_proxy`
 
 When HTTP_PROXY / http_proxy are set, they will be used to proxy non-SSL requests that do not have an explicit proxy configuration option present. Similarly, HTTPS_PROXY / https_proxy will be respected for SSL requests that do not have an explicit proxy configuration option. It is valid to define a proxy in one of the environment variables, but then override it for a specific request, using the proxy configuration option.
 
 ### Questions/problems?
 
-* Ask your development related questions on [![Ask a question on Stackoverflow][overflowimg]][stackoverflow]
+* Ask your development related questions on [Stack Overflow][stackoverflow].
 * If you've found an bug/issue, please [file it on GitHub][bugs].
 
 ## Contributing
@@ -317,10 +317,10 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [axios]: https://github.com/axios/axios
 [axiosOpts]: https://github.com/axios/axios#request-config
 [bugs]: https://github.com/google/google-auth-library-nodejs/issues
-[circle-image]: https://circleci.com/gh/google/js-green-licenses.svg?style=svg
-[circle-url]: https://circleci.com/gh/google/js-green-licenses
-[codecov-image]: https://codecov.io/gh/google/js-green-licenses/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/google/js-green-licenses
+[circle-image]: https://circleci.com/gh/google/google-auth-library-nodejs.svg?style=svg
+[circle-url]: https://circleci.com/gh/google/google-auth-library-nodejs
+[codecov-image]: https://codecov.io/gh/google/google-auth-library-nodejs/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/google/google-auth-library-nodejs
 [contributing]: https://github.com/google/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
 [copying]: https://github.com/google/google-auth-library-nodejs/tree/master/LICENSE
 [david-dm-img]: https://david-dm.org/google/google-auth-library-nodejs/status.svg
@@ -331,7 +331,6 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [npmimg]: https://img.shields.io/npm/v/google-auth-library.svg
 [npm]: https://www.npmjs.org/package/google-auth-library
 [oauth]: https://developers.google.com/identity/protocols/OAuth2
-[overflowimg]: https://googledrive.com/host/0ByfSjdPVs9MZbkhjeUhMYzRTeEE/stackoveflow-tag.png
 [snyk-image]: https://snyk.io/test/github/google/google-auth-library-nodejs/badge.svg
 [snyk-url]: https://snyk.io/test/github/google/google-auth-library-nodejs
 [stability]: http://nodejs.org/api/stream.html#stream_stream
