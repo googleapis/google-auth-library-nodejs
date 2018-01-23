@@ -1,4 +1,4 @@
-node_modules/*
+node_modules
 build/
 types/
 .idea
@@ -10,5 +10,5 @@ coverage
 yarn-error.log
 **/*.js
 examples/*.keys.json
-!examples/*.js
+!examples/**/*.js
 .nyc_output
