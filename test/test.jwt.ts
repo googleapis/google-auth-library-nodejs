@@ -49,11 +49,9 @@ interface GTokenResult {
   expires_in?: number;
 }
 
-function createGTokenMock(body: GTokenResult = {
-  access_token: 'initial-access-token'
-}) {
-  nock('https://accounts.google.com:443')
-      .post('/o/oauth2/token')
+function createGTokenMock(body: GTokenResult) {
+  return nock('https://www.googleapis.com')
+      .post('/oauth2/v4/token')
       .reply(200, body);
 }
 
@@ -76,7 +74,7 @@ describe('JWT auth client', () => {
       const jwt = new JWT(
           'foo@serviceaccount.com', PEM_PATH, undefined,
           ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
-      createGTokenMock();
+      createGTokenMock({access_token: 'initial-access-token'});
       jwt.authorize((err, creds) => {
         assert.equal(err, null);
         assert.notEqual(creds, null);
@@ -103,7 +101,7 @@ describe('JWT auth client', () => {
         subject: 'bar@subjectaccount.com'
       });
 
-      createGTokenMock();
+      createGTokenMock({access_token: 'initial-access-token'});
       jwt.authorize((err, creds) => {
         assert.equal('http://foo', jwt.gtoken.scope);
         done();
@@ -122,7 +120,7 @@ describe('JWT auth client', () => {
         });
 
         jwt.credentials = {refresh_token: 'jwt-placeholder'};
-        createGTokenMock();
+        createGTokenMock({access_token: 'initial-access-token'});
         jwt.getAccessToken((err, got) => {
           assert.strictEqual(null, err, 'no error was expected: got\n' + err);
           assert.strictEqual(
@@ -255,12 +253,9 @@ describe('JWT auth client', () => {
 
     it('should not refresh if access token will not expire soon and time to' +
            ' refresh before expiration is set',
-       (done) => {
+       done => {
          const scope =
-             nock('https://accounts.google.com')
-                 .post('/o/oauth2/token', '*')
-                 .reply(200, {access_token: 'abc123', expires_in: 10000});
-
+             createGTokenMock({access_token: 'abc123', expires_in: 10000});
          const jwt = new JWT({
            email: 'foo@serviceaccount.com',
            keyFile: '/path/to/key.pem',
@@ -307,10 +302,7 @@ describe('JWT auth client', () => {
 
     it('should not refresh if not expired', (done) => {
       const scope =
-          nock('https://accounts.google.com')
-              .post('/o/oauth2/token', '*')
-              .reply(200, {access_token: 'abc123', expires_in: 10000});
-
+          createGTokenMock({access_token: 'abc123', expires_in: 10000});
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
         keyFile: '/path/to/key.pem',
@@ -333,10 +325,7 @@ describe('JWT auth client', () => {
 
     it('should assume access token is not expired', (done) => {
       const scope =
-          nock('https://accounts.google.com')
-              .post('/o/oauth2/token', '*')
-              .reply(200, {access_token: 'abc123', expires_in: 10000});
-
+          createGTokenMock({access_token: 'abc123', expires_in: 10000});
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
         keyFile: '/path/to/key.pem',
