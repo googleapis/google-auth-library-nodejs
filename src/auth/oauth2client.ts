@@ -649,10 +649,9 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * Provides a request implementation with OAuth 2.0 flow.
-   * If credentials have a refresh_token, in cases of HTTP
-   * 401 and 403 responses, it automatically asks for a new
-   * access token and replays the unsuccessful request.
+   * Provides a request implementation with OAuth 2.0 flow. If credentials have
+   * a refresh_token, in cases of HTTP 401 and 403 responses, it automatically
+   * asks for a new access token and replays the unsuccessful request.
    * @param {object} opts Request options.
    * @param {function} callback callback.
    * @return {Request} Request object
@@ -676,7 +675,7 @@ export class OAuth2Client extends AuthClient {
       Promise<AxiosResponse<T>> {
     let r2: AxiosResponse;
     try {
-      const r = await this.getRequestMetadataAsync(null);
+      const r = await this.getRequestMetadataAsync(opts.url);
       if (r.headers && r.headers.Authorization) {
         opts.headers = opts.headers || {};
         opts.headers.Authorization = r.headers.Authorization;

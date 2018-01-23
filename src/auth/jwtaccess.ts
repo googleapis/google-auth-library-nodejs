@@ -57,10 +57,13 @@ export class JWTAccess {
   /**
    * Get a non-expired access token, after refreshing if necessary.
    *
-   * @param {string} authURI the URI being authorized
+   * @param authURI The URI being authorized.
+   * @param additionalClaims An object with a set of additional claims to
+   * include in the payload.
    * @returns An object that includes the authorization header.
    */
-  getRequestMetadata(authURI: string): RequestMetadataResponse {
+  getRequestMetadata(authURI: string, additionalClaims?: {}):
+      RequestMetadataResponse {
     const cachedToken = this.cache.get(authURI);
     if (cachedToken) {
       return cachedToken;
@@ -71,12 +74,9 @@ export class JWTAccess {
     // The payload used for signed JWT headers has:
     // iss == sub == <client email>
     // aud == <the authorization uri>
-    const payload = {iss: this.email, sub: this.email, aud: authURI, exp, iat};
-    const assertion = {
-      header: {alg: 'RS256'} as jws.Header,
-      payload,
-      secret: this.key
-    };
+    const payload = Object.assign(
+        {iss: this.email, sub: this.email, aud: authURI, exp, iat},
+        additionalClaims);
 
     // Sign the jwt and add it to the cache
     const signedJWT =
