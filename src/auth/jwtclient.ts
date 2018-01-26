@@ -99,11 +99,14 @@ export class JWT extends OAuth2Client {
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
     if (!this.apiKey && this.createScopedRequired() && url) {
-      if (this.additionalClaims && (this.additionalClaims as any).target_audience) {
+      if (this.additionalClaims && (this.additionalClaims as {
+                                     target_audience: string
+                                   }).target_audience) {
         const {tokens} = await this.refreshToken();
         return {headers: {Authorization: `Bearer ${tokens.access_token}`}};
       } else {
-        // no scopes have been set, but a uri has been provided. Use JWTAccess credentials.
+        // no scopes have been set, but a uri has been provided. Use JWTAccess
+        // credentials.
         if (!this.access) {
           this.access = new JWTAccess(this.email, this.key);
         }

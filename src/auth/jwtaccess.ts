@@ -18,7 +18,7 @@ import * as jws from 'jws';
 import * as LRU from 'lru-cache';
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {RequestMetadataCallback, RequestMetadataResponse} from './oauth2client';
+import {RequestMetadataResponse} from './oauth2client';
 
 export class JWTAccess {
   email?: string|null;
@@ -74,6 +74,8 @@ export class JWTAccess {
     // The payload used for signed JWT headers has:
     // iss == sub == <client email>
     // aud == <the authorization uri>
+    // NOTE: Users can also override the values for iss / sub / aud / etc
+    // with additionalClaims.
     const payload = Object.assign(
         {iss: this.email, sub: this.email, aud: authURI, exp, iat},
         additionalClaims);

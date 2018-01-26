@@ -41,16 +41,15 @@ describe('.getRequestMetadata', () => {
   let testUri: string;
   let email: string;
   let client: JWTAccess;
-  let res: RequestMetadataResponse;
   beforeEach(() => {
     keys = keypair(1024 /* bitsize of private key */);
     testUri = 'http:/example.com/my_test_service';
     email = 'foo@serviceaccount.com';
     client = new JWTAccess(email, keys.private);
-    res = client.getRequestMetadata(testUri);
   });
 
   it('create a signed JWT token as the access token', () => {
+    const res = client.getRequestMetadata(testUri);
     assert.notStrictEqual(
         null, res.headers, 'an creds object should be present');
     const decoded = jws.decode(
@@ -61,12 +60,26 @@ describe('.getRequestMetadata', () => {
     assert.strictEqual(testUri, payload.aud);
   });
 
+  it('should allow overriding with additionalClaims', () => {
+    const additionalClaims = {iss: 'not-the-email'};
+    const res = client.getRequestMetadata(testUri, additionalClaims);
+    assert.notStrictEqual(
+        null, res.headers, 'an creds object should be present');
+    const decoded = jws.decode(
+        (res.headers!.Authorization as string).replace('Bearer ', ''));
+    const payload = JSON.parse(decoded.payload);
+    assert.strictEqual('not-the-email', payload.iss);
+    assert.strictEqual(email, payload.sub);
+  });
+
   it('should return a cached token on the second request', () => {
+    const res = client.getRequestMetadata(testUri);
     const res2 = client.getRequestMetadata(testUri);
     assert.strictEqual(res, res2);
   });
 
   it('should not return cached tokens older than an hour', () => {
+    const res = client.getRequestMetadata(testUri);
     const realDateNow = Date.now;
     try {
       // go forward in time one hour (plus a little)
