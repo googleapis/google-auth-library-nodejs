@@ -18,16 +18,11 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as jws from 'jws';
 import * as nock from 'nock';
-import {JWTInput} from '../src/auth/credentials';
+
+import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import {GoogleAuth, JWT} from '../src/index';
 
 const keypair = require('keypair');
-const noop = Function.prototype;
-
-interface TokenCallback {
-  (err: Error|null, result: string): void;
-}
-
 const PEM_PATH = './test/fixtures/private.pem';
 const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
 
@@ -44,12 +39,7 @@ function createJSON() {
   };
 }
 
-interface GTokenResult {
-  access_token?: string;
-  expires_in?: number;
-}
-
-function createGTokenMock(body: GTokenResult) {
+function createGTokenMock(body: CredentialRequest) {
   return nock('https://www.googleapis.com')
       .post('/oauth2/v4/token')
       .reply(200, body);
@@ -185,7 +175,54 @@ describe('JWT auth client', () => {
           done();
         });
       });
+
+      it('should accept additionalClaims', async () => {
+        const keys = keypair(1024 /* bitsize of private key */);
+        const email = 'foo@serviceaccount.com';
+        const someClaim = 'cat-on-my-desk';
+        const jwt = new JWT({
+          email: 'foo@serviceaccount.com',
+          key: keys.private,
+          subject: 'ignored@subjectaccount.com',
+          additionalClaims: {someClaim}
+        });
+        jwt.credentials = {refresh_token: 'jwt-placeholder'};
+
+        const testUri = 'http:/example.com/my_test_service';
+        const {headers} = await jwt.getRequestMetadata(testUri);
+        const got = headers as {
+          Authorization: string;
+        };
+        assert.notStrictEqual(null, got, 'the creds should be present');
+        const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+        const payload = JSON.parse(decoded.payload);
+        assert.strictEqual(testUri, payload.aud);
+        assert.strictEqual(someClaim, payload.someClaim);
+      });
     });
+
+    it('should accept additionalClaims that include a target_audience',
+       async () => {
+         const keys = keypair(1024 /* bitsize of private key */);
+         const email = 'foo@serviceaccount.com';
+         const jwt = new JWT({
+           email: 'foo@serviceaccount.com',
+           key: keys.private,
+           subject: 'ignored@subjectaccount.com',
+           additionalClaims: {target_audience: 'applause'}
+         });
+         jwt.credentials = {refresh_token: 'jwt-placeholder'};
+
+         const testUri = 'http:/example.com/my_test_service';
+         createGTokenMock({access_token: 'abc123'});
+         const {headers} = await jwt.getRequestMetadata(testUri);
+         const got = headers as {
+           Authorization: string;
+         };
+         assert.notStrictEqual(null, got, 'the creds should be present');
+         const decoded = got.Authorization.replace('Bearer ', '');
+         assert.strictEqual(decoded, 'abc123');
+       });
   });
 
   describe('.request', () => {

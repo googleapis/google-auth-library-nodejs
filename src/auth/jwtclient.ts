@@ -94,7 +94,7 @@ export class JWT extends OAuth2Client {
   /**
    * Obtains the metadata to be sent with the request.
    *
-   * @param {string} optUri the URI being authorized.
+   * @param optUri the URI being authorized.
    */
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
@@ -169,7 +169,6 @@ export class JWT extends OAuth2Client {
    * @private
    */
   async refreshToken(refreshToken?: string|null): Promise<GetTokenResponse> {
-    console.log('refreshing the token!');
     if (!this.gtoken) {
       this.gtoken = new GoogleToken({
         iss: this.email,
@@ -181,7 +180,6 @@ export class JWT extends OAuth2Client {
       });
     }
     const token = await this.gtoken.getToken();
-    console.log(`Token: ${token}`);
     const tokens = {
       access_token: token,
       token_type: 'Bearer',
