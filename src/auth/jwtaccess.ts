@@ -62,8 +62,9 @@ export class JWTAccess {
    * include in the payload.
    * @returns An object that includes the authorization header.
    */
-  getRequestMetadata(authURI: string, additionalClaims?: {}):
-      RequestMetadataResponse {
+  getRequestMetadata(
+      authURI: string,
+      additionalClaims?: {[index: string]: string}): RequestMetadataResponse {
     const cachedToken = this.cache.get(authURI);
     if (cachedToken) {
       return cachedToken;
@@ -71,11 +72,20 @@ export class JWTAccess {
     const iat = Math.floor(new Date().getTime() / 1000);
     const exp = iat + 3600;  // 3600 seconds = 1 hour
 
+    // if additionalClaims are provided, ensure they do not collide with
+    // other required claims.
+    if (additionalClaims) {
+      ['iss', 'sub', 'aud', 'exp', 'iat'].forEach(claim => {
+        if (additionalClaims[claim]) {
+          throw new Error(`The '${
+              claim}' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`);
+        }
+      });
+    }
+
     // The payload used for signed JWT headers has:
     // iss == sub == <client email>
     // aud == <the authorization uri>
-    // NOTE: Users can also override the values for iss / sub / aud / etc
-    // with additionalClaims.
     const payload = Object.assign(
         {iss: this.email, sub: this.email, aud: authURI, exp, iat},
         additionalClaims);

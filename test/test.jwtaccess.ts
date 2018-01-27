@@ -60,16 +60,11 @@ describe('.getRequestMetadata', () => {
     assert.strictEqual(testUri, payload.aud);
   });
 
-  it('should allow overriding with additionalClaims', () => {
+  it('should not allow overriding with additionalClaims', () => {
     const additionalClaims = {iss: 'not-the-email'};
-    const res = client.getRequestMetadata(testUri, additionalClaims);
-    assert.notStrictEqual(
-        null, res.headers, 'an creds object should be present');
-    const decoded = jws.decode(
-        (res.headers!.Authorization as string).replace('Bearer ', ''));
-    const payload = JSON.parse(decoded.payload);
-    assert.strictEqual('not-the-email', payload.iss);
-    assert.strictEqual(email, payload.sub);
+    assert.throws(() => {
+      client.getRequestMetadata(testUri, additionalClaims);
+    }, `The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`);
   });
 
   it('should return a cached token on the second request', () => {
