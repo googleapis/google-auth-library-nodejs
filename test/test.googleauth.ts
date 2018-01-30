@@ -1113,7 +1113,9 @@ describe('GoogleAuth', () => {
 
 describe('.getApplicationDefault', () => {
   it('should return a new credential the first time and a cached credential the second time',
-     async () => {
+     async function() {
+       this.timeout(5000);
+
        // Create a function which will set up a GoogleAuth instance to match
        // on an environment variable json file, but not on anything else.
        const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
@@ -1178,7 +1180,9 @@ describe('.getApplicationDefault', () => {
        assert.notEqual(cachedCredential, result3);
      });
 
-  it('should use environment variable when it is set', (done) => {
+  it('should use environment variable when it is set', function(done) {
+    this.timeout(5000);
+
     // We expect private.json to be the file that is used.
     const fileContents =
         fs.readFileSync('./test/fixtures/private.json', 'utf-8');

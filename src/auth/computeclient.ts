@@ -27,7 +27,7 @@ export class Compute extends OAuth2Client {
    * Google Compute Engine metadata server token endpoint.
    */
   protected static readonly _GOOGLE_OAUTH2_TOKEN_URL =
-      'http://metadata.google.internal/computeMetadata/v1beta1/instance/service-accounts/default/token';
+      'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
 
   /**
    * Google Compute Engine service account credentials.
