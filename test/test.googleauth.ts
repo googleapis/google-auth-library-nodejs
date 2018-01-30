@@ -1179,7 +1179,6 @@ describe('.getApplicationDefault', () => {
      });
 
   it('should use environment variable when it is set', (done) => {
-
     // We expect private.json to be the file that is used.
     const fileContents =
         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
