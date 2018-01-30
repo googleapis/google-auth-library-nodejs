@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import {GoogleToken, TokenOptions} from 'gtoken';
+import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
-
 import {Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
@@ -29,6 +28,7 @@ export interface JWTOptions extends RefreshOptions {
   key?: string;
   scopes?: string|string[];
   subject?: string;
+  additionalClaims?: {};
 }
 
 export class JWT extends OAuth2Client {
@@ -39,6 +39,9 @@ export class JWT extends OAuth2Client {
   scope?: string;
   subject?: string;
   gtoken: GoogleToken;
+  additionalClaims?: {};
+
+  private access: JWTAccess;
 
   /**
    * JWT service account credentials.
@@ -68,6 +71,7 @@ export class JWT extends OAuth2Client {
     this.key = opts.key;
     this.scopes = opts.scopes;
     this.subject = opts.subject;
+    this.additionalClaims = opts.additionalClaims;
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
   }
 
@@ -82,22 +86,32 @@ export class JWT extends OAuth2Client {
       keyFile: this.keyFile,
       key: this.key,
       scopes,
-      subject: this.subject
+      subject: this.subject,
+      additionalClaims: this.additionalClaims
     });
   }
 
   /**
    * Obtains the metadata to be sent with the request.
    *
-   * @param {string} optUri the URI being authorized.
+   * @param optUri the URI being authorized.
    */
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
-    if (this.createScopedRequired() && url) {
-      // no scopes have been set, but a uri has been provided.  Use JWTAccess
-      // credentials.
-      const alt = new JWTAccess(this.email, this.key);
-      return alt.getRequestMetadata(url);
+    if (!this.apiKey && this.createScopedRequired() && url) {
+      if (this.additionalClaims && (this.additionalClaims as {
+                                     target_audience: string
+                                   }).target_audience) {
+        const {tokens} = await this.refreshToken();
+        return {headers: {Authorization: `Bearer ${tokens.access_token}`}};
+      } else {
+        // no scopes have been set, but a uri has been provided. Use JWTAccess
+        // credentials.
+        if (!this.access) {
+          this.access = new JWTAccess(this.email, this.key);
+        }
+        return this.access.getRequestMetadata(url, this.additionalClaims);
+      }
     } else {
       return super.getRequestMetadataAsync(url);
     }
@@ -151,16 +165,25 @@ export class JWT extends OAuth2Client {
 
   /**
    * Refreshes the access token.
-   * @param {object=} ignored
+   * @param refreshToken ignored
    * @private
    */
   async refreshToken(refreshToken?: string|null): Promise<GetTokenResponse> {
-    const newGToken = this.createGToken();
-    const token = await newGToken.getToken();
+    if (!this.gtoken) {
+      this.gtoken = new GoogleToken({
+        iss: this.email,
+        sub: this.subject,
+        scope: this.scopes,
+        keyFile: this.keyFile,
+        key: this.key,
+        additionalClaims: this.additionalClaims
+      });
+    }
+    const token = await this.gtoken.getToken();
     const tokens = {
       access_token: token,
       token_type: 'Bearer',
-      expiry_date: newGToken.expiresAt
+      expiry_date: this.gtoken.expiresAt
     };
     return {res: null, tokens};
   }
@@ -238,23 +261,5 @@ export class JWT extends OAuth2Client {
       throw new Error('Must provide an API Key string.');
     }
     this.apiKey = apiKey;
-  }
-
-  /**
-   * Creates the gToken instance if it has not been created already.
-   * @param {function=} callback Callback.
-   * @private
-   */
-  private createGToken() {
-    if (!this.gtoken) {
-      this.gtoken = new GoogleToken({
-        iss: this.email,
-        sub: this.subject,
-        scope: this.scopes,
-        keyFile: this.keyFile,
-        key: this.key
-      } as TokenOptions);
-    }
-    return this.gtoken;
   }
 }

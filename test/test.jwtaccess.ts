@@ -41,16 +41,15 @@ describe('.getRequestMetadata', () => {
   let testUri: string;
   let email: string;
   let client: JWTAccess;
-  let res: RequestMetadataResponse;
   beforeEach(() => {
     keys = keypair(1024 /* bitsize of private key */);
     testUri = 'http:/example.com/my_test_service';
     email = 'foo@serviceaccount.com';
     client = new JWTAccess(email, keys.private);
-    res = client.getRequestMetadata(testUri);
   });
 
   it('create a signed JWT token as the access token', () => {
+    const res = client.getRequestMetadata(testUri);
     assert.notStrictEqual(
         null, res.headers, 'an creds object should be present');
     const decoded = jws.decode(
@@ -61,12 +60,21 @@ describe('.getRequestMetadata', () => {
     assert.strictEqual(testUri, payload.aud);
   });
 
+  it('should not allow overriding with additionalClaims', () => {
+    const additionalClaims = {iss: 'not-the-email'};
+    assert.throws(() => {
+      client.getRequestMetadata(testUri, additionalClaims);
+    }, `The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`);
+  });
+
   it('should return a cached token on the second request', () => {
+    const res = client.getRequestMetadata(testUri);
     const res2 = client.getRequestMetadata(testUri);
     assert.strictEqual(res, res2);
   });
 
   it('should not return cached tokens older than an hour', () => {
+    const res = client.getRequestMetadata(testUri);
     const realDateNow = Date.now;
     try {
       // go forward in time one hour (plus a little)
