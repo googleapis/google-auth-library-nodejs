@@ -72,23 +72,24 @@ export class JWTAccess {
     const iat = Math.floor(new Date().getTime() / 1000);
     const exp = iat + 3600;  // 3600 seconds = 1 hour
 
+    // The payload used for signed JWT headers has:
+    // iss == sub == <client email>
+    // aud == <the authorization uri>
+    const defaultClaims =
+        {iss: this.email, sub: this.email, aud: authURI, exp, iat};
+
     // if additionalClaims are provided, ensure they do not collide with
     // other required claims.
     if (additionalClaims) {
-      ['iss', 'sub', 'aud', 'exp', 'iat'].forEach(claim => {
+      for (const claim in defaultClaims) {
         if (additionalClaims[claim]) {
           throw new Error(`The '${
               claim}' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`);
         }
-      });
+      }
     }
 
-    // The payload used for signed JWT headers has:
-    // iss == sub == <client email>
-    // aud == <the authorization uri>
-    const payload = Object.assign(
-        {iss: this.email, sub: this.email, aud: authURI, exp, iat},
-        additionalClaims);
+    const payload = Object.assign(defaultClaims, additionalClaims);
 
     // Sign the jwt and add it to the cache
     const signedJWT =
