@@ -46,7 +46,7 @@ describe('Compute auth client', () => {
 
   it('should get an access token for the first request', done => {
     nock('http://metadata.google.internal')
-        .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
+        .get('/computeMetadata/v1/instance/service-accounts/default/token')
         .reply(200, {access_token: 'abc123', expires_in: 10000});
     compute.request({url: 'http://foo'}, () => {
       assert.equal(compute.credentials.access_token, 'abc123');
@@ -56,7 +56,7 @@ describe('Compute auth client', () => {
 
   it('should refresh if access token has expired', (done) => {
     nock('http://metadata.google.internal')
-        .get('/computeMetadata/v1beta1/instance/service-accounts/default/token')
+        .get('/computeMetadata/v1/instance/service-accounts/default/token')
         .reply(200, {access_token: 'abc123', expires_in: 10000});
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() - 10000;
@@ -70,8 +70,7 @@ describe('Compute auth client', () => {
          ' before expiration is set',
      (done) => {
        nock('http://metadata.google.internal')
-           .get(
-               '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+           .get('/computeMetadata/v1/instance/service-accounts/default/token')
            .reply(200, {access_token: 'abc123', expires_in: 10000});
        compute = new Compute({eagerRefreshThresholdMillis: 10000});
        compute.credentials.access_token = 'initial-access-token';
@@ -88,7 +87,7 @@ describe('Compute auth client', () => {
        const scope =
            nock('http://metadata.google.internal')
                .get(
-                   '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+                   '/computeMetadata/v1/instance/service-accounts/default/token')
                .reply(200, {access_token: 'abc123', expires_in: 10000});
        compute = new Compute({eagerRefreshThresholdMillis: 1000});
        compute.credentials.access_token = 'initial-access-token';
@@ -104,8 +103,7 @@ describe('Compute auth client', () => {
   it('should not refresh if access token has not expired', (done) => {
     const scope =
         nock('http://metadata.google.internal')
-            .get(
-                '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+            .get('/computeMetadata/v1/instance/service-accounts/default/token')
             .reply(200, {access_token: 'abc123', expires_in: 10000});
     compute.credentials.access_token = 'initial-access-token';
     compute.credentials.expiry_date = (new Date()).getTime() + 10 * 60 * 1000;
@@ -135,8 +133,7 @@ describe('Compute auth client', () => {
 
       nock('http://foo').get('/').twice().reply(403, 'a weird response body');
       nock('http://metadata.google.internal')
-          .get(
-              '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+          .get('/computeMetadata/v1/instance/service-accounts/default/token')
           .reply(403, 'a weird response body');
 
       compute.request({url: 'http://foo'}, (err, response) => {
@@ -182,8 +179,7 @@ describe('Compute auth client', () => {
     it('should return a helpful message on token refresh response.statusCode 403',
        (done) => {
          nock('http://metadata.google.internal')
-             .get(
-                 '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+             .get('/computeMetadata/v1/instance/service-accounts/default/token')
              .twice()
              .reply(403, 'a weird response body');
 
@@ -211,8 +207,7 @@ describe('Compute auth client', () => {
     it('should return a helpful message on token refresh response.statusCode 404',
        done => {
          nock('http://metadata.google.internal')
-             .get(
-                 '/computeMetadata/v1beta1/instance/service-accounts/default/token')
+             .get('/computeMetadata/v1/instance/service-accounts/default/token')
              .reply(404, 'a weird body');
 
          // Mock the credentials object with a null access token, to force
