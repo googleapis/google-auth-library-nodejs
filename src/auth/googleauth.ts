@@ -281,7 +281,7 @@ export class GoogleAuth {
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable(
       options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
-    const credentialsPath = this._getEnv('GOOGLE_APPLICATION_CREDENTIALS');
+    const credentialsPath = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
     if (!credentialsPath || credentialsPath.length === 0) {
       return null;
     }
@@ -306,10 +306,10 @@ export class GoogleAuth {
     let location = null;
     if (this._isWindows()) {
       // Windows
-      location = this._getEnv('APPDATA');
+      location = process.env['APPDATA'];
     } else {
       // Linux or Mac
-      const home = this._getEnv('HOME');
+      const home = process.env['HOME'];
       if (home) {
         location = this._pathJoin(home, '.config');
       }
@@ -488,15 +488,6 @@ export class GoogleAuth {
   }
 
   /**
-   * Gets the value of the environment variable with the given name. Allows
-   * mocking.
-   * @api private
-   */
-  _getEnv(name: string) {
-    return process.env[name];
-  }
-
-  /**
    * Gets the current operating system platform. Allows mocking.
    * @api private
    */
@@ -565,8 +556,7 @@ export class GoogleAuth {
    * @api private
    */
   private getProductionProjectId() {
-    return this._getEnv('GCLOUD_PROJECT') ||
-        this._getEnv('GOOGLE_CLOUD_PROJECT');
+    return process.env['GCLOUD_PROJECT'] || process.env['GOOGLE_CLOUD_PROJECT'];
   }
 
   /**
