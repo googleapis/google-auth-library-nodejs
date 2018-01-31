@@ -34,9 +34,8 @@ export class JWTAccess {
    * Create a new access token by using the credential to create a new JWT token
    * that's recognized as the access token.
    *
-   * @param {string=} email the service account email address.
-   * @param {string=} key the private key that will be used to sign the token.
-   * @constructor
+   * @param email the service account email address.
+   * @param key the private key that will be used to sign the token.
    */
   constructor(email?: string|null, key?: string|null) {
     this.email = email;
@@ -47,7 +46,7 @@ export class JWTAccess {
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
    *
-   * @return {boolean} always false
+   * @return always false
    */
   createScopedRequired(): boolean {
     // JWT Header authentication does not use scopes.
@@ -101,7 +100,7 @@ export class JWTAccess {
 
   /**
    * Create a JWTAccess credentials instance using the given input options.
-   * @param {object=} json The input object.
+   * @param json The input object.
    */
   fromJSON(json: JWTInput): void {
     if (!json) {
@@ -124,8 +123,8 @@ export class JWTAccess {
 
   /**
    * Create a JWTAccess credentials instance using the given input stream.
-   * @param {object=} inputStream The input stream.
-   * @param {function=} callback Optional callback.
+   * @param inputStream The input stream.
+   * @param callback Optional callback.
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(inputStream: stream.Readable, callback: (err?: Error) => void):

@@ -41,7 +41,7 @@ export class LoginTicket {
   /**
    * Create a simple class to extract user ID from an ID Token
    *
-   * @return {string} The user ID
+   * @return The user ID
    */
   getUserId() {
     const payload = this.getPayload();
@@ -55,7 +55,7 @@ export class LoginTicket {
    * Returns attributes from the login ticket.  This can contain
    * various information about the user session.
    *
-   * @return {Object} The envelope and payload
+   * @return The envelope and payload
    */
   getAttributes() {
     return {envelope: this.getEnvelope(), payload: this.getPayload()};

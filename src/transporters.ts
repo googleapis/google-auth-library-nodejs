@@ -99,8 +99,6 @@ export class DefaultTransporter {
     }
   }
 
-
-
   /**
    * Changes the error to include details from the body.
    */
