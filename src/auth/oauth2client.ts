@@ -255,7 +255,8 @@ export class OAuth2Client extends AuthClient {
    *
    * @param clientId The authentication client ID.
    * @param clientSecret The authentication client secret.
-   * @param redirectUri The URI to redirect to after completing the auth request.
+   * @param redirectUri The URI to redirect to after completing the auth
+   * request.
    * @param opts optional options for overriding the given parameters.
    * @constructor
    */
