@@ -33,10 +33,9 @@ export class UserRefreshClient extends OAuth2Client {
   /**
    * User Refresh Token credentials.
    *
-   * @param {string} clientId The authentication client ID.
-   * @param {string} clientSecret The authentication client secret.
-   * @param {string} refreshToken The authentication refresh token.
-   * @constructor
+   * @param clientId The authentication client ID.
+   * @param clientSecret The authentication client secret.
+   * @param refreshToken The authentication refresh token.
    */
   constructor(clientId?: string, clientSecret?: string, refreshToken?: string);
   constructor(options: UserRefreshClientOptions);
@@ -63,9 +62,8 @@ export class UserRefreshClient extends OAuth2Client {
 
   /**
    * Refreshes the access token.
-   * @param {object=} ignored
-   * @param {function=} callback Optional callback.
-   * @private
+   * @param refreshToken An ignored refreshToken..
+   * @param callback Optional callback.
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
@@ -75,7 +73,7 @@ export class UserRefreshClient extends OAuth2Client {
   /**
    * Create a UserRefreshClient credentials instance using the given input
    * options.
-   * @param {object=} json The input object.
+   * @param json The input object.
    */
   fromJSON(json: JWTInput): void {
     if (!json) {
@@ -107,8 +105,8 @@ export class UserRefreshClient extends OAuth2Client {
   /**
    * Create a UserRefreshClient credentials instance using the given input
    * stream.
-   * @param {object=} inputStream The input stream.
-   * @param {function=} callback Optional callback.
+   * @param inputStream The input stream.
+   * @param callback Optional callback.
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(inputStream: stream.Readable, callback: (err?: Error) => void):

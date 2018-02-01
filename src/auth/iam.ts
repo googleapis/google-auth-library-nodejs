@@ -23,8 +23,8 @@ export class IAMAuth {
   /**
    * IAM credentials.
    *
-   * @param {string=} selector the iam authority selector
-   * @param {string=} token the token
+   * @param selector the iam authority selector
+   * @param token the token
    * @constructor
    */
   constructor(public selector: string, public token: string) {
@@ -36,7 +36,7 @@ export class IAMAuth {
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
    *
-   * @return {boolean} always false
+   * @return always false
    */
   createScopedRequired() {
     // IAM authorization does not use scopes.
@@ -46,8 +46,8 @@ export class IAMAuth {
   /**
    * Pass the selector and token to the metadataFn callback.
    *
-   * @param {string} unused_uri is required of the credentials interface
-   * @param {function} metadataFn a callback invoked with object
+   * @param unused_uri is required of the credentials interface
+   * @param metadataFn a callback invoked with object
    *                   containing request metadata.
    */
   getRequestMetadata(

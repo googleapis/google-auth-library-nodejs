@@ -48,12 +48,11 @@ export class JWT extends OAuth2Client {
    *
    * Retrieve access token using gtoken.
    *
-   * @param {string=} email service account email address.
-   * @param {string=} keyFile path to private key file.
-   * @param {string=} key value of key
-   * @param {(string|array)=} scopes list of requested scopes or a single scope.
-   * @param {string=} subject impersonated account's email address.
-   * @constructor
+   * @param email service account email address.
+   * @param keyFile path to private key file.
+   * @param key value of key
+   * @param scopes list of requested scopes or a single scope.
+   * @param subject impersonated account's email address.
    */
   constructor(options: JWTOptions);
   constructor(
@@ -77,8 +76,8 @@ export class JWT extends OAuth2Client {
 
   /**
    * Creates a copy of the credential with the specified scopes.
-   * @param {(string|array)=} scopes List of requested scopes or a single scope.
-   * @return {object} The cloned instance.
+   * @param scopes List of requested scopes or a single scope.
+   * @return The cloned instance.
    */
   createScoped(scopes?: string|string[]) {
     return new JWT({
@@ -94,7 +93,7 @@ export class JWT extends OAuth2Client {
   /**
    * Obtains the metadata to be sent with the request.
    *
-   * @param optUri the URI being authorized.
+   * @param url the URI being authorized.
    */
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
@@ -120,7 +119,7 @@ export class JWT extends OAuth2Client {
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
-   * @return {boolean} false if createScoped does not need to be called.
+   * @return false if createScoped does not need to be called.
    */
   createScopedRequired() {
     // If scopes is null, always return true.
@@ -137,7 +136,7 @@ export class JWT extends OAuth2Client {
 
   /**
    * Get the initial access token using gToken.
-   * @param {function=} callback Optional callback.
+   * @param callback Optional callback.
    * @returns Promise that resolves with credentials
    */
   authorize(): Promise<Credentials>;
@@ -190,7 +189,7 @@ export class JWT extends OAuth2Client {
 
   /**
    * Create a JWT credentials instance using the given input options.
-   * @param {object=} json The input object.
+   * @param json The input object.
    */
   fromJSON(json: JWTInput): void {
     if (!json) {
@@ -213,8 +212,8 @@ export class JWT extends OAuth2Client {
 
   /**
    * Create a JWT credentials instance using the given input stream.
-   * @param {object=} inputStream The input stream.
-   * @param {function=} callback Optional callback.
+   * @param inputStream The input stream.
+   * @param callback Optional callback.
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(
@@ -254,7 +253,7 @@ export class JWT extends OAuth2Client {
 
   /**
    * Creates a JWT credentials instance using an API Key for authentication.
-   * @param {string} apiKey - the API Key in string form.
+   * @param apiKey The API Key in string form.
    */
   fromAPIKey(apiKey: string): void {
     if (!isString(apiKey)) {

@@ -159,7 +159,7 @@ export class GoogleAuth {
 
   /**
    * Obtains the default service-level credentials for the application.
-   * @param {function=} callback Optional callback.
+   * @param callback Optional callback.
    * @returns Promise that resolves with the ADCResponse (if no callback was
    * passed).
    */
@@ -335,7 +335,7 @@ export class GoogleAuth {
 
   /**
    * Attempts to load default credentials from a file at the given path..
-   * @param {string=} filePath The path to the file to read.
+   * @param filePath The path to the file to read.
    * @returns Promise that resolves with the OAuth2Client
    * @api private
    */
@@ -376,7 +376,7 @@ export class GoogleAuth {
 
   /**
    * Create a credentials instance using the given input options.
-   * @param {object=} json The input object.
+   * @param json The input object.
    * @returns JWT or UserRefresh Client with data
    */
   fromJSON(json: JWTInput, options?: RefreshOptions): JWT|UserRefreshClient {
@@ -398,8 +398,8 @@ export class GoogleAuth {
 
   /**
    * Create a credentials instance using the given input stream.
-   * @param {object=} inputStream The input stream.
-   * @param {function=} callback Optional callback.
+   * @param inputStream The input stream.
+   * @param callback Optional callback.
    */
   fromStream(inputStream: stream.Readable): Promise<JWT|UserRefreshClient>;
   fromStream(inputStream: stream.Readable, callback: CredentialCallback): void;
@@ -454,7 +454,8 @@ export class GoogleAuth {
 
   /**
    * Create a credentials instance using the given API key string.
-   * @param {string} - The API key string
+   * @param apiKey The API key string
+   * @param options An optional options object.
    * @returns A JWT loaded from the key
    */
   fromAPIKey(apiKey: string, options?: RefreshOptions): JWT {

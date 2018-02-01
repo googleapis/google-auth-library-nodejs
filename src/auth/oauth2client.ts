@@ -253,10 +253,11 @@ export class OAuth2Client extends AuthClient {
   /**
    * Handles OAuth2 flow for Google APIs.
    *
-   * @param {string=} clientId The authentication client ID.
-   * @param {string=} clientSecret The authentication client secret.
-   * @param {string=} redirectUri The URI to redirect to after completing the auth request.
-   * @param {Object=} opts optional options for overriding the given parameters.
+   * @param clientId The authentication client ID.
+   * @param clientSecret The authentication client secret.
+   * @param redirectUri The URI to redirect to after completing the auth
+   * request.
+   * @param opts optional options for overriding the given parameters.
    * @constructor
    */
   constructor(options?: OAuth2ClientOptions);
@@ -328,8 +329,8 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Generates URL for consent page landing.
-   * @param {object=} opts Options.
-   * @return {string} URL to consent page.
+   * @param opts Options.
+   * @return URL to consent page.
    */
   generateAuthUrl(opts: GenerateAuthUrlOpts = {}) {
     if (opts.code_challenge_method && !opts.code_challenge) {
@@ -375,8 +376,8 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Gets the access token for the given code.
-   * @param {string} code The authorization code.
-   * @param {function=} callback Optional callback fn.
+   * @param code The authorization code.
+   * @param callback Optional callback fn.
    */
   getToken(code: string): Promise<GetTokenResponse>;
   getToken(options: GetTokenOptions): Promise<GetTokenResponse>;
@@ -424,8 +425,7 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Refreshes the access token.
-   * @param {string} refresh_token Existing refresh token.
-   * @param {function=} callback Optional callback.
+   * @param refresh_token Existing refresh token.
    * @private
    */
   protected async refreshToken(refreshToken?: string|
@@ -459,9 +459,8 @@ export class OAuth2Client extends AuthClient {
    * Retrieves the access token using refresh token
    *
    * @deprecated use getRequestMetadata instead.
-   * @param {function} callback callback
+   * @param callback callback
    */
-
   refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
   refreshAccessToken(callback: RefreshAccessTokenCallback): void;
   refreshAccessToken(callback?: RefreshAccessTokenCallback):
@@ -489,7 +488,7 @@ export class OAuth2Client extends AuthClient {
   /**
    * Get a non-expired access token, after refreshing if necessary
    *
-   * @param {function} callback Callback to call with the access token
+   * @param callback Callback to call with the access token
    */
   getAccessToken(): Promise<GetAccessTokenResponse>;
   getAccessToken(callback: GetAccessTokenCallback): void;
@@ -534,8 +533,8 @@ export class OAuth2Client extends AuthClient {
    *
    * {Authorization: 'Bearer <access_token_value>'}
    *
-   * @param {string} optUri the Uri being authorized
-   * @param {function} metadataCb the func described above
+   * @param url the Uri being authorized
+   * @param callback the func described above
    */
   getRequestMetadata(url?: string|null): Promise<RequestMetadataResponse>;
   getRequestMetadata(url: string|null, callback: RequestMetadataCallback): void;
@@ -594,8 +593,8 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Revokes the access given to token.
-   * @param {string} token The existing token to be revoked.
-   * @param {function=} callback Optional callback fn.
+   * @param token The existing token to be revoked.
+   * @param callback Optional callback fn.
    */
   revokeToken(token: string): AxiosPromise<RevokeCredentialsResult>;
   revokeToken(
@@ -622,7 +621,7 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Revokes access token and clears the credentials object
-   * @param  {Function=} callback callback
+   * @param callback callback
    */
   revokeCredentials(): AxiosPromise<RevokeCredentialsResult>;
   revokeCredentials(callback: BodyResponseCallback<RevokeCredentialsResult>):
@@ -652,9 +651,9 @@ export class OAuth2Client extends AuthClient {
    * Provides a request implementation with OAuth 2.0 flow. If credentials have
    * a refresh_token, in cases of HTTP 401 and 403 responses, it automatically
    * asks for a new access token and replays the unsuccessful request.
-   * @param {object} opts Request options.
-   * @param {function} callback callback.
-   * @return {Request} Request object
+   * @param opts Request options.
+   * @param callback callback.
+   * @return Request object
    */
   request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
   request<T>(opts: AxiosRequestConfig, callback: BodyResponseCallback<T>): void;
@@ -708,8 +707,8 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * Verify id token is token by checking the certs and audience
-   * @param {VerifyIdTokenOptions} Object that contains all options.
-   * @param {function=} callback Callback supplying GoogleLogin if successful
+   * @param options that contains all options.
+   * @param callback Callback supplying GoogleLogin if successful
    */
   verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket|null>;
   verifyIdToken(
@@ -754,7 +753,7 @@ export class OAuth2Client extends AuthClient {
    * Gets federated sign-on certificates to use for verifying identity tokens.
    * Returns certs as array structure, where keys are key ids, and values
    * are PEM encoded certificates.
-   * @param {function=} callback Callback supplying the certificates
+   * @param callback Callback supplying the certificates
    */
   getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
   getFederatedSignonCerts(callback: GetFederatedSignonCertsCallback): void;
@@ -804,12 +803,12 @@ export class OAuth2Client extends AuthClient {
   /**
    * Verify the id token is signed with the correct certificate
    * and is from the correct audience.
-   * @param {string} jwt The jwt to verify (The ID Token in this case).
-   * @param {array} certs The array of certs to test the jwt against.
-   * @param {(string|Array.<string>)} requiredAudience The audience to test the jwt against.
-   * @param {array} issuers The allowed issuers of the jwt (Optional).
-   * @param {string} maxExpiry The max expiry the certificate can be (Optional).
-   * @return {LoginTicket} Returns a LoginTicket on verification.
+   * @param jwt The jwt to verify (The ID Token in this case).
+   * @param certs The array of certs to test the jwt against.
+   * @param requiredAudience The audience to test the jwt against.
+   * @param issuers The allowed issuers of the jwt (Optional).
+   * @param maxExpiry The max expiry the certificate can be (Optional).
+   * @return Returns a LoginTicket on verification.
    */
   verifySignedJwtWithCerts(
       jwt: string, certs: {}, requiredAudience: string|string[],
@@ -926,8 +925,8 @@ export class OAuth2Client extends AuthClient {
 
   /**
    * This is a utils method to decode a base64 string
-   * @param {string} b64String The string to base64 decode
-   * @return {string} The decoded string
+   * @param b64String The string to base64 decode
+   * @return The decoded string
    */
   decodeBase64(b64String: string) {
     const buffer = new Buffer(b64String, 'base64');
