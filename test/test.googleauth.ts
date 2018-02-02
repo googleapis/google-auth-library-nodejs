@@ -26,8 +26,13 @@ import {BodyResponseCallback} from '../src/transporters';
 
 nock.disableNetConnect();
 
+// Cache env vars before the tests start
+const envCache = process.env;
+
 afterEach(() => {
   nock.cleanAll();
+  // after each test, reset the env vars
+  process.env = envCache;
 });
 
 function createIsGCENock(isGCE = true) {
@@ -119,23 +124,13 @@ function pathJoin(item1: string, item2: string) {
 
 // Blocks the GOOGLE_APPLICATION_CREDENTIALS by default. This is necessary in
 // case it is actually set on the host machine executing the test.
-function blockGoogleApplicationCredentialEnvironmentVariable(auth: GoogleAuth) {
-  return insertEnvironmentVariableIntoAuth(
-      auth, 'GOOGLE_APPLICATION_CREDENTIALS');
+function blockGoogleApplicationCredentialEnvironmentVariable() {
+  mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
 }
 
 // Intercepts the specified environment variable, returning the specified value.
-function insertEnvironmentVariableIntoAuth(
-    auth: GoogleAuth, environmentVariableName: string,
-    environmentVariableValue?: string) {
-  const originalGetEnvironmentVariableFunction = auth._getEnv;
-  auth._getEnv = (name: string) => {
-    if (name === environmentVariableName) {
-      return environmentVariableValue;
-    }
-
-    return originalGetEnvironmentVariableFunction(name);
-  };
+function mockEnvVar(name: string, value?: string) {
+  process.env[name] = value || '';
 }
 
 // Intercepts the specified file path and inserts the mock file path.
@@ -146,7 +141,6 @@ function insertWellKnownFilePathIntoAuth(
     if (kfpath === filePath) {
       return mockFilePath;
     }
-
     return originalMockWellKnownFilePathFunction(filePath);
   };
 }
@@ -195,8 +189,7 @@ describe('GoogleAuth', () => {
         let auth: GoogleAuth;
         beforeEach(() => {
           auth = new GoogleAuth();
-          insertEnvironmentVariableIntoAuth(
-              auth, 'GCLOUD_PROJECT', STUB_PROJECT);
+          mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
         });
 
         describe('With no added query string parameters', () => {
@@ -676,7 +669,7 @@ describe('GoogleAuth', () => {
     it('should return null when env const is not set', async () => {
       // Set up a mock to return a null path string.
       const auth = new GoogleAuth();
-      insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS');
+      mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
       const client =
           await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.equal(client, null);
@@ -685,8 +678,7 @@ describe('GoogleAuth', () => {
     it('should return null when env const is empty string', async () => {
       // Set up a mock to return an empty path string.
       const auth = new GoogleAuth();
-      insertEnvironmentVariableIntoAuth(
-          auth, 'GOOGLE_APPLICATION_CREDENTIALS', '');
+      mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS', '');
       const client =
           await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.equal(client, null);
@@ -695,8 +687,7 @@ describe('GoogleAuth', () => {
     it('should handle invalid environment variable', async () => {
       // Set up a mock to return a path to an invalid file.
       const auth = new GoogleAuth();
-      insertEnvironmentVariableIntoAuth(
-          auth, 'GOOGLE_APPLICATION_CREDENTIALS', './nonexistantfile.json');
+      mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS', './nonexistantfile.json');
 
       try {
         await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
@@ -709,9 +700,8 @@ describe('GoogleAuth', () => {
     it('should handle valid environment variable', async () => {
       // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
-      insertEnvironmentVariableIntoAuth(
-          auth, 'GOOGLE_APPLICATION_CREDENTIALS',
-          './test/fixtures/private.json');
+      mockEnvVar(
+          'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
 
       // Read the contents of the file into a json object.
       const fileContents =
@@ -733,9 +723,8 @@ describe('GoogleAuth', () => {
        async () => {
          // Set up a mock to return path to a valid credentials file.
          const auth = new GoogleAuth();
-         insertEnvironmentVariableIntoAuth(
-             auth, 'GOOGLE_APPLICATION_CREDENTIALS',
-             './test/fixtures/private.json');
+         mockEnvVar(
+             'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
 
          // Read the contents of the file into a json object.
          const fileContents =
@@ -762,8 +751,8 @@ describe('GoogleAuth', () => {
 
       // Set up mocks.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar('APPDATA', 'foo');
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'win32';
       auth._fileExists = () => true;
@@ -788,8 +777,8 @@ describe('GoogleAuth', () => {
 
       // Set up mocks.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar('HOME', 'foo');
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'linux';
       auth._fileExists = () => true;
@@ -812,8 +801,8 @@ describe('GoogleAuth', () => {
     it('should fail on Windows when APPDATA is not defined', async () => {
       // Set up mocks.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'APPDATA');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar('APPDATA');
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'win32';
       auth._fileExists = () => true;
@@ -829,8 +818,8 @@ describe('GoogleAuth', () => {
     it('should fail on non-Windows when HOME is not defined', async () => {
       // Set up mocks.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'HOME');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar('HOME');
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'linux';
       auth._fileExists = () => true;
@@ -848,8 +837,8 @@ describe('GoogleAuth', () => {
     it('should fail on Windows when file does not exist', async () => {
       // Set up mocks.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar('APPDATA', 'foo');
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'win32';
       auth._fileExists = () => false;
@@ -867,8 +856,8 @@ describe('GoogleAuth', () => {
     it('should fail on non-Windows when file does not exist', async () => {
       // Set up mocks.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar('HOME', 'foo');
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'linux';
       auth._fileExists = () => false;
@@ -887,8 +876,8 @@ describe('GoogleAuth', () => {
   it('should succeeds on Windows', async () => {
     // Set up mocks.
     const auth = new GoogleAuth();
-    blockGoogleApplicationCredentialEnvironmentVariable(auth);
-    insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    mockEnvVar('APPDATA', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'win32';
     auth._fileExists = () => true;
@@ -904,8 +893,8 @@ describe('GoogleAuth', () => {
   it('should succeeds on non-Windows', async () => {
     // Set up mocks.
     const auth = new GoogleAuth();
-    blockGoogleApplicationCredentialEnvironmentVariable(auth);
-    insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    mockEnvVar('HOME', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'linux';
     auth._fileExists = () => true;
@@ -922,8 +911,8 @@ describe('GoogleAuth', () => {
   it('should pass along a failure on Windows', async () => {
     // Set up mocks.
     const auth = new GoogleAuth();
-    blockGoogleApplicationCredentialEnvironmentVariable(auth);
-    insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    mockEnvVar('APPDATA', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'win32';
     auth._fileExists = () => true;
@@ -946,8 +935,8 @@ describe('GoogleAuth', () => {
   it('should pass along a failure on non-Windows', async () => {
     // Set up mocks.
     const auth = new GoogleAuth();
-    blockGoogleApplicationCredentialEnvironmentVariable(auth);
-    insertEnvironmentVariableIntoAuth(auth, 'HOME', 'foo');
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    mockEnvVar('HOME', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'linux';
     auth._fileExists = () => true;
@@ -974,9 +963,7 @@ describe('GoogleAuth', () => {
          // Create a function which will set up a GoogleAuth instance to match
          // on an environment variable json file, but not on anything else.
          const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
-           insertEnvironmentVariableIntoAuth(
-               creds, 'GCLOUD_PROJECT', fixedProjectId);
-
+           mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
            creds._fileExists = () => false;
            creds._checkIsGCE = async () => Promise.resolve(false);
          };
@@ -1019,12 +1006,8 @@ describe('GoogleAuth', () => {
   it('should use GCLOUD_PROJECT environment variable when it is set',
      (done) => {
        const fixedProjectId = 'my-awesome-project';
-
        const auth = new GoogleAuth();
-       insertEnvironmentVariableIntoAuth(
-           auth, 'GCLOUD_PROJECT', fixedProjectId);
-
-       // Execute.
+       mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
        auth.getDefaultProjectId((err, projectId) => {
          assert.equal(err, null);
          assert.equal(projectId, fixedProjectId);
@@ -1037,8 +1020,7 @@ describe('GoogleAuth', () => {
        const fixedProjectId = 'my-awesome-project';
 
        const auth = new GoogleAuth();
-       insertEnvironmentVariableIntoAuth(
-           auth, 'GOOGLE_CLOUD_PROJECT', fixedProjectId);
+       mockEnvVar('GOOGLE_CLOUD_PROJECT', fixedProjectId);
 
        // Execute.
        auth.getDefaultProjectId((err, projectId) => {
@@ -1053,8 +1035,8 @@ describe('GoogleAuth', () => {
        const fixedProjectId = 'my-awesome-project';
 
        const auth = new GoogleAuth();
-       insertEnvironmentVariableIntoAuth(
-           auth, 'GOOGLE_APPLICATION_CREDENTIALS',
+       mockEnvVar(
+           'GOOGLE_APPLICATION_CREDENTIALS',
            path.join(__dirname, '../../test/fixtures/private2.json'));
 
        // Execute.
@@ -1074,7 +1056,7 @@ describe('GoogleAuth', () => {
        // * Well-known file is set up to point to private2.json
        // * Running on GCE is set to true.
        const auth = new GoogleAuth();
-       blockGoogleApplicationCredentialEnvironmentVariable(auth);
+       blockGoogleApplicationCredentialEnvironmentVariable();
        auth._getSDKDefaultProjectId = () => {
          return Promise.resolve({
            stdout: JSON.stringify({
@@ -1096,7 +1078,7 @@ describe('GoogleAuth', () => {
      (done) => {
        const fixedProjectId = 'my-awesome-project';
        const auth = new GoogleAuth();
-       blockGoogleApplicationCredentialEnvironmentVariable(auth);
+       blockGoogleApplicationCredentialEnvironmentVariable();
        auth._getSDKDefaultProjectId = () => {
          return Promise.resolve({stdout: '', stderr: null});
        };
@@ -1117,9 +1099,8 @@ describe('.getApplicationDefault', () => {
        // Create a function which will set up a GoogleAuth instance to match
        // on an environment variable json file, but not on anything else.
        const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
-         insertEnvironmentVariableIntoAuth(
-             creds, 'GOOGLE_APPLICATION_CREDENTIALS',
-             './test/fixtures/private.json');
+         mockEnvVar(
+             'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
 
          creds._fileExists = () => false;
          creds._checkIsGCE = () => Promise.resolve(false);
@@ -1189,9 +1170,9 @@ describe('.getApplicationDefault', () => {
     // * Well-known file is set up to point to private2.json
     // * Running on GCE is set to true.
     const auth = new GoogleAuth();
-    insertEnvironmentVariableIntoAuth(
-        auth, 'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-    insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+    mockEnvVar(
+        'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
+    mockEnvVar('APPDATA', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'win32';
     auth._fileExists = () => true;
@@ -1226,8 +1207,8 @@ describe('.getApplicationDefault', () => {
        // * Well-known file is set up to point to private2.json
        // * Running on GCE is set to true.
        const auth = new GoogleAuth();
-       blockGoogleApplicationCredentialEnvironmentVariable(auth);
-       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+       blockGoogleApplicationCredentialEnvironmentVariable();
+       mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
        auth._fileExists = () => true;
@@ -1256,8 +1237,8 @@ describe('.getApplicationDefault', () => {
        // * Well-known file is not set.
        // * Running on GCE is set to true.
        const auth = new GoogleAuth();
-       blockGoogleApplicationCredentialEnvironmentVariable(auth);
-       insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+       blockGoogleApplicationCredentialEnvironmentVariable();
+       mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
        auth._fileExists = () => false;
@@ -1279,8 +1260,8 @@ describe('.getApplicationDefault', () => {
     // * Well-known file is not set.
     // * Running on GCE is set to true.
     const auth = new GoogleAuth();
-    blockGoogleApplicationCredentialEnvironmentVariable(auth);
-    insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    mockEnvVar('APPDATA', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'win32';
     auth._fileExists = () => false;
@@ -1308,10 +1289,10 @@ describe('.getApplicationDefault', () => {
     // * Well-known file is set up to point to private2.json
     // * Running on GCE is set to true.
     const auth = new GoogleAuth();
-    insertEnvironmentVariableIntoAuth(
-        auth, 'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-    insertEnvironmentVariableIntoAuth(auth, 'GCLOUD_PROJECT', testProjectId);
-    insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+    mockEnvVar(
+        'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
+    mockEnvVar('GCLOUD_PROJECT', testProjectId);
+    mockEnvVar('APPDATA', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'win32';
     auth._fileExists = () => true;
@@ -1560,10 +1541,9 @@ describe('._checkIsGCE', () => {
     it('should handle valid environment variable', async () => {
       // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(
-          auth, 'GOOGLE_APPLICATION_CREDENTIALS',
-          './test/fixtures/private.json');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar(
+          'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
       // Execute.
       const result =
           await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
@@ -1581,8 +1561,8 @@ describe('._checkIsGCE', () => {
     it('should handle valid file path', async () => {
       // Set up a mock to return path to a valid credentials file.
       const auth = new GoogleAuth();
-      blockGoogleApplicationCredentialEnvironmentVariable(auth);
-      insertEnvironmentVariableIntoAuth(auth, 'APPDATA', 'foo');
+      blockGoogleApplicationCredentialEnvironmentVariable();
+      mockEnvVar('APPDATA', 'foo');
       auth._pathJoin = pathJoin;
       auth._osPlatform = () => 'win32';
       auth._fileExists = () => true;
@@ -1605,7 +1585,7 @@ describe('._checkIsGCE', () => {
     it('should return error when env const is not set', async () => {
       // Set up a mock to return a null path string
       const auth = new GoogleAuth();
-      insertEnvironmentVariableIntoAuth(auth, 'GOOGLE_APPLICATION_CREDENTIALS');
+      mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
       const client =
           await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.equal(null, client);
