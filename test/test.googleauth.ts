@@ -130,7 +130,7 @@ function blockGoogleApplicationCredentialEnvironmentVariable() {
 
 // Intercepts the specified environment variable, returning the specified value.
 function mockEnvVar(name: string, value?: string) {
-  process.env[name] = value ? value : '';
+  process.env[name] = value || '';
 }
 
 // Intercepts the specified file path and inserts the mock file path.
