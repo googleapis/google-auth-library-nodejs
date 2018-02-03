@@ -15,7 +15,7 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-
+import * as gcpMetadata from 'gcp-metadata';
 import {RequestError} from './../transporters';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
@@ -27,7 +27,7 @@ export class Compute extends OAuth2Client {
    * Google Compute Engine metadata server token endpoint.
    */
   protected static readonly _GOOGLE_OAUTH2_TOKEN_URL =
-      'http://metadata.google.internal/computeMetadata/v1beta1/instance/service-accounts/default/token';
+      '/computeMetadata/v1beta1/instance/service-accounts/default/token';
 
   /**
    * Google Compute Engine service account credentials.
@@ -60,7 +60,8 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
-    const url = this.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
+    const url = this.tokenUrl ||
+        `${gcpMetadata.HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
     let res: AxiosResponse<CredentialRequest>|null = null;
     // request for new token
     try {

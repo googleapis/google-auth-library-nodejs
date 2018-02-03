@@ -21,6 +21,7 @@
   ],
   "dependencies": {
     "axios": "^0.17.1",
+    "gcp-metadata": "^0.4.1",
     "gtoken": "^2.1.0",
     "jws": "^3.1.4",
     "lodash.isstring": "^4.0.1",
