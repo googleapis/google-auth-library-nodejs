@@ -1387,17 +1387,11 @@ describe('._checkIsGCE', () => {
       };
       nock.cleanAll();
       nock(host).get(svcAccountPath).reply(200, response);
-      try {
-        const body = await auth.getCredentials();
-        assert(body);
-        assert.equal(
-            body!.client_email,
-            'test-creds@test-creds.iam.gserviceaccount.com');
-        assert.equal(body!.private_key, null);
-      } catch (e) {
-        console.error(e);
-        throw e;
-      }
+      const body = await auth.getCredentials();
+      assert(body);
+      assert.equal(
+          body!.client_email, 'test-creds@test-creds.iam.gserviceaccount.com');
+      assert.equal(body!.private_key, null);
     });
 
     it('should error if metadata server is not reachable', async () => {
