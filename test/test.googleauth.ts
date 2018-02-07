@@ -39,7 +39,6 @@ afterEach(() => {
 
 const host = HOST_ADDRESS;
 const instancePath = `${BASE_PATH}/instance`;
-const tokenPath = `${instancePath}/service-accounts/default/token`;
 const svcAccountPath = `${instancePath}/service-accounts?recursive=true`;
 
 function nockIsGCE() {
