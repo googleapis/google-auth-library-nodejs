@@ -16,7 +16,7 @@
 
 import * as assert from 'assert';
 import {AxiosRequestConfig} from 'axios';
-import * as gcpMetadata from 'gcp-metadata';
+import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 
 import {Credentials} from '../src/auth/credentials';
@@ -25,8 +25,7 @@ import {Compute} from '../src/index';
 
 nock.disableNetConnect();
 
-const tokenPath =
-    '/computeMetadata/v1beta1/instance/service-accounts/default/token';
+const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 
 describe('Initial credentials', () => {
   it('should create a dummy refresh token string', () => {
@@ -49,7 +48,7 @@ describe('Compute auth client', () => {
   });
 
   it('should get an access token for the first request', done => {
-    nock(gcpMetadata.HOST_ADDRESS).get(tokenPath).reply(200, {
+    nock(HOST_ADDRESS).get(tokenPath).reply(200, {
       access_token: 'abc123',
       expires_in: 10000
     });
@@ -60,7 +59,7 @@ describe('Compute auth client', () => {
   });
 
   it('should refresh if access token has expired', (done) => {
-    nock(gcpMetadata.HOST_ADDRESS).get(tokenPath).reply(200, {
+    nock(HOST_ADDRESS).get(tokenPath).reply(200, {
       access_token: 'abc123',
       expires_in: 10000
     });
@@ -75,7 +74,7 @@ describe('Compute auth client', () => {
   it('should refresh if access token will expired soon and time to refresh' +
          ' before expiration is set',
      (done) => {
-       nock(gcpMetadata.HOST_ADDRESS).get(tokenPath).reply(200, {
+       nock(HOST_ADDRESS).get(tokenPath).reply(200, {
          access_token: 'abc123',
          expires_in: 10000
        });
@@ -91,7 +90,7 @@ describe('Compute auth client', () => {
   it('should not refresh if access token will not expire soon and time to' +
          ' refresh before expiration is set',
      (done) => {
-       const scope = nock(gcpMetadata.HOST_ADDRESS).get(tokenPath).reply(200, {
+       const scope = nock(HOST_ADDRESS).get(tokenPath).reply(200, {
          access_token: 'abc123',
          expires_in: 10000
        });
@@ -107,7 +106,7 @@ describe('Compute auth client', () => {
      });
 
   it('should not refresh if access token has not expired', (done) => {
-    const scope = nock(gcpMetadata.HOST_ADDRESS).get(tokenPath).reply(200, {
+    const scope = nock(HOST_ADDRESS).get(tokenPath).reply(200, {
       access_token: 'abc123',
       expires_in: 10000
     });
@@ -138,9 +137,7 @@ describe('Compute auth client', () => {
       };
 
       nock('http://foo').get('/').twice().reply(403, 'a weird response body');
-      nock(gcpMetadata.HOST_ADDRESS)
-          .get(tokenPath)
-          .reply(403, 'a weird response body');
+      nock(HOST_ADDRESS).get(tokenPath).reply(403, 'a weird response body');
 
       compute.request({url: 'http://foo'}, (err, response) => {
         assert(response);
@@ -184,7 +181,7 @@ describe('Compute auth client', () => {
 
     it('should return a helpful message on token refresh response.statusCode 403',
        (done) => {
-         nock(gcpMetadata.HOST_ADDRESS)
+         nock(HOST_ADDRESS)
              .get(tokenPath)
              .twice()
              .reply(403, 'a weird response body');
@@ -212,9 +209,7 @@ describe('Compute auth client', () => {
 
     it('should return a helpful message on token refresh response.statusCode 404',
        done => {
-         nock(gcpMetadata.HOST_ADDRESS)
-             .get(tokenPath)
-             .reply(404, 'a weird body');
+         nock(HOST_ADDRESS).get(tokenPath).reply(404, 'a weird body');
 
          // Mock the credentials object with a null access token, to force
          // a refresh.

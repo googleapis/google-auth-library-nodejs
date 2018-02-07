@@ -17,7 +17,7 @@
 import * as assert from 'assert';
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as fs from 'fs';
-import * as gcpMetadata from 'gcp-metadata';
+import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
 import * as http from 'http';
 import * as nock from 'nock';
 import * as path from 'path';
@@ -37,35 +37,33 @@ afterEach(() => {
   process.env = envCache;
 });
 
-const host = gcpMetadata.HOST_ADDRESS;
-const instancePath = '/computeMetadata/v1beta1/instance';
+const host = HOST_ADDRESS;
+const instancePath = `${BASE_PATH}/instance`;
 const tokenPath = `${instancePath}/service-accounts/default/token`;
 const svcAccountPath = `${instancePath}/service-accounts?recursive=true`;
 
 function nockIsGCE() {
-  nock(host).head(instancePath).reply(200, null, {'metadata-flavor': 'Google'});
+  nock(host).get(instancePath).reply(200, {}, {'metadata-flavor': 'Google'});
 }
 
 function nockNotGCE() {
-  nock(host).head(instancePath).replyWithError({code: 'ETIMEDOUT'});
+  nock(host).get(instancePath).replyWithError({code: 'ETIMEDOUT'});
 }
 
 function nockENOTFOUND() {
-  nock(host).head(instancePath).replyWithError({code: 'ENOTFOUND'});
+  nock(host).get(instancePath).replyWithError({code: 'ENOTFOUND'});
 }
 
 function nockErrGCE() {
-  nock(host).head(instancePath).reply(500);
+  nock(host).get(instancePath).reply(500);
 }
 
 function nock404GCE() {
-  nock(host).head(instancePath).reply(404);
+  nock(host).get(instancePath).reply(404);
 }
 
 function createGetProjectIdNock(projectId: string) {
-  nock(host)
-      .get('/computeMetadata/v1beta1/project/project-id')
-      .reply(200, projectId);
+  nock(host).get(`${BASE_PATH}/project/project-id`).reply(200, projectId);
 }
 
 // Creates a standard JSON auth object for testing.
@@ -1325,13 +1323,8 @@ describe('._checkIsGCE', () => {
        const auth = new GoogleAuth();
        assert.notEqual(true, auth.isGCE);
        nock404GCE();
-       try {
-         const isGCE = await auth._checkIsGCE();
-         assert.notEqual(true, auth.isGCE);
-       } catch (e) {
-         return;
-       }
-       assert.fail('Expected to throw');
+       const isGCE = await auth._checkIsGCE();
+       assert.notEqual(true, auth.isGCE);
      });
 
   it('should not retry the check for isGCE if it fails with an ENOTFOUND',
@@ -1386,7 +1379,9 @@ describe('._checkIsGCE', () => {
         }
       };
       nock.cleanAll();
-      nock(host).get(svcAccountPath).reply(200, response);
+      nock(host).get(svcAccountPath).reply(200, response, {
+        'Metadata-Flavor': 'Google'
+      });
       const body = await auth.getCredentials();
       assert(body);
       assert.equal(
@@ -1399,7 +1394,7 @@ describe('._checkIsGCE', () => {
       nockIsGCE();
       await auth._checkIsGCE();
       assert.equal(true, auth.isGCE);
-      nock(gcpMetadata.HOST_ADDRESS).get(svcAccountPath).reply(404);
+      nock(HOST_ADDRESS).get(svcAccountPath).reply(404);
       try {
         await auth.getCredentials();
       } catch (e) {
@@ -1413,7 +1408,7 @@ describe('._checkIsGCE', () => {
       nockIsGCE();
       await auth._checkIsGCE();
       assert.equal(true, auth.isGCE);
-      nock(gcpMetadata.HOST_ADDRESS).get(svcAccountPath).reply(200, {});
+      nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {});
 
       try {
         await auth.getCredentials();
