@@ -15,12 +15,13 @@
  */
 
 import * as assert from 'assert';
-import {AxiosRequestConfig} from 'axios';
+import {AxiosError, AxiosRequestConfig} from 'axios';
 import * as crypto from 'crypto';
 import {randomBytes} from 'crypto';
 import * as fs from 'fs';
 import * as nock from 'nock';
 import * as path from 'path';
+import * as pify from 'pify';
 import * as qs from 'querystring';
 import * as url from 'url';
 
@@ -1126,6 +1127,23 @@ describe('OAuth2 client', () => {
           done();
         });
       });
+    });
+
+    it('should not retry requests with streaming data', (done) => {
+      const s = fs.createReadStream('./test/fixtures/public.pem');
+      nock('http://example.com').post('/').reply(401);
+      const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+      client.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'refresh-token-placeholder'
+      };
+      client.request(
+          {method: 'POST', url: 'http://example.com', data: s}, err => {
+            const e = err as AxiosError;
+            assert(e);
+            assert.equal(e.response!.status, 401);
+            done();
+          });
     });
   });
 

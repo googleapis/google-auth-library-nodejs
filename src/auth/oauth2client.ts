@@ -18,6 +18,8 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios
 import * as crypto from 'crypto';
 import * as http from 'http';
 import * as querystring from 'querystring';
+import * as stream from 'stream';
+
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
@@ -691,7 +693,9 @@ export class OAuth2Client extends AuthClient {
         // Automatically retry 401 and 403 responses if err is set and is
         // unrelated to response then getting credentials failed, and retrying
         // won't help
-        if (!retry && (statusCode === 401 || statusCode === 403)) {
+        const isReadableStream = res.config.data instanceof stream.Readable;
+        if (!retry && (statusCode === 401 || statusCode === 403) &&
+            !isReadableStream) {
           /* It only makes sense to retry once, because the retry is intended
            * to handle expiration-related failures. If refreshing the token
            * does not fix the failure, then refreshing again probably won't
