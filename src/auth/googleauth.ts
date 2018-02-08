@@ -244,11 +244,10 @@ export class GoogleAuth {
    * @returns A promise that resolves with the boolean.
    * @api private
    */
-  async _checkIsGCE(): Promise<boolean> {
-    if (this.checkIsGCE !== undefined) {
-      return this.checkIsGCE;
+  async _checkIsGCE() {
+    if (this.checkIsGCE === undefined) {
+      this.checkIsGCE = await gcpMetadata.isAvailable();
     }
-    this.checkIsGCE = await gcpMetadata.isAvailable();
     return this.checkIsGCE;
   }
 
