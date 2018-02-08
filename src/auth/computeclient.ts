@@ -15,6 +15,7 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
 
 import {RequestError} from './../transporters';
 import {CredentialRequest, Credentials} from './credentials';
@@ -27,7 +28,7 @@ export class Compute extends OAuth2Client {
    * Google Compute Engine metadata server token endpoint.
    */
   protected static readonly _GOOGLE_OAUTH2_TOKEN_URL =
-      'http://metadata.google.internal/computeMetadata/v1beta1/instance/service-accounts/default/token';
+      `${BASE_PATH}/instance/service-accounts/default/token`;
 
   /**
    * Google Compute Engine service account credentials.
@@ -60,11 +61,15 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
-    const url = this.tokenUrl || Compute._GOOGLE_OAUTH2_TOKEN_URL;
+    const url =
+        this.tokenUrl || `${HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
     let res: AxiosResponse<CredentialRequest>|null = null;
     // request for new token
     try {
-      res = await this.transporter.request<CredentialRequest>({url});
+      // TODO: In 2.0, we should remove the ability to configure the tokenUrl,
+      // and switch this over to use the gcp-metadata package instead.
+      res = await this.transporter.request<CredentialRequest>(
+          {url, headers: {'Metadata-Flavor': 'Google'}});
     } catch (e) {
       e.message = 'Could not refresh access token.';
       throw e;
