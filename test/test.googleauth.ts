@@ -17,10 +17,12 @@
 import * as assert from 'assert';
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as fs from 'fs';
+import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
 import * as http from 'http';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as stream from 'stream';
+
 import {auth, DefaultTransporter, GoogleAuth, JWT, UserRefreshClient} from '../src/index';
 import {BodyResponseCallback} from '../src/transporters';
 
@@ -35,61 +37,32 @@ afterEach(() => {
   process.env = envCache;
 });
 
-function createIsGCENock(isGCE = true) {
-  nock('http://metadata.google.internal').get('/').reply(200, null, {
-    'metadata-flavor': 'Google'
-  });
+const host = HOST_ADDRESS;
+const instancePath = `${BASE_PATH}/instance`;
+const svcAccountPath = `${instancePath}/service-accounts?recursive=true`;
+
+function nockIsGCE() {
+  nock(host).get(instancePath).reply(200, {}, {'metadata-flavor': 'Google'});
+}
+
+function nockNotGCE() {
+  nock(host).get(instancePath).replyWithError({code: 'ETIMEDOUT'});
+}
+
+function nockENOTFOUND() {
+  nock(host).get(instancePath).replyWithError({code: 'ENOTFOUND'});
+}
+
+function nockErrGCE() {
+  nock(host).get(instancePath).reply(500);
+}
+
+function nock404GCE() {
+  nock(host).get(instancePath).reply(404);
 }
 
 function createGetProjectIdNock(projectId: string) {
-  nock('http://169.254.169.254')
-      .get('/computeMetadata/v1/project/project-id')
-      .reply(200, projectId);
-}
-
-// Mocks the transporter class to simulate GCE.
-class MockTransporter extends DefaultTransporter {
-  isGCE: boolean;
-  throwError?: boolean;
-  executionCount: number;
-  constructor(simulateGCE: boolean, throwError?: boolean) {
-    super();
-    this.isGCE = false;
-    if (simulateGCE) {
-      this.isGCE = true;
-    }
-    this.throwError = throwError;
-    this.executionCount = 0;
-  }
-  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
-  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
-      void;
-  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
-      AxiosPromise<T>|void {
-    if (opts.url === 'http://metadata.google.internal') {
-      this.executionCount += 1;
-      let err = null;
-      const response = {headers: {} as http.IncomingHttpHeaders} as
-          AxiosResponse;
-      if (this.throwError) {
-        err = new Error('blah');
-      } else if (this.isGCE) {
-        response.headers['metadata-flavor'] = 'Google';
-      }
-      if (callback) {
-        return callback(err, response);
-      } else {
-        return Promise.resolve(response);
-      }
-    } else {
-      const err = new Error('unexpected request');
-      if (callback) {
-        return callback(err);
-      } else {
-        throw err;
-      }
-    }
-  }
+  nock(host).get(`${BASE_PATH}/project/project-id`).reply(200, projectId);
 }
 
 // Creates a standard JSON auth object for testing.
@@ -959,13 +932,13 @@ describe('GoogleAuth', () => {
     it('should return a new projectId the first time and a cached projectId the second time',
        async () => {
          const fixedProjectId = 'my-awesome-project';
+         nockNotGCE();
 
          // Create a function which will set up a GoogleAuth instance to match
          // on an environment variable json file, but not on anything else.
          const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
            mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
            creds._fileExists = () => false;
-           creds._checkIsGCE = async () => Promise.resolve(false);
          };
 
          // Set up a new GoogleAuth and prepare it for local environment
@@ -1096,6 +1069,7 @@ describe('GoogleAuth', () => {
 describe('.getApplicationDefault', () => {
   it('should return a new credential the first time and a cached credential the second time',
      async () => {
+       nockNotGCE();
        // Create a function which will set up a GoogleAuth instance to match
        // on an environment variable json file, but not on anything else.
        const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
@@ -1103,7 +1077,6 @@ describe('.getApplicationDefault', () => {
              'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
 
          creds._fileExists = () => false;
-         creds._checkIsGCE = () => Promise.resolve(false);
        };
 
        // Set up a new GoogleAuth and prepare it for local environment
@@ -1176,8 +1149,7 @@ describe('.getApplicationDefault', () => {
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'win32';
     auth._fileExists = () => true;
-
-    auth._checkIsGCE = () => Promise.resolve(true);
+    nockIsGCE();
     insertWellKnownFilePathIntoAuth(
         auth, 'foo:gcloud:application_default_credentials.json',
         './test/fixtures/private2.json');
@@ -1212,7 +1184,7 @@ describe('.getApplicationDefault', () => {
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
        auth._fileExists = () => true;
-       auth._checkIsGCE = () => Promise.resolve(true);
+       nockIsGCE();
        insertWellKnownFilePathIntoAuth(
            auth, 'foo:gcloud:application_default_credentials.json',
            './test/fixtures/private2.json');
@@ -1242,7 +1214,7 @@ describe('.getApplicationDefault', () => {
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
        auth._fileExists = () => false;
-       auth._checkIsGCE = () => Promise.resolve(true);
+       nockIsGCE();
 
        // Execute.
        auth.getApplicationDefault((err, result) => {
@@ -1319,31 +1291,17 @@ describe('.getApplicationDefault', () => {
 describe('._checkIsGCE', () => {
   it('should set the _isGCE flag when running on GCE', async () => {
     const auth = new GoogleAuth();
-
-    // Mock the transport layer to return the correct header indicating that
-    // we're running on GCE.
-    auth.transporter = new MockTransporter(true);
-
-    // Assert on the initial values.
     assert.notEqual(true, auth.isGCE);
-
-    // Execute.
+    nockIsGCE();
     const isGCE = await auth._checkIsGCE();
     assert.equal(true, auth.isGCE);
   });
 
   it('should not set the _isGCE flag when not running on GCE', async () => {
     const auth = new GoogleAuth();
-
-    // Mock the transport layer to indicate that we're not running on GCE.
-    auth.transporter = new MockTransporter(false);
-
-    // Assert on the initial values.
+    nockNotGCE();
     assert.notEqual(true, auth.isGCE);
-
-    // Execute.
     const isGCE = await auth._checkIsGCE();
-    // Assert that the flags are set.
     assert.equal(false, auth.isGCE);
   });
 
@@ -1352,122 +1310,56 @@ describe('._checkIsGCE', () => {
        const auth = new GoogleAuth();
        assert.notEqual(true, auth.isGCE);
        // the first request will fail
-       const scope1 =
-           nock('http://metadata.google.internal').get('/').reply(500);
+       nockErrGCE();
        // the second one will succeed
-       const scope2 =
-           nock('http://metadata.google.internal').get('/').reply(200, null, {
-             'metadata-flavor': 'Google'
-           });
+       nockIsGCE();
        const isGCE = await auth._checkIsGCE();
        assert.equal(true, auth.isGCE);
-       assert(scope1.isDone());
-       assert(scope2.isDone());
      });
 
   it('should not retry the check for isGCE if it fails with a 404',
      async () => {
        const auth = new GoogleAuth();
        assert.notEqual(true, auth.isGCE);
-       // the first request will fail
-       const scope1 =
-           nock('http://metadata.google.internal').get('/').reply(404);
-       // the second one should never happen
-       const scope2 =
-           nock('http://metadata.google.internal').get('/').reply(404);
-       try {
-         const isGCE = await auth._checkIsGCE();
-         assert.notEqual(true, auth.isGCE);
-       } catch (e) {
-         return;
-       }
-       assert(scope1.isDone());
-       assert(!scope2.isDone());
-       assert.fail('Expected to throw');
+       nock404GCE();
+       const isGCE = await auth._checkIsGCE();
+       assert.notEqual(true, auth.isGCE);
      });
 
   it('should not retry the check for isGCE if it fails with an ENOTFOUND',
      async () => {
        const auth = new GoogleAuth();
        assert.notEqual(true, auth.isGCE);
-       // the first request will fail
-       const scope1 =
-           nock('http://metadata.google.internal').get('/').replyWithError({
-             code: 'ENOTFOUND'
-           });
-       // the second one should never happen
-       const scope2 =
-           nock('http://metadata.google.internal').get('/').replyWithError({
-             code: 'ENOTFOUND'
-           });
-
+       nockENOTFOUND();
        const isGCE = await auth._checkIsGCE();
        assert.notEqual(true, auth.isGCE);
-       assert(scope1.isDone());
-       assert(!scope2.isDone());
      });
 
   it('Does not execute the second time when running on GCE', async () => {
+    // This test relies on the nock mock only getting called once.
     const auth = new GoogleAuth();
-
-    // Mock the transport layer to indicate that we're not running on GCE.
-    auth.transporter = new MockTransporter(true);
-
-    // Assert on the initial values.
     assert.notEqual(true, auth.isGCE);
-    assert.equal(0, (auth.transporter as MockTransporter).executionCount);
-
-    // Execute.
+    nockIsGCE();
     await auth._checkIsGCE();
-    // Assert.
     assert.equal(true, auth.isGCE);
-    assert.equal(1, (auth.transporter as MockTransporter).executionCount);
-
-    // Execute a second time, check that we still get the correct values
-    // back, but the execution count has not rev'd again, indicating that we
-    // got the cached values this time.
     const isGCE2 = await auth._checkIsGCE();
     assert.equal(true, auth.isGCE);
-    assert.equal(1, (auth.transporter as MockTransporter).executionCount);
   });
 
   it('Does not execute the second time when not running on GCE', async () => {
     const auth = new GoogleAuth();
-
-    // Mock the transport layer to indicate that we're not running on GCE.
-    auth.transporter = new MockTransporter(false);
-
-    // Assert on the initial values.
     assert.notEqual(true, auth.isGCE);
-    assert.equal(0, (auth.transporter as MockTransporter).executionCount);
-
-    // Execute.
-    await auth._checkIsGCE();
-    // Assert.
-    assert.equal(false, auth.isGCE);
-    assert.equal(1, (auth.transporter as MockTransporter).executionCount);
-
-    // Execute a second time, check that we still get the correct values
-    // back, but the execution count has not rev'd again, indicating that we
-    // got the cached values this time.
+    nockNotGCE();
     await auth._checkIsGCE();
     assert.equal(false, auth.isGCE);
-    assert.equal(1, (auth.transporter as MockTransporter).executionCount);
-
+    await auth._checkIsGCE();
+    assert.equal(false, auth.isGCE);
 
     it('Returns false on transport error', async () => {
       const auth2 = new GoogleAuth();
-
-      // Mock the transport layer to indicate that we're not running on GCE,
-      // but also to throw an error.
-      auth2.transporter = new MockTransporter(true, true);
-
-      // Assert on the initial values.
       assert.notEqual(true, auth2.isGCE);
-
-      // Execute.
+      nockErrGCE();
       await auth2._checkIsGCE();
-      // Assert that _isGCE is set to false due to the error.
       assert.equal(false, auth2.isGCE);
     });
   });
@@ -1475,11 +1367,8 @@ describe('._checkIsGCE', () => {
   describe('.getCredentials', () => {
     it('should get metadata from the server when running on GCE', async () => {
       const auth = new GoogleAuth();
-
-      createIsGCENock();
+      nockIsGCE();
       const isGCE = await auth._checkIsGCE();
-
-      // Assert that the flags are set.
       assert.equal(true, auth.isGCE);
 
       const response = {
@@ -1488,11 +1377,10 @@ describe('._checkIsGCE', () => {
           private_key: null
         }
       };
-
-      nock('http://metadata.google.internal')
-          .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
-          .reply(200, response);
-
+      nock.cleanAll();
+      nock(host).get(svcAccountPath).reply(200, response, {
+        'Metadata-Flavor': 'Google'
+      });
       const body = await auth.getCredentials();
       assert(body);
       assert.equal(
@@ -1502,15 +1390,10 @@ describe('._checkIsGCE', () => {
 
     it('should error if metadata server is not reachable', async () => {
       const auth = new GoogleAuth();
-      createIsGCENock();
+      nockIsGCE();
       await auth._checkIsGCE();
-      // Assert that the flags are set.
       assert.equal(true, auth.isGCE);
-
-      nock('http://metadata.google.internal')
-          .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
-          .reply(404);
-
+      nock(HOST_ADDRESS).get(svcAccountPath).reply(404);
       try {
         await auth.getCredentials();
       } catch (e) {
@@ -1521,14 +1404,10 @@ describe('._checkIsGCE', () => {
 
     it('should error if body is empty', async () => {
       const auth = new GoogleAuth();
-      createIsGCENock();
+      nockIsGCE();
       await auth._checkIsGCE();
-      // Assert that the flags are set.
       assert.equal(true, auth.isGCE);
-
-      nock('http://metadata.google.internal')
-          .get('/computeMetadata/v1/instance/service-accounts/?recursive=true')
-          .reply(200, {});
+      nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {});
 
       try {
         await auth.getCredentials();

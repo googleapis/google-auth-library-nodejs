@@ -17,6 +17,7 @@
 import {AxiosError} from 'axios';
 import {exec} from 'child_process';
 import * as fs from 'fs';
+import * as gcpMetadata from 'gcp-metadata';
 import * as os from 'os';
 import * as path from 'path';
 import * as stream from 'stream';
@@ -243,33 +244,9 @@ export class GoogleAuth {
    * @returns A promise that resolves with the boolean.
    * @api private
    */
-  async _checkIsGCE(isRetry = false): Promise<boolean> {
-    if (this.checkIsGCE !== undefined) {
-      return this.checkIsGCE;
-    }
-    if (!this.transporter) {
-      this.transporter = new DefaultTransporter();
-    }
-    try {
-      const res = await this.transporter.request(
-          {url: 'http://metadata.google.internal'});
-      this.checkIsGCE =
-          res && res.headers && res.headers['metadata-flavor'] === 'Google';
-    } catch (e) {
-      const isDNSError = (e as NodeJS.ErrnoException).code === 'ENOTFOUND';
-      const ae = e as AxiosError;
-      const is5xx = ae.response &&
-          (ae.response.status >= 500 && ae.response.status < 600);
-      if (is5xx) {
-        // Unexpected error occurred. Retry once.
-        if (!isRetry) {
-          return await this._checkIsGCE(true);
-        }
-        throw e;
-      } else if (!isDNSError) {
-        throw e;
-      }
-      this.checkIsGCE = false;
+  async _checkIsGCE() {
+    if (this.checkIsGCE === undefined) {
+      this.checkIsGCE = await gcpMetadata.isAvailable();
     }
     return this.checkIsGCE;
   }
@@ -580,32 +557,16 @@ export class GoogleAuth {
 
   /**
    * Gets the Compute Engine project ID if it can be inferred.
-   * Uses 169.254.169.254 for the metadata server to avoid request
-   * latency from DNS lookup.
-   * See https://cloud.google.com/compute/docs/metadata#metadataserver
-   * for information about this IP address. (This IP is also used for
-   * Amazon EC2 instances, so the metadata flavor is crucial.)
-   * See https://github.com/google/oauth2client/issues/93 for context about
-   * DNS latency.
-   *
-   * @api private
    */
   private async getGCEProjectId() {
-    if (!this.transporter) {
-      this.transporter = new DefaultTransporter();
-    }
     try {
-      const r = await this.transporter.request<string>({
-        url: 'http://169.254.169.254/computeMetadata/v1/project/project-id',
-        headers: {'Metadata-Flavor': 'Google'}
-      });
+      const r = await gcpMetadata.project('project-id');
       return r.data;
     } catch (e) {
       // Ignore any errors
       return null;
     }
   }
-
 
   /**
    * The callback function handles a credential object that contains the
@@ -645,19 +606,13 @@ export class GoogleAuth {
     }
 
     // For GCE, return the service account details from the metadata server
-    const result = await this.transporter.request<CredentialResult>({
-      url:
-          'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/?recursive=true',
-      headers: {'Metadata-Flavor': 'Google'}
-    });
+    const {data} = await gcpMetadata.instance(
+        {property: 'service-accounts', params: {recursive: true}});
 
-    if (!result.data || !result.data.default || !result.data.default.email) {
+    if (!data || !data.default || !data.default.email) {
       throw new Error('Failure from metadata server.');
     }
 
-    // Callback with the body
-    const credential:
-        CredentialBody = {client_email: result.data.default.email};
-    return credential;
+    return {client_email: data.default.email};
   }
 }

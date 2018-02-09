@@ -39,6 +39,7 @@
     "@types/tmp": "0.0.33",
     "clang-format": "^1.0.50",
     "codecov": "^3.0.0",
+    "gcp-metadata": "^0.5.0",
     "gh-pages": "^1.1.0",
     "gts": "^0.5.3",
     "js-green-licenses": "^0.4.0",
