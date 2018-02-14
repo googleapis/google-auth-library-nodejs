@@ -15,13 +15,10 @@
  */
 
 import * as assert from 'assert';
-import {AxiosRequestConfig} from 'axios';
-import {ETIMEDOUT} from 'constants';
 import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 
 import {Credentials} from '../src/auth/credentials';
-import {GoogleAuth} from '../src/auth/googleauth';
 import {Compute} from '../src/index';
 
 nock.disableNetConnect();
