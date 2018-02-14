@@ -15,7 +15,7 @@
  */
 
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
+import * as gcpMetadata from 'gcp-metadata';
 import * as rax from 'retry-axios';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
@@ -31,7 +31,7 @@ export class Compute extends OAuth2Client {
    * Google Compute Engine metadata server token endpoint.
    */
   protected static readonly _GOOGLE_OAUTH2_TOKEN_URL =
-      `${BASE_PATH}/instance/service-accounts/default/token`;
+      `${gcpMetadata.BASE_PATH}/instance/service-accounts/default/token`;
 
   /**
    * Google Compute Engine service account credentials.
@@ -64,8 +64,8 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
-    const url =
-        this.tokenUrl || `${HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
+    const url = this.tokenUrl ||
+        `${gcpMetadata.HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
     let res: AxiosResponse<CredentialRequest>|null = null;
     // request for new token
     try {
@@ -73,7 +73,7 @@ export class Compute extends OAuth2Client {
       // and switch this over to use the gcp-metadata package instead.
       res = await ax.request<CredentialRequest>({
         url,
-        headers: {'Metadata-Flavor': 'Google'},
+        headers: {[gcpMetadata.HEADER_NAME]: 'Google'},
         raxConfig: {noResponseRetries: 3, retry: 3, instance: ax}
       } as rax.RaxConfig);
     } catch (e) {
