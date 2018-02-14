@@ -16,6 +16,7 @@
 
 import * as assert from 'assert';
 import {AxiosRequestConfig} from 'axios';
+import {ETIMEDOUT} from 'constants';
 import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 
@@ -119,6 +120,44 @@ describe('Compute auth client', () => {
       done();
     });
   });
+
+  it('should retry calls to the metadata service if there are network errors',
+     (done) => {
+       const scopes = [
+         nock(HOST_ADDRESS).get(tokenPath).times(2).replyWithError({
+           code: 'ENOTFOUND'
+         }),
+         nock(HOST_ADDRESS).get(tokenPath).reply(200, {
+           access_token: 'abc123',
+           expires_in: 10000
+         })
+       ];
+       compute.credentials.access_token = 'initial-access-token';
+       compute.credentials.expiry_date = (new Date()).getTime() - 10000;
+       compute.request({url: 'http://foo'}, e => {
+         assert.equal(compute.credentials.access_token, 'abc123');
+         scopes.forEach(s => s.done());
+         done();
+       });
+     });
+
+  it('should retry calls to the metadata service if it returns non-200 errors',
+     (done) => {
+       const scopes = [
+         nock(HOST_ADDRESS).get(tokenPath).times(2).reply(500),
+         nock(HOST_ADDRESS).get(tokenPath).reply(200, {
+           access_token: 'abc123',
+           expires_in: 10000
+         })
+       ];
+       compute.credentials.access_token = 'initial-access-token';
+       compute.credentials.expiry_date = (new Date()).getTime() - 10000;
+       compute.request({url: 'http://foo'}, e => {
+         assert.equal(compute.credentials.access_token, 'abc123');
+         scopes.forEach(s => s.done());
+         done();
+       });
+     });
 
   describe('.createScopedRequired', () => {
     it('should return false', () => {
