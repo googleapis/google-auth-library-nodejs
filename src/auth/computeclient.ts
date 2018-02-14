@@ -17,8 +17,6 @@
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
 import * as rax from 'retry-axios';
-
-import {RequestError} from './../transporters';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
@@ -27,7 +25,6 @@ export interface ComputeOptions extends RefreshOptions {}
 // Create a scoped axios instance that will retry 3 times by default
 const ax = axios.create();
 rax.attach(ax);
-
 
 export class Compute extends OAuth2Client {
   /**
@@ -77,7 +74,7 @@ export class Compute extends OAuth2Client {
       res = await ax.request<CredentialRequest>({
         url,
         headers: {'Metadata-Flavor': 'Google'},
-        raxConfig: {noResponseRetries: 8, retry: 8, instance: ax}
+        raxConfig: {noResponseRetries: 3, retry: 3, instance: ax}
       } as rax.RaxConfig);
     } catch (e) {
       e.message = 'Could not refresh access token.';
@@ -118,7 +115,7 @@ export class Compute extends OAuth2Client {
             e.message = helpfulMessage;
           } else {
             e = new Error(helpfulMessage);
-            (e as RequestError).code = res.status.toString();
+            (e as NodeJS.ErrnoException).code = res.status.toString();
           }
         }
       }
