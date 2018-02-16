@@ -1132,6 +1132,26 @@ describe('.getApplicationDefault', () => {
        assert.notEqual(cachedCredential, result3);
      });
 
+  it('should cache the credential when using GCE', async () => {
+    nockIsGCE();
+    const auth = new GoogleAuth();
+
+    // Ask for credentials, the first time.
+    const result = await auth.getApplicationDefault();
+    assert.notEqual(null, result);
+
+    // Capture the returned credential.
+    const cachedCredential = result.credential;
+
+    // Ask for credentials again, from the same auth instance. We expect
+    // a cached instance this time.
+    const result2 = (await auth.getApplicationDefault()).credential;
+    assert.notEqual(null, result2);
+
+    // Make sure it's the same object
+    assert.equal(cachedCredential, result2);
+  });
+
   it('should use environment variable when it is set', (done) => {
     // We expect private.json to be the file that is used.
     const fileContents =

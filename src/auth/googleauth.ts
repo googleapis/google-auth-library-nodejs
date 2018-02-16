@@ -225,8 +225,9 @@ export class GoogleAuth {
       if (gce) {
         // For GCE, just return a default ComputeClient. It will take care of
         // the rest.
-        // TODO: cache the result
-        return {projectId: null, credential: new Compute(options)};
+        this.cachedCredential = new Compute(options);
+        projectId = await this.getDefaultProjectId();
+        return {projectId, credential: this.cachedCredential};
       } else {
         // We failed to find the default credentials. Bail out with an error.
         throw new Error(
