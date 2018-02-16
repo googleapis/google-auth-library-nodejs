@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
-
-import {RequestError} from './../transporters';
+import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import * as gcpMetadata from 'gcp-metadata';
+import * as rax from 'retry-axios';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface ComputeOptions extends RefreshOptions {}
+
+// Create a scoped axios instance that will retry 3 times by default
+const ax = axios.create();
+rax.attach(ax);
 
 export class Compute extends OAuth2Client {
   /**
    * Google Compute Engine metadata server token endpoint.
    */
   protected static readonly _GOOGLE_OAUTH2_TOKEN_URL =
-      `${BASE_PATH}/instance/service-accounts/default/token`;
+      `${gcpMetadata.BASE_PATH}/instance/service-accounts/default/token`;
 
   /**
    * Google Compute Engine service account credentials.
@@ -61,15 +64,18 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
-    const url =
-        this.tokenUrl || `${HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
+    const url = this.tokenUrl ||
+        `${gcpMetadata.HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
     let res: AxiosResponse<CredentialRequest>|null = null;
     // request for new token
     try {
       // TODO: In 2.0, we should remove the ability to configure the tokenUrl,
       // and switch this over to use the gcp-metadata package instead.
-      res = await this.transporter.request<CredentialRequest>(
-          {url, headers: {'Metadata-Flavor': 'Google'}});
+      res = await ax.request<CredentialRequest>({
+        url,
+        headers: {[gcpMetadata.HEADER_NAME]: 'Google'},
+        raxConfig: {noResponseRetries: 3, retry: 3, instance: ax}
+      } as rax.RaxConfig);
     } catch (e) {
       e.message = 'Could not refresh access token.';
       throw e;
@@ -109,7 +115,7 @@ export class Compute extends OAuth2Client {
             e.message = helpfulMessage;
           } else {
             e = new Error(helpfulMessage);
-            (e as RequestError).code = res.status.toString();
+            (e as NodeJS.ErrnoException).code = res.status.toString();
           }
         }
       }
