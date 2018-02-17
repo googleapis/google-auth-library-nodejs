@@ -23,7 +23,7 @@ const { GoogleAuth } = require('google-auth-library');
  */
 async function main() {
   const auth = new GoogleAuth({
-    keyFilename: '../jwt.keys.json',
+    keyFilename: 'jwt.keys.json',
     scopes: 'https://www.googleapis.com/auth/cloud-platform'
   });
   const client = await auth.getClient();
