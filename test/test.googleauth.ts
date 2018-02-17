@@ -1475,5 +1475,15 @@ describe('._checkIsGCE', () => {
       }
       throw new Error('Expected to throw');
     });
+
+    it('should use jsonContent if available', async () => {
+      const json = createJwtJSON();
+      const auth = new GoogleAuth();
+      const result = auth.fromJSON(json);
+      // We know this returned a cached result if a nock scope isn't required
+      const body = await auth.getCredentials();
+      assert.notEqual(body, null);
+      assert.equal(body!.client_email, 'hello@youarecool.com');
+    });
   });
 });
