@@ -68,10 +68,10 @@ describe('JWT auth client', () => {
       jwt.authorize((err, creds) => {
         assert.equal(err, null);
         assert.notEqual(creds, null);
-        assert.equal('foo@serviceaccount.com', jwt.gtoken.iss);
-        assert.equal(PEM_PATH, jwt.gtoken.keyFile);
-        assert.equal(['http://bar', 'http://foo'].join(' '), jwt.gtoken.scope);
-        assert.equal('bar@subjectaccount.com', jwt.gtoken.sub);
+        assert.equal('foo@serviceaccount.com', jwt.gtoken!.iss);
+        assert.equal(PEM_PATH, jwt.gtoken!.keyFile);
+        assert.equal(['http://bar', 'http://foo'].join(' '), jwt.gtoken!.scope);
+        assert.equal('bar@subjectaccount.com', jwt.gtoken!.sub);
         assert.equal('initial-access-token', jwt.credentials.access_token);
         assert.equal(creds!.access_token, jwt.credentials.access_token);
         assert.equal(creds!.refresh_token, jwt.credentials.refresh_token);
@@ -93,7 +93,7 @@ describe('JWT auth client', () => {
 
       createGTokenMock({access_token: 'initial-access-token'});
       jwt.authorize((err, creds) => {
-        assert.equal('http://foo', jwt.gtoken.scope);
+        assert.equal('http://foo', jwt.gtoken!.scope);
         done();
       });
     });
