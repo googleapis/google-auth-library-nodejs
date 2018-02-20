@@ -18,6 +18,7 @@ import {AxiosError} from 'axios';
 import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
+import * as http from 'http';
 import * as os from 'os';
 import * as path from 'path';
 import * as stream from 'stream';
@@ -27,11 +28,12 @@ import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute} from './computeclient';
 import {JWTInput} from './credentials';
-import {IAMAuth} from './iam';
+import {GCPEnv, getEnv} from './envDetect';
+import {IAMAuth, RequestMetadata} from './iam';
 import {JWTAccess} from './jwtaccess';
-import {JWT} from './jwtclient';
-import {OAuth2Client, RefreshOptions} from './oauth2client';
-import {UserRefreshClient} from './refreshclient';
+import {JWT, JWTOptions} from './jwtclient';
+import {GetAccessTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
+import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
 
 export interface ProjectIdCallback {
   (err?: Error|null, projectId?: string|null): void;
@@ -59,6 +61,33 @@ interface CredentialResult {
   default: {email: string;};
 }
 
+export interface GoogleAuthOptions {
+  /**
+   * Path to a .json, .pem, or .p12 key file
+   */
+  keyFilename?: string;
+
+  /**
+   * Path to a .json, .pem, or .p12 key file
+   */
+  keyFile?: string;
+
+  /**
+   * Object containing client_email and private_key properties
+   */
+  credentials?: CredentialBody;
+
+  /**
+   * Required scopes for the desired API request
+   */
+  scopes?: string|string[];
+
+  /**
+   * Your project ID.
+   */
+  projectId?: string;
+}
+
 export class GoogleAuth {
   transporter?: Transporter;
 
@@ -81,15 +110,26 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput|null = null;
 
-  cachedCredential: OAuth2Client|null = null;
+  cachedCredential: JWT|UserRefreshClient|Compute|null = null;
+
+  private keyFilename?: string;
+  private scopes?: string|string[];
 
   /**
    * Export DefaultTransporter as a static property of the class.
    */
   static DefaultTransporter = DefaultTransporter;
 
+  constructor(opts?: GoogleAuthOptions) {
+    opts = opts || {};
+    this._cachedProjectId = opts.projectId || null;
+    this.keyFilename = opts.keyFilename || opts.keyFile;
+    this.scopes = opts.scopes;
+    this.jsonContent = opts.credentials || null;
+  }
+
   /**
-   * Obtains the default project ID for the application..
+   * Obtains the default project ID for the application.
    * @param callback Optional callback
    * @returns Promise that resolves with project Id (if used without callback)
    */
@@ -196,7 +236,7 @@ export class GoogleAuth {
       };
     }
 
-    let credential: OAuth2Client|null;
+    let credential: JWT|UserRefreshClient|null;
     let projectId: string|null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
@@ -368,6 +408,7 @@ export class GoogleAuth {
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
     } else {
+      (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
     }
     client.fromJSON(json);
@@ -615,5 +656,64 @@ export class GoogleAuth {
     }
 
     return {client_email: data.default.email};
+  }
+
+  /**
+   * Automatically obtain a client based on the provided configuration.  If no
+   * options were passed, use Application Default Credentials.
+   */
+  async getClient() {
+    if (!this.cachedCredential) {
+      if (this.keyFilename) {
+        const filePath = path.resolve(this.keyFilename);
+        const stream = fs.createReadStream(filePath);
+        this.cachedCredential = await this.fromStreamAsync(stream);
+      } else if (this.jsonContent) {
+        this.cachedCredential = await this.fromJSON(this.jsonContent);
+      } else {
+        await this.getApplicationDefaultAsync();
+      }
+    }
+    return this.cachedCredential!;
+  }
+
+  /**
+   * Automatically obtain application default credentials, and return
+   * an access token for making requests.
+   */
+  async getAccessToken() {
+    const client = await this.getClient();
+    return (await client.getAccessToken()).token;
+  }
+
+  /**
+   * Obtain the HTTP headers that will provide authorization for a given
+   * request.
+   */
+  async getRequestHeaders(url?: string) {
+    const client = await this.getClient();
+    return (await client.getRequestMetadata(url)).headers;
+  }
+
+  /**
+   * Obtain credentials for a request, then attach the appropriate headers to
+   * the request options.
+   * @param opts Axios or Request options on which to attach the headers
+   */
+  async authorizeRequest(
+      opts: {url?: string, uri?: string, headers?: http.IncomingHttpHeaders}) {
+    opts = opts || {};
+    const url = opts.url || opts.uri;
+    const client = await this.getClient();
+    const {headers} = await client.getRequestMetadata(url);
+    opts.headers = Object.assign(opts.headers || {}, headers);
+    return opts;
+  }
+
+  /**
+   * Determine the compute environment in which the code is running.
+   */
+  getEnv(): Promise<GCPEnv> {
+    return getEnv();
   }
 }

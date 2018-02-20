@@ -15,21 +15,21 @@
  */
 
 import * as assert from 'assert';
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as fs from 'fs';
-import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
-import * as http from 'http';
+import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as stream from 'stream';
 
-import {auth, DefaultTransporter, GoogleAuth, JWT, UserRefreshClient} from '../src/index';
-import {BodyResponseCallback} from '../src/transporters';
+import * as envDetect from '../src/auth/envDetect';
+import {auth, GoogleAuth, JWT, UserRefreshClient} from '../src/index';
 
 nock.disableNetConnect();
 
 // Cache env vars before the tests start
 const envCache = process.env;
+
+const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 
 afterEach(() => {
   nock.cleanAll();
@@ -42,27 +42,31 @@ const instancePath = `${BASE_PATH}/instance`;
 const svcAccountPath = `${instancePath}/service-accounts?recursive=true`;
 
 function nockIsGCE() {
-  nock(host).get(instancePath).reply(200, {}, {'metadata-flavor': 'Google'});
+  return nock(host).get(instancePath).reply(200, {}, {
+    'metadata-flavor': 'Google'
+  });
 }
 
 function nockNotGCE() {
-  nock(host).get(instancePath).replyWithError({code: 'ETIMEDOUT'});
+  return nock(host).get(instancePath).replyWithError({code: 'ETIMEDOUT'});
 }
 
 function nockENOTFOUND() {
-  nock(host).get(instancePath).replyWithError({code: 'ENOTFOUND'});
+  return nock(host).get(instancePath).replyWithError({code: 'ENOTFOUND'});
 }
 
 function nockErrGCE() {
-  nock(host).get(instancePath).reply(500);
+  return nock(host).get(instancePath).reply(500);
 }
 
 function nock404GCE() {
-  nock(host).get(instancePath).reply(404);
+  return nock(host).get(instancePath).reply(404);
 }
 
 function createGetProjectIdNock(projectId: string) {
-  nock(host).get(`${BASE_PATH}/project/project-id`).reply(200, projectId);
+  return nock(host)
+      .get(`${BASE_PATH}/project/project-id`)
+      .reply(200, projectId);
 }
 
 // Creates a standard JSON auth object for testing.
@@ -83,6 +87,19 @@ function createRefreshJSON() {
     refresh_token: 'refreshtoken',
     type: 'authorized_user'
   };
+}
+
+// Pretend that we're GCE, and mock an access token.
+function mockGCE() {
+  const scope1 = nockIsGCE();
+  blockGoogleApplicationCredentialEnvironmentVariable();
+  const auth = new GoogleAuth();
+  auth._fileExists = () => false;
+  const scope2 = nock(HOST_ADDRESS).get(tokenPath).reply(200, {
+    access_token: 'abc123',
+    expires_in: 10000
+  });
+  return {auth, scopes: [scope1, scope2]};
 }
 
 // Matches the ending of a string.
@@ -1506,4 +1523,70 @@ describe('._checkIsGCE', () => {
       assert.equal(body!.client_email, 'hello@youarecool.com');
     });
   });
+});
+
+it('should accept keyFilename to get a client', async () => {
+  const auth = new GoogleAuth({keyFilename: './test/fixtures/private.json'});
+  const client = await auth.getClient() as JWT;
+  assert.equal(client.email, 'hello@youarecool.com');
+});
+
+it('should accept credentials to get a client', async () => {
+  const credentials = require('../../test/fixtures/private.json');
+  const auth = new GoogleAuth({credentials});
+  const client = await auth.getClient() as JWT;
+  assert.equal(client.email, 'hello@youarecool.com');
+});
+
+it('should get an access token', async () => {
+  const {auth, scopes} = mockGCE();
+  const token = await auth.getAccessToken();
+  scopes.forEach(s => s.done());
+  assert.equal(token, 'abc123');
+});
+
+it('should get request headers', async () => {
+  const {auth, scopes} = mockGCE();
+  const headers = await auth.getRequestHeaders();
+  scopes.forEach(s => s.done());
+  assert.deepEqual(headers, {Authorization: 'Bearer abc123'});
+});
+
+it('should authorize the request', async () => {
+  const {auth, scopes} = mockGCE();
+  const opts = await auth.authorizeRequest({url: 'http://example.com'});
+  scopes.forEach(s => s.done());
+  assert.deepEqual(opts.headers, {Authorization: 'Bearer abc123'});
+});
+
+it('should get the current environment if GCE', async () => {
+  envDetect.clear();
+  const {auth, scopes} = mockGCE();
+  const env = await auth.getEnv();
+  assert.equal(env, envDetect.GCPEnv.COMPUTE_ENGINE);
+});
+
+it('should get the current environment if GKE', async () => {
+  envDetect.clear();
+  const {auth, scopes} = mockGCE();
+  const scope = nock(host)
+                    .get(`${instancePath}/attributes/cluster-name`)
+                    .reply(200, {}, {[HEADER_NAME.toLowerCase()]: 'Google'});
+  const env = await auth.getEnv();
+  assert.equal(env, envDetect.GCPEnv.KUBERNETES_ENGINE);
+  scope.done();
+});
+
+it('should get the current environment if GCF', async () => {
+  envDetect.clear();
+  mockEnvVar('FUNCTION_NAME', 'DOGGY');
+  const env = await auth.getEnv();
+  assert.equal(env, envDetect.GCPEnv.CLOUD_FUNCTIONS);
+});
+
+it('should get the current environment if GAE', async () => {
+  envDetect.clear();
+  mockEnvVar('GAE_SERVICE', 'KITTY');
+  const env = await auth.getEnv();
+  assert.equal(env, envDetect.GCPEnv.APP_ENGINE);
 });

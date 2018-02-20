@@ -17,6 +17,7 @@
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
 const { auth } = require('google-auth-library');
+const axios = require('axios');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
@@ -25,7 +26,8 @@ async function main() {
   const client = await auth.getClient();
   const projectId = await auth.getDefaultProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
-  const res = await client.request({ url });
+  const opts = await auth.authorizeRequest();
+  const res = await axios.get(url, opts);
   console.log(res.data);
 }
 
