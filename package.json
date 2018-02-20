@@ -25,7 +25,8 @@
     "jws": "^3.1.4",
     "lodash.isstring": "^4.0.1",
     "lru-cache": "^4.1.1",
-    "retry-axios": "^0.3.2"
+    "retry-axios": "^0.3.2",
+    "gcp-metadata": "^0.6.0"
   },
   "devDependencies": {
     "@justinbeckwith/typedoc": "^0.10.1",
@@ -40,7 +41,6 @@
     "@types/tmp": "0.0.33",
     "clang-format": "^1.2.2",
     "codecov": "^3.0.0",
-    "gcp-metadata": "^0.6.0",
     "gh-pages": "^1.1.0",
     "gts": "^0.5.3",
     "js-green-licenses": "^0.4.0",
