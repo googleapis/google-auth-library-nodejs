@@ -20,7 +20,7 @@ import {Credentials} from './credentials';
 
 export abstract class AuthClient {
   transporter = new DefaultTransporter();
-  credentials: Credentials;
+  credentials: Credentials = {};
 
   /**
    * Provides an alternative Axios request implementation with auth credentials

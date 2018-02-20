@@ -246,7 +246,7 @@ export class OAuth2Client extends AuthClient {
   // TODO: refactor tests to make this private
   _clientSecret?: string;
 
-  apiKey: string;
+  apiKey?: string;
 
   projectId?: string;
 
@@ -284,7 +284,6 @@ export class OAuth2Client extends AuthClient {
     this.redirectUri = opts.redirectUri;
     this.authBaseUrl = opts.authBaseUrl;
     this.tokenUrl = opts.tokenUrl;
-    this.credentials = {};
     this.eagerRefreshThresholdMillis =
         opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
   }

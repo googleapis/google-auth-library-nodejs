@@ -60,7 +60,7 @@ interface CredentialResult {
 }
 
 export class GoogleAuth {
-  transporter: Transporter;
+  transporter?: Transporter;
 
   /**
    * Caches a value indicating whether the auth layer is running on Google
@@ -75,8 +75,8 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  private _getDefaultProjectIdPromise: Promise<string|null>;
-  private _cachedProjectId: string|null;
+  private _getDefaultProjectIdPromise?: Promise<string|null>;
+  private _cachedProjectId?: string|null;
 
   // To save the contents of the JSON credential file
   jsonContent: JWTInput|null = null;

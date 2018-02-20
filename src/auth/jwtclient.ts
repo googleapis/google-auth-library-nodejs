@@ -38,10 +38,10 @@ export class JWT extends OAuth2Client {
   scopes?: string|string[];
   scope?: string;
   subject?: string;
-  gtoken: GoogleToken;
+  gtoken?: GoogleToken;
   additionalClaims?: {};
 
-  private access: JWTAccess;
+  private access?: JWTAccess;
 
   /**
    * JWT service account credentials.
@@ -157,8 +157,8 @@ export class JWT extends OAuth2Client {
     }
     this.credentials = result.tokens;
     this.credentials.refresh_token = 'jwt-placeholder';
-    this.key = this.gtoken.key;
-    this.email = this.gtoken.iss;
+    this.key = this.gtoken!.key;
+    this.email = this.gtoken!.iss;
     return result.tokens;
   }
 
