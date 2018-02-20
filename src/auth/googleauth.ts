@@ -665,7 +665,7 @@ export class GoogleAuth {
   async getClient() {
     if (!this.cachedCredential) {
       if (this.keyFilename) {
-        const filePath = path.resolve(process.cwd(), this.keyFilename);
+        const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
         this.cachedCredential = await this.fromStreamAsync(stream);
       } else if (this.jsonContent) {

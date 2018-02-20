@@ -60,7 +60,6 @@ async function isKubernetesEngine() {
     await gcpMetadata.instance('attributes/cluster-name');
     return true;
   } catch (e) {
-    console.error(e);
     return false;
   }
 }
