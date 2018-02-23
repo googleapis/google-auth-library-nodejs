@@ -223,6 +223,7 @@ const tokens = await oauth2Client.refreshAccessToken();
 
 ##### OAuth2 with Installed Apps (Electron)
 If you're authenticating with OAuth2 from an installed application (like Electron), you may not want to embed your `client_secret` inside of the application sources. To work around this restriction, you can choose the `iOS` application type when creating your OAuth2 credentials in the [Google Developers console][devconsole]:
+
 ![application type][apptype]
 
 If using the `iOS` type, when creating the OAuth2 client you won't need to pass a `client_secret` into the constructor:
