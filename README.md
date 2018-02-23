@@ -221,6 +221,18 @@ const tokens = await oauth2Client.refreshAccessToken();
 // store these new tokens in a safe place (e.g. database)
 ```
 
+##### OAuth2 with Installed Apps (Electron)
+If you're authenticating with OAuth2 from an installed application (like Electron), you may not want to embed your `client_secret` inside of the application sources. To work around this restriction, you can choose the `iOS` application type when creating your OAuth2 credentials in the [Google Developers console][devconsole]:
+![application type][apptype]
+
+If using the `iOS` type, when creating the OAuth2 client you won't need to pass a `client_secret` into the constructor:
+```js
+const oAuth2Client = new OAuth2Client({
+  clientId: <your_client_id>,
+  redirectUri: <your_redirect_uri>
+});
+```
+
 #### Using JSON Web Tokens
 The Google Developers Console provides `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
@@ -313,6 +325,7 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 
 [apiexplorer]: https://developers.google.com/apis-explorer
 [Application Default Credentials]: https://developers.google.com/identity/protocols/application-default-credentials#callingnode
+[apptype]: https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
 [axios]: https://github.com/axios/axios
 [axiosOpts]: https://github.com/axios/axios#request-config
