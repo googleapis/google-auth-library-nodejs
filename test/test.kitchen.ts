@@ -27,8 +27,8 @@ const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
 const pkg = require('../../package.json');
 
-const spawnp = (command: string, args: string[], options: cp.SpawnOptions = {}):
-    Promise<void> => {
+const spawnp =
+    (command: string, args: string[], options: cp.SpawnOptions = {}) => {
       return new Promise((resolve, reject) => {
         cp.spawn(command, args, Object.assign(options, {stdio: 'inherit'}))
             .on('close',
@@ -50,17 +50,14 @@ const spawnp = (command: string, args: string[], options: cp.SpawnOptions = {}):
  * Create a staging directory with temp fixtures used
  * to test on a fresh application.
  */
-
-describe('kitchen sink', async () => {
-  it('should be able to use the d.ts', async () => {
-    console.log(`${__filename} staging area: ${stagingPath}`);
-    await spawnp('npm', ['pack']);
-    const tarball = `${pkg.name}-${pkg.version}.tgz`;
-    await rename(tarball, `${stagingPath}/google-auth-library.tgz`);
-    await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
-    await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-  }).timeout(40000);
-});
+it('should be able to use the d.ts', async () => {
+  console.log(`${__filename} staging area: ${stagingPath}`);
+  await spawnp('npm', ['pack']);
+  const tarball = `${pkg.name}-${pkg.version}.tgz`;
+  await rename(tarball, `${stagingPath}/google-auth-library.tgz`);
+  await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
+  await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
+}).timeout(40000);
 
 /**
  * CLEAN UP - remove the staging directory when done.

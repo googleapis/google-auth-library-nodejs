@@ -17,14 +17,12 @@ import * as assert from 'assert';
 
 import {DefaultTransporter, GoogleAuth} from '../src/';
 
-describe('module', () => {
-  it('should publicly export GoogleAuth', () => {
-    const cjs = require('../src/');
-    assert.strictEqual(cjs.GoogleAuth, GoogleAuth);
-  });
+it('should publicly export GoogleAuth', () => {
+  const cjs = require('../src/');
+  assert.strictEqual(cjs.GoogleAuth, GoogleAuth);
+});
 
-  it('should publicly export DefaultTransporter', () => {
-    const cjs = require('../src');
-    assert.strictEqual(cjs.DefaultTransporter, DefaultTransporter);
-  });
+it('should publicly export DefaultTransporter', () => {
+  const cjs = require('../src');
+  assert.strictEqual(cjs.DefaultTransporter, DefaultTransporter);
 });

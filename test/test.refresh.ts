@@ -16,11 +16,7 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import * as nock from 'nock';
-
-import {GoogleAuth, UserRefreshClient} from '../src/index';
-
-nock.disableNetConnect();
+import {UserRefreshClient} from '../src/';
 
 // Creates a standard JSON credentials object for testing.
 function createJSON() {
@@ -32,105 +28,98 @@ function createJSON() {
   };
 }
 
-describe('.fromJson', () => {
-  it('should error on null json', () => {
-    const refresh = new UserRefreshClient();
-    assert.throws(() => {
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      (refresh as any).fromJSON(null);
-    });
-  });
-
-  it('should error on empty json', () => {
-    const refresh = new UserRefreshClient();
-    assert.throws(() => {
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      refresh.fromJSON({});
-    });
-  });
-
-  it('should error on missing client_id', () => {
-    const json = createJSON();
-    delete json.client_id;
-    const refresh = new UserRefreshClient();
-    assert.throws(() => {
-      refresh.fromJSON(json);
-    });
-  });
-
-  it('should error on missing client_secret', () => {
-    const json = createJSON();
-    delete json.client_secret;
-    const refresh = new UserRefreshClient();
-    assert.throws(() => {
-      refresh.fromJSON(json);
-    });
-  });
-
-  it('should error on missing refresh_token', () => {
-    const json = createJSON();
-    delete json.refresh_token;
-    const refresh = new UserRefreshClient();
-    assert.throws(() => {
-      refresh.fromJSON(json);
-    });
-  });
-
-  it('should create UserRefreshClient with clientId_', () => {
-    const json = createJSON();
-    const refresh = new UserRefreshClient();
-    const result = refresh.fromJSON(json);
-    assert.equal(json.client_id, refresh._clientId);
-  });
-
-  it('should create UserRefreshClient with clientSecret_', () => {
-    const json = createJSON();
-    const refresh = new UserRefreshClient();
-    const result = refresh.fromJSON(json);
-    assert.equal(json.client_secret, refresh._clientSecret);
-  });
-
-  it('should create UserRefreshClient with _refreshToken', () => {
-    const json = createJSON();
-    const refresh = new UserRefreshClient();
-    const result = refresh.fromJSON(json);
-    assert.equal(json.refresh_token, refresh._refreshToken);
+it('fromJSON should error on null json', () => {
+  const refresh = new UserRefreshClient();
+  assert.throws(() => {
+    // Test verifies invalid parameter tests, which requires cast to any.
+    // tslint:disable-next-line no-any
+    (refresh as any).fromJSON(null);
   });
 });
 
-describe('.fromStream', () => {
-  it('should error on null stream', (done) => {
-    const refresh = new UserRefreshClient();
+it('fromJSON should error on empty json', () => {
+  const refresh = new UserRefreshClient();
+  assert.throws(() => {
     // Test verifies invalid parameter tests, which requires cast to any.
     // tslint:disable-next-line no-any
-    (refresh as any).fromStream(null, (err: Error) => {
-      assert.equal(true, err instanceof Error);
-      done();
-    });
+    refresh.fromJSON({});
   });
+});
 
-  it('should read the stream and create a UserRefreshClient', (done) => {
-    // Read the contents of the file into a json object.
-    const fileContents =
-        fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
-    const json = JSON.parse(fileContents);
+it('fromJSON should error on missing client_id', () => {
+  const json = createJSON();
+  delete json.client_id;
+  const refresh = new UserRefreshClient();
+  assert.throws(() => {
+    refresh.fromJSON(json);
+  });
+});
 
-    // Now open a stream on the same file.
-    const stream = fs.createReadStream('./test/fixtures/refresh.json');
+it('fromJSON should error on missing client_secret', () => {
+  const json = createJSON();
+  delete json.client_secret;
+  const refresh = new UserRefreshClient();
+  assert.throws(() => {
+    refresh.fromJSON(json);
+  });
+});
 
-    // And pass it into the fromStream method.
-    const refresh = new UserRefreshClient();
-    refresh.fromStream(stream, (err) => {
-      assert.ifError(err);
+it('fromJSON should error on missing refresh_token', () => {
+  const json = createJSON();
+  delete json.refresh_token;
+  const refresh = new UserRefreshClient();
+  assert.throws(() => {
+    refresh.fromJSON(json);
+  });
+});
 
-      // Ensure that the correct bits were pulled from the stream.
-      assert.equal(json.client_id, refresh._clientId);
-      assert.equal(json.client_secret, refresh._clientSecret);
-      assert.equal(json.refresh_token, refresh._refreshToken);
+it('fromJSON should create UserRefreshClient with clientId_', () => {
+  const json = createJSON();
+  const refresh = new UserRefreshClient();
+  const result = refresh.fromJSON(json);
+  assert.equal(json.client_id, refresh._clientId);
+});
 
-      done();
-    });
+it('fromJSON should create UserRefreshClient with clientSecret_', () => {
+  const json = createJSON();
+  const refresh = new UserRefreshClient();
+  const result = refresh.fromJSON(json);
+  assert.equal(json.client_secret, refresh._clientSecret);
+});
+
+it('fromJSON should create UserRefreshClient with _refreshToken', () => {
+  const json = createJSON();
+  const refresh = new UserRefreshClient();
+  const result = refresh.fromJSON(json);
+  assert.equal(json.refresh_token, refresh._refreshToken);
+});
+
+it('fromStream should error on null stream', done => {
+  const refresh = new UserRefreshClient();
+  // Test verifies invalid parameter tests, which requires cast to any.
+  // tslint:disable-next-line no-any
+  (refresh as any).fromStream(null, (err: Error) => {
+    assert.equal(true, err instanceof Error);
+    done();
+  });
+});
+
+it('fromStream should read the stream and create a UserRefreshClient', done => {
+  // Read the contents of the file into a json object.
+  const fileContents = fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
+  const json = JSON.parse(fileContents);
+
+  // Now open a stream on the same file.
+  const stream = fs.createReadStream('./test/fixtures/refresh.json');
+
+  // And pass it into the fromStream method.
+  const refresh = new UserRefreshClient();
+  refresh.fromStream(stream, (err) => {
+    assert.ifError(err);
+    // Ensure that the correct bits were pulled from the stream.
+    assert.equal(json.client_id, refresh._clientId);
+    assert.equal(json.client_secret, refresh._clientSecret);
+    assert.equal(json.refresh_token, refresh._refreshToken);
+    done();
   });
 });

@@ -16,166 +16,144 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
-import * as http from 'http';
 import * as jws from 'jws';
-
-import {JWTInput} from '../src/auth/credentials';
-import {RequestMetadataResponse} from '../src/auth/oauth2client';
-import {GoogleAuth, JWTAccess} from '../src/index';
+import {JWTAccess} from '../src/index';
 
 const keypair = require('keypair');
 
 // Creates a standard JSON credentials object for testing.
-function createJSON() {
-  return {
-    private_key_id: 'key123',
-    private_key: 'privatekey',
-    client_email: 'hello@youarecool.com',
-    client_id: 'client123',
-    type: 'service_account'
-  };
-}
+const json = {
+  private_key_id: 'key123',
+  private_key: 'privatekey',
+  client_email: 'hello@youarecool.com',
+  client_id: 'client123',
+  type: 'service_account'
+};
 
-describe('.getRequestMetadata', () => {
-  let keys: {private: string};
-  let testUri: string;
-  let email: string;
-  let client: JWTAccess;
-  beforeEach(() => {
-    keys = keypair(1024 /* bitsize of private key */);
-    testUri = 'http:/example.com/my_test_service';
-    email = 'foo@serviceaccount.com';
-    client = new JWTAccess(email, keys.private);
-  });
+const keys = keypair(1024 /* bitsize of private key */);
+const testUri = 'http:/example.com/my_test_service';
+const email = 'foo@serviceaccount.com';
+let client: JWTAccess;
 
-  it('create a signed JWT token as the access token', () => {
-    const res = client.getRequestMetadata(testUri);
-    assert.notStrictEqual(
-        null, res.headers, 'an creds object should be present');
-    const decoded = jws.decode(
-        (res.headers!.Authorization as string).replace('Bearer ', ''));
-    const payload = JSON.parse(decoded.payload);
-    assert.strictEqual(email, payload.iss);
-    assert.strictEqual(email, payload.sub);
-    assert.strictEqual(testUri, payload.aud);
-  });
-
-  it('should not allow overriding with additionalClaims', () => {
-    const additionalClaims = {iss: 'not-the-email'};
-    assert.throws(() => {
-      client.getRequestMetadata(testUri, additionalClaims);
-    }, `The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`);
-  });
-
-  it('should return a cached token on the second request', () => {
-    const res = client.getRequestMetadata(testUri);
-    const res2 = client.getRequestMetadata(testUri);
-    assert.strictEqual(res, res2);
-  });
-
-  it('should not return cached tokens older than an hour', () => {
-    const res = client.getRequestMetadata(testUri);
-    const realDateNow = Date.now;
-    try {
-      // go forward in time one hour (plus a little)
-      Date.now = () => realDateNow() + (1000 * 60 * 60) + 10;
-      const res2 = client.getRequestMetadata(testUri);
-      assert.notEqual(res, res2);
-    } finally {
-      // return date.now to it's normally scheduled programming
-      Date.now = realDateNow;
-    }
-  });
+beforeEach(() => {
+  client = new JWTAccess();
 });
 
-describe('.createScopedRequired', () => {
-  it('should return false', () => {
-    const client = new JWTAccess('foo@serviceaccount.com', null);
-    assert.equal(false, client.createScopedRequired());
-  });
+it('getRequestMetadata should create a signed JWT token as the access token',
+   () => {
+     const client = new JWTAccess(email, keys.private);
+     const res = client.getRequestMetadata(testUri);
+     assert.notStrictEqual(
+         null, res.headers, 'an creds object should be present');
+     const decoded = jws.decode(
+         (res.headers!.Authorization as string).replace('Bearer ', ''));
+     const payload = JSON.parse(decoded.payload);
+     assert.strictEqual(email, payload.iss);
+     assert.strictEqual(email, payload.sub);
+     assert.strictEqual(testUri, payload.aud);
+   });
+
+it('getRequestMetadata should not allow overriding with additionalClaims', () => {
+  const client = new JWTAccess(email, keys.private);
+  const additionalClaims = {iss: 'not-the-email'};
+  assert.throws(() => {
+    client.getRequestMetadata(testUri, additionalClaims);
+  }, `The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`);
 });
 
-describe('.fromJson', () => {
-  // set up the test json and the client instance being tested.
-  let json = ({} as JWTInput);
-  let client: JWTAccess;
-  beforeEach(() => {
-    json = createJSON();
-    client = new JWTAccess();
-  });
+it('getRequestMetadata should return a cached token on the second request',
+   () => {
+     const client = new JWTAccess(email, keys.private);
+     const res = client.getRequestMetadata(testUri);
+     const res2 = client.getRequestMetadata(testUri);
+     assert.strictEqual(res, res2);
+   });
 
-  it('should error on null json', () => {
-    assert.throws(() => {
-      // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
-      (client as any).fromJSON(null);
-    });
-  });
+it('getRequestMetadata should not return cached tokens older than an hour',
+   () => {
+     const client = new JWTAccess(email, keys.private);
+     const res = client.getRequestMetadata(testUri);
+     const realDateNow = Date.now;
+     try {
+       // go forward in time one hour (plus a little)
+       Date.now = () => realDateNow() + (1000 * 60 * 60) + 10;
+       const res2 = client.getRequestMetadata(testUri);
+       assert.notEqual(res, res2);
+     } finally {
+       // return date.now to it's normally scheduled programming
+       Date.now = realDateNow;
+     }
+   });
 
-  it('should error on empty json', () => {
-    assert.throws(() => {
-      client.fromJSON({});
-    });
-  });
-
-  it('should error on missing client_email', () => {
-    delete json.client_email;
-    assert.throws(() => {
-      client.fromJSON(json);
-    });
-  });
-
-  it('should error on missing private_key', () => {
-    delete json.private_key;
-    assert.throws(() => {
-      client.fromJSON(json);
-    });
-  });
-
-  it('should create JWT with client_email', () => {
-    const result = client.fromJSON(json);
-    assert.equal(json.client_email, client.email);
-  });
-
-  it('should create JWT with private_key', () => {
-    const result = client.fromJSON(json);
-    assert.equal(json.private_key, client.key);
-  });
+it('createScopedRequired should return false', () => {
+  const client = new JWTAccess('foo@serviceaccount.com', null);
+  assert.equal(false, client.createScopedRequired());
 });
 
-describe('.fromStream', () => {
-  // set up the client instance being tested.
-  let client: JWTAccess;
-  beforeEach(() => {
-    client = new JWTAccess();
-  });
-
-  it('should error on null stream', (done) => {
+it('fromJson should error on null json', () => {
+  assert.throws(() => {
     // Test verifies invalid parameter tests, which requires cast to any.
     // tslint:disable-next-line no-any
-    (client as any).fromStream(null, (err: Error) => {
-      assert.equal(true, err instanceof Error);
-      done();
-    });
+    (client as any).fromJSON(null);
   });
+});
 
-  it('should construct a JWT Header instance from a stream', (done) => {
-    // Read the contents of the file into a json object.
-    const fileContents =
-        fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-    const json = JSON.parse(fileContents);
+it('fromJson should error on empty json', () => {
+  assert.throws(() => {
+    client.fromJSON({});
+  });
+});
 
-    // Now open a stream on the same file.
-    const stream = fs.createReadStream('./test/fixtures/private.json');
+it('fromJson should error on missing client_email', () => {
+  const j = Object.assign({}, json);
+  delete j.client_email;
+  assert.throws(() => {
+    client.fromJSON(j);
+  });
+});
 
-    // And pass it into the fromStream method.
-    client.fromStream(stream, (err) => {
-      assert.equal(null, err);
+it('fromJson should error on missing private_key', () => {
+  const j = Object.assign({}, json);
+  delete j.private_key;
+  assert.throws(() => {
+    client.fromJSON(j);
+  });
+});
 
-      // Ensure that the correct bits were pulled from the stream.
-      assert.equal(json.private_key, client.key);
-      assert.equal(json.client_email, client.email);
-      done();
-    });
+it('fromJson should create JWT with client_email', () => {
+  client.fromJSON(json);
+  assert.equal(json.client_email, client.email);
+});
+
+it('fromJson should create JWT with private_key', () => {
+  client.fromJSON(json);
+  assert.equal(json.private_key, client.key);
+});
+
+it('fromStream should error on null stream', (done) => {
+  // Test verifies invalid parameter tests, which requires cast to any.
+  // tslint:disable-next-line no-any
+  (client as any).fromStream(null, (err: Error) => {
+    assert.equal(true, err instanceof Error);
+    done();
+  });
+});
+
+it('fromStream should construct a JWT Header instance from a stream', done => {
+  // Read the contents of the file into a json object.
+  const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+  const json = JSON.parse(fileContents);
+
+  // Now open a stream on the same file.
+  const stream = fs.createReadStream('./test/fixtures/private.json');
+
+  // And pass it into the fromStream method.
+  client.fromStream(stream, (err) => {
+    assert.equal(null, err);
+
+    // Ensure that the correct bits were pulled from the stream.
+    assert.equal(json.private_key, client.key);
+    assert.equal(json.client_email, client.email);
+    done();
   });
 });

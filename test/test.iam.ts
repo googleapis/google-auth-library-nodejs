@@ -15,29 +15,17 @@
  */
 
 import * as assert from 'assert';
+import {IAMAuth} from '../src/index';
 
-import {RequestMetadata} from '../src/auth/iam';
-import {GoogleAuth, IAMAuth} from '../src/index';
-
-describe('.getRequestMetadata', () => {
+it('passes the token and selector to the callback ', done => {
   const testSelector = 'a-test-selector';
   const testToken = 'a-test-token';
-  let client: IAMAuth;
-  beforeEach(() => {
-    client = new IAMAuth(testSelector, testToken);
-  });
-
-  it('passes the token and selector to the callback ', (done) => {
-    const expectRequestMetadata =
-        (err: Error|null, creds?: RequestMetadata) => {
-          assert.strictEqual(err, null, 'no error was expected: got\n' + err);
-          assert.notStrictEqual(creds, null, 'metadata should be present');
-          assert.strictEqual(
-              creds!['x-goog-iam-authority-selector'], testSelector);
-          assert.strictEqual(
-              creds!['x-goog-iam-authorization-token'], testToken);
-          done();
-        };
-    client.getRequestMetadata(null, expectRequestMetadata);
+  const client = new IAMAuth(testSelector, testToken);
+  client.getRequestMetadata(null, (err, creds) => {
+    assert.strictEqual(err, null, 'no error was expected: got\n' + err);
+    assert.notStrictEqual(creds, null, 'metadata should be present');
+    assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
+    assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
+    done();
   });
 });

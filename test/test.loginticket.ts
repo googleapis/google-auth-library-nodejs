@@ -17,21 +17,19 @@
 import * as assert from 'assert';
 import {LoginTicket} from '../src/auth/loginticket';
 
-describe('LoginTicket', () => {
-  it('should return null userId even if no payload', () => {
-    const ticket = new LoginTicket();
-    assert.equal(ticket.getUserId(), null);
-  });
+it('should return null userId even if no payload', () => {
+  const ticket = new LoginTicket();
+  assert.equal(ticket.getUserId(), null);
+});
 
-  it('should return envelope', () => {
-    const ticket = new LoginTicket('myenvelope');
-    assert.equal(ticket.getEnvelope(), 'myenvelope');
-  });
+it('should return envelope', () => {
+  const ticket = new LoginTicket('myenvelope');
+  assert.equal(ticket.getEnvelope(), 'myenvelope');
+});
 
-  it('should return attributes from getAttributes', () => {
-    const payload =
-        {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-    const ticket = new LoginTicket('myenvelope', payload);
-    assert.deepEqual(ticket.getAttributes(), {envelope: 'myenvelope', payload});
-  });
+it('should return attributes from getAttributes', () => {
+  const payload =
+      {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
+  const ticket = new LoginTicket('myenvelope', payload);
+  assert.deepEqual(ticket.getAttributes(), {envelope: 'myenvelope', payload});
 });
