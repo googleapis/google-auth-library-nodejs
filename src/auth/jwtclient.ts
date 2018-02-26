@@ -118,7 +118,7 @@ export class JWT extends OAuth2Client {
 
   /**
    * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
+   * createScoped before use.
    * @return false if createScoped does not need to be called.
    */
   createScopedRequired() {
