@@ -15,10 +15,12 @@
  */
 
 import * as assert from 'assert';
+import * as child_process from 'child_process';
 import * as fs from 'fs';
 import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as path from 'path';
+import * as sinon from 'sinon';
 import * as stream from 'stream';
 
 import * as envDetect from '../src/auth/envDetect';
@@ -39,16 +41,18 @@ const BASE_URL = [
 ].join('/');
 
 let auth: GoogleAuth;
+let sandbox: sinon.SinonSandbox|undefined;
 beforeEach(() => {
   auth = new GoogleAuth();
 });
 
-// Cache env vars before the tests start
-const envCache = process.env;
 afterEach(() => {
   nock.cleanAll();
   // after each test, reset the env vars
-  process.env = envCache;
+  if (sandbox) {
+    sandbox.restore();
+    sandbox = undefined;
+  }
 });
 
 function nockIsGCE() {
@@ -125,12 +129,17 @@ function pathJoin(item1: string, item2: string) {
 // Blocks the GOOGLE_APPLICATION_CREDENTIALS by default. This is necessary in
 // case it is actually set on the host machine executing the test.
 function blockGoogleApplicationCredentialEnvironmentVariable() {
-  mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
+  return mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
 }
 
 // Intercepts the specified environment variable, returning the specified value.
-function mockEnvVar(name: string, value?: string) {
-  process.env[name] = value || '';
+function mockEnvVar(name: string, value = '') {
+  if (!sandbox) {
+    sandbox = sinon.createSandbox();
+  }
+  const envVars = Object.assign({}, process.env, {[name]: value});
+  const stub = sandbox.stub(process, 'env').value(envVars);
+  return stub;
 }
 
 // Intercepts the specified file path and inserts the mock file path.
@@ -174,7 +183,6 @@ it('should make a request with the api key', async () => {
         assert(uri.indexOf('key=' + API_KEY) > -1);
         return [200, RESPONSE_BODY];
       });
-  mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
   const client = auth.fromAPIKey(API_KEY);
   const res = await client.request(
       {url: BASE_URL + ENDPOINT, method: 'POST', data: {'test': true}});
@@ -558,7 +566,7 @@ it('tryGetApplicationCredentialsFromEnvironmentVariable should return null when 
 it('tryGetApplicationCredentialsFromEnvironmentVariable should return null when env const is empty string',
    async () => {
      // Set up a mock to return an empty path string.
-     mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS', '');
+     const stub = mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
      const client =
          await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
      assert.equal(client, null);
@@ -866,22 +874,21 @@ it('getDefaultProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it i
      });
    });
 
-it('getDefaultProjectId should use well-known file when it is available and env vars are not set',
+it('getDefaultProjectId should use Cloud SDK when it is available and env vars are not set',
    done => {
      const fixedProjectId = 'my-awesome-project';
      // Set up the creds.
      // * Environment variable is not set.
      // * Well-known file is set up to point to private2.json
      // * Running on GCE is set to true.
+     sandbox = sinon.createSandbox();
      blockGoogleApplicationCredentialEnvironmentVariable();
-     auth._getSDKDefaultProjectId = () => {
-       return Promise.resolve({
-         stdout: JSON.stringify(
-             {configuration: {properties: {core: {project: fixedProjectId}}}}),
-         stderr: null
-       });
-     };
+     const stdout = JSON.stringify(
+         {configuration: {properties: {core: {project: fixedProjectId}}}});
+     const stub = sandbox.stub(child_process, 'exec')
+                      .callsArgWith(1, null, stdout, null);
      auth.getDefaultProjectId((err, projectId) => {
+       assert(stub.calledOnce);
        assert.equal(err, null);
        assert.equal(projectId, fixedProjectId);
        done();
@@ -892,28 +899,27 @@ it('getDefaultProjectId should use GCE when well-known file and env const are no
    done => {
      const fixedProjectId = 'my-awesome-project';
      blockGoogleApplicationCredentialEnvironmentVariable();
-     auth._getSDKDefaultProjectId = () => {
-       return Promise.resolve({stdout: '', stderr: null});
-     };
+     sandbox = sinon.createSandbox();
+     const stub =
+         sandbox.stub(child_process, 'exec').callsArgWith(1, null, '', null);
+     const scope = createGetProjectIdNock(fixedProjectId);
      auth.getDefaultProjectId((err, projectId) => {
+       assert(stub.calledOnce);
        assert.equal(err, null);
        assert.equal(projectId, fixedProjectId);
+       scope.done();
        done();
      });
    });
 
 it('getApplicationDefault should return a new credential the first time and a cached credential the second time',
    async () => {
-     nockNotGCE();
+     const scope = nockNotGCE();
      // Create a function which will set up a GoogleAuth instance to match
      // on an environment variable json file, but not on anything else.
-     const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
-       mockEnvVar(
-           'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-       creds._fileExists = () => false;
-     };
-
-     setUpAuthForEnvironmentVariable(auth);
+     mockEnvVar(
+         'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
+     auth._fileExists = () => false;
 
      // Ask for credentials, the first time.
      const result = await auth.getApplicationDefault();
@@ -950,7 +956,7 @@ it('getApplicationDefault should return a new credential the first time and a ca
      // Now create a second GoogleAuth instance, and ask for
      // credentials. We should get a new credentials instance this time.
      const auth2 = new GoogleAuth();
-     setUpAuthForEnvironmentVariable(auth2);
+     auth2._fileExists = () => false;
 
      const result3 = (await auth2.getApplicationDefault()).credential;
      assert.notEqual(null, result3);
@@ -1254,12 +1260,10 @@ it('getCredentials should handle valid environment variable', async () => {
       await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
   assert(result);
   const jwt = result as JWT;
-  it('should return the credentials from file', async () => {
-    const body = await auth.getCredentials();
-    assert.notEqual(null, body);
-    assert.equal(jwt.email, body!.client_email);
-    assert.equal(jwt.key, body!.private_key);
-  });
+  const body = await auth.getCredentials();
+  assert.notEqual(null, body);
+  assert.equal(jwt.email, body!.client_email);
+  assert.equal(jwt.key, body!.private_key);
 });
 
 it('getCredentials should handle valid file path', async () => {

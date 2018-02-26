@@ -146,21 +146,16 @@ export class GoogleAuth {
   }
 
   private getDefaultProjectIdAsync(): Promise<string|null> {
-    // In implicit case, supports three environments. In order of precedence,
-    // the implicit environments are:
-    //
-    // * GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
-    // * GOOGLE_APPLICATION_CREDENTIALS JSON file
-    // * Get default service project from
-    //  ``$ gcloud beta auth application-default login``
-    // * Google App Engine application ID (Not implemented yet)
-    // * Google Compute Engine project ID (from metadata server) (Not
-    // implemented yet)
-
     if (this._cachedProjectId) {
       return Promise.resolve(this._cachedProjectId);
     }
 
+    // In implicit case, supports three environments. In order of precedence,
+    // the implicit environments are:
+    // - GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
+    // - GOOGLE_APPLICATION_CREDENTIALS JSON file
+    // - Cloud SDK: `gcloud config config-helper --format json`
+    // - GCE project ID from metadata server)
     if (!this._getDefaultProjectIdPromise) {
       this._getDefaultProjectIdPromise =
           new Promise(async (resolve, reject) => {
@@ -177,25 +172,6 @@ export class GoogleAuth {
           });
     }
     return this._getDefaultProjectIdPromise;
-  }
-
-  /**
-   * Run the Google Cloud SDK command that prints the default project ID
-   */
-  _getSDKDefaultProjectId():
-      Promise<{stdout: string | null, stderr: string|null}> {
-    // TODO: make this a proper async function
-    return new Promise((resolve, reject) => {
-      exec(
-          'gcloud config config-helper --format json',
-          (err, stdout, stderr) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve({stdout, stderr});
-            }
-          });
-    });
   }
 
   /**
@@ -555,19 +531,26 @@ export class GoogleAuth {
   }
 
   /**
-   * Loads the default project of the Google Cloud SDK.
-   * @api private
+   * Run the Google Cloud SDK command that prints the default project ID
    */
   private async getDefaultServiceProjectId(): Promise<string|null> {
-    try {
-      const r = await this._getSDKDefaultProjectId();
-      if (r.stdout) {
-        return JSON.parse(r.stdout).configuration.properties.core.project;
-      }
-    } catch (e) {
-      // Ignore any errors
-    }
-    return null;
+    return new Promise<string|null>(resolve => {
+      exec(
+          'gcloud config config-helper --format json',
+          (err, stdout, stderr) => {
+            if (!err && stdout) {
+              try {
+                const projectId =
+                    JSON.parse(stdout).configuration.properties.core.project;
+                resolve(projectId);
+                return;
+              } catch (e) {
+                // ignore errors
+              }
+            }
+            resolve(null);
+          });
+    });
   }
 
   /**
