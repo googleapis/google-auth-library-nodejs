@@ -150,11 +150,10 @@ it('should return false for createScopedRequired', () => {
 });
 
 it('should return a helpful message on request response.statusCode 403', done => {
-  // Mock the credentials object.
+  // Mock the credentials object.  Make sure there's no expiry_date set.
   compute.credentials = {
     refresh_token: 'hello',
     access_token: 'goodbye',
-    expiry_date: (new Date(9999, 1, 1)).getTime()
   };
 
   nock('http://foo').get('/').twice().reply(403, 'a weird response body');
