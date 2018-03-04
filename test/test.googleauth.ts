@@ -892,8 +892,13 @@ it('getApplicationDefault should return a new credential the first time and a ca
 
 it('getApplicationDefault should cache the credential when using GCE',
    async () => {
+     blockGoogleApplicationCredentialEnvironmentVariable();
+     auth._fileExists = () => false;
+     const scope = nockIsGCE();
+
      // Ask for credentials, the first time.
      const result = await auth.getApplicationDefault();
+     scope.done();
      assert.notEqual(null, result);
 
      // Capture the returned credential.
