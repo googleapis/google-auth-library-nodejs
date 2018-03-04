@@ -217,9 +217,8 @@ export class GoogleAuth {
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
-    client =
-        await this._tryGetApplicationCredentialsFromEnvironmentVariable(
-            options);
+    client = await this._tryGetApplicationCredentialsFromEnvironmentVariable(
+        options);
     if (client) {
       this.cachedClient = client;
       projectId = await this.getDefaultProjectId();
@@ -227,8 +226,7 @@ export class GoogleAuth {
     }
 
     // Look in the well-known credential file location.
-    client =
-        await this._tryGetApplicationCredentialsFromWellKnownFile(options);
+    client = await this._tryGetApplicationCredentialsFromWellKnownFile(options);
     if (client) {
       this.cachedClient = client;
       projectId = await this.getDefaultProjectId();
