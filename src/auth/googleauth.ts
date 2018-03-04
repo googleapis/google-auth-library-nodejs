@@ -44,11 +44,11 @@ export interface CredentialCallback {
 }
 
 export interface ADCCallback {
-  (err: Error|null, credential?: OAuth2Client, projectId?: string|null): void;
+  (err: Error|null, client?: OAuth2Client, projectId?: string|null): void;
 }
 
 export interface ADCResponse {
-  credential: OAuth2Client;
+  client: OAuth2Client;
   projectId: string|null;
 }
 
@@ -110,7 +110,7 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput|null = null;
 
-  cachedCredential: JWT|UserRefreshClient|Compute|null = null;
+  cachedClient: JWT|UserRefreshClient|Compute|null = null;
 
   private keyFilename?: string;
   private scopes?: string|string[];
@@ -195,7 +195,7 @@ export class GoogleAuth {
     }
     if (callback) {
       this.getApplicationDefaultAsync(options)
-          .then(r => callback!(null, r.credential, r.projectId))
+          .then(r => callback!(null, r.client, r.projectId))
           .catch(callback);
     } else {
       return this.getApplicationDefaultAsync(options);
@@ -205,34 +205,34 @@ export class GoogleAuth {
   private async getApplicationDefaultAsync(options?: RefreshOptions):
       Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
-    if (this.cachedCredential) {
+    if (this.cachedClient) {
       return {
-        credential: this.cachedCredential as JWT | UserRefreshClient,
+        client: this.cachedClient as JWT | UserRefreshClient,
         projectId: await this.getDefaultProjectIdAsync()
       };
     }
 
-    let credential: JWT|UserRefreshClient|null;
+    let client: JWT|UserRefreshClient|null;
     let projectId: string|null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
-    credential =
+    client =
         await this._tryGetApplicationCredentialsFromEnvironmentVariable(
             options);
-    if (credential) {
-      this.cachedCredential = credential;
+    if (client) {
+      this.cachedClient = client;
       projectId = await this.getDefaultProjectId();
-      return {credential, projectId};
+      return {client, projectId};
     }
 
     // Look in the well-known credential file location.
-    credential =
+    client =
         await this._tryGetApplicationCredentialsFromWellKnownFile(options);
-    if (credential) {
-      this.cachedCredential = credential;
+    if (client) {
+      this.cachedClient = client;
       projectId = await this.getDefaultProjectId();
-      return {credential, projectId};
+      return {client, projectId};
     }
 
     try {
@@ -241,9 +241,9 @@ export class GoogleAuth {
       if (gce) {
         // For GCE, just return a default ComputeClient. It will take care of
         // the rest.
-        this.cachedCredential = new Compute(options);
+        this.cachedClient = new Compute(options);
         projectId = await this.getDefaultProjectId();
-        return {projectId, credential: this.cachedCredential};
+        return {projectId, client: this.cachedClient};
       } else {
         // We failed to find the default credentials. Bail out with an error.
         throw new Error(
@@ -566,9 +566,9 @@ export class GoogleAuth {
    * @api private
    */
   private async getFileProjectId(): Promise<string|undefined|null> {
-    if (this.cachedCredential) {
+    if (this.cachedClient) {
       // Try to read the project ID from the cached credentials file
-      return this.cachedCredential.projectId;
+      return this.cachedClient.projectId;
     }
 
     // Try to load a credentials file and read its project ID
@@ -646,18 +646,18 @@ export class GoogleAuth {
    * options were passed, use Application Default Credentials.
    */
   async getClient() {
-    if (!this.cachedCredential) {
+    if (!this.cachedClient) {
       if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
-        this.cachedCredential = await this.fromStreamAsync(stream);
+        this.cachedClient = await this.fromStreamAsync(stream);
       } else if (this.jsonContent) {
-        this.cachedCredential = await this.fromJSON(this.jsonContent);
+        this.cachedClient = await this.fromJSON(this.jsonContent);
       } else {
         await this.getApplicationDefaultAsync();
       }
     }
-    return this.cachedCredential!;
+    return this.cachedClient!;
   }
 
   /**

@@ -926,22 +926,22 @@ it('getApplicationDefault should return a new credential the first time and a ca
      assert.notEqual(null, result);
 
      // Capture the returned credential.
-     const cachedCredential = result.credential;
+     const cachedClient = result.client;
 
      // Make sure our special test bit is not set yet, indicating that
      // this is a new credentials instance.
      // Test verifies invalid parameter tests, which requires cast to any.
      // tslint:disable-next-line no-any
-     assert.equal(null, (cachedCredential as any).specialTestBit);
+     assert.equal(null, (cachedClient as any).specialTestBit);
 
      // Now set the special test bit.
      // Test verifies invalid parameter tests, which requires cast to any.
      // tslint:disable-next-line no-any
-     (cachedCredential as any).specialTestBit = 'monkey';
+     (cachedClient as any).specialTestBit = 'monkey';
 
      // Ask for credentials again, from the same auth instance. We expect
      // a cached instance this time.
-     const result2 = (await auth.getApplicationDefault()).credential;
+     const result2 = (await auth.getApplicationDefault()).client;
      assert.notEqual(null, result2);
 
      // Make sure the special test bit is set on the credentials we got
@@ -951,14 +951,14 @@ it('getApplicationDefault should return a new credential the first time and a ca
      // any.
      // tslint:disable-next-line no-any
      assert.equal('monkey', (result2 as any).specialTestBit);
-     assert.equal(cachedCredential, result2);
+     assert.equal(cachedClient, result2);
 
      // Now create a second GoogleAuth instance, and ask for
      // credentials. We should get a new credentials instance this time.
      const auth2 = new GoogleAuth();
      auth2._fileExists = () => false;
 
-     const result3 = (await auth2.getApplicationDefault()).credential;
+     const result3 = (await auth2.getApplicationDefault()).client;
      assert.notEqual(null, result3);
 
      // Make sure we get a new (non-cached) credential instance back.
@@ -966,7 +966,7 @@ it('getApplicationDefault should return a new credential the first time and a ca
      // any.
      // tslint:disable-next-line no-any
      assert.equal(null, (result3 as any).specialTestBit);
-     assert.notEqual(cachedCredential, result3);
+     assert.notEqual(cachedClient, result3);
    });
 
 it('getApplicationDefault should cache the credential when using GCE',
@@ -978,11 +978,11 @@ it('getApplicationDefault should cache the credential when using GCE',
      assert.notEqual(null, result);
 
      // Capture the returned credential.
-     const cachedCredential = result.credential;
+     const cachedCredential = result.client;
 
      // Ask for credentials again, from the same auth instance. We expect
      // a cached instance this time.
-     const result2 = (await auth.getApplicationDefault()).credential;
+     const result2 = (await auth.getApplicationDefault()).client;
      assert.notEqual(null, result2);
 
      // Make sure it's the same object
@@ -1279,7 +1279,7 @@ it('getCredentials should handle valid file path', async () => {
       './test/fixtures/private2.json');
   const result = await auth.getApplicationDefault();
   assert(result);
-  const jwt = result.credential as JWT;
+  const jwt = result.client as JWT;
   it('should return the credentials from file', async () => {
     const body = await auth.getCredentials();
     assert.notEqual(null, body);
