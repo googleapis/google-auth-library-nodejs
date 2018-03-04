@@ -160,54 +160,51 @@ export interface AuthClientOpts {
 }
 
 export interface GetTokenCallback {
-  (err: AxiosError|null, token?: Credentials|null,
-   res?: AxiosResponse|null): void;
+  (err: AxiosError|null, token?: Credentials, res?: AxiosResponse): void;
 }
 
 export interface GetTokenResponse {
   tokens: Credentials;
-  res: AxiosResponse|null;
+  res?: AxiosResponse;
 }
 
 export interface GetAccessTokenCallback {
-  (err: AxiosError|null, token?: string|null, res?: AxiosResponse|null): void;
+  (err: AxiosError|null, token?: string, res?: AxiosResponse): void;
 }
 
 export interface GetAccessTokenResponse {
-  token?: string|null;
-  res?: AxiosResponse|null;
+  token?: string;
+  res?: AxiosResponse;
 }
 
 export interface RefreshAccessTokenCallback {
-  (err: AxiosError|null, credentials?: Credentials|null,
-   res?: AxiosResponse|null): void;
+  (err: AxiosError|null, credentials?: Credentials, res?: AxiosResponse): void;
 }
 
 export interface RefreshAccessTokenResponse {
   credentials: Credentials;
-  res: AxiosResponse|null;
+  res?: AxiosResponse;
 }
 
 export interface RequestMetadataResponse {
   headers: http.IncomingHttpHeaders;
-  res?: AxiosResponse<void>|null;
+  res?: AxiosResponse<void>;
 }
 
 export interface RequestMetadataCallback {
   (err: AxiosError|null, headers?: http.IncomingHttpHeaders,
-   res?: AxiosResponse<void>|null): void;
+   res?: AxiosResponse<void>): void;
 }
 
 export interface GetFederatedSignonCertsCallback {
   // tslint:disable-next-line no-any
-  (err: AxiosError|null, certs?: any,
-   response?: AxiosResponse<void>|null): void;
+  (err: AxiosError|null, certs?: any, response?: AxiosResponse<void>): void;
 }
 
 export interface FederatedSignonCertsResponse {
   // tslint:disable-next-line no-any
   certs: any;
-  res?: AxiosResponse<void>|null;
+  res?: AxiosResponse<void>;
 }
 
 export interface RevokeCredentialsResult { success: boolean; }
@@ -235,8 +232,8 @@ export interface RefreshOptions {
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
-  private certificateCache: {}|null|undefined = null;
-  private certificateExpiry: Date|null = null;
+  private certificateCache: {}|undefined;
+  private certificateExpiry: Date|undefined;
   protected authBaseUrl?: string;
   protected tokenUrl?: string;
 
@@ -392,7 +389,7 @@ export class OAuth2Client extends AuthClient {
     if (callback) {
       this.getTokenAsync(options)
           .then(r => callback(null, r.tokens, r.res))
-          .catch(e => callback(e, null, (e as AxiosError).response));
+          .catch(e => callback(e, undefined, (e as AxiosError).response));
     } else {
       return this.getTokenAsync(options);
     }
@@ -429,8 +426,8 @@ export class OAuth2Client extends AuthClient {
    * @param refresh_token Existing refresh token.
    * @private
    */
-  protected async refreshToken(refreshToken?: string|
-                               null): Promise<GetTokenResponse> {
+  protected async refreshToken(refreshToken?: string):
+      Promise<GetTokenResponse> {
     const url = this.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const data = {
       refresh_token: refreshToken,
@@ -537,9 +534,10 @@ export class OAuth2Client extends AuthClient {
    * @param url the Uri being authorized
    * @param callback the func described above
    */
-  getRequestMetadata(url?: string|null): Promise<RequestMetadataResponse>;
-  getRequestMetadata(url: string|null, callback: RequestMetadataCallback): void;
-  getRequestMetadata(url: string|null, callback?: RequestMetadataCallback):
+  getRequestMetadata(url?: string): Promise<RequestMetadataResponse>;
+  getRequestMetadata(url: string|undefined, callback: RequestMetadataCallback):
+      void;
+  getRequestMetadata(url?: string, callback?: RequestMetadataCallback):
       Promise<RequestMetadataResponse>|void {
     if (callback) {
       this.getRequestMetadataAsync(url)
@@ -550,7 +548,7 @@ export class OAuth2Client extends AuthClient {
     }
   }
 
-  protected async getRequestMetadataAsync(url?: string|null):
+  protected async getRequestMetadataAsync(url?: string):
       Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
     if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
@@ -568,8 +566,8 @@ export class OAuth2Client extends AuthClient {
     if (this.apiKey) {
       return {headers: {}};
     }
-    let r: GetTokenResponse|null = null;
-    let tokens: Credentials|null = null;
+    let r: GetTokenResponse|undefined;
+    let tokens: Credentials|undefined;
     try {
       r = await this.refreshToken(thisCreds.refresh_token);
       tokens = r.tokens;
@@ -661,11 +659,9 @@ export class OAuth2Client extends AuthClient {
   request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
       AxiosPromise<T>|void {
     if (callback) {
-      this.requestAsync<T>(opts).then(r => callback(null, r)).catch(e => {
-        const err = e as AxiosError;
-        const body = err.response ? err.response.data : null;
-        return callback(e, err.response);
-      });
+      this.requestAsync<T>(opts)
+          .then(r => callback(null, r))
+          .catch(e => callback(e, (e as AxiosError).response));
     } else {
       return this.requestAsync<T>(opts);
     }
@@ -717,14 +713,14 @@ export class OAuth2Client extends AuthClient {
    * @param options that contains all options.
    * @param callback Callback supplying GoogleLogin if successful
    */
-  verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket|null>;
+  verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket>;
   verifyIdToken(
       options: VerifyIdTokenOptions,
-      callback: (err: Error|null, login?: LoginTicket|null) => void): void;
+      callback: (err: Error|null, login?: LoginTicket) => void): void;
   verifyIdToken(
       options: VerifyIdTokenOptions,
-      callback?: (err: Error|null, login?: LoginTicket|null) => void):
-      void|Promise<LoginTicket|null> {
+      callback?: (err: Error|null, login?: LoginTicket) => void):
+      void|Promise<LoginTicket> {
     // This function used to accept two arguments instead of an options object.
     // Check the types to help users upgrade with less pain.
     // This check can be removed after a 2.0 release.
@@ -743,7 +739,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async verifyIdTokenAsync(options: VerifyIdTokenOptions):
-      Promise<LoginTicket|null> {
+      Promise<LoginTicket> {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
@@ -802,7 +798,7 @@ export class OAuth2Client extends AuthClient {
 
     const now = new Date();
     this.certificateExpiry =
-        cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
+        cacheAge === -1 ? undefined : new Date(now.getTime() + cacheAge);
     this.certificateCache = res.data;
     return {certs: res.data, res};
   }
@@ -912,7 +908,7 @@ export class OAuth2Client extends AuthClient {
     }
 
     // Check the audience matches if we have one
-    if (typeof requiredAudience !== 'undefined' && requiredAudience !== null) {
+    if (requiredAudience) {
       const aud = payload.aud;
       let audVerified = false;
       // If the requiredAudience is an array, check if it contains token

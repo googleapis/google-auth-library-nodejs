@@ -21,8 +21,8 @@ import {JWTInput} from './credentials';
 import {RequestMetadataResponse} from './oauth2client';
 
 export class JWTAccess {
-  email?: string|null;
-  key?: string|null;
+  email?: string;
+  key?: string;
   projectId?: string;
 
   private cache =
@@ -37,7 +37,7 @@ export class JWTAccess {
    * @param email the service account email address.
    * @param key the private key that will be used to sign the token.
    */
-  constructor(email?: string|null, key?: string|null) {
+  constructor(email?: string, key?: string) {
     this.email = email;
     this.key = key;
   }

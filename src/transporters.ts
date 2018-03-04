@@ -31,7 +31,7 @@ export interface Transporter {
 export interface BodyResponseCallback<T> {
   // The `body` object is a truly dynamic type.  It must be `any`.
   // tslint:disable-next-line no-any
-  (err: Error|null, res?: AxiosResponse<T>|null): void;
+  (err: Error|null, res?: AxiosResponse<T>): void;
 }
 
 export interface RequestError extends AxiosError { errors: Error[]; }
@@ -105,7 +105,7 @@ export class DefaultTransporter {
   private processError(e: AxiosError): RequestError {
     const res = e.response;
     const err = e as RequestError;
-    const body = res ? res.data : null;
+    const body = res ? res.data : undefined;
     if (res && body && body.error && res.status !== 200) {
       if (typeof body.error === 'string') {
         err.message = body.error;

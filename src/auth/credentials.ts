@@ -15,11 +15,11 @@
  */
 
 export interface Credentials {
-  refresh_token?: string|null;
-  expiry_date?: number|null;
-  access_token?: string|null;
-  token_type?: string|null;
-  id_token?: string|null;
+  refresh_token?: string;
+  expiry_date?: number;
+  access_token?: string;
+  token_type?: string;
+  id_token?: string;
 }
 
 export interface CredentialRequest {

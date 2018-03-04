@@ -62,11 +62,11 @@ export class Compute extends OAuth2Client {
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */
-  protected async refreshToken(refreshToken?: string|
-                               null): Promise<GetTokenResponse> {
+  protected async refreshToken(refreshToken?: string):
+      Promise<GetTokenResponse> {
     const url = this.tokenUrl ||
         `${gcpMetadata.HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
-    let res: AxiosResponse<CredentialRequest>|null = null;
+    let res: AxiosResponse<CredentialRequest>;
     // request for new token
     try {
       // TODO: In 2.0, we should remove the ability to configure the tokenUrl,
@@ -95,7 +95,7 @@ export class Compute extends OAuth2Client {
     return super.requestAsync<T>(opts, retry).catch(e => {
       const res = (e as AxiosError).response;
       if (res && res.status) {
-        let helpfulMessage = null;
+        let helpfulMessage: string|undefined;
         if (res.status === 403) {
           helpfulMessage =
               'A Forbidden error was returned while attempting to retrieve an access ' +
