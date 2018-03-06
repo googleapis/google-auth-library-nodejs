@@ -982,6 +982,7 @@ it('getApplicationDefault should use GCE when well-known file and env const are 
      assert.equal('compute-placeholder', res.client.credentials.refresh_token);
    });
 
+
 it('getApplicationDefault should report GCE error when checking for GCE fails',
    async () => {
      // Set up the creds.
