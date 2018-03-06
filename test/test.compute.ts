@@ -46,6 +46,7 @@ afterEach(() => {
   nock.cleanAll();
 });
 
+
 it('should create a dummy refresh token string', () => {
   // It is important that the compute client is created with a refresh token
   // value filled in, or else the rest of the logic will not work.
