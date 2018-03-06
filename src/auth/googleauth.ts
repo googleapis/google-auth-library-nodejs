@@ -201,6 +201,7 @@ export class GoogleAuth {
     }
   }
 
+
   private async getApplicationDefaultAsync(options?: RefreshOptions):
       Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
