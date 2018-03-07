@@ -216,7 +216,6 @@ it('should return a helpful message on token refresh response.statusCode 403',
      throw new Error('Expected to throw');
    });
 
-
 it('should return a helpful message on token refresh response.statusCode 404',
    async () => {
      const scope = nock(HOST_ADDRESS).get(tokenPath).reply(404);
