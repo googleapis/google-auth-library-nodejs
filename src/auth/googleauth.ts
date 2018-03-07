@@ -29,7 +29,6 @@ import {DefaultTransporter, Transporter} from '../transporters';
 import {Compute} from './computeclient';
 import {JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
-import {IAMAuth, RequestMetadata} from './iam';
 import {JWTAccess} from './jwtaccess';
 import {JWT, JWTOptions} from './jwtclient';
 import {GetAccessTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';

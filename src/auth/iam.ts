@@ -44,18 +44,12 @@ export class IAMAuth {
   }
 
   /**
-   * Pass the selector and token to the metadataFn callback.
-   *
-   * @param unused_uri is required of the credentials interface
-   * @param metadataFn a callback invoked with object
-   *                   containing request metadata.
+   * Acquire an object with the HTTP headers required for the request.
    */
-  getRequestMetadata(
-      unusedUri: string|null,
-      metadataFn: (err: Error|null, metadata?: RequestMetadata) => void) {
-    metadataFn(null, {
+  getRequestMetadata(): RequestMetadata {
+    return {
       'x-goog-iam-authority-selector': this.selector,
       'x-goog-iam-authorization-token': this.token
-    });
+    };
   }
 }
