@@ -141,7 +141,7 @@ it('can obtain new access token when scopes are set', (done) => {
   const wantedToken = 'abc123';
   const want = 'Bearer ' + wantedToken;
   createGTokenMock({access_token: wantedToken});
-  jwt.getRequestMetadata(null, (err, result) => {
+  jwt.getRequestMetadata(undefined, (err, result) => {
     assert.strictEqual(null, err, 'no error was expected: got\n' + err);
     const got = result as {
       Authorization: string;
@@ -389,7 +389,7 @@ it('should return expiry_date in milliseconds', async () => {
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
   createGTokenMock({access_token: 'token', expires_in: 100});
-  const result = await jwt.refreshToken(null);
+  const result = await jwt.refreshToken();
   const creds = result.tokens;
   const dateInMillis = (new Date()).getTime();
   const expiryDate = new Date(creds.expiry_date!);

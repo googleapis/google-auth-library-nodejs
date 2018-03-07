@@ -26,9 +26,8 @@ export interface UserRefreshClientOptions extends RefreshOptions {
 
 export class UserRefreshClient extends OAuth2Client {
   // TODO: refactor tests to make this private
-  // In a future gts release, the _propertyName rule will be lifted.
   // This is also a hard one because `this.refreshToken` is a function.
-  _refreshToken?: string|null;
+  _refreshToken?: string;
 
   /**
    * User Refresh Token credentials.
@@ -65,8 +64,8 @@ export class UserRefreshClient extends OAuth2Client {
    * @param refreshToken An ignored refreshToken..
    * @param callback Optional callback.
    */
-  protected async refreshToken(refreshToken?: string|
-                               null): Promise<GetTokenResponse> {
+  protected async refreshToken(refreshToken?: string):
+      Promise<GetTokenResponse> {
     return super.refreshToken(this._refreshToken);
   }
 

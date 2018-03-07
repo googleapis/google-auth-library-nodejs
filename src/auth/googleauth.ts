@@ -35,7 +35,7 @@ import {GetAccessTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataRes
 import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
 
 export interface ProjectIdCallback {
-  (err?: Error|null, projectId?: string|null): void;
+  (err?: Error|null, projectId?: string): void;
 }
 
 export interface CredentialCallback {
@@ -43,12 +43,12 @@ export interface CredentialCallback {
 }
 
 export interface ADCCallback {
-  (err: Error|null, client?: OAuth2Client, projectId?: string|null): void;
+  (err: Error|null, client?: OAuth2Client, projectId?: string): void;
 }
 
 export interface ADCResponse {
   client: OAuth2Client;
-  projectId: string|null;
+  projectId?: string;
 }
 
 export interface CredentialBody {
@@ -103,13 +103,13 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  private _getDefaultProjectIdPromise?: Promise<string|null>;
-  private _cachedProjectId?: string|null;
+  private _getDefaultProjectIdPromise?: Promise<string>;
+  private _cachedProjectId?: string;
 
   // To save the contents of the JSON credential file
-  jsonContent: JWTInput|null = null;
+  jsonContent: JWTInput|undefined;
 
-  cachedClient: JWT|UserRefreshClient|Compute|null = null;
+  cachedClient: JWT|UserRefreshClient|Compute|undefined;
 
   private keyFilename?: string;
   private scopes?: string|string[];
@@ -121,10 +121,10 @@ export class GoogleAuth {
 
   constructor(opts?: GoogleAuthOptions) {
     opts = opts || {};
-    this._cachedProjectId = opts.projectId || null;
+    this._cachedProjectId = opts.projectId;
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
-    this.jsonContent = opts.credentials || null;
+    this.jsonContent = opts.credentials;
   }
 
   /**
@@ -134,7 +134,7 @@ export class GoogleAuth {
    */
   getDefaultProjectId(): Promise<string>;
   getDefaultProjectId(callback: ProjectIdCallback): void;
-  getDefaultProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+  getDefaultProjectId(callback?: ProjectIdCallback): Promise<string>|void {
     if (callback) {
       this.getDefaultProjectIdAsync()
           .then(r => callback(null, r))
@@ -144,7 +144,7 @@ export class GoogleAuth {
     }
   }
 
-  private getDefaultProjectIdAsync(): Promise<string|null> {
+  private getDefaultProjectIdAsync(): Promise<string> {
     if (this._cachedProjectId) {
       return Promise.resolve(this._cachedProjectId);
     }
@@ -211,8 +211,8 @@ export class GoogleAuth {
       };
     }
 
-    let client: JWT|UserRefreshClient|null;
-    let projectId: string|null;
+    let client: JWT|UserRefreshClient|undefined;
+    let projectId: string;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
@@ -267,14 +267,14 @@ export class GoogleAuth {
 
   /**
    * Attempts to load default credentials from the environment variable path..
-   * @returns Promise that resolves with the OAuth2Client or null.
+   * @returns Promise that resolves with the OAuth2Client or undefined.
    * @api private
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable(
-      options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
+      options?: RefreshOptions): Promise<JWT|UserRefreshClient|undefined> {
     const credentialsPath = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
     if (!credentialsPath || credentialsPath.length === 0) {
-      return null;
+      return undefined;
     }
     try {
       return this._getApplicationCredentialsFromFilePath(
@@ -292,9 +292,9 @@ export class GoogleAuth {
    * @api private
    */
   async _tryGetApplicationCredentialsFromWellKnownFile(
-      options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
+      options?: RefreshOptions): Promise<JWT|UserRefreshClient|undefined> {
     // First, figure out the location of the file, depending upon the OS type.
-    let location = null;
+    let location: string|undefined;
     if (this._isWindows()) {
       // Windows
       location = process.env['APPDATA'];
@@ -313,12 +313,12 @@ export class GoogleAuth {
       location = this._mockWellKnownFilePath(location);
       // Check whether the file exists.
       if (!this._fileExists(location)) {
-        location = null;
+        location = undefined;
       }
     }
     // The file does not exist.
     if (!location) {
-      return null;
+      return undefined;
     }
     // The file seems to exist. Try to use it.
     return this._getApplicationCredentialsFromFilePath(location, options);
@@ -562,19 +562,14 @@ export class GoogleAuth {
    * Loads the project id from the GOOGLE_APPLICATION_CREDENTIALS json file.
    * @api private
    */
-  private async getFileProjectId(): Promise<string|undefined|null> {
+  private async getFileProjectId(): Promise<string|undefined> {
     if (this.cachedClient) {
       // Try to read the project ID from the cached credentials file
       return this.cachedClient.projectId;
     }
-
     // Try to load a credentials file and read its project ID
     const r = await this._tryGetApplicationCredentialsFromEnvironmentVariable();
-    if (r) {
-      return r.projectId;
-    } else {
-      return null;
-    }
+    return r ? r.projectId : undefined;
   }
 
   /**
@@ -586,7 +581,7 @@ export class GoogleAuth {
       return r.data;
     } catch (e) {
       // Ignore any errors
-      return null;
+      return undefined;
     }
   }
 

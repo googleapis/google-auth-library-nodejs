@@ -86,7 +86,7 @@ it('getRequestMetadata should not return cached tokens older than an hour',
    });
 
 it('createScopedRequired should return false', () => {
-  const client = new JWTAccess('foo@serviceaccount.com', null);
+  const client = new JWTAccess('foo@serviceaccount.com');
   assert.equal(false, client.createScopedRequired());
 });
 
