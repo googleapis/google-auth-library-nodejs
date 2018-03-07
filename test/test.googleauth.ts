@@ -820,6 +820,7 @@ it('getDefaultProjectId should use Cloud SDK when it is available and env vars a
      assert.equal(projectId, fixedProjectId);
    });
 
+
 it('getDefaultProjectId should use GCE when well-known file and env const are not set',
    async () => {
      blockGoogleApplicationCredentialEnvironmentVariable();
