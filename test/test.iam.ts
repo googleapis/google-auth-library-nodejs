@@ -15,17 +15,14 @@
  */
 
 import * as assert from 'assert';
-import {IAMAuth} from '../src/index';
+import {IAMAuth} from '../src';
 
-it('passes the token and selector to the callback ', done => {
+it('passes the token and selector to the callback ', () => {
   const testSelector = 'a-test-selector';
   const testToken = 'a-test-token';
   const client = new IAMAuth(testSelector, testToken);
-  client.getRequestMetadata(null, (err, creds) => {
-    assert.strictEqual(err, null, 'no error was expected: got\n' + err);
-    assert.notStrictEqual(creds, null, 'metadata should be present');
-    assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
-    assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
-    done();
-  });
+  const creds = client.getRequestMetadata();
+  assert.notStrictEqual(creds, null, 'metadata should be present');
+  assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
+  assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
 });
