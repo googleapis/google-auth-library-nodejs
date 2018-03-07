@@ -15,13 +15,26 @@
  */
 
 import * as assert from 'assert';
+import {AxiosError} from 'axios';
 import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
-import {Compute} from '../src/index';
+import {Compute} from '../src';
 
 nock.disableNetConnect();
 
+const url = 'http://example.com';
+
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
+function mockToken() {
+  return nock(HOST_ADDRESS).get(tokenPath).reply(200, {
+    access_token: 'abc123',
+    expires_in: 10000
+  });
+}
+
+function mockExample() {
+  return nock(url).get('/').reply(200);
+}
 
 // set up compute client.
 let compute: Compute;
@@ -40,116 +53,94 @@ it('should create a dummy refresh token string', () => {
   assert.equal('compute-placeholder', compute.credentials.refresh_token);
 });
 
-it('should get an access token for the first request', done => {
-  nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-    access_token: 'abc123',
-    expires_in: 10000
-  });
-  compute.request({url: 'http://foo'}, () => {
-    assert.equal(compute.credentials.access_token, 'abc123');
-    done();
-  });
+it('should get an access token for the first request', async () => {
+  const scopes = [mockToken(), mockExample()];
+  await compute.request({url});
+  scopes.forEach(s => s.done());
+  assert.equal(compute.credentials.access_token, 'abc123');
 });
 
-it('should refresh if access token has expired', done => {
-  nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-    access_token: 'abc123',
-    expires_in: 10000
-  });
+it('should refresh if access token has expired', async () => {
+  const scopes = [mockToken(), mockExample()];
   compute.credentials.access_token = 'initial-access-token';
   compute.credentials.expiry_date = (new Date()).getTime() - 10000;
-  compute.request({url: 'http://foo'}, () => {
-    assert.equal(compute.credentials.access_token, 'abc123');
-    done();
-  });
+  await compute.request({url});
+  assert.equal(compute.credentials.access_token, 'abc123');
+  scopes.forEach(s => s.done());
 });
 
 it('should refresh if access token will expired soon and time to refresh before expiration is set',
-   done => {
-     nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-       access_token: 'abc123',
-       expires_in: 10000
-     });
+   async () => {
+     const scopes = [mockToken(), mockExample()];
      compute = new Compute({eagerRefreshThresholdMillis: 10000});
      compute.credentials.access_token = 'initial-access-token';
      compute.credentials.expiry_date = (new Date()).getTime() + 5000;
-     compute.request({url: 'http://foo'}, () => {
-       assert.equal(compute.credentials.access_token, 'abc123');
-       done();
-     });
+     await compute.request({url});
+     assert.equal(compute.credentials.access_token, 'abc123');
+     scopes.forEach(s => s.done());
    });
 
 it('should not refresh if access token will not expire soon and time to refresh before expiration is set',
-   done => {
-     const scope = nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-       access_token: 'abc123',
-       expires_in: 10000
-     });
+   async () => {
+     const scope = mockExample();
      compute = new Compute({eagerRefreshThresholdMillis: 1000});
      compute.credentials.access_token = 'initial-access-token';
      compute.credentials.expiry_date = (new Date()).getTime() + 12000;
-     compute.request({url: 'http://foo'}, () => {
-       assert.equal(compute.credentials.access_token, 'initial-access-token');
-       assert.equal(false, scope.isDone());
-       nock.cleanAll();
-       done();
-     });
+     await compute.request({url});
+     assert.equal(compute.credentials.access_token, 'initial-access-token');
+     scope.done();
    });
 
-it('should not refresh if access token has not expired', done => {
-  const scope = nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-    access_token: 'abc123',
-    expires_in: 10000
-  });
+it('should not refresh if access token has not expired', async () => {
+  const scope = mockExample();
   compute.credentials.access_token = 'initial-access-token';
   compute.credentials.expiry_date = (new Date()).getTime() + 10 * 60 * 1000;
-  compute.request({url: 'http://foo'}, () => {
-    assert.equal(compute.credentials.access_token, 'initial-access-token');
-    assert.equal(false, scope.isDone());
-    nock.cleanAll();
-    done();
-  });
+  await compute.request({url});
+  assert.equal(compute.credentials.access_token, 'initial-access-token');
+  scope.done();
 });
 
 it('should retry calls to the metadata service if there are network errors',
-   done => {
-     const scope = nock(HOST_ADDRESS)
-                       .get(tokenPath)
-                       .times(2)
-                       .replyWithError({code: 'ENOTFOUND'})
-                       .get(tokenPath)
-                       .reply(200, {access_token: 'abc123', expires_in: 10000});
+   async () => {
+     const scopes = [
+       nock(HOST_ADDRESS)
+           .get(tokenPath)
+           .times(2)
+           .replyWithError({code: 'ENOTFOUND'})
+           .get(tokenPath)
+           .reply(200, {access_token: 'abc123', expires_in: 10000}),
+       mockExample()
+     ];
      compute.credentials.access_token = 'initial-access-token';
      compute.credentials.expiry_date = (new Date()).getTime() - 10000;
-     compute.request({url: 'http://foo'}, e => {
-       assert.equal(compute.credentials.access_token, 'abc123');
-       scope.done();
-       done();
-     });
+     await compute.request({url});
+     assert.equal(compute.credentials.access_token, 'abc123');
+     scopes.forEach(s => s.done());
    });
 
 it('should retry calls to the metadata service if it returns non-200 errors',
-   done => {
-     const scope = nock(HOST_ADDRESS)
-                       .get(tokenPath)
-                       .times(2)
-                       .reply(500)
-                       .get(tokenPath)
-                       .reply(200, {access_token: 'abc123', expires_in: 10000});
+   async () => {
+     const scopes = [
+       nock(HOST_ADDRESS)
+           .get(tokenPath)
+           .times(2)
+           .reply(500)
+           .get(tokenPath)
+           .reply(200, {access_token: 'abc123', expires_in: 10000}),
+       mockExample()
+     ];
      compute.credentials.access_token = 'initial-access-token';
      compute.credentials.expiry_date = (new Date()).getTime() - 10000;
-     compute.request({url: 'http://foo'}, e => {
-       assert.equal(compute.credentials.access_token, 'abc123');
-       scope.done();
-       done();
-     });
+     await compute.request({url});
+     assert.equal(compute.credentials.access_token, 'abc123');
+     scopes.forEach(s => s.done());
    });
 
 it('should return false for createScopedRequired', () => {
   assert.equal(false, compute.createScopedRequired());
 });
 
-it('should return a helpful message on request response.statusCode 403', done => {
+it('should return a helpful message on request response.statusCode 403', async () => {
   // Mock the credentials object.
   compute.credentials = {
     refresh_token: 'hello',
@@ -157,88 +148,102 @@ it('should return a helpful message on request response.statusCode 403', done =>
     expiry_date: (new Date(9999, 1, 1)).getTime()
   };
 
-  nock('http://foo').get('/').twice().reply(403, 'a weird response body');
-  nock(HOST_ADDRESS).get(tokenPath).reply(403, 'a weird response body');
+  const scopes = [
+    nock(url).get('/').reply(403), nock(HOST_ADDRESS).get(tokenPath).reply(403)
+  ];
 
-  compute.request({url: 'http://foo'}, (err, response) => {
-    assert(response);
-    assert.equal(403, response ? response.status : 0);
+  try {
+    await compute.request({url});
+  } catch (e) {
+    scopes.forEach(s => s.done());
+    const err = e as AxiosError;
+    assert.equal(403, err.response!.status);
     const expected =
         'A Forbidden error was returned while attempting to retrieve an access ' +
         'token for the Compute Engine built-in service account. This may be because the ' +
         'Compute Engine instance does not have the correct permission scopes specified. ' +
         'Could not refresh access token.';
-    assert.equal(expected, err ? err.message : null);
-    done();
-  });
+    assert.equal(expected, err.message);
+    return;
+  }
+  throw new Error('Expected to throw');
 });
 
-it('should return a helpful message on request response.statusCode 404', done => {
+it('should return a helpful message on request response.statusCode 404', async () => {
   // Mock the credentials object.
   compute.credentials = {
     refresh_token: 'hello',
     access_token: 'goodbye',
     expiry_date: (new Date(9999, 1, 1)).getTime()
   };
-
   // Mock the request method to return a 404.
-  nock('http://foo').get('/').twice().reply(404, 'a weird response body');
-
-  compute.request({url: 'http://foo'}, (err, response) => {
-    assert.equal(404, response ? response.status : 0);
+  const scope = nock(url).get('/').reply(404);
+  try {
+    await compute.request({url});
+  } catch (e) {
+    scope.done();
+    const err = e as AxiosError;
+    assert.equal(404, e.response!.status);
     assert.equal(
         'A Not Found error was returned while attempting to retrieve an access' +
             'token for the Compute Engine built-in service account. This may be because the ' +
-            'Compute Engine instance does not have any permission scopes specified. ' +
-            'a weird response body',
-        err ? err.message : null);
-    done();
-  });
+            'Compute Engine instance does not have any permission scopes specified.',
+        err.message);
+    return;
+  }
+  throw new Error('Expected to throw');
 });
 
-it('should return a helpful message on token refresh response.statusCode 403', done => {
-  nock(HOST_ADDRESS).get(tokenPath).twice().reply(403, 'a weird response body');
+it('should return a helpful message on token refresh response.statusCode 403',
+   async () => {
+     const scope = nock(HOST_ADDRESS).get(tokenPath).twice().reply(403);
+     // Mock the credentials object with a null access token, to force a
+     // refresh.
+     compute.credentials = {
+       refresh_token: 'hello',
+       access_token: undefined,
+       expiry_date: 1
+     };
+     try {
+       await compute.request({});
+     } catch (e) {
+       const err = e as AxiosError;
+       assert.equal(403, err.response!.status);
+       const expected =
+           'A Forbidden error was returned while attempting to retrieve an access ' +
+           'token for the Compute Engine built-in service account. This may be because the ' +
+           'Compute Engine instance does not have the correct permission scopes specified. ' +
+           'Could not refresh access token.';
+       assert.equal(expected, err.message);
+       return;
+     }
+     throw new Error('Expected to throw');
+   });
 
-  // Mock the credentials object with a null access token, to force
-  // a refresh.
-  compute.credentials = {
-    refresh_token: 'hello',
-    access_token: undefined,
-    expiry_date: 1
-  };
+it('should return a helpful message on token refresh response.statusCode 404',
+   async () => {
+     const scope = nock(HOST_ADDRESS).get(tokenPath).reply(404);
 
-  compute.request({}, (err, response) => {
-    assert.equal(403, response ? response.status : null);
-    const expected =
-        'A Forbidden error was returned while attempting to retrieve an access ' +
-        'token for the Compute Engine built-in service account. This may be because the ' +
-        'Compute Engine instance does not have the correct permission scopes specified. ' +
-        'Could not refresh access token.';
-    assert.equal(expected, err ? err.message : null);
-    nock.cleanAll();
-    done();
-  });
-});
+     // Mock the credentials object with a null access token, to force
+     // a refresh.
+     compute.credentials = {
+       refresh_token: 'hello',
+       access_token: undefined,
+       expiry_date: 1
+     };
 
-it('should return a helpful message on token refresh response.statusCode 404', done => {
-  nock(HOST_ADDRESS).get(tokenPath).reply(404, 'a weird body');
-
-  // Mock the credentials object with a null access token, to force
-  // a refresh.
-  compute.credentials = {
-    refresh_token: 'hello',
-    access_token: undefined,
-    expiry_date: 1
-  };
-
-  compute.request({}, (err, response) => {
-    assert.equal(404, response ? response.status : null);
-    assert.equal(
-        'A Not Found error was returned while attempting to retrieve an access' +
-            'token for the Compute Engine built-in service account. This may be because the ' +
-            'Compute Engine instance does not have any permission scopes specified. Could not ' +
-            'refresh access token.',
-        err ? err.message : null);
-    done();
-  });
-});
+     try {
+       await compute.request({});
+     } catch (e) {
+       const err = e as AxiosError;
+       assert.equal(404, e.response!.status);
+       assert.equal(
+           'A Not Found error was returned while attempting to retrieve an access' +
+               'token for the Compute Engine built-in service account. This may be because the ' +
+               'Compute Engine instance does not have any permission scopes specified. Could not ' +
+               'refresh access token.',
+           err.message);
+       return;
+     }
+     throw new Error('Expected to throw');
+   });

@@ -40,6 +40,11 @@ const BASE_URL = [
   'https://clouderrorreporting.googleapis.com/v1beta1/projects', STUB_PROJECT
 ].join('/');
 
+const privateJSON = require('../../test/fixtures/private.json');
+const private2JSON = require('../../test/fixtures/private2.json');
+const refreshJSON = require('../../test/fixtures/refresh.json');
+const fixedProjectId = 'my-awesome-project';
+
 let auth: GoogleAuth;
 let sandbox: sinon.SinonSandbox|undefined;
 beforeEach(() => {
@@ -292,92 +297,57 @@ it('fromStream should error on null stream', (done) => {
   });
 });
 
-it('fromStream should read the stream and create a jwt', done => {
-  // Read the contents of the file into a json object.
-  const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-  const json = JSON.parse(fileContents);
-
-  // Now open a stream on the same file.
+it('fromStream should read the stream and create a jwt', async () => {
   const stream = fs.createReadStream('./test/fixtures/private.json');
-
   // And pass it into the fromStream method.
-  auth.fromStream(stream, (err, result) => {
-    assert.equal(null, err);
-    const jwt = result as JWT;
-    // Ensure that the correct bits were pulled from the stream.
-    assert.equal(json.private_key, jwt.key);
-    assert.equal(json.client_email, jwt.email);
-    assert.equal(null, jwt.keyFile);
-    assert.equal(null, jwt.subject);
-    assert.equal(null, jwt.scope);
-    done();
-  });
+  const res = await auth.fromStream(stream);
+  const jwt = res as JWT;
+  // Ensure that the correct bits were pulled from the stream.
+  assert.equal(privateJSON.private_key, jwt.key);
+  assert.equal(privateJSON.client_email, jwt.email);
+  assert.equal(null, jwt.keyFile);
+  assert.equal(null, jwt.subject);
+  assert.equal(null, jwt.scope);
 });
 
 it('fromStream should read the stream and create a jwt with eager refresh',
    async () => {
-     // Read the contents of the file into a json object.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
-     // Now open a stream on the same file.
      const stream = fs.createReadStream('./test/fixtures/private.json');
-
-     // And pass it into the fromStream method.
      const auth = new GoogleAuth();
      const result = await auth.fromStream(
          stream, {eagerRefreshThresholdMillis: 1000 * 60 * 60});
      const jwt = result as JWT;
      // Ensure that the correct bits were pulled from the stream.
-     assert.equal(json.private_key, jwt.key);
-     assert.equal(json.client_email, jwt.email);
+     assert.equal(privateJSON.private_key, jwt.key);
+     assert.equal(privateJSON.client_email, jwt.email);
      assert.equal(null, jwt.keyFile);
      assert.equal(null, jwt.subject);
      assert.equal(null, jwt.scope);
      assert.equal(1000 * 60 * 60, jwt.eagerRefreshThresholdMillis);
    });
 
-it('should read another stream and create a UserRefreshClient', done => {
-  // Read the contents of the file into a json object.
-  const fileContents = fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
-  const json = JSON.parse(fileContents);
-
-  // Now open a stream on the same file.
+it('should read another stream and create a UserRefreshClient', async () => {
   const stream = fs.createReadStream('./test/fixtures/refresh.json');
-
-  // And pass it into the fromStream method.
   const auth = new GoogleAuth();
-  auth.fromStream(stream, (err, result) => {
-    assert.ifError(err);
-    // Ensure that the correct bits were pulled from the stream.
-    const rc = result as UserRefreshClient;
-    assert.equal(json.client_id, rc._clientId);
-    assert.equal(json.client_secret, rc._clientSecret);
-    assert.equal(json.refresh_token, rc._refreshToken);
-    done();
-  });
+  const res = await auth.fromStream(stream);
+  // Ensure that the correct bits were pulled from the stream.
+  const rc = res as UserRefreshClient;
+  assert.equal(refreshJSON.client_id, rc._clientId);
+  assert.equal(refreshJSON.client_secret, rc._clientSecret);
+  assert.equal(refreshJSON.refresh_token, rc._refreshToken);
 });
 
 it('should read another stream and create a UserRefreshClient with eager refresh',
    async () => {
-     // Read the contents of the file into a json object.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/refresh.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
-     // Now open a stream on the same file.
      const stream = fs.createReadStream('./test/fixtures/refresh.json');
-
-     // And pass it into the fromStream method.
      const auth = new GoogleAuth();
      const result =
          await auth.fromStream(stream, {eagerRefreshThresholdMillis: 100});
      // Ensure that the correct bits were pulled from the stream.
      const rc = result as UserRefreshClient;
-     assert.equal(json.client_id, rc._clientId);
-     assert.equal(json.client_secret, rc._clientSecret);
-     assert.equal(json.refresh_token, rc._refreshToken);
+     assert.equal(refreshJSON.client_id, rc._clientId);
+     assert.equal(refreshJSON.client_secret, rc._clientSecret);
+     assert.equal(refreshJSON.refresh_token, rc._refreshToken);
      assert.equal(100, rc.eagerRefreshThresholdMillis);
    });
 
@@ -517,18 +487,12 @@ it('getApplicationCredentialsFromFilePath should handle errors passed from fromS
 
 it('getApplicationCredentialsFromFilePath should correctly read the file and create a valid JWT',
    async () => {
-     // Read the contents of the file into a json object.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
-     // Now pass the same path to the auth loader.
      const result = await auth._getApplicationCredentialsFromFilePath(
          './test/fixtures/private.json');
      assert(result);
      const jwt = result as JWT;
-     assert.equal(json.private_key, jwt.key);
-     assert.equal(json.client_email, jwt.email);
+     assert.equal(privateJSON.private_key, jwt.key);
+     assert.equal(privateJSON.client_email, jwt.email);
      assert.equal(null, jwt.keyFile);
      assert.equal(null, jwt.subject);
      assert.equal(null, jwt.scope);
@@ -536,18 +500,12 @@ it('getApplicationCredentialsFromFilePath should correctly read the file and cre
 
 it('getApplicationCredentialsFromFilePath should correctly read the file and create a valid JWT with eager refresh',
    async () => {
-     // Read the contents of the file into a json object.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
-     // Now pass the same path to the auth loader.
      const result = await auth._getApplicationCredentialsFromFilePath(
          './test/fixtures/private.json', {eagerRefreshThresholdMillis: 7000});
      assert(result);
      const jwt = result as JWT;
-     assert.equal(json.private_key, jwt.key);
-     assert.equal(json.client_email, jwt.email);
+     assert.equal(privateJSON.private_key, jwt.key);
+     assert.equal(privateJSON.client_email, jwt.email);
      assert.equal(null, jwt.keyFile);
      assert.equal(null, jwt.subject);
      assert.equal(null, jwt.scope);
@@ -589,18 +547,11 @@ it('tryGetApplicationCredentialsFromEnvironmentVariable should handle valid envi
      // Set up a mock to return path to a valid credentials file.
      mockEnvVar(
          'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-
-     // Read the contents of the file into a json object.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
-     // Execute.
      const result =
          await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
      const jwt = result as JWT;
-     assert.equal(json.private_key, jwt.key);
-     assert.equal(json.client_email, jwt.email);
+     assert.equal(privateJSON.private_key, jwt.key);
+     assert.equal(privateJSON.client_email, jwt.email);
      assert.equal(null, jwt.keyFile);
      assert.equal(null, jwt.subject);
      assert.equal(null, jwt.scope);
@@ -611,19 +562,12 @@ it('tryGetApplicationCredentialsFromEnvironmentVariable should handle valid envi
      // Set up a mock to return path to a valid credentials file.
      mockEnvVar(
          'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-
-     // Read the contents of the file into a json object.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
-     // Execute.
      const result =
          await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
              {eagerRefreshThresholdMillis: 60 * 60 * 1000});
      const jwt = result as JWT;
-     assert.equal(json.private_key, jwt.key);
-     assert.equal(json.client_email, jwt.email);
+     assert.equal(privateJSON.private_key, jwt.key);
+     assert.equal(privateJSON.client_email, jwt.email);
      assert.equal(null, jwt.keyFile);
      assert.equal(null, jwt.subject);
      assert.equal(null, jwt.scope);
@@ -798,9 +742,6 @@ it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure o
 
 it('getDefaultProjectId should return a new projectId the first time and a cached projectId the second time',
    async () => {
-     const fixedProjectId = 'my-awesome-project';
-     nockNotGCE();
-
      // Create a function which will set up a GoogleAuth instance to match
      // on an environment variable json file, but not on anything else.
      const setUpAuthForEnvironmentVariable = (creds: GoogleAuth) => {
@@ -835,48 +776,35 @@ it('getDefaultProjectId should return a new projectId the first time and a cache
      const auth2 = new GoogleAuth();
      setUpAuthForEnvironmentVariable(auth2);
 
-     const getProjectIdPromise = await auth2.getDefaultProjectId();
+     const getProjectIdPromise = auth2.getDefaultProjectId();
      assert.notEqual(getProjectIdPromise, projectIdPromise);
    });
 
 it('getDefaultProjectId should use GCLOUD_PROJECT environment variable when it is set',
-   done => {
-     const fixedProjectId = 'my-awesome-project';
+   async () => {
      mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
-     auth.getDefaultProjectId((err, projectId) => {
-       assert.equal(err, null);
-       assert.equal(projectId, fixedProjectId);
-       done();
-     });
+     const projectId = await auth.getDefaultProjectId();
+     assert.equal(projectId, fixedProjectId);
    });
 
 it('getDefaultProjectId should use GOOGLE_CLOUD_PROJECT environment variable when it is set',
-   done => {
-     const fixedProjectId = 'my-awesome-project';
+   async () => {
      mockEnvVar('GOOGLE_CLOUD_PROJECT', fixedProjectId);
-     auth.getDefaultProjectId((err, projectId) => {
-       assert.equal(err, null);
-       assert.equal(projectId, fixedProjectId);
-       done();
-     });
+     const projectId = await auth.getDefaultProjectId();
+     assert.equal(projectId, fixedProjectId);
    });
 
 it('getDefaultProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it is available',
-   done => {
-     const fixedProjectId = 'my-awesome-project';
+   async () => {
      mockEnvVar(
          'GOOGLE_APPLICATION_CREDENTIALS',
          path.join(__dirname, '../../test/fixtures/private2.json'));
-     auth.getDefaultProjectId((err, projectId) => {
-       assert.ifError(err);
-       assert.equal(projectId, fixedProjectId);
-       done();
-     });
+     const projectId = await auth.getDefaultProjectId();
+     assert.equal(projectId, fixedProjectId);
    });
 
 it('getDefaultProjectId should use Cloud SDK when it is available and env vars are not set',
-   done => {
-     const fixedProjectId = 'my-awesome-project';
+   async () => {
      // Set up the creds.
      // * Environment variable is not set.
      // * Well-known file is set up to point to private2.json
@@ -887,29 +815,22 @@ it('getDefaultProjectId should use Cloud SDK when it is available and env vars a
          {configuration: {properties: {core: {project: fixedProjectId}}}});
      const stub = sandbox.stub(child_process, 'exec')
                       .callsArgWith(1, null, stdout, null);
-     auth.getDefaultProjectId((err, projectId) => {
-       assert(stub.calledOnce);
-       assert.equal(err, null);
-       assert.equal(projectId, fixedProjectId);
-       done();
-     });
+     const projectId = await auth.getDefaultProjectId();
+     assert(stub.calledOnce);
+     assert.equal(projectId, fixedProjectId);
    });
 
 it('getDefaultProjectId should use GCE when well-known file and env const are not set',
-   done => {
-     const fixedProjectId = 'my-awesome-project';
+   async () => {
      blockGoogleApplicationCredentialEnvironmentVariable();
      sandbox = sinon.createSandbox();
      const stub =
          sandbox.stub(child_process, 'exec').callsArgWith(1, null, '', null);
      const scope = createGetProjectIdNock(fixedProjectId);
-     auth.getDefaultProjectId((err, projectId) => {
-       assert(stub.calledOnce);
-       assert.equal(err, null);
-       assert.equal(projectId, fixedProjectId);
-       scope.done();
-       done();
-     });
+     const projectId = await auth.getDefaultProjectId();
+     assert(stub.calledOnce);
+     assert.equal(projectId, fixedProjectId);
+     scope.done();
    });
 
 it('getApplicationDefault should return a new credential the first time and a cached credential the second time',
@@ -971,10 +892,13 @@ it('getApplicationDefault should return a new credential the first time and a ca
 
 it('getApplicationDefault should cache the credential when using GCE',
    async () => {
-     nockIsGCE();
+     blockGoogleApplicationCredentialEnvironmentVariable();
+     auth._fileExists = () => false;
+     const scope = nockIsGCE();
 
      // Ask for credentials, the first time.
      const result = await auth.getApplicationDefault();
+     scope.done();
      assert.notEqual(null, result);
 
      // Capture the returned credential.
@@ -990,12 +914,7 @@ it('getApplicationDefault should cache the credential when using GCE',
    });
 
 it('getApplicationDefault should use environment variable when it is set',
-   done => {
-     // We expect private.json to be the file that is used.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
+   async () => {
      // Set up the creds.
      // * Environment variable is set up to point to private.json
      // * Well-known file is set up to point to private2.json
@@ -1011,25 +930,17 @@ it('getApplicationDefault should use environment variable when it is set',
          auth, 'foo:gcloud:application_default_credentials.json',
          './test/fixtures/private2.json');
 
-     auth.getApplicationDefault((err, result) => {
-       const client = result as JWT;
-       assert.equal(null, err);
-       assert.equal(json.private_key, client.key);
-       assert.equal(json.client_email, client.email);
-       assert.equal(null, client.keyFile);
-       assert.equal(null, client.subject);
-       assert.equal(null, client.scope);
-       done();
-     });
+     const res = await auth.getApplicationDefault();
+     const client = res.credential as JWT;
+     assert.equal(privateJSON.private_key, client.key);
+     assert.equal(privateJSON.client_email, client.email);
+     assert.equal(null, client.keyFile);
+     assert.equal(null, client.subject);
+     assert.equal(null, client.scope);
    });
 
 it('should use well-known file when it is available and env const is not set',
-   done => {
-     // We expect private2.json to be the file that is used.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private2.json', 'utf-8');
-     const json = JSON.parse(fileContents);
-
+   async () => {
      // Set up the creds.
      // * Environment variable is not set.
      // * Well-known file is set up to point to private2.json
@@ -1044,20 +955,17 @@ it('should use well-known file when it is available and env const is not set',
          auth, 'foo:gcloud:application_default_credentials.json',
          './test/fixtures/private2.json');
 
-     auth.getApplicationDefault((err, result) => {
-       assert.equal(null, err);
-       const client = result as JWT;
-       assert.equal(json.private_key, client.key);
-       assert.equal(json.client_email, client.email);
-       assert.equal(null, client.keyFile);
-       assert.equal(null, client.subject);
-       assert.equal(null, client.scope);
-       done();
-     });
+     const res = await auth.getApplicationDefault();
+     const client = res.credential as JWT;
+     assert.equal(private2JSON.private_key, client.key);
+     assert.equal(private2JSON.client_email, client.email);
+     assert.equal(null, client.keyFile);
+     assert.equal(null, client.subject);
+     assert.equal(null, client.scope);
    });
 
 it('getApplicationDefault should use GCE when well-known file and env const are not set',
-   done => {
+   async () => {
      // Set up the creds.
      // * Environment variable is not set.
      // * Well-known file is not set.
@@ -1067,20 +975,17 @@ it('getApplicationDefault should use GCE when well-known file and env const are 
      auth._pathJoin = pathJoin;
      auth._osPlatform = () => 'win32';
      auth._fileExists = () => false;
-     nockIsGCE();
-
-     // Execute.
-     auth.getApplicationDefault((err, result) => {
-       assert.equal(null, err);
-       // This indicates that we got a ComputeClient instance back, rather
-       // than a JWTClient.
-       assert.equal('compute-placeholder', result!.credentials.refresh_token);
-       done();
-     });
+     const scope = nockIsGCE();
+     const res = await auth.getApplicationDefault();
+     scope.done();
+     // This indicates that we got a ComputeClient instance back, rather than a
+     // JWTClient.
+     assert.equal(
+         'compute-placeholder', res.credential.credentials.refresh_token);
    });
 
 it('getApplicationDefault should report GCE error when checking for GCE fails',
-   done => {
+   async () => {
      // Set up the creds.
      // * Environment variable is not set.
      // * Well-known file is not set.
@@ -1093,25 +998,21 @@ it('getApplicationDefault should report GCE error when checking for GCE fails',
      auth._checkIsGCE = () => {
        throw new Error('fake error');
      };
-     auth.getApplicationDefault((err, result) => {
-       assert(err instanceof Error);
-       assert.equal(result, undefined);
-       done();
-     });
+     try {
+       await auth.getApplicationDefault();
+     } catch (e) {
+       return;
+     }
+     throw new Error('Expected to throw');
    });
 
-it('getApplicationDefault should also get project ID', done => {
-  // We expect private.json to be the file that is used.
-  const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-  const json = JSON.parse(fileContents);
-  const testProjectId = 'my-awesome-project';
-
+it('getApplicationDefault should also get project ID', async () => {
   // Set up the creds.
   // * Environment variable is set up to point to private.json
   // * Well-known file is set up to point to private2.json
   // * Running on GCE is set to true.
   mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-  mockEnvVar('GCLOUD_PROJECT', testProjectId);
+  mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
   mockEnvVar('APPDATA', 'foo');
   auth._pathJoin = pathJoin;
   auth._osPlatform = () => 'win32';
@@ -1121,86 +1022,89 @@ it('getApplicationDefault should also get project ID', done => {
       auth, 'foo:gcloud:application_default_credentials.json',
       './test/fixtures/private2.json');
 
-  auth.getApplicationDefault((err, result, projectId) => {
-    assert.equal(null, err);
-    const client = result as JWT;
-    assert.equal(json.private_key, client.key);
-    assert.equal(json.client_email, client.email);
-    assert.equal(projectId, testProjectId);
-    assert.equal(null, client.keyFile);
-    assert.equal(null, client.subject);
-    assert.equal(null, client.scope);
-    done();
-  });
+  const res = await auth.getApplicationDefault();
+  const client = res.credential as JWT;
+  assert.equal(privateJSON.private_key, client.key);
+  assert.equal(privateJSON.client_email, client.email);
+  assert.equal(res.projectId, fixedProjectId);
+  assert.equal(null, client.keyFile);
+  assert.equal(null, client.subject);
+  assert.equal(null, client.scope);
 });
 
 it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
   assert.notEqual(true, auth.isGCE);
-  nockIsGCE();
+  const scope = nockIsGCE();
   const isGCE = await auth._checkIsGCE();
   assert.equal(true, auth.isGCE);
+  scope.done();
 });
 
 it('_checkIsGCE should not set the _isGCE flag when not running on GCE',
    async () => {
-     nockNotGCE();
+     const scope = nockNotGCE();
      assert.notEqual(true, auth.isGCE);
      const isGCE = await auth._checkIsGCE();
      assert.equal(false, auth.isGCE);
+     scope.done();
    });
 
 it('_checkIsGCE should retry the check for isGCE if it fails the first time',
    async () => {
      assert.notEqual(true, auth.isGCE);
-     // the first request will fail
-     nockErrGCE();
-     // the second one will succeed
-     nockIsGCE();
+     // the first request will fail, the second one will succeed
+     const scopes = [nockErrGCE(), nockIsGCE()];
      const isGCE = await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
+     scopes.forEach(s => s.done());
    });
 
 it('should not retry the check for isGCE if it fails with a 404', async () => {
   assert.notEqual(true, auth.isGCE);
-  nock404GCE();
+  const scope = nock404GCE();
   const isGCE = await auth._checkIsGCE();
   assert.notEqual(true, auth.isGCE);
+  scope.done();
 });
 
 it('_checkIsGCE should not retry the check for isGCE if it fails with an ENOTFOUND',
    async () => {
      assert.notEqual(true, auth.isGCE);
-     nockENOTFOUND();
+     const scope = nockENOTFOUND();
      const isGCE = await auth._checkIsGCE();
      assert.notEqual(true, auth.isGCE);
+     scope.done();
    });
 
 it('_checkIsGCE does not execute the second time when running on GCE',
    async () => {
      // This test relies on the nock mock only getting called once.
      assert.notEqual(true, auth.isGCE);
-     nockIsGCE();
+     const scope = nockIsGCE();
      await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
      const isGCE2 = await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
+     scope.done();
    });
 
 it('_checkIsGCE does not execute the second time when not running on GCE',
    async () => {
      assert.notEqual(true, auth.isGCE);
-     nockNotGCE();
+     const scope = nockNotGCE();
      await auth._checkIsGCE();
      assert.equal(false, auth.isGCE);
      await auth._checkIsGCE();
      assert.equal(false, auth.isGCE);
+     scope.done();
    });
 
 it('_checkIsGCE returns false on transport error', async () => {
   assert.notEqual(true, auth.isGCE);
-  nockErrGCE();
+  const scope = nockErrGCE();
   await auth._checkIsGCE();
   assert.equal(false, auth.isGCE);
+  scope.done();
 });
 
 it('getCredentials should get metadata from the server when running on GCE',
@@ -1215,7 +1119,7 @@ it('getCredentials should get metadata from the server when running on GCE',
        }
      };
      nock.cleanAll();
-     nock(host).get(svcAccountPath).reply(200, response, {
+     const scope = nock(host).get(svcAccountPath).reply(200, response, {
        'Metadata-Flavor': 'Google'
      });
      const body = await auth.getCredentials();
@@ -1223,30 +1127,33 @@ it('getCredentials should get metadata from the server when running on GCE',
      assert.equal(
          body!.client_email, 'test-creds@test-creds.iam.gserviceaccount.com');
      assert.equal(body!.private_key, null);
+     scope.done();
    });
 
 it('getCredentials should error if metadata server is not reachable',
    async () => {
-     nockIsGCE();
+     const scopes =
+         [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(404)];
      await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
-     nock(HOST_ADDRESS).get(svcAccountPath).reply(404);
      try {
        await auth.getCredentials();
      } catch (e) {
+       scopes.forEach(s => s.done());
        return;
      }
      throw new Error('Expected to throw');
    });
 
 it('getCredentials should error if body is empty', async () => {
-  nockIsGCE();
+  const scopes =
+      [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {})];
   await auth._checkIsGCE();
   assert.equal(true, auth.isGCE);
-  nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {});
   try {
     await auth.getCredentials();
   } catch (e) {
+    scopes.forEach(s => s.done());
     return;
   }
   throw new Error('Expected to throw');
@@ -1280,12 +1187,10 @@ it('getCredentials should handle valid file path', async () => {
   const result = await auth.getApplicationDefault();
   assert(result);
   const jwt = result.credential as JWT;
-  it('should return the credentials from file', async () => {
-    const body = await auth.getCredentials();
-    assert.notEqual(null, body);
-    assert.equal(jwt.email, body!.client_email);
-    assert.equal(jwt.key, body!.private_key);
-  });
+  const body = await auth.getCredentials();
+  assert.notEqual(null, body);
+  assert.equal(jwt.email, body!.client_email);
+  assert.equal(jwt.key, body!.private_key);
 });
 
 it('getCredentials should return error when env const is not set', async () => {

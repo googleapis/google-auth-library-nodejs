@@ -139,21 +139,19 @@ it('fromStream should error on null stream', (done) => {
   });
 });
 
-it('fromStream should construct a JWT Header instance from a stream', done => {
-  // Read the contents of the file into a json object.
-  const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-  const json = JSON.parse(fileContents);
+it('fromStream should construct a JWT Header instance from a stream',
+   async () => {
+     // Read the contents of the file into a json object.
+     const fileContents =
+         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+     const json = JSON.parse(fileContents);
 
-  // Now open a stream on the same file.
-  const stream = fs.createReadStream('./test/fixtures/private.json');
+     // Now open a stream on the same file.
+     const stream = fs.createReadStream('./test/fixtures/private.json');
 
-  // And pass it into the fromStream method.
-  client.fromStream(stream, (err) => {
-    assert.equal(null, err);
-
-    // Ensure that the correct bits were pulled from the stream.
-    assert.equal(json.private_key, client.key);
-    assert.equal(json.client_email, client.email);
-    done();
-  });
-});
+     // And pass it into the fromStream method.
+     await client.fromStream(stream);
+     // Ensure that the correct bits were pulled from the stream.
+     assert.equal(json.private_key, client.key);
+     assert.equal(json.client_email, client.email);
+   });
