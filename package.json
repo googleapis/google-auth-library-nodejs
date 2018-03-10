@@ -70,7 +70,7 @@
     ]
   },
   "scripts": {
-    "test": "nyc mocha build/test",
+    "test": "nyc mocha build/test --timeout 10000",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json",
     "clean": "gts clean",
     "prepare": "npm run compile",
