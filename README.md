@@ -52,12 +52,14 @@ Rather than manually creating an OAuth2 client, JWT client, or Compute client, t
 
 For example, a JWT auth client will be created when your code is running on your local developer machine, and a Compute client will be created when the same code is running on Google Cloud Platform.
 
-The code below shows how to retrieve a default credential type, depending upon the runtime environment. The createScopedRequired must be called to determine when you need to pass in the scopes manually, and when they have been set for you automatically based on the configured runtime environment.
+The code below shows how to retrieve a default credential type, depending upon the runtime environment.
 
 ```js
 const {auth} = require('google-auth-library');
 async function main() {
-  const client = await auth.getClient();
+  const client = await auth.getClient({
+    scopes: 'https://www.googleapis.com/auth/cloud-platform'
+  });
   const projectId = await auth.getDefaultProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });

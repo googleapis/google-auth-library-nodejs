@@ -85,11 +85,6 @@ it('getRequestMetadata should not return cached tokens older than an hour',
      }
    });
 
-it('createScopedRequired should return false', () => {
-  const client = new JWTAccess('foo@serviceaccount.com');
-  assert.equal(false, client.createScopedRequired());
-});
-
 it('fromJson should error on null json', () => {
   assert.throws(() => {
     // Test verifies invalid parameter tests, which requires cast to any.

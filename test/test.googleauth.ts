@@ -1226,6 +1226,13 @@ it('should accept credentials to get a client', async () => {
   assert.equal(client.email, 'hello@youarecool.com');
 });
 
+it('should allow passing scopes to get a client', async () => {
+  const scopes = ['http://examples.com/is/a/scope'];
+  const keyFilename = './test/fixtures/private.json';
+  const client = await auth.getClient({scopes, keyFilename}) as JWT;
+  assert.equal(client.scopes, scopes);
+});
+
 it('should get an access token', async () => {
   const {auth, scopes} = mockGCE();
   const token = await auth.getAccessToken();

@@ -220,6 +220,9 @@ export class GoogleAuth {
     client = await this._tryGetApplicationCredentialsFromEnvironmentVariable(
         options);
     if (client) {
+      if (client instanceof JWT) {
+        client.scopes = this.scopes;
+      }
       this.cachedClient = client;
       projectId = await this.getDefaultProjectId();
       return {client, projectId};
@@ -228,6 +231,9 @@ export class GoogleAuth {
     // Look in the well-known credential file location.
     client = await this._tryGetApplicationCredentialsFromWellKnownFile(options);
     if (client) {
+      if (client instanceof JWT) {
+        client.scopes = this.scopes;
+      }
       this.cachedClient = client;
       projectId = await this.getDefaultProjectId();
       return {client, projectId};
@@ -638,7 +644,13 @@ export class GoogleAuth {
    * Automatically obtain a client based on the provided configuration.  If no
    * options were passed, use Application Default Credentials.
    */
-  async getClient() {
+  async getClient(options?: GoogleAuthOptions) {
+    if (options) {
+      this.keyFilename =
+          options.keyFilename || options.keyFile || this.keyFilename;
+      this.scopes = options.scopes || this.scopes;
+      this.jsonContent = options.credentials || this.jsonContent;
+    }
     if (!this.cachedClient) {
       if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);

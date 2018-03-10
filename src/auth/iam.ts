@@ -33,17 +33,6 @@ export class IAMAuth {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   *
-   * @return always false
-   */
-  createScopedRequired() {
-    // IAM authorization does not use scopes.
-    return false;
-  }
-
-  /**
    * Acquire an object with the HTTP headers required for the request.
    */
   getRequestMetadata(): RequestMetadata {

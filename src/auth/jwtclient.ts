@@ -75,29 +75,13 @@ export class JWT extends OAuth2Client {
   }
 
   /**
-   * Creates a copy of the credential with the specified scopes.
-   * @param scopes List of requested scopes or a single scope.
-   * @return The cloned instance.
-   */
-  createScoped(scopes?: string|string[]) {
-    return new JWT({
-      email: this.email,
-      keyFile: this.keyFile,
-      key: this.key,
-      scopes,
-      subject: this.subject,
-      additionalClaims: this.additionalClaims
-    });
-  }
-
-  /**
    * Obtains the metadata to be sent with the request.
    *
    * @param url the URI being authorized.
    */
   protected async getRequestMetadataAsync(url?: string):
       Promise<RequestMetadataResponse> {
-    if (!this.apiKey && this.createScopedRequired() && url) {
+    if (!this.apiKey && !this.hasScopes() && url) {
       if (this.additionalClaims && (this.additionalClaims as {
                                      target_audience: string
                                    }).target_audience) {
@@ -117,21 +101,20 @@ export class JWT extends OAuth2Client {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createScoped before use.
-   * @return false if createScoped does not need to be called.
+   * Indicates whether the client current defines a set of
+   * scopes.
    */
-  createScopedRequired() {
+  hasScopes() {
     // If scopes is null, always return true.
     if (this.scopes) {
       // For arrays, check the array length.
       if (this.scopes instanceof Array) {
-        return this.scopes.length === 0;
+        return this.scopes.length > 0;
       }
       // For others, convert to a string and check the length.
-      return String(this.scopes).length === 0;
+      return String(this.scopes).length > 0;
     }
-    return true;
+    return false;
   }
 
   /**

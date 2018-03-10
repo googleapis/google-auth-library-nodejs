@@ -397,144 +397,56 @@ it('should return expiry_date in milliseconds', async () => {
       dateInMillis.toString().length, creds.expiry_date!.toString().length);
 });
 
-it('createScoped should clone stuff', () => {
+it('hasScopes should return false when scopes is null', () => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: '/path/to/key.pem',
+    subject: 'bar@subjectaccount.com'
+  });
+  assert.equal(false, jwt.hasScopes());
+});
+
+it('hasScopes should return false when scopes is an empty array', () => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: '/path/to/key.pem',
+    scopes: [],
+    subject: 'bar@subjectaccount.com'
+  });
+  assert.equal(false, jwt.hasScopes());
+});
+
+it('hasScopes should return false when scopes is an empty string', () => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: '/path/to/key.pem',
+    scopes: '',
+    subject: 'bar@subjectaccount.com'
+  });
+  assert.equal(false, jwt.hasScopes());
+});
+
+it('hasScopes should return true when scopes is a filled-in string', () => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: '/path/to/key.pem',
+    scopes: 'http://foo',
+    subject: 'bar@subjectaccount.com'
+  });
+  assert.equal(true, jwt.hasScopes());
+});
+
+it('hasScopes should return true when scopes is a filled-in array', () => {
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
     keyFile: '/path/to/key.pem',
     scopes: ['http://bar', 'http://foo'],
     subject: 'bar@subjectaccount.com'
   });
-
-  const clone = jwt.createScoped('x');
-
-  assert.equal(jwt.email, clone.email);
-  assert.equal(jwt.keyFile, clone.keyFile);
-  assert.equal(jwt.key, clone.key);
-  assert.equal(jwt.subject, clone.subject);
+  assert.equal(true, jwt.hasScopes());
 });
 
-it('createScoped should handle string scope', () => {
-  const jwt = new JWT({
-    email: 'foo@serviceaccount.com',
-    keyFile: '/path/to/key.pem',
-    scopes: ['http://bar', 'http://foo'],
-    subject: 'bar@subjectaccount.com'
-  });
-  const clone = jwt.createScoped('newscope');
-  assert.equal('newscope', clone.scopes);
-});
-
-it('createScoped should handle array scope', () => {
-  const jwt = new JWT({
-    email: 'foo@serviceaccount.com',
-    keyFile: '/path/to/key.pem',
-    scopes: ['http://bar', 'http://foo'],
-    subject: 'bar@subjectaccount.com'
-  });
-  const clone = jwt.createScoped(['gorilla', 'chimpanzee', 'orangutan']);
-  assert.equal(3, clone.scopes!.length);
-  assert.equal('gorilla', clone.scopes![0]);
-  assert.equal('chimpanzee', clone.scopes![1]);
-  assert.equal('orangutan', clone.scopes![2]);
-});
-
-it('createScoped should handle null scope', () => {
-  const jwt = new JWT({
-    email: 'foo@serviceaccount.com',
-    keyFile: '/path/to/key.pem',
-    scopes: ['http://bar', 'http://foo'],
-    subject: 'bar@subjectaccount.com'
-  });
-  const clone = jwt.createScoped();
-  assert.equal(null, clone.scopes);
-});
-
-it('createScoped should set scope when scope was null', () => {
-  const jwt = new JWT({
-    email: 'foo@serviceaccount.com',
-    keyFile: '/path/to/key.pem',
-    subject: 'bar@subjectaccount.com'
-  });
-  const clone = jwt.createScoped('hi');
-  assert.equal('hi', clone.scopes);
-});
-
-it('createScoped should handle nulls', () => {
-  const jwt = new JWT();
-  const clone = jwt.createScoped('hi');
-  assert.equal(jwt.email, null);
-  assert.equal(jwt.keyFile, null);
-  assert.equal(jwt.key, null);
-  assert.equal(jwt.subject, null);
-  assert.equal('hi', clone.scopes);
-});
-
-it('createScoped should not return the original instance', () => {
-  const jwt = new JWT({
-    email: 'foo@serviceaccount.com',
-    keyFile: '/path/to/key.pem',
-    scopes: ['http://bar', 'http://foo'],
-    subject: 'bar@subjectaccount.com'
-  });
-  const clone = jwt.createScoped('hi');
-  assert.notEqual(jwt, clone);
-});
-
-it('createScopedRequired should return true when scopes is null', () => {
-  const jwt = new JWT({
-    email: 'foo@serviceaccount.com',
-    keyFile: '/path/to/key.pem',
-    subject: 'bar@subjectaccount.com'
-  });
-  assert.equal(true, jwt.createScopedRequired());
-});
-
-it('createScopedRequired should return true when scopes is an empty array',
-   () => {
-     const jwt = new JWT({
-       email: 'foo@serviceaccount.com',
-       keyFile: '/path/to/key.pem',
-       scopes: [],
-       subject: 'bar@subjectaccount.com'
-     });
-     assert.equal(true, jwt.createScopedRequired());
-   });
-
-it('createScopedRequired should return true when scopes is an empty string',
-   () => {
-     const jwt = new JWT({
-       email: 'foo@serviceaccount.com',
-       keyFile: '/path/to/key.pem',
-       scopes: '',
-       subject: 'bar@subjectaccount.com'
-     });
-     assert.equal(true, jwt.createScopedRequired());
-   });
-
-it('createScopedRequired should return false when scopes is a filled-in string',
-   () => {
-     const jwt = new JWT({
-       email: 'foo@serviceaccount.com',
-       keyFile: '/path/to/key.pem',
-       scopes: 'http://foo',
-       subject: 'bar@subjectaccount.com'
-     });
-     assert.equal(false, jwt.createScopedRequired());
-   });
-
-it('createScopedRequired should return false when scopes is a filled-in array',
-   () => {
-     const jwt = new JWT({
-       email: 'foo@serviceaccount.com',
-       keyFile: '/path/to/key.pem',
-       scopes: ['http://bar', 'http://foo'],
-       subject: 'bar@subjectaccount.com'
-     });
-
-     assert.equal(false, jwt.createScopedRequired());
-   });
-
-it('createScopedRequired should return false when scopes is not an array or a string, but can be used as a string',
+it('hasScopes should return true when scopes is not an array or a string, but can be used as a string',
    () => {
      const jwt = new JWT({
        email: 'foo@serviceaccount.com',
@@ -542,7 +454,7 @@ it('createScopedRequired should return false when scopes is not an array or a st
        scopes: '2',
        subject: 'bar@subjectaccount.com'
      });
-     assert.equal(false, jwt.createScopedRequired());
+     assert.equal(true, jwt.hasScopes());
    });
 
 it('fromJson should error on null json', () => {
