@@ -980,8 +980,7 @@ it('getApplicationDefault should use GCE when well-known file and env const are 
      scope.done();
      // This indicates that we got a ComputeClient instance back, rather than a
      // JWTClient.
-     assert.equal(
-         'compute-placeholder', res.client.credentials.refresh_token);
+     assert.equal('compute-placeholder', res.client.credentials.refresh_token);
    });
 
 it('getApplicationDefault should report GCE error when checking for GCE fails',
