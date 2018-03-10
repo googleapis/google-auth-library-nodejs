@@ -16,8 +16,9 @@
 
 import * as assert from 'assert';
 import {AxiosError} from 'axios';
-import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
+import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
+
 import {Compute} from '../src';
 
 nock.disableNetConnect();
@@ -26,10 +27,9 @@ const url = 'http://example.com';
 
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 function mockToken() {
-  return nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-    access_token: 'abc123',
-    expires_in: 10000
-  });
+  return nock(HOST_ADDRESS)
+      .get(tokenPath)
+      .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
 }
 
 function mockExample() {
@@ -108,7 +108,7 @@ it('should retry calls to the metadata service if there are network errors',
            .times(2)
            .replyWithError({code: 'ENOTFOUND'})
            .get(tokenPath)
-           .reply(200, {access_token: 'abc123', expires_in: 10000}),
+           .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS),
        mockExample()
      ];
      compute.credentials.access_token = 'initial-access-token';
@@ -126,7 +126,7 @@ it('should retry calls to the metadata service if it returns non-200 errors',
            .times(2)
            .reply(500)
            .get(tokenPath)
-           .reply(200, {access_token: 'abc123', expires_in: 10000}),
+           .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS),
        mockExample()
      ];
      compute.credentials.access_token = 'initial-access-token';
@@ -140,33 +140,30 @@ it('should return false for createScopedRequired', () => {
   assert.equal(false, compute.createScopedRequired());
 });
 
-it('should return a helpful message on request response.statusCode 403', async () => {
-  // Mock the credentials object.  Make sure there's no expiry_date set.
-  compute.credentials = {
-    refresh_token: 'hello',
-    access_token: 'goodbye',
-  };
+it('should return a helpful message on request response.statusCode 403',
+   async () => {
+     // Mock the credentials object.  Make sure there's no expiry_date set.
+     compute.credentials = {
+       refresh_token: 'hello',
+       access_token: 'goodbye',
+     };
 
-  const scopes = [
-    nock(url).get('/').reply(403), nock(HOST_ADDRESS).get(tokenPath).reply(403)
-  ];
+     const scopes = [
+       nock(url).get('/').reply(403),
+       nock(HOST_ADDRESS).get(tokenPath).reply(403, HEADERS)
+     ];
 
-  try {
-    await compute.request({url});
-  } catch (e) {
-    scopes.forEach(s => s.done());
-    const err = e as AxiosError;
-    assert.equal(403, err.response!.status);
-    const expected =
-        'A Forbidden error was returned while attempting to retrieve an access ' +
-        'token for the Compute Engine built-in service account. This may be because the ' +
-        'Compute Engine instance does not have the correct permission scopes specified. ' +
-        'Could not refresh access token.';
-    assert.equal(expected, err.message);
-    return;
-  }
-  throw new Error('Expected to throw');
-});
+     try {
+       await compute.request({url});
+     } catch (e) {
+       scopes.forEach(s => s.done());
+       const err = e as AxiosError;
+       assert.equal(403, err.response!.status);
+       assert(err.message.startsWith('A Forbidden error was returned'));
+       return;
+     }
+     throw new Error('Expected to throw');
+   });
 
 it('should return a helpful message on request response.statusCode 404', async () => {
   // Mock the credentials object.

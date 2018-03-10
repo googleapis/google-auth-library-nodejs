@@ -925,18 +925,3 @@ it('should return expiry_date', done => {
     done();
   });
 });
-
-it('should accept custom authBaseUrl and tokenUrl', async () => {
-  const authBaseUrl = 'http://authBaseUrl.com';
-  const tokenUrl = 'http://tokenUrl.com';
-  const client = new OAuth2Client(
-      CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, {authBaseUrl, tokenUrl});
-  const authUrl = client.generateAuthUrl();
-  const authUrlParts = url.parse(authUrl);
-  assert.equal(
-      authBaseUrl.toLowerCase(),
-      authUrlParts.protocol + '//' + authUrlParts.hostname);
-  const scope = nock(tokenUrl).post('/').reply(200, {});
-  const result = await client.getToken('12345');
-  scope.done();
-});

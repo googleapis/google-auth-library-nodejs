@@ -573,7 +573,6 @@ export class GoogleAuth {
     return r ? r.projectId : undefined;
   }
 
-
   /**
    * Gets the Compute Engine project ID if it can be inferred.
    */

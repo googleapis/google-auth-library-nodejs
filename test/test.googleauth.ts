@@ -17,7 +17,7 @@
 import * as assert from 'assert';
 import * as child_process from 'child_process';
 import * as fs from 'fs';
-import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
+import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as sinon from 'sinon';
@@ -61,9 +61,7 @@ afterEach(() => {
 });
 
 function nockIsGCE() {
-  return nock(host).get(instancePath).reply(200, {}, {
-    'metadata-flavor': 'Google'
-  });
+  return nock(host).get(instancePath).reply(200, {}, HEADERS);
 }
 
 function nockNotGCE() {
@@ -85,7 +83,7 @@ function nock404GCE() {
 function createGetProjectIdNock(projectId: string) {
   return nock(host)
       .get(`${BASE_PATH}/project/project-id`)
-      .reply(200, projectId, {'metadata-flavor': 'Google'});
+      .reply(200, projectId, HEADERS);
 }
 
 // Creates a standard JSON auth object for testing.
@@ -114,10 +112,10 @@ function mockGCE() {
   blockGoogleApplicationCredentialEnvironmentVariable();
   const auth = new GoogleAuth();
   auth._fileExists = () => false;
-  const scope2 = nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-    access_token: 'abc123',
-    expires_in: 10000
-  });
+  const scope2 =
+      nock(HOST_ADDRESS)
+          .get(tokenPath)
+          .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
   return {auth, scopes: [scope1, scope2]};
 }
 
@@ -1119,9 +1117,7 @@ it('getCredentials should get metadata from the server when running on GCE',
        }
      };
      nock.cleanAll();
-     const scope = nock(host).get(svcAccountPath).reply(200, response, {
-       'Metadata-Flavor': 'Google'
-     });
+     const scope = nock(host).get(svcAccountPath).reply(200, response, HEADERS);
      const body = await auth.getCredentials();
      assert(body);
      assert.equal(
@@ -1262,7 +1258,7 @@ it('should get the current environment if GKE', async () => {
   const {auth, scopes} = mockGCE();
   const scope = nock(host)
                     .get(`${instancePath}/attributes/cluster-name`)
-                    .reply(200, {}, {[HEADER_NAME.toLowerCase()]: 'Google'});
+                    .reply(200, {}, HEADERS);
   const env = await auth.getEnv();
   assert.equal(env, envDetect.GCPEnv.KUBERNETES_ENGINE);
   scope.done();
