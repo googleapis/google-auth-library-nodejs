@@ -50,7 +50,7 @@ Before making your API call, you must be sure the API you're calling has been en
 
 Rather than manually creating an OAuth2 client, JWT client, or Compute client, the auth library can create the correct credential type for you, depending upon the environment your code is running under.
 
-For example, a JWT auth client will be created when your code is running on your local developer machine, and a Compute client will be created when the same code is running on Google Cloud Platform.
+For example, a JWT auth client will be created when your code is running on your local developer machine, and a Compute client will be created when the same code is running on Google Cloud Platform. If you need a specific set of scopes, you can pass those in the form of a string or an array into the `auth.getClient` method.
 
 The code below shows how to retrieve a default credential type, depending upon the runtime environment.
 
