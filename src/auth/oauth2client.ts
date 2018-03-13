@@ -154,11 +154,6 @@ export interface GenerateAuthUrlOpts {
   code_challenge?: string;
 }
 
-export interface AuthClientOpts {
-  authBaseUrl?: string;
-  tokenUrl?: string;
-}
-
 export interface GetTokenCallback {
   (err: AxiosError|null, token?: Credentials, res?: AxiosResponse): void;
 }
@@ -234,8 +229,6 @@ export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
   private certificateCache: {}|undefined;
   private certificateExpiry: Date|undefined;
-  protected authBaseUrl?: string;
-  protected tokenUrl?: string;
 
   // TODO: refactor tests to make this private
   _clientId?: string;
@@ -260,27 +253,17 @@ export class OAuth2Client extends AuthClient {
    * @constructor
    */
   constructor(options?: OAuth2ClientOptions);
-  constructor(
-      clientId?: string, clientSecret?: string, redirectUri?: string,
-      opts?: AuthClientOpts);
+  constructor(clientId?: string, clientSecret?: string, redirectUri?: string);
   constructor(
       optionsOrClientId?: string|OAuth2ClientOptions, clientSecret?: string,
-      redirectUri?: string, authClientOpts: AuthClientOpts = {}) {
+      redirectUri?: string) {
     super();
     const opts = (optionsOrClientId && typeof optionsOrClientId === 'object') ?
         optionsOrClientId :
-        {
-          clientId: optionsOrClientId,
-          clientSecret,
-          redirectUri,
-          tokenUrl: authClientOpts.tokenUrl,
-          authBaseUrl: authClientOpts.authBaseUrl
-        };
+        {clientId: optionsOrClientId, clientSecret, redirectUri};
     this._clientId = opts.clientId;
     this._clientSecret = opts.clientSecret;
     this.redirectUri = opts.redirectUri;
-    this.authBaseUrl = opts.authBaseUrl;
-    this.tokenUrl = opts.tokenUrl;
     this.eagerRefreshThresholdMillis =
         opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
   }
@@ -342,8 +325,7 @@ export class OAuth2Client extends AuthClient {
     if (opts.scope instanceof Array) {
       opts.scope = opts.scope.join(' ');
     }
-    const rootUrl =
-        this.authBaseUrl || OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
+    const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
 
     return rootUrl + '?' + querystring.stringify(opts);
   }
@@ -397,7 +379,7 @@ export class OAuth2Client extends AuthClient {
 
   private async getTokenAsync(options: GetTokenOptions):
       Promise<GetTokenResponse> {
-    const url = this.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
+    const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       code: options.code,
       client_id: this._clientId,
@@ -428,7 +410,7 @@ export class OAuth2Client extends AuthClient {
    */
   protected async refreshToken(refreshToken?: string):
       Promise<GetTokenResponse> {
-    const url = this.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
+    const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const data = {
       refresh_token: refreshToken,
       client_id: this._clientId,
