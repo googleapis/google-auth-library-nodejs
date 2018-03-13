@@ -168,6 +168,20 @@ export class JWT extends OAuth2Client {
    * @private
    */
   async refreshToken(refreshToken?: string|null): Promise<GetTokenResponse> {
+    this.createGToken();
+    const token = await this.gtoken!.getToken();
+    const tokens = {
+      access_token: token,
+      token_type: 'Bearer',
+      expiry_date: this.gtoken!.expiresAt
+    };
+    return {res: null, tokens};
+  }
+
+  /**
+   * Create a gToken if it doesn't already exist.
+   */
+  private createGToken() {
     if (!this.gtoken) {
       this.gtoken = new GoogleToken({
         iss: this.email,
@@ -178,13 +192,6 @@ export class JWT extends OAuth2Client {
         additionalClaims: this.additionalClaims
       });
     }
-    const token = await this.gtoken.getToken();
-    const tokens = {
-      access_token: token,
-      token_type: 'Bearer',
-      expiry_date: this.gtoken.expiresAt
-    };
-    return {res: null, tokens};
   }
 
   /**
@@ -260,5 +267,20 @@ export class JWT extends OAuth2Client {
       throw new Error('Must provide an API Key string.');
     }
     this.apiKey = apiKey;
+  }
+
+  /**
+   * Using the key or keyFile on the JWT client, obtain an object that contains
+   * the key and the client email.
+   */
+  async getCredentials() {
+    if (this.key) {
+      return {key: this.key, email: this.email};
+    } else if (this.keyFile) {
+      this.createGToken();
+      const creds = await this.gtoken!.getCredentials(this.keyFile);
+      return {key: creds.privateKey, email: creds.clientEmail};
+    }
+    throw new Error('A key or a keyFile must be provided to getCredentials.');
   }
 }
