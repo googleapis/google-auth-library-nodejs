@@ -154,11 +154,6 @@ export interface GenerateAuthUrlOpts {
   code_challenge?: string;
 }
 
-export interface AuthClientOpts {
-  authBaseUrl?: string;
-  tokenUrl?: string;
-}
-
 export interface GetTokenCallback {
   (err: AxiosError|null, token?: Credentials, res?: AxiosResponse): void;
 }
@@ -258,22 +253,14 @@ export class OAuth2Client extends AuthClient {
    * @constructor
    */
   constructor(options?: OAuth2ClientOptions);
-  constructor(
-      clientId?: string, clientSecret?: string, redirectUri?: string,
-      opts?: AuthClientOpts);
+  constructor(clientId?: string, clientSecret?: string, redirectUri?: string);
   constructor(
       optionsOrClientId?: string|OAuth2ClientOptions, clientSecret?: string,
-      redirectUri?: string, authClientOpts: AuthClientOpts = {}) {
+      redirectUri?: string) {
     super();
     const opts = (optionsOrClientId && typeof optionsOrClientId === 'object') ?
         optionsOrClientId :
-        {
-          clientId: optionsOrClientId,
-          clientSecret,
-          redirectUri,
-          tokenUrl: authClientOpts.tokenUrl,
-          authBaseUrl: authClientOpts.authBaseUrl
-        };
+        {clientId: optionsOrClientId, clientSecret, redirectUri};
     this._clientId = opts.clientId;
     this._clientSecret = opts.clientSecret;
     this.redirectUri = opts.redirectUri;
