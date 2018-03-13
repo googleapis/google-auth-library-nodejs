@@ -50,13 +50,12 @@ export class DefaultTransporter {
   configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
     // set transporter user agent
     opts.headers = opts.headers || {};
-    if (!opts.headers['User-Agent']) {
+    const uaValue: string = opts.headers['User-Agent'];
+    if (!uaValue) {
       opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
-    } else if (
-        opts.headers['User-Agent'].indexOf(DefaultTransporter.USER_AGENT) ===
-        -1) {
+    } else if (!uaValue.includes('google-api-nodejs-client/')) {
       opts.headers['User-Agent'] =
-          opts.headers['User-Agent'] + ' ' + DefaultTransporter.USER_AGENT;
+          `${uaValue} ${DefaultTransporter.USER_AGENT}`;
     }
     return opts;
   }

@@ -49,8 +49,7 @@ it('should append default client user agent to the existing user agent', () => {
 
 it('should not append default client user agent to the existing user agent more than once',
    () => {
-     const appName =
-         'MyTestApplication-1.0 google-api-nodejs-client/' + version;
+     const appName = 'MyTestApplication-1.0 google-api-nodejs-client/foobear';
      const opts =
          transporter.configure({headers: {'User-Agent': appName}, url: ''});
      assert.equal(opts.headers!['User-Agent'], appName);
