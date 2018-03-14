@@ -19,6 +19,7 @@ import {validate} from './options';
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
+const PRODUCT_NAME = 'google-api-nodejs-client';
 
 export interface Transporter {
   request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
@@ -40,7 +41,7 @@ export class DefaultTransporter {
   /**
    * Default user agent.
    */
-  static readonly USER_AGENT = 'google-api-nodejs-client/' + pkg.version;
+  static readonly USER_AGENT = `${PRODUCT_NAME}/${pkg.version}`;
 
   /**
    * Configures request options before making a request.
@@ -50,13 +51,12 @@ export class DefaultTransporter {
   configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
     // set transporter user agent
     opts.headers = opts.headers || {};
-    if (!opts.headers['User-Agent']) {
+    const uaValue: string = opts.headers['User-Agent'];
+    if (!uaValue) {
       opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
-    } else if (
-        opts.headers['User-Agent'].indexOf(DefaultTransporter.USER_AGENT) ===
-        -1) {
+    } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
       opts.headers['User-Agent'] =
-          opts.headers['User-Agent'] + ' ' + DefaultTransporter.USER_AGENT;
+          `${uaValue} ${DefaultTransporter.USER_AGENT}`;
     }
     return opts;
   }
