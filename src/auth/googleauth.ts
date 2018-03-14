@@ -631,8 +631,11 @@ export class GoogleAuth {
     }
 
     // For GCE, return the service account details from the metadata server
+    // NOTE: The trailing '/' at the end of service-accounts/ is very important!
+    // The GCF metadata server doesn't respect querystring params if this / is
+    // not included.
     const {data} = await gcpMetadata.instance(
-        {property: 'service-accounts', params: {recursive: true}});
+        {property: 'service-accounts/', params: {recursive: true}});
 
     if (!data || !data.default || !data.default.email) {
       throw new Error('Failure from metadata server.');
