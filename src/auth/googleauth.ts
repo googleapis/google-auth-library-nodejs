@@ -632,7 +632,7 @@ export class GoogleAuth {
 
     // For GCE, return the service account details from the metadata server
     const {data} = await gcpMetadata.instance(
-        {property: 'service-accounts', params: {recursive: true}});
+        {property: 'service-accounts/', params: {recursive: true}});
 
     if (!data || !data.default || !data.default.email) {
       throw new Error('Failure from metadata server.');

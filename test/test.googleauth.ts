@@ -31,7 +31,7 @@ nock.disableNetConnect();
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 const host = HOST_ADDRESS;
 const instancePath = `${BASE_PATH}/instance`;
-const svcAccountPath = `${instancePath}/service-accounts?recursive=true`;
+const svcAccountPath = `${instancePath}/service-accounts/?recursive=true`;
 const API_KEY = 'test-123';
 const STUB_PROJECT = 'my-awesome-project';
 const ENDPOINT = '/events:report';
