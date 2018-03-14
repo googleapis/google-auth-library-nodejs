@@ -16,7 +16,8 @@
 
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
-import {Credentials, JWTInput} from './credentials';
+
+import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
 
@@ -168,6 +169,20 @@ export class JWT extends OAuth2Client {
    * @private
    */
   async refreshToken(refreshToken?: string|null): Promise<GetTokenResponse> {
+    const gtoken = this.createGToken();
+    const token = await gtoken.getToken();
+    const tokens = {
+      access_token: token,
+      token_type: 'Bearer',
+      expiry_date: gtoken.expiresAt
+    };
+    return {res: null, tokens};
+  }
+
+  /**
+   * Create a gToken if it doesn't already exist.
+   */
+  private createGToken(): GoogleToken {
     if (!this.gtoken) {
       this.gtoken = new GoogleToken({
         iss: this.email,
@@ -178,13 +193,7 @@ export class JWT extends OAuth2Client {
         additionalClaims: this.additionalClaims
       });
     }
-    const token = await this.gtoken.getToken();
-    const tokens = {
-      access_token: token,
-      token_type: 'Bearer',
-      expiry_date: this.gtoken.expiresAt
-    };
-    return {res: null, tokens};
+    return this.gtoken;
   }
 
   /**
@@ -260,5 +269,20 @@ export class JWT extends OAuth2Client {
       throw new Error('Must provide an API Key string.');
     }
     this.apiKey = apiKey;
+  }
+
+  /**
+   * Using the key or keyFile on the JWT client, obtain an object that contains
+   * the key and the client email.
+   */
+  async getCredentials(): Promise<CredentialBody> {
+    if (this.key) {
+      return {private_key: this.key, client_email: this.email};
+    } else if (this.keyFile) {
+      const gtoken = this.createGToken();
+      const creds = await gtoken.getCredentials(this.keyFile);
+      return {private_key: creds.privateKey, client_email: creds.clientEmail};
+    }
+    throw new Error('A key or a keyFile must be provided to getCredentials.');
   }
 }

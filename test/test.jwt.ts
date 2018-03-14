@@ -25,6 +25,7 @@ import {GoogleAuth, JWT} from '../src/index';
 const keypair = require('keypair');
 const PEM_PATH = './test/fixtures/private.pem';
 const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
+const P12_PATH = './test/fixtures/key.p12';
 
 nock.disableNetConnect();
 
@@ -676,4 +677,25 @@ it('fromAPIKey should set the .apiKey property on the instance', () => {
   const KEY = 'test';
   const result = jwt.fromAPIKey(KEY);
   assert.strictEqual(jwt.apiKey, KEY);
+});
+
+it('getCredentials should handle a key', async () => {
+  const jwt = new JWT({key: PEM_CONTENTS});
+  const {private_key} = await jwt.getCredentials();
+  assert.equal(private_key, PEM_CONTENTS);
+});
+
+it('getCredentials should handle a p12 keyFile', async () => {
+  const jwt = new JWT({keyFile: P12_PATH});
+  const {private_key, client_email} = await jwt.getCredentials();
+  assert(private_key);
+  assert.equal(client_email, undefined);
+});
+
+it('getCredentials should handle a json keyFile', async () => {
+  const jwt = new JWT();
+  jwt.fromJSON(json);
+  const {private_key, client_email} = await jwt.getCredentials();
+  assert.equal(private_key, json.private_key);
+  assert.equal(client_email, json.client_email);
 });

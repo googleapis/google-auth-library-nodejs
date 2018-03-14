@@ -21,7 +21,7 @@
   ],
   "dependencies": {
     "axios": "^0.18.0",
-    "gtoken": "^2.1.1",
+    "gtoken": "^2.2.0",
     "jws": "^3.1.4",
     "lodash.isstring": "^4.0.1",
     "lru-cache": "^4.1.2",
