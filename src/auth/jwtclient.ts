@@ -16,7 +16,8 @@
 
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
-import {Credentials, JWTInput} from './credentials';
+
+import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
 
@@ -181,7 +182,7 @@ export class JWT extends OAuth2Client {
   /**
    * Create a gToken if it doesn't already exist.
    */
-  private createGToken() {
+  private createGToken(): GoogleToken {
     if (!this.gtoken) {
       this.gtoken = new GoogleToken({
         iss: this.email,
@@ -192,6 +193,7 @@ export class JWT extends OAuth2Client {
         additionalClaims: this.additionalClaims
       });
     }
+    return this.gtoken;
   }
 
   /**
@@ -273,13 +275,13 @@ export class JWT extends OAuth2Client {
    * Using the key or keyFile on the JWT client, obtain an object that contains
    * the key and the client email.
    */
-  async getCredentials() {
+  async getCredentials(): Promise<CredentialBody> {
     if (this.key) {
-      return {key: this.key, email: this.email};
+      return {private_key: this.key, client_email: this.email};
     } else if (this.keyFile) {
-      this.createGToken();
-      const creds = await this.gtoken!.getCredentials(this.keyFile);
-      return {key: creds.privateKey, email: creds.clientEmail};
+      const gtoken = this.createGToken();
+      const creds = await gtoken.getCredentials(this.keyFile);
+      return {private_key: creds.privateKey, client_email: creds.clientEmail};
     }
     throw new Error('A key or a keyFile must be provided to getCredentials.');
   }

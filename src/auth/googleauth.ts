@@ -27,7 +27,7 @@ import * as util from 'util';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute} from './computeclient';
-import {JWTInput} from './credentials';
+import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
 import {IAMAuth, RequestMetadata} from './iam';
 import {JWTAccess} from './jwtaccess';
@@ -50,11 +50,6 @@ export interface ADCCallback {
 export interface ADCResponse {
   credential: OAuth2Client;
   projectId: string|null;
-}
-
-export interface CredentialBody {
-  client_email?: string;
-  private_key?: string;
 }
 
 interface CredentialResult {

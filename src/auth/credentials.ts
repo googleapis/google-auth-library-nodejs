@@ -38,3 +38,8 @@ export interface JWTInput {
   client_secret?: string;
   refresh_token?: string;
 }
+
+export interface CredentialBody {
+  client_email?: string;
+  private_key?: string;
+}

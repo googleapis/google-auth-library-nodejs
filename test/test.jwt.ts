@@ -681,21 +681,21 @@ it('fromAPIKey should set the .apiKey property on the instance', () => {
 
 it('getCredentials should handle a key', async () => {
   const jwt = new JWT({key: PEM_CONTENTS});
-  const {key} = await jwt.getCredentials();
-  assert.equal(key, PEM_CONTENTS);
+  const {private_key} = await jwt.getCredentials();
+  assert.equal(private_key, PEM_CONTENTS);
 });
 
 it('getCredentials should handle a p12 keyFile', async () => {
   const jwt = new JWT({keyFile: P12_PATH});
-  const {key, email} = await jwt.getCredentials();
-  assert(key);
-  assert.equal(email, undefined);
+  const {private_key, client_email} = await jwt.getCredentials();
+  assert(private_key);
+  assert.equal(client_email, undefined);
 });
 
 it('getCredentials should handle a json keyFile', async () => {
   const jwt = new JWT();
   jwt.fromJSON(json);
-  const {key, email} = await jwt.getCredentials();
-  assert.equal(key, json.private_key);
-  assert.equal(email, json.client_email);
+  const {private_key, client_email} = await jwt.getCredentials();
+  assert.equal(private_key, json.private_key);
+  assert.equal(client_email, json.client_email);
 });
