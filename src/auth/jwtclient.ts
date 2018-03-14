@@ -169,12 +169,12 @@ export class JWT extends OAuth2Client {
    * @private
    */
   async refreshToken(refreshToken?: string|null): Promise<GetTokenResponse> {
-    this.createGToken();
-    const token = await this.gtoken!.getToken();
+    const gtoken = this.createGToken();
+    const token = await gtoken.getToken();
     const tokens = {
       access_token: token,
       token_type: 'Bearer',
-      expiry_date: this.gtoken!.expiresAt
+      expiry_date: gtoken.expiresAt
     };
     return {res: null, tokens};
   }
