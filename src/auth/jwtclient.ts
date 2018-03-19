@@ -103,7 +103,7 @@ export class JWT extends OAuth2Client {
                                      target_audience: string
                                    }).target_audience) {
         const {tokens} = await this.refreshToken();
-        return {headers: {Authorization: `Bearer ${tokens.access_token}`}};
+        return {headers: {Authorization: `Bearer ${tokens.id_token}`}};
       } else {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
@@ -174,7 +174,9 @@ export class JWT extends OAuth2Client {
     const tokens = {
       access_token: token,
       token_type: 'Bearer',
-      expiry_date: gtoken.expiresAt
+      expiry_date: gtoken.expiresAt,
+      // tslint:disable-next-line no-any
+      id_token: (gtoken.rawToken! as any).id_token
     };
     return {res: null, tokens};
   }
