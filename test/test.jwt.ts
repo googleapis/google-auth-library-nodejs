@@ -217,8 +217,9 @@ it('should accept additionalClaims that include a target_audience',
      jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
      const testUri = 'http:/example.com/my_test_service';
-     createGTokenMock({access_token: 'abc123'});
+     const scope = createGTokenMock({id_token: 'abc123'});
      const {headers} = await jwt.getRequestMetadata(testUri);
+     scope.done();
      const got = headers as {
        Authorization: string;
      };
