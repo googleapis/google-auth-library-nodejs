@@ -99,10 +99,10 @@ export interface TokenInfoRequest {
   user_id?: string;
   scope: string;
   expires_in: number;
-  azp: string;
-  sub: string;
-  exp: string;
-  access_type: string;
+  azp?: string;
+  sub?: string;
+  exp?: number;
+  access_type?: string;
 }
 
 export interface GenerateAuthUrlOpts {

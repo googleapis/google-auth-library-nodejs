@@ -221,8 +221,8 @@ const tokens = await oauth2Client.refreshAccessToken();
 // store these new tokens in a safe place (e.g. database)
 ```
 
-##### Checking access_token information
-After obtaining and storing an access_token, at a later time you may want to go check the expiration date,
+##### Checking `access_token` information
+After obtaining and storing an `access_token`, at a later time you may want to go check the expiration date,
 original scopes, or audience for the token.  To get the token info, you can use the `getTokenInfo` method:
 
 ```js

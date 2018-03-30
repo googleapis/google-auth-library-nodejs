@@ -37,8 +37,8 @@ async function main() {
 
   // After acquiring an access_token, you may want to check on the audience, expiration,
   // or original scopes requested.  You can do that with the `getTokenInfo` method.
-  const info = await client.getTokenInfo(client.credentials.access_token);
-  console.log(info);
+  const tokenInfo = await client.getTokenInfo(client.credentials.access_token);
+  console.log(tokenInfo);
 }
 
 main().catch(console.error);
