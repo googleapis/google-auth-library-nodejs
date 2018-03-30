@@ -940,3 +940,23 @@ it('should accept custom authBaseUrl and tokenUrl', async () => {
   const result = await client.getToken('12345');
   scope.done();
 });
+
+it('should obtain token info', async () => {
+  const accessToken = 'abc';
+  const tokenInfo = {
+    aud: 'naudience',
+    user_id: '12345',
+    scope: 'scope1 scope2',
+    expires_in: 1234
+  };
+
+  const scope = nock('https://www.googleapis.com')
+                    .get(`/oauth2/v3/tokeninfo?access_token=${accessToken}`)
+                    .reply(200, tokenInfo);
+
+  const info = await client.getTokenInfo(accessToken);
+  scope.done();
+  assert.equal(info.aud, tokenInfo.aud);
+  assert.equal(info.user_id, tokenInfo.user_id);
+  assert.deepEqual(info.scopes, tokenInfo.scope.split(' '));
+});

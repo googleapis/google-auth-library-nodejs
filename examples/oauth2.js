@@ -33,6 +33,13 @@ async function main() {
     const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
     const res = await oAuth2Client.request({ url });
     console.log(res.data);
+
+    // After acquiring an access_token, you may want to check on the audience, expiration,
+    // or original scopes requested.  You can do that with the `getTokenInfo` method.
+    const tokenInfo = await oAuth2Client.getTokenInfo(
+      oAuth2Client.credentials.access_token
+    );
+    console.log(tokenInfo);
   } catch (e) {
     console.error(e);
   }
