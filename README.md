@@ -221,6 +221,20 @@ const tokens = await oauth2Client.refreshAccessToken();
 // store these new tokens in a safe place (e.g. database)
 ```
 
+##### Checking `access_token` information
+After obtaining and storing an `access_token`, at a later time you may want to go check the expiration date,
+original scopes, or audience for the token.  To get the token info, you can use the `getTokenInfo` method:
+
+```js
+// after acquiring an oAuth2Client...
+const tokenInfo = await oAuth2client.getTokenInfo('my-access-token');
+
+// take a look at the scopes originally provisioned for the access token
+console.log(tokenInfo.scopes);
+```
+
+This method will throw if the token is invalid.
+
 ##### OAuth2 with Installed Apps (Electron)
 If you're authenticating with OAuth2 from an installed application (like Electron), you may not want to embed your `client_secret` inside of the application sources. To work around this restriction, you can choose the `iOS` application type when creating your OAuth2 credentials in the [Google Developers console][devconsole]:
 

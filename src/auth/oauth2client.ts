@@ -36,6 +36,75 @@ export interface GetTokenOptions {
   codeVerifier?: string;
 }
 
+export interface TokenInfo {
+  /**
+   * The application that is the intended user of the access token.
+   */
+  aud: string;
+
+  /**
+   * This value lets you correlate profile information from multiple Google
+   * APIs. It is only present in the response if you included the profile scope
+   * in your request in step 1. The field value is an immutable identifier for
+   * the logged-in user that can be used to create and manage user sessions in
+   * your application. The identifier is the same regardless of which client ID
+   * is used to retrieve it. This enables multiple applications in the same
+   * organization to correlate profile information.
+   */
+  user_id?: string;
+
+  /**
+   * An array of scopes that the user granted access to.
+   */
+  scopes: string[];
+
+  /**
+   * The datetime when the token becomes invalid.
+   */
+  expiry_date: number;
+
+  /**
+   * An identifier for the user, unique among all Google accounts and never
+   * reused. A Google account can have multiple emails at different points in
+   * time, but the sub value is never changed. Use sub within your application
+   * as the unique-identifier key for the user.
+   */
+  sub?: string;
+
+  /**
+   * The client_id of the authorized presenter. This claim is only needed when
+   * the party requesting the ID token is not the same as the audience of the ID
+   * token. This may be the case at Google for hybrid apps where a web
+   * application and Android app have a different client_id but share the same
+   * project.
+   */
+  azp?: string;
+
+  /**
+   * Indicates whether your application can refresh access tokens
+   * when the user is not present at the browser. Valid parameter values are
+   * 'online', which is the default value, and 'offline'. Set the value to
+   * 'offline' if your application needs to refresh access tokens when the user
+   * is not present at the browser. This value instructs the Google
+   * authorization server to return a refresh token and an access token the
+   * first time that your application exchanges an authorization code for
+   * tokens.
+   */
+  access_type?: string;
+}
+
+
+export interface TokenInfoRequest {
+  aud: string;
+  user_id?: string;
+  scope: string;
+  expires_in: number;
+  azp?: string;
+  sub?: string;
+  exp?: number;
+  access_type?: string;
+}
+
 export interface GenerateAuthUrlOpts {
   /**
    * Recommended. Indicates whether your application can refresh access tokens
@@ -287,6 +356,9 @@ export class OAuth2Client extends AuthClient {
     this.eagerRefreshThresholdMillis =
         opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
   }
+
+  protected static readonly GOOGLE_TOKEN_INFO_URL =
+      'https://www.googleapis.com/oauth2/v3/tokeninfo';
 
   /**
    * The base URL for auth endpoints.
@@ -750,6 +822,30 @@ export class OAuth2Client extends AuthClient {
         OAuth2Client.ISSUERS_, options.maxExpiry);
 
     return login;
+  }
+
+  /**
+   * Obtains information about the provisioned access token.  Especially useful
+   * if you want to check the scopes that were provisioned to a given token.
+   *
+   * @param accessToken Required.  The Access Token for which you want to get
+   * user info.
+   */
+  async getTokenInfo(accessToken: string): Promise<TokenInfo> {
+    const {data} = await this.transporter.request<TokenInfoRequest>({
+      method: 'GET',
+      url: OAuth2Client.GOOGLE_TOKEN_INFO_URL,
+      params: {access_token: accessToken}
+    });
+    const info = Object.assign(
+        {
+          expiry_date: ((new Date()).getTime() + (data.expires_in * 1000)),
+          scopes: data.scope.split(' ')
+        },
+        data);
+    delete info.expires_in;
+    delete info.scope;
+    return info;
   }
 
   /**
