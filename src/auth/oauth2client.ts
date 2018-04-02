@@ -504,26 +504,26 @@ export class OAuth2Client extends AuthClient {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
-    if (refreshToken) {
-      // If a request to refresh using the same token has started,
-      // return the same promise.
-      if (this.refreshTokenPromises.has(refreshToken)) {
-        return this.refreshTokenPromises.get(refreshToken)!;
-      }
-
-      const p = this.refreshTokenNoCache(refreshToken)
-                    .then(r => {
-                      this.refreshTokenPromises.delete(refreshToken);
-                      return r;
-                    })
-                    .catch(e => {
-                      this.refreshTokenPromises.delete(refreshToken);
-                      throw e;
-                    });
-      this.refreshTokenPromises.set(refreshToken, p);
-      return p;
+    if (!refreshToken) {
+      return this.refreshTokenNoCache(refreshToken);
     }
-    return this.refreshTokenNoCache(refreshToken);
+    // If a request to refresh using the same token has started,
+    // return the same promise.
+    if (this.refreshTokenPromises.has(refreshToken)) {
+      return this.refreshTokenPromises.get(refreshToken)!;
+    }
+
+    const p = this.refreshTokenNoCache(refreshToken)
+                  .then(r => {
+                    this.refreshTokenPromises.delete(refreshToken);
+                    return r;
+                  })
+                  .catch(e => {
+                    this.refreshTokenPromises.delete(refreshToken);
+                    throw e;
+                  });
+    this.refreshTokenPromises.set(refreshToken, p);
+    return p;
   }
 
   protected async refreshTokenNoCache(refreshToken?: string|

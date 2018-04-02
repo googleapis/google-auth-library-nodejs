@@ -67,7 +67,7 @@ export class UserRefreshClient extends OAuth2Client {
    */
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
-    return super.refreshTokenNoCache(this._refreshToken!);
+    return super.refreshTokenNoCache(this._refreshToken);
   }
 
   /**

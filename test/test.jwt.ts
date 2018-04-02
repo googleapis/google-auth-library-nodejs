@@ -258,7 +258,6 @@ it('should unify the promise when refreshing the token', async () => {
     subject: 'bar@subjectaccount.com'
   });
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
-  jwt.credentials = {refresh_token: 'refresh-token-placeholder'};
   await Promise.all([
     jwt.request({url: 'http://example.com'}),
     jwt.request({url: 'http://example.com'}),

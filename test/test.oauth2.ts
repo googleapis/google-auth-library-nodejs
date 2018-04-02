@@ -787,6 +787,31 @@ it('should clear the cached refresh token promise after completion',
      assert.equal('abc123', client.credentials.access_token);
    });
 
+it('should clear the cached refresh token promise after throw', async () => {
+  // Mock a failed call to the refreshToken endpoint. This should trigger
+  // a second call to refreshToken, which should use a different promise.
+  const scopes = [
+    nock(baseUrl)
+        .post(
+            '/oauth2/v4/token', undefined,
+            {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
+        .reply(500)
+        .post(
+            '/oauth2/v4/token', undefined,
+            {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
+        .reply(200, {access_token: 'abc123', expires_in: 100000}),
+    nock('http://example.com').get('/').reply(200)
+  ];
+  client.credentials = {refresh_token: 'refresh-token-placeholder'};
+  try {
+    await client.request({url: 'http://example.com'});
+  } catch (e) {
+  }
+  await client.request({url: 'http://example.com'});
+  scopes.forEach(s => s.done());
+  assert.equal('abc123', client.credentials.access_token);
+});
+
 it('should refresh if access token is expired', (done) => {
   client.setCredentials({
     access_token: 'initial-access-token',
@@ -800,7 +825,6 @@ it('should refresh if access token is expired', (done) => {
     done();
   });
 });
-
 
 it('should refresh if access token will expired soon and time to refresh before expiration is set',
    async () => {
