@@ -36,7 +36,7 @@ const SCOPE = 'scopex';
 const SCOPE_ARRAY = ['scopex', 'scopey'];
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
-const certsBaseUrl = 'https://www.googleapis.com';
+const baseUrl = 'https://www.googleapis.com';
 const certsPath = '/oauth2/v1/certs';
 const certsResPath =
     path.join(__dirname, '../../test/fixtures/oauthcerts.json');
@@ -126,9 +126,7 @@ it('should verifyIdToken properly', async () => {
   const maxExpiry = 5;
   const payload =
       {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-  nock('https://www.googleapis.com')
-      .get('/oauth2/v1/certs')
-      .reply(200, fakeCerts);
+  nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
   client.verifySignedJwtWithCerts =
       (jwt: string, certs: {}, requiredAudience: string|string[],
        issuers?: string[], theMaxExpiry?: number) => {
@@ -153,9 +151,7 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const audience = 'fakeAudience';
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-     nock('https://www.googleapis.com')
-         .get('/oauth2/v1/certs')
-         .reply(200, fakeCerts);
+     nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
      client.verifySignedJwtWithCerts =
          (jwt: string, certs: {}, requiredAudience: string|string[],
           issuers?: string[], theMaxExpiry?: number) => {
@@ -635,8 +631,7 @@ it('should pass due to valid issuer', () => {
 });
 
 it('should be able to retrieve a list of Google certificates', (done) => {
-  const scope =
-      nock(certsBaseUrl).get(certsPath).replyWithFile(200, certsResPath);
+  const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
     assert.equal(err, null);
     assert.equal(Object.keys(certs).length, 2);
@@ -650,7 +645,7 @@ it('should be able to retrieve a list of Google certificates', (done) => {
 it('should be able to retrieve a list of Google certificates from cache again',
    done => {
      const scope =
-         nock(certsBaseUrl)
+         nock(baseUrl)
              .defaultReplyHeaders({
                'Cache-Control':
                    'public, max-age=23641, must-revalidate, no-transform',
@@ -730,7 +725,7 @@ it('should return error in callback on refreshAccessToken', done => {
 
 function mockExample() {
   return [
-    nock('https://www.googleapis.com')
+    nock(baseUrl)
         .post(
             '/oauth2/v4/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
@@ -749,6 +744,74 @@ it('should refresh token if missing access token', (done) => {
   });
 });
 
+it('should unify the promise when refreshing the token', async () => {
+  // Mock a single call to the token server, and 3 calls to the example
+  // endpoint. This makes sure that refreshToken is called only once.
+  const scopes = [
+    nock(baseUrl)
+        .post(
+            '/oauth2/v4/token', undefined,
+            {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
+        .reply(200, {access_token: 'abc123', expires_in: 1}),
+    nock('http://example.com').get('/').thrice().reply(200)
+  ];
+  client.credentials = {refresh_token: 'refresh-token-placeholder'};
+  await Promise.all([
+    client.request({url: 'http://example.com'}),
+    client.request({url: 'http://example.com'}),
+    client.request({url: 'http://example.com'})
+  ]);
+  scopes.forEach(s => s.done());
+  assert.equal('abc123', client.credentials.access_token);
+});
+
+it('should clear the cached refresh token promise after completion',
+   async () => {
+     // Mock 2 calls to the token server and 2 calls to the example endpoint.
+     // This makes sure that the token endpoint is invoked twice, preventing the
+     // promise from getting cached for too long.
+     const scopes = [
+       nock(baseUrl)
+           .post('/oauth2/v4/token', undefined, {
+             reqheaders: {'content-type': 'application/x-www-form-urlencoded'}
+           })
+           .twice()
+           .reply(200, {access_token: 'abc123', expires_in: 100000}),
+       nock('http://example.com').get('/').twice().reply(200)
+     ];
+     client.credentials = {refresh_token: 'refresh-token-placeholder'};
+     await client.request({url: 'http://example.com'});
+     client.credentials.access_token = null;
+     await client.request({url: 'http://example.com'});
+     scopes.forEach(s => s.done());
+     assert.equal('abc123', client.credentials.access_token);
+   });
+
+it('should clear the cached refresh token promise after throw', async () => {
+  // Mock a failed call to the refreshToken endpoint. This should trigger
+  // a second call to refreshToken, which should use a different promise.
+  const scopes = [
+    nock(baseUrl)
+        .post(
+            '/oauth2/v4/token', undefined,
+            {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
+        .reply(500)
+        .post(
+            '/oauth2/v4/token', undefined,
+            {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
+        .reply(200, {access_token: 'abc123', expires_in: 100000}),
+    nock('http://example.com').get('/').reply(200)
+  ];
+  client.credentials = {refresh_token: 'refresh-token-placeholder'};
+  try {
+    await client.request({url: 'http://example.com'});
+  } catch (e) {
+  }
+  await client.request({url: 'http://example.com'});
+  scopes.forEach(s => s.done());
+  assert.equal('abc123', client.credentials.access_token);
+});
+
 it('should refresh if access token is expired', (done) => {
   client.setCredentials({
     access_token: 'initial-access-token',
@@ -762,7 +825,6 @@ it('should refresh if access token is expired', (done) => {
     done();
   });
 });
-
 
 it('should refresh if access token will expired soon and time to refresh before expiration is set',
    async () => {
@@ -894,7 +956,7 @@ it('should clear credentials and return error if no access token to revoke',
 
 it('getToken should allow a code_verifier to be passed', async () => {
   const scope =
-      nock('https://www.googleapis.com')
+      nock(baseUrl)
           .post('/oauth2/v4/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
@@ -912,7 +974,7 @@ it('getToken should allow a code_verifier to be passed', async () => {
 it('should return expiry_date', done => {
   const now = (new Date()).getTime();
   const scope =
-      nock('https://www.googleapis.com')
+      nock(baseUrl)
           .post('/oauth2/v4/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
@@ -950,7 +1012,7 @@ it('should obtain token info', async () => {
     expires_in: 1234
   };
 
-  const scope = nock('https://www.googleapis.com')
+  const scope = nock(baseUrl)
                     .get(`/oauth2/v3/tokeninfo?access_token=${accessToken}`)
                     .reply(200, tokenInfo);
 

@@ -62,8 +62,8 @@ export class Compute extends OAuth2Client {
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */
-  protected async refreshToken(refreshToken?: string|
-                               null): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(refreshToken?: string|
+                                      null): Promise<GetTokenResponse> {
     const url = this.tokenUrl ||
         `${gcpMetadata.HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
     let res: AxiosResponse<CredentialRequest>|null = null;

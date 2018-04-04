@@ -65,9 +65,9 @@ export class UserRefreshClient extends OAuth2Client {
    * @param refreshToken An ignored refreshToken..
    * @param callback Optional callback.
    */
-  protected async refreshToken(refreshToken?: string|
-                               null): Promise<GetTokenResponse> {
-    return super.refreshToken(this._refreshToken);
+  protected async refreshTokenNoCache(refreshToken?: string|
+                                      null): Promise<GetTokenResponse> {
+    return super.refreshTokenNoCache(this._refreshToken);
   }
 
   /**

@@ -244,6 +244,53 @@ it('should refresh token if missing access token', (done) => {
   });
 });
 
+it('should unify the promise when refreshing the token', async () => {
+  // Mock a single call to the token server, and 3 calls to the example
+  // endpoint. This makes sure that refreshToken is called only once.
+  const scopes = [
+    createGTokenMock({access_token: 'abc123'}),
+    nock('http://example.com').get('/').thrice().reply(200)
+  ];
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: PEM_PATH,
+    scopes: ['http://bar', 'http://foo'],
+    subject: 'bar@subjectaccount.com'
+  });
+  jwt.credentials = {refresh_token: 'jwt-placeholder'};
+  await Promise.all([
+    jwt.request({url: 'http://example.com'}),
+    jwt.request({url: 'http://example.com'}),
+    jwt.request({url: 'http://example.com'})
+  ]);
+  scopes.forEach(s => s.done());
+  assert.equal('abc123', jwt.credentials.access_token);
+});
+
+it('should clear the cached refresh token promise after completion',
+   async () => {
+     // Mock 2 calls to the token server and 2 calls to the example endpoint.
+     // This makes sure that the token endpoint is invoked twice, preventing
+     // the promise from getting cached for too long.
+     const scopes = [
+       createGTokenMock({access_token: 'abc123'}),
+       createGTokenMock({access_token: 'abc123'}),
+       nock('http://example.com').get('/').twice().reply(200)
+     ];
+     const jwt = new JWT({
+       email: 'foo@serviceaccount.com',
+       keyFile: PEM_PATH,
+       scopes: ['http://bar', 'http://foo'],
+       subject: 'bar@subjectaccount.com'
+     });
+     jwt.credentials = {refresh_token: 'refresh-token-placeholder'};
+     await jwt.request({url: 'http://example.com'});
+     jwt.credentials.access_token = null;
+     await jwt.request({url: 'http://example.com'});
+     scopes.forEach(s => s.done());
+     assert.equal('abc123', jwt.credentials.access_token);
+   });
+
 it('should refresh token if expired', (done) => {
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
@@ -390,13 +437,15 @@ it('should return expiry_date in milliseconds', async () => {
 
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
-  createGTokenMock({access_token: 'token', expires_in: 100});
-  const result = await jwt.refreshToken(null);
-  const creds = result.tokens;
+  const scope = createGTokenMock({access_token: 'token', expires_in: 100});
+  jwt.credentials.access_token = null;
+  const result = await jwt.getRequestMetadata();
+  scope.done();
   const dateInMillis = (new Date()).getTime();
-  const expiryDate = new Date(creds.expiry_date!);
+  const expiryDate = new Date(jwt.credentials.expiry_date!);
   assert.equal(
-      dateInMillis.toString().length, creds.expiry_date!.toString().length);
+      dateInMillis.toString().length,
+      jwt.credentials.expiry_date!.toString().length);
 });
 
 it('createScoped should clone stuff', () => {

@@ -306,6 +306,7 @@ export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
   private certificateCache: {}|null|undefined = null;
   private certificateExpiry: Date|null = null;
+  protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
   protected authBaseUrl?: string;
   protected tokenUrl?: string;
 
@@ -503,6 +504,30 @@ export class OAuth2Client extends AuthClient {
    */
   protected async refreshToken(refreshToken?: string|
                                null): Promise<GetTokenResponse> {
+    if (!refreshToken) {
+      return this.refreshTokenNoCache(refreshToken);
+    }
+    // If a request to refresh using the same token has started,
+    // return the same promise.
+    if (this.refreshTokenPromises.has(refreshToken)) {
+      return this.refreshTokenPromises.get(refreshToken)!;
+    }
+
+    const p = this.refreshTokenNoCache(refreshToken)
+                  .then(r => {
+                    this.refreshTokenPromises.delete(refreshToken);
+                    return r;
+                  })
+                  .catch(e => {
+                    this.refreshTokenPromises.delete(refreshToken);
+                    throw e;
+                  });
+    this.refreshTokenPromises.set(refreshToken, p);
+    return p;
+  }
+
+  protected async refreshTokenNoCache(refreshToken?: string|
+                                      null): Promise<GetTokenResponse> {
     const url = this.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const data = {
       refresh_token: refreshToken,
@@ -518,6 +543,7 @@ export class OAuth2Client extends AuthClient {
       data: querystring.stringify(data),
       headers: {'Content-Type': 'application/x-www-form-urlencoded'}
     });
+
     const tokens = res.data as Credentials;
     // TODO: de-duplicate this code from a few spots
     if (res.data && res.data.expires_in) {
