@@ -130,6 +130,30 @@ it('can get obtain new access token when scopes are set', (done) => {
   });
 });
 
+
+it('should emit an event for tokens', (done) => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: PEM_PATH,
+    scopes: ['http://bar', 'http://foo'],
+    subject: 'bar@subjectaccount.com'
+  });
+
+  let raisedEvent = false;
+  jwt.on('tokens', tokens => {
+    assert.equal(tokens.access_token, 'initial-access-token');
+    raisedEvent = true;
+  });
+
+  jwt.credentials = {refresh_token: 'jwt-placeholder'};
+  const scope = createGTokenMock({access_token: 'initial-access-token'});
+  jwt.getAccessToken((err, got) => {
+    scope.done();
+    assert(raisedEvent);
+    done();
+  });
+});
+
 it('can obtain new access token when scopes are set', (done) => {
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
@@ -153,6 +177,8 @@ it('can obtain new access token when scopes are set', (done) => {
     done();
   });
 });
+
+
 
 it('gets a jwt header access token', (done) => {
   const keys = keypair(1024 /* bitsize of private key */);

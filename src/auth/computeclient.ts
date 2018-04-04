@@ -86,6 +86,7 @@ export class Compute extends OAuth2Client {
           ((new Date()).getTime() + (res.data.expires_in * 1000));
       delete (tokens as CredentialRequest).expires_in;
     }
+    this.emit('tokens', tokens);
     return {tokens, res};
   }
 
