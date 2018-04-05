@@ -17,7 +17,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as jws from 'jws';
-import {JWTAccess} from '../src/index';
+import {JWTAccess} from '../src';
 
 const keypair = require('keypair');
 

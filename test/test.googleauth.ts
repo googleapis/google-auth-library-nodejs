@@ -23,8 +23,8 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import * as stream from 'stream';
 
+import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import * as envDetect from '../src/auth/envDetect';
-import {GoogleAuth, JWT, UserRefreshClient} from '../src/index';
 
 nock.disableNetConnect();
 
@@ -1227,6 +1227,20 @@ it('should accept credentials to get a client', async () => {
   const auth = new GoogleAuth({credentials});
   const client = await auth.getClient() as JWT;
   assert.equal(client.email, 'hello@youarecool.com');
+});
+
+it('should allow passing scopes to get a client', async () => {
+  const scopes = ['http://examples.com/is/a/scope'];
+  const keyFilename = './test/fixtures/private.json';
+  const client = await auth.getClient({scopes, keyFilename}) as JWT;
+  assert.equal(client.scopes, scopes);
+});
+
+it('should allow passing a scope to get a client', async () => {
+  const scopes = 'http://examples.com/is/a/scope';
+  const keyFilename = './test/fixtures/private.json';
+  const client = await auth.getClient({scopes, keyFilename}) as JWT;
+  assert.equal(client.scopes, scopes);
 });
 
 it('should get an access token', async () => {
