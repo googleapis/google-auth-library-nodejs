@@ -78,8 +78,9 @@ it('should get an initial access token', done => {
   const jwt = new JWT(
       'foo@serviceaccount.com', PEM_PATH, undefined,
       ['http://bar', 'http://foo'], 'bar@subjectaccount.com');
-  createGTokenMock({access_token: 'initial-access-token'});
+  const scope = createGTokenMock({access_token: 'initial-access-token'});
   jwt.authorize((err, creds) => {
+    scope.done();
     assert.equal(err, null);
     assert.notEqual(creds, null);
     assert.equal('foo@serviceaccount.com', jwt.gtoken!.iss);
@@ -100,13 +101,14 @@ it('should get an initial access token', done => {
 it('should accept scope as string', done => {
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
-    keyFile: '/path/to/key.pem',
+    keyFile: PEM_PATH,
     scopes: 'http://foo',
     subject: 'bar@subjectaccount.com'
   });
 
-  createGTokenMock({access_token: 'initial-access-token'});
+  const scope = createGTokenMock({access_token: 'initial-access-token'});
   jwt.authorize((err, creds) => {
+    scope.done();
     assert.equal('http://foo', jwt.gtoken!.scope);
     done();
   });
@@ -121,8 +123,9 @@ it('can get obtain new access token when scopes are set', (done) => {
   });
 
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
-  createGTokenMock({access_token: 'initial-access-token'});
+  const scope = createGTokenMock({access_token: 'initial-access-token'});
   jwt.getAccessToken((err, got) => {
+    scope.done();
     assert.strictEqual(null, err, 'no error was expected: got\n' + err);
     assert.strictEqual(
         'initial-access-token', got, 'the access token was wrong: ' + got);
@@ -141,8 +144,9 @@ it('can obtain new access token when scopes are set', (done) => {
 
   const wantedToken = 'abc123';
   const want = 'Bearer ' + wantedToken;
-  createGTokenMock({access_token: wantedToken});
+  const scope = createGTokenMock({access_token: wantedToken});
   jwt.getRequestMetadata(null, (err, result) => {
+    scope.done();
     assert.strictEqual(null, err, 'no error was expected: got\n' + err);
     const got = result as {
       Authorization: string;
@@ -236,9 +240,10 @@ it('should refresh token if missing access token', (done) => {
     subject: 'bar@subjectaccount.com'
   });
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
-  createGTokenMock({access_token: 'abc123'});
+  const scope = createGTokenMock({access_token: 'abc123'});
 
   jwt.request({url: 'http://bar'}, () => {
+    scope.done();
     assert.equal('abc123', jwt.credentials.access_token);
     done();
   });
@@ -305,8 +310,9 @@ it('should refresh token if expired', (done) => {
     expiry_date: (new Date()).getTime() - 1000
   };
 
-  createGTokenMock({access_token: 'abc123'});
+  const scope = createGTokenMock({access_token: 'abc123'});
   jwt.request({url: 'http://bar'}, () => {
+    scope.done();
     assert.equal('abc123', jwt.credentials.access_token);
     done();
   });
@@ -329,8 +335,9 @@ it('should refresh if access token will expired soon and time to refresh before 
        expiry_date: (new Date()).getTime() + 800
      };
 
-     createGTokenMock({access_token: 'abc123'});
+     const scope = createGTokenMock({access_token: 'abc123'});
      jwt.request({url: 'http://bar'}, () => {
+       scope.done();
        assert.equal('abc123', jwt.credentials.access_token);
        done();
      });
@@ -376,9 +383,10 @@ it('should refresh token if the server returns 403', (done) => {
     expiry_date: (new Date()).getTime() + 5000
   };
 
-  createGTokenMock({access_token: 'abc123'});
+  const scope = createGTokenMock({access_token: 'abc123'});
 
   jwt.request({url: 'http://example.com/access'}, () => {
+    scope.done();
     assert.equal('abc123', jwt.credentials.access_token);
     done();
   });

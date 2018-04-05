@@ -15,7 +15,7 @@
  */
 import * as assert from 'assert';
 
-import {DefaultTransporter, GoogleAuth} from '../src/';
+import {DefaultTransporter, GoogleAuth} from '../src';
 
 it('should publicly export GoogleAuth', () => {
   const cjs = require('../src/');

@@ -67,25 +67,23 @@ it('should not append default client user agent to the existing user agent more 
 it('should create a single error from multiple response errors', done => {
   const firstError = {message: 'Error 1'};
   const secondError = {message: 'Error 2'};
-  nock('http://example.com').get('/api').reply(400, {
-    error: {code: 500, errors: [firstError, secondError]}
+  const url = 'http://example.com';
+  const scope = nock(url).get('/').reply(
+      400, {error: {code: 500, errors: [firstError, secondError]}});
+  transporter.request({url}, (error) => {
+    scope.done();
+    assert.strictEqual(error!.message, 'Error 1\nError 2');
+    assert.equal((error as RequestError).code, 500);
+    assert.equal((error as RequestError).errors.length, 2);
+    done();
   });
-  transporter.request(
-      {
-        url: 'http://example.com/api',
-      },
-      (error) => {
-        assert.strictEqual(error!.message, 'Error 1\nError 2');
-        assert.equal((error as RequestError).code, 500);
-        assert.equal((error as RequestError).errors.length, 2);
-        done();
-      });
 });
 
 it('should return an error for a 404 response', done => {
   const url = 'http://example.com';
-  nock(url).get('/').reply(404, 'Not found');
+  const scope = nock(url).get('/').reply(404, 'Not found');
   transporter.request({url}, error => {
+    scope.done();
     assert.strictEqual(error!.message, 'Not found');
     assert.equal((error as RequestError).code, 404);
     done();
@@ -124,6 +122,7 @@ it('should support invocation with async/await', async () => {
   const url = 'http://example.com';
   const scope = nock(url).get('/').reply(200);
   const res = await transporter.request({url});
+  scope.done();
   assert.equal(res.status, 200);
 });
 
@@ -134,6 +133,7 @@ it('should throw if using async/await', async () => {
     await transporter.request({url});
   } catch (e) {
     assert.equal(e.message, 'florg');
+    scope.done();
     return;
   }
   throw new Error('Expected to throw');
@@ -143,6 +143,7 @@ it('should work with a callback', done => {
   const url = 'http://example.com';
   const scope = nock(url).get('/').reply(200);
   transporter.request({url}, (err, res) => {
+    scope.done();
     assert.equal(err, null);
     assert.equal(res!.status, 200);
     done();
@@ -152,35 +153,37 @@ it('should work with a callback', done => {
 it('should use the http proxy if one is configured', async () => {
   process.env['http_proxy'] = 'http://han:solo@proxy-server:1234';
   const transporter = new DefaultTransporter();
-  nock('http://proxy-server:1234')
-      .get('http://example.com/fake', undefined, {
-        reqheaders: {
-          'host': 'example.com',
-          'accept': /.*/g,
-          'user-agent': /google-api-nodejs-client\/.*/g,
-          'proxy-authorization': /.*/g
-        }
-      })
-      .reply(200);
+  const scope = nock('http://proxy-server:1234')
+                    .get('http://example.com/fake', undefined, {
+                      reqheaders: {
+                        'host': 'example.com',
+                        'accept': /.*/g,
+                        'user-agent': /google-api-nodejs-client\/.*/g,
+                        'proxy-authorization': /.*/g
+                      }
+                    })
+                    .reply(200);
   const url = 'http://example.com/fake';
   const result = await transporter.request({url});
+  scope.done();
   assert.equal(result.status, 200);
 });
 
 it('should use the https proxy if one is configured', async () => {
   process.env['https_proxy'] = 'https://han:solo@proxy-server:1234';
   const transporter = new DefaultTransporter();
-  nock('https://proxy-server:1234')
-      .get('https://example.com/fake', undefined, {
-        reqheaders: {
-          'host': 'example.com',
-          'accept': /.*/g,
-          'user-agent': /google-api-nodejs-client\/.*/g,
-          'proxy-authorization': /.*/g
-        }
-      })
-      .reply(200);
+  const scope = nock('https://proxy-server:1234')
+                    .get('https://example.com/fake', undefined, {
+                      reqheaders: {
+                        'host': 'example.com',
+                        'accept': /.*/g,
+                        'user-agent': /google-api-nodejs-client\/.*/g,
+                        'proxy-authorization': /.*/g
+                      }
+                    })
+                    .reply(200);
   const url = 'https://example.com/fake';
   const result = await transporter.request({url});
+  scope.done();
   assert.equal(result.status, 200);
 });
