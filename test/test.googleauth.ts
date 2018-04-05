@@ -984,7 +984,6 @@ it('getApplicationDefault should use GCE when well-known file and env const are 
          'compute-placeholder', res.credential.credentials.refresh_token);
    });
 
-
 it('getApplicationDefault should report GCE error when checking for GCE fails',
    async () => {
      // Set up the creds.
