@@ -37,6 +37,15 @@ export interface BodyResponseCallback<T> {
 
 export interface RequestError extends AxiosError { errors: Error[]; }
 
+/**
+ * Axios will use XHR if it is available. In the case of Electron,
+ * since XHR is there it will try to use that. This leads to OPTIONS
+ * preflight requests which googleapis DOES NOT like. This line of
+ * code pins the adapter to ensure it uses node.
+ * https://github.com/google/google-api-nodejs-client/issues/1083
+ */
+axios.defaults.adapter = require('axios/lib/adapters/http');
+
 export class DefaultTransporter {
   /**
    * Default user agent.
