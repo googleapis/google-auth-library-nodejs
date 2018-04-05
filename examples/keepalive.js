@@ -30,50 +30,28 @@ const https = require('https');
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  const adc = await getADC();
-  const url = `https://www.googleapis.com/dns/v1/projects/${adc.projectId}`;
+  const client = await auth.getClient({
+    scopes: 'https://www.googleapis.com/auth/cloud-platform'
+  });
+  const projectId = await auth.getDefaultProjectId();
+  const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
 
   // create a new agent with keepAlive enabled
   const agent = new https.Agent({ keepAlive: true });
 
   // use the agent as an Axios config param to make the request
-  const res = await adc.client.request({
+  const res = await client.request({
     url,
     httpsAgent: agent
   });
   console.log(res.data);
 
   // Re-use the same agent to make the next request over the same connection
-  const res2 = await adc.client.request({
+  const res2 = await client.request({
     url,
     httpsAgent: agent
   });
   console.log(res2.data);
-}
-
-/**
- * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
- * this library will automatically choose the right client based on the environment.
- */
-async function getADC() {
-  // Acquire a client and the projectId based on the environment. This method looks
-  // for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables.
-  const res = await auth.getApplicationDefault();
-  let client = res.credential;
-
-  // The createScopedRequired method returns true when running on GAE or a local developer
-  // machine. In that case, the desired scopes must be passed in manually. When the code is
-  // running in GCE or a Managed VM, the scopes are pulled from the GCE metadata server.
-  // See https://cloud.google.com/compute/docs/authentication for more information.
-  if (client.createScopedRequired && client.createScopedRequired()) {
-    // Scopes can be specified either as an array or as a single, space-delimited string.
-    const scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-    client = client.createScoped(scopes);
-  }
-  return {
-    client: client,
-    projectId: res.projectId
-  };
 }
 
 main().catch(console.error);

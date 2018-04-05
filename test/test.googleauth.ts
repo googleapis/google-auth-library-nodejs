@@ -984,6 +984,7 @@ it('getApplicationDefault should use GCE when well-known file and env const are 
          'compute-placeholder', res.credential.credentials.refresh_token);
    });
 
+
 it('getApplicationDefault should report GCE error when checking for GCE fails',
    async () => {
      // Set up the creds.
@@ -1227,6 +1228,20 @@ it('should accept credentials to get a client', async () => {
   const auth = new GoogleAuth({credentials});
   const client = await auth.getClient() as JWT;
   assert.equal(client.email, 'hello@youarecool.com');
+});
+
+it('should allow passing scopes to get a client', async () => {
+  const scopes = ['http://examples.com/is/a/scope'];
+  const keyFilename = './test/fixtures/private.json';
+  const client = await auth.getClient({scopes, keyFilename}) as JWT;
+  assert.equal(client.scopes, scopes);
+});
+
+it('should allow passing a scope to get a client', async () => {
+  const scopes = 'http://examples.com/is/a/scope';
+  const keyFilename = './test/fixtures/private.json';
+  const client = await auth.getClient({scopes, keyFilename}) as JWT;
+  assert.equal(client.scopes, scopes);
 });
 
 it('should get an access token', async () => {
