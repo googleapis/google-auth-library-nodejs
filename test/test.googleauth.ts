@@ -23,8 +23,8 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import * as stream from 'stream';
 
+import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import * as envDetect from '../src/auth/envDetect';
-import {GoogleAuth, JWT, UserRefreshClient} from '../src/index';
 
 nock.disableNetConnect();
 

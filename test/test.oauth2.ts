@@ -126,7 +126,7 @@ it('should verifyIdToken properly', async () => {
   const maxExpiry = 5;
   const payload =
       {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-  nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
+  const scope = nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
   client.verifySignedJwtWithCerts =
       (jwt: string, certs: {}, requiredAudience: string|string[],
        issuers?: string[], theMaxExpiry?: number) => {
@@ -137,6 +137,7 @@ it('should verifyIdToken properly', async () => {
         return new LoginTicket('c', payload);
       };
   const result = await client.verifyIdToken({idToken, audience, maxExpiry});
+  scope.done();
   assert.notEqual(result, null);
   if (result) {
     assert.equal(result.getEnvelope(), 'c');
@@ -151,7 +152,6 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const audience = 'fakeAudience';
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-     nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
      client.verifySignedJwtWithCerts =
          (jwt: string, certs: {}, requiredAudience: string|string[],
           issuers?: string[], theMaxExpiry?: number) => {
