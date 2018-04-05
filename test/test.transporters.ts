@@ -33,7 +33,16 @@ nock.disableNetConnect();
 const defaultUserAgentRE = 'google-api-nodejs-client/\\d+.\\d+.\\d+';
 const transporter = new DefaultTransporter();
 
-it('should set default client user agent if none is set', () => {
+it('should set default client user agent if none is set', async () => {
+  const url = 'http://example.com';
+  const scope = nock(url).get('/').reply(200, {});
+  const res = await transporter.request({url});
+  assert.strictEqual(typeof res.config.adapter, 'function');
+  assert.deepStrictEqual(
+      res.config.adapter, require('axios/lib/adapters/http'));
+});
+
+it('should set default adapter to node.js', () => {
   const opts = transporter.configure();
   const re = new RegExp(defaultUserAgentRE);
   assert(re.test(opts.headers!['User-Agent']));
