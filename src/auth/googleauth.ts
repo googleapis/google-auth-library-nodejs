@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {AxiosError} from 'axios';
+import {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
@@ -701,6 +701,16 @@ export class GoogleAuth {
     const {headers} = await client.getRequestMetadata(url);
     opts.headers = Object.assign(opts.headers || {}, headers);
     return opts;
+  }
+
+  /**
+   * Automatically obtain application default credentials, and make an
+   * HTTP request using the given options.
+   * @param opts Axios request options for the HTTP request.
+   */
+  async request(opts: AxiosRequestConfig): Promise<AxiosResponse> {
+    const client = await this.getClient();
+    return client.request(opts);
   }
 
   /**
