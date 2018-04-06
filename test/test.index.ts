@@ -14,15 +14,26 @@
  * limitations under the License.
  */
 import * as assert from 'assert';
-
-import {DefaultTransporter, GoogleAuth} from '../src';
+import * as gal from '../src';
 
 it('should publicly export GoogleAuth', () => {
   const cjs = require('../src/');
-  assert.strictEqual(cjs.GoogleAuth, GoogleAuth);
+  assert.strictEqual(cjs.GoogleAuth, gal.GoogleAuth);
 });
 
 it('should publicly export DefaultTransporter', () => {
   const cjs = require('../src');
-  assert.strictEqual(cjs.DefaultTransporter, DefaultTransporter);
+  assert.strictEqual(cjs.DefaultTransporter, gal.DefaultTransporter);
+});
+
+it('should export all the things', () => {
+  assert(gal.CodeChallengeMethod);
+  assert(gal.Compute);
+  assert(gal.DefaultTransporter);
+  assert(gal.IAMAuth);
+  assert(gal.JWT);
+  assert(gal.JWTAccess);
+  assert(gal.OAuth2Client);
+  assert(gal.UserRefreshClient);
+  assert(gal.GoogleAuth);
 });
