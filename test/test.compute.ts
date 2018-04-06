@@ -69,6 +69,19 @@ it('should refresh if access token has expired', async () => {
   scopes.forEach(s => s.done());
 });
 
+it('should emit an event for a new access token', async () => {
+  const scopes = [mockToken(), mockExample()];
+  let raisedEvent = false;
+  compute.on('tokens', tokens => {
+    assert.equal(tokens.access_token, 'abc123');
+    raisedEvent = true;
+  });
+  await compute.request({url});
+  assert.equal(compute.credentials.access_token, 'abc123');
+  scopes.forEach(s => s.done());
+  assert(raisedEvent);
+});
+
 it('should refresh if access token will expired soon and time to refresh before expiration is set',
    async () => {
      const scopes = [mockToken(), mockExample()];

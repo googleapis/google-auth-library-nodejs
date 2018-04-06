@@ -736,10 +736,21 @@ function mockExample() {
 
 it('should refresh token if missing access token', (done) => {
   const scopes = mockExample();
-  client.credentials = {refresh_token: 'refresh-token-placeholder'};
+  const accessToken = 'abc123';
+  let raisedEvent = false;
+  const refreshToken = 'refresh-token-placeholder';
+  client.credentials = {refresh_token: refreshToken};
+
+  // ensure the tokens event is raised
+  client.on('tokens', tokens => {
+    assert.equal(tokens.access_token, accessToken);
+    raisedEvent = true;
+  });
+
   client.request({url: 'http://example.com'}, err => {
     scopes.forEach(s => s.done());
-    assert.equal('abc123', client.credentials.access_token);
+    assert(raisedEvent);
+    assert.equal(accessToken, client.credentials.access_token);
     done();
   });
 });

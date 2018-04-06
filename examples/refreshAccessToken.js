@@ -27,14 +27,37 @@ const keys = require('./oauth2.keys.json');
  */
 async function main() {
   try {
-    const oAuth2Client = await getAuthenticatedClient();
-    // If you're going to save the refresh_token, make sure
-    // to put it somewhere safe!
-    console.log(`Refresh Token: ${oAuth2Client.credentials.refresh_token}`);
-    console.log(`Expiration: ${oAuth2Client.credentials.expiry_date}`);
+    // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
+    // which should be downloaded from the Google Developers Console.
+    const client = new OAuth2Client(
+      keys.web.client_id,
+      keys.web.client_secret,
+      keys.web.redirect_uris[0]
+    );
+
+    client.on('tokens', tokens => {
+      // You'll get a refresh token the first time the user authorizes this app.
+      // You can always ask for another access_token using this long lived token.
+      // Make sure to store it somewhere safe!
+      if (tokens.refresh_token) {
+        // store me somewhere safe!
+        console.log(`Refresh Token: ${tokens.refresh_token}`);
+      }
+      // You'll also get new access tokens here!  These tokens expire frequently,
+      // but as long as client.credentials.refresh_token is set, we can ask for
+      // another one.
+      if (tokens.access_token) {
+        console.log(`Access Token: ${tokens.access_token}`);
+        console.log(`Expiration: ${tokens.expiry_date}`);
+      }
+    });
+
+    // Prompt the user for consent and obtain an access token.
+    await authorizeClient(client);
+
+    // Now lets go ahead and aske for another access token, why not.
     console.log('Refreshing access token ...');
-    const res = await oAuth2Client.refreshAccessToken();
-    console.log(`New expiration: ${oAuth2Client.credentials.expiry_date}`);
+    const res = await client.refreshAccessToken();
   } catch (e) {
     console.error(e);
   }
@@ -45,18 +68,10 @@ async function main() {
  * Create a new OAuth2Client, and go through the OAuth2 content
  * workflow.  Return the full client to the callback.
  */
-function getAuthenticatedClient() {
+function authorizeClient(client) {
   return new Promise((resolve, reject) => {
-    // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
-    // which should be downloaded from the Google Developers Console.
-    const oAuth2Client = new OAuth2Client(
-      keys.web.client_id,
-      keys.web.client_secret,
-      keys.web.redirect_uris[0]
-    );
-
     // Generate the url that will be used for the consent dialog.
-    const authorizeUrl = oAuth2Client.generateAuthUrl({
+    const authorizeUrl = client.generateAuthUrl({
       // To get a refresh token, you MUST set access_type to `offline`.
       access_type: 'offline',
       // set the appropriate scopes
@@ -80,11 +95,11 @@ function getAuthenticatedClient() {
           server.close();
 
           // Now that we have the code, use that to acquire tokens.
-          const r = await oAuth2Client.getToken(qs.code);
+          const r = await client.getToken(qs.code);
           // Make sure to set the credentials on the OAuth2 client.
-          oAuth2Client.setCredentials(r.tokens);
+          client.setCredentials(r.tokens);
           console.info('Tokens acquired.');
-          resolve(oAuth2Client);
+          resolve(client);
         }
       })
       .listen(3000, () => {

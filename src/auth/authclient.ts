@@ -15,10 +15,17 @@
  */
 
 import {AxiosPromise, AxiosRequestConfig} from 'axios';
+import {EventEmitter} from 'events';
+
 import {DefaultTransporter} from '../transporters';
+
 import {Credentials} from './credentials';
 
-export abstract class AuthClient {
+export declare interface AuthClient {
+  on(event: 'tokens', listener: (tokens: Credentials) => void): this;
+}
+
+export abstract class AuthClient extends EventEmitter {
   transporter = new DefaultTransporter();
   credentials: Credentials = {};
 

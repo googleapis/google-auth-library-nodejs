@@ -179,6 +179,7 @@ export class JWT extends OAuth2Client {
       // tslint:disable-next-line no-any
       id_token: (gtoken.rawToken! as any).id_token
     };
+    this.emit('tokens', tokens);
     return {res: null, tokens};
   }
 
