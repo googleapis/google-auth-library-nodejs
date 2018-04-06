@@ -1295,3 +1295,14 @@ it('should get the current environment if GAE', async () => {
   const env = await auth.getEnv();
   assert.equal(env, envDetect.GCPEnv.APP_ENGINE);
 });
+
+it('should make the request', async () => {
+  const url = 'http://example.com';
+  const {auth, scopes} = mockGCE();
+  const data = {breakfast: 'coffee'};
+  const scope = nock(url).get('/').reply(200, data);
+  scopes.push(scope);
+  const res = await auth.request({url});
+  scopes.forEach(s => s.done());
+  assert.deepEqual(res.data, data);
+});
