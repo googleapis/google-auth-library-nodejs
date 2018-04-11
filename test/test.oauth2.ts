@@ -982,6 +982,72 @@ it('getToken should allow a code_verifier to be passed', async () => {
   assert(params.code_verifier === 'its_verified');
 });
 
+it('getToken should set redirect_uri if not provided in options', async () => {
+  const scope =
+      nock(baseUrl)
+          .post('/oauth2/v4/token', undefined, {
+            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
+          })
+          .reply(
+              200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
+  const res = await client.getToken({code: 'code here'});
+  scope.done();
+  assert(res.res);
+  if (!res.res) return;
+  const params = qs.parse(res.res.config.data);
+  assert.equal(params.redirect_uri, REDIRECT_URI);
+});
+
+it('getToken should set client_id if not provided in options', async () => {
+  const scope =
+      nock(baseUrl)
+          .post('/oauth2/v4/token', undefined, {
+            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
+          })
+          .reply(
+              200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
+  const res = await client.getToken({code: 'code here'});
+  scope.done();
+  assert(res.res);
+  if (!res.res) return;
+  const params = qs.parse(res.res.config.data);
+  assert.equal(params.client_id, CLIENT_ID);
+});
+
+it('getToken should override redirect_uri if provided in options', async () => {
+  const scope =
+      nock(baseUrl)
+          .post('/oauth2/v4/token', undefined, {
+            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
+          })
+          .reply(
+              200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
+  const res =
+      await client.getToken({code: 'code here', redirect_uri: 'overridden'});
+  scope.done();
+  assert(res.res);
+  if (!res.res) return;
+  const params = qs.parse(res.res.config.data);
+  assert.equal(params.redirect_uri, 'overridden');
+});
+
+it('getToken should override client_id if provided in options', async () => {
+  const scope =
+      nock(baseUrl)
+          .post('/oauth2/v4/token', undefined, {
+            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
+          })
+          .reply(
+              200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
+  const res =
+      await client.getToken({code: 'code here', client_id: 'overridden'});
+  scope.done();
+  assert(res.res);
+  if (!res.res) return;
+  const params = qs.parse(res.res.config.data);
+  assert.equal(params.client_id, 'overridden');
+});
+
 it('should return expiry_date', done => {
   const now = (new Date()).getTime();
   const scope =

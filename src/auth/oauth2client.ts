@@ -34,6 +34,19 @@ export enum CodeChallengeMethod {
 export interface GetTokenOptions {
   code: string;
   codeVerifier?: string;
+  /**
+   * The client ID for your application. The value passed into the constructor
+   * will be used if not provided. Must match any client_id option passed to
+   * a corresponding call to generateAuthUrl.
+   */
+  client_id?: string;
+  /**
+   * Determines where the API server redirects the user after the user
+   * completes the authorization flow. The value passed into the constructor
+   * will be used if not provided. Must match any redirect_uri option passed to
+   * a corresponding call to generateAuthUrl.
+   */
+  redirect_uri?: string;
 }
 
 export interface TokenInfo {
@@ -476,9 +489,9 @@ export class OAuth2Client extends AuthClient {
     const url = this.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       code: options.code,
-      client_id: this._clientId,
+      client_id: options.client_id || this._clientId,
       client_secret: this._clientSecret,
-      redirect_uri: this.redirectUri,
+      redirect_uri: options.redirect_uri || this.redirectUri,
       grant_type: 'authorization_code',
       code_verifier: options.codeVerifier
     };
