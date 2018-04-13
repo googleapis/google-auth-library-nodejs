@@ -16,10 +16,12 @@
 
 import * as cp from 'child_process';
 import * as fs from 'fs';
+import * as mv from 'mv';
 import {ncp} from 'ncp';
 import * as pify from 'pify';
 import * as tmp from 'tmp';
 
+const mvp = pify(mv);
 const rename = pify(fs.rename);
 const ncpp = pify(ncp);
 const keep = !!process.env.GALN_KEEP_TEMPDIRS;
@@ -54,7 +56,7 @@ it('should be able to use the d.ts', async () => {
   console.log(`${__filename} staging area: ${stagingPath}`);
   await spawnp('npm', ['pack']);
   const tarball = `${pkg.name}-${pkg.version}.tgz`;
-  await rename(tarball, `${stagingPath}/google-auth-library.tgz`);
+  await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
   await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
   await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
 }).timeout(40000);
