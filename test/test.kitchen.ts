@@ -22,7 +22,6 @@ import * as pify from 'pify';
 import * as tmp from 'tmp';
 
 const mvp = pify(mv);
-const rename = pify(fs.rename);
 const ncpp = pify(ncp);
 const keep = !!process.env.GALN_KEEP_TEMPDIRS;
 const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
@@ -56,6 +55,8 @@ it('should be able to use the d.ts', async () => {
   console.log(`${__filename} staging area: ${stagingPath}`);
   await spawnp('npm', ['pack']);
   const tarball = `${pkg.name}-${pkg.version}.tgz`;
+  // stagingPath can be on another filesystem so fs.rename() will fail
+  // with EXDEV, hence we use `mv` module here.
   await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
   await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
   await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
