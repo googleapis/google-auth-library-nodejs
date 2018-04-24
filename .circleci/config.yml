@@ -84,7 +84,7 @@ jobs:
     <<: *unit_tests
   node9:
     docker:
-      - image: node:8
+      - image: node:9
         user: node
     <<: *unit_tests
   node10:
