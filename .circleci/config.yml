@@ -42,6 +42,8 @@ workflows:
           filters: *release_tags
       - node8:
           filters: *release_tags
+      - node9:
+          filters: *release_tags
       - node10:
           filters: *release_tags
       - publish_npm:
@@ -49,6 +51,7 @@ workflows:
             - node4
             - node6
             - node8
+            - node9
             - node10
           filters:
             branches:
@@ -75,6 +78,11 @@ jobs:
         user: node
     <<: *unit_tests
   node8:
+    docker:
+      - image: node:8
+        user: node
+    <<: *unit_tests
+  node9:
     docker:
       - image: node:8
         user: node
