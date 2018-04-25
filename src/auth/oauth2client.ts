@@ -706,6 +706,21 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
+   * Generates an URL to revoke the given token.
+   * @param token The existing token to be revoked.
+   * @param jsonp If set, append callback= parameter to request JSONP response.
+   */
+  static getRevokeTokenUrl(token: string, jsonp?: string): string {
+    let parameters = '';
+    if (jsonp) {
+      parameters = querystring.stringify({token, 'callback': jsonp});
+    } else {
+      parameters = querystring.stringify({token});
+    }
+    return OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' + parameters;
+  }
+
+  /**
    * Revokes the access given to token.
    * @param token The existing token to be revoked.
    * @param callback Optional callback fn.
@@ -717,10 +732,7 @@ export class OAuth2Client extends AuthClient {
   revokeToken(
       token: string, callback?: BodyResponseCallback<RevokeCredentialsResult>):
       AxiosPromise<RevokeCredentialsResult>|void {
-    const opts = {
-      url: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
-          querystring.stringify({token, callback: 'revokeCallback'})
-    };
+    const opts = {url: OAuth2Client.getRevokeTokenUrl(token)};
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts)
           .then(res => {

@@ -940,9 +940,22 @@ it('should not retry requests with streaming data', done => {
   });
 });
 
+it('should generate revoke URL', done => {
+  const url = OAuth2Client.getRevokeTokenUrl('abc');
+  assert.equal(url, 'https://accounts.google.com/o/oauth2/revoke?token=abc');
+  done();
+});
+
+it('should generate revoke URL with JSONP', done => {
+  const url = OAuth2Client.getRevokeTokenUrl('abc', 'cb');
+  assert.equal(
+      url, 'https://accounts.google.com/o/oauth2/revoke?token=abc&callback=cb');
+  done();
+});
+
 it('should revoke credentials if access token present', done => {
   const scope = nock('https://accounts.google.com')
-                    .get('/o/oauth2/revoke?token=abc&callback=revokeCallback')
+                    .get('/o/oauth2/revoke?token=abc')
                     .reply(200, {success: true});
   client.credentials = {access_token: 'abc', refresh_token: 'abc'};
   client.revokeCredentials((err, result) => {
