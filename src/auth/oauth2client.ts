@@ -719,7 +719,7 @@ export class OAuth2Client extends AuthClient {
       AxiosPromise<RevokeCredentialsResult>|void {
     const opts = {
       url: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
-          querystring.stringify({token})
+          querystring.stringify({token, callback: 'revokeCallback'})
     };
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts)
