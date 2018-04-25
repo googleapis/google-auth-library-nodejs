@@ -708,9 +708,10 @@ export class GoogleAuth {
    * HTTP request using the given options.
    * @param opts Axios request options for the HTTP request.
    */
-  async request(opts: AxiosRequestConfig): Promise<AxiosResponse> {
+  // tslint:disable-next-line no-any
+  async request<T = any>(opts: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     const client = await this.getClient();
-    return client.request(opts);
+    return client.request<T>(opts);
   }
 
   /**
