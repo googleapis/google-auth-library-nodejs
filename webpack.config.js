@@ -7,8 +7,8 @@ module.exports = {
     extensions: [ '.js', '.json' ]
   },
   output: {
-    library: 'googleapis',
-    filename: 'bundle.js',
+    library: 'GoogleAuth',
+    filename: 'google-auth-library.min.js',
     path: path.resolve(__dirname, 'dist')
   },
   node: {
@@ -18,10 +18,17 @@ module.exports = {
   module: {
     rules: [
       {
-        test: path.resolve(__dirname, 'node_modules/gtoken/build/src/index.js'),
+        test: /node_modules\/(?:gtoken|elliptic)\//,
         use: 'null-loader'
       }
     ]
   },
-  mode: 'production'
+  mode: 'production',
+  plugins: [
+    new webpack.DefinePlugin({
+      'process.env': {
+        'WEBPACK': 'true',
+      }
+    })
+  ]
 };
