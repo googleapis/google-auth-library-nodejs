@@ -55,7 +55,7 @@
     "opn": "^5.2.0",
     "pify": "^3.0.0",
     "prettier": "^1.11.1",
-    "sinon": "^4.5.0",
+    "sinon": "^5.0.1",
     "source-map-support": "^0.5.3",
     "tmp": "^0.0.33",
     "typescript": "~2.7.2"
