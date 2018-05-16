@@ -657,12 +657,12 @@ export class GoogleAuth {
       this.jsonContent = options.credentials || this.jsonContent;
     }
     if (!this.cachedCredential) {
-      if (this.keyFilename) {
+      if (this.jsonContent) {
+        this.cachedCredential = await this.fromJSON(this.jsonContent);
+      } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
         this.cachedCredential = await this.fromStreamAsync(stream);
-      } else if (this.jsonContent) {
-        this.cachedCredential = await this.fromJSON(this.jsonContent);
       } else {
         await this.getApplicationDefaultAsync();
       }

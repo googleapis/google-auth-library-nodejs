@@ -23,7 +23,8 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import * as stream from 'stream';
 
-import {GoogleAuth, JWT, UserRefreshClient} from '../src';
+import {GoogleAuth, GoogleAuthOptions, JWT, UserRefreshClient} from '../src';
+import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
 
 nock.disableNetConnect();
@@ -1227,6 +1228,16 @@ it('should accept credentials to get a client', async () => {
   const auth = new GoogleAuth({credentials});
   const client = await auth.getClient() as JWT;
   assert.equal(client.email, 'hello@youarecool.com');
+});
+
+it('should prefer credentials over keyFilename', async () => {
+  const credentials: CredentialBody = Object.assign(
+      require('../../test/fixtures/private.json'),
+      {client_email: 'hello@butiamcooler.com'});
+  const auth = new GoogleAuth(
+      {credentials, keyFilename: './test/fixtures/private.json'});
+  const client = await auth.getClient() as JWT;
+  assert.equal(client.email, credentials.client_email);
 });
 
 it('should allow passing scopes to get a client', async () => {
