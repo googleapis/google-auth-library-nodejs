@@ -24,8 +24,8 @@ The `1.x` release includes a variety of bug fixes, new features, and breaking ch
 ## Ways to authenticate
 This library provides a variety of ways to authenticate to your Google services.
 - [Application Default Credentials](#choosing-the-correct-credential-type-automatically) - Use Application Default Credentials when you use a single identity for all users in your application. Especially useful for applications running on Google Cloud.
-- [OAuth 2](#oauth2-client) - Use OAuth2 when you need to perform actions on behalf of the end user.
-- [JSON Web Tokens](#using-json-web-tokens) - Use JWT when you are using a single identity for all users.  Especially useful for server->server or server->API communication.
+- [OAuth 2](#oauth2) - Use OAuth2 when you need to perform actions on behalf of the end user.
+- [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users.  Especially useful for server->server or server->API communication.
 
 ## Application Default Credentials
 This library provides an implementation of [Application Default Credentials][] for Node.js. The [Application Default Credentials][] provide a simple way to get authorization credentials for use in calling Google APIs.
@@ -98,15 +98,15 @@ async function getADC() {
 main().catch(console.error);
 ```
 
-#### OAuth2 client
+## OAuth2
 
-This client comes with an [OAuth2][oauth] client that allows you to retrieve an access token and refreshes the token and retry the request seamlessly if you also provide an `expiry_date` and the token is expired. The basics of Google's OAuth2 implementation is explained on [Google Authorization and Authentication documentation][authdocs].
+This library comes with an [OAuth2][oauth] client that allows you to retrieve an access token and refreshes the token and retry the request seamlessly if you also provide an `expiry_date` and the token is expired. The basics of Google's OAuth2 implementation is explained on [Google Authorization and Authentication documentation][authdocs].
 
 In the following examples, you may need a `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URL`. You can find these pieces of information by going to the [Developer Console][devconsole], clicking your project > APIs & auth > credentials.
 
 For more information about OAuth2 and how it works, [see here][oauth].
 
-##### A complete OAuth2 example
+#### A complete OAuth2 example
 
 Let's take a look at a complete example.
 
@@ -184,7 +184,7 @@ function getAuthenticatedClient() {
 main();
 ```
 
-##### Handling token events
+#### Handling token events
 This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization]((https://github.com/google/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
 
 ```js
@@ -203,7 +203,7 @@ const res = await client.request({ url });
 // The `tokens` event would now be raised if this was the first request
 ```
 
-##### Retrieve access token
+#### Retrieve access token
 With the code returned, you can ask for an access token as shown below:
 
 ``` js
@@ -212,7 +212,7 @@ const tokens = await oauth2Client.getToken(code);
 oauth2Client.setCredentials(tokens);
 ```
 
-##### Manually refreshing access token
+#### Manually refreshing access token
 If you need to manually refresh the `access_token` associated with your OAuth2 client, ensure the call to `generateAuthUrl` sets the `access_type` to `offline`.  The refresh token will only be returned for the first authorization by the user.  To force consent, set the `prompt` property to `consent`:
 
 ```js
@@ -238,7 +238,7 @@ const tokens = await oauth2Client.refreshAccessToken();
 // store these new tokens in a safe place (e.g. database)
 ```
 
-##### Checking `access_token` information
+#### Checking `access_token` information
 After obtaining and storing an `access_token`, at a later time you may want to go check the expiration date,
 original scopes, or audience for the token.  To get the token info, you can use the `getTokenInfo` method:
 
@@ -252,7 +252,7 @@ console.log(tokenInfo.scopes);
 
 This method will throw if the token is invalid.
 
-##### OAuth2 with Installed Apps (Electron)
+#### OAuth2 with Installed Apps (Electron)
 If you're authenticating with OAuth2 from an installed application (like Electron), you may not want to embed your `client_secret` inside of the application sources. To work around this restriction, you can choose the `iOS` application type when creating your OAuth2 credentials in the [Google Developers console][devconsole]:
 
 ![application type][apptype]
@@ -265,8 +265,8 @@ const oAuth2Client = new OAuth2Client({
 });
 ```
 
-#### Using JSON Web Tokens
-The Google Developers Console provides `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
+## JSON Web Tokens
+The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
 ``` js
 const {JWT} = require('../build/src/index');
@@ -342,7 +342,7 @@ You can use the following environment variables to proxy HTTP and HTTPS requests
 
 When HTTP_PROXY / http_proxy are set, they will be used to proxy non-SSL requests that do not have an explicit proxy configuration option present. Similarly, HTTPS_PROXY / https_proxy will be respected for SSL requests that do not have an explicit proxy configuration option. It is valid to define a proxy in one of the environment variables, but then override it for a specific request, using the proxy configuration option.
 
-### Questions/problems?
+## Questions/problems?
 
 * Ask your development related questions on [Stack Overflow][stackoverflow].
 * If you've found an bug/issue, please [file it on GitHub][bugs].
