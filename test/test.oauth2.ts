@@ -25,6 +25,7 @@ import * as url from 'url';
 
 import {CodeChallengeMethod, GoogleAuth, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
+import {CertificateDictionary, CertificateFormat} from '../src/auth/oauth2client';
 
 nock.disableNetConnect();
 
@@ -37,9 +38,12 @@ const SCOPE_ARRAY = ['scopex', 'scopey'];
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 const baseUrl = 'https://www.googleapis.com';
-const certsPath = '/oauth2/v1/certs';
-const certsResPath =
-    path.join(__dirname, '../../test/fixtures/oauthcerts.json');
+const certsPathPem = '/oauth2/v1/certs';
+const certsPathJwk = '/oauth2/v3/certs';
+const certsResPathPem =
+    path.join(__dirname, '../../test/fixtures/oauthcertspem.json');
+const certsResPathJwk =
+    path.join(__dirname, '../../test/fixtures/oauthcertsjwk.json');
 
 let client: OAuth2Client;
 beforeEach(() => {
@@ -94,18 +98,19 @@ it('should throw an error if generateAuthUrl is called with invalid parameters',
      }
    });
 
-it('should generate a valid code verifier and resulting challenge', () => {
-  const codes = client.generateCodeVerifier();
-  // ensure the code_verifier matches all requirements
-  assert.equal(codes.codeVerifier.length, 128);
-  const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
-  assert(match);
-  if (!match) return;
-  assert(match.length > 0 && match[0] === codes.codeVerifier);
-});
+it('should generate a valid code verifier and resulting challenge',
+   async () => {
+     const codes = await client.generateCodeVerifier();
+     // ensure the code_verifier matches all requirements
+     assert.equal(codes.codeVerifier.length, 128);
+     const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
+     assert(match);
+     if (!match) return;
+     assert(match.length > 0 && match[0] === codes.codeVerifier);
+   });
 
-it('should include code challenge and method in the url', () => {
-  const codes = client.generateCodeVerifier();
+it('should include code challenge and method in the url', async () => {
+  const codes = await client.generateCodeVerifier();
   const authUrl = client.generateAuthUrl({
     code_challenge: codes.codeChallenge,
     code_challenge_method: CodeChallengeMethod.S256
@@ -128,13 +133,14 @@ it('should verifyIdToken properly', async () => {
       {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
   const scope = nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
   client.verifySignedJwtWithCerts =
-      (jwt: string, certs: {}, requiredAudience: string|string[],
-       issuers?: string[], theMaxExpiry?: number) => {
+      (jwt: string, certs: CertificateDictionary, format: CertificateFormat,
+       requiredAudience: string|string[], issuers?: string[],
+       theMaxExpiry?: number) => {
         assert.equal(jwt, idToken);
         assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
         assert.equal(requiredAudience, audience);
         assert.equal(theMaxExpiry, maxExpiry);
-        return new LoginTicket('c', payload);
+        return Promise.resolve(new LoginTicket('c', payload));
       };
   const result = await client.verifyIdToken({idToken, audience, maxExpiry});
   scope.done();
@@ -153,12 +159,13 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
      client.verifySignedJwtWithCerts =
-         (jwt: string, certs: {}, requiredAudience: string|string[],
-          issuers?: string[], theMaxExpiry?: number) => {
+         (jwt: string, certs: CertificateDictionary, format: CertificateFormat,
+          requiredAudience: string|string[], issuers?: string[],
+          theMaxExpiry?: number) => {
            assert.equal(jwt, idToken);
            assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
            assert.equal(requiredAudience, audience);
-           return new LoginTicket('c', payload);
+           return Promise.resolve(new LoginTicket('c', payload));
          };
      try {
        // tslint:disable-next-line no-any
@@ -197,7 +204,7 @@ it('should set response_type param to code if none is given while generating the
      assert.equal(query.response_type, 'code');
    });
 
-it('should verify a valid certificate against a jwt', () => {
+it('should verify a valid certificate against a jwt', async () => {
   const maxLifetimeSecs = 86400;
   const now = new Date().getTime() / 1000;
   const expiry = now + (maxLifetimeSecs / 2);
@@ -218,12 +225,12 @@ it('should verify a valid certificate against a jwt', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  const login =
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
+  const login = await client.verifySignedJwtWithCerts(
+      data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
   assert.equal(login.getUserId(), '123456789');
 });
 
-it('should fail due to invalid audience', () => {
+it('should fail due to invalid audience', async () => {
   const maxLifetimeSecs = 86400;
   const now = new Date().getTime() / 1000;
   const expiry = now + (maxLifetimeSecs / 2);
@@ -248,12 +255,16 @@ it('should fail due to invalid audience', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Wrong recipient/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Wrong recipient/));
+  }
 });
 
-it('should fail due to invalid array of audiences', () => {
+it('should fail due to invalid array of audiences', async () => {
   const maxLifetimeSecs = 86400;
   const now = new Date().getTime() / 1000;
   const expiry = now + (maxLifetimeSecs / 2);
@@ -279,12 +290,16 @@ it('should fail due to invalid array of audiences', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   const validAudiences = ['testaudience', 'extra-audience'];
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, validAudiences);
-  }, /Wrong recipient/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, validAudiences);
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Wrong recipient/));
+  }
 });
 
-it('should fail due to invalid signature', () => {
+it('should fail due to invalid signature', async () => {
   const idToken = '{' +
       '"iss":"testissuer",' +
       '"aud":"testaudience",' +
@@ -307,12 +322,16 @@ it('should fail due to invalid signature', () => {
   const signature = signer.sign(privateKey, 'base64');
   // Originally: data += '.'+signature;
   data += signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Wrong number of segments/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Wrong number of segments/));
+  }
 });
 
-it('should fail due to invalid envelope', () => {
+it('should fail due to invalid envelope', async () => {
   const maxLifetimeSecs = 86400;
   const now = new Date().getTime() / 1000;
   const expiry = now + (maxLifetimeSecs / 2);
@@ -336,12 +355,16 @@ it('should fail due to invalid envelope', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Can\'t parse token envelope/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Can\'t parse token envelope/));
+  }
 });
 
-it('should fail due to invalid payload', () => {
+it('should fail due to invalid payload', async () => {
   const maxLifetimeSecs = 86400;
   const now = new Date().getTime() / 1000;
   const expiry = now + (maxLifetimeSecs / 2);
@@ -365,12 +388,16 @@ it('should fail due to invalid payload', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Can\'t parse token payload/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Can\'t parse token payload/));
+  }
 });
 
-it('should fail due to invalid signature', () => {
+it('should fail due to invalid signature', async () => {
   const maxLifetimeSecs = 86400;
   const now = new Date().getTime() / 1000;
   const expiry = now + (maxLifetimeSecs / 2);
@@ -391,12 +418,16 @@ it('should fail due to invalid signature', () => {
   const data = new Buffer(envelope).toString('base64') + '.' +
       new Buffer(idToken).toString('base64') + '.' +
       'broken-signature';
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Invalid token signature/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Invalid token signature/));
+  }
 });
 
-it('should fail due to no expiration date', () => {
+it('should fail due to no expiration date', async () => {
   const now = new Date().getTime() / 1000;
   const idToken = '{' +
       '"iss":"testissuer",' +
@@ -417,12 +448,16 @@ it('should fail due to no expiration date', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /No expiration time/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/No expiration time/));
+  }
 });
 
-it('should fail due to no issue time', () => {
+it('should fail due to no issue time', async () => {
   const maxLifetimeSecs = 86400;
   const now = new Date().getTime() / 1000;
   const expiry = now + (maxLifetimeSecs / 2);
@@ -445,42 +480,51 @@ it('should fail due to no issue time', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /No issue time/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/No issue time/));
+  }
 });
 
-it('should fail due to certificate with expiration date in future', () => {
-  const maxLifetimeSecs = 86400;
-  const now = new Date().getTime() / 1000;
-  const expiry = now + (2 * maxLifetimeSecs);
-  const idToken = '{' +
-      '"iss":"testissuer",' +
-      '"aud":"testaudience",' +
-      '"azp":"testauthorisedparty",' +
-      '"email_verified":"true",' +
-      '"id":"123456789",' +
-      '"sub":"123456789",' +
-      '"email":"test@test.com",' +
-      '"iat":' + now + ',' +
-      '"exp":' + expiry + '}';
-  const envelope = '{' +
-      '"kid":"keyid",' +
-      '"alg":"RS256"' +
-      '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
-  const signer = crypto.createSign('sha256');
-  signer.update(data);
-  const signature = signer.sign(privateKey, 'base64');
-  data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Expiration time too far in future/);
-});
+it('should fail due to certificate with expiration date in future',
+   async () => {
+     const maxLifetimeSecs = 86400;
+     const now = new Date().getTime() / 1000;
+     const expiry = now + (2 * maxLifetimeSecs);
+     const idToken = '{' +
+         '"iss":"testissuer",' +
+         '"aud":"testaudience",' +
+         '"azp":"testauthorisedparty",' +
+         '"email_verified":"true",' +
+         '"id":"123456789",' +
+         '"sub":"123456789",' +
+         '"email":"test@test.com",' +
+         '"iat":' + now + ',' +
+         '"exp":' + expiry + '}';
+     const envelope = '{' +
+         '"kid":"keyid",' +
+         '"alg":"RS256"' +
+         '}';
+     let data = new Buffer(envelope).toString('base64') + '.' +
+         new Buffer(idToken).toString('base64');
+     const signer = crypto.createSign('sha256');
+     signer.update(data);
+     const signature = signer.sign(privateKey, 'base64');
+     data += '.' + signature;
+     try {
+       await client.verifySignedJwtWithCerts(
+           data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+       assert(false);
+     } catch (err) {
+       assert(err.toString().match(/Expiration time too far in future/));
+     }
+   });
 
 it('should pass due to expiration date in future with adjusted max expiry',
-   () => {
+   async () => {
      const maxLifetimeSecs = 86400;
      const now = new Date().getTime() / 1000;
      const expiry = now + (2 * maxLifetimeSecs);
@@ -506,10 +550,11 @@ it('should pass due to expiration date in future with adjusted max expiry',
      const signature = signer.sign(privateKey, 'base64');
      data += '.' + signature;
      client.verifySignedJwtWithCerts(
-         data, {keyid: publicKey}, 'testaudience', ['testissuer'], maxExpiry);
+         data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience',
+         ['testissuer'], maxExpiry);
    });
 
-it('should fail due to token being used to early', () => {
+it('should fail due to token being used to early', async () => {
   const maxLifetimeSecs = 86400;
   const clockSkews = 300;
   const now = (new Date().getTime() / 1000);
@@ -535,12 +580,16 @@ it('should fail due to token being used to early', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Token used too early/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Token used too early/));
+  }
 });
 
-it('should fail due to token being used to late', () => {
+it('should fail due to token being used to late', async () => {
   const maxLifetimeSecs = 86400;
   const clockSkews = 300;
   const now = (new Date().getTime() / 1000);
@@ -567,12 +616,16 @@ it('should fail due to token being used to late', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  }, /Token used too late/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Token used too late/));
+  }
 });
 
-it('should fail due to invalid issuer', () => {
+it('should fail due to invalid issuer', async () => {
   const maxLifetimeSecs = 86400;
   const now = (new Date().getTime() / 1000);
   const expiry = now + (maxLifetimeSecs / 2);
@@ -596,13 +649,17 @@ it('should fail due to invalid issuer', () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  assert.throws(() => {
-    client.verifySignedJwtWithCerts(
-        data, {keyid: publicKey}, 'testaudience', ['testissuer']);
-  }, /Invalid issuer/);
+  try {
+    await client.verifySignedJwtWithCerts(
+        data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience',
+        ['testissuer']);
+    assert(false);
+  } catch (err) {
+    assert(err.toString().match(/Invalid issuer/));
+  }
 });
 
-it('should pass due to valid issuer', () => {
+it('should pass due to valid issuer', async () => {
   const maxLifetimeSecs = 86400;
   const now = (new Date().getTime() / 1000);
   const expiry = now + (maxLifetimeSecs / 2);
@@ -627,12 +684,14 @@ it('should pass due to valid issuer', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   client.verifySignedJwtWithCerts(
-      data, {keyid: publicKey}, 'testaudience', ['testissuer']);
+      data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience',
+      ['testissuer']);
 });
 
-it('should be able to retrieve a list of Google certificates', (done) => {
-  const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
-  client.getFederatedSignonCerts((err, certs) => {
+it('should be able to retrieve a list of Google PEM certificates', (done) => {
+  const scope =
+      nock(baseUrl).get(certsPathPem).replyWithFile(200, certsResPathPem);
+  client.getFederatedSignonCerts(CertificateFormat.PEM, (err, certs) => {
     assert.equal(err, null);
     assert.equal(Object.keys(certs).length, 2);
     assert.notEqual(certs.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
@@ -642,7 +701,7 @@ it('should be able to retrieve a list of Google certificates', (done) => {
   });
 });
 
-it('should be able to retrieve a list of Google certificates from cache again',
+it('should be able to retrieve a list of Google PEM certificates from cache again',
    done => {
      const scope =
          nock(baseUrl)
@@ -651,13 +710,13 @@ it('should be able to retrieve a list of Google certificates from cache again',
                    'public, max-age=23641, must-revalidate, no-transform',
                'Content-Type': 'application/json'
              })
-             .get(certsPath)
-             .replyWithFile(200, certsResPath);
-     client.getFederatedSignonCerts((err, certs) => {
+             .get(certsPathPem)
+             .replyWithFile(200, certsResPathPem);
+     client.getFederatedSignonCerts(CertificateFormat.PEM, (err, certs) => {
        assert.equal(err, null);
        assert.equal(Object.keys(certs).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
-       client.getFederatedSignonCerts((err2, certs2) => {
+       client.getFederatedSignonCerts(CertificateFormat.PEM, (err2, certs2) => {
          assert.equal(err2, null);
          assert.equal(Object.keys(certs2).length, 2);
          scope.done();
@@ -665,6 +724,46 @@ it('should be able to retrieve a list of Google certificates from cache again',
        });
      });
    });
+
+it('should be able to retrieve a list of Google JWK certificates', (done) => {
+  const scope =
+      nock(baseUrl).get(certsPathJwk).replyWithFile(200, certsResPathJwk);
+  client.getFederatedSignonCerts(CertificateFormat.JWK, (err, certs) => {
+    assert.equal(err, null);
+    assert.equal(Object.keys(certs).length, 2);
+    assert.notEqual(certs['029f269f3f06af1e93dac67063977f713a77f19e'], null);
+    assert.notEqual(certs['3bcf0b3cc862a0ac77092f72b4dfdb20a8100df0'], null);
+    scope.done();
+    done();
+  });
+});
+
+it(
+    'should be able to retrieve a list of Google JWK certificates from cache again',
+    done => {
+      const scope =
+          nock(baseUrl)
+              .defaultReplyHeaders({
+                'Cache-Control':
+                    'public, max-age=23641, must-revalidate, no-transform',
+                'Content-Type': 'application/json'
+              })
+              .get(certsPathJwk)
+              .replyWithFile(200, certsResPathJwk);
+      client.getFederatedSignonCerts(CertificateFormat.JWK, (err, certs) => {
+        assert.equal(err, null);
+        assert.equal(Object.keys(certs).length, 2);
+        scope.done();  // has retrieved from nock... nock no longer will reply
+        client.getFederatedSignonCerts(
+            CertificateFormat.JWK, (err2, certs2) => {
+              console.log('got certs2:', certs2);
+              assert.equal(err2, null);
+              assert.equal(Object.keys(certs2).length, 2);
+              scope.done();
+              done();
+            });
+      });
+    });
 
 it('should set redirect_uri if not provided in options', () => {
   const generated = client.generateAuthUrl({});

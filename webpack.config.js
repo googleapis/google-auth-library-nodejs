@@ -1,5 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
   entry: './build/src/index.js',
@@ -13,12 +14,17 @@ module.exports = {
   },
   node: {
     'child_process': 'empty',
-    'fs': 'empty'
+    'fs': 'empty',
+    'crypto': 'empty'
   },
   module: {
     rules: [
       {
-        test: /node_modules\/(?:gtoken|elliptic)\//,
+        test: /node_modules\/gtoken\//,
+        use: 'null-loader'
+      },
+      {
+        test: /node_modules\/text-encoding\/lib\/encoding-indexes.js/,
         use: 'null-loader'
       }
     ]
@@ -30,5 +36,6 @@ module.exports = {
         'WEBPACK': 'true',
       }
     })
+//  , new BundleAnalyzerPlugin()
   ]
 };

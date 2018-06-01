@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Google Inc. All Rights Reserved.
+ * Copyright 2018 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 
 import * as crypto from 'crypto';
+import {CertVerifier} from '../certverifier';
 
-export class PemVerifier {
-  verify(
-      pubkey: string, data: string|Buffer, signature: string,
-      encoding: crypto.HexBase64Latin1Encoding) {
+export class PemVerifier implements CertVerifier {
+  verify(pubkey: string, data: string|Buffer, signature: string):
+      Promise<boolean> {
     const verifier = crypto.createVerify('sha256');
     verifier.update(data);
-    return verifier.verify(pubkey, signature, encoding);
+    return Promise.resolve(verifier.verify(pubkey, signature, 'base64'));
   }
 }
