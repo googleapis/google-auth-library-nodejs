@@ -35,7 +35,9 @@ export interface BodyResponseCallback<T> {
   (err: Error|null, res?: AxiosResponse<T>|null): void;
 }
 
-export interface RequestError extends AxiosError { errors: Error[]; }
+export interface RequestError extends AxiosError {
+  errors: Error[];
+}
 
 /**
  * Axios will use XHR if it is available. In the case of Electron,

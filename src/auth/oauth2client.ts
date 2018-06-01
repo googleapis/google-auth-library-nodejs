@@ -15,10 +15,10 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import * as crypto from 'crypto';
-import * as http from 'http';
-import * as querystring from 'querystring';
-import * as stream from 'stream';
+import crypto from 'crypto';
+import http from 'http';
+import querystring from 'querystring';
+import stream from 'stream';
 
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
@@ -292,7 +292,9 @@ export interface FederatedSignonCertsResponse {
   res?: AxiosResponse<void>|null;
 }
 
-export interface RevokeCredentialsResult { success: boolean; }
+export interface RevokeCredentialsResult {
+  success: boolean;
+}
 
 export interface VerifyIdTokenOptions {
   idToken: string;

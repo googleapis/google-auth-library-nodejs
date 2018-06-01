@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import {AxiosError} from 'axios';
 import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
-import * as nock from 'nock';
+import nock from 'nock';
 import {Compute} from '../src';
 
 nock.disableNetConnect();

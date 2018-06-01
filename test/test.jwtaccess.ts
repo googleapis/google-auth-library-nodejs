@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import * as fs from 'fs';
-import * as jws from 'jws';
+import assert from 'assert';
+import fs from 'fs';
+import jws from 'jws';
 import {JWTAccess} from '../src';
 
 const keypair = require('keypair');

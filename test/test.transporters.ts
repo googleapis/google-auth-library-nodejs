@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import {AxiosRequestConfig} from 'axios';
-import * as nock from 'nock';
+import nock from 'nock';
 
 import {DefaultTransporter, RequestError} from '../src/transporters';
 

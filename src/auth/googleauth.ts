@@ -16,13 +16,13 @@
 
 import {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
-import * as fs from 'fs';
+import fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
-import * as http from 'http';
-import * as os from 'os';
-import * as path from 'path';
-import * as stream from 'stream';
-import * as util from 'util';
+import http from 'http';
+import os from 'os';
+import path from 'path';
+import stream from 'stream';
+import util from 'util';
 
 import {DefaultTransporter, Transporter} from '../transporters';
 
