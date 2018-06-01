@@ -15,7 +15,7 @@
  */
 
 import * as base64js from 'base64-js';
-import * as TextEncoding from 'text-encoding';
+import * as TextEncoding from 'text-encoding-shim';
 
 import {CertVerifier, JwkCertificate} from '../certverifier';
 
@@ -28,10 +28,14 @@ export class JwkVerifier implements CertVerifier {
         hash: {name: 'SHA-256'},
       };
       const dataArray = new TextEncoding.TextEncoder().encode(data);
+      // base64js requires padding, so let's add some '='
+      while (signature.length % 4 !== 0) {
+        signature += '=';
+      }
       const signatureArray = base64js.toByteArray(signature);
-      crypto.subtle.importKey('jwk', pubkey, algo, true, ['verify'])
+      window.crypto.subtle.importKey('jwk', pubkey, algo, true, ['verify'])
           .then(ck => {
-            crypto.subtle.verify(algo, ck, signatureArray, dataArray)
+            window.crypto.subtle.verify(algo, ck, signatureArray, dataArray)
                 .then(resolve);
           });
     });

@@ -15,7 +15,7 @@
  */
 
 import * as base64js from 'base64-js';
-import * as TextEncoding from 'text-encoding';
+import * as TextEncoding from 'text-encoding-shim';
 
 import {Crypto} from '../crypto';
 
