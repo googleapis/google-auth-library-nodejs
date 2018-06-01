@@ -754,7 +754,6 @@ it('should be able to retrieve a list of Google JWK certificates from cache agai
        assert.equal(Object.keys(certs).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
        client.getFederatedSignonCerts(CertificateFormat.JWK, (err2, certs2) => {
-         console.log('got certs2:', certs2);
          assert.equal(err2, null);
          assert.equal(Object.keys(certs2).length, 2);
          scope.done();
