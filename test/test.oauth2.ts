@@ -738,32 +738,30 @@ it('should be able to retrieve a list of Google JWK certificates', (done) => {
   });
 });
 
-it(
-    'should be able to retrieve a list of Google JWK certificates from cache again',
-    done => {
-      const scope =
-          nock(baseUrl)
-              .defaultReplyHeaders({
-                'Cache-Control':
-                    'public, max-age=23641, must-revalidate, no-transform',
-                'Content-Type': 'application/json'
-              })
-              .get(certsPathJwk)
-              .replyWithFile(200, certsResPathJwk);
-      client.getFederatedSignonCerts(CertificateFormat.JWK, (err, certs) => {
-        assert.equal(err, null);
-        assert.equal(Object.keys(certs).length, 2);
-        scope.done();  // has retrieved from nock... nock no longer will reply
-        client.getFederatedSignonCerts(
-            CertificateFormat.JWK, (err2, certs2) => {
-              console.log('got certs2:', certs2);
-              assert.equal(err2, null);
-              assert.equal(Object.keys(certs2).length, 2);
-              scope.done();
-              done();
-            });
-      });
-    });
+it('should be able to retrieve a list of Google JWK certificates from cache again',
+   done => {
+     const scope =
+         nock(baseUrl)
+             .defaultReplyHeaders({
+               'Cache-Control':
+                   'public, max-age=23641, must-revalidate, no-transform',
+               'Content-Type': 'application/json'
+             })
+             .get(certsPathJwk)
+             .replyWithFile(200, certsResPathJwk);
+     client.getFederatedSignonCerts(CertificateFormat.JWK, (err, certs) => {
+       assert.equal(err, null);
+       assert.equal(Object.keys(certs).length, 2);
+       scope.done();  // has retrieved from nock... nock no longer will reply
+       client.getFederatedSignonCerts(CertificateFormat.JWK, (err2, certs2) => {
+         console.log('got certs2:', certs2);
+         assert.equal(err2, null);
+         assert.equal(Object.keys(certs2).length, 2);
+         scope.done();
+         done();
+       });
+     });
+   });
 
 it('should set redirect_uri if not provided in options', () => {
   const generated = client.generateAuthUrl({});
