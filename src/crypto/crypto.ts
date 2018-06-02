@@ -14,17 +14,30 @@
  * limitations under the License.
  */
 
+import {create} from 'domain';
+
 import {isWebpack} from '../webpack';
 
 import {BrowserCrypto} from './browser/crypto';
 import {NodeCrypto} from './node/crypto';
 
+export interface JwkCertificate {
+  kty: string;
+  alg: string;
+  use: string;
+  kid: string;
+  n: string;
+  e: string;
+}
+
 export interface Crypto {
   sha256DigestBase64(str: string): Promise<string>;
   randomBytesBase64(n: number): string;
+  verify(pubkey: string|JwkCertificate, data: string|Buffer, signature: string):
+      Promise<boolean>;
 }
 
-export function CreateCrypto(): Crypto {
+export function createCrypto(): Crypto {
   if (isWebpack()) {
     return new BrowserCrypto();
   }

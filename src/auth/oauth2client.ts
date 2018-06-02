@@ -19,8 +19,7 @@ import * as http from 'http';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
 
-import {CreateCertVerifier, JwkCertificate} from './../crypto/certverifier';
-import {CreateCrypto} from './../crypto/crypto';
+import {createCrypto, JwkCertificate} from './../crypto/crypto';
 import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
@@ -460,7 +459,7 @@ export class OAuth2Client extends AuthClient {
   async generateCodeVerifier() {
     // base64 encoding uses 6 bits per character, and we want to generate128
     // characters. 6*128/8 = 96.
-    const crypto = CreateCrypto();
+    const crypto = createCrypto();
     const randomString = crypto.randomBytesBase64(96);
     // The valid characters in the code_verifier are [A-Z]/[a-z]/[0-9]/
     // "-"/"."/"_"/"~". Base64 encoded strings are pretty close, so we're just
@@ -1061,8 +1060,8 @@ export class OAuth2Client extends AuthClient {
     // certs is a legit dynamic object
     // tslint:disable-next-line no-any
     const cert = certs[envelope.kid];
-    const verifier = CreateCertVerifier();
-    const verified: boolean = await verifier.verify(cert, signed, signature);
+    const crypto = createCrypto();
+    const verified: boolean = await crypto.verify(cert, signed, signature);
 
     if (!verified) {
       throw new Error('Invalid token signature: ' + jwt);
