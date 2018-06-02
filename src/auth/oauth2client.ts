@@ -956,10 +956,16 @@ export class OAuth2Client extends AuthClient {
       return {certs: this.certificateCache, format};
     }
     let res: AxiosResponse;
-    let url: string =
-        OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_;
-    if (format === CertificateFormat.JWK) {
-      url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_;
+    let url: string;
+    switch (format) {
+      case CertificateFormat.PEM:
+        url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_;
+        break;
+      case CertificateFormat.JWK:
+        url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_;
+        break;
+      default:
+        throw new Error('Unsupported certificate format ' + format);
     }
     try {
       res = await this.transporter.request({url});
