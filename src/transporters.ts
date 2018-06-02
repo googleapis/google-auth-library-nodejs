@@ -16,6 +16,7 @@
 
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {validate} from './options';
+import {isWebpack} from './webpack';
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
@@ -58,14 +59,16 @@ export class DefaultTransporter {
    * @return Configured options.
    */
   configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
-    // set transporter user agent
     opts.headers = opts.headers || {};
-    const uaValue: string = opts.headers['User-Agent'];
-    if (!uaValue) {
-      opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
-    } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
-      opts.headers['User-Agent'] =
-          `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+    if (!isWebpack()) {
+      // set transporter user agent if not in browser
+      const uaValue: string = opts.headers['User-Agent'];
+      if (!uaValue) {
+        opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
+      } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
+        opts.headers['User-Agent'] =
+            `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+      }
     }
     return opts;
   }
