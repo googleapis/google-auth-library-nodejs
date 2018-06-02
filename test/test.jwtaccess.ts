@@ -56,13 +56,9 @@ it('getRequestMetadata should create a signed JWT token as the access token',
 it('getRequestMetadata should not allow overriding with additionalClaims', () => {
   const client = new JWTAccess(email, keys.private);
   const additionalClaims = {iss: 'not-the-email'};
-  try {
+  assert.throws(() => {
     client.getRequestMetadata(testUri, additionalClaims);
-    assert(false);
-  } catch (err) {
-    assert(err.toString().match(
-        /The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default./));
-  }
+  }, /^Error: The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.$/);
 });
 
 it('getRequestMetadata should return a cached token on the second request',
