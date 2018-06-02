@@ -64,7 +64,6 @@
     "tmp": "^0.0.33",
     "typescript": "~2.8.3",
     "webpack": "^4.5.0",
-    "webpack-bundle-analyzer": "^2.11.1",
     "webpack-cli": "^2.0.14"
   },
   "files": [

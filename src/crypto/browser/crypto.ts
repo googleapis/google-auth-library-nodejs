@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// This file implements crypto functions we need using in-browser
+// SubtleCrypto interface `window.crypto.subtle`.
+
 import * as base64js from 'base64-js';
 import * as TextEncoding from 'text-encoding-shim';
 

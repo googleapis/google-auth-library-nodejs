@@ -21,6 +21,7 @@ import * as stream from 'stream';
 
 import {createCrypto, JwkCertificate} from './../crypto/crypto';
 import {BodyResponseCallback} from './../transporters';
+import {isWebpack} from './../webpack';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
@@ -732,7 +733,7 @@ export class OAuth2Client extends AuthClient {
     } else {
       parameters = querystring.stringify({token});
     }
-    return OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' + parameters;
+    return `${OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_}?${parameters}`;
   }
 
   /**
@@ -884,11 +885,8 @@ export class OAuth2Client extends AuthClient {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
 
-    let format: CertificateFormat = CertificateFormat.PEM;
-    if (process.env.WEBPACK) {
-      format = CertificateFormat.JWK;
-    }
-
+    const format: CertificateFormat =
+        isWebpack() ? CertificateFormat.JWK : CertificateFormat.PEM;
     const response = await this.getFederatedSignonCertsAsync(format);
     const login = await this.verifySignedJwtWithCerts(
         options.idToken, response.certs, response.format, options.audience,
@@ -932,11 +930,9 @@ export class OAuth2Client extends AuthClient {
       format: CertificateFormat,
       callback: GetFederatedSignonCertsCallback): void;
   getFederatedSignonCerts(
-      format?: CertificateFormat, callback?: GetFederatedSignonCertsCallback):
+      format: CertificateFormat = CertificateFormat.PEM,
+      callback?: GetFederatedSignonCertsCallback):
       Promise<FederatedSignonCertsResponse>|void {
-    if (!format) {
-      format = CertificateFormat.PEM;
-    }
     if (callback) {
       this.getFederatedSignonCertsAsync(format)
           .then(r => callback(null, r.certs, r.res))
