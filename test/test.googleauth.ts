@@ -804,6 +804,14 @@ it('getDefaultProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it i
      assert.equal(projectId, fixedProjectId);
    });
 
+it('getProjectId should work the same as getDefaultProjectId', async () => {
+  mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      path.join(__dirname, '../../test/fixtures/private2.json'));
+  const projectId = await auth.getProjectId();
+  assert.equal(projectId, fixedProjectId);
+});
+
 it('getDefaultProjectId should use Cloud SDK when it is available and env vars are not set',
    async () => {
      // Set up the creds.
