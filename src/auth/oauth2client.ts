@@ -1053,8 +1053,7 @@ export class OAuth2Client extends AuthClient {
       // If this is not present, then there's no reason to attempt verification
       throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
     }
-    // certs is a legit dynamic object
-    // tslint:disable-next-line no-any
+
     const cert = certs[envelope.kid];
     const crypto = createCrypto();
     const verified: boolean = await crypto.verify(cert, signed, signature);
