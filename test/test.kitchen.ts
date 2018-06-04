@@ -64,16 +64,17 @@ before('npm pack and move to staging directory', async () => {
 });
 
 it('should be able to use the d.ts', async () => {
-    await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-  }).timeout(240000); // TODO: set pack to 40000 after removing node4
+  await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
+}).timeout(240000);  // TODO: set pack to 40000 after removing node4
 
 it('should be able to webpack the library', async () => {
-    // we expect npm install is executed on the previous step
-    await spawnp('npx', ['webpack'], {cwd: `${stagingPath}/`});
-    const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
-    const stat = fs.statSync(bundle);
-    assert(stat.size < 256 * 1024);
-  }).timeout(60000); // TODO: set to 20000 after removing node4
+  // we expect npm install is executed on the previous step
+  await spawnp('node_modules/.bin/webpack', [], {cwd: `${stagingPath}/`});
+  // TODO: change the above command to 'npx webpack' after removing node4
+  const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
+  const stat = fs.statSync(bundle);
+  assert(stat.size < 256 * 1024);
+}).timeout(60000);  // TODO: set to 20000 after removing node4
 
 /**
  * CLEAN UP - remove the staging directory when done.
