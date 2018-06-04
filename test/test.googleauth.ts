@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import * as child_process from 'child_process';
-import * as fs from 'fs';
+import assert from 'assert';
+import child_process from 'child_process';
+import fs from 'fs';
 import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
-import * as nock from 'nock';
-import * as path from 'path';
-import * as sinon from 'sinon';
-import * as stream from 'stream';
+import nock from 'nock';
+import path from 'path';
+import sinon from 'sinon';
+import stream from 'stream';
 
 import {GoogleAuth, GoogleAuthOptions, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
@@ -803,6 +803,14 @@ it('getDefaultProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it i
      const projectId = await auth.getDefaultProjectId();
      assert.equal(projectId, fixedProjectId);
    });
+
+it('getProjectId should work the same as getDefaultProjectId', async () => {
+  mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      path.join(__dirname, '../../test/fixtures/private2.json'));
+  const projectId = await auth.getProjectId();
+  assert.equal(projectId, fixedProjectId);
+});
 
 it('getDefaultProjectId should use Cloud SDK when it is available and env vars are not set',
    async () => {

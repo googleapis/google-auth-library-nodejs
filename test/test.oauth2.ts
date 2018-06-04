@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import {AxiosError} from 'axios';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as nock from 'nock';
-import * as path from 'path';
-import * as qs from 'querystring';
-import * as url from 'url';
+import crypto from 'crypto';
+import fs from 'fs';
+import nock from 'nock';
+import path from 'path';
+import qs from 'querystring';
+import url from 'url';
 
 import {CodeChallengeMethod, GoogleAuth, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';

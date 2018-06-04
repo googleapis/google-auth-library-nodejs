@@ -28,12 +28,5 @@ module.exports = {
       }
     ]
   },
-  mode: 'production',
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env': {
-        'WEBPACK': 'true',
-      }
-    })
-  ]
+  mode: 'production'
 };

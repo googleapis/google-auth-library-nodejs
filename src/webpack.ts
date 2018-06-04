@@ -15,5 +15,5 @@
  */
 
 export function isWebpack(): boolean {
-  return process.env.WEBPACK !== undefined;
+  return typeof (window) !== 'undefined';
 }

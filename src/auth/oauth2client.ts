@@ -15,9 +15,9 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import * as http from 'http';
-import * as querystring from 'querystring';
-import * as stream from 'stream';
+import http from 'http';
+import querystring from 'querystring';
+import stream from 'stream';
 
 import {createCrypto, JwkCertificate} from './../crypto/crypto';
 import {BodyResponseCallback} from './../transporters';
@@ -36,7 +36,9 @@ export enum CertificateFormat {
   JWK = 'JWK'
 }
 
-export interface CertificateDictionary { [key: string]: string|JwkCertificate; }
+export interface CertificateDictionary {
+  [key: string]: string|JwkCertificate;
+}
 
 export interface GetTokenOptions {
   code: string;
@@ -300,7 +302,9 @@ export interface FederatedSignonCertsResponse {
   res?: AxiosResponse<void>|null;
 }
 
-export interface RevokeCredentialsResult { success: boolean; }
+export interface RevokeCredentialsResult {
+  success: boolean;
+}
 
 export interface VerifyIdTokenOptions {
   idToken: string;

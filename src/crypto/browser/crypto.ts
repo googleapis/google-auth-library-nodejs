@@ -24,7 +24,7 @@ import {Crypto, JwkCertificate} from '../crypto';
 
 export class BrowserCrypto implements Crypto {
   constructor() {
-    if (window === undefined || window.crypto === undefined ||
+    if (typeof (window) === 'undefined' || window.crypto === undefined ||
         window.crypto.subtle === undefined) {
       throw new Error(
           'SubtleCrypto not found. Make sure it\'s an https:// website.');
