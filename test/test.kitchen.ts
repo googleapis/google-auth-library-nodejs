@@ -65,7 +65,7 @@ before('npm pack and move to staging directory', async () => {
 
 it('should be able to use the d.ts', async () => {
   await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-}).timeout(240000);  // TODO: set pack to 40000 after removing node4
+}).timeout(240000);  // TODO: set back to 40000 after removing node4
 
 it('should be able to webpack the library', async () => {
   if (process.version.match(/^v[46]\./)) {
@@ -85,6 +85,6 @@ it('should be able to webpack the library', async () => {
  */
 after('cleanup staging directory', async () => {
   if (!keep) {
-    stagingDir.removeCallback();
+		await spawnp('rm', ['-rf', $stagingPath]);
   }
 });
