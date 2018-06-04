@@ -7,8 +7,7 @@ module.exports = {
     extensions: [ '.js', '.json' ]
   },
   output: {
-    library: 'GoogleAuth',
-    filename: 'google-auth-library.min.js',
+    filename: 'bundle.min.js',
     path: path.resolve(__dirname, 'dist')
   },
   node: {

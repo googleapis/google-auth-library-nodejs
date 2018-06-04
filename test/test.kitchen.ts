@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+import assert from 'assert';
 import cp from 'child_process';
 import fs from 'fs';
 import mv from 'mv';
 import {ncp} from 'ncp';
+import path from 'path';
 import pify from 'pify';
 import tmp from 'tmp';
 
@@ -51,7 +53,7 @@ const spawnp =
  * Create a staging directory with temp fixtures used
  * to test on a fresh application.
  */
-it('should be able to use the d.ts', async () => {
+before('npm pack and move to staging directory', async () => {
   console.log(`${__filename} staging area: ${stagingPath}`);
   await spawnp('npm', ['pack']);
   const tarball = `${pkg.name}-${pkg.version}.tgz`;
@@ -59,13 +61,24 @@ it('should be able to use the d.ts', async () => {
   // with EXDEV, hence we use `mv` module here.
   await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
   await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
-  await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-}).timeout(40000);
+});
+
+it('should be able to use the d.ts', async () => {
+    await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
+  }).timeout(40000);
+
+it('should be able to webpack the library', async () => {
+    // we expect npm install is executed on the previous step
+    await spawnp('npx', ['webpack'], {cwd: `${stagingPath}/`});
+    const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
+    const stat = fs.statSync(bundle);
+    assert(stat.size < 256 * 1024);
+  }).timeout(20000);
 
 /**
  * CLEAN UP - remove the staging directory when done.
  */
-after('cleanup staging', async () => {
+after('cleanup staging directory', async () => {
   if (!keep) {
     stagingDir.removeCallback();
   }
