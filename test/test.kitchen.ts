@@ -68,13 +68,18 @@ it('should be able to use the d.ts', async () => {
 }).timeout(240000);  // TODO: set pack to 40000 after removing node4
 
 it('should be able to webpack the library', async () => {
+  if (process.version.match(/^v4\./)) {
+    console.log('not running webpack on node4.');
+    return;  // skip this test for node4. TODO: remove this check when we stop
+             // testing on node4.
+  }
   // we expect npm install is executed on the previous step
   await spawnp('node_modules/.bin/webpack', [], {cwd: `${stagingPath}/`});
   // TODO: change the above command to 'npx webpack' after removing node6
   const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
   const stat = fs.statSync(bundle);
   assert(stat.size < 256 * 1024);
-}).timeout(60000);  // TODO: set to 20000 after removing node4
+}).timeout(20000);
 
 /**
  * CLEAN UP - remove the staging directory when done.
