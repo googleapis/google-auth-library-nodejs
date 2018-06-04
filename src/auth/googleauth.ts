@@ -86,6 +86,9 @@ export interface GoogleAuthOptions {
 export class GoogleAuth {
   transporter?: Transporter;
 
+  // This shim is in place for compatibility with google-auto-auth.
+  getProjectId = this.getDefaultProjectId;
+
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
