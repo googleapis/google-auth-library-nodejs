@@ -23,6 +23,14 @@ import * as TextEncoding from 'text-encoding-shim';
 import {Crypto, JwkCertificate} from '../crypto';
 
 export class BrowserCrypto implements Crypto {
+  constructor() {
+    if (window === undefined || window.crypto === undefined ||
+        window.crypto.subtle === undefined) {
+      throw new Error(
+          'SubtleCrypto not found. Make sure it\'s an https:// website.');
+    }
+  }
+
   async sha256DigestBase64(str: string): Promise<string> {
     const arrayBuffer = await window.crypto.subtle.digest(
         'SHA-256', new TextEncoding.TextEncoder().encode(str));
