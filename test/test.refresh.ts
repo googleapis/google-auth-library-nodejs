@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import * as fs from 'fs';
-import {UserRefreshClient} from '../src/';
+import assert from 'assert';
+import fs from 'fs';
+import {UserRefreshClient} from '../src';
 
 // Creates a standard JSON credentials object for testing.
 function createJSON() {
