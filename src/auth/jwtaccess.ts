@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as jws from 'jws';
-import * as LRU from 'lru-cache';
-import * as stream from 'stream';
+import jws from 'jws';
+import LRU from 'lru-cache';
+import stream from 'stream';
 import {JWTInput} from './credentials';
 import {RequestMetadataResponse} from './oauth2client';
 

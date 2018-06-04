@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import {IAMAuth} from '../src/index';
 
 it('passes the token and selector to the callback ', done => {

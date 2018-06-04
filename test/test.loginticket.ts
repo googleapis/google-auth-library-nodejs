@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import {LoginTicket} from '../src/auth/loginticket';
 
 it('should return null userId even if no payload', () => {

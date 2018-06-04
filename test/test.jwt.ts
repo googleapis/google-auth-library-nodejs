@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import * as fs from 'fs';
-import * as jws from 'jws';
-import * as nock from 'nock';
+import assert from 'assert';
+import fs from 'fs';
+import jws from 'jws';
+import nock from 'nock';
 
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import {GoogleAuth, JWT} from '../src/index';
