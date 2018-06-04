@@ -49,7 +49,7 @@ const spawnp =
       });
     };
 
-describe('kitchen', function() {
+describe('kitchen', async function() {
   this.timeout(60000);
 
   /**
@@ -67,6 +67,8 @@ describe('kitchen', function() {
   });
 
   it('should be able to use the d.ts', async () => {
+    await spawnp('npm', ['config', 'delete', 'proxy'], {cwd: `${stagingPath}/`});
+    await spawnp('npm', ['config', 'delete', 'https-proxy'], {cwd: `${stagingPath}/`});
     await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
   }).timeout(240000);  // TODO: set pack to 40000 after removing node4
 
