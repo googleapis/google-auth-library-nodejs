@@ -65,7 +65,7 @@ before('npm pack and move to staging directory', async () => {
 
 it('should be able to use the d.ts', async () => {
     await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-  }).timeout(80000); // TODO: set pack to 40000 after removing node4
+  }).timeout(240000); // TODO: set pack to 40000 after removing node4
 
 it('should be able to webpack the library', async () => {
     // we expect npm install is executed on the previous step
@@ -73,7 +73,7 @@ it('should be able to webpack the library', async () => {
     const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
     const stat = fs.statSync(bundle);
     assert(stat.size < 256 * 1024);
-  }).timeout(40000); // TODO: set to 20000 after removing node4
+  }).timeout(60000); // TODO: set to 20000 after removing node4
 
 /**
  * CLEAN UP - remove the staging directory when done.
