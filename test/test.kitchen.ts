@@ -70,7 +70,7 @@ it('should be able to use the d.ts', async () => {
 it('should be able to webpack the library', async () => {
   // we expect npm install is executed on the previous step
   await spawnp('node_modules/.bin/webpack', [], {cwd: `${stagingPath}/`});
-  // TODO: change the above command to 'npx webpack' after removing node4
+  // TODO: change the above command to 'npx webpack' after removing node6
   const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
   const stat = fs.statSync(bundle);
   assert(stat.size < 256 * 1024);
