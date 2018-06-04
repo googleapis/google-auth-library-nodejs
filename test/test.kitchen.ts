@@ -87,4 +87,4 @@ after('cleanup staging directory', async () => {
   if (!keep) {
     stagingDir.removeCallback();
   }
-});
+}).timeout(60000);
