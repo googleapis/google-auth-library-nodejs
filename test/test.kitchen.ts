@@ -85,6 +85,6 @@ it('should be able to webpack the library', async () => {
  */
 after('cleanup staging directory', async () => {
   if (!keep) {
-		await spawnp('rm', ['-rf', $stagingPath]);
+    await spawnp('rm', ['-rf', stagingPath]);
   }
 });
