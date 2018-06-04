@@ -68,10 +68,9 @@ it('should be able to use the d.ts', async () => {
 }).timeout(240000);  // TODO: set pack to 40000 after removing node4
 
 it('should be able to webpack the library', async () => {
-  if (process.version.match(/^v4\./)) {
-    console.log('not running webpack on node4.');
-    return;  // skip this test for node4. TODO: remove this check when we stop
-             // testing on node4.
+  if (process.version.match(/^v[46]\./)) {
+    console.log('not running webpack on node4 or node6.');
+    return;
   }
   // we expect npm install is executed on the previous step
   await spawnp('node_modules/.bin/webpack', [], {cwd: `${stagingPath}/`});
