@@ -16,7 +16,6 @@
 
 import {GoogleToken} from 'gtoken';
 import stream from 'stream';
-import crypto from 'crypto';
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
@@ -289,39 +288,4 @@ export class JWT extends OAuth2Client {
     }
     throw new Error('A key or a keyFile must be provided to getCredentials.');
   }
-
-  /**
-   * Sign the given data with the current private key, or go out
-   * to the IAM API to sign it.
-   * @param data The data to be signed.
-   */
-  async sign(data: string): Promise<string> {
-    if (this.key) {
-      const sign = crypto.createSign('RSA-SHA256');
-      sign.update(data);
-      return sign.sign(this.key, 'base64');
-    }
-
-    if (!this.projectId) {
-      throw new Error('Cannot sign data without a project ID.');
-    }
-
-    if (!this.email) {
-      throw new Error('Cannot sign data without `client_email`.');
-    }
-
-    const idString = `projects/${this.projectId}/serviceAccounts/${this.email}`;
-    const res = await this.request<SignBlobResponse>({
-      method: 'POST',
-      url: `https://iam.googleapis.com/v1/${idString}:signBlob`,
-      data: {
-        bytesToSign: Buffer.from(data).toString('base64')
-      }
-    });
-    return res.data.signature;
-  }
-}
-
-export interface SignBlobResponse {
-  signature: string;
 }
