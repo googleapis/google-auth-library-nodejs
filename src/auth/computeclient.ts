@@ -20,18 +20,20 @@ import * as rax from 'retry-axios';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
-export interface ComputeOptions extends RefreshOptions {}
+export interface ComputeOptions extends RefreshOptions {
+  /**
+   * The service account email to use, or 'default'. A Compute Engine instance
+   * may have multiple service accounts.
+   */
+  serviceAccountEmail?: string;
+}
 
 // Create a scoped axios instance that will retry 3 times by default
 const ax = axios.create();
 rax.attach(ax);
 
 export class Compute extends OAuth2Client {
-  /**
-   * Google Compute Engine metadata server token endpoint.
-   */
-  protected static readonly _GOOGLE_OAUTH2_TOKEN_URL =
-      `${gcpMetadata.BASE_PATH}/instance/service-accounts/default/token`;
+  private serviceAccountEmail: string;
 
   /**
    * Google Compute Engine service account credentials.
@@ -39,11 +41,12 @@ export class Compute extends OAuth2Client {
    * Retrieve access token from the metadata server.
    * See: https://developers.google.com/compute/docs/authentication
    */
-  constructor(options?: ComputeOptions) {
+  constructor(options: ComputeOptions = {}) {
     super(options);
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};
+    this.serviceAccountEmail = options.serviceAccountEmail || 'default';
   }
 
   /**
@@ -65,8 +68,10 @@ export class Compute extends OAuth2Client {
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
     const url = this.tokenUrl ||
-        `${gcpMetadata.HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
-    let res: AxiosResponse<CredentialRequest>|null = null;
+        `${gcpMetadata.HOST_ADDRESS}${
+                    gcpMetadata.BASE_PATH}/instance/service-accounts/${
+                    this.serviceAccountEmail}/token`;
+    let res: AxiosResponse<CredentialRequest>;
     // request for new token
     try {
       // TODO: In 2.0, we should remove the ability to configure the tokenUrl,

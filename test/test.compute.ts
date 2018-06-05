@@ -260,3 +260,18 @@ it('should return a helpful message on token refresh response.statusCode 404',
      }
      throw new Error('Expected to throw');
    });
+
+it('should accept a custom service account', async () => {
+  const serviceAccountEmail = 'service-account@example.com';
+  const compute = new Compute({serviceAccountEmail});
+  const scopes = [
+    mockExample(),
+    nock(HOST_ADDRESS)
+        .get(`${BASE_PATH}/instance/service-accounts/${
+            serviceAccountEmail}/token`)
+        .reply(200, {access_token: 'abc123', expires_in: 10000})
+  ];
+  await compute.request({url});
+  scopes.forEach(s => s.done());
+  assert.equal(compute.credentials.access_token, 'abc123');
+});

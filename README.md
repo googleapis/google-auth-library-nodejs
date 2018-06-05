@@ -25,7 +25,8 @@ The `1.x` release includes a variety of bug fixes, new features, and breaking ch
 This library provides a variety of ways to authenticate to your Google services.
 - [Application Default Credentials](#choosing-the-correct-credential-type-automatically) - Use Application Default Credentials when you use a single identity for all users in your application. Especially useful for applications running on Google Cloud.
 - [OAuth 2](#oauth2) - Use OAuth2 when you need to perform actions on behalf of the end user.
-- [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users.  Especially useful for server->server or server->API communication.
+- [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users. Especially useful for server->server or server->API communication.
+- [Google Compute](#compute) - Directly use a service account on Google Cloud Platform. Useful for server->server or server->API communication.
 
 ## Application Default Credentials
 This library provides an implementation of [Application Default Credentials][] for Node.js. The [Application Default Credentials][] provide a simple way to get authorization credentials for use in calling Google APIs.
@@ -269,7 +270,7 @@ const oAuth2Client = new OAuth2Client({
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
 ``` js
-const {JWT} = require('../build/src/index');
+const {JWT} = require('google-auth-library');
 const keys = require('./jwt.keys.json');
 
 async function main() {
@@ -341,6 +342,30 @@ You can use the following environment variables to proxy HTTP and HTTPS requests
 - `HTTPS_PROXY` / `https_proxy`
 
 When HTTP_PROXY / http_proxy are set, they will be used to proxy non-SSL requests that do not have an explicit proxy configuration option present. Similarly, HTTPS_PROXY / https_proxy will be respected for SSL requests that do not have an explicit proxy configuration option. It is valid to define a proxy in one of the environment variables, but then override it for a specific request, using the proxy configuration option.
+
+
+## Compute
+If your application is running on Google Cloud Platform, you can authenticate using the default service account or by specifying a specific service account.
+
+**Note**: In most cases, you will want to use [Application Default Credentials](choosing-the-correct-credential-type-automatically).  Direct use of the `Compute` class is for very specific scenarios.
+
+``` js
+const {Compute} = require('google-auth-library');
+
+async function main() {
+  const client = new Compute({
+    // Specifying the service account email is optional.
+    serviceAccountEmail: 'my-service-account@example.com'
+  });
+  const projectId = 'your-project-id';
+  const url = `https://www.googleapis.com/dns/v1/projects/${project_id}`;
+  const res = await client.request({url});
+  console.log(res.data);
+}
+
+main().catch(console.error);
+
+```
 
 ## Questions/problems?
 
