@@ -262,7 +262,7 @@ it('should return a helpful message on token refresh response.statusCode 404',
    });
 
 it('should accept a custom service account', async () => {
-  const serviceAccountEmail = 'beckwith@google.com';
+  const serviceAccountEmail = 'service-account@example.com';
   const compute = new Compute({serviceAccountEmail});
   const scopes = [
     mockExample(),
