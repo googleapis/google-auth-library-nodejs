@@ -20,7 +20,9 @@ const { Compute } = require('google-auth-library');
  */
 async function main() {
   const client = new Compute({
-    serviceAccountEmail: 'beckwith@google.com'
+    // Specifying the serviceAccountEmail is optional. It will use the default
+    // service account if one is not defined.
+    serviceAccountEmail: 'some-service-account@some-place.org'
   });
   const projectId = 'el-gato';
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
