@@ -22,7 +22,7 @@ async function main() {
   const client = new Compute({
     // Specifying the serviceAccountEmail is optional. It will use the default
     // service account if one is not defined.
-    serviceAccountEmail: 'some-service-account@some-place.org'
+    serviceAccountEmail: 'some-service-account@example.com'
   });
   const projectId = 'el-gato';
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;

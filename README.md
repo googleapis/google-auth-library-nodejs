@@ -355,7 +355,7 @@ const {Compute} = require('google-auth-library');
 async function main() {
   const client = new Compute({
     // Specifying the service account email is optional.
-    serviceAccountEmail: 'my@gserviceaccount.com'
+    serviceAccountEmail: 'my-service-account@example.com'
   });
   const projectId = 'your-project-id';
   const url = `https://www.googleapis.com/dns/v1/projects/${project_id}`;
