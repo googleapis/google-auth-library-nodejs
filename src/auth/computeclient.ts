@@ -22,7 +22,8 @@ import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface ComputeOptions extends RefreshOptions {
   /**
-   * The service account email to use, or 'default'. A Compute Engine instance may have multiple service accounts.
+   * The service account email to use, or 'default'. A Compute Engine instance
+   * may have multiple service accounts.
    */
   serviceAccountEmail?: string;
 }
@@ -32,7 +33,6 @@ const ax = axios.create();
 rax.attach(ax);
 
 export class Compute extends OAuth2Client {
-
   private serviceAccountEmail: string;
 
   /**
@@ -68,11 +68,14 @@ export class Compute extends OAuth2Client {
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
     const url = this.tokenUrl ||
-        `${gcpMetadata.HOST_ADDRESS}${gcpMetadata.BASE_PATH}/instance/service-accounts/${this.serviceAccountEmail}/token`;
+        `${gcpMetadata.HOST_ADDRESS}${
+                    gcpMetadata.BASE_PATH}/instance/service-accounts/${
+                    this.serviceAccountEmail}/token`;
     let res: AxiosResponse<CredentialRequest>;
     // request for new token
     try {
-      // TODO: In 2.0, we should remove the ability to configure the tokenUrl, and switch this over to use the gcp-metadata package instead.
+      // TODO: In 2.0, we should remove the ability to configure the tokenUrl,
+      // and switch this over to use the gcp-metadata package instead.
       res = await ax.request<CredentialRequest>({
         url,
         headers: {[gcpMetadata.HEADER_NAME]: 'Google'},
