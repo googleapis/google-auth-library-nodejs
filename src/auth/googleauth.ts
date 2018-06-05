@@ -748,11 +748,10 @@ export class GoogleAuth {
       throw new Error('Cannot sign data without `client_email`.');
     }
 
-    const idString =
-        `projects/${projectId}/serviceAccounts/${creds.client_email}`;
+    const id = `projects/${projectId}/serviceAccounts/${creds.client_email}`;
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
-      url: `https://iam.googleapis.com/v1/${idString}:signBlob`,
+      url: `https://iam.googleapis.com/v1/${id}:signBlob`,
       data: {bytesToSign: Buffer.from(data).toString('base64')}
     });
     return res.data.signature;
