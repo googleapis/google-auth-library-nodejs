@@ -63,13 +63,17 @@ before('npm pack and move to staging directory', async () => {
   await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
 });
 
-it('should be able to use the d.ts', async () => {
+it('should be able to use the d.ts', async function() {
+  if (process.version.match(/^v[46]\./)) {
+    this.timeout(240000);  // :-(
+  }
   await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-}).timeout(240000);  // TODO: set back to 40000 after removing node4
+}).timeout(40000);
 
-it('should be able to webpack the library', async () => {
+it('should be able to webpack the library', async function() {
   if (process.version.match(/^v[46]\./)) {
     console.log('not running webpack on node4 or node6.');
+    this.skip();
     return;
   }
   // we expect npm install is executed on the previous step
