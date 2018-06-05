@@ -16,6 +16,7 @@
 
 import {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
+import crypto from 'crypto';
 import fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
 import http from 'http';
@@ -723,4 +724,40 @@ export class GoogleAuth {
   getEnv(): Promise<GCPEnv> {
     return getEnv();
   }
+
+  /**
+   * Sign the given data with the current private key, or go out
+   * to the IAM API to sign it.
+   * @param data The data to be signed.
+   */
+  async sign(data: string): Promise<string> {
+    const client = await this.getClient();
+    if (client instanceof JWT && client.key) {
+      const sign = crypto.createSign('RSA-SHA256');
+      sign.update(data);
+      return sign.sign(client.key, 'base64');
+    }
+
+    const projectId = await this.getProjectId();
+    if (!projectId) {
+      throw new Error('Cannot sign data without a project ID.');
+    }
+
+    const creds = await this.getCredentials();
+    if (!creds.client_email) {
+      throw new Error('Cannot sign data without `client_email`.');
+    }
+
+    const id = `projects/${projectId}/serviceAccounts/${creds.client_email}`;
+    const res = await this.request<SignBlobResponse>({
+      method: 'POST',
+      url: `https://iam.googleapis.com/v1/${id}:signBlob`,
+      data: {bytesToSign: Buffer.from(data).toString('base64')}
+    });
+    return res.data.signature;
+  }
+}
+
+export interface SignBlobResponse {
+  signature: string;
 }

@@ -16,6 +16,7 @@
 
 import assert from 'assert';
 import child_process from 'child_process';
+import crypto from 'crypto';
 import fs from 'fs';
 import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
 import nock from 'nock';
@@ -45,6 +46,7 @@ const privateJSON = require('../../test/fixtures/private.json');
 const private2JSON = require('../../test/fixtures/private2.json');
 const refreshJSON = require('../../test/fixtures/refresh.json');
 const fixedProjectId = 'my-awesome-project';
+const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 
 let auth: GoogleAuth;
 let sandbox: sinon.SinonSandbox|undefined;
@@ -1325,3 +1327,38 @@ it('should make the request', async () => {
   scopes.forEach(s => s.done());
   assert.deepEqual(res.data, data);
 });
+
+it('sign should use the private key for JWT clients', async () => {
+  const data = 'abc123';
+  const auth = new GoogleAuth({
+    credentials:
+        {client_email: 'google@auth.library', private_key: privateKey}
+  });
+  const value = await auth.sign(data);
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(data);
+  const computed = sign.sign(privateKey, 'base64');
+  assert.equal(value, computed);
+});
+
+it('sign should hit the IAM endpoint if no private_key is available',
+   async () => {
+     mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+     const {auth, scopes} = mockGCE();
+     const email = 'google@auth.library';
+     const iamUri = `https://iam.googleapis.com`;
+     const iamPath =
+         `/v1/projects/${fixedProjectId}/serviceAccounts/${email}:signBlob`;
+     const signature = 'erutangis';
+     const data = 'abc123';
+     scopes.push(
+         nock(iamUri).post(iamPath).reply(200, {signature}),
+         nock(host)
+             .get(svcAccountPath)
+             .reply(
+                 200, {default: {email, private_key: privateKey}},
+                 {'Metadata-Flavor': 'Google'}));
+     const value = await auth.sign(data);
+     scopes.forEach(x => x.done());
+     assert.equal(value, signature);
+   });
