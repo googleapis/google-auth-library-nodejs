@@ -804,16 +804,20 @@ export class OAuth2Client extends AuthClient {
       const res = (e as AxiosError).response;
       if (res) {
         const statusCode = res.status;
-        // Automatically retry 401 and 403 responses if err is set and is
-        // unrelated to response then getting credentials failed, and retrying
-        // won't help
+        // Retry the request for metadata if the following criteria are true:
+        // - We haven't already retried.  It only makes sense to retry once.
+        // - The response was a 401 or a 403
+        // - The request didn't send a readableStream
+        // - An access_token and refresh_token were available, but no
+        //   expiry_date was availabe. This can happen when developers stash
+        //   the access_token and refresh_token for later use, but the
+        //   access_token fails on the first try because it's expired.
+        const mayRequireRefresh = this.credentials &&
+            this.credentials.access_token && this.credentials.refresh_token &&
+            !this.credentials.expiry_date;
         const isReadableStream = res.config.data instanceof stream.Readable;
-        if (!retry && (statusCode === 401 || statusCode === 403) &&
-            !isReadableStream) {
-          /* It only makes sense to retry once, because the retry is intended
-           * to handle expiration-related failures. If refreshing the token
-           * does not fix the failure, then refreshing again probably won't
-           * help */
+        const isAuthErr = statusCode === 401 || statusCode === 403;
+        if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
           await this.refreshAccessTokenAsync();
           return this.requestAsync<T>(opts, true);
         }

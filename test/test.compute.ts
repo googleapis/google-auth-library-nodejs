@@ -154,12 +154,8 @@ it('should return false for createScopedRequired', () => {
 });
 
 it('should return a helpful message on request response.statusCode 403', async () => {
-  // Mock the credentials object.
-  compute.credentials = {
-    refresh_token: 'hello',
-    access_token: 'goodbye',
-    expiry_date: (new Date(9999, 1, 1)).getTime()
-  };
+  // Mock the credentials object. Make sure there's no expiry_date set.
+  compute.credentials = {refresh_token: 'hello', access_token: 'goodbye'};
 
   const scopes = [
     nock(url).get('/').reply(403), nock(HOST_ADDRESS).get(tokenPath).reply(403)
