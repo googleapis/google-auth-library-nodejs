@@ -809,10 +809,9 @@ export class OAuth2Client extends AuthClient {
         // - The response was a 401 or a 403
         // - The request didn't send a readableStream
         // - An access_token and refresh_token were available, but no
-        // expiry_date
-        //   was availabe.  This can happen when developers stash the
-        //   access_token and refresh_token for later use, but the access_token
-        //   fails on the first try because it's expired.
+        //   expiry_date was availabe. This can happen when developers stash
+        //   the access_token and refresh_token for later use, but the
+        //   access_token fails on the first try because it's expired.
         const mayRequireRefresh = this.credentials &&
             this.credentials.access_token && this.credentials.refresh_token &&
             !this.credentials.expiry_date;
