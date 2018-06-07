@@ -16,9 +16,9 @@
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import crypto from 'crypto';
-import http from 'http';
+import * as http from 'http';
 import querystring from 'querystring';
-import stream from 'stream';
+import * as stream from 'stream';
 
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';

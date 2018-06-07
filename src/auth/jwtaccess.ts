@@ -16,7 +16,7 @@
 
 import jws from 'jws';
 import LRU from 'lru-cache';
-import stream from 'stream';
+import * as stream from 'stream';
 import {JWTInput} from './credentials';
 import {RequestMetadataResponse} from './oauth2client';
 

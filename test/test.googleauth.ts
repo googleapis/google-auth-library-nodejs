@@ -17,12 +17,12 @@
 import assert from 'assert';
 import child_process from 'child_process';
 import crypto from 'crypto';
-import fs from 'fs';
+import * as fs from 'fs';
 import {BASE_PATH, HEADER_NAME, HOST_ADDRESS} from 'gcp-metadata';
 import nock from 'nock';
 import path from 'path';
 import sinon from 'sinon';
-import stream from 'stream';
+import * as stream from 'stream';
 
 import {GoogleAuth, GoogleAuthOptions, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';

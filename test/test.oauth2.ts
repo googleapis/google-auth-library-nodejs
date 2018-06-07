@@ -17,7 +17,7 @@
 import assert from 'assert';
 import {AxiosError} from 'axios';
 import crypto from 'crypto';
-import fs from 'fs';
+import * as fs from 'fs';
 import nock from 'nock';
 import path from 'path';
 import qs from 'querystring';

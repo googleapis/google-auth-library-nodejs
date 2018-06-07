@@ -15,7 +15,7 @@
  */
 
 import cp from 'child_process';
-import fs from 'fs';
+import * as fs from 'fs';
 import mv from 'mv';
 import {ncp} from 'ncp';
 import pify from 'pify';

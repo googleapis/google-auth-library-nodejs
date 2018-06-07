@@ -2,13 +2,13 @@
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    // This ensures we test clients which don't have esModuleInterop
+    // enabled, which is the default.
+    "esModuleInterop": false
   },
   "include": [
     "src/*.ts",
     "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
   ]
 }
