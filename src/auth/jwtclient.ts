@@ -15,7 +15,7 @@
  */
 
 import {GoogleToken} from 'gtoken';
-import stream from 'stream';
+import * as stream from 'stream';
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';

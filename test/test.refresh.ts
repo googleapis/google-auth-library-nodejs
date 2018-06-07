@@ -15,7 +15,7 @@
  */
 
 import assert from 'assert';
-import fs from 'fs';
+import * as fs from 'fs';
 import {UserRefreshClient} from '../src';
 
 // Creates a standard JSON credentials object for testing.

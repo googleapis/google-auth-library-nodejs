@@ -17,12 +17,12 @@
 import {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
 import crypto from 'crypto';
-import fs from 'fs';
+import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
-import http from 'http';
+import * as http from 'http';
 import os from 'os';
 import path from 'path';
-import stream from 'stream';
+import * as stream from 'stream';
 import util from 'util';
 
 import {DefaultTransporter, Transporter} from '../transporters';

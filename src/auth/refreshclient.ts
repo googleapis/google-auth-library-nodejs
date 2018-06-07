@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import stream from 'stream';
+import * as stream from 'stream';
 import {JWTInput} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 

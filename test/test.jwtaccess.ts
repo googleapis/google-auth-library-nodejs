@@ -15,7 +15,7 @@
  */
 
 import assert from 'assert';
-import fs from 'fs';
+import * as fs from 'fs';
 import jws from 'jws';
 import {JWTAccess} from '../src';
 
