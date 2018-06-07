@@ -3,9 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
-    // This ensures we test clients which don't have esModuleInterop
-    // enabled, which is the default.
-    "esModuleInterop": false
+    "esModuleInterop": false // test default setting
   },
   "include": [
     "src/*.ts",
