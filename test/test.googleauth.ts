@@ -806,6 +806,20 @@ it('getDefaultProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it i
      assert.equal(projectId, fixedProjectId);
    });
 
+it('getDefaultProjectId should prefer configured projectId', async () => {
+  mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+  mockEnvVar('GOOGLE_CLOUD_PROJECT', fixedProjectId);
+  mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      path.join(__dirname, '../../test/fixtures/private2.json'));
+  // nock.disableNetConnect() is also used globally in this file.
+
+  const PROJECT_ID = 'configured-project-id-should-be-preferred';
+  const auth = new GoogleAuth({projectId: PROJECT_ID});
+  const projectId = await auth.getDefaultProjectId();
+  assert.strictEqual(projectId, PROJECT_ID);
+});
+
 it('getProjectId should work the same as getDefaultProjectId', async () => {
   mockEnvVar(
       'GOOGLE_APPLICATION_CREDENTIALS',
