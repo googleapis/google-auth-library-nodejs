@@ -240,25 +240,26 @@ export class GoogleAuth {
       return {credential, projectId};
     }
 
+    // Determine if we're running on GCE.
+    let isGCE;
     try {
-      // Determine if we're running on GCE.
-      const gce = await this._checkIsGCE();
-      if (gce) {
-        // For GCE, just return a default ComputeClient. It will take care of
-        // the rest.
-        this.cachedCredential = new Compute(options);
-        projectId = await this.getDefaultProjectId();
-        return {projectId, credential: this.cachedCredential};
-      } else {
-        // We failed to find the default credentials. Bail out with an error.
-        throw new Error(
-            'Could not load the default credentials. Browse to https://developers.google.com/accounts/docs/application-default-credentials for more information.');
-      }
+      isGCE = await this._checkIsGCE();
     } catch (e) {
       throw new Error(
-          'Unexpected error while acquiring application default credentials: ' +
-          e.message);
+          'Unexpected error determining execution environment: ' + e.message);
     }
+
+    if (!isGCE) {
+      // We failed to find the default credentials. Bail out with an error.
+      throw new Error(
+          'Could not load the default credentials. Browse to https://developers.google.com/accounts/docs/application-default-credentials for more information.');
+    }
+
+    // For GCE, just return a default ComputeClient. It will take care of
+    // the rest.
+    this.cachedCredential = new Compute(options);
+    projectId = await this.getDefaultProjectId();
+    return {projectId, credential: this.cachedCredential};
   }
 
   /**
