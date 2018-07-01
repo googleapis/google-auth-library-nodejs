@@ -1075,7 +1075,7 @@ export class OAuth2Client extends AuthClient {
    * @return The decoded string
    */
   decodeBase64(b64String: string) {
-    const buffer = new Buffer(b64String, 'base64');
+    const buffer = Buffer.from(b64String, 'base64');
     return buffer.toString('utf8');
   }
 
