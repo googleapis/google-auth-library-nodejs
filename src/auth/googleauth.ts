@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
 import crypto from 'crypto';
 import * as fs from 'fs';
@@ -25,16 +25,15 @@ import path from 'path';
 import * as stream from 'stream';
 import util from 'util';
 
+import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
-import {IAMAuth, RequestMetadata} from './iam';
-import {JWTAccess} from './jwtaccess';
 import {JWT, JWTOptions} from './jwtclient';
-import {GetAccessTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
-import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
+import {OAuth2Client, RefreshOptions} from './oauth2client';
+import {UserRefreshClient} from './refreshclient';
 
 export interface ProjectIdCallback {
   (err?: Error|null, projectId?: string|null): void;
@@ -51,10 +50,6 @@ export interface ADCCallback {
 export interface ADCResponse {
   credential: OAuth2Client;
   projectId: string|null;
-}
-
-interface CredentialResult {
-  default: {email: string;};
 }
 
 export interface GoogleAuthOptions {
@@ -83,6 +78,9 @@ export interface GoogleAuthOptions {
    */
   projectId?: string;
 }
+
+export const CLOUD_SDK_CLIENT_ID =
+    '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
 export class GoogleAuth {
   transporter?: Transporter;
@@ -330,7 +328,10 @@ export class GoogleAuth {
       return null;
     }
     // The file seems to exist. Try to use it.
-    return this._getApplicationCredentialsFromFilePath(location, options);
+    const client =
+        await this._getApplicationCredentialsFromFilePath(location, options);
+    this.warnOnProblematicCredentials(client as JWT);
+    return client;
   }
 
   /**
@@ -371,6 +372,17 @@ export class GoogleAuth {
     } catch (err) {
       throw this.createError(
           util.format('Unable to read the file at %s.', filePath), err);
+    }
+  }
+
+  /**
+   * Credentials from the Cloud SDK that are associated with Cloud SDK's project
+   * are problematic because they may not have APIs enabled and have limited
+   * quota. If this is the case, warn about it.
+   */
+  protected warnOnProblematicCredentials(client: JWT) {
+    if (client.email === CLOUD_SDK_CLIENT_ID) {
+      process.emitWarning(messages.PROBLEMATIC_CREDENTIALS_WARNING);
     }
   }
 
