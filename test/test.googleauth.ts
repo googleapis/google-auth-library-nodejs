@@ -24,9 +24,11 @@ import path from 'path';
 import sinon from 'sinon';
 import * as stream from 'stream';
 
-import {GoogleAuth, GoogleAuthOptions, JWT, UserRefreshClient} from '../src';
+import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
+import {CLOUD_SDK_CLIENT_ID} from '../src/auth/googleauth';
+import * as messages from '../src/messages';
 
 nock.disableNetConnect();
 
@@ -1376,3 +1378,25 @@ it('sign should hit the IAM endpoint if no private_key is available',
      scopes.forEach(x => x.done());
      assert.equal(value, signature);
    });
+
+it('should warn the user if using default Cloud SDK credentials', done => {
+  blockGoogleApplicationCredentialEnvironmentVariable();
+  mockEnvVar('HOME', 'foo');
+  auth._pathJoin = pathJoin;
+  auth._osPlatform = () => 'linux';
+  auth._fileExists = () => true;
+  auth._getApplicationCredentialsFromFilePath = () => {
+    return Promise.resolve(new JWT(CLOUD_SDK_CLIENT_ID));
+  };
+  let warned = false;
+  process.on('warning', (warning) => {
+    assert.equal(warning.message, messages.PROBLEMATIC_CREDENTIALS_WARNING);
+    warned = true;
+  });
+  auth._tryGetApplicationCredentialsFromWellKnownFile().then(() => {
+    setImmediate(() => {
+      assert(warned);
+      done();
+    });
+  });
+});
