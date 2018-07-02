@@ -212,8 +212,8 @@ it('should verify a valid certificate against a jwt', () => {
       '"iat":' + now + ',' +
       '"exp":' + expiry + '}';
   const envelope = JSON.stringify({kid: 'keyid', alg: 'RS256'});
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -242,8 +242,8 @@ it('should fail due to invalid audience', () => {
       '"alg":"RS256"' +
       '}';
 
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -272,8 +272,8 @@ it('should fail due to invalid array of audiences', () => {
       '"alg":"RS256"' +
       '}';
 
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -300,8 +300,8 @@ it('should fail due to invalid signature', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -330,8 +330,8 @@ it('should fail due to invalid envelope', () => {
       '"kid":"keyid"' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -359,8 +359,8 @@ it('should fail due to invalid payload', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -388,8 +388,8 @@ it('should fail due to invalid signature', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  const data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64') + '.' +
+  const data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64') + '.' +
       'broken-signature';
   assert.throws(() => {
     client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
@@ -411,8 +411,8 @@ it('should fail due to no expiration date', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -439,8 +439,8 @@ it('should fail due to no issue time', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -468,8 +468,8 @@ it('should fail due to certificate with expiration date in future', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -499,8 +499,8 @@ it('should pass due to expiration date in future with adjusted max expiry',
          '"kid":"keyid",' +
          '"alg":"RS256"' +
          '}';
-     let data = new Buffer(envelope).toString('base64') + '.' +
-         new Buffer(idToken).toString('base64');
+     let data = Buffer.from(envelope).toString('base64') + '.' +
+         Buffer.from(idToken).toString('base64');
      const signer = crypto.createSign('sha256');
      signer.update(data);
      const signature = signer.sign(privateKey, 'base64');
@@ -529,8 +529,8 @@ it('should fail due to token being used to early', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -561,8 +561,8 @@ it('should fail due to token being used to late', () => {
       '"alg":"RS256"' +
       '}';
 
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -590,8 +590,8 @@ it('should fail due to invalid issuer', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -620,8 +620,8 @@ it('should pass due to valid issuer', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
