@@ -39,8 +39,6 @@ workflows:
   version: 2
   tests:
     jobs: &workflow_jobs
-      - node4:
-          filters: *release_tags
       - node6:
           filters: *release_tags
       - node8:
@@ -49,14 +47,12 @@ workflows:
           filters: *release_tags
       - lint:
           requires:
-            - node4
             - node6
             - node8
             - node10
           filters: *release_tags
       - publish_npm:
           requires:
-            - node4
             - node6
             - node8
             - node10
@@ -74,11 +70,6 @@ workflows:
     jobs: *workflow_jobs
 
 jobs:
-  node4:
-    docker:
-      - image: node:4
-        user: node
-    <<: *unit_tests
   node6:
     docker:
       - image: node:6
