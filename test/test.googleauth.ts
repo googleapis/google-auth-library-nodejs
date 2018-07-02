@@ -745,7 +745,7 @@ it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure o
      assert.fail('failed to throw');
    });
 
-it('getDefaultProjectId should return a new projectId the first time and a cached projectId the second time',
+it('getProjectId should return a new projectId the first time and a cached projectId the second time',
    async () => {
      // Create a function which will set up a GoogleAuth instance to match
      // on an environment variable json file, but not on anything else.
@@ -757,7 +757,7 @@ it('getDefaultProjectId should return a new projectId the first time and a cache
      setUpAuthForEnvironmentVariable(auth);
 
      // Ask for credentials, the first time.
-     const projectIdPromise = auth.getDefaultProjectId();
+     const projectIdPromise = auth.getProjectId();
      const projectId = await projectIdPromise;
      assert.equal(projectId, fixedProjectId);
 
@@ -771,7 +771,7 @@ it('getDefaultProjectId should return a new projectId the first time and a cache
 
      // Ask for projectId again, from the same auth instance. If it isn't
      // cached, this will crash.
-     const projectId2 = await auth.getDefaultProjectId();
+     const projectId2 = await auth.getProjectId();
 
      // Make sure we get the original cached projectId back
      assert.equal(fixedProjectId, projectId2);
@@ -781,34 +781,34 @@ it('getDefaultProjectId should return a new projectId the first time and a cache
      const auth2 = new GoogleAuth();
      setUpAuthForEnvironmentVariable(auth2);
 
-     const getProjectIdPromise = auth2.getDefaultProjectId();
+     const getProjectIdPromise = auth2.getProjectId();
      assert.notEqual(getProjectIdPromise, projectIdPromise);
    });
 
-it('getDefaultProjectId should use GCLOUD_PROJECT environment variable when it is set',
+it('getProjectId should use GCLOUD_PROJECT environment variable when it is set',
    async () => {
      mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
-     const projectId = await auth.getDefaultProjectId();
+     const projectId = await auth.getProjectId();
      assert.equal(projectId, fixedProjectId);
    });
 
-it('getDefaultProjectId should use GOOGLE_CLOUD_PROJECT environment variable when it is set',
+it('getProjectId should use GOOGLE_CLOUD_PROJECT environment variable when it is set',
    async () => {
      mockEnvVar('GOOGLE_CLOUD_PROJECT', fixedProjectId);
-     const projectId = await auth.getDefaultProjectId();
+     const projectId = await auth.getProjectId();
      assert.equal(projectId, fixedProjectId);
    });
 
-it('getDefaultProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it is available',
+it('getProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it is available',
    async () => {
      mockEnvVar(
          'GOOGLE_APPLICATION_CREDENTIALS',
          path.join(__dirname, '../../test/fixtures/private2.json'));
-     const projectId = await auth.getDefaultProjectId();
+     const projectId = await auth.getProjectId();
      assert.equal(projectId, fixedProjectId);
    });
 
-it('getDefaultProjectId should prefer configured projectId', async () => {
+it('getProjectId should prefer configured projectId', async () => {
   mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
   mockEnvVar('GOOGLE_CLOUD_PROJECT', fixedProjectId);
   mockEnvVar(
@@ -818,11 +818,11 @@ it('getDefaultProjectId should prefer configured projectId', async () => {
 
   const PROJECT_ID = 'configured-project-id-should-be-preferred';
   const auth = new GoogleAuth({projectId: PROJECT_ID});
-  const projectId = await auth.getDefaultProjectId();
+  const projectId = await auth.getProjectId();
   assert.strictEqual(projectId, PROJECT_ID);
 });
 
-it('getProjectId should work the same as getDefaultProjectId', async () => {
+it('getProjectId should work the same as getProjectId', async () => {
   mockEnvVar(
       'GOOGLE_APPLICATION_CREDENTIALS',
       path.join(__dirname, '../../test/fixtures/private2.json'));
@@ -830,7 +830,7 @@ it('getProjectId should work the same as getDefaultProjectId', async () => {
   assert.equal(projectId, fixedProjectId);
 });
 
-it('getDefaultProjectId should use Cloud SDK when it is available and env vars are not set',
+it('getProjectId should use Cloud SDK when it is available and env vars are not set',
    async () => {
      // Set up the creds.
      // * Environment variable is not set.
@@ -842,19 +842,19 @@ it('getDefaultProjectId should use Cloud SDK when it is available and env vars a
          {configuration: {properties: {core: {project: fixedProjectId}}}});
      const stub = sandbox.stub(child_process, 'exec')
                       .callsArgWith(1, null, stdout, null);
-     const projectId = await auth.getDefaultProjectId();
+     const projectId = await auth.getProjectId();
      assert(stub.calledOnce);
      assert.equal(projectId, fixedProjectId);
    });
 
-it('getDefaultProjectId should use GCE when well-known file and env const are not set',
+it('getProjectId should use GCE when well-known file and env const are not set',
    async () => {
      blockGoogleApplicationCredentialEnvironmentVariable();
      sandbox = sinon.createSandbox();
      const stub =
          sandbox.stub(child_process, 'exec').callsArgWith(1, null, '', null);
      const scope = createGetProjectIdNock(fixedProjectId);
-     const projectId = await auth.getDefaultProjectId();
+     const projectId = await auth.getProjectId();
      assert(stub.calledOnce);
      assert.equal(projectId, fixedProjectId);
      scope.done();
@@ -1398,5 +1398,19 @@ it('should warn the user if using default Cloud SDK credentials', done => {
       assert(warned);
       done();
     });
+  });
+});
+
+it('should warn the user if using the getDefaultProjectId method', done => {
+  mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+  let warned = false;
+  process.on('warning', (warning) => {
+    assert.equal(warning.message, messages.DEFAULT_PROJECT_ID_DEPRECATED);
+    warned = true;
+  });
+  auth.getDefaultProjectId().then(projectId => {
+    assert.equal(projectId, fixedProjectId);
+    assert(warned);
+    done();
   });
 });

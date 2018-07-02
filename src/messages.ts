@@ -16,8 +16,12 @@
 
 export const PROBLEMATIC_CREDENTIALS_WARNING =
     `Your application has authenticated using end user credentials from Google
-  Cloud SDK. We recommend that most server applications use service accounts
-  instead. If your application continues to use end user credentials from Cloud
-  SDK, you might receive a "quota exceeded" or "API not enabled" error. For
-  more information about service accounts, see
-  https://cloud.google.com/docs/authentication/.`;
+Cloud SDK. We recommend that most server applications use service accounts
+instead. If your application continues to use end user credentials from Cloud
+SDK, you might receive a "quota exceeded" or "API not enabled" error. For
+more information about service accounts, see
+https://cloud.google.com/docs/authentication/.`;
+
+export const DEFAULT_PROJECT_ID_DEPRECATED =
+    `The 'getDefaultProjectId' method has been deprecated, and will be removed
+ in the 3.0 release of this library. Please use the 'getProjectId' method instead.`;
