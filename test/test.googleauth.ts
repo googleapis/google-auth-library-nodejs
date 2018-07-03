@@ -1389,10 +1389,12 @@ it('should warn the user if using default Cloud SDK credentials', done => {
     return Promise.resolve(new JWT(CLOUD_SDK_CLIENT_ID));
   };
   let warned = false;
-  process.on('warning', (warning) => {
+  const onWarning = (warning: Error) => {
     assert.equal(warning.message, messages.PROBLEMATIC_CREDENTIALS_WARNING);
     warned = true;
-  });
+    process.removeListener('warning', onWarning);
+  };
+  process.on('warning', onWarning);
   auth._tryGetApplicationCredentialsFromWellKnownFile().then(() => {
     setImmediate(() => {
       assert(warned);
@@ -1404,10 +1406,12 @@ it('should warn the user if using default Cloud SDK credentials', done => {
 it('should warn the user if using the getDefaultProjectId method', done => {
   mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
   let warned = false;
-  process.on('warning', (warning) => {
+  const onWarning = (warning: Error) => {
     assert.equal(warning.message, messages.DEFAULT_PROJECT_ID_DEPRECATED);
     warned = true;
-  });
+    process.removeListener('warning', onWarning);
+  };
+  process.on('warning', onWarning);
   auth.getDefaultProjectId().then(projectId => {
     assert.equal(projectId, fixedProjectId);
     assert(warned);
