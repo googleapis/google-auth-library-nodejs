@@ -129,7 +129,7 @@ export class GoogleAuth {
   getDefaultProjectId(): Promise<string>;
   getDefaultProjectId(callback: ProjectIdCallback): void;
   getDefaultProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
-    process.emitWarning(messages.DEFAULT_PROJECT_ID_DEPRECATED);
+    messages.warn(messages.DEFAULT_PROJECT_ID_DEPRECATED);
     if (callback) {
       this.getProjectIdAsync().then(r => callback(null, r)).catch(callback);
     } else {
@@ -392,7 +392,7 @@ export class GoogleAuth {
    */
   protected warnOnProblematicCredentials(client: JWT) {
     if (client.email === CLOUD_SDK_CLIENT_ID) {
-      process.emitWarning(messages.PROBLEMATIC_CREDENTIALS_WARNING);
+      messages.warn(messages.PROBLEMATIC_CREDENTIALS_WARNING);
     }
   }
 

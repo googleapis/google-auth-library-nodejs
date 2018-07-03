@@ -1390,7 +1390,8 @@ it('should warn the user if using default Cloud SDK credentials', done => {
   };
   let warned = false;
   const onWarning = (warning: Error) => {
-    assert.equal(warning.message, messages.PROBLEMATIC_CREDENTIALS_WARNING);
+    assert.equal(
+        warning.message, messages.PROBLEMATIC_CREDENTIALS_WARNING.message);
     warned = true;
     process.removeListener('warning', onWarning);
   };
@@ -1407,7 +1408,8 @@ it('should warn the user if using the getDefaultProjectId method', done => {
   mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
   let warned = false;
   const onWarning = (warning: Error) => {
-    assert.equal(warning.message, messages.DEFAULT_PROJECT_ID_DEPRECATED);
+    assert.equal(
+        warning.message, messages.DEFAULT_PROJECT_ID_DEPRECATED.message);
     warned = true;
     process.removeListener('warning', onWarning);
   };

@@ -14,14 +14,48 @@
  * limitations under the License.
  */
 
-export const PROBLEMATIC_CREDENTIALS_WARNING =
-    `Your application has authenticated using end user credentials from Google
-Cloud SDK. We recommend that most server applications use service accounts
-instead. If your application continues to use end user credentials from Cloud
-SDK, you might receive a "quota exceeded" or "API not enabled" error. For
-more information about service accounts, see
-https://cloud.google.com/docs/authentication/.`;
+import * as semver from 'semver';
 
-export const DEFAULT_PROJECT_ID_DEPRECATED =
-    `The 'getDefaultProjectId' method has been deprecated, and will be removed
- in the 3.0 release of this library. Please use the 'getProjectId' method instead.`;
+export function warn(warning: Warning) {
+  if (semver.satisfies(process.version, '>=8')) {
+    // @types/node doesn't recognize the emitWarning syntax which
+    // accepts a config object, so `as any` it is
+    // https://nodejs.org/docs/latest-v8.x/api/process.html#process_process_emitwarning_warning_options
+    // tslint:disable-next-line no-any
+    process.emitWarning(warning.message, warning as any);
+  } else {
+    // This path can be removed once we drop support for Node 6.
+    // https://nodejs.org/docs/latest-v6.x/api/process.html#process_process_emitwarning_warning_name_ctor
+    process.emitWarning(warning.message, warning.type);
+  }
+}
+
+export interface Warning {
+  code: string;
+  type: string;
+  message: string;
+}
+
+export const PROBLEMATIC_CREDENTIALS_WARNING = {
+  code: 'google-auth-library:DEP001',
+  type: 'DeprecationWarning',
+  message: [
+    'Your application has authenticated using end user credentials from Google',
+    'Cloud SDK. We recommend that most server applications use service accounts',
+    'instead. If your application continues to use end user credentials from',
+    'Cloud SDK, you might receive a "quota exceeded" or "API not enabled" error.',
+    'For more information about service accounts, see',
+    'https://cloud.google.com/docs/authentication/.'
+  ].join(' ')
+};
+
+
+export const DEFAULT_PROJECT_ID_DEPRECATED = {
+  code: 'google-auth-library:DEP002',
+  type: 'DeprecationWarning',
+  message: [
+    'The `getDefaultProjectId` method has been deprecated, and will be removed',
+    'in the 3.0 release of google-auth-library. Please use the `getProjectId`',
+    'method instead.'
+  ].join(' ')
+};
