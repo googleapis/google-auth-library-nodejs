@@ -1408,11 +1408,10 @@ it('should warn the user if using the getDefaultProjectId method', done => {
 });
 
 it('should only emit warnings once', async () => {
+  // The warning was used above, so invoking it here should have no effect.
   mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
   let count = 0;
   sandbox.stub(process, 'emitWarning').callsFake(() => count++);
   await auth.getDefaultProjectId();
-  assert.equal(count, 1);
-  await auth.getDefaultProjectId();
-  assert.equal(count, 1);
+  assert.equal(count, 0);
 });
