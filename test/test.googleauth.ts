@@ -51,18 +51,16 @@ const fixedProjectId = 'my-awesome-project';
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 
 let auth: GoogleAuth;
-let sandbox: sinon.SinonSandbox|undefined;
+let sandbox: sinon.SinonSandbox;
 beforeEach(() => {
   auth = new GoogleAuth();
+  sandbox = sinon.createSandbox();
 });
 
 afterEach(() => {
   nock.cleanAll();
   // after each test, reset the env vars
-  if (sandbox) {
-    sandbox.restore();
-    sandbox = undefined;
-  }
+  sandbox.restore();
 });
 
 function nockIsGCE() {
@@ -144,9 +142,6 @@ function blockGoogleApplicationCredentialEnvironmentVariable() {
 
 // Intercepts the specified environment variable, returning the specified value.
 function mockEnvVar(name: string, value = '') {
-  if (!sandbox) {
-    sandbox = sinon.createSandbox();
-  }
   const envVars = Object.assign({}, process.env, {[name]: value});
   const stub = sandbox.stub(process, 'env').value(envVars);
   return stub;
@@ -836,7 +831,6 @@ it('getProjectId should use Cloud SDK when it is available and env vars are not 
      // * Environment variable is not set.
      // * Well-known file is set up to point to private2.json
      // * Running on GCE is set to true.
-     sandbox = sinon.createSandbox();
      blockGoogleApplicationCredentialEnvironmentVariable();
      const stdout = JSON.stringify(
          {configuration: {properties: {core: {project: fixedProjectId}}}});
@@ -850,7 +844,6 @@ it('getProjectId should use Cloud SDK when it is available and env vars are not 
 it('getProjectId should use GCE when well-known file and env const are not set',
    async () => {
      blockGoogleApplicationCredentialEnvironmentVariable();
-     sandbox = sinon.createSandbox();
      const stub =
          sandbox.stub(child_process, 'exec').callsArgWith(1, null, '', null);
      const scope = createGetProjectIdNock(fixedProjectId);
@@ -1388,35 +1381,38 @@ it('should warn the user if using default Cloud SDK credentials', done => {
   auth._getApplicationCredentialsFromFilePath = () => {
     return Promise.resolve(new JWT(CLOUD_SDK_CLIENT_ID));
   };
-  let warned = false;
-  const onWarning = (warning: Error) => {
-    assert.equal(
-        warning.message, messages.PROBLEMATIC_CREDENTIALS_WARNING.message);
-    warned = true;
-    process.removeListener('warning', onWarning);
-  };
-  process.on('warning', onWarning);
-  auth._tryGetApplicationCredentialsFromWellKnownFile().then(() => {
-    setImmediate(() => {
-      assert(warned);
-      done();
-    });
-  });
+  sandbox.stub(process, 'emitWarning')
+      .callsFake((message: string, warningOrType: messages.Warning|string) => {
+        assert.equal(message, messages.PROBLEMATIC_CREDENTIALS_WARNING.message);
+        const warningType = typeof warningOrType === 'string' ?
+            warningOrType :
+            warningOrType.type;
+        assert.equal(warningType, messages.WarningTypes.WARNING);
+        done();
+      });
+  auth._tryGetApplicationCredentialsFromWellKnownFile();
 });
 
 it('should warn the user if using the getDefaultProjectId method', done => {
   mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
-  let warned = false;
-  const onWarning = (warning: Error) => {
-    assert.equal(
-        warning.message, messages.DEFAULT_PROJECT_ID_DEPRECATED.message);
-    warned = true;
-    process.removeListener('warning', onWarning);
-  };
-  process.on('warning', onWarning);
-  auth.getDefaultProjectId().then(projectId => {
-    assert.equal(projectId, fixedProjectId);
-    assert(warned);
-    done();
-  });
+  sandbox.stub(process, 'emitWarning')
+      .callsFake((message: string, warningOrType: messages.Warning|string) => {
+        assert.equal(message, messages.DEFAULT_PROJECT_ID_DEPRECATED.message);
+        const warningType = typeof warningOrType === 'string' ?
+            warningOrType :
+            warningOrType.type;
+        assert.equal(warningType, messages.WarningTypes.DEPRECATION);
+        done();
+      });
+  auth.getDefaultProjectId();
+});
+
+it('should only emit warnings once', async () => {
+  mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+  let count = 0;
+  sandbox.stub(process, 'emitWarning').callsFake(() => count++);
+  await auth.getDefaultProjectId();
+  assert.equal(count, 1);
+  await auth.getDefaultProjectId();
+  assert.equal(count, 1);
 });

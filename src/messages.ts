@@ -16,7 +16,17 @@
 
 import * as semver from 'semver';
 
+export enum WarningTypes {
+  WARNING = 'Warning',
+  DEPRECATION = 'DeprecationWarning'
+}
+
 export function warn(warning: Warning) {
+  // Only show a given warning once
+  if (warning.warned) {
+    return;
+  }
+  warning.warned = true;
   if (semver.satisfies(process.version, '>=8')) {
     // @types/node doesn't recognize the emitWarning syntax which
     // accepts a config object, so `as any` it is
@@ -32,13 +42,14 @@ export function warn(warning: Warning) {
 
 export interface Warning {
   code: string;
-  type: string;
+  type: WarningTypes;
   message: string;
+  warned?: boolean;
 }
 
 export const PROBLEMATIC_CREDENTIALS_WARNING = {
-  code: 'google-auth-library:DEP001',
-  type: 'DeprecationWarning',
+  code: 'google-auth-library:00001',
+  type: WarningTypes.WARNING,
   message: [
     'Your application has authenticated using end user credentials from Google',
     'Cloud SDK. We recommend that most server applications use service accounts',
@@ -49,10 +60,9 @@ export const PROBLEMATIC_CREDENTIALS_WARNING = {
   ].join(' ')
 };
 
-
 export const DEFAULT_PROJECT_ID_DEPRECATED = {
   code: 'google-auth-library:DEP002',
-  type: 'DeprecationWarning',
+  type: WarningTypes.DEPRECATION,
   message: [
     'The `getDefaultProjectId` method has been deprecated, and will be removed',
     'in the 3.0 release of google-auth-library. Please use the `getProjectId`',
