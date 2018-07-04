@@ -132,7 +132,7 @@ export class JWTAccess {
   fromStream(inputStream: stream.Readable, callback?: (err?: Error) => void):
       void|Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback()).catch(callback);
+      this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }
