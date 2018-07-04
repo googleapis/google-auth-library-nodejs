@@ -85,9 +85,6 @@ export const CLOUD_SDK_CLIENT_ID =
 export class GoogleAuth {
   transporter?: Transporter;
 
-  // This shim is in place for compatibility with google-auto-auth.
-  getProjectId = this.getDefaultProjectId;
-
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
@@ -126,23 +123,36 @@ export class GoogleAuth {
   }
 
   /**
-   * Obtains the default project ID for the application.
-   * @param callback Optional callback
-   * @returns Promise that resolves with project Id (if used without callback)
+   * THIS METHOD HAS BEEN DEPRECATED.
+   * It will be removed in 3.0.  Please use getProjectId instead.
    */
   getDefaultProjectId(): Promise<string>;
   getDefaultProjectId(callback: ProjectIdCallback): void;
   getDefaultProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+    messages.warn(messages.DEFAULT_PROJECT_ID_DEPRECATED);
     if (callback) {
-      this.getDefaultProjectIdAsync()
-          .then(r => callback(null, r))
-          .catch(callback);
+      this.getProjectIdAsync().then(r => callback(null, r)).catch(callback);
     } else {
-      return this.getDefaultProjectIdAsync();
+      return this.getProjectIdAsync();
     }
   }
 
-  private getDefaultProjectIdAsync(): Promise<string|null> {
+  /**
+   * Obtains the default project ID for the application.
+   * @param callback Optional callback
+   * @returns Promise that resolves with project Id (if used without callback)
+   */
+  getProjectId(): Promise<string>;
+  getProjectId(callback: ProjectIdCallback): void;
+  getProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+    if (callback) {
+      this.getProjectIdAsync().then(r => callback(null, r)).catch(callback);
+    } else {
+      return this.getProjectIdAsync();
+    }
+  }
+
+  private getProjectIdAsync(): Promise<string|null> {
     if (this._cachedProjectId) {
       return Promise.resolve(this._cachedProjectId);
     }
@@ -205,7 +215,7 @@ export class GoogleAuth {
     if (this.cachedCredential) {
       return {
         credential: this.cachedCredential as JWT | UserRefreshClient,
-        projectId: await this.getDefaultProjectIdAsync()
+        projectId: await this.getProjectIdAsync()
       };
     }
 
@@ -222,7 +232,7 @@ export class GoogleAuth {
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
-      projectId = await this.getDefaultProjectId();
+      projectId = await this.getProjectId();
       return {credential, projectId};
     }
 
@@ -234,7 +244,7 @@ export class GoogleAuth {
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
-      projectId = await this.getDefaultProjectId();
+      projectId = await this.getProjectId();
       return {credential, projectId};
     }
 
@@ -256,7 +266,7 @@ export class GoogleAuth {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     this.cachedCredential = new Compute(options);
-    projectId = await this.getDefaultProjectId();
+    projectId = await this.getProjectId();
     return {projectId, credential: this.cachedCredential};
   }
 
@@ -382,7 +392,7 @@ export class GoogleAuth {
    */
   protected warnOnProblematicCredentials(client: JWT) {
     if (client.email === CLOUD_SDK_CLIENT_ID) {
-      process.emitWarning(messages.PROBLEMATIC_CREDENTIALS_WARNING);
+      messages.warn(messages.PROBLEMATIC_CREDENTIALS_WARNING);
     }
   }
 
