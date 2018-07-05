@@ -50,6 +50,10 @@ afterEach(() => {
   nock.cleanAll();
 });
 
+interface Body {
+  [index: string]: string;
+}
+
 it('should generate a valid consent page url', done => {
   const opts = {
     access_type: ACCESS_TYPE,
@@ -634,9 +638,9 @@ it('should be able to retrieve a list of Google certificates', (done) => {
   const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
     assert.equal(err, null);
-    assert.equal(Object.keys(certs).length, 2);
-    assert.notEqual(certs.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
-    assert.notEqual(certs['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
+    assert.equal(Object.keys(certs!).length, 2);
+    assert.notEqual(certs!.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
+    assert.notEqual(certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
     scope.done();
     done();
   });
@@ -655,11 +659,11 @@ it('should be able to retrieve a list of Google certificates from cache again',
              .replyWithFile(200, certsResPath);
      client.getFederatedSignonCerts((err, certs) => {
        assert.equal(err, null);
-       assert.equal(Object.keys(certs).length, 2);
+       assert.equal(Object.keys(certs!).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
        client.getFederatedSignonCerts((err2, certs2) => {
          assert.equal(err2, null);
-         assert.equal(Object.keys(certs2).length, 2);
+         assert.equal(Object.keys(certs2!).length, 2);
          scope.done();
          done();
        });
@@ -968,84 +972,76 @@ it('should clear credentials and return error if no access token to revoke',
 it('getToken should allow a code_verifier to be passed', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
-            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
-          })
+          .post(
+              '/oauth2/v4/token',
+              (body: Body) => body.code_verifier === 'its_verified', {
+                reqheaders:
+                    {'Content-Type': 'application/x-www-form-urlencoded'}
+              })
           .reply(
               200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
-  const res =
-      await client.getToken({code: 'code here', codeVerifier: 'its_verified'});
+  await client.getToken({code: 'code here', codeVerifier: 'its_verified'});
   scope.done();
-  assert(res.res);
-  if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
-  assert(params.code_verifier === 'its_verified');
 });
 
 it('getToken should set redirect_uri if not provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
-            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
-          })
+          .post(
+              '/oauth2/v4/token',
+              (body: Body) => body.redirect_uri === REDIRECT_URI, {
+                reqheaders:
+                    {'Content-Type': 'application/x-www-form-urlencoded'}
+              })
           .reply(
               200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
-  const res = await client.getToken({code: 'code here'});
+  await client.getToken({code: 'code here'});
   scope.done();
-  assert(res.res);
-  if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
-  assert.equal(params.redirect_uri, REDIRECT_URI);
 });
 
 it('getToken should set client_id if not provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
-            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
-          })
+          .post(
+              '/oauth2/v4/token', (body: Body) => body.client_id === CLIENT_ID,
+              {
+                reqheaders:
+                    {'Content-Type': 'application/x-www-form-urlencoded'}
+              })
           .reply(
               200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
-  const res = await client.getToken({code: 'code here'});
+  await client.getToken({code: 'code here'});
   scope.done();
-  assert(res.res);
-  if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
-  assert.equal(params.client_id, CLIENT_ID);
 });
 
 it('getToken should override redirect_uri if provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
-            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
-          })
+          .post(
+              '/oauth2/v4/token',
+              (body: Body) => body.redirect_uri === 'overridden', {
+                reqheaders:
+                    {'Content-Type': 'application/x-www-form-urlencoded'}
+              })
           .reply(
               200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
-  const res =
-      await client.getToken({code: 'code here', redirect_uri: 'overridden'});
+  await client.getToken({code: 'code here', redirect_uri: 'overridden'});
   scope.done();
-  assert(res.res);
-  if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
-  assert.equal(params.redirect_uri, 'overridden');
 });
 
 it('getToken should override client_id if provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
-            reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
-          })
+          .post(
+              '/oauth2/v4/token',
+              (body: Body) => body.client_id === 'overridden', {
+                reqheaders:
+                    {'Content-Type': 'application/x-www-form-urlencoded'}
+              })
           .reply(
               200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
-  const res =
-      await client.getToken({code: 'code here', client_id: 'overridden'});
+  await client.getToken({code: 'code here', client_id: 'overridden'});
   scope.done();
-  assert(res.res);
-  if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
-  assert.equal(params.client_id, 'overridden');
 });
 
 it('should return expiry_date', done => {

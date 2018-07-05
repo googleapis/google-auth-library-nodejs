@@ -169,9 +169,9 @@ function getAuthenticatedClient() {
         server.close();
 
         // Now that we have the code, use that to acquire tokens.
-        const r = await oAuth2Client.getToken(qs.code)
+        const tokens = await oAuth2Client.getToken(qs.code)
         // Make sure to set the credentials on the OAuth2 client.
-        oAuth2Client.setCredentials(r.tokens);
+        oAuth2Client.setCredentials(tokens);
         console.info('Tokens acquired.');
         resolve(oAuth2Client);
       }
@@ -280,7 +280,6 @@ async function main() {
     keys.private_key,
     ['https://www.googleapis.com/auth/cloud-platform'],
   );
-  await client.authorize();
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
   console.log(res.data);

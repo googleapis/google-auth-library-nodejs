@@ -215,12 +215,9 @@ it('should accept additionalClaims', async () => {
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
   const testUri = 'http:/example.com/my_test_service';
-  const {headers} = await jwt.getRequestMetadata(testUri);
-  const got = headers as {
-    Authorization: string;
-  };
-  assert.notStrictEqual(null, got, 'the creds should be present');
-  const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+  const headers = await jwt.getRequestMetadata(testUri);
+  assert.notStrictEqual(null, headers, 'the creds should be present');
+  const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
   const payload = JSON.parse(decoded.payload);
   assert.strictEqual(testUri, payload.aud);
   assert.strictEqual(someClaim, payload.someClaim);
@@ -240,13 +237,10 @@ it('should accept additionalClaims that include a target_audience',
 
      const testUri = 'http:/example.com/my_test_service';
      const scope = createGTokenMock({id_token: 'abc123'});
-     const {headers} = await jwt.getRequestMetadata(testUri);
+     const headers = await jwt.getRequestMetadata(testUri);
      scope.done();
-     const got = headers as {
-       Authorization: string;
-     };
-     assert.notStrictEqual(null, got, 'the creds should be present');
-     const decoded = got.Authorization.replace('Bearer ', '');
+     assert.notStrictEqual(null, headers, 'the creds should be present');
+     const decoded = headers.Authorization.replace('Bearer ', '');
      assert.strictEqual(decoded, 'abc123');
    });
 

@@ -16,9 +16,10 @@
 
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
+
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
-import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
+import {Headers, OAuth2Client, RefreshOptions} from './oauth2client';
 
 const isString = require('lodash.isstring');
 
@@ -95,14 +96,13 @@ export class JWT extends OAuth2Client {
    *
    * @param url the URI being authorized.
    */
-  protected async getRequestMetadataAsync(url?: string|null):
-      Promise<RequestMetadataResponse> {
+  protected async getRequestMetadataAsync(url?: string|null): Promise<Headers> {
     if (!this.apiKey && this.createScopedRequired() && url) {
       if (this.additionalClaims && (this.additionalClaims as {
                                      target_audience: string
                                    }).target_audience) {
-        const {tokens} = await this.refreshToken();
-        return {headers: {Authorization: `Bearer ${tokens.id_token}`}};
+        const tokens = await this.refreshToken();
+        return {Authorization: `Bearer ${tokens.id_token}`};
       } else {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
@@ -151,15 +151,15 @@ export class JWT extends OAuth2Client {
   }
 
   private async authorizeAsync(): Promise<Credentials> {
-    const result = await this.refreshToken();
-    if (!result) {
+    const tokens = await this.refreshToken();
+    if (!tokens) {
       throw new Error('No result returned');
     }
-    this.credentials = result.tokens;
+    this.credentials = tokens;
     this.credentials.refresh_token = 'jwt-placeholder';
     this.key = this.gtoken!.key;
     this.email = this.gtoken!.iss;
-    return result.tokens;
+    return tokens;
   }
 
   /**
@@ -168,7 +168,7 @@ export class JWT extends OAuth2Client {
    * @private
    */
   protected async refreshTokenNoCache(refreshToken?: string|
-                                      null): Promise<GetTokenResponse> {
+                                      null): Promise<Credentials> {
     const gtoken = this.createGToken();
     const token = await gtoken.getToken();
     const tokens = {
@@ -179,7 +179,7 @@ export class JWT extends OAuth2Client {
       id_token: (gtoken.rawToken! as any).id_token
     };
     this.emit('tokens', tokens);
-    return {res: null, tokens};
+    return tokens;
   }
 
   /**
