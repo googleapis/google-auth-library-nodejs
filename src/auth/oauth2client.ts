@@ -26,6 +26,14 @@ import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 
+export interface Headers {
+  [index: string]: string;
+}
+
+export interface Certificates {
+  [index: string]: string;
+}
+
 export enum CodeChallengeMethod {
   Plain = 'plain',
   S256 = 'S256'
@@ -237,54 +245,23 @@ export interface GenerateAuthUrlOpts {
 }
 
 export interface GetTokenCallback {
-  (err: AxiosError|null, token?: Credentials|null,
-   res?: AxiosResponse|null): void;
-}
-
-export interface GetTokenResponse {
-  tokens: Credentials;
-  res: AxiosResponse|null;
+  (err: AxiosError|null, token?: Credentials): void;
 }
 
 export interface GetAccessTokenCallback {
-  (err: AxiosError|null, token?: string|null, res?: AxiosResponse|null): void;
-}
-
-export interface GetAccessTokenResponse {
-  token?: string|null;
-  res?: AxiosResponse|null;
+  (err: AxiosError|null, token?: string): void;
 }
 
 export interface RefreshAccessTokenCallback {
-  (err: AxiosError|null, credentials?: Credentials|null,
-   res?: AxiosResponse|null): void;
-}
-
-export interface RefreshAccessTokenResponse {
-  credentials: Credentials;
-  res: AxiosResponse|null;
-}
-
-export interface RequestMetadataResponse {
-  headers: http.IncomingHttpHeaders;
-  res?: AxiosResponse<void>|null;
+  (err: AxiosError|null, credentials?: Credentials): void;
 }
 
 export interface RequestMetadataCallback {
-  (err: AxiosError|null, headers?: http.IncomingHttpHeaders,
-   res?: AxiosResponse<void>|null): void;
+  (err: AxiosError|null, headers?: Headers): void;
 }
 
 export interface GetFederatedSignonCertsCallback {
-  // tslint:disable-next-line no-any
-  (err: AxiosError|null, certs?: any,
-   response?: AxiosResponse<void>|null): void;
-}
-
-export interface FederatedSignonCertsResponse {
-  // tslint:disable-next-line no-any
-  certs: any;
-  res?: AxiosResponse<void>|null;
+  (err: AxiosError|null, certs?: Certificates): void;
 }
 
 export interface RevokeCredentialsResult {
@@ -312,9 +289,9 @@ export interface RefreshOptions {
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
-  private certificateCache: {}|null|undefined = null;
+  private certificateCache?: Certificates;
   private certificateExpiry: Date|null = null;
-  protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
+  protected refreshTokenPromises = new Map<string, Promise<Credentials>>();
 
   // TODO: refactor tests to make this private
   _clientId?: string;
@@ -447,26 +424,23 @@ export class OAuth2Client extends AuthClient {
    * @param code The authorization code.
    * @param callback Optional callback fn.
    */
-  getToken(code: string): Promise<GetTokenResponse>;
-  getToken(options: GetTokenOptions): Promise<GetTokenResponse>;
+  getToken(code: string): Promise<Credentials>;
+  getToken(options: GetTokenOptions): Promise<Credentials>;
   getToken(code: string, callback: GetTokenCallback): void;
   getToken(options: GetTokenOptions, callback: GetTokenCallback): void;
   getToken(codeOrOptions: string|GetTokenOptions, callback?: GetTokenCallback):
-      Promise<GetTokenResponse>|void {
+      Promise<Credentials>|void {
     const options = (typeof codeOrOptions === 'string') ?
         {code: codeOrOptions} :
         codeOrOptions;
     if (callback) {
-      this.getTokenAsync(options)
-          .then(r => callback(null, r.tokens, r.res))
-          .catch(e => callback(e, null, (e as AxiosError).response));
+      this.getTokenAsync(options).then(r => callback(null, r)).catch(callback);
     } else {
       return this.getTokenAsync(options);
     }
   }
 
-  private async getTokenAsync(options: GetTokenOptions):
-      Promise<GetTokenResponse> {
+  private async getTokenAsync(options: GetTokenOptions): Promise<Credentials> {
     const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       code: options.code,
@@ -489,7 +463,7 @@ export class OAuth2Client extends AuthClient {
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
-    return {tokens, res};
+    return tokens;
   }
 
   /**
@@ -498,7 +472,7 @@ export class OAuth2Client extends AuthClient {
    * @private
    */
   protected async refreshToken(refreshToken?: string|
-                               null): Promise<GetTokenResponse> {
+                               null): Promise<Credentials> {
     if (!refreshToken) {
       return this.refreshTokenNoCache(refreshToken);
     }
@@ -522,7 +496,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   protected async refreshTokenNoCache(refreshToken?: string|
-                                      null): Promise<GetTokenResponse> {
+                                      null): Promise<Credentials> {
     const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const data = {
       refresh_token: refreshToken,
@@ -547,7 +521,7 @@ export class OAuth2Client extends AuthClient {
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
-    return {tokens, res};
+    return tokens;
   }
 
   /**
@@ -556,28 +530,27 @@ export class OAuth2Client extends AuthClient {
    * @deprecated use getRequestMetadata instead.
    * @param callback callback
    */
-  refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
+  refreshAccessToken(): Promise<Credentials>;
   refreshAccessToken(callback: RefreshAccessTokenCallback): void;
   refreshAccessToken(callback?: RefreshAccessTokenCallback):
-      Promise<RefreshAccessTokenResponse>|void {
+      Promise<Credentials>|void {
     if (callback) {
       this.refreshAccessTokenAsync()
-          .then(r => callback(null, r.credentials, r.res))
+          .then(r => callback(null, r))
           .catch(callback);
     } else {
       return this.refreshAccessTokenAsync();
     }
   }
 
-  private async refreshAccessTokenAsync() {
+  private async refreshAccessTokenAsync(): Promise<Credentials> {
     if (!this.credentials.refresh_token) {
       throw new Error('No refresh token is set.');
     }
-    const r = await this.refreshToken(this.credentials.refresh_token);
-    const tokens = r.tokens as Credentials;
+    const tokens = await this.refreshToken(this.credentials.refresh_token);
     tokens.refresh_token = this.credentials.refresh_token;
     this.credentials = tokens;
-    return {credentials: this.credentials, res: r.res};
+    return this.credentials;
   }
 
   /**
@@ -585,34 +558,30 @@ export class OAuth2Client extends AuthClient {
    *
    * @param callback Callback to call with the access token
    */
-  getAccessToken(): Promise<GetAccessTokenResponse>;
+  getAccessToken(): Promise<string>;
   getAccessToken(callback: GetAccessTokenCallback): void;
-  getAccessToken(callback?: GetAccessTokenCallback):
-      Promise<GetAccessTokenResponse>|void {
+  getAccessToken(callback?: GetAccessTokenCallback): Promise<string>|void {
     if (callback) {
-      this.getAccessTokenAsync()
-          .then(r => callback(null, r.token, r.res))
-          .catch(callback);
+      this.getAccessTokenAsync().then(r => callback(null, r)).catch(callback);
     } else {
       return this.getAccessTokenAsync();
     }
   }
 
-  private async getAccessTokenAsync(): Promise<GetAccessTokenResponse> {
+  private async getAccessTokenAsync(): Promise<string> {
     const shouldRefresh =
         !this.credentials.access_token || this.isTokenExpiring();
     if (shouldRefresh && this.credentials.refresh_token) {
       if (!this.credentials.refresh_token) {
         throw new Error('No refresh token is set.');
       }
-
       const r = await this.refreshAccessToken();
-      if (!r.credentials || (r.credentials && !r.credentials.access_token)) {
+      if (!r || (r && !r.access_token)) {
         throw new Error('Could not refresh access token.');
       }
-      return {token: r.credentials.access_token, res: r.res};
+      return r.access_token!;
     } else {
-      return {token: this.credentials.access_token};
+      return this.credentials.access_token!;
     }
   }
 
@@ -631,21 +600,20 @@ export class OAuth2Client extends AuthClient {
    * @param url the Uri being authorized
    * @param callback the func described above
    */
-  getRequestMetadata(url?: string|null): Promise<RequestMetadataResponse>;
+  getRequestMetadata(url?: string|null): Promise<Headers>;
   getRequestMetadata(url: string|null, callback: RequestMetadataCallback): void;
   getRequestMetadata(url: string|null, callback?: RequestMetadataCallback):
-      Promise<RequestMetadataResponse>|void {
+      Promise<Headers>|void {
     if (callback) {
       this.getRequestMetadataAsync(url)
-          .then(r => callback(null, r.headers, r.res))
+          .then(r => callback(null, r))
           .catch(callback);
     } else {
       return this.getRequestMetadataAsync(url);
     }
   }
 
-  protected async getRequestMetadataAsync(url?: string|null):
-      Promise<RequestMetadataResponse> {
+  protected async getRequestMetadataAsync(url?: string|null): Promise<Headers> {
     const thisCreds = this.credentials;
     if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
       throw new Error('No access, refresh token or API key is set.');
@@ -656,17 +624,15 @@ export class OAuth2Client extends AuthClient {
       const headers = {
         Authorization: thisCreds.token_type + ' ' + thisCreds.access_token
       };
-      return {headers};
+      return headers;
     }
 
     if (this.apiKey) {
-      return {headers: {}};
+      return {};
     }
-    let r: GetTokenResponse|null = null;
     let tokens: Credentials|null = null;
     try {
-      r = await this.refreshToken(thisCreds.refresh_token);
-      tokens = r.tokens;
+      tokens = await this.refreshToken(thisCreds.refresh_token);
     } catch (err) {
       const e = err as AxiosError;
       if (e.response &&
@@ -683,7 +649,7 @@ export class OAuth2Client extends AuthClient {
     const headers = {
       Authorization: credentials.token_type + ' ' + tokens.access_token
     };
-    return {headers, res: r.res};
+    return headers;
   }
 
   /**
@@ -769,10 +735,10 @@ export class OAuth2Client extends AuthClient {
       Promise<AxiosResponse<T>> {
     let r2: AxiosResponse;
     try {
-      const r = await this.getRequestMetadataAsync(opts.url);
-      if (r.headers && r.headers.Authorization) {
+      const headers = await this.getRequestMetadataAsync(opts.url);
+      if (headers && headers.Authorization) {
         opts.headers = opts.headers || {};
-        opts.headers.Authorization = r.headers.Authorization;
+        opts.headers.Authorization = headers.Authorization;
       }
 
       if (this.apiKey) {
@@ -842,10 +808,10 @@ export class OAuth2Client extends AuthClient {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
 
-    const response = await this.getFederatedSignonCertsAsync();
+    const certs = await this.getFederatedSignonCertsAsync();
     const login = this.verifySignedJwtWithCerts(
-        options.idToken, response.certs, options.audience,
-        OAuth2Client.ISSUERS_, options.maxExpiry);
+        options.idToken, certs, options.audience, OAuth2Client.ISSUERS_,
+        options.maxExpiry);
 
     return login;
   }
@@ -880,28 +846,28 @@ export class OAuth2Client extends AuthClient {
    * are PEM encoded certificates.
    * @param callback Callback supplying the certificates
    */
-  getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
+  getFederatedSignonCerts(): Promise<Certificates>;
   getFederatedSignonCerts(callback: GetFederatedSignonCertsCallback): void;
   getFederatedSignonCerts(callback?: GetFederatedSignonCertsCallback):
-      Promise<FederatedSignonCertsResponse>|void {
+      Promise<Certificates>|void {
     if (callback) {
       this.getFederatedSignonCertsAsync()
-          .then(r => callback(null, r.certs, r.res))
+          .then(r => callback(null, r))
           .catch(callback);
     } else {
       return this.getFederatedSignonCertsAsync();
     }
   }
 
-  async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
+  async getFederatedSignonCertsAsync(): Promise<Certificates> {
     const nowTime = (new Date()).getTime();
     if (this.certificateExpiry &&
         (nowTime < this.certificateExpiry.getTime())) {
-      return {certs: this.certificateCache};
+      return this.certificateCache!;
     }
     let res: AxiosResponse;
     try {
-      res = await this.transporter.request(
+      res = await this.transporter.request<Certificates>(
           {url: OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_});
     } catch (e) {
       throw new Error('Failed to retrieve verification certificates: ' + e);
@@ -922,7 +888,7 @@ export class OAuth2Client extends AuthClient {
     this.certificateExpiry =
         cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
     this.certificateCache = res.data;
-    return {certs: res.data, res};
+    return res.data;
   }
 
   /**
@@ -936,7 +902,7 @@ export class OAuth2Client extends AuthClient {
    * @return Returns a LoginTicket on verification.
    */
   verifySignedJwtWithCerts(
-      jwt: string, certs: {}, requiredAudience: string|string[],
+      jwt: string, certs: Certificates, requiredAudience: string|string[],
       issuers?: string[], maxExpiry?: number) {
     if (!maxExpiry) {
       maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
@@ -977,8 +943,7 @@ export class OAuth2Client extends AuthClient {
       throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
     }
     // certs is a legit dynamic object
-    // tslint:disable-next-line no-any
-    const pem = (certs as any)[envelope.kid];
+    const pem = certs[envelope.kid];
     const pemVerifier = new PemVerifier();
     const verified = pemVerifier.verify(pem, signed, signature, 'base64');
 

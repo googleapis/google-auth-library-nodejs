@@ -75,13 +75,13 @@ function getAuthenticatedClient() {
 
           // Now that we have the code, use that to acquire tokens.
           // Pass along the generated code verifier that matches our code challenge.
-          const r = await oAuth2Client.getToken({
+          const tokens = await oAuth2Client.getToken({
             code: qs.code,
             codeVerifier: codes.codeVerifier
           });
 
           // Make sure to set the credentials on the OAuth2 client.
-          oAuth2Client.setCredentials(r.tokens);
+          oAuth2Client.setCredentials(tokens);
           console.info('Tokens acquired.');
           resolve(oAuth2Client);
         }

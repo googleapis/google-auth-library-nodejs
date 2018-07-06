@@ -15,8 +15,9 @@
  */
 
 import * as stream from 'stream';
-import {JWTInput} from './credentials';
-import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+
+import {Credentials, JWTInput} from './credentials';
+import {OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface UserRefreshClientOptions extends RefreshOptions {
   clientId?: string;
@@ -66,7 +67,7 @@ export class UserRefreshClient extends OAuth2Client {
    * @param callback Optional callback.
    */
   protected async refreshTokenNoCache(refreshToken?: string|
-                                      null): Promise<GetTokenResponse> {
+                                      null): Promise<Credentials> {
     return super.refreshTokenNoCache(this._refreshToken);
   }
 

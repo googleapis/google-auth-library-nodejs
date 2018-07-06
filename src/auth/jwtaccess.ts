@@ -18,15 +18,14 @@ import jws from 'jws';
 import LRU from 'lru-cache';
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {RequestMetadataResponse} from './oauth2client';
+import {Headers} from './oauth2client';
 
 export class JWTAccess {
   email?: string|null;
   key?: string|null;
   projectId?: string;
 
-  private cache =
-      LRU<string, RequestMetadataResponse>({max: 500, maxAge: 60 * 60 * 1000});
+  private cache = LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
 
   /**
    * JWTAccess service account credentials.
@@ -62,8 +61,7 @@ export class JWTAccess {
    * @returns An object that includes the authorization header.
    */
   getRequestMetadata(
-      authURI: string,
-      additionalClaims?: {[index: string]: string}): RequestMetadataResponse {
+      authURI: string, additionalClaims?: {[index: string]: string}): Headers {
     const cachedToken = this.cache.get(authURI);
     if (cachedToken) {
       return cachedToken;
@@ -93,7 +91,7 @@ export class JWTAccess {
     // Sign the jwt and add it to the cache
     const signedJWT =
         jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
-    const res = {headers: {Authorization: `Bearer ${signedJWT}`}};
+    const res = {Authorization: `Bearer ${signedJWT}`};
     this.cache.set(authURI, res);
     return res;
   }

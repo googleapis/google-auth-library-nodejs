@@ -18,7 +18,7 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios
 import * as gcpMetadata from 'gcp-metadata';
 
 import {CredentialRequest, Credentials} from './credentials';
-import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+import {OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface ComputeOptions extends RefreshOptions {
   /**
@@ -62,7 +62,7 @@ export class Compute extends OAuth2Client {
    * @param refreshToken Unused parameter
    */
   protected async refreshTokenNoCache(refreshToken?: string|
-                                      null): Promise<GetTokenResponse> {
+                                      null): Promise<Credentials> {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let res: AxiosResponse<CredentialRequest>;
     try {
@@ -78,7 +78,7 @@ export class Compute extends OAuth2Client {
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
-    return {tokens, res};
+    return tokens;
   }
 
   protected requestAsync<T>(opts: AxiosRequestConfig, retry = false):
