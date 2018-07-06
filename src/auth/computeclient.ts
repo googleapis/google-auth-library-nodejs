@@ -31,9 +31,6 @@ export interface ComputeOptions extends RefreshOptions {
 export class Compute extends OAuth2Client {
   private serviceAccountEmail: string;
 
-  // Google Compute Engine metadata server token endpoint.
-
-
   /**
    * Google Compute Engine service account credentials.
    *
