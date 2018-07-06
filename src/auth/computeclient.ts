@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as gcpMetadata from 'gcp-metadata';
-import * as rax from 'retry-axios';
+
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
@@ -27,10 +27,6 @@ export interface ComputeOptions extends RefreshOptions {
    */
   serviceAccountEmail?: string;
 }
-
-// Create a scoped axios instance that will retry 3 times by default
-const ax = axios.create();
-rax.attach(ax);
 
 export class Compute extends OAuth2Client {
   private serviceAccountEmail: string;
@@ -67,20 +63,10 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
-    const url = this.tokenUrl ||
-        `${gcpMetadata.HOST_ADDRESS}${
-                    gcpMetadata.BASE_PATH}/instance/service-accounts/${
-                    this.serviceAccountEmail}/token`;
+    const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let res: AxiosResponse<CredentialRequest>;
-    // request for new token
     try {
-      // TODO: In 2.0, we should remove the ability to configure the tokenUrl,
-      // and switch this over to use the gcp-metadata package instead.
-      res = await ax.request<CredentialRequest>({
-        url,
-        headers: {[gcpMetadata.HEADER_NAME]: 'Google'},
-        raxConfig: {noResponseRetries: 3, retry: 3, instance: ax}
-      } as rax.RaxConfig);
+      res = await gcpMetadata.instance(tokenPath);
     } catch (e) {
       e.message = 'Could not refresh access token.';
       throw e;
@@ -94,7 +80,6 @@ export class Compute extends OAuth2Client {
     this.emit('tokens', tokens);
     return {tokens, res};
   }
-
 
   protected requestAsync<T>(opts: AxiosRequestConfig, retry = false):
       AxiosPromise<T> {
