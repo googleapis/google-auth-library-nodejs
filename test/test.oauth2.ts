@@ -638,9 +638,9 @@ it('should be able to retrieve a list of Google certificates', (done) => {
   const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
     assert.equal(err, null);
-    assert.equal(Object.keys(certs).length, 2);
-    assert.notEqual(certs.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
-    assert.notEqual(certs['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
+    assert.equal(Object.keys(certs!).length, 2);
+    assert.notEqual(certs!.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
+    assert.notEqual(certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
     scope.done();
     done();
   });
@@ -659,11 +659,11 @@ it('should be able to retrieve a list of Google certificates from cache again',
              .replyWithFile(200, certsResPath);
      client.getFederatedSignonCerts((err, certs) => {
        assert.equal(err, null);
-       assert.equal(Object.keys(certs).length, 2);
+       assert.equal(Object.keys(certs!).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
        client.getFederatedSignonCerts((err2, certs2) => {
          assert.equal(err2, null);
-         assert.equal(Object.keys(certs2).length, 2);
+         assert.equal(Object.keys(certs2!).length, 2);
          scope.done();
          done();
        });
