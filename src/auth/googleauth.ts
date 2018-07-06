@@ -131,7 +131,7 @@ export class GoogleAuth {
   getDefaultProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
     messages.warn(messages.DEFAULT_PROJECT_ID_DEPRECATED);
     if (callback) {
-      this.getProjectIdAsync().then(r => callback(null, r)).catch(callback);
+      this.getProjectIdAsync().then(r => callback(null, r), callback);
     } else {
       return this.getProjectIdAsync();
     }
@@ -146,7 +146,7 @@ export class GoogleAuth {
   getProjectId(callback: ProjectIdCallback): void;
   getProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
     if (callback) {
-      this.getProjectIdAsync().then(r => callback(null, r)).catch(callback);
+      this.getProjectIdAsync().then(r => callback(null, r), callback);
     } else {
       return this.getProjectIdAsync();
     }
@@ -201,9 +201,8 @@ export class GoogleAuth {
       options = optionsOrCallback;
     }
     if (callback) {
-      this.getApplicationDefaultAsync(options)
-          .then(r => callback!(null, r.credential, r.projectId))
-          .catch(callback);
+      this.getApplicationDefaultAsync(options).then(
+          r => callback!(null, r.credential, r.projectId), callback);
     } else {
       return this.getApplicationDefaultAsync(options);
     }
@@ -443,8 +442,7 @@ export class GoogleAuth {
     }
     if (callback) {
       this.fromStreamAsync(inputStream, options)
-          .then(r => callback!(null, r))
-          .catch(callback);
+          .then(r => callback!(null, r), callback);
     } else {
       return this.fromStreamAsync(inputStream, options);
     }
@@ -638,7 +636,7 @@ export class GoogleAuth {
       callback?: (err: Error|null, credentials?: CredentialBody) => void):
       void|Promise<CredentialBody> {
     if (callback) {
-      this.getCredentialsAsync().then(r => callback(null, r)).catch(callback);
+      this.getCredentialsAsync().then(r => callback(null, r), callback);
     } else {
       return this.getCredentialsAsync();
     }
