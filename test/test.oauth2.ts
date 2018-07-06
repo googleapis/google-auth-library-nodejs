@@ -21,9 +21,10 @@ import * as fs from 'fs';
 import nock from 'nock';
 import path from 'path';
 import qs from 'querystring';
+import sinon, {SinonSandbox} from 'sinon';
 import url from 'url';
 
-import {CodeChallengeMethod, GoogleAuth, OAuth2Client} from '../src';
+import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 
 nock.disableNetConnect();
@@ -42,12 +43,15 @@ const certsResPath =
     path.join(__dirname, '../../test/fixtures/oauthcerts.json');
 
 let client: OAuth2Client;
+let sandbox: SinonSandbox;
 beforeEach(() => {
   client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+  sandbox = sinon.createSandbox();
 });
 
 afterEach(() => {
   nock.cleanAll();
+  sandbox.restore();
 });
 
 it('should generate a valid consent page url', done => {
@@ -711,6 +715,14 @@ it('should return error in callback on request', done => {
     assert.equal(err!.message, 'No access, refresh token or API key is set.');
     assert.equal(result, null);
     done();
+  });
+});
+
+it('should emit warning on refreshAccessToken', async () => {
+  let warned = false;
+  sandbox.stub(process, 'emitWarning').callsFake(() => warned = true);
+  client.refreshAccessToken((err, result) => {
+    assert.equal(warned, true);
   });
 });
 
