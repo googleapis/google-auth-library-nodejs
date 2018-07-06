@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as messages from '../messages';
+
 export interface RequestMetadata {
   'x-goog-iam-authority-selector': string;
   'x-goog-iam-authorization-token': string;
@@ -40,6 +42,7 @@ export class IAMAuth {
    */
   createScopedRequired() {
     // IAM authorization does not use scopes.
+    messages.warn(messages.IAM_CREATE_SCOPED_DEPRECATED);
     return false;
   }
 

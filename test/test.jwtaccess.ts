@@ -17,6 +17,8 @@
 import assert from 'assert';
 import * as fs from 'fs';
 import jws from 'jws';
+import sinon, {SinonSandbox} from 'sinon';
+
 import {JWTAccess} from '../src';
 
 const keypair = require('keypair');
@@ -33,10 +35,22 @@ const json = {
 const keys = keypair(1024 /* bitsize of private key */);
 const testUri = 'http:/example.com/my_test_service';
 const email = 'foo@serviceaccount.com';
-let client: JWTAccess;
 
+let client: JWTAccess;
+let sandbox: SinonSandbox;
 beforeEach(() => {
   client = new JWTAccess();
+  sandbox = sinon.createSandbox();
+});
+afterEach(() => {
+  sandbox.restore();
+});
+
+it('should emit warning for createScopedRequired', () => {
+  let called = false;
+  sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
+  client.createScopedRequired();
+  assert.equal(called, true);
 });
 
 it('getRequestMetadata should create a signed JWT token as the access token',
