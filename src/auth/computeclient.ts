@@ -61,7 +61,8 @@ export class Compute extends OAuth2Client {
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */
-  protected async refreshTokenNoCache(refreshToken?: string|null): Promise<Credentials> {
+  protected async refreshTokenNoCache(refreshToken?: string|
+                                      null): Promise<Credentials> {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let res: AxiosResponse<CredentialRequest>;
     try {
