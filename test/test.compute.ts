@@ -16,8 +16,9 @@
 
 import assert from 'assert';
 import {AxiosError} from 'axios';
-import {BASE_PATH, HOST_ADDRESS} from 'gcp-metadata';
+import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import nock from 'nock';
+
 import {Compute} from '../src';
 
 nock.disableNetConnect();
@@ -26,10 +27,9 @@ const url = 'http://example.com';
 
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 function mockToken() {
-  return nock(HOST_ADDRESS).get(tokenPath).reply(200, {
-    access_token: 'abc123',
-    expires_in: 10000
-  });
+  return nock(HOST_ADDRESS)
+      .get(tokenPath, undefined, {reqheaders: HEADERS})
+      .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
 }
 
 function mockExample() {
@@ -112,42 +112,6 @@ it('should not refresh if access token has not expired', async () => {
   assert.equal(compute.credentials.access_token, 'initial-access-token');
   scope.done();
 });
-
-it('should retry calls to the metadata service if there are network errors',
-   async () => {
-     const scopes = [
-       nock(HOST_ADDRESS)
-           .get(tokenPath)
-           .times(2)
-           .replyWithError({code: 'ENOTFOUND'})
-           .get(tokenPath)
-           .reply(200, {access_token: 'abc123', expires_in: 10000}),
-       mockExample()
-     ];
-     compute.credentials.access_token = 'initial-access-token';
-     compute.credentials.expiry_date = (new Date()).getTime() - 10000;
-     await compute.request({url});
-     assert.equal(compute.credentials.access_token, 'abc123');
-     scopes.forEach(s => s.done());
-   });
-
-it('should retry calls to the metadata service if it returns non-200 errors',
-   async () => {
-     const scopes = [
-       nock(HOST_ADDRESS)
-           .get(tokenPath)
-           .times(2)
-           .reply(500)
-           .get(tokenPath)
-           .reply(200, {access_token: 'abc123', expires_in: 10000}),
-       mockExample()
-     ];
-     compute.credentials.access_token = 'initial-access-token';
-     compute.credentials.expiry_date = (new Date()).getTime() - 10000;
-     await compute.request({url});
-     assert.equal(compute.credentials.access_token, 'abc123');
-     scopes.forEach(s => s.done());
-   });
 
 it('should return false for createScopedRequired', () => {
   assert.equal(false, compute.createScopedRequired());
@@ -265,7 +229,7 @@ it('should accept a custom service account', async () => {
     nock(HOST_ADDRESS)
         .get(`${BASE_PATH}/instance/service-accounts/${
             serviceAccountEmail}/token`)
-        .reply(200, {access_token: 'abc123', expires_in: 10000})
+        .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS)
   ];
   await compute.request({url});
   scopes.forEach(s => s.done());
