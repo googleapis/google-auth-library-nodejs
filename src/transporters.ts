@@ -96,11 +96,11 @@ export class DefaultTransporter {
     }
 
     if (callback) {
-      axios(opts)
-          .then(r => {
+      axios(opts).then(
+          r => {
             callback(null, r);
-          })
-          .catch(e => {
+          },
+          e => {
             callback(this.processError(e));
           });
     } else {

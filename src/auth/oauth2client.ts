@@ -457,9 +457,9 @@ export class OAuth2Client extends AuthClient {
         {code: codeOrOptions} :
         codeOrOptions;
     if (callback) {
-      this.getTokenAsync(options)
-          .then(r => callback(null, r.tokens, r.res))
-          .catch(e => callback(e, null, (e as AxiosError).response));
+      this.getTokenAsync(options).then(
+          r => callback(null, r.tokens, r.res),
+          e => callback(e, null, e.response));
     } else {
       return this.getTokenAsync(options);
     }
@@ -509,14 +509,15 @@ export class OAuth2Client extends AuthClient {
     }
 
     const p = this.refreshTokenNoCache(refreshToken)
-                  .then(r => {
-                    this.refreshTokenPromises.delete(refreshToken);
-                    return r;
-                  })
-                  .catch(e => {
-                    this.refreshTokenPromises.delete(refreshToken);
-                    throw e;
-                  });
+                  .then(
+                      r => {
+                        this.refreshTokenPromises.delete(refreshToken);
+                        return r;
+                      },
+                      e => {
+                        this.refreshTokenPromises.delete(refreshToken);
+                        throw e;
+                      });
     this.refreshTokenPromises.set(refreshToken, p);
     return p;
   }
@@ -561,9 +562,8 @@ export class OAuth2Client extends AuthClient {
   refreshAccessToken(callback?: RefreshAccessTokenCallback):
       Promise<RefreshAccessTokenResponse>|void {
     if (callback) {
-      this.refreshAccessTokenAsync()
-          .then(r => callback(null, r.credentials, r.res))
-          .catch(callback);
+      this.refreshAccessTokenAsync().then(
+          r => callback(null, r.credentials, r.res), callback);
     } else {
       return this.refreshAccessTokenAsync();
     }
@@ -590,9 +590,8 @@ export class OAuth2Client extends AuthClient {
   getAccessToken(callback?: GetAccessTokenCallback):
       Promise<GetAccessTokenResponse>|void {
     if (callback) {
-      this.getAccessTokenAsync()
-          .then(r => callback(null, r.token, r.res))
-          .catch(callback);
+      this.getAccessTokenAsync().then(
+          r => callback(null, r.token, r.res), callback);
     } else {
       return this.getAccessTokenAsync();
     }
@@ -636,9 +635,8 @@ export class OAuth2Client extends AuthClient {
   getRequestMetadata(url: string|null, callback?: RequestMetadataCallback):
       Promise<RequestMetadataResponse>|void {
     if (callback) {
-      this.getRequestMetadataAsync(url)
-          .then(r => callback(null, r.headers, r.res))
-          .catch(callback);
+      this.getRequestMetadataAsync(url).then(
+          r => callback(null, r.headers, r.res), callback);
     } else {
       return this.getRequestMetadataAsync(url);
     }
@@ -703,11 +701,8 @@ export class OAuth2Client extends AuthClient {
           querystring.stringify({token})
     };
     if (callback) {
-      this.transporter.request<RevokeCredentialsResult>(opts)
-          .then(res => {
-            callback(null, res);
-          })
-          .catch(callback);
+      this.transporter.request<RevokeCredentialsResult>(opts).then(
+          r => callback(null, r), callback);
     } else {
       return this.transporter.request<RevokeCredentialsResult>(opts);
     }
@@ -724,9 +719,7 @@ export class OAuth2Client extends AuthClient {
   revokeCredentials(callback?: BodyResponseCallback<RevokeCredentialsResult>):
       AxiosPromise<RevokeCredentialsResult>|void {
     if (callback) {
-      this.revokeCredentialsAsync()
-          .then(res => callback(null, res))
-          .catch(callback);
+      this.revokeCredentialsAsync().then(res => callback(null, res), callback);
     } else {
       return this.revokeCredentialsAsync();
     }
@@ -755,10 +748,8 @@ export class OAuth2Client extends AuthClient {
   request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
       AxiosPromise<T>|void {
     if (callback) {
-      this.requestAsync<T>(opts).then(r => callback(null, r)).catch(e => {
-        const err = e as AxiosError;
-        const body = err.response ? err.response.data : null;
-        return callback(e, err.response);
+      this.requestAsync<T>(opts).then(r => callback(null, r), e => {
+        return callback(e, e.response);
       });
     } else {
       return this.requestAsync<T>(opts);
@@ -828,9 +819,7 @@ export class OAuth2Client extends AuthClient {
     }
 
     if (callback) {
-      this.verifyIdTokenAsync(options)
-          .then(r => callback(null, r))
-          .catch(callback);
+      this.verifyIdTokenAsync(options).then(r => callback(null, r), callback);
     } else {
       return this.verifyIdTokenAsync(options);
     }
@@ -885,9 +874,8 @@ export class OAuth2Client extends AuthClient {
   getFederatedSignonCerts(callback?: GetFederatedSignonCertsCallback):
       Promise<FederatedSignonCertsResponse>|void {
     if (callback) {
-      this.getFederatedSignonCertsAsync()
-          .then(r => callback(null, r.certs, r.res))
-          .catch(callback);
+      this.getFederatedSignonCertsAsync().then(
+          r => callback(null, r.certs, r.res), callback);
     } else {
       return this.getFederatedSignonCertsAsync();
     }

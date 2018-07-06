@@ -144,7 +144,7 @@ export class JWT extends OAuth2Client {
   authorize(callback?: (err: Error|null, result?: Credentials) => void):
       Promise<Credentials>|void {
     if (callback) {
-      this.authorizeAsync().then(r => callback(null, r)).catch(callback);
+      this.authorizeAsync().then(r => callback(null, r), callback);
     } else {
       return this.authorizeAsync();
     }
@@ -234,7 +234,7 @@ export class JWT extends OAuth2Client {
       inputStream: stream.Readable,
       callback?: (err?: Error|null) => void): void|Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback()).catch(callback);
+      this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }
