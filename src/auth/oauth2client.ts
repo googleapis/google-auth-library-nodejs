@@ -26,6 +26,10 @@ import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 
+export type Certificates = {
+  [index: string]: string
+};
+
 export enum CodeChallengeMethod {
   Plain = 'plain',
   S256 = 'S256'
@@ -276,14 +280,12 @@ export interface RequestMetadataCallback {
 }
 
 export interface GetFederatedSignonCertsCallback {
-  // tslint:disable-next-line no-any
-  (err: AxiosError|null, certs?: any,
+  (err: AxiosError|null, certs?: Certificates,
    response?: AxiosResponse<void>|null): void;
 }
 
 export interface FederatedSignonCertsResponse {
-  // tslint:disable-next-line no-any
-  certs: any;
+  certs: Certificates;
   res?: AxiosResponse<void>|null;
 }
 
@@ -312,7 +314,7 @@ export interface RefreshOptions {
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
-  private certificateCache: {}|null|undefined = null;
+  private certificateCache?: Certificates;
   private certificateExpiry: Date|null = null;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
 
@@ -886,7 +888,7 @@ export class OAuth2Client extends AuthClient {
     const nowTime = (new Date()).getTime();
     if (this.certificateExpiry &&
         (nowTime < this.certificateExpiry.getTime())) {
-      return {certs: this.certificateCache};
+      return {certs: this.certificateCache!};
     }
     let res: AxiosResponse;
     try {
@@ -925,7 +927,7 @@ export class OAuth2Client extends AuthClient {
    * @return Returns a LoginTicket on verification.
    */
   verifySignedJwtWithCerts(
-      jwt: string, certs: {}, requiredAudience: string|string[],
+      jwt: string, certs: Certificates, requiredAudience: string|string[],
       issuers?: string[], maxExpiry?: number) {
     if (!maxExpiry) {
       maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
@@ -965,9 +967,7 @@ export class OAuth2Client extends AuthClient {
       // If this is not present, then there's no reason to attempt verification
       throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
     }
-    // certs is a legit dynamic object
-    // tslint:disable-next-line no-any
-    const pem = (certs as any)[envelope.kid];
+    const pem = certs[envelope.kid];
     const pemVerifier = new PemVerifier();
     const verified = pemVerifier.verify(pem, signed, signature, 'base64');
 
