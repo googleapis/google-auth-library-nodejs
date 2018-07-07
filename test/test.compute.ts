@@ -15,21 +15,21 @@
  */
 
 import assert from 'assert';
-import {AxiosError} from 'axios';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import nock from 'nock';
 
 import {Compute} from '../src';
+assert.rejects = require('assert-rejects');
 
 nock.disableNetConnect();
 
 const url = 'http://example.com';
 
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
-function mockToken() {
+function mockToken(statusCode = 200) {
   return nock(HOST_ADDRESS)
       .get(tokenPath, undefined, {reqheaders: HEADERS})
-      .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
+      .reply(statusCode, {access_token: 'abc123', expires_in: 10000}, HEADERS);
 }
 
 function mockExample() {
@@ -125,21 +125,14 @@ it('should return a helpful message on request response.statusCode 403', async (
     nock(url).get('/').reply(403), nock(HOST_ADDRESS).get(tokenPath).reply(403)
   ];
 
-  try {
-    await compute.request({url});
-  } catch (e) {
-    scopes.forEach(s => s.done());
-    const err = e as AxiosError;
-    assert.equal(403, err.response!.status);
-    const expected =
-        'A Forbidden error was returned while attempting to retrieve an access ' +
-        'token for the Compute Engine built-in service account. This may be because the ' +
-        'Compute Engine instance does not have the correct permission scopes specified. ' +
-        'Could not refresh access token.';
-    assert.equal(expected, err.message);
-    return;
-  }
-  throw new Error('Expected to throw');
+  const expected = new RegExp(
+      'A Forbidden error was returned while attempting to retrieve an access ' +
+      'token for the Compute Engine built-in service account. This may be because the ' +
+      'Compute Engine instance does not have the correct permission scopes specified. ' +
+      'Could not refresh access token.');
+
+  await assert.rejects(compute.request({url}), expected);
+  scopes.forEach(s => s.done());
 });
 
 it('should return a helpful message on request response.statusCode 404', async () => {
@@ -151,25 +144,18 @@ it('should return a helpful message on request response.statusCode 404', async (
   };
   // Mock the request method to return a 404.
   const scope = nock(url).get('/').reply(404);
-  try {
-    await compute.request({url});
-  } catch (e) {
-    scope.done();
-    const err = e as AxiosError;
-    assert.equal(404, e.response!.status);
-    assert.equal(
-        'A Not Found error was returned while attempting to retrieve an access' +
-            'token for the Compute Engine built-in service account. This may be because the ' +
-            'Compute Engine instance does not have any permission scopes specified.',
-        err.message);
-    return;
-  }
-  throw new Error('Expected to throw');
+  const expected = new RegExp(
+      'A Not Found error was returned while attempting to retrieve an access' +
+      'token for the Compute Engine built-in service account. This may be because the ' +
+      'Compute Engine instance does not have any permission scopes specified.');
+
+  await assert.rejects(compute.request({url}), expected);
+  scope.done();
 });
 
 it('should return a helpful message on token refresh response.statusCode 403',
    async () => {
-     const scope = nock(HOST_ADDRESS).get(tokenPath).twice().reply(403);
+     const scope = mockToken(403);
      // Mock the credentials object with a null access token, to force a
      // refresh.
      compute.credentials = {
@@ -177,48 +163,35 @@ it('should return a helpful message on token refresh response.statusCode 403',
        access_token: undefined,
        expiry_date: 1
      };
-     try {
-       await compute.request({});
-     } catch (e) {
-       const err = e as AxiosError;
-       assert.equal(403, err.response!.status);
-       const expected =
-           'A Forbidden error was returned while attempting to retrieve an access ' +
-           'token for the Compute Engine built-in service account. This may be because the ' +
-           'Compute Engine instance does not have the correct permission scopes specified. ' +
-           'Could not refresh access token.';
-       assert.equal(expected, err.message);
-       return;
-     }
-     throw new Error('Expected to throw');
+     const expected = new RegExp(
+         'A Forbidden error was returned while attempting to retrieve an access ' +
+         'token for the Compute Engine built-in service account. This may be because the ' +
+         'Compute Engine instance does not have the correct permission scopes specified. ' +
+         'Could not refresh access token.');
+     await assert.rejects(compute.request({}), expected);
+     scope.done();
    });
 
 it('should return a helpful message on token refresh response.statusCode 404',
    async () => {
-     const scope = nock(HOST_ADDRESS).get(tokenPath).reply(404);
+     const scope = mockToken(404);
 
-     // Mock the credentials object with a null access token, to force
-     // a refresh.
+     // Mock the credentials object with a null access token, to force a
+     // refresh.
      compute.credentials = {
        refresh_token: 'hello',
        access_token: undefined,
        expiry_date: 1
      };
 
-     try {
-       await compute.request({});
-     } catch (e) {
-       const err = e as AxiosError;
-       assert.equal(404, e.response!.status);
-       assert.equal(
-           'A Not Found error was returned while attempting to retrieve an access' +
-               'token for the Compute Engine built-in service account. This may be because the ' +
-               'Compute Engine instance does not have any permission scopes specified. Could not ' +
-               'refresh access token.',
-           err.message);
-       return;
-     }
-     throw new Error('Expected to throw');
+     const expected = new RegExp(
+         'A Not Found error was returned while attempting to retrieve an access' +
+         'token for the Compute Engine built-in service account. This may be because the ' +
+         'Compute Engine instance does not have any permission scopes specified. Could not ' +
+         'refresh access token.');
+
+     await assert.rejects(compute.request({}), expected);
+     scope.done();
    });
 
 it('should accept a custom service account', async () => {

@@ -26,6 +26,7 @@ import url from 'url';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
+assert.rejects = require('assert-rejects');
 
 nock.disableNetConnect();
 
@@ -88,14 +89,9 @@ it('should throw an error if generateAuthUrl is called with invalid parameters',
        scope: SCOPE,
        code_challenge_method: CodeChallengeMethod.S256
      };
-     try {
-       const generated = client.generateAuthUrl(opts);
-       assert.fail('Expected to throw');
-     } catch (e) {
-       assert.equal(
-           e.message,
-           'If a code_challenge_method is provided, code_challenge must be included.');
-     }
+     assert.throws(
+         () => client.generateAuthUrl(opts),
+         /If a code_challenge_method is provided, code_challenge must be included/);
    });
 
 it('should generate a valid code verifier and resulting challenge', () => {
@@ -157,22 +153,16 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
      client.verifySignedJwtWithCerts =
-         (jwt: string, certs: {}, requiredAudience: string|string[],
-          issuers?: string[], theMaxExpiry?: number) => {
+         (jwt: string, certs: {}, requiredAudience: string) => {
            assert.equal(jwt, idToken);
-           assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
+           assert.deepStrictEqual(certs, fakeCerts);
            assert.equal(requiredAudience, audience);
            return new LoginTicket('c', payload);
          };
-     try {
-       // tslint:disable-next-line no-any
-       await (client as any).verifyIdToken(idToken, audience);
-       throw new Error('Expected to throw');
-     } catch (e) {
-       assert.equal(
-           e.message,
-           'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.');
-     }
+     assert.throws(
+         // tslint:disable-next-line no-any
+         () => (client as any).verifyIdToken(idToken, audience),
+         /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./);
    });
 
 it('should allow scopes to be specified as array', () => {
