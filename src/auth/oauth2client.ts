@@ -26,7 +26,9 @@ import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 
-export type Certificates = { [index: string]: string};
+export type Certificates = {
+  [index: string]: string
+};
 
 export enum CodeChallengeMethod {
   Plain = 'plain',
