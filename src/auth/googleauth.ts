@@ -709,7 +709,7 @@ export class GoogleAuth {
    */
   async getRequestHeaders(url?: string) {
     const client = await this.getClient();
-    return (await client.getRequestMetadata(url)).headers;
+    return client.getRequestHeaders(url);
   }
 
   /**
@@ -722,7 +722,7 @@ export class GoogleAuth {
     opts = opts || {};
     const url = opts.url || opts.uri;
     const client = await this.getClient();
-    const {headers} = await client.getRequestMetadata(url);
+    const headers = await client.getRequestHeaders(url);
     opts.headers = Object.assign(opts.headers || {}, headers);
     return opts;
   }

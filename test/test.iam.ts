@@ -17,13 +17,14 @@
 import assert from 'assert';
 import sinon, {SinonSandbox} from 'sinon';
 
-import {IAMAuth} from '../src/index';
+import {IAMAuth} from '../src';
+import * as messages from '../src/messages';
 
 const testSelector = 'a-test-selector';
 const testToken = 'a-test-token';
 
-let client: IAMAuth;
 let sandbox: SinonSandbox;
+let client: IAMAuth;
 beforeEach(() => {
   sandbox = sinon.createSandbox();
   client = new IAMAuth(testSelector, testToken);
@@ -32,19 +33,23 @@ afterEach(() => {
   sandbox.restore();
 });
 
-it('passes the token and selector to the callback ', done => {
-  client.getRequestMetadata(null, (err, creds) => {
-    assert.strictEqual(err, null, 'no error was expected: got\n' + err);
-    assert.notStrictEqual(creds, null, 'metadata should be present');
-    assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
-    assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
+it('passes the token and selector to the callback ', async () => {
+  const creds = client.getRequestHeaders();
+  assert.notStrictEqual(creds, null, 'metadata should be present');
+  assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
+  assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
+});
+
+it('should warn about deprecation of getRequestMetadata', done => {
+  const stub = sandbox.stub(messages, 'warn');
+  client.getRequestMetadata(null, () => {
+    assert.equal(stub.calledOnce, true);
     done();
   });
 });
 
 it('should emit warning for createScopedRequired', () => {
-  let called = false;
-  sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
+  const stub = sandbox.stub(process, 'emitWarning');
   client.createScopedRequired();
-  assert.equal(called, true);
+  assert(stub.called);
 });

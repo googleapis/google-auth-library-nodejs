@@ -111,7 +111,36 @@ export const REFRESH_ACCESS_TOKEN_DEPRECATED = {
   type: WarningTypes.DEPRECATION,
   message: [
     'The `refreshAccessToken` method has been deprecated, and will be removed',
-    'in the 3.0 release of google-auth-library. Please use the `getRequestMetadata`',
+    'in the 3.0 release of google-auth-library. Please use the `getRequestHeaders`',
     'method instead.'
+  ].join(' ')
+};
+export const OAUTH_GET_REQUEST_METADATA_DEPRECATED = {
+  code: 'google-auth-library:DEP004',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `getRequestMetadata` method on the `OAuth2` class has been deprecated,',
+    'and will be removed in the 3.0 release of google-auth-library. Please use',
+    'the `getRequestHeaders` method instead.'
+  ].join(' ')
+};
+
+export const IAM_GET_REQUEST_METADATA_DEPRECATED = {
+  code: 'google-auth-library:DEP005',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `getRequestMetadata` method on the `IAM` class has been deprecated,',
+    'and will be removed in the 3.0 release of google-auth-library. Please use',
+    'the `getRequestHeaders` method instead.'
+  ].join(' ')
+};
+
+export const JWT_ACCESS_GET_REQUEST_METADATA_DEPRECATED = {
+  code: 'google-auth-library:DEP006',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `getRequestMetadata` method on the `JWTAccess` class has been deprecated,',
+    'and will be removed in the 3.0 release of google-auth-library. Please use',
+    'the `getRequestHeaders` method instead.'
   ].join(' ')
 };
