@@ -19,7 +19,7 @@ import crypto from 'crypto';
 import * as http from 'http';
 import querystring from 'querystring';
 import * as stream from 'stream';
-
+import * as messages from '../messages';
 import {PemVerifier} from './../pemverifier';
 import {BodyResponseCallback} from './../transporters';
 import {AuthClient} from './authclient';
@@ -561,6 +561,7 @@ export class OAuth2Client extends AuthClient {
   refreshAccessToken(callback: RefreshAccessTokenCallback): void;
   refreshAccessToken(callback?: RefreshAccessTokenCallback):
       Promise<RefreshAccessTokenResponse>|void {
+    messages.warn(messages.REFRESH_ACCESS_TOKEN_DEPRECATED);
     if (callback) {
       this.refreshAccessTokenAsync().then(
           r => callback(null, r.credentials, r.res), callback);
@@ -605,7 +606,7 @@ export class OAuth2Client extends AuthClient {
         throw new Error('No refresh token is set.');
       }
 
-      const r = await this.refreshAccessToken();
+      const r = await this.refreshAccessTokenAsync();
       if (!r.credentials || (r.credentials && !r.credentials.access_token)) {
         throw new Error('Could not refresh access token.');
       }
