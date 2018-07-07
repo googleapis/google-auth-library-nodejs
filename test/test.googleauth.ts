@@ -23,6 +23,7 @@ import nock from 'nock';
 import path from 'path';
 import sinon from 'sinon';
 import * as stream from 'stream';
+assert.rejects = require('assert-rejects');
 
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
@@ -97,15 +98,6 @@ function createJwtJSON() {
     client_email: 'hello@youarecool.com',
     client_id: 'client123',
     type: 'service_account'
-  };
-}
-
-function createRefreshJSON() {
-  return {
-    client_secret: 'privatekey',
-    client_id: 'client123',
-    refresh_token: 'refreshtoken',
-    type: 'authorized_user'
   };
 }
 
@@ -862,6 +854,7 @@ it('getApplicationDefault should return a new credential the first time and a ca
 
      // Ask for credentials, the first time.
      const result = await auth.getApplicationDefault();
+     scope.isDone();
      assert.notEqual(null, result);
 
      // Capture the returned credential.
@@ -1236,6 +1229,13 @@ it('should accept keyFilename to get a client', async () => {
   const auth = new GoogleAuth({keyFilename: './test/fixtures/private.json'});
   const client = await auth.getClient() as JWT;
   assert.equal(client.email, 'hello@youarecool.com');
+});
+
+it('should error when invalid keyFilename passed to getClient', async () => {
+  const auth = new GoogleAuth();
+  await assert.rejects(
+      auth.getClient({keyFilename: './funky/fresh.json'}),
+      /ENOENT: no such file or directory/);
 });
 
 it('should accept credentials to get a client', async () => {
