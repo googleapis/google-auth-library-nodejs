@@ -30,6 +30,10 @@ export type Certificates = {
   [index: string]: string
 };
 
+export type Headers = {
+  [index: string]: string
+};
+
 export enum CodeChallengeMethod {
   Plain = 'plain',
   S256 = 'S256'
@@ -270,12 +274,12 @@ export interface RefreshAccessTokenResponse {
 }
 
 export interface RequestMetadataResponse {
-  headers: http.IncomingHttpHeaders;
+  headers: Headers;
   res?: AxiosResponse<void>|null;
 }
 
 export interface RequestMetadataCallback {
-  (err: AxiosError|null, headers?: http.IncomingHttpHeaders,
+  (err: AxiosError|null, headers?: Headers,
    res?: AxiosResponse<void>|null): void;
 }
 
@@ -647,7 +651,7 @@ export class OAuth2Client extends AuthClient {
    * { Authorization: 'Bearer <access_token_value>' }
    * @param url The optional url being authorized
    */
-  async getRequestHeaders(url?: string): Promise<http.IncomingHttpHeaders> {
+  async getRequestHeaders(url?: string): Promise<Headers> {
     const res = await this.getRequestMetadataAsync(url);
     return res.headers;
   }

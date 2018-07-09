@@ -58,8 +58,7 @@ it('getRequestHeaders should create a signed JWT token as the access token',
      const client = new JWTAccess(email, keys.private);
      const headers = client.getRequestHeaders(testUri);
      assert.notStrictEqual(null, headers, 'an creds object should be present');
-     const decoded =
-         jws.decode((headers.Authorization as string).replace('Bearer ', ''));
+     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
      const payload = JSON.parse(decoded.payload);
      assert.strictEqual(email, payload.iss);
      assert.strictEqual(email, payload.sub);

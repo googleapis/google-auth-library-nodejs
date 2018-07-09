@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import {IncomingHttpHeaders} from 'http';
 import jws from 'jws';
 import LRU from 'lru-cache';
 import * as stream from 'stream';
+
 import * as messages from '../messages';
+
 import {JWTInput} from './credentials';
-import {RequestMetadataResponse} from './oauth2client';
+import {Headers, RequestMetadataResponse} from './oauth2client';
 
 export type Claims = {
   [index: string]: string
@@ -31,8 +32,7 @@ export class JWTAccess {
   key?: string|null;
   projectId?: string;
 
-  private cache =
-      LRU<string, IncomingHttpHeaders>({max: 500, maxAge: 60 * 60 * 1000});
+  private cache = LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
 
   /**
    * JWTAccess service account credentials.
@@ -83,8 +83,7 @@ export class JWTAccess {
    * include in the payload.
    * @returns An object that includes the authorization header.
    */
-  getRequestHeaders(url: string, additionalClaims?: Claims):
-      IncomingHttpHeaders {
+  getRequestHeaders(url: string, additionalClaims?: Claims): Headers {
     const cachedToken = this.cache.get(url);
     if (cachedToken) {
       return cachedToken;

@@ -192,8 +192,7 @@ it('gets a jwt header access token', async () => {
   const testUri = 'http:/example.com/my_test_service';
   const got = await jwt.getRequestHeaders(testUri);
   assert.notStrictEqual(null, got, 'the creds should be present');
-  const decoded =
-      jws.decode((got.Authorization as string).replace('Bearer ', ''));
+  const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
   const payload = JSON.parse(decoded.payload);
   assert.strictEqual(email, payload.iss);
   assert.strictEqual(email, payload.sub);
@@ -214,8 +213,7 @@ it('should accept additionalClaims', async () => {
   const testUri = 'http:/example.com/my_test_service';
   const got = await jwt.getRequestHeaders(testUri);
   assert.notStrictEqual(null, got, 'the creds should be present');
-  const decoded =
-      jws.decode((got.Authorization as string).replace('Bearer ', ''));
+  const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
   const payload = JSON.parse(decoded.payload);
   assert.strictEqual(testUri, payload.aud);
   assert.strictEqual(someClaim, payload.someClaim);
@@ -237,7 +235,7 @@ it('should accept additionalClaims that include a target_audience',
      const got = await jwt.getRequestHeaders(testUri);
      scope.done();
      assert.notStrictEqual(null, got, 'the creds should be present');
-     const decoded = (got.Authorization as string).replace('Bearer ', '');
+     const decoded = got.Authorization.replace('Bearer ', '');
      assert.strictEqual(decoded, 'abc123');
    });
 

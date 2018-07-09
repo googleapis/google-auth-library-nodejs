@@ -32,7 +32,7 @@ import {Compute} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {OAuth2Client, RefreshOptions} from './oauth2client';
+import {Headers, OAuth2Client, RefreshOptions} from './oauth2client';
 import {UserRefreshClient} from './refreshclient';
 
 export interface ProjectIdCallback {
@@ -717,8 +717,8 @@ export class GoogleAuth {
    * the request options.
    * @param opts Axios or Request options on which to attach the headers
    */
-  async authorizeRequest(
-      opts: {url?: string, uri?: string, headers?: http.IncomingHttpHeaders}) {
+  async authorizeRequest(opts:
+                             {url?: string, uri?: string, headers?: Headers}) {
     opts = opts || {};
     const url = opts.url || opts.uri;
     const client = await this.getClient();
