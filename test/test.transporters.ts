@@ -19,9 +19,7 @@ import {AxiosRequestConfig} from 'axios';
 import nock from 'nock';
 
 import {DefaultTransporter, RequestError} from '../src/transporters';
-
-// tslint:disable-next-line no-var-requires
-const version = require('../../package.json').version;
+assert.rejects = require('assert-rejects');
 
 const savedEnv = process.env;
 afterEach(() => {
@@ -40,6 +38,7 @@ it('should set default client user agent if none is set', async () => {
   assert.strictEqual(typeof res.config.adapter, 'function');
   assert.deepStrictEqual(
       res.config.adapter, require('axios/lib/adapters/http'));
+  scope.done();
 });
 
 it('should set default adapter to node.js', () => {
@@ -105,17 +104,13 @@ it('should return an error if you try to use request config options', done => {
 
 it('should return an error if you try to use request config options with a promise',
    async () => {
-     const expected =
-         '\'uri\' is not a valid configuration option. Please use \'url\' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.';
-     try {
-       await transporter.request({
-         uri: 'http://example.com/api',
-       } as AxiosRequestConfig);
-     } catch (e) {
-       assert.equal(e.message, expected);
-       return;
-     }
-     throw new Error('Expected to throw');
+     const expected = new RegExp(
+         `'uri' is not a valid configuration option. Please use 'url' instead. This ` +
+         `library is using Axios for requests. Please see https://github.com/axios/axios ` +
+         `to learn more about the valid request options.`);
+     const uri = 'http://example.com/api';
+     assert.throws(
+         () => transporter.request({uri} as AxiosRequestConfig), expected);
    });
 
 it('should support invocation with async/await', async () => {
@@ -128,15 +123,9 @@ it('should support invocation with async/await', async () => {
 
 it('should throw if using async/await', async () => {
   const url = 'http://example.com';
-  const scope = nock(url).get('/').reply(500, 'florg');
-  try {
-    await transporter.request({url});
-  } catch (e) {
-    assert.equal(e.message, 'florg');
-    scope.done();
-    return;
-  }
-  throw new Error('Expected to throw');
+  const scope = nock(url).get('/').reply(500, '🦃');
+  await assert.rejects(transporter.request({url}), /🦃/);
+  scope.done();
 });
 
 it('should work with a callback', done => {
