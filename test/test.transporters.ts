@@ -139,7 +139,7 @@ it('should work with a callback', done => {
   });
 });
 
-it('should use the https proxy if one is configured', async () => {
+it.skip('should use the https proxy if one is configured', async () => {
   process.env['https_proxy'] = 'https://han:solo@proxy-server:1234';
   const transporter = new DefaultTransporter();
   const scope = nock('https://proxy-server:1234')

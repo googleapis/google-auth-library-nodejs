@@ -102,6 +102,7 @@ export class DefaultTransporter {
     const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
     if (proxy) {
       opts.httpsAgent = new HttpsProxyAgent(proxy);
+      opts.proxy = false;
     }
 
     if (callback) {
