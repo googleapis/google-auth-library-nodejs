@@ -105,3 +105,13 @@ export const JWT_ACCESS_CREATE_SCOPED_DEPRECATED = {
     'and will be removed in the 3.0 release of google-auth-library.'
   ].join(' ')
 };
+
+export const REFRESH_ACCESS_TOKEN_DEPRECATED = {
+  code: 'google-auth-library:DEP007',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `refreshAccessToken` method has been deprecated, and will be removed',
+    'in the 3.0 release of google-auth-library. Please use the `getRequestMetadata`',
+    'method instead.'
+  ].join(' ')
+};

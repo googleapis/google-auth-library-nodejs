@@ -20,8 +20,8 @@ import jws from 'jws';
 import nock from 'nock';
 import sinon, {SinonSandbox} from 'sinon';
 
+import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
-import {GoogleAuth, JWT} from '../src/index';
 
 const keypair = require('keypair');
 const PEM_PATH = './test/fixtures/private.pem';

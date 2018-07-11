@@ -31,7 +31,6 @@ export interface Transporter {
 
 export interface BodyResponseCallback<T> {
   // The `body` object is a truly dynamic type.  It must be `any`.
-  // tslint:disable-next-line no-any
   (err: Error|null, res?: AxiosResponse<T>|null): void;
 }
 

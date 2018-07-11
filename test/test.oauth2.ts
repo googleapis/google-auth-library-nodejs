@@ -21,10 +21,12 @@ import * as fs from 'fs';
 import nock from 'nock';
 import path from 'path';
 import qs from 'querystring';
+import sinon, {SinonSandbox} from 'sinon';
 import url from 'url';
 
-import {CodeChallengeMethod, GoogleAuth, OAuth2Client} from '../src';
+import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
+assert.rejects = require('assert-rejects');
 
 nock.disableNetConnect();
 
@@ -42,12 +44,15 @@ const certsResPath =
     path.join(__dirname, '../../test/fixtures/oauthcerts.json');
 
 let client: OAuth2Client;
+let sandbox: SinonSandbox;
 beforeEach(() => {
   client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+  sandbox = sinon.createSandbox();
 });
 
 afterEach(() => {
   nock.cleanAll();
+  sandbox.restore();
 });
 
 it('should generate a valid consent page url', done => {
@@ -84,14 +89,9 @@ it('should throw an error if generateAuthUrl is called with invalid parameters',
        scope: SCOPE,
        code_challenge_method: CodeChallengeMethod.S256
      };
-     try {
-       const generated = client.generateAuthUrl(opts);
-       assert.fail('Expected to throw');
-     } catch (e) {
-       assert.equal(
-           e.message,
-           'If a code_challenge_method is provided, code_challenge must be included.');
-     }
+     assert.throws(
+         () => client.generateAuthUrl(opts),
+         /If a code_challenge_method is provided, code_challenge must be included/);
    });
 
 it('should generate a valid code verifier and resulting challenge', () => {
@@ -153,22 +153,16 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
      client.verifySignedJwtWithCerts =
-         (jwt: string, certs: {}, requiredAudience: string|string[],
-          issuers?: string[], theMaxExpiry?: number) => {
+         (jwt: string, certs: {}, requiredAudience: string) => {
            assert.equal(jwt, idToken);
-           assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
+           assert.deepStrictEqual(certs, fakeCerts);
            assert.equal(requiredAudience, audience);
            return new LoginTicket('c', payload);
          };
-     try {
-       // tslint:disable-next-line no-any
-       await (client as any).verifyIdToken(idToken, audience);
-       throw new Error('Expected to throw');
-     } catch (e) {
-       assert.equal(
-           e.message,
-           'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.');
-     }
+     assert.throws(
+         // tslint:disable-next-line no-any
+         () => (client as any).verifyIdToken(idToken, audience),
+         /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./);
    });
 
 it('should allow scopes to be specified as array', () => {
@@ -634,9 +628,9 @@ it('should be able to retrieve a list of Google certificates', (done) => {
   const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
     assert.equal(err, null);
-    assert.equal(Object.keys(certs).length, 2);
-    assert.notEqual(certs.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
-    assert.notEqual(certs['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
+    assert.equal(Object.keys(certs!).length, 2);
+    assert.notEqual(certs!.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
+    assert.notEqual(certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
     scope.done();
     done();
   });
@@ -655,11 +649,11 @@ it('should be able to retrieve a list of Google certificates from cache again',
              .replyWithFile(200, certsResPath);
      client.getFederatedSignonCerts((err, certs) => {
        assert.equal(err, null);
-       assert.equal(Object.keys(certs).length, 2);
+       assert.equal(Object.keys(certs!).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
        client.getFederatedSignonCerts((err2, certs2) => {
          assert.equal(err2, null);
-         assert.equal(Object.keys(certs2).length, 2);
+         assert.equal(Object.keys(certs2!).length, 2);
          scope.done();
          done();
        });
@@ -711,6 +705,14 @@ it('should return error in callback on request', done => {
     assert.equal(err!.message, 'No access, refresh token or API key is set.');
     assert.equal(result, null);
     done();
+  });
+});
+
+it('should emit warning on refreshAccessToken', async () => {
+  let warned = false;
+  sandbox.stub(process, 'emitWarning').callsFake(() => warned = true);
+  client.refreshAccessToken((err, result) => {
+    assert.equal(warned, true);
   });
 });
 

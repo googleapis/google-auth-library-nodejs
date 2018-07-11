@@ -457,19 +457,18 @@ export class GoogleAuth {
             'Must pass in a stream containing the Google auth settings.');
       }
       let s = '';
-      inputStream.setEncoding('utf8');
-      inputStream.on('data', (chunk) => {
-        s += chunk;
-      });
-      inputStream.on('end', () => {
-        try {
-          const data = JSON.parse(s);
-          const r = this.fromJSON(data, options);
-          return resolve(r);
-        } catch (err) {
-          return reject(err);
-        }
-      });
+      inputStream.setEncoding('utf8')
+          .on('error', reject)
+          .on('data', (chunk) => s += chunk)
+          .on('end', () => {
+            try {
+              const data = JSON.parse(s);
+              const r = this.fromJSON(data, options);
+              return resolve(r);
+            } catch (err) {
+              return reject(err);
+            }
+          });
     });
   }
 

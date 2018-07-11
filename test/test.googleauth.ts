@@ -22,7 +22,7 @@ import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import nock from 'nock';
 import path from 'path';
 import sinon from 'sinon';
-import * as stream from 'stream';
+assert.rejects = require('assert-rejects');
 
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
@@ -59,7 +59,6 @@ beforeEach(() => {
 
 afterEach(() => {
   nock.cleanAll();
-  // after each test, reset the env vars
   sandbox.restore();
 });
 
@@ -68,14 +67,10 @@ function nockIsGCE() {
 }
 
 function nockNotGCE() {
-  return nock(host).get(instancePath).replyWithError({code: 'ETIMEDOUT'});
-}
-
-function nockENOTFOUND() {
   return nock(host).get(instancePath).replyWithError({code: 'ENOTFOUND'});
 }
 
-function nockErrGCE() {
+function nock500GCE() {
   return nock(host).get(instancePath).reply(500);
 }
 
@@ -97,15 +92,6 @@ function createJwtJSON() {
     client_email: 'hello@youarecool.com',
     client_id: 'client123',
     type: 'service_account'
-  };
-}
-
-function createRefreshJSON() {
-  return {
-    client_secret: 'privatekey',
-    client_id: 'client123',
-    refresh_token: 'refreshtoken',
-    type: 'authorized_user'
   };
 }
 
@@ -438,49 +424,30 @@ it('getApplicationCredentialsFromFilePath should error on directory',
 it('getApplicationCredentialsFromFilePath should handle errors thrown from createReadStream',
    async () => {
      // Set up a mock to throw from the createReadStream method.
-     auth._createReadStream = () => {
-       throw new Error('Han and Chewbacca');
-     };
-     try {
-       await auth._getApplicationCredentialsFromFilePath(
-           './test/fixtures/private.json');
-     } catch (e) {
-       assert.equal(true, stringEndsWith(e.message, 'Han and Chewbacca'));
-       return;
-     }
-     assert.fail('failed to throw');
+     sandbox.stub(auth, '_createReadStream').throws('🤮');
+     await assert.rejects(
+         auth._getApplicationCredentialsFromFilePath(
+             './test/fixtures/private.json'),
+         /🤮/);
    });
 
 it('getApplicationCredentialsFromFilePath should handle errors thrown from fromStream',
    async () => {
-     // Set up a mock to throw from the fromStream method.
-     auth.fromStream = () => {
-       throw new Error('Darth Maul');
-     };
-     try {
-       await auth._getApplicationCredentialsFromFilePath(
-           './test/fixtures/private.json');
-     } catch (e) {
-       assert(stringEndsWith(e.message, 'Darth Maul'));
-       return;
-     }
-     assert.fail('failed to throw');
+     sandbox.stub(auth, 'fromStream').throws('🤮');
+     await assert.rejects(
+         auth._getApplicationCredentialsFromFilePath(
+             './test/fixtures/private.json'),
+         /🤮/);
    });
 
 it('getApplicationCredentialsFromFilePath should handle errors passed from fromStream',
    async () => {
      // Set up a mock to return an error from the fromStream method.
-     auth.fromStream = (streamInput: stream.Readable) => {
-       throw new Error('Princess Leia');
-     };
-     try {
-       await auth._getApplicationCredentialsFromFilePath(
-           './test/fixtures/private.json');
-     } catch (e) {
-       assert(stringEndsWith(e.message, 'Princess Leia'));
-       return;
-     }
-     assert.fail('failed to throw');
+     sandbox.stub(auth, 'fromStream').throws('🤮');
+     await assert.rejects(
+         auth._getApplicationCredentialsFromFilePath(
+             './test/fixtures/private.json'),
+         /🤮/);
    });
 
 it('getApplicationCredentialsFromFilePath should correctly read the file and create a valid JWT',
@@ -706,17 +673,10 @@ it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure o
      auth._pathJoin = pathJoin;
      auth._osPlatform = () => 'win32';
      auth._fileExists = () => true;
-     auth._getApplicationCredentialsFromFilePath = (filePath: string) => {
-       throw new Error('hello');
-     };
-     try {
-       await auth._tryGetApplicationCredentialsFromWellKnownFile();
-     } catch (e) {
-       assert(e);
-       assert.equal('hello', e.message);
-       return;
-     }
-     assert.fail('failed to throw');
+     sandbox.stub(auth, '_getApplicationCredentialsFromFilePath')
+         .rejects('🤮');
+     await assert.rejects(
+         auth._tryGetApplicationCredentialsFromWellKnownFile(), /🤮/);
    });
 
 it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure on non-Windows',
@@ -726,16 +686,10 @@ it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure o
      auth._pathJoin = pathJoin;
      auth._osPlatform = () => 'linux';
      auth._fileExists = () => true;
-     auth._getApplicationCredentialsFromFilePath = (filePath: string) => {
-       throw new Error('hello');
-     };
-     try {
-       await auth._tryGetApplicationCredentialsFromWellKnownFile();
-     } catch (e) {
-       assert.equal('hello', e.message);
-       return;
-     }
-     assert.fail('failed to throw');
+     sandbox.stub(auth, '_getApplicationCredentialsFromFilePath')
+         .rejects('🤮');
+     await assert.rejects(
+         auth._tryGetApplicationCredentialsFromWellKnownFile(), /🤮/);
    });
 
 it('getProjectId should return a new projectId the first time and a cached projectId the second time',
@@ -862,6 +816,7 @@ it('getApplicationDefault should return a new credential the first time and a ca
 
      // Ask for credentials, the first time.
      const result = await auth.getApplicationDefault();
+     scope.isDone();
      assert.notEqual(null, result);
 
      // Capture the returned credential.
@@ -1013,15 +968,10 @@ it('getApplicationDefault should report GCE error when checking for GCE fails',
      auth._pathJoin = pathJoin;
      auth._osPlatform = () => 'win32';
      auth._fileExists = () => false;
-     auth._checkIsGCE = () => {
-       throw new Error('fake error');
-     };
-     try {
-       await auth.getApplicationDefault();
-     } catch (e) {
-       return;
-     }
-     throw new Error('Expected to throw');
+     sandbox.stub(auth, '_checkIsGCE').rejects('🤮');
+     await assert.rejects(
+         auth.getApplicationDefault(),
+         /Unexpected error determining execution environment/);
    });
 
 it('getApplicationDefault should also get project ID', async () => {
@@ -1053,7 +1003,7 @@ it('getApplicationDefault should also get project ID', async () => {
 it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
   assert.notEqual(true, auth.isGCE);
   const scope = nockIsGCE();
-  const isGCE = await auth._checkIsGCE();
+  await auth._checkIsGCE();
   assert.equal(true, auth.isGCE);
   scope.done();
 });
@@ -1062,35 +1012,35 @@ it('_checkIsGCE should not set the _isGCE flag when not running on GCE',
    async () => {
      const scope = nockNotGCE();
      assert.notEqual(true, auth.isGCE);
-     const isGCE = await auth._checkIsGCE();
+     await auth._checkIsGCE();
      assert.equal(false, auth.isGCE);
      scope.done();
    });
 
-it('_checkIsGCE should retry the check for isGCE if it fails the first time',
+it('_checkIsGCE should retry the check for isGCE on transient http errors',
    async () => {
      assert.notEqual(true, auth.isGCE);
      // the first request will fail, the second one will succeed
-     const scopes = [nockErrGCE(), nockIsGCE()];
-     const isGCE = await auth._checkIsGCE();
+     const scopes = [nock500GCE(), nockIsGCE()];
+     await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
      scopes.forEach(s => s.done());
    });
 
-it('should not retry the check for isGCE if it fails with a 404', async () => {
+it('_checkIsGCE should throw on unexpected errors', async () => {
   assert.notEqual(true, auth.isGCE);
   const scope = nock404GCE();
-  const isGCE = await auth._checkIsGCE();
-  assert.notEqual(true, auth.isGCE);
+  await assert.rejects(auth._checkIsGCE());
+  assert.equal(undefined, auth.isGCE);
   scope.done();
 });
 
 it('_checkIsGCE should not retry the check for isGCE if it fails with an ENOTFOUND',
    async () => {
      assert.notEqual(true, auth.isGCE);
-     const scope = nockENOTFOUND();
+     const scope = nockNotGCE();
      const isGCE = await auth._checkIsGCE();
-     assert.notEqual(true, auth.isGCE);
+     assert.equal(false, auth.isGCE);
      scope.done();
    });
 
@@ -1116,14 +1066,6 @@ it('_checkIsGCE does not execute the second time when not running on GCE',
      assert.equal(false, auth.isGCE);
      scope.done();
    });
-
-it('_checkIsGCE returns false on transport error', async () => {
-  assert.notEqual(true, auth.isGCE);
-  const scope = nockErrGCE();
-  await auth._checkIsGCE();
-  assert.equal(false, auth.isGCE);
-  scope.done();
-});
 
 it('getCredentials should get metadata from the server when running on GCE',
    async () => {
@@ -1152,13 +1094,8 @@ it('getCredentials should error if metadata server is not reachable',
          [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(404)];
      await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
-     try {
-       await auth.getCredentials();
-     } catch (e) {
-       scopes.forEach(s => s.done());
-       return;
-     }
-     throw new Error('Expected to throw');
+     await assert.rejects(auth.getCredentials());
+     scopes.forEach(s => s.done());
    });
 
 it('getCredentials should error if body is empty', async () => {
@@ -1166,13 +1103,8 @@ it('getCredentials should error if body is empty', async () => {
       [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {})];
   await auth._checkIsGCE();
   assert.equal(true, auth.isGCE);
-  try {
-    await auth.getCredentials();
-  } catch (e) {
-    scopes.forEach(s => s.done());
-    return;
-  }
-  throw new Error('Expected to throw');
+  await assert.rejects(auth.getCredentials());
+  scopes.forEach(s => s.done());
 });
 
 it('getCredentials should handle valid environment variable', async () => {
@@ -1215,17 +1147,12 @@ it('getCredentials should return error when env const is not set', async () => {
   const client =
       await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
   assert.equal(null, client);
-  try {
-    await auth.getCredentials();
-  } catch (e) {
-    return;
-  }
-  throw new Error('Expected to throw');
+  await assert.rejects(auth.getCredentials());
 });
 
 it('should use jsonContent if available', async () => {
   const json = createJwtJSON();
-  const result = auth.fromJSON(json);
+  auth.fromJSON(json);
   // We know this returned a cached result if a nock scope isn't required
   const body = await auth.getCredentials();
   assert.notEqual(body, null);
@@ -1236,6 +1163,13 @@ it('should accept keyFilename to get a client', async () => {
   const auth = new GoogleAuth({keyFilename: './test/fixtures/private.json'});
   const client = await auth.getClient() as JWT;
   assert.equal(client.email, 'hello@youarecool.com');
+});
+
+it('should error when invalid keyFilename passed to getClient', async () => {
+  const auth = new GoogleAuth();
+  await assert.rejects(
+      auth.getClient({keyFilename: './funky/fresh.json'}),
+      /ENOENT: no such file or directory/);
 });
 
 it('should accept credentials to get a client', async () => {
