@@ -67,14 +67,10 @@ function nockIsGCE() {
 }
 
 function nockNotGCE() {
-  return nock(host).get(instancePath).replyWithError({code: 'ETIMEDOUT'});
-}
-
-function nockENOTFOUND() {
   return nock(host).get(instancePath).replyWithError({code: 'ENOTFOUND'});
 }
 
-function nockErrGCE() {
+function nock500GCE() {
   return nock(host).get(instancePath).reply(500);
 }
 
@@ -1021,30 +1017,30 @@ it('_checkIsGCE should not set the _isGCE flag when not running on GCE',
      scope.done();
    });
 
-it('_checkIsGCE should retry the check for isGCE if it fails the first time',
+it('_checkIsGCE should retry the check for isGCE on transient http errors',
    async () => {
      assert.notEqual(true, auth.isGCE);
      // the first request will fail, the second one will succeed
-     const scopes = [nockErrGCE(), nockIsGCE()];
+     const scopes = [nock500GCE(), nockIsGCE()];
      await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
      scopes.forEach(s => s.done());
    });
 
-it('should not retry the check for isGCE if it fails with a 404', async () => {
+it('_checkIsGCE should throw on unexpected errors', async () => {
   assert.notEqual(true, auth.isGCE);
   const scope = nock404GCE();
-  await auth._checkIsGCE();
-  assert.notEqual(true, auth.isGCE);
+  await assert.rejects(auth._checkIsGCE());
+  assert.equal(undefined, auth.isGCE);
   scope.done();
 });
 
 it('_checkIsGCE should not retry the check for isGCE if it fails with an ENOTFOUND',
    async () => {
      assert.notEqual(true, auth.isGCE);
-     const scope = nockENOTFOUND();
+     const scope = nockNotGCE();
      const isGCE = await auth._checkIsGCE();
-     assert.notEqual(true, auth.isGCE);
+     assert.equal(false, auth.isGCE);
      scope.done();
    });
 
@@ -1070,14 +1066,6 @@ it('_checkIsGCE does not execute the second time when not running on GCE',
      assert.equal(false, auth.isGCE);
      scope.done();
    });
-
-it('_checkIsGCE returns false on transport error', async () => {
-  assert.notEqual(true, auth.isGCE);
-  const scope = nockErrGCE();
-  await auth._checkIsGCE();
-  assert.equal(false, auth.isGCE);
-  scope.done();
-});
 
 it('getCredentials should get metadata from the server when running on GCE',
    async () => {
