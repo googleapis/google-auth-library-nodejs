@@ -133,7 +133,7 @@ export class JWT extends OAuth2Client {
   /**
    * Determine if there are currently scopes available.
    */
-  protected hasScopes() {
+  private hasScopes() {
     if (!this.scopes) {
       return false;
     }

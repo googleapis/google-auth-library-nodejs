@@ -37,7 +37,7 @@ export class IAMAuth {
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
-   *
+   * @deprecated
    * @return always false
    */
   createScopedRequired() {
