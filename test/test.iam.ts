@@ -15,12 +15,24 @@
  */
 
 import assert from 'assert';
+import sinon, {SinonSandbox} from 'sinon';
+
 import {IAMAuth} from '../src/index';
 
+const testSelector = 'a-test-selector';
+const testToken = 'a-test-token';
+
+let client: IAMAuth;
+let sandbox: SinonSandbox;
+beforeEach(() => {
+  sandbox = sinon.createSandbox();
+  client = new IAMAuth(testSelector, testToken);
+});
+afterEach(() => {
+  sandbox.restore();
+});
+
 it('passes the token and selector to the callback ', done => {
-  const testSelector = 'a-test-selector';
-  const testToken = 'a-test-token';
-  const client = new IAMAuth(testSelector, testToken);
   client.getRequestMetadata(null, (err, creds) => {
     assert.strictEqual(err, null, 'no error was expected: got\n' + err);
     assert.notStrictEqual(creds, null, 'metadata should be present');
@@ -28,4 +40,11 @@ it('passes the token and selector to the callback ', done => {
     assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
     done();
   });
+});
+
+it('should emit warning for createScopedRequired', () => {
+  let called = false;
+  sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
+  client.createScopedRequired();
+  assert.equal(called, true);
 });

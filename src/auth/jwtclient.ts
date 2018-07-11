@@ -16,6 +16,9 @@
 
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
+
+import * as messages from '../messages';
+
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
@@ -97,7 +100,7 @@ export class JWT extends OAuth2Client {
    */
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
-    if (!this.apiKey && this.createScopedRequired() && url) {
+    if (!this.apiKey && !this.hasScopes() && url) {
       if (this.additionalClaims && (this.additionalClaims as {
                                      target_audience: string
                                    }).target_audience) {
@@ -119,19 +122,27 @@ export class JWT extends OAuth2Client {
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createScoped before use.
+   * @deprecated
    * @return false if createScoped does not need to be called.
    */
   createScopedRequired() {
-    // If scopes is null, always return true.
-    if (this.scopes) {
-      // For arrays, check the array length.
-      if (this.scopes instanceof Array) {
-        return this.scopes.length === 0;
-      }
-      // For others, convert to a string and check the length.
-      return String(this.scopes).length === 0;
+    messages.warn(messages.JWT_CREATE_SCOPED_DEPRECATED);
+    return !this.hasScopes();
+  }
+
+  /**
+   * Determine if there are currently scopes available.
+   */
+  private hasScopes() {
+    if (!this.scopes) {
+      return false;
     }
-    return true;
+    // For arrays, check the array length.
+    if (this.scopes instanceof Array) {
+      return this.scopes.length > 0;
+    }
+    // For others, convert to a string and check the length.
+    return String(this.scopes).length > 0;
   }
 
   /**

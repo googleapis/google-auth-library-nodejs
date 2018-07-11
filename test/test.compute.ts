@@ -17,7 +17,7 @@
 import assert from 'assert';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import nock from 'nock';
-
+import sinon, {SinonSandbox} from 'sinon';
 import {Compute} from '../src';
 assert.rejects = require('assert-rejects');
 
@@ -37,13 +37,16 @@ function mockExample() {
 }
 
 // set up compute client.
+let sandbox: SinonSandbox;
 let compute: Compute;
 beforeEach(() => {
   compute = new Compute();
+  sandbox = sinon.createSandbox();
 });
 
 afterEach(() => {
   nock.cleanAll();
+  sandbox.restore();
 });
 
 it('should create a dummy refresh token string', () => {
@@ -111,6 +114,13 @@ it('should not refresh if access token has not expired', async () => {
   await compute.request({url});
   assert.equal(compute.credentials.access_token, 'initial-access-token');
   scope.done();
+});
+
+it('should emit warning for createScopedRequired', () => {
+  let called = false;
+  sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
+  compute.createScopedRequired();
+  assert.equal(called, true);
 });
 
 it('should return false for createScopedRequired', () => {

@@ -17,6 +17,9 @@
 import jws from 'jws';
 import LRU from 'lru-cache';
 import * as stream from 'stream';
+
+import * as messages from '../messages';
+
 import {JWTInput} from './credentials';
 import {RequestMetadataResponse} from './oauth2client';
 
@@ -45,11 +48,12 @@ export class JWTAccess {
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
-   *
+   * @deprecated
    * @return always false
    */
   createScopedRequired(): boolean {
     // JWT Header authentication does not use scopes.
+    messages.warn(messages.JWT_ACCESS_CREATE_SCOPED_DEPRECATED);
     return false;
   }
 

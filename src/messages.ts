@@ -70,8 +70,44 @@ export const DEFAULT_PROJECT_ID_DEPRECATED = {
   ].join(' ')
 };
 
-export const REFRESH_ACCESS_TOKEN_DEPRECATED = {
+export const COMPUTE_CREATE_SCOPED_DEPRECATED = {
   code: 'google-auth-library:DEP003',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `createScopedRequired` method on the `Compute` class has been deprecated,',
+    'and will be removed in the 3.0 release of google-auth-library.'
+  ].join(' ')
+};
+
+export const JWT_CREATE_SCOPED_DEPRECATED = {
+  code: 'google-auth-library:DEP004',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `createScopedRequired` method on the `JWT` class has been deprecated,',
+    'and will be removed in the 3.0 release of google-auth-library.'
+  ].join(' ')
+};
+
+export const IAM_CREATE_SCOPED_DEPRECATED = {
+  code: 'google-auth-library:DEP005',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `createScopedRequired` method on the `IAM` class has been deprecated,',
+    'and will be removed in the 3.0 release of google-auth-library.'
+  ].join(' ')
+};
+
+export const JWT_ACCESS_CREATE_SCOPED_DEPRECATED = {
+  code: 'google-auth-library:DEP006',
+  type: WarningTypes.DEPRECATION,
+  message: [
+    'The `createScopedRequired` method on the `JWTAccess` class has been deprecated,',
+    'and will be removed in the 3.0 release of google-auth-library.'
+  ].join(' ')
+};
+
+export const REFRESH_ACCESS_TOKEN_DEPRECATED = {
+  code: 'google-auth-library:DEP007',
   type: WarningTypes.DEPRECATION,
   message: [
     'The `refreshAccessToken` method has been deprecated, and will be removed',

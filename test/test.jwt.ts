@@ -18,6 +18,7 @@ import assert from 'assert';
 import * as fs from 'fs';
 import jws from 'jws';
 import nock from 'nock';
+import sinon, {SinonSandbox} from 'sinon';
 
 import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
@@ -58,13 +59,23 @@ function createGTokenMock(body: CredentialRequest) {
 // set up the test json and the jwt instance being tested.
 let jwt: JWT;
 let json: JWTInput;
+let sandbox: SinonSandbox;
 beforeEach(() => {
   json = createJSON();
   jwt = new JWT();
+  sandbox = sinon.createSandbox();
 });
 
 afterEach(() => {
   nock.cleanAll();
+  sandbox.restore();
+});
+
+it('should emit warning for createScopedRequired', () => {
+  let called = false;
+  sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
+  jwt.createScopedRequired();
+  assert.equal(called, true);
 });
 
 it('should create a dummy refresh token string', () => {
