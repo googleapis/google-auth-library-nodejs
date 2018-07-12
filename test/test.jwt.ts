@@ -20,7 +20,7 @@ import jws from 'jws';
 import nock from 'nock';
 import sinon, {SinonSandbox} from 'sinon';
 
-import {GoogleAuth, JWT} from '../src';
+import {JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 
 const keypair = require('keypair');
@@ -160,7 +160,7 @@ it('should emit an event for tokens', (done) => {
      }).getAccessToken();
 });
 
-it('can obtain new access token when scopes are set', (done) => {
+it('can obtain new access token when scopes are set', async () => {
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
     keyFile: PEM_PATH,
@@ -170,24 +170,16 @@ it('can obtain new access token when scopes are set', (done) => {
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
   const wantedToken = 'abc123';
-  const want = 'Bearer ' + wantedToken;
+  const want = `Bearer ${wantedToken}`;
   const scope = createGTokenMock({access_token: wantedToken});
-  jwt.getRequestMetadata(null, (err, result) => {
-    scope.done();
-    assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-    const got = result as {
-      Authorization: string;
-    };
-    assert.strictEqual(
-        want, got.Authorization,
-        'the authorization header was wrong: ' + got.Authorization);
-    done();
-  });
+  const headers = await jwt.getRequestHeaders();
+  scope.done();
+  assert.strictEqual(
+      want, headers.Authorization,
+      `the authorization header was wrong: ${headers.Authorization}`);
 });
 
-
-
-it('gets a jwt header access token', (done) => {
+it('gets a jwt header access token', async () => {
   const keys = keypair(1024 /* bitsize of private key */);
   const email = 'foo@serviceaccount.com';
   const jwt = new JWT({
@@ -198,24 +190,17 @@ it('gets a jwt header access token', (done) => {
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
   const testUri = 'http:/example.com/my_test_service';
-  jwt.getRequestMetadata(testUri, (err, result) => {
-    const got = result as {
-      Authorization: string;
-    };
-    assert.strictEqual(null, err, 'no error was expected: got\n' + err);
-    assert.notStrictEqual(null, got, 'the creds should be present');
-    const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
-    const payload = JSON.parse(decoded.payload);
-    assert.strictEqual(email, payload.iss);
-    assert.strictEqual(email, payload.sub);
-    assert.strictEqual(testUri, payload.aud);
-    done();
-  });
+  const got = await jwt.getRequestHeaders(testUri);
+  assert.notStrictEqual(null, got, 'the creds should be present');
+  const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+  const payload = JSON.parse(decoded.payload);
+  assert.strictEqual(email, payload.iss);
+  assert.strictEqual(email, payload.sub);
+  assert.strictEqual(testUri, payload.aud);
 });
 
 it('should accept additionalClaims', async () => {
   const keys = keypair(1024 /* bitsize of private key */);
-  const email = 'foo@serviceaccount.com';
   const someClaim = 'cat-on-my-desk';
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
@@ -226,10 +211,7 @@ it('should accept additionalClaims', async () => {
   jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
   const testUri = 'http:/example.com/my_test_service';
-  const {headers} = await jwt.getRequestMetadata(testUri);
-  const got = headers as {
-    Authorization: string;
-  };
+  const got = await jwt.getRequestHeaders(testUri);
   assert.notStrictEqual(null, got, 'the creds should be present');
   const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
   const payload = JSON.parse(decoded.payload);
@@ -240,7 +222,6 @@ it('should accept additionalClaims', async () => {
 it('should accept additionalClaims that include a target_audience',
    async () => {
      const keys = keypair(1024 /* bitsize of private key */);
-     const email = 'foo@serviceaccount.com';
      const jwt = new JWT({
        email: 'foo@serviceaccount.com',
        key: keys.private,
@@ -251,11 +232,8 @@ it('should accept additionalClaims that include a target_audience',
 
      const testUri = 'http:/example.com/my_test_service';
      const scope = createGTokenMock({id_token: 'abc123'});
-     const {headers} = await jwt.getRequestMetadata(testUri);
+     const got = await jwt.getRequestHeaders(testUri);
      scope.done();
-     const got = headers as {
-       Authorization: string;
-     };
      assert.notStrictEqual(null, got, 'the creds should be present');
      const decoded = got.Authorization.replace('Bearer ', '');
      assert.strictEqual(decoded, 'abc123');
@@ -349,7 +327,6 @@ it('should refresh token if expired', (done) => {
 
 it('should refresh if access token will expired soon and time to refresh before expiration is set',
    (done) => {
-     const auth = new GoogleAuth();
      const jwt = new JWT({
        email: 'foo@serviceaccount.com',
        keyFile: PEM_PATH,
@@ -476,10 +453,9 @@ it('should return expiry_date in milliseconds', async () => {
 
   const scope = createGTokenMock({access_token: 'token', expires_in: 100});
   jwt.credentials.access_token = null;
-  const result = await jwt.getRequestMetadata();
+  await jwt.getRequestHeaders();
   scope.done();
   const dateInMillis = (new Date()).getTime();
-  const expiryDate = new Date(jwt.credentials.expiry_date!);
   assert.equal(
       dateInMillis.toString().length,
       jwt.credentials.expiry_date!.toString().length);
@@ -662,27 +638,27 @@ it('fromJson should error on missing private_key', () => {
 });
 
 it('fromJson should create JWT with client_email', () => {
-  const result = jwt.fromJSON(json);
+  jwt.fromJSON(json);
   assert.equal(json.client_email, jwt.email);
 });
 
 it('fromJson should create JWT with private_key', () => {
-  const result = jwt.fromJSON(json);
+  jwt.fromJSON(json);
   assert.equal(json.private_key, jwt.key);
 });
 
 it('fromJson should create JWT with null scopes', () => {
-  const result = jwt.fromJSON(json);
+  jwt.fromJSON(json);
   assert.equal(null, jwt.scopes);
 });
 
 it('fromJson should create JWT with null subject', () => {
-  const result = jwt.fromJSON(json);
+  jwt.fromJSON(json);
   assert.equal(null, jwt.subject);
 });
 
 it('fromJson should create JWT with null keyFile', () => {
-  const result = jwt.fromJSON(json);
+  jwt.fromJSON(json);
   assert.equal(null, jwt.keyFile);
 });
 
@@ -762,7 +738,7 @@ it('fromAPIKey should error with invalid api key type', () => {
 
 it('fromAPIKey should set the .apiKey property on the instance', () => {
   const KEY = 'test';
-  const result = jwt.fromAPIKey(KEY);
+  jwt.fromAPIKey(KEY);
   assert.strictEqual(jwt.apiKey, KEY);
 });
 

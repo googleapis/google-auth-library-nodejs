@@ -112,7 +112,9 @@ export class JWT extends OAuth2Client {
         if (!this.access) {
           this.access = new JWTAccess(this.email, this.key);
         }
-        return this.access.getRequestMetadata(url, this.additionalClaims);
+        const headers =
+            await this.access.getRequestHeaders(url, this.additionalClaims);
+        return {headers};
       }
     } else {
       return super.getRequestMetadataAsync(url);
@@ -258,19 +260,18 @@ export class JWT extends OAuth2Client {
             'Must pass in a stream containing the service account auth settings.');
       }
       let s = '';
-      inputStream.setEncoding('utf8');
-      inputStream.on('data', (chunk) => {
-        s += chunk;
-      });
-      inputStream.on('end', () => {
-        try {
-          const data = JSON.parse(s);
-          this.fromJSON(data);
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
-      });
+      inputStream.setEncoding('utf8')
+          .on('error', reject)
+          .on('data', (chunk) => s += chunk)
+          .on('end', () => {
+            try {
+              const data = JSON.parse(s);
+              this.fromJSON(data);
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          });
     });
   }
 

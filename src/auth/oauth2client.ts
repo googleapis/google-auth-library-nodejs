@@ -30,6 +30,10 @@ export type Certificates = {
   [index: string]: string
 };
 
+export type Headers = {
+  [index: string]: string
+};
+
 export enum CodeChallengeMethod {
   Plain = 'plain',
   S256 = 'S256'
@@ -270,12 +274,12 @@ export interface RefreshAccessTokenResponse {
 }
 
 export interface RequestMetadataResponse {
-  headers: http.IncomingHttpHeaders;
+  headers: Headers;
   res?: AxiosResponse<void>|null;
 }
 
 export interface RequestMetadataCallback {
-  (err: AxiosError|null, headers?: http.IncomingHttpHeaders,
+  (err: AxiosError|null, headers?: Headers,
    res?: AxiosResponse<void>|null): void;
 }
 
@@ -556,7 +560,7 @@ export class OAuth2Client extends AuthClient {
   /**
    * Retrieves the access token using refresh token
    *
-   * @deprecated use getRequestMetadata instead.
+   * @deprecated use getRequestHeaders instead.
    * @param callback callback
    */
   refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
@@ -619,17 +623,9 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * getRequestMetadata obtains auth metadata to be used by requests.
+   * Obtain the set of headers required to authenticate a request.
    *
-   * getRequestMetadata is the main authentication interface.  It takes an
-   * optional uri which when present is the endpoint being accessed, and a
-   * callback func(err, metadata_obj, response) where metadata_obj contains
-   * authorization metadata fields and response is an optional response object.
-   *
-   * In OAuth2Client, metadata_obj has the form.
-   *
-   * {Authorization: 'Bearer <access_token_value>'}
-   *
+   * @deprecated Use getRequestHeaders instead.
    * @param url the Uri being authorized
    * @param callback the func described above
    */
@@ -637,12 +633,27 @@ export class OAuth2Client extends AuthClient {
   getRequestMetadata(url: string|null, callback: RequestMetadataCallback): void;
   getRequestMetadata(url: string|null, callback?: RequestMetadataCallback):
       Promise<RequestMetadataResponse>|void {
+    messages.warn(messages.OAUTH_GET_REQUEST_METADATA_DEPRECATED);
     if (callback) {
       this.getRequestMetadataAsync(url).then(
           r => callback(null, r.headers, r.res), callback);
     } else {
-      return this.getRequestMetadataAsync(url);
+      return this.getRequestMetadataAsync();
     }
+  }
+
+  /**
+   * The main authentication interface.  It takes an optional url which when
+   * present is the endpoint being accessed, and returns a Promise which
+   * resolves with authorization header fields.
+   *
+   * In OAuth2Client, the result has the form:
+   * { Authorization: 'Bearer <access_token_value>' }
+   * @param url The optional url being authorized
+   */
+  async getRequestHeaders(url?: string): Promise<Headers> {
+    const res = await this.getRequestMetadataAsync(url);
+    return res.headers;
   }
 
   protected async getRequestMetadataAsync(url?: string|null):

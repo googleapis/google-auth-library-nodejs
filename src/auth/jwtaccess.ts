@@ -21,15 +21,18 @@ import * as stream from 'stream';
 import * as messages from '../messages';
 
 import {JWTInput} from './credentials';
-import {RequestMetadataResponse} from './oauth2client';
+import {Headers, RequestMetadataResponse} from './oauth2client';
+
+export type Claims = {
+  [index: string]: string
+};
 
 export class JWTAccess {
   email?: string|null;
   key?: string|null;
   projectId?: string;
 
-  private cache =
-      LRU<string, RequestMetadataResponse>({max: 500, maxAge: 60 * 60 * 1000});
+  private cache = LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
 
   /**
    * JWTAccess service account credentials.
@@ -63,12 +66,25 @@ export class JWTAccess {
    * @param authURI The URI being authorized.
    * @param additionalClaims An object with a set of additional claims to
    * include in the payload.
+   * @deprecated Please use `getRequestHeaders` instead.
    * @returns An object that includes the authorization header.
    */
-  getRequestMetadata(
-      authURI: string,
-      additionalClaims?: {[index: string]: string}): RequestMetadataResponse {
-    const cachedToken = this.cache.get(authURI);
+  getRequestMetadata(url: string, additionalClaims?: Claims):
+      RequestMetadataResponse {
+    messages.warn(messages.JWT_ACCESS_GET_REQUEST_METADATA_DEPRECATED);
+    return {headers: this.getRequestHeaders(url, additionalClaims)};
+  }
+
+  /**
+   * Get a non-expired access token, after refreshing if necessary.
+   *
+   * @param url The URI being authorized.
+   * @param additionalClaims An object with a set of additional claims to
+   * include in the payload.
+   * @returns An object that includes the authorization header.
+   */
+  getRequestHeaders(url: string, additionalClaims?: Claims): Headers {
+    const cachedToken = this.cache.get(url);
     if (cachedToken) {
       return cachedToken;
     }
@@ -79,7 +95,7 @@ export class JWTAccess {
     // iss == sub == <client email>
     // aud == <the authorization uri>
     const defaultClaims =
-        {iss: this.email, sub: this.email, aud: authURI, exp, iat};
+        {iss: this.email, sub: this.email, aud: url, exp, iat};
 
     // if additionalClaims are provided, ensure they do not collide with
     // other required claims.
@@ -97,9 +113,9 @@ export class JWTAccess {
     // Sign the jwt and add it to the cache
     const signedJWT =
         jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
-    const res = {headers: {Authorization: `Bearer ${signedJWT}`}};
-    this.cache.set(authURI, res);
-    return res;
+    const headers = {Authorization: `Bearer ${signedJWT}`};
+    this.cache.set(url, headers);
+    return headers;
   }
 
   /**
@@ -149,19 +165,18 @@ export class JWTAccess {
             'Must pass in a stream containing the service account auth settings.'));
       }
       let s = '';
-      inputStream.setEncoding('utf8');
-      inputStream.on('data', (chunk) => {
-        s += chunk;
-      });
-      inputStream.on('end', () => {
-        try {
-          const data = JSON.parse(s);
-          this.fromJSON(data);
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
+      inputStream.setEncoding('utf8')
+          .on('data', (chunk) => s += chunk)
+          .on('error', reject)
+          .on('end', () => {
+            try {
+              const data = JSON.parse(s);
+              this.fromJSON(data);
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          });
     });
   }
 }

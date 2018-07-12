@@ -26,6 +26,7 @@ import url from 'url';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
+import * as messages from '../src/messages';
 assert.rejects = require('assert-rejects');
 
 nock.disableNetConnect();
@@ -1085,4 +1086,12 @@ it('should obtain token info', async () => {
   assert.equal(info.aud, tokenInfo.aud);
   assert.equal(info.user_id, tokenInfo.user_id);
   assert.deepEqual(info.scopes, tokenInfo.scope.split(' '));
+});
+
+it('should warn about deprecation of getRequestMetadata', done => {
+  const stub = sandbox.stub(messages, 'warn');
+  client.getRequestMetadata(null, () => {
+    assert.equal(stub.calledOnce, true);
+    done();
+  });
 });

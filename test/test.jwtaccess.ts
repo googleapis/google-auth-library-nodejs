@@ -20,6 +20,7 @@ import jws from 'jws';
 import sinon, {SinonSandbox} from 'sinon';
 
 import {JWTAccess} from '../src';
+import * as messages from '../src/messages';
 
 const keypair = require('keypair');
 
@@ -47,51 +48,48 @@ afterEach(() => {
 });
 
 it('should emit warning for createScopedRequired', () => {
-  let called = false;
-  sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
+  const stub = sandbox.stub(process, 'emitWarning');
   client.createScopedRequired();
-  assert.equal(called, true);
+  assert(stub.called);
 });
 
-it('getRequestMetadata should create a signed JWT token as the access token',
+it('getRequestHeaders should create a signed JWT token as the access token',
    () => {
      const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestMetadata(testUri);
-     assert.notStrictEqual(
-         null, res.headers, 'an creds object should be present');
-     const decoded = jws.decode(
-         (res.headers!.Authorization as string).replace('Bearer ', ''));
+     const headers = client.getRequestHeaders(testUri);
+     assert.notStrictEqual(null, headers, 'an creds object should be present');
+     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
      const payload = JSON.parse(decoded.payload);
      assert.strictEqual(email, payload.iss);
      assert.strictEqual(email, payload.sub);
      assert.strictEqual(testUri, payload.aud);
    });
 
-it('getRequestMetadata should not allow overriding with additionalClaims', () => {
+it('getRequestHeaders should not allow overriding with additionalClaims', () => {
   const client = new JWTAccess(email, keys.private);
   const additionalClaims = {iss: 'not-the-email'};
   assert.throws(() => {
-    client.getRequestMetadata(testUri, additionalClaims);
+    client.getRequestHeaders(testUri, additionalClaims);
   }, /^Error: The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.$/);
 });
 
-it('getRequestMetadata should return a cached token on the second request',
+it('getRequestHeaders should return a cached token on the second request',
    () => {
      const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestMetadata(testUri);
-     const res2 = client.getRequestMetadata(testUri);
+     const res = client.getRequestHeaders(testUri);
+     const res2 = client.getRequestHeaders(testUri);
      assert.strictEqual(res, res2);
    });
 
-it('getRequestMetadata should not return cached tokens older than an hour',
+it('getRequestHeaders should not return cached tokens older than an hour',
    () => {
      const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestMetadata(testUri);
+     const res = client.getRequestHeaders(testUri);
      const realDateNow = Date.now;
      try {
        // go forward in time one hour (plus a little)
        Date.now = () => realDateNow() + (1000 * 60 * 60) + 10;
-       const res2 = client.getRequestMetadata(testUri);
+       const res2 = client.getRequestHeaders(testUri);
        assert.notEqual(res, res2);
      } finally {
        // return date.now to it's normally scheduled programming
@@ -169,3 +167,10 @@ it('fromStream should construct a JWT Header instance from a stream',
      assert.equal(json.private_key, client.key);
      assert.equal(json.client_email, client.email);
    });
+
+it('should warn about deprecation of getRequestMetadata', () => {
+  const client = new JWTAccess(email, keys.private);
+  const stub = sandbox.stub(messages, 'warn');
+  client.getRequestMetadata(testUri);
+  assert.equal(stub.calledOnce, true);
+});
