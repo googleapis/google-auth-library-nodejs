@@ -141,7 +141,7 @@ it('should return a helpful message on request response.statusCode 403', async (
       'Compute Engine instance does not have the correct permission scopes specified. ' +
       'Could not refresh access token.');
 
-  await assert.rejects(compute.request({url}), expected);
+  await assertRejects(compute.request({url}), expected);
   scopes.forEach(s => s.done());
 });
 
@@ -159,7 +159,7 @@ it('should return a helpful message on request response.statusCode 404', async (
       'token for the Compute Engine built-in service account. This may be because the ' +
       'Compute Engine instance does not have any permission scopes specified.');
 
-  await assert.rejects(compute.request({url}), expected);
+  await assertRejects(compute.request({url}), expected);
   scope.done();
 });
 
@@ -178,7 +178,7 @@ it('should return a helpful message on token refresh response.statusCode 403',
          'token for the Compute Engine built-in service account. This may be because the ' +
          'Compute Engine instance does not have the correct permission scopes specified. ' +
          'Could not refresh access token.');
-     await assert.rejects(compute.request({}), expected);
+     await assertRejects(compute.request({}), expected);
      scope.done();
    });
 
@@ -200,7 +200,7 @@ it('should return a helpful message on token refresh response.statusCode 404',
          'Compute Engine instance does not have any permission scopes specified. Could not ' +
          'refresh access token.');
 
-     await assert.rejects(compute.request({}), expected);
+     await assertRejects(compute.request({}), expected);
      scope.done();
    });
 
