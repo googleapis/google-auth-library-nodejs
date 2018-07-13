@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import cp from 'child_process';
-import mv from 'mv';
+import * as cp from 'child_process';
+import * as mv from 'mv';
 import {ncp} from 'ncp';
-import pify from 'pify';
-import tmp from 'tmp';
+import * as pify from 'pify';
+import * as tmp from 'tmp';
 
 const mvp = pify(mv);
 const ncpp = pify(ncp);

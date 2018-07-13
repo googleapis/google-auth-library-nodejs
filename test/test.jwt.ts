@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import * as fs from 'fs';
-import jws from 'jws';
-import nock from 'nock';
-import sinon, {SinonSandbox} from 'sinon';
+import * as jws from 'jws';
+import * as nock from 'nock';
+import * as sinon from 'sinon';
 
 import {JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
@@ -59,7 +59,7 @@ function createGTokenMock(body: CredentialRequest) {
 // set up the test json and the jwt instance being tested.
 let jwt: JWT;
 let json: JWTInput;
-let sandbox: SinonSandbox;
+let sandbox: sinon.SinonSandbox;
 beforeEach(() => {
   json = createJSON();
   jwt = new JWT();

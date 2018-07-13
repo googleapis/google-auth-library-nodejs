@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
-import nock from 'nock';
-import sinon, {SinonSandbox} from 'sinon';
+import * as nock from 'nock';
+import * as sinon from 'sinon';
 import {Compute} from '../src';
-assert.rejects = require('assert-rejects');
+const assertRejects = require('assert-rejects');
 
 nock.disableNetConnect();
 
@@ -37,7 +37,7 @@ function mockExample() {
 }
 
 // set up compute client.
-let sandbox: SinonSandbox;
+let sandbox: sinon.SinonSandbox;
 let compute: Compute;
 beforeEach(() => {
   compute = new Compute();

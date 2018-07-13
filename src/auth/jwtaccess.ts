@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import jws from 'jws';
-import LRU from 'lru-cache';
+import * as jws from 'jws';
+import * as LRU from 'lru-cache';
 import * as stream from 'stream';
 
 import * as messages from '../messages';

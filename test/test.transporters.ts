@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import {AxiosRequestConfig} from 'axios';
-import nock from 'nock';
+import * as nock from 'nock';
 
 import {DefaultTransporter, RequestError} from '../src/transporters';
-assert.rejects = require('assert-rejects');
+const assertRejects = require('assert-rejects');
 
 const savedEnv = process.env;
 afterEach(() => {

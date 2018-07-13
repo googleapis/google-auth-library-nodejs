@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
-import sinon, {SinonSandbox} from 'sinon';
+import * as assert from 'assert';
+import * as sinon from 'sinon';
 
 import {IAMAuth} from '../src';
 import * as messages from '../src/messages';
@@ -23,7 +23,7 @@ import * as messages from '../src/messages';
 const testSelector = 'a-test-selector';
 const testToken = 'a-test-token';
 
-let sandbox: SinonSandbox;
+let sandbox: sinon.SinonSandbox;
 let client: IAMAuth;
 beforeEach(() => {
   sandbox = sinon.createSandbox();

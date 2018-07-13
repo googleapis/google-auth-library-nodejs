@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
-import child_process from 'child_process';
-import crypto from 'crypto';
+import * as assert from 'assert';
+import * as child_process from 'child_process';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
-import nock from 'nock';
-import path from 'path';
-import sinon from 'sinon';
-assert.rejects = require('assert-rejects');
+import * as nock from 'nock';
+import * as path from 'path';
+import * as sinon from 'sinon';
+const assertRejects = require('assert-rejects');
 
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
