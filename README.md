@@ -347,7 +347,7 @@ When HTTP_PROXY / http_proxy are set, they will be used to proxy non-SSL request
 ## Compute
 If your application is running on Google Cloud Platform, you can authenticate using the default service account or by specifying a specific service account.
 
-**Note**: In most cases, you will want to use [Application Default Credentials](choosing-the-correct-credential-type-automatically).  Direct use of the `Compute` class is for very specific scenarios.
+**Note**: In most cases, you will want to use [Application Default Credentials](#choosing-the-correct-credential-type-automatically).  Direct use of the `Compute` class is for very specific scenarios.
 
 ``` js
 const {Compute} = require('google-auth-library');
