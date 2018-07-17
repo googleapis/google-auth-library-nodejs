@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import {AxiosRequestConfig} from 'axios';
-import nock from 'nock';
+import * as nock from 'nock';
 
 import {DefaultTransporter, RequestError} from '../src/transporters';
-assert.rejects = require('assert-rejects');
+const assertRejects = require('assert-rejects');
 
 const savedEnv = process.env;
 afterEach(() => {
@@ -124,7 +124,7 @@ it('should support invocation with async/await', async () => {
 it('should throw if using async/await', async () => {
   const url = 'http://example.com';
   const scope = nock(url).get('/').reply(500, '🦃');
-  await assert.rejects(transporter.request({url}), /🦃/);
+  await assertRejects(transporter.request({url}), /🦃/);
   scope.done();
 });
 

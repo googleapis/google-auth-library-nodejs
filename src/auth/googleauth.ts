@@ -16,14 +16,14 @@
 
 import {AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
 import * as http from 'http';
-import os from 'os';
-import path from 'path';
+import * as os from 'os';
+import * as path from 'path';
 import * as stream from 'stream';
-import util from 'util';
+import * as util from 'util';
 
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';

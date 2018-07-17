@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import {AxiosError} from 'axios';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
-import nock from 'nock';
-import path from 'path';
-import qs from 'querystring';
-import sinon, {SinonSandbox} from 'sinon';
-import url from 'url';
+import * as nock from 'nock';
+import * as path from 'path';
+import * as qs from 'querystring';
+import * as sinon from 'sinon';
+import * as url from 'url';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 import * as messages from '../src/messages';
-assert.rejects = require('assert-rejects');
+const assertRejects = require('assert-rejects');
 
 nock.disableNetConnect();
 
@@ -45,7 +45,7 @@ const certsResPath =
     path.join(__dirname, '../../test/fixtures/oauthcerts.json');
 
 let client: OAuth2Client;
-let sandbox: SinonSandbox;
+let sandbox: sinon.SinonSandbox;
 beforeEach(() => {
   client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
   sandbox = sinon.createSandbox();

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
-import child_process from 'child_process';
-import crypto from 'crypto';
+import * as assert from 'assert';
+import * as child_process from 'child_process';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
-import nock from 'nock';
-import path from 'path';
-import sinon from 'sinon';
-assert.rejects = require('assert-rejects');
+import * as nock from 'nock';
+import * as path from 'path';
+import * as sinon from 'sinon';
+const assertRejects = require('assert-rejects');
 
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
@@ -425,7 +425,7 @@ it('getApplicationCredentialsFromFilePath should handle errors thrown from creat
    async () => {
      // Set up a mock to throw from the createReadStream method.
      sandbox.stub(auth, '_createReadStream').throws('🤮');
-     await assert.rejects(
+     await assertRejects(
          auth._getApplicationCredentialsFromFilePath(
              './test/fixtures/private.json'),
          /🤮/);
@@ -434,7 +434,7 @@ it('getApplicationCredentialsFromFilePath should handle errors thrown from creat
 it('getApplicationCredentialsFromFilePath should handle errors thrown from fromStream',
    async () => {
      sandbox.stub(auth, 'fromStream').throws('🤮');
-     await assert.rejects(
+     await assertRejects(
          auth._getApplicationCredentialsFromFilePath(
              './test/fixtures/private.json'),
          /🤮/);
@@ -444,7 +444,7 @@ it('getApplicationCredentialsFromFilePath should handle errors passed from fromS
    async () => {
      // Set up a mock to return an error from the fromStream method.
      sandbox.stub(auth, 'fromStream').throws('🤮');
-     await assert.rejects(
+     await assertRejects(
          auth._getApplicationCredentialsFromFilePath(
              './test/fixtures/private.json'),
          /🤮/);
@@ -675,7 +675,7 @@ it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure o
      auth._fileExists = () => true;
      sandbox.stub(auth, '_getApplicationCredentialsFromFilePath')
          .rejects('🤮');
-     await assert.rejects(
+     await assertRejects(
          auth._tryGetApplicationCredentialsFromWellKnownFile(), /🤮/);
    });
 
@@ -688,7 +688,7 @@ it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure o
      auth._fileExists = () => true;
      sandbox.stub(auth, '_getApplicationCredentialsFromFilePath')
          .rejects('🤮');
-     await assert.rejects(
+     await assertRejects(
          auth._tryGetApplicationCredentialsFromWellKnownFile(), /🤮/);
    });
 
@@ -969,7 +969,7 @@ it('getApplicationDefault should report GCE error when checking for GCE fails',
      auth._osPlatform = () => 'win32';
      auth._fileExists = () => false;
      sandbox.stub(auth, '_checkIsGCE').rejects('🤮');
-     await assert.rejects(
+     await assertRejects(
          auth.getApplicationDefault(),
          /Unexpected error determining execution environment/);
    });
@@ -1030,7 +1030,7 @@ it('_checkIsGCE should retry the check for isGCE on transient http errors',
 it('_checkIsGCE should throw on unexpected errors', async () => {
   assert.notEqual(true, auth.isGCE);
   const scope = nock404GCE();
-  await assert.rejects(auth._checkIsGCE());
+  await assertRejects(auth._checkIsGCE());
   assert.equal(undefined, auth.isGCE);
   scope.done();
 });
@@ -1094,7 +1094,7 @@ it('getCredentials should error if metadata server is not reachable',
          [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(404)];
      await auth._checkIsGCE();
      assert.equal(true, auth.isGCE);
-     await assert.rejects(auth.getCredentials());
+     await assertRejects(auth.getCredentials());
      scopes.forEach(s => s.done());
    });
 
@@ -1103,7 +1103,7 @@ it('getCredentials should error if body is empty', async () => {
       [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {})];
   await auth._checkIsGCE();
   assert.equal(true, auth.isGCE);
-  await assert.rejects(auth.getCredentials());
+  await assertRejects(auth.getCredentials());
   scopes.forEach(s => s.done());
 });
 
@@ -1147,7 +1147,7 @@ it('getCredentials should return error when env const is not set', async () => {
   const client =
       await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
   assert.equal(null, client);
-  await assert.rejects(auth.getCredentials());
+  await assertRejects(auth.getCredentials());
 });
 
 it('should use jsonContent if available', async () => {
@@ -1167,7 +1167,7 @@ it('should accept keyFilename to get a client', async () => {
 
 it('should error when invalid keyFilename passed to getClient', async () => {
   const auth = new GoogleAuth();
-  await assert.rejects(
+  await assertRejects(
       auth.getClient({keyFilename: './funky/fresh.json'}),
       /ENOENT: no such file or directory/);
 });

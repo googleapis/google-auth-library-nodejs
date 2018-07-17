@@ -15,9 +15,9 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import * as http from 'http';
-import querystring from 'querystring';
+import * as querystring from 'querystring';
 import * as stream from 'stream';
 import * as messages from '../messages';
 import {PemVerifier} from './../pemverifier';

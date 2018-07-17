@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import * as fs from 'fs';
-import jws from 'jws';
-import sinon, {SinonSandbox} from 'sinon';
+import * as jws from 'jws';
+import * as sinon from 'sinon';
 
 import {JWTAccess} from '../src';
 import * as messages from '../src/messages';
@@ -38,7 +38,7 @@ const testUri = 'http:/example.com/my_test_service';
 const email = 'foo@serviceaccount.com';
 
 let client: JWTAccess;
-let sandbox: SinonSandbox;
+let sandbox: sinon.SinonSandbox;
 beforeEach(() => {
   client = new JWTAccess();
   sandbox = sinon.createSandbox();
