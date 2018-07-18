@@ -43,7 +43,7 @@ it('passes the token and selector to the callback ', async () => {
 it('should warn about deprecation of getRequestMetadata', done => {
   const stub = sandbox.stub(messages, 'warn');
   client.getRequestMetadata(null, () => {
-    assert.equal(stub.calledOnce, true);
+    assert.strictEqual(stub.calledOnce, true);
     done();
   });
 });

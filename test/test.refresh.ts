@@ -77,21 +77,21 @@ it('fromJSON should create UserRefreshClient with clientId_', () => {
   const json = createJSON();
   const refresh = new UserRefreshClient();
   const result = refresh.fromJSON(json);
-  assert.equal(json.client_id, refresh._clientId);
+  assert.strictEqual(json.client_id, refresh._clientId);
 });
 
 it('fromJSON should create UserRefreshClient with clientSecret_', () => {
   const json = createJSON();
   const refresh = new UserRefreshClient();
   const result = refresh.fromJSON(json);
-  assert.equal(json.client_secret, refresh._clientSecret);
+  assert.strictEqual(json.client_secret, refresh._clientSecret);
 });
 
 it('fromJSON should create UserRefreshClient with _refreshToken', () => {
   const json = createJSON();
   const refresh = new UserRefreshClient();
   const result = refresh.fromJSON(json);
-  assert.equal(json.refresh_token, refresh._refreshToken);
+  assert.strictEqual(json.refresh_token, refresh._refreshToken);
 });
 
 it('fromStream should error on null stream', done => {
@@ -99,7 +99,7 @@ it('fromStream should error on null stream', done => {
   // Test verifies invalid parameter tests, which requires cast to any.
   // tslint:disable-next-line no-any
   (refresh as any).fromStream(null, (err: Error) => {
-    assert.equal(true, err instanceof Error);
+    assert.strictEqual(true, err instanceof Error);
     done();
   });
 });
@@ -117,9 +117,9 @@ it('fromStream should read the stream and create a UserRefreshClient', done => {
   refresh.fromStream(stream, (err) => {
     assert.ifError(err);
     // Ensure that the correct bits were pulled from the stream.
-    assert.equal(json.client_id, refresh._clientId);
-    assert.equal(json.client_secret, refresh._clientSecret);
-    assert.equal(json.refresh_token, refresh._refreshToken);
+    assert.strictEqual(json.client_id, refresh._clientId);
+    assert.strictEqual(json.client_secret, refresh._clientSecret);
+    assert.strictEqual(json.refresh_token, refresh._refreshToken);
     done();
   });
 });

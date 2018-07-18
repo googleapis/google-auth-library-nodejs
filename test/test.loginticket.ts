@@ -19,12 +19,12 @@ import {LoginTicket} from '../src/auth/loginticket';
 
 it('should return null userId even if no payload', () => {
   const ticket = new LoginTicket();
-  assert.equal(ticket.getUserId(), null);
+  assert.strictEqual(ticket.getUserId(), null);
 });
 
 it('should return envelope', () => {
   const ticket = new LoginTicket('myenvelope');
-  assert.equal(ticket.getEnvelope(), 'myenvelope');
+  assert.strictEqual(ticket.getEnvelope(), 'myenvelope');
 });
 
 it('should return attributes from getAttributes', () => {
