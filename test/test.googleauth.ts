@@ -1244,8 +1244,12 @@ it('should get the current environment if GKE', async () => {
 
 it('should get the current environment if GCF', async () => {
   envDetect.clear();
+  // X_GOOGLE_FUNCTION_NAME is newer.
+  mockEnvVar('X_GOOGLE_FUNCTION_NAME', 'DOGGY');
+  let env = await auth.getEnv();
+  assert.equal(env, envDetect.GCPEnv.CLOUD_FUNCTIONS);
   mockEnvVar('FUNCTION_NAME', 'DOGGY');
-  const env = await auth.getEnv();
+  env = await auth.getEnv();
   assert.equal(env, envDetect.GCPEnv.CLOUD_FUNCTIONS);
 });
 
