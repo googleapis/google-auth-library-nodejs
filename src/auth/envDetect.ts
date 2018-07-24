@@ -52,7 +52,8 @@ function isAppEngine() {
 }
 
 function isCloudFunction() {
-  return !!process.env.FUNCTION_NAME;
+  // X_GOOGLE_FUNCTION_NAME is a new alias for FUNCTION_NAME.
+  return !!process.env.X_GOOGLE_FUNCTION_NAME || !!process.env.FUNCTION_NAME;
 }
 
 async function isKubernetesEngine() {
