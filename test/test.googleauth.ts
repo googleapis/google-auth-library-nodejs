@@ -243,19 +243,19 @@ it('fromJSON should create JWT with private_key', () => {
 it('fromJSON should create JWT with null scopes', () => {
   const json = createJwtJSON();
   const result = auth.fromJSON(json);
-  assert.strictEqual(null, (result as JWT).scopes);
+  assert.strictEqual(undefined, (result as JWT).scopes);
 });
 
 it('fromJSON should create JWT with null subject', () => {
   const json = createJwtJSON();
   const result = auth.fromJSON(json);
-  assert.strictEqual(null, (result as JWT).subject);
+  assert.strictEqual(undefined, (result as JWT).subject);
 });
 
 it('fromJSON should create JWT with null keyFile', () => {
   const json = createJwtJSON();
   const result = auth.fromJSON(json);
-  assert.strictEqual(null, (result as JWT).keyFile);
+  assert.strictEqual(undefined, (result as JWT).keyFile);
 });
 
 it('fromJSON should create JWT which eagerRefreshThresholdMillisset when this is set for GoogleAuth',
@@ -289,9 +289,9 @@ it('fromStream should read the stream and create a jwt', async () => {
   // Ensure that the correct bits were pulled from the stream.
   assert.strictEqual(privateJSON.private_key, jwt.key);
   assert.strictEqual(privateJSON.client_email, jwt.email);
-  assert.strictEqual(null, jwt.keyFile);
-  assert.strictEqual(null, jwt.subject);
-  assert.strictEqual(null, jwt.scope);
+  assert.strictEqual(undefined, jwt.keyFile);
+  assert.strictEqual(undefined, jwt.subject);
+  assert.strictEqual(undefined, jwt.scope);
 });
 
 it('fromStream should read the stream and create a jwt with eager refresh',
@@ -304,9 +304,9 @@ it('fromStream should read the stream and create a jwt with eager refresh',
      // Ensure that the correct bits were pulled from the stream.
      assert.strictEqual(privateJSON.private_key, jwt.key);
      assert.strictEqual(privateJSON.client_email, jwt.email);
-     assert.strictEqual(null, jwt.keyFile);
-     assert.strictEqual(null, jwt.subject);
-     assert.strictEqual(null, jwt.scope);
+     assert.strictEqual(undefined, jwt.keyFile);
+     assert.strictEqual(undefined, jwt.subject);
+     assert.strictEqual(undefined, jwt.scope);
      assert.strictEqual(1000 * 60 * 60, jwt.eagerRefreshThresholdMillis);
    });
 
@@ -458,9 +458,9 @@ it('getApplicationCredentialsFromFilePath should correctly read the file and cre
      const jwt = result as JWT;
      assert.strictEqual(privateJSON.private_key, jwt.key);
      assert.strictEqual(privateJSON.client_email, jwt.email);
-     assert.strictEqual(null, jwt.keyFile);
-     assert.strictEqual(null, jwt.subject);
-     assert.strictEqual(null, jwt.scope);
+     assert.strictEqual(undefined, jwt.keyFile);
+     assert.strictEqual(undefined, jwt.subject);
+     assert.strictEqual(undefined, jwt.scope);
    });
 
 it('getApplicationCredentialsFromFilePath should correctly read the file and create a valid JWT with eager refresh',
@@ -471,9 +471,9 @@ it('getApplicationCredentialsFromFilePath should correctly read the file and cre
      const jwt = result as JWT;
      assert.strictEqual(privateJSON.private_key, jwt.key);
      assert.strictEqual(privateJSON.client_email, jwt.email);
-     assert.strictEqual(null, jwt.keyFile);
-     assert.strictEqual(null, jwt.subject);
-     assert.strictEqual(null, jwt.scope);
+     assert.strictEqual(undefined, jwt.keyFile);
+     assert.strictEqual(undefined, jwt.subject);
+     assert.strictEqual(undefined, jwt.scope);
      assert.strictEqual(7000, jwt.eagerRefreshThresholdMillis);
    });
 
@@ -517,9 +517,9 @@ it('tryGetApplicationCredentialsFromEnvironmentVariable should handle valid envi
      const jwt = result as JWT;
      assert.strictEqual(privateJSON.private_key, jwt.key);
      assert.strictEqual(privateJSON.client_email, jwt.email);
-     assert.strictEqual(null, jwt.keyFile);
-     assert.strictEqual(null, jwt.subject);
-     assert.strictEqual(null, jwt.scope);
+     assert.strictEqual(undefined, jwt.keyFile);
+     assert.strictEqual(undefined, jwt.subject);
+     assert.strictEqual(undefined, jwt.scope);
    });
 
 it('tryGetApplicationCredentialsFromEnvironmentVariable should handle valid environment variable when there is eager refresh set',
@@ -533,9 +533,9 @@ it('tryGetApplicationCredentialsFromEnvironmentVariable should handle valid envi
      const jwt = result as JWT;
      assert.strictEqual(privateJSON.private_key, jwt.key);
      assert.strictEqual(privateJSON.client_email, jwt.email);
-     assert.strictEqual(null, jwt.keyFile);
-     assert.strictEqual(null, jwt.subject);
-     assert.strictEqual(null, jwt.scope);
+     assert.strictEqual(undefined, jwt.keyFile);
+     assert.strictEqual(undefined, jwt.subject);
+     assert.strictEqual(undefined, jwt.scope);
      assert.strictEqual(60 * 60 * 1000, jwt.eagerRefreshThresholdMillis);
    });
 
@@ -826,7 +826,7 @@ it('getApplicationDefault should return a new credential the first time and a ca
      // this is a new credentials instance.
      // Test verifies invalid parameter tests, which requires cast to any.
      // tslint:disable-next-line no-any
-     assert.strictEqual(null, (cachedCredential as any).specialTestBit);
+     assert.strictEqual(undefined, (cachedCredential as any).specialTestBit);
 
      // Now set the special test bit.
      // Test verifies invalid parameter tests, which requires cast to any.
@@ -859,7 +859,7 @@ it('getApplicationDefault should return a new credential the first time and a ca
      // Test verifies invalid parameter tests, which requires cast to
      // any.
      // tslint:disable-next-line no-any
-     assert.strictEqual(null, (result3 as any).specialTestBit);
+     assert.strictEqual(undefined, (result3 as any).specialTestBit);
      assert.notEqual(cachedCredential, result3);
    });
 
@@ -907,9 +907,9 @@ it('getApplicationDefault should use environment variable when it is set',
      const client = res.credential as JWT;
      assert.strictEqual(privateJSON.private_key, client.key);
      assert.strictEqual(privateJSON.client_email, client.email);
-     assert.strictEqual(null, client.keyFile);
-     assert.strictEqual(null, client.subject);
-     assert.strictEqual(null, client.scope);
+     assert.strictEqual(undefined, client.keyFile);
+     assert.strictEqual(undefined, client.subject);
+     assert.strictEqual(undefined, client.scope);
    });
 
 it('should use well-known file when it is available and env const is not set',
@@ -932,9 +932,9 @@ it('should use well-known file when it is available and env const is not set',
      const client = res.credential as JWT;
      assert.strictEqual(private2JSON.private_key, client.key);
      assert.strictEqual(private2JSON.client_email, client.email);
-     assert.strictEqual(null, client.keyFile);
-     assert.strictEqual(null, client.subject);
-     assert.strictEqual(null, client.scope);
+     assert.strictEqual(undefined, client.keyFile);
+     assert.strictEqual(undefined, client.subject);
+     assert.strictEqual(undefined, client.scope);
    });
 
 it('getApplicationDefault should use GCE when well-known file and env const are not set',
@@ -995,9 +995,9 @@ it('getApplicationDefault should also get project ID', async () => {
   assert.strictEqual(privateJSON.private_key, client.key);
   assert.strictEqual(privateJSON.client_email, client.email);
   assert.strictEqual(res.projectId, fixedProjectId);
-  assert.strictEqual(null, client.keyFile);
-  assert.strictEqual(null, client.subject);
-  assert.strictEqual(null, client.scope);
+  assert.strictEqual(undefined, client.keyFile);
+  assert.strictEqual(undefined, client.subject);
+  assert.strictEqual(undefined, client.scope);
 });
 
 it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
@@ -1084,7 +1084,7 @@ it('getCredentials should get metadata from the server when running on GCE',
      assert(body);
      assert.strictEqual(
          body!.client_email, 'test-creds@test-creds.iam.gserviceaccount.com');
-     assert.strictEqual(body!.private_key, null);
+     assert.strictEqual(body!.private_key, undefined);
      scope.done();
    });
 
@@ -1214,14 +1214,14 @@ it('should get request headers', async () => {
   const {auth, scopes} = mockGCE();
   const headers = await auth.getRequestHeaders();
   scopes.forEach(s => s.done());
-  assert.deepEqual(headers, {Authorization: 'Bearer abc123'});
+  assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
 });
 
 it('should authorize the request', async () => {
   const {auth, scopes} = mockGCE();
   const opts = await auth.authorizeRequest({url: 'http://example.com'});
   scopes.forEach(s => s.done());
-  assert.deepEqual(opts.headers, {Authorization: 'Bearer abc123'});
+  assert.deepStrictEqual(opts.headers, {Authorization: 'Bearer abc123'});
 });
 
 it('should get the current environment if GCE', async () => {
@@ -1264,7 +1264,7 @@ it('should make the request', async () => {
   scopes.push(scope);
   const res = await auth.request({url});
   scopes.forEach(s => s.done());
-  assert.deepEqual(res.data, data);
+  assert.deepStrictEqual(res.data, data);
 });
 
 it('sign should use the private key for JWT clients', async () => {

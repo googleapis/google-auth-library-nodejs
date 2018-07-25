@@ -705,7 +705,7 @@ it('should return error in callback on request', done => {
   client.request({}, (err, result) => {
     assert.strictEqual(
         err!.message, 'No access, refresh token or API key is set.');
-    assert.strictEqual(result, null);
+    assert.strictEqual(result, undefined);
     done();
   });
 });
@@ -721,7 +721,7 @@ it('should emit warning on refreshAccessToken', async () => {
 it('should return error in callback on refreshAccessToken', done => {
   client.refreshAccessToken((err, result) => {
     assert.strictEqual(err!.message, 'No refresh token is set.');
-    assert.strictEqual(result, null);
+    assert.strictEqual(result, undefined);
     done();
   });
 });
@@ -964,7 +964,7 @@ it('should clear credentials and return error if no access token to revoke',
      client.credentials = {refresh_token: 'abc'};
      client.revokeCredentials((err, result) => {
        assert.strictEqual(err!.message, 'No access token to revoke.');
-       assert.strictEqual(result, null);
+       assert.strictEqual(result, undefined);
        assert.strictEqual(JSON.stringify(client.credentials), '{}');
        done();
      });
@@ -1087,7 +1087,7 @@ it('should obtain token info', async () => {
   scope.done();
   assert.strictEqual(info.aud, tokenInfo.aud);
   assert.strictEqual(info.user_id, tokenInfo.user_id);
-  assert.deepEqual(info.scopes, tokenInfo.scope.split(' '));
+  assert.deepStrictEqual(info.scopes, tokenInfo.scope.split(' '));
 });
 
 it('should warn about deprecation of getRequestMetadata', done => {

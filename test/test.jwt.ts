@@ -511,7 +511,7 @@ it('createScoped should handle null scope', () => {
     subject: 'bar@subjectaccount.com'
   });
   const clone = jwt.createScoped();
-  assert.strictEqual(null, clone.scopes);
+  assert.strictEqual(undefined, clone.scopes);
 });
 
 it('createScoped should set scope when scope was null', () => {
@@ -527,10 +527,10 @@ it('createScoped should set scope when scope was null', () => {
 it('createScoped should handle nulls', () => {
   const jwt = new JWT();
   const clone = jwt.createScoped('hi');
-  assert.strictEqual(jwt.email, null);
-  assert.strictEqual(jwt.keyFile, null);
-  assert.strictEqual(jwt.key, null);
-  assert.strictEqual(jwt.subject, null);
+  assert.strictEqual(jwt.email, undefined);
+  assert.strictEqual(jwt.keyFile, undefined);
+  assert.strictEqual(jwt.key, undefined);
+  assert.strictEqual(jwt.subject, undefined);
   assert.strictEqual('hi', clone.scopes);
 });
 
@@ -650,17 +650,17 @@ it('fromJson should create JWT with private_key', () => {
 
 it('fromJson should create JWT with null scopes', () => {
   jwt.fromJSON(json);
-  assert.strictEqual(null, jwt.scopes);
+  assert.strictEqual(undefined, jwt.scopes);
 });
 
 it('fromJson should create JWT with null subject', () => {
   jwt.fromJSON(json);
-  assert.strictEqual(null, jwt.subject);
+  assert.strictEqual(undefined, jwt.subject);
 });
 
 it('fromJson should create JWT with null keyFile', () => {
   jwt.fromJSON(json);
-  assert.strictEqual(null, jwt.keyFile);
+  assert.strictEqual(undefined, jwt.keyFile);
 });
 
 it('should error on missing client_id', () => {
@@ -709,13 +709,13 @@ it('fromStream should read the stream and create a jwt', (done) => {
 
   // And pass it into the fromStream method.
   jwt.fromStream(stream, (err) => {
-    assert.strictEqual(null, err);
+    assert.strictEqual(undefined, err);
     // Ensure that the correct bits were pulled from the stream.
     assert.strictEqual(json.private_key, jwt.key);
     assert.strictEqual(json.client_email, jwt.email);
-    assert.strictEqual(null, jwt.keyFile);
-    assert.strictEqual(null, jwt.subject);
-    assert.strictEqual(null, jwt.scopes);
+    assert.strictEqual(undefined, jwt.keyFile);
+    assert.strictEqual(undefined, jwt.subject);
+    assert.strictEqual(undefined, jwt.scopes);
     done();
   });
 });

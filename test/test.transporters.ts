@@ -84,7 +84,7 @@ it('should return an error for a 404 response', done => {
   transporter.request({url}, error => {
     scope.done();
     assert.strictEqual(error!.message, 'Not found');
-    assert.strictEqual((error as RequestError).code, 404);
+    assert.strictEqual((error as RequestError).code, '404');
     done();
   });
 });
