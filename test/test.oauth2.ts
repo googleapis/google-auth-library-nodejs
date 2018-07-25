@@ -75,11 +75,11 @@ it('should generate a valid consent page url', done => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.response_type, 'code token');
-  assert.equal(query.access_type, ACCESS_TYPE);
-  assert.equal(query.scope, SCOPE);
-  assert.equal(query.client_id, CLIENT_ID);
-  assert.equal(query.redirect_uri, REDIRECT_URI);
+  assert.strictEqual(query.response_type, 'code token');
+  assert.strictEqual(query.access_type, ACCESS_TYPE);
+  assert.strictEqual(query.scope, SCOPE);
+  assert.strictEqual(query.client_id, CLIENT_ID);
+  assert.strictEqual(query.redirect_uri, REDIRECT_URI);
   done();
 });
 
@@ -98,7 +98,7 @@ it('should throw an error if generateAuthUrl is called with invalid parameters',
 it('should generate a valid code verifier and resulting challenge', () => {
   const codes = client.generateCodeVerifier();
   // ensure the code_verifier matches all requirements
-  assert.equal(codes.codeVerifier.length, 128);
+  assert.strictEqual(codes.codeVerifier.length, 128);
   const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
   assert(match);
   if (!match) return;
@@ -116,8 +116,8 @@ it('should include code challenge and method in the url', () => {
     throw new Error('Unable to parse querystring');
   }
   const props = qs.parse(parsed.query);
-  assert.equal(props.code_challenge, codes.codeChallenge);
-  assert.equal(props.code_challenge_method, CodeChallengeMethod.S256);
+  assert.strictEqual(props.code_challenge, codes.codeChallenge);
+  assert.strictEqual(props.code_challenge_method, CodeChallengeMethod.S256);
 });
 
 it('should verifyIdToken properly', async () => {
@@ -131,18 +131,18 @@ it('should verifyIdToken properly', async () => {
   client.verifySignedJwtWithCerts =
       (jwt: string, certs: {}, requiredAudience: string|string[],
        issuers?: string[], theMaxExpiry?: number) => {
-        assert.equal(jwt, idToken);
-        assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
-        assert.equal(requiredAudience, audience);
-        assert.equal(theMaxExpiry, maxExpiry);
+        assert.strictEqual(jwt, idToken);
+        assert.strictEqual(JSON.stringify(certs), JSON.stringify(fakeCerts));
+        assert.strictEqual(requiredAudience, audience);
+        assert.strictEqual(theMaxExpiry, maxExpiry);
         return new LoginTicket('c', payload);
       };
   const result = await client.verifyIdToken({idToken, audience, maxExpiry});
   scope.done();
   assert.notEqual(result, null);
   if (result) {
-    assert.equal(result.getEnvelope(), 'c');
-    assert.equal(result.getPayload(), payload);
+    assert.strictEqual(result.getEnvelope(), 'c');
+    assert.strictEqual(result.getPayload(), payload);
   }
 });
 
@@ -155,9 +155,9 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
      client.verifySignedJwtWithCerts =
          (jwt: string, certs: {}, requiredAudience: string) => {
-           assert.equal(jwt, idToken);
+           assert.strictEqual(jwt, idToken);
            assert.deepStrictEqual(certs, fakeCerts);
-           assert.equal(requiredAudience, audience);
+           assert.strictEqual(requiredAudience, audience);
            return new LoginTicket('c', payload);
          };
      assert.throws(
@@ -178,7 +178,7 @@ it('should allow scopes to be specified as array', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.scope, SCOPE_ARRAY.join(' '));
+  assert.strictEqual(query.scope, SCOPE_ARRAY.join(' '));
 });
 
 it('should set response_type param to code if none is given while generating the consent page url',
@@ -189,7 +189,7 @@ it('should set response_type param to code if none is given while generating the
        throw new Error('Unable to parse querystring');
      }
      const query = qs.parse(parsed.query);
-     assert.equal(query.response_type, 'code');
+     assert.strictEqual(query.response_type, 'code');
    });
 
 it('should verify a valid certificate against a jwt', () => {
@@ -215,7 +215,7 @@ it('should verify a valid certificate against a jwt', () => {
   data += '.' + signature;
   const login =
       client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  assert.equal(login.getUserId(), '123456789');
+  assert.strictEqual(login.getUserId(), '123456789');
 });
 
 it('should fail due to invalid audience', () => {
@@ -628,8 +628,8 @@ it('should pass due to valid issuer', () => {
 it('should be able to retrieve a list of Google certificates', (done) => {
   const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
-    assert.equal(err, null);
-    assert.equal(Object.keys(certs!).length, 2);
+    assert.strictEqual(err, null);
+    assert.strictEqual(Object.keys(certs!).length, 2);
     assert.notEqual(certs!.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
     assert.notEqual(certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
     scope.done();
@@ -649,12 +649,12 @@ it('should be able to retrieve a list of Google certificates from cache again',
              .get(certsPath)
              .replyWithFile(200, certsResPath);
      client.getFederatedSignonCerts((err, certs) => {
-       assert.equal(err, null);
-       assert.equal(Object.keys(certs!).length, 2);
+       assert.strictEqual(err, null);
+       assert.strictEqual(Object.keys(certs!).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
        client.getFederatedSignonCerts((err2, certs2) => {
-         assert.equal(err2, null);
-         assert.equal(Object.keys(certs2!).length, 2);
+         assert.strictEqual(err2, null);
+         assert.strictEqual(Object.keys(certs2!).length, 2);
          scope.done();
          done();
        });
@@ -668,7 +668,7 @@ it('should set redirect_uri if not provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.redirect_uri, REDIRECT_URI);
+  assert.strictEqual(query.redirect_uri, REDIRECT_URI);
 });
 
 it('should set client_id if not provided in options', () => {
@@ -678,7 +678,7 @@ it('should set client_id if not provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.client_id, CLIENT_ID);
+  assert.strictEqual(query.client_id, CLIENT_ID);
 });
 
 it('should override redirect_uri if provided in options', () => {
@@ -688,7 +688,7 @@ it('should override redirect_uri if provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.redirect_uri, 'overridden');
+  assert.strictEqual(query.redirect_uri, 'overridden');
 });
 
 it('should override client_id if provided in options', () => {
@@ -698,13 +698,14 @@ it('should override client_id if provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.client_id, 'client_override');
+  assert.strictEqual(query.client_id, 'client_override');
 });
 
 it('should return error in callback on request', done => {
   client.request({}, (err, result) => {
-    assert.equal(err!.message, 'No access, refresh token or API key is set.');
-    assert.equal(result, null);
+    assert.strictEqual(
+        err!.message, 'No access, refresh token or API key is set.');
+    assert.strictEqual(result, undefined);
     done();
   });
 });
@@ -713,14 +714,14 @@ it('should emit warning on refreshAccessToken', async () => {
   let warned = false;
   sandbox.stub(process, 'emitWarning').callsFake(() => warned = true);
   client.refreshAccessToken((err, result) => {
-    assert.equal(warned, true);
+    assert.strictEqual(warned, true);
   });
 });
 
 it('should return error in callback on refreshAccessToken', done => {
   client.refreshAccessToken((err, result) => {
-    assert.equal(err!.message, 'No refresh token is set.');
-    assert.equal(result, null);
+    assert.strictEqual(err!.message, 'No refresh token is set.');
+    assert.strictEqual(result, undefined);
     done();
   });
 });
@@ -746,14 +747,14 @@ it('should refresh token if missing access token', (done) => {
 
   // ensure the tokens event is raised
   client.on('tokens', tokens => {
-    assert.equal(tokens.access_token, accessToken);
+    assert.strictEqual(tokens.access_token, accessToken);
     raisedEvent = true;
   });
 
   client.request({url: 'http://example.com'}, err => {
     scopes.forEach(s => s.done());
     assert(raisedEvent);
-    assert.equal(accessToken, client.credentials.access_token);
+    assert.strictEqual(accessToken, client.credentials.access_token);
     done();
   });
 });
@@ -776,7 +777,7 @@ it('should unify the promise when refreshing the token', async () => {
     client.request({url: 'http://example.com'})
   ]);
   scopes.forEach(s => s.done());
-  assert.equal('abc123', client.credentials.access_token);
+  assert.strictEqual('abc123', client.credentials.access_token);
 });
 
 it('should clear the cached refresh token promise after completion',
@@ -798,7 +799,7 @@ it('should clear the cached refresh token promise after completion',
      client.credentials.access_token = null;
      await client.request({url: 'http://example.com'});
      scopes.forEach(s => s.done());
-     assert.equal('abc123', client.credentials.access_token);
+     assert.strictEqual('abc123', client.credentials.access_token);
    });
 
 it('should clear the cached refresh token promise after throw', async () => {
@@ -823,7 +824,7 @@ it('should clear the cached refresh token promise after throw', async () => {
   }
   await client.request({url: 'http://example.com'});
   scopes.forEach(s => s.done());
-  assert.equal('abc123', client.credentials.access_token);
+  assert.strictEqual('abc123', client.credentials.access_token);
 });
 
 it('should refresh if access token is expired', (done) => {
@@ -835,7 +836,7 @@ it('should refresh if access token is expired', (done) => {
   const scopes = mockExample();
   client.request({url: 'http://example.com'}, () => {
     scopes.forEach(s => s.done());
-    assert.equal('abc123', client.credentials.access_token);
+    assert.strictEqual('abc123', client.credentials.access_token);
     done();
   });
 });
@@ -855,7 +856,7 @@ it('should refresh if access token will expired soon and time to refresh before 
      };
      const scopes = mockExample();
      await client.request({url: 'http://example.com'});
-     assert.equal('abc123', client.credentials.access_token);
+     assert.strictEqual('abc123', client.credentials.access_token);
      scopes.forEach(s => s.done());
    });
 
@@ -874,8 +875,9 @@ it('should not refresh if access token will not expire soon and time to refresh 
      };
      const scopes = mockExample();
      await client.request({url: 'http://example.com'});
-     assert.equal('initial-access-token', client.credentials.access_token);
-     assert.equal(false, scopes[0].isDone());
+     assert.strictEqual(
+         'initial-access-token', client.credentials.access_token);
+     assert.strictEqual(false, scopes[0].isDone());
      scopes[1].done();
    });
 
@@ -887,8 +889,8 @@ it('should not refresh if not expired', done => {
   };
   const scopes = mockExample();
   client.request({url: 'http://example.com'}, () => {
-    assert.equal('initial-access-token', client.credentials.access_token);
-    assert.equal(false, scopes[0].isDone());
+    assert.strictEqual('initial-access-token', client.credentials.access_token);
+    assert.strictEqual(false, scopes[0].isDone());
     scopes[1].done();
     done();
   });
@@ -901,8 +903,8 @@ it('should assume access token is not expired', done => {
   };
   const scopes = mockExample();
   client.request({url: 'http://example.com'}, () => {
-    assert.equal('initial-access-token', client.credentials.access_token);
-    assert.equal(false, scopes[0].isDone());
+    assert.strictEqual('initial-access-token', client.credentials.access_token);
+    assert.strictEqual(false, scopes[0].isDone());
     scopes[1].done();
     done();
   });
@@ -921,7 +923,7 @@ it('should assume access token is not expired', done => {
     client.request({url: 'http://example.com/access'}, err => {
       scope.done();
       scopes[0].done();
-      assert.equal('abc123', client.credentials.access_token);
+      assert.strictEqual('abc123', client.credentials.access_token);
       done();
     });
   });
@@ -938,7 +940,7 @@ it('should not retry requests with streaming data', done => {
     scope.done();
     const e = err as AxiosError;
     assert(e);
-    assert.equal(e.response!.status, 401);
+    assert.strictEqual(e.response!.status, 401);
     done();
   });
 });
@@ -949,9 +951,9 @@ it('should revoke credentials if access token present', done => {
                     .reply(200, {success: true});
   client.credentials = {access_token: 'abc', refresh_token: 'abc'};
   client.revokeCredentials((err, result) => {
-    assert.equal(err, null);
-    assert.equal(result!.data!.success, true);
-    assert.equal(JSON.stringify(client.credentials), '{}');
+    assert.strictEqual(err, null);
+    assert.strictEqual(result!.data!.success, true);
+    assert.strictEqual(JSON.stringify(client.credentials), '{}');
     scope.done();
     done();
   });
@@ -961,9 +963,9 @@ it('should clear credentials and return error if no access token to revoke',
    done => {
      client.credentials = {refresh_token: 'abc'};
      client.revokeCredentials((err, result) => {
-       assert.equal(err!.message, 'No access token to revoke.');
-       assert.equal(result, null);
-       assert.equal(JSON.stringify(client.credentials), '{}');
+       assert.strictEqual(err!.message, 'No access token to revoke.');
+       assert.strictEqual(result, undefined);
+       assert.strictEqual(JSON.stringify(client.credentials), '{}');
        done();
      });
    });
@@ -998,7 +1000,7 @@ it('getToken should set redirect_uri if not provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.redirect_uri, REDIRECT_URI);
+  assert.strictEqual(params.redirect_uri, REDIRECT_URI);
 });
 
 it('getToken should set client_id if not provided in options', async () => {
@@ -1014,7 +1016,7 @@ it('getToken should set client_id if not provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.client_id, CLIENT_ID);
+  assert.strictEqual(params.client_id, CLIENT_ID);
 });
 
 it('getToken should override redirect_uri if provided in options', async () => {
@@ -1031,7 +1033,7 @@ it('getToken should override redirect_uri if provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.redirect_uri, 'overridden');
+  assert.strictEqual(params.redirect_uri, 'overridden');
 });
 
 it('getToken should override client_id if provided in options', async () => {
@@ -1048,7 +1050,7 @@ it('getToken should override client_id if provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.client_id, 'overridden');
+  assert.strictEqual(params.client_id, 'overridden');
 });
 
 it('should return expiry_date', done => {
@@ -1083,15 +1085,15 @@ it('should obtain token info', async () => {
 
   const info = await client.getTokenInfo(accessToken);
   scope.done();
-  assert.equal(info.aud, tokenInfo.aud);
-  assert.equal(info.user_id, tokenInfo.user_id);
-  assert.deepEqual(info.scopes, tokenInfo.scope.split(' '));
+  assert.strictEqual(info.aud, tokenInfo.aud);
+  assert.strictEqual(info.user_id, tokenInfo.user_id);
+  assert.deepStrictEqual(info.scopes, tokenInfo.scope.split(' '));
 });
 
 it('should warn about deprecation of getRequestMetadata', done => {
   const stub = sandbox.stub(messages, 'warn');
   client.getRequestMetadata(null, () => {
-    assert.equal(stub.calledOnce, true);
+    assert.strictEqual(stub.calledOnce, true);
     done();
   });
 });

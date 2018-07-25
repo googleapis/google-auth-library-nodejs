@@ -99,7 +99,7 @@ it('getRequestHeaders should not return cached tokens older than an hour',
 
 it('createScopedRequired should return false', () => {
   const client = new JWTAccess('foo@serviceaccount.com', null);
-  assert.equal(false, client.createScopedRequired());
+  assert.strictEqual(false, client.createScopedRequired());
 });
 
 it('fromJson should error on null json', () => {
@@ -134,19 +134,19 @@ it('fromJson should error on missing private_key', () => {
 
 it('fromJson should create JWT with client_email', () => {
   client.fromJSON(json);
-  assert.equal(json.client_email, client.email);
+  assert.strictEqual(json.client_email, client.email);
 });
 
 it('fromJson should create JWT with private_key', () => {
   client.fromJSON(json);
-  assert.equal(json.private_key, client.key);
+  assert.strictEqual(json.private_key, client.key);
 });
 
 it('fromStream should error on null stream', (done) => {
   // Test verifies invalid parameter tests, which requires cast to any.
   // tslint:disable-next-line no-any
   (client as any).fromStream(null, (err: Error) => {
-    assert.equal(true, err instanceof Error);
+    assert.strictEqual(true, err instanceof Error);
     done();
   });
 });
@@ -164,13 +164,13 @@ it('fromStream should construct a JWT Header instance from a stream',
      // And pass it into the fromStream method.
      await client.fromStream(stream);
      // Ensure that the correct bits were pulled from the stream.
-     assert.equal(json.private_key, client.key);
-     assert.equal(json.client_email, client.email);
+     assert.strictEqual(json.private_key, client.key);
+     assert.strictEqual(json.client_email, client.email);
    });
 
 it('should warn about deprecation of getRequestMetadata', () => {
   const client = new JWTAccess(email, keys.private);
   const stub = sandbox.stub(messages, 'warn');
   client.getRequestMetadata(testUri);
-  assert.equal(stub.calledOnce, true);
+  assert.strictEqual(stub.calledOnce, true);
 });

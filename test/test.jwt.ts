@@ -75,14 +75,14 @@ it('should emit warning for createScopedRequired', () => {
   let called = false;
   sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
   jwt.createScopedRequired();
-  assert.equal(called, true);
+  assert.strictEqual(called, true);
 });
 
 it('should create a dummy refresh token string', () => {
   // It is important that the compute client is created with a refresh token
   // value filled in, or else the rest of the logic will not work.
   const jwt = new JWT();
-  assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
+  assert.strictEqual('jwt-placeholder', jwt.credentials.refresh_token);
 });
 
 it('should get an initial access token', done => {
@@ -92,19 +92,20 @@ it('should get an initial access token', done => {
   const scope = createGTokenMock({access_token: 'initial-access-token'});
   jwt.authorize((err, creds) => {
     scope.done();
-    assert.equal(err, null);
+    assert.strictEqual(err, null);
     assert.notEqual(creds, null);
-    assert.equal('foo@serviceaccount.com', jwt.gtoken!.iss);
-    assert.equal(PEM_PATH, jwt.gtoken!.keyFile);
-    assert.equal(['http://bar', 'http://foo'].join(' '), jwt.gtoken!.scope);
-    assert.equal('bar@subjectaccount.com', jwt.gtoken!.sub);
-    assert.equal('initial-access-token', jwt.credentials.access_token);
-    assert.equal(creds!.access_token, jwt.credentials.access_token);
-    assert.equal(creds!.refresh_token, jwt.credentials.refresh_token);
-    assert.equal(creds!.token_type, jwt.credentials.token_type);
-    assert.equal('jwt-placeholder', jwt.credentials.refresh_token);
-    assert.equal(PEM_CONTENTS, jwt.key);
-    assert.equal('foo@serviceaccount.com', jwt.email);
+    assert.strictEqual('foo@serviceaccount.com', jwt.gtoken!.iss);
+    assert.strictEqual(PEM_PATH, jwt.gtoken!.keyFile);
+    assert.strictEqual(
+        ['http://bar', 'http://foo'].join(' '), jwt.gtoken!.scope);
+    assert.strictEqual('bar@subjectaccount.com', jwt.gtoken!.sub);
+    assert.strictEqual('initial-access-token', jwt.credentials.access_token);
+    assert.strictEqual(creds!.access_token, jwt.credentials.access_token);
+    assert.strictEqual(creds!.refresh_token, jwt.credentials.refresh_token);
+    assert.strictEqual(creds!.token_type, jwt.credentials.token_type);
+    assert.strictEqual('jwt-placeholder', jwt.credentials.refresh_token);
+    assert.strictEqual(PEM_CONTENTS, jwt.key);
+    assert.strictEqual('foo@serviceaccount.com', jwt.email);
     done();
   });
 });
@@ -120,7 +121,7 @@ it('should accept scope as string', done => {
   const scope = createGTokenMock({access_token: 'initial-access-token'});
   jwt.authorize((err, creds) => {
     scope.done();
-    assert.equal('http://foo', jwt.gtoken!.scope);
+    assert.strictEqual('http://foo', jwt.gtoken!.scope);
     done();
   });
 });
@@ -154,7 +155,7 @@ it('should emit an event for tokens', (done) => {
     subject: 'bar@subjectaccount.com'
   });
   jwt.on('tokens', tokens => {
-       assert.equal(tokens.access_token, accessToken);
+       assert.strictEqual(tokens.access_token, accessToken);
        scope.done();
        done();
      }).getAccessToken();
@@ -251,7 +252,7 @@ it('should refresh token if missing access token', (done) => {
 
   jwt.request({url: 'http://bar'}, () => {
     scope.done();
-    assert.equal('abc123', jwt.credentials.access_token);
+    assert.strictEqual('abc123', jwt.credentials.access_token);
     done();
   });
 });
@@ -276,7 +277,7 @@ it('should unify the promise when refreshing the token', async () => {
     jwt.request({url: 'http://example.com'})
   ]);
   scopes.forEach(s => s.done());
-  assert.equal('abc123', jwt.credentials.access_token);
+  assert.strictEqual('abc123', jwt.credentials.access_token);
 });
 
 it('should clear the cached refresh token promise after completion',
@@ -300,7 +301,7 @@ it('should clear the cached refresh token promise after completion',
      jwt.credentials.access_token = null;
      await jwt.request({url: 'http://example.com'});
      scopes.forEach(s => s.done());
-     assert.equal('abc123', jwt.credentials.access_token);
+     assert.strictEqual('abc123', jwt.credentials.access_token);
    });
 
 it('should refresh token if expired', (done) => {
@@ -320,7 +321,7 @@ it('should refresh token if expired', (done) => {
   const scope = createGTokenMock({access_token: 'abc123'});
   jwt.request({url: 'http://bar'}, () => {
     scope.done();
-    assert.equal('abc123', jwt.credentials.access_token);
+    assert.strictEqual('abc123', jwt.credentials.access_token);
     done();
   });
 });
@@ -344,7 +345,7 @@ it('should refresh if access token will expired soon and time to refresh before 
      const scope = createGTokenMock({access_token: 'abc123'});
      jwt.request({url: 'http://bar'}, () => {
        scope.done();
-       assert.equal('abc123', jwt.credentials.access_token);
+       assert.strictEqual('abc123', jwt.credentials.access_token);
        done();
      });
    });
@@ -368,8 +369,8 @@ it('should not refresh if access token will not expire soon and time to refresh 
      };
 
      jwt.request({url: 'http://bar'}, () => {
-       assert.equal('initial-access-token', jwt.credentials.access_token);
-       assert.equal(false, scope.isDone());
+       assert.strictEqual('initial-access-token', jwt.credentials.access_token);
+       assert.strictEqual(false, scope.isDone());
        done();
      });
    });
@@ -393,7 +394,7 @@ it('should refresh token if the server returns 403', (done) => {
 
   jwt.request({url: 'http://example.com/access'}, () => {
     scope.done();
-    assert.equal('abc123', jwt.credentials.access_token);
+    assert.strictEqual('abc123', jwt.credentials.access_token);
     done();
   });
 });
@@ -414,8 +415,8 @@ it('should not refresh if not expired', (done) => {
   };
 
   jwt.request({url: 'http://bar'}, () => {
-    assert.equal('initial-access-token', jwt.credentials.access_token);
-    assert.equal(false, scope.isDone());
+    assert.strictEqual('initial-access-token', jwt.credentials.access_token);
+    assert.strictEqual(false, scope.isDone());
     done();
   });
 });
@@ -435,8 +436,8 @@ it('should assume access token is not expired', (done) => {
   };
 
   jwt.request({url: 'http://bar'}, () => {
-    assert.equal('initial-access-token', jwt.credentials.access_token);
-    assert.equal(false, scope.isDone());
+    assert.strictEqual('initial-access-token', jwt.credentials.access_token);
+    assert.strictEqual(false, scope.isDone());
     done();
   });
 });
@@ -456,7 +457,7 @@ it('should return expiry_date in milliseconds', async () => {
   await jwt.getRequestHeaders();
   scope.done();
   const dateInMillis = (new Date()).getTime();
-  assert.equal(
+  assert.strictEqual(
       dateInMillis.toString().length,
       jwt.credentials.expiry_date!.toString().length);
 });
@@ -471,10 +472,10 @@ it('createScoped should clone stuff', () => {
 
   const clone = jwt.createScoped('x');
 
-  assert.equal(jwt.email, clone.email);
-  assert.equal(jwt.keyFile, clone.keyFile);
-  assert.equal(jwt.key, clone.key);
-  assert.equal(jwt.subject, clone.subject);
+  assert.strictEqual(jwt.email, clone.email);
+  assert.strictEqual(jwt.keyFile, clone.keyFile);
+  assert.strictEqual(jwt.key, clone.key);
+  assert.strictEqual(jwt.subject, clone.subject);
 });
 
 it('createScoped should handle string scope', () => {
@@ -485,7 +486,7 @@ it('createScoped should handle string scope', () => {
     subject: 'bar@subjectaccount.com'
   });
   const clone = jwt.createScoped('newscope');
-  assert.equal('newscope', clone.scopes);
+  assert.strictEqual('newscope', clone.scopes);
 });
 
 it('createScoped should handle array scope', () => {
@@ -496,10 +497,10 @@ it('createScoped should handle array scope', () => {
     subject: 'bar@subjectaccount.com'
   });
   const clone = jwt.createScoped(['gorilla', 'chimpanzee', 'orangutan']);
-  assert.equal(3, clone.scopes!.length);
-  assert.equal('gorilla', clone.scopes![0]);
-  assert.equal('chimpanzee', clone.scopes![1]);
-  assert.equal('orangutan', clone.scopes![2]);
+  assert.strictEqual(3, clone.scopes!.length);
+  assert.strictEqual('gorilla', clone.scopes![0]);
+  assert.strictEqual('chimpanzee', clone.scopes![1]);
+  assert.strictEqual('orangutan', clone.scopes![2]);
 });
 
 it('createScoped should handle null scope', () => {
@@ -510,7 +511,7 @@ it('createScoped should handle null scope', () => {
     subject: 'bar@subjectaccount.com'
   });
   const clone = jwt.createScoped();
-  assert.equal(null, clone.scopes);
+  assert.strictEqual(undefined, clone.scopes);
 });
 
 it('createScoped should set scope when scope was null', () => {
@@ -520,17 +521,17 @@ it('createScoped should set scope when scope was null', () => {
     subject: 'bar@subjectaccount.com'
   });
   const clone = jwt.createScoped('hi');
-  assert.equal('hi', clone.scopes);
+  assert.strictEqual('hi', clone.scopes);
 });
 
 it('createScoped should handle nulls', () => {
   const jwt = new JWT();
   const clone = jwt.createScoped('hi');
-  assert.equal(jwt.email, null);
-  assert.equal(jwt.keyFile, null);
-  assert.equal(jwt.key, null);
-  assert.equal(jwt.subject, null);
-  assert.equal('hi', clone.scopes);
+  assert.strictEqual(jwt.email, undefined);
+  assert.strictEqual(jwt.keyFile, undefined);
+  assert.strictEqual(jwt.key, undefined);
+  assert.strictEqual(jwt.subject, undefined);
+  assert.strictEqual('hi', clone.scopes);
 });
 
 it('createScoped should not return the original instance', () => {
@@ -550,7 +551,7 @@ it('createScopedRequired should return true when scopes is null', () => {
     keyFile: '/path/to/key.pem',
     subject: 'bar@subjectaccount.com'
   });
-  assert.equal(true, jwt.createScopedRequired());
+  assert.strictEqual(true, jwt.createScopedRequired());
 });
 
 it('createScopedRequired should return true when scopes is an empty array',
@@ -561,7 +562,7 @@ it('createScopedRequired should return true when scopes is an empty array',
        scopes: [],
        subject: 'bar@subjectaccount.com'
      });
-     assert.equal(true, jwt.createScopedRequired());
+     assert.strictEqual(true, jwt.createScopedRequired());
    });
 
 it('createScopedRequired should return true when scopes is an empty string',
@@ -572,7 +573,7 @@ it('createScopedRequired should return true when scopes is an empty string',
        scopes: '',
        subject: 'bar@subjectaccount.com'
      });
-     assert.equal(true, jwt.createScopedRequired());
+     assert.strictEqual(true, jwt.createScopedRequired());
    });
 
 it('createScopedRequired should return false when scopes is a filled-in string',
@@ -583,7 +584,7 @@ it('createScopedRequired should return false when scopes is a filled-in string',
        scopes: 'http://foo',
        subject: 'bar@subjectaccount.com'
      });
-     assert.equal(false, jwt.createScopedRequired());
+     assert.strictEqual(false, jwt.createScopedRequired());
    });
 
 it('createScopedRequired should return false when scopes is a filled-in array',
@@ -595,7 +596,7 @@ it('createScopedRequired should return false when scopes is a filled-in array',
        subject: 'bar@subjectaccount.com'
      });
 
-     assert.equal(false, jwt.createScopedRequired());
+     assert.strictEqual(false, jwt.createScopedRequired());
    });
 
 it('createScopedRequired should return false when scopes is not an array or a string, but can be used as a string',
@@ -606,7 +607,7 @@ it('createScopedRequired should return false when scopes is not an array or a st
        scopes: '2',
        subject: 'bar@subjectaccount.com'
      });
-     assert.equal(false, jwt.createScopedRequired());
+     assert.strictEqual(false, jwt.createScopedRequired());
    });
 
 it('fromJson should error on null json', () => {
@@ -639,27 +640,27 @@ it('fromJson should error on missing private_key', () => {
 
 it('fromJson should create JWT with client_email', () => {
   jwt.fromJSON(json);
-  assert.equal(json.client_email, jwt.email);
+  assert.strictEqual(json.client_email, jwt.email);
 });
 
 it('fromJson should create JWT with private_key', () => {
   jwt.fromJSON(json);
-  assert.equal(json.private_key, jwt.key);
+  assert.strictEqual(json.private_key, jwt.key);
 });
 
 it('fromJson should create JWT with null scopes', () => {
   jwt.fromJSON(json);
-  assert.equal(null, jwt.scopes);
+  assert.strictEqual(undefined, jwt.scopes);
 });
 
 it('fromJson should create JWT with null subject', () => {
   jwt.fromJSON(json);
-  assert.equal(null, jwt.subject);
+  assert.strictEqual(undefined, jwt.subject);
 });
 
 it('fromJson should create JWT with null keyFile', () => {
   jwt.fromJSON(json);
-  assert.equal(null, jwt.keyFile);
+  assert.strictEqual(undefined, jwt.keyFile);
 });
 
 it('should error on missing client_id', () => {
@@ -693,7 +694,7 @@ it('fromStream should error on null stream', (done) => {
   // Test verifies invalid parameter tests, which requires cast to any.
   // tslint:disable-next-line no-any
   (jwt as any).fromStream(null, (err: Error) => {
-    assert.equal(true, err instanceof Error);
+    assert.strictEqual(true, err instanceof Error);
     done();
   });
 });
@@ -708,13 +709,13 @@ it('fromStream should read the stream and create a jwt', (done) => {
 
   // And pass it into the fromStream method.
   jwt.fromStream(stream, (err) => {
-    assert.equal(null, err);
+    assert.strictEqual(undefined, err);
     // Ensure that the correct bits were pulled from the stream.
-    assert.equal(json.private_key, jwt.key);
-    assert.equal(json.client_email, jwt.email);
-    assert.equal(null, jwt.keyFile);
-    assert.equal(null, jwt.subject);
-    assert.equal(null, jwt.scopes);
+    assert.strictEqual(json.private_key, jwt.key);
+    assert.strictEqual(json.client_email, jwt.email);
+    assert.strictEqual(undefined, jwt.keyFile);
+    assert.strictEqual(undefined, jwt.subject);
+    assert.strictEqual(undefined, jwt.scopes);
     done();
   });
 });
@@ -745,20 +746,20 @@ it('fromAPIKey should set the .apiKey property on the instance', () => {
 it('getCredentials should handle a key', async () => {
   const jwt = new JWT({key: PEM_CONTENTS});
   const {private_key} = await jwt.getCredentials();
-  assert.equal(private_key, PEM_CONTENTS);
+  assert.strictEqual(private_key, PEM_CONTENTS);
 });
 
 it('getCredentials should handle a p12 keyFile', async () => {
   const jwt = new JWT({keyFile: P12_PATH});
   const {private_key, client_email} = await jwt.getCredentials();
   assert(private_key);
-  assert.equal(client_email, undefined);
+  assert.strictEqual(client_email, undefined);
 });
 
 it('getCredentials should handle a json keyFile', async () => {
   const jwt = new JWT();
   jwt.fromJSON(json);
   const {private_key, client_email} = await jwt.getCredentials();
-  assert.equal(private_key, json.private_key);
-  assert.equal(client_email, json.client_email);
+  assert.strictEqual(private_key, json.private_key);
+  assert.strictEqual(client_email, json.client_email);
 });

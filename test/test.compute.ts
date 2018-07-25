@@ -53,14 +53,14 @@ it('should create a dummy refresh token string', () => {
   // It is important that the compute client is created with a refresh token
   // value filled in, or else the rest of the logic will not work.
   const compute = new Compute();
-  assert.equal('compute-placeholder', compute.credentials.refresh_token);
+  assert.strictEqual('compute-placeholder', compute.credentials.refresh_token);
 });
 
 it('should get an access token for the first request', async () => {
   const scopes = [mockToken(), mockExample()];
   await compute.request({url});
   scopes.forEach(s => s.done());
-  assert.equal(compute.credentials.access_token, 'abc123');
+  assert.strictEqual(compute.credentials.access_token, 'abc123');
 });
 
 it('should refresh if access token has expired', async () => {
@@ -68,7 +68,7 @@ it('should refresh if access token has expired', async () => {
   compute.credentials.access_token = 'initial-access-token';
   compute.credentials.expiry_date = (new Date()).getTime() - 10000;
   await compute.request({url});
-  assert.equal(compute.credentials.access_token, 'abc123');
+  assert.strictEqual(compute.credentials.access_token, 'abc123');
   scopes.forEach(s => s.done());
 });
 
@@ -76,11 +76,11 @@ it('should emit an event for a new access token', async () => {
   const scopes = [mockToken(), mockExample()];
   let raisedEvent = false;
   compute.on('tokens', tokens => {
-    assert.equal(tokens.access_token, 'abc123');
+    assert.strictEqual(tokens.access_token, 'abc123');
     raisedEvent = true;
   });
   await compute.request({url});
-  assert.equal(compute.credentials.access_token, 'abc123');
+  assert.strictEqual(compute.credentials.access_token, 'abc123');
   scopes.forEach(s => s.done());
   assert(raisedEvent);
 });
@@ -92,7 +92,7 @@ it('should refresh if access token will expired soon and time to refresh before 
      compute.credentials.access_token = 'initial-access-token';
      compute.credentials.expiry_date = (new Date()).getTime() + 5000;
      await compute.request({url});
-     assert.equal(compute.credentials.access_token, 'abc123');
+     assert.strictEqual(compute.credentials.access_token, 'abc123');
      scopes.forEach(s => s.done());
    });
 
@@ -103,7 +103,8 @@ it('should not refresh if access token will not expire soon and time to refresh 
      compute.credentials.access_token = 'initial-access-token';
      compute.credentials.expiry_date = (new Date()).getTime() + 12000;
      await compute.request({url});
-     assert.equal(compute.credentials.access_token, 'initial-access-token');
+     assert.strictEqual(
+         compute.credentials.access_token, 'initial-access-token');
      scope.done();
    });
 
@@ -112,7 +113,7 @@ it('should not refresh if access token has not expired', async () => {
   compute.credentials.access_token = 'initial-access-token';
   compute.credentials.expiry_date = (new Date()).getTime() + 10 * 60 * 1000;
   await compute.request({url});
-  assert.equal(compute.credentials.access_token, 'initial-access-token');
+  assert.strictEqual(compute.credentials.access_token, 'initial-access-token');
   scope.done();
 });
 
@@ -120,11 +121,11 @@ it('should emit warning for createScopedRequired', () => {
   let called = false;
   sandbox.stub(process, 'emitWarning').callsFake(() => called = true);
   compute.createScopedRequired();
-  assert.equal(called, true);
+  assert.strictEqual(called, true);
 });
 
 it('should return false for createScopedRequired', () => {
-  assert.equal(false, compute.createScopedRequired());
+  assert.strictEqual(false, compute.createScopedRequired());
 });
 
 it('should return a helpful message on request response.statusCode 403', async () => {
@@ -216,5 +217,5 @@ it('should accept a custom service account', async () => {
   ];
   await compute.request({url});
   scopes.forEach(s => s.done());
-  assert.equal(compute.credentials.access_token, 'abc123');
+  assert.strictEqual(compute.credentials.access_token, 'abc123');
 });

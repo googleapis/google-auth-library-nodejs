@@ -60,7 +60,7 @@ it('should not append default client user agent to the existing user agent more 
      const appName = 'MyTestApplication-1.0 google-api-nodejs-client/foobear';
      const opts =
          transporter.configure({headers: {'User-Agent': appName}, url: ''});
-     assert.equal(opts.headers!['User-Agent'], appName);
+     assert.strictEqual(opts.headers!['User-Agent'], appName);
    });
 
 it('should create a single error from multiple response errors', done => {
@@ -72,8 +72,8 @@ it('should create a single error from multiple response errors', done => {
   transporter.request({url}, (error) => {
     scope.done();
     assert.strictEqual(error!.message, 'Error 1\nError 2');
-    assert.equal((error as RequestError).code, 500);
-    assert.equal((error as RequestError).errors.length, 2);
+    assert.strictEqual((error as RequestError).code, 500);
+    assert.strictEqual((error as RequestError).errors.length, 2);
     done();
   });
 });
@@ -84,7 +84,7 @@ it('should return an error for a 404 response', done => {
   transporter.request({url}, error => {
     scope.done();
     assert.strictEqual(error!.message, 'Not found');
-    assert.equal((error as RequestError).code, 404);
+    assert.strictEqual((error as RequestError).code, '404');
     done();
   });
 });
@@ -97,7 +97,7 @@ it('should return an error if you try to use request config options', done => {
         uri: 'http://example.com/api',
       } as AxiosRequestConfig,
       (error) => {
-        assert.equal(error!.message, expected);
+        assert.strictEqual(error!.message, expected);
         done();
       });
 });
@@ -118,7 +118,7 @@ it('should support invocation with async/await', async () => {
   const scope = nock(url).get('/').reply(200);
   const res = await transporter.request({url});
   scope.done();
-  assert.equal(res.status, 200);
+  assert.strictEqual(res.status, 200);
 });
 
 it('should throw if using async/await', async () => {
@@ -133,8 +133,8 @@ it('should work with a callback', done => {
   const scope = nock(url).get('/').reply(200);
   transporter.request({url}, (err, res) => {
     scope.done();
-    assert.equal(err, null);
-    assert.equal(res!.status, 200);
+    assert.strictEqual(err, null);
+    assert.strictEqual(res!.status, 200);
     done();
   });
 });
@@ -155,7 +155,7 @@ it('should use the http proxy if one is configured', async () => {
   const url = 'http://example.com/fake';
   const result = await transporter.request({url});
   scope.done();
-  assert.equal(result.status, 200);
+  assert.strictEqual(result.status, 200);
 });
 
 it('should use the https proxy if one is configured', async () => {
@@ -174,5 +174,5 @@ it('should use the https proxy if one is configured', async () => {
   const url = 'https://example.com/fake';
   const result = await transporter.request({url});
   scope.done();
-  assert.equal(result.status, 200);
+  assert.strictEqual(result.status, 200);
 });
