@@ -1311,7 +1311,8 @@ it('should warn the user if using default Cloud SDK credentials', done => {
   };
   sandbox.stub(process, 'emitWarning')
       .callsFake((message: string, warningOrType: messages.Warning|string) => {
-        assert.strictEqual(message, messages.PROBLEMATIC_CREDENTIALS_WARNING.message);
+        assert.strictEqual(
+            message, messages.PROBLEMATIC_CREDENTIALS_WARNING.message);
         const warningType = typeof warningOrType === 'string' ?
             warningOrType :
             warningOrType.type;
@@ -1325,7 +1326,8 @@ it('should warn the user if using the getDefaultProjectId method', done => {
   mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
   sandbox.stub(process, 'emitWarning')
       .callsFake((message: string, warningOrType: messages.Warning|string) => {
-        assert.strictEqual(message, messages.DEFAULT_PROJECT_ID_DEPRECATED.message);
+        assert.strictEqual(
+            message, messages.DEFAULT_PROJECT_ID_DEPRECATED.message);
         const warningType = typeof warningOrType === 'string' ?
             warningOrType :
             warningOrType.type;

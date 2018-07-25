@@ -703,7 +703,8 @@ it('should override client_id if provided in options', () => {
 
 it('should return error in callback on request', done => {
   client.request({}, (err, result) => {
-    assert.strictEqual(err!.message, 'No access, refresh token or API key is set.');
+    assert.strictEqual(
+        err!.message, 'No access, refresh token or API key is set.');
     assert.strictEqual(result, null);
     done();
   });
@@ -874,7 +875,8 @@ it('should not refresh if access token will not expire soon and time to refresh 
      };
      const scopes = mockExample();
      await client.request({url: 'http://example.com'});
-     assert.strictEqual('initial-access-token', client.credentials.access_token);
+     assert.strictEqual(
+         'initial-access-token', client.credentials.access_token);
      assert.strictEqual(false, scopes[0].isDone());
      scopes[1].done();
    });

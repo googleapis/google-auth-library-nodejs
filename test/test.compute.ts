@@ -103,7 +103,8 @@ it('should not refresh if access token will not expire soon and time to refresh 
      compute.credentials.access_token = 'initial-access-token';
      compute.credentials.expiry_date = (new Date()).getTime() + 12000;
      await compute.request({url});
-     assert.strictEqual(compute.credentials.access_token, 'initial-access-token');
+     assert.strictEqual(
+         compute.credentials.access_token, 'initial-access-token');
      scope.done();
    });
 

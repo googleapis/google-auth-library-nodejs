@@ -96,7 +96,8 @@ it('should get an initial access token', done => {
     assert.notEqual(creds, null);
     assert.strictEqual('foo@serviceaccount.com', jwt.gtoken!.iss);
     assert.strictEqual(PEM_PATH, jwt.gtoken!.keyFile);
-    assert.strictEqual(['http://bar', 'http://foo'].join(' '), jwt.gtoken!.scope);
+    assert.strictEqual(
+        ['http://bar', 'http://foo'].join(' '), jwt.gtoken!.scope);
     assert.strictEqual('bar@subjectaccount.com', jwt.gtoken!.sub);
     assert.strictEqual('initial-access-token', jwt.credentials.access_token);
     assert.strictEqual(creds!.access_token, jwt.credentials.access_token);
