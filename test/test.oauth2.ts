@@ -39,7 +39,7 @@ const SCOPE = 'scopex';
 const SCOPE_ARRAY = ['scopex', 'scopey'];
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
-const baseUrl = 'https://www.googleapis.com';
+const baseUrl = 'https://oauth2.googleapis.com';
 const certsPath = '/oauth2/v1/certs';
 const certsResPath =
     path.join(__dirname, '../../test/fixtures/oauthcerts.json');
@@ -127,7 +127,9 @@ it('should verifyIdToken properly', async () => {
   const maxExpiry = 5;
   const payload =
       {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-  const scope = nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
+  const scope = nock('https://www.googleapis.com')
+                    .get('/oauth2/v1/certs')
+                    .reply(200, fakeCerts);
   client.verifySignedJwtWithCerts =
       (jwt: string, certs: {}, requiredAudience: string|string[],
        issuers?: string[], theMaxExpiry?: number) => {
@@ -626,7 +628,9 @@ it('should pass due to valid issuer', () => {
 });
 
 it('should be able to retrieve a list of Google certificates', (done) => {
-  const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
+  const scope = nock('https://www.googleapis.com')
+                    .get(certsPath)
+                    .replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
     assert.strictEqual(err, null);
     assert.strictEqual(Object.keys(certs!).length, 2);
@@ -640,7 +644,7 @@ it('should be able to retrieve a list of Google certificates', (done) => {
 it('should be able to retrieve a list of Google certificates from cache again',
    done => {
      const scope =
-         nock(baseUrl)
+         nock('https://www.googleapis.com')
              .defaultReplyHeaders({
                'Cache-Control':
                    'public, max-age=23641, must-revalidate, no-transform',
@@ -731,7 +735,7 @@ function mockExample() {
   return [
     nock(baseUrl)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(200, {access_token: 'abc123', expires_in: 1}),
     nock('http://example.com').get('/').reply(200)
@@ -765,7 +769,7 @@ it('should unify the promise when refreshing the token', async () => {
   const scopes = [
     nock(baseUrl)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(200, {access_token: 'abc123', expires_in: 1}),
     nock('http://example.com').get('/').thrice().reply(200)
@@ -787,7 +791,7 @@ it('should clear the cached refresh token promise after completion',
      // promise from getting cached for too long.
      const scopes = [
        nock(baseUrl)
-           .post('/oauth2/v4/token', undefined, {
+           .post('/token', undefined, {
              reqheaders: {'content-type': 'application/x-www-form-urlencoded'}
            })
            .twice()
@@ -808,11 +812,11 @@ it('should clear the cached refresh token promise after throw', async () => {
   const scopes = [
     nock(baseUrl)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(500)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(200, {access_token: 'abc123', expires_in: 100000}),
     nock('http://example.com').get('/').reply(200)
@@ -946,8 +950,8 @@ it('should not retry requests with streaming data', done => {
 });
 
 it('should revoke credentials if access token present', done => {
-  const scope = nock('https://accounts.google.com')
-                    .get('/o/oauth2/revoke?token=abc')
+  const scope = nock('https://oauth2.googleapis.com')
+                    .get('/revoke?token=abc')
                     .reply(200, {success: true});
   client.credentials = {access_token: 'abc', refresh_token: 'abc'};
   client.revokeCredentials((err, result) => {
@@ -973,7 +977,7 @@ it('should clear credentials and return error if no access token to revoke',
 it('getToken should allow a code_verifier to be passed', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -990,7 +994,7 @@ it('getToken should allow a code_verifier to be passed', async () => {
 it('getToken should set redirect_uri if not provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1006,7 +1010,7 @@ it('getToken should set redirect_uri if not provided in options', async () => {
 it('getToken should set client_id if not provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1022,7 +1026,7 @@ it('getToken should set client_id if not provided in options', async () => {
 it('getToken should override redirect_uri if provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1039,7 +1043,7 @@ it('getToken should override redirect_uri if provided in options', async () => {
 it('getToken should override client_id if provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1057,7 +1061,7 @@ it('should return expiry_date', done => {
   const now = (new Date()).getTime();
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1080,7 +1084,7 @@ it('should obtain token info', async () => {
   };
 
   const scope = nock(baseUrl)
-                    .get(`/oauth2/v3/tokeninfo?access_token=${accessToken}`)
+                    .get(`/tokeninfo?access_token=${accessToken}`)
                     .reply(200, tokenInfo);
 
   const info = await client.getTokenInfo(accessToken);
