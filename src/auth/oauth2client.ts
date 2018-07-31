@@ -361,7 +361,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   protected static readonly GOOGLE_TOKEN_INFO_URL =
-      'https://www.googleapis.com/oauth2/v3/tokeninfo';
+      'https://oauth2.googleapis.com/tokeninfo';
 
   /**
    * The base URL for auth endpoints.
@@ -373,13 +373,13 @@ export class OAuth2Client extends AuthClient {
    * The base endpoint for token retrieval.
    */
   private static readonly GOOGLE_OAUTH2_TOKEN_URL_ =
-      'https://www.googleapis.com/oauth2/v4/token';
+      'https://oauth2.googleapis.com/token';
 
   /**
    * The base endpoint to revoke tokens.
    */
   private static readonly GOOGLE_OAUTH2_REVOKE_URL_ =
-      'https://accounts.google.com/o/oauth2/revoke';
+      'https://oauth2.googleapis.com/revoke';
 
   /**
    * Google Sign on certificates.
