@@ -16,6 +16,7 @@
 import {GoogleAuth} from './auth/googleauth';
 
 export {Compute, ComputeOptions} from './auth/computeclient';
+export {Credentials} from './auth/credentials';
 export {GoogleAuthOptions} from './auth/googleauth';
 export {IAMAuth} from './auth/iam';
 export {JWTAccess} from './auth/jwtaccess';
@@ -23,7 +24,6 @@ export {JWT} from './auth/jwtclient';
 export {CodeChallengeMethod, OAuth2Client} from './auth/oauth2client';
 export {UserRefreshClient} from './auth/refreshclient';
 export {DefaultTransporter} from './transporters';
-export {Credentials} from './auth/credentials';
 
 const auth = new GoogleAuth();
 export {auth, GoogleAuth};
