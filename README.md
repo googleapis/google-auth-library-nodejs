@@ -2,7 +2,6 @@
 
 # Google Auth Library
 
-[![Greenkeeper badge][greenkeeperimg]][greenkeeper]
 [![npm version][npmimg]][npm]
 [![CircleCI][circle-image]][circle-url]
 [![codecov][codecov-image]][codecov-url]
@@ -395,8 +394,6 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [copying]: https://github.com/google/google-auth-library-nodejs/tree/master/LICENSE
 [david-dm-img]: https://david-dm.org/google/google-auth-library-nodejs/status.svg
 [david-dm]: https://david-dm.org/google/google-auth-library-nodejs
-[greenkeeperimg]: https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg
-[greenkeeper]: https://greenkeeper.io/
 [node]: http://nodejs.org/
 [npmimg]: https://img.shields.io/npm/v/google-auth-library.svg
 [npm]: https://www.npmjs.org/package/google-auth-library
