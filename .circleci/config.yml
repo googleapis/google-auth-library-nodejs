@@ -4,19 +4,12 @@ release_tags: &release_tags
     only: /^v\d+(\.\d+){2}(-.*)?$/
 
 # "Include" for unit tests definition.
-
-
 unit_tests: &unit_tests
   steps:
     - checkout
-    - run: *remove_package_lock
     - run: npm install
-    - run:
-        name: Compile
-        command: npm run compile
-    - run:
-        name: Run unit tests.
-        command: npm run test-only
+    - run: npm run compile
+    - run: npm run test-only
     - run: npm run codecov
 
 version: 2.0
