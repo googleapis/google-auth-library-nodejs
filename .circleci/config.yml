@@ -4,29 +4,12 @@ release_tags: &release_tags
     only: /^v\d+(\.\d+){2}(-.*)?$/
 
 # "Include" for unit tests definition.
-remove_package_lock: &remove_package_lock
-  name: Remove package-lock.json if needed.
-  command: |
-    WORKFLOW_NAME=`python .circleci/get_workflow_name.py`
-    echo "Workflow name: $WORKFLOW_NAME"
-    if [ "$WORKFLOW_NAME" = "nightly" ]; then
-      echo "Nightly build detected, removing package-lock.json"
-      rm -f package-lock.json
-    else
-      echo "Not a nightly build, skipping this step."
-    fi
-
 unit_tests: &unit_tests
   steps:
     - checkout
-    - run: *remove_package_lock
     - run: npm install
-    - run:
-        name: Compile
-        command: npm run compile
-    - run:
-        name: Run unit tests.
-        command: npm run test-only
+    - run: npm run compile
+    - run: npm run test-only
     - run: npm run codecov
 
 version: 2.0
