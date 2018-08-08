@@ -42,7 +42,7 @@
     "@types/semver": "^5.5.0",
     "@types/sinon": "^5.0.1",
     "@types/tmp": "^0.0.33",
-    "assert-rejects": "^0.1.1",
+    "assert-rejects": "^1.0.0",
     "clang-format": "^1.2.3",
     "codecov": "^3.0.2",
     "gh-pages": "^1.2.0",
