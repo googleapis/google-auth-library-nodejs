@@ -13,3 +13,4 @@ samples/*.keys.json
 !samples/**/*.js
 .nyc_output
 package-lock.json
+yarn.lock

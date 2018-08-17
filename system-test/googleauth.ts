@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
- console.warn('no system tests available 👻');
+console.warn('no system tests available 👻');
