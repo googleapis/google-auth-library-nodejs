@@ -40,8 +40,6 @@ accept your pull requests.
 * Commit and push until you are happy with your contribution.
 * Make sure to add tests for it. This is important so I don't break it
   in a future version unintentionally.
-* Add an entry to the [Changelog](CHANGELOG.md) accordingly. See
-  [changelog entry format](#changelog-entry-format).
 * Please try not to mess with the package.json or version. If you want to
   have your own version, or is otherwise necessary, that is fine, but please
   isolate to its own commit so I can cherry-pick around it.
@@ -59,16 +57,6 @@ client tests still pass.
 * [Squash related commits together][5].
 * Open a [pull request][4] that relates to *only* one subject with a clear title
   and description in grammatically correct, complete sentences.
-
-
-### Changelog entry format
-
-Here are a few examples:
-
-```
-* Obtains the instance email and key from gtoken ([@stephenplusplus][])
-* [#36](google/google-auth-library-nodejs#36) Adds an implementation of IAM authorization ([@tbetbetbe][])
-```
 
 
 ## Preparing for release
