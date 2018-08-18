@@ -59,11 +59,20 @@ it('getRequestHeaders should create a signed JWT token as the access token',
      const headers = client.getRequestHeaders(testUri);
      assert.notStrictEqual(null, headers, 'an creds object should be present');
      const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
-     const payload = JSON.parse(decoded.payload);
+     assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
+     const payload = decoded.payload;
      assert.strictEqual(email, payload.iss);
      assert.strictEqual(email, payload.sub);
      assert.strictEqual(testUri, payload.aud);
    });
+
+it('getRequestHeaders should set key id in header when available', () => {
+  const client = new JWTAccess(email, keys.private, '101');
+  const headers = client.getRequestHeaders(testUri);
+  const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+  assert.deepStrictEqual(
+      {alg: 'RS256', typ: 'JWT', kid: '101'}, decoded.header);
+});
 
 it('getRequestHeaders should not allow overriding with additionalClaims', () => {
   const client = new JWTAccess(email, keys.private);
@@ -140,6 +149,11 @@ it('fromJson should create JWT with client_email', () => {
 it('fromJson should create JWT with private_key', () => {
   client.fromJSON(json);
   assert.strictEqual(json.private_key, client.key);
+});
+
+it('fromJson should create JWT with private_key_id', () => {
+  client.fromJSON(json);
+  assert.strictEqual(json.private_key_id, client.keyId);
 });
 
 it('fromStream should error on null stream', (done) => {

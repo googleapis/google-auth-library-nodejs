@@ -194,10 +194,29 @@ it('gets a jwt header access token', async () => {
   const got = await jwt.getRequestHeaders(testUri);
   assert.notStrictEqual(null, got, 'the creds should be present');
   const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
-  const payload = JSON.parse(decoded.payload);
+  assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
+  const payload = decoded.payload;
   assert.strictEqual(email, payload.iss);
   assert.strictEqual(email, payload.sub);
   assert.strictEqual(testUri, payload.aud);
+});
+
+it('gets a jwt header access token with key id', async () => {
+  const keys = keypair(1024 /* bitsize of private key */);
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    key: keys.private,
+    keyId: '101',
+    subject: 'ignored@subjectaccount.com'
+  });
+  jwt.credentials = {refresh_token: 'jwt-placeholder'};
+
+  const testUri = 'http:/example.com/my_test_service';
+  const got = await jwt.getRequestHeaders(testUri);
+  assert.notStrictEqual(null, got, 'the creds should be present');
+  const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+  assert.deepStrictEqual(
+      {alg: 'RS256', typ: 'JWT', kid: '101'}, decoded.header);
 });
 
 it('should accept additionalClaims', async () => {
@@ -215,7 +234,7 @@ it('should accept additionalClaims', async () => {
   const got = await jwt.getRequestHeaders(testUri);
   assert.notStrictEqual(null, got, 'the creds should be present');
   const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
-  const payload = JSON.parse(decoded.payload);
+  const payload = decoded.payload;
   assert.strictEqual(testUri, payload.aud);
   assert.strictEqual(someClaim, payload.someClaim);
 });
@@ -466,6 +485,7 @@ it('createScoped should clone stuff', () => {
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
     keyFile: '/path/to/key.pem',
+    keyId: '101',
     scopes: ['http://bar', 'http://foo'],
     subject: 'bar@subjectaccount.com'
   });
@@ -475,6 +495,7 @@ it('createScoped should clone stuff', () => {
   assert.strictEqual(jwt.email, clone.email);
   assert.strictEqual(jwt.keyFile, clone.keyFile);
   assert.strictEqual(jwt.key, clone.key);
+  assert.strictEqual(jwt.keyId, clone.keyId);
   assert.strictEqual(jwt.subject, clone.subject);
 });
 
@@ -648,6 +669,11 @@ it('fromJson should create JWT with private_key', () => {
   assert.strictEqual(json.private_key, jwt.key);
 });
 
+it('fromJson should create JWT with private_key_id', () => {
+  jwt.fromJSON(json);
+  assert.strictEqual(json.private_key_id, jwt.keyId);
+});
+
 it('fromJson should create JWT with null scopes', () => {
   jwt.fromJSON(json);
   assert.strictEqual(undefined, jwt.scopes);
@@ -712,6 +738,7 @@ it('fromStream should read the stream and create a jwt', (done) => {
     assert.strictEqual(undefined, err);
     // Ensure that the correct bits were pulled from the stream.
     assert.strictEqual(json.private_key, jwt.key);
+    assert.strictEqual(json.private_key_id, jwt.keyId);
     assert.strictEqual(json.client_email, jwt.email);
     assert.strictEqual(undefined, jwt.keyFile);
     assert.strictEqual(undefined, jwt.subject);

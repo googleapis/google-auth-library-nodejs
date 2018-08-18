@@ -23,6 +23,11 @@ import * as messages from '../messages';
 import {JWTInput} from './credentials';
 import {Headers, RequestMetadataResponse} from './oauth2client';
 
+const DEFAULT_HEADER: jws.Header = {
+  alg: 'RS256',
+  typ: 'JWT'
+};
+
 export type Claims = {
   [index: string]: string
 };
@@ -30,6 +35,7 @@ export type Claims = {
 export class JWTAccess {
   email?: string|null;
   key?: string|null;
+  keyId?: string|null;
   projectId?: string;
 
   private cache = LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
@@ -42,10 +48,12 @@ export class JWTAccess {
    *
    * @param email the service account email address.
    * @param key the private key that will be used to sign the token.
+   * @param keyId the ID of the private key used to sign the token.
    */
-  constructor(email?: string|null, key?: string|null) {
+  constructor(email?: string|null, key?: string|null, keyId?: string|null) {
     this.email = email;
     this.key = key;
+    this.keyId = keyId;
   }
 
   /**
@@ -108,11 +116,12 @@ export class JWTAccess {
       }
     }
 
+    const header =
+        this.keyId ? {...DEFAULT_HEADER, kid: this.keyId} : DEFAULT_HEADER;
     const payload = Object.assign(defaultClaims, additionalClaims);
 
     // Sign the jwt and add it to the cache
-    const signedJWT =
-        jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
+    const signedJWT = jws.sign({header, payload, secret: this.key});
     const headers = {Authorization: `Bearer ${signedJWT}`};
     this.cache.set(url, headers);
     return headers;
@@ -138,6 +147,7 @@ export class JWTAccess {
     // Extract the relevant information from the json key file.
     this.email = json.client_email;
     this.key = json.private_key;
+    this.keyId = json.private_key_id;
     this.projectId = json.project_id;
   }
 
