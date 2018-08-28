@@ -8,10 +8,7 @@
   },
   "main": "./build/src/index.js",
   "types": "./build/src/index.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/google/google-auth-library-nodejs.git"
-  },
+  "repository": "google/google-auth-library-nodejs.git",
   "keywords": [
     "google",
     "api",
