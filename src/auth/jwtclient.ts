@@ -29,6 +29,7 @@ export interface JWTOptions extends RefreshOptions {
   email?: string;
   keyFile?: string;
   key?: string;
+  keyId?: string;
   scopes?: string|string[];
   subject?: string;
   additionalClaims?: {};
@@ -38,6 +39,7 @@ export class JWT extends OAuth2Client {
   email?: string;
   keyFile?: string;
   key?: string;
+  keyId?: string;
   scopes?: string|string[];
   scope?: string;
   subject?: string;
@@ -56,21 +58,23 @@ export class JWT extends OAuth2Client {
    * @param key value of key
    * @param scopes list of requested scopes or a single scope.
    * @param subject impersonated account's email address.
+   * @param key_id the ID of the key
    */
   constructor(options: JWTOptions);
   constructor(
       email?: string, keyFile?: string, key?: string, scopes?: string|string[],
-      subject?: string);
+      subject?: string, keyId?: string);
   constructor(
       optionsOrEmail?: string|JWTOptions, keyFile?: string, key?: string,
-      scopes?: string|string[], subject?: string) {
+      scopes?: string|string[], subject?: string, keyId?: string) {
     const opts = (optionsOrEmail && typeof optionsOrEmail === 'object') ?
         optionsOrEmail :
-        {email: optionsOrEmail, keyFile, key, scopes, subject};
+        {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
     super({eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis});
     this.email = opts.email;
     this.keyFile = opts.keyFile;
     this.key = opts.key;
+    this.keyId = opts.keyId;
     this.scopes = opts.scopes;
     this.subject = opts.subject;
     this.additionalClaims = opts.additionalClaims;
@@ -87,6 +91,7 @@ export class JWT extends OAuth2Client {
       email: this.email,
       keyFile: this.keyFile,
       key: this.key,
+      keyId: this.keyId,
       scopes,
       subject: this.subject,
       additionalClaims: this.additionalClaims
@@ -110,7 +115,7 @@ export class JWT extends OAuth2Client {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
         if (!this.access) {
-          this.access = new JWTAccess(this.email, this.key);
+          this.access = new JWTAccess(this.email, this.key, this.keyId);
         }
         const headers =
             await this.access.getRequestHeaders(url, this.additionalClaims);
@@ -232,6 +237,7 @@ export class JWT extends OAuth2Client {
     // Extract the relevant information from the json key file.
     this.email = json.client_email;
     this.key = json.private_key;
+    this.keyId = json.private_key_id;
     this.projectId = json.project_id;
   }
 
