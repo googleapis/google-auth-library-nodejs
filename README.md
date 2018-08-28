@@ -58,41 +58,17 @@ The code below shows how to retrieve a default credential type, depending upon t
 const {auth} = require('google-auth-library');
 
 /**
- * Acquire a client, and make a request to an API that's enabled by default.
+ * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
+ * this library will automatically choose the right client based on the environment.
  */
 async function main() {
   const client = await auth.getClient({
     scopes: 'https://www.googleapis.com/auth/cloud-platform'
   });
-  const projectId = await auth.getDefaultProjectId();
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
   console.log(res.data);
-}
-
-/**
- * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
- * this library will automatically choose the right client based on the environment.
- */
-async function getADC() {
-  // Acquire a client and the projectId based on the environment. This method looks
-  // for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables.
-  const res = await auth.getApplicationDefault();
-  let client = res.credential;
-
-  // The createScopedRequired method returns true when running on GAE or a local developer
-  // machine. In that case, the desired scopes must be passed in manually. When the code is
-  // running in GCE or a Managed VM, the scopes are pulled from the GCE metadata server.
-  // See https://cloud.google.com/compute/docs/authentication for more information.
-  if (client.createScopedRequired && client.createScopedRequired()) {
-    // Scopes can be specified either as an array or as a single, space-delimited string.
-    const scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-    client = client.createScoped(scopes);
-  }
-  return {
-    client: client,
-    projectId: res.projectId
-  }
 }
 
 main().catch(console.error);
@@ -363,7 +339,6 @@ async function main() {
 }
 
 main().catch(console.error);
-
 ```
 
 ## Questions/problems?
@@ -379,7 +354,6 @@ See [CONTRIBUTING][contributing].
 
 This library is licensed under Apache 2.0. Full license text is available in [LICENSE][copying].
 
-[apiexplorer]: https://developers.google.com/apis-explorer
 [Application Default Credentials]: https://developers.google.com/identity/protocols/application-default-credentials#callingnode
 [apptype]: https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
@@ -403,11 +377,7 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [stability]: http://nodejs.org/api/stream.html#stream_stream
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
 [stream]: http://nodejs.org/api/stream.html#stream_class_stream_readable
-[urlshort]: https://developers.google.com/url-shortener/
-[usingkeys]: https://developers.google.com/console/help/#UsingKeys
 [devconsole]: https://console.developer.google.com
-[oauth]: https://developers.google.com/accounts/docs/OAuth2
 [options]: https://github.com/google/google-auth-library-nodejs/tree/master#options
 [gcloud]: https://github.com/GoogleCloudPlatform/gcloud-node
 [cloudplatform]: https://developers.google.com/cloud/
-
