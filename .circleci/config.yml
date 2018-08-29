@@ -117,9 +117,11 @@ jobs:
       - run:
           name: Decrypt credentials.
           command: |
-            openssl aes-256-cbc -d -in .circleci/key.json.enc \
+            if [[ -z "${SYSTEM_TESTS_ENCRYPTION_KEY}" ]]; then
+              openssl aes-256-cbc -d -in .circleci/key.json.enc \
                 -out .circleci/key.json \
                 -k "${SYSTEM_TESTS_ENCRYPTION_KEY}"
+            fi
       - run: *npm_install_and_link
       - run: *samples_npm_install_and_link
       - run:
@@ -143,9 +145,11 @@ jobs:
       - run:
           name: Decrypt credentials.
           command: |
-            openssl aes-256-cbc -d -in .circleci/key.json.enc \
+            if [[ -z "${SYSTEM_TESTS_ENCRYPTION_KEY}" ]]; then
+              openssl aes-256-cbc -d -in .circleci/key.json.enc \
                 -out .circleci/key.json \
                 -k "${SYSTEM_TESTS_ENCRYPTION_KEY}"
+            fi
       - run: *npm_install_and_link
       - run:
           name: Run system tests.
