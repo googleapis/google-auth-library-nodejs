@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import * as fs from 'fs';
-import jws from 'jws';
+import * as jws from 'jws';
+import * as sinon from 'sinon';
+
 import {JWTAccess} from '../src';
+import * as messages from '../src/messages';
 
 const keypair = require('keypair');
 
@@ -33,51 +36,69 @@ const json = {
 const keys = keypair(1024 /* bitsize of private key */);
 const testUri = 'http:/example.com/my_test_service';
 const email = 'foo@serviceaccount.com';
-let client: JWTAccess;
 
+let client: JWTAccess;
+let sandbox: sinon.SinonSandbox;
 beforeEach(() => {
   client = new JWTAccess();
+  sandbox = sinon.createSandbox();
+});
+afterEach(() => {
+  sandbox.restore();
 });
 
-it('getRequestMetadata should create a signed JWT token as the access token',
+it('should emit warning for createScopedRequired', () => {
+  const stub = sandbox.stub(process, 'emitWarning');
+  client.createScopedRequired();
+  assert(stub.called);
+});
+
+it('getRequestHeaders should create a signed JWT token as the access token',
    () => {
      const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestMetadata(testUri);
-     assert.notStrictEqual(
-         null, res.headers, 'an creds object should be present');
-     const decoded = jws.decode(
-         (res.headers!.Authorization as string).replace('Bearer ', ''));
-     const payload = JSON.parse(decoded.payload);
+     const headers = client.getRequestHeaders(testUri);
+     assert.notStrictEqual(null, headers, 'an creds object should be present');
+     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+     assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
+     const payload = decoded.payload;
      assert.strictEqual(email, payload.iss);
      assert.strictEqual(email, payload.sub);
      assert.strictEqual(testUri, payload.aud);
    });
 
-it('getRequestMetadata should not allow overriding with additionalClaims', () => {
+it('getRequestHeaders should set key id in header when available', () => {
+  const client = new JWTAccess(email, keys.private, '101');
+  const headers = client.getRequestHeaders(testUri);
+  const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+  assert.deepStrictEqual(
+      {alg: 'RS256', typ: 'JWT', kid: '101'}, decoded.header);
+});
+
+it('getRequestHeaders should not allow overriding with additionalClaims', () => {
   const client = new JWTAccess(email, keys.private);
   const additionalClaims = {iss: 'not-the-email'};
   assert.throws(() => {
-    client.getRequestMetadata(testUri, additionalClaims);
+    client.getRequestHeaders(testUri, additionalClaims);
   }, /^Error: The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.$/);
 });
 
-it('getRequestMetadata should return a cached token on the second request',
+it('getRequestHeaders should return a cached token on the second request',
    () => {
      const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestMetadata(testUri);
-     const res2 = client.getRequestMetadata(testUri);
+     const res = client.getRequestHeaders(testUri);
+     const res2 = client.getRequestHeaders(testUri);
      assert.strictEqual(res, res2);
    });
 
-it('getRequestMetadata should not return cached tokens older than an hour',
+it('getRequestHeaders should not return cached tokens older than an hour',
    () => {
      const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestMetadata(testUri);
+     const res = client.getRequestHeaders(testUri);
      const realDateNow = Date.now;
      try {
        // go forward in time one hour (plus a little)
        Date.now = () => realDateNow() + (1000 * 60 * 60) + 10;
-       const res2 = client.getRequestMetadata(testUri);
+       const res2 = client.getRequestHeaders(testUri);
        assert.notEqual(res, res2);
      } finally {
        // return date.now to it's normally scheduled programming
@@ -87,7 +108,7 @@ it('getRequestMetadata should not return cached tokens older than an hour',
 
 it('createScopedRequired should return false', () => {
   const client = new JWTAccess('foo@serviceaccount.com', null);
-  assert.equal(false, client.createScopedRequired());
+  assert.strictEqual(false, client.createScopedRequired());
 });
 
 it('fromJson should error on null json', () => {
@@ -122,19 +143,24 @@ it('fromJson should error on missing private_key', () => {
 
 it('fromJson should create JWT with client_email', () => {
   client.fromJSON(json);
-  assert.equal(json.client_email, client.email);
+  assert.strictEqual(json.client_email, client.email);
 });
 
 it('fromJson should create JWT with private_key', () => {
   client.fromJSON(json);
-  assert.equal(json.private_key, client.key);
+  assert.strictEqual(json.private_key, client.key);
+});
+
+it('fromJson should create JWT with private_key_id', () => {
+  client.fromJSON(json);
+  assert.strictEqual(json.private_key_id, client.keyId);
 });
 
 it('fromStream should error on null stream', (done) => {
   // Test verifies invalid parameter tests, which requires cast to any.
   // tslint:disable-next-line no-any
   (client as any).fromStream(null, (err: Error) => {
-    assert.equal(true, err instanceof Error);
+    assert.strictEqual(true, err instanceof Error);
     done();
   });
 });
@@ -152,6 +178,13 @@ it('fromStream should construct a JWT Header instance from a stream',
      // And pass it into the fromStream method.
      await client.fromStream(stream);
      // Ensure that the correct bits were pulled from the stream.
-     assert.equal(json.private_key, client.key);
-     assert.equal(json.client_email, client.email);
+     assert.strictEqual(json.private_key, client.key);
+     assert.strictEqual(json.client_email, client.email);
    });
+
+it('should warn about deprecation of getRequestMetadata', () => {
+  const client = new JWTAccess(email, keys.private);
+  const stub = sandbox.stub(messages, 'warn');
+  client.getRequestMetadata(testUri);
+  assert.strictEqual(stub.calledOnce, true);
+});

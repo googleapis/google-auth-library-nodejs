@@ -34,6 +34,7 @@ export interface JWTInput {
   type?: string;
   client_email?: string;
   private_key?: string;
+  private_key_id?: string;
   project_id?: string;
   client_id?: string;
   client_secret?: string;

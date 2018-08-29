@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import {AxiosError} from 'axios';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
-import nock from 'nock';
-import path from 'path';
-import qs from 'querystring';
-import url from 'url';
+import * as nock from 'nock';
+import * as path from 'path';
+import * as qs from 'querystring';
+import * as sinon from 'sinon';
+import * as url from 'url';
 
-import {CodeChallengeMethod, GoogleAuth, OAuth2Client} from '../src';
+import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
+import * as messages from '../src/messages';
+const assertRejects = require('assert-rejects');
 
 nock.disableNetConnect();
 
@@ -36,18 +39,21 @@ const SCOPE = 'scopex';
 const SCOPE_ARRAY = ['scopex', 'scopey'];
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
-const baseUrl = 'https://www.googleapis.com';
+const baseUrl = 'https://oauth2.googleapis.com';
 const certsPath = '/oauth2/v1/certs';
 const certsResPath =
     path.join(__dirname, '../../test/fixtures/oauthcerts.json');
 
 let client: OAuth2Client;
+let sandbox: sinon.SinonSandbox;
 beforeEach(() => {
   client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+  sandbox = sinon.createSandbox();
 });
 
 afterEach(() => {
   nock.cleanAll();
+  sandbox.restore();
 });
 
 it('should generate a valid consent page url', done => {
@@ -69,11 +75,11 @@ it('should generate a valid consent page url', done => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.response_type, 'code token');
-  assert.equal(query.access_type, ACCESS_TYPE);
-  assert.equal(query.scope, SCOPE);
-  assert.equal(query.client_id, CLIENT_ID);
-  assert.equal(query.redirect_uri, REDIRECT_URI);
+  assert.strictEqual(query.response_type, 'code token');
+  assert.strictEqual(query.access_type, ACCESS_TYPE);
+  assert.strictEqual(query.scope, SCOPE);
+  assert.strictEqual(query.client_id, CLIENT_ID);
+  assert.strictEqual(query.redirect_uri, REDIRECT_URI);
   done();
 });
 
@@ -84,20 +90,15 @@ it('should throw an error if generateAuthUrl is called with invalid parameters',
        scope: SCOPE,
        code_challenge_method: CodeChallengeMethod.S256
      };
-     try {
-       const generated = client.generateAuthUrl(opts);
-       assert.fail('Expected to throw');
-     } catch (e) {
-       assert.equal(
-           e.message,
-           'If a code_challenge_method is provided, code_challenge must be included.');
-     }
+     assert.throws(
+         () => client.generateAuthUrl(opts),
+         /If a code_challenge_method is provided, code_challenge must be included/);
    });
 
 it('should generate a valid code verifier and resulting challenge', () => {
   const codes = client.generateCodeVerifier();
   // ensure the code_verifier matches all requirements
-  assert.equal(codes.codeVerifier.length, 128);
+  assert.strictEqual(codes.codeVerifier.length, 128);
   const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
   assert(match);
   if (!match) return;
@@ -115,8 +116,8 @@ it('should include code challenge and method in the url', () => {
     throw new Error('Unable to parse querystring');
   }
   const props = qs.parse(parsed.query);
-  assert.equal(props.code_challenge, codes.codeChallenge);
-  assert.equal(props.code_challenge_method, CodeChallengeMethod.S256);
+  assert.strictEqual(props.code_challenge, codes.codeChallenge);
+  assert.strictEqual(props.code_challenge_method, CodeChallengeMethod.S256);
 });
 
 it('should verifyIdToken properly', async () => {
@@ -126,22 +127,24 @@ it('should verifyIdToken properly', async () => {
   const maxExpiry = 5;
   const payload =
       {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-  const scope = nock(baseUrl).get('/oauth2/v1/certs').reply(200, fakeCerts);
+  const scope = nock('https://www.googleapis.com')
+                    .get('/oauth2/v1/certs')
+                    .reply(200, fakeCerts);
   client.verifySignedJwtWithCerts =
       (jwt: string, certs: {}, requiredAudience: string|string[],
        issuers?: string[], theMaxExpiry?: number) => {
-        assert.equal(jwt, idToken);
-        assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
-        assert.equal(requiredAudience, audience);
-        assert.equal(theMaxExpiry, maxExpiry);
+        assert.strictEqual(jwt, idToken);
+        assert.strictEqual(JSON.stringify(certs), JSON.stringify(fakeCerts));
+        assert.strictEqual(requiredAudience, audience);
+        assert.strictEqual(theMaxExpiry, maxExpiry);
         return new LoginTicket('c', payload);
       };
   const result = await client.verifyIdToken({idToken, audience, maxExpiry});
   scope.done();
   assert.notEqual(result, null);
   if (result) {
-    assert.equal(result.getEnvelope(), 'c');
-    assert.equal(result.getPayload(), payload);
+    assert.strictEqual(result.getEnvelope(), 'c');
+    assert.strictEqual(result.getPayload(), payload);
   }
 });
 
@@ -153,22 +156,16 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
      client.verifySignedJwtWithCerts =
-         (jwt: string, certs: {}, requiredAudience: string|string[],
-          issuers?: string[], theMaxExpiry?: number) => {
-           assert.equal(jwt, idToken);
-           assert.equal(JSON.stringify(certs), JSON.stringify(fakeCerts));
-           assert.equal(requiredAudience, audience);
+         (jwt: string, certs: {}, requiredAudience: string) => {
+           assert.strictEqual(jwt, idToken);
+           assert.deepStrictEqual(certs, fakeCerts);
+           assert.strictEqual(requiredAudience, audience);
            return new LoginTicket('c', payload);
          };
-     try {
-       // tslint:disable-next-line no-any
-       await (client as any).verifyIdToken(idToken, audience);
-       throw new Error('Expected to throw');
-     } catch (e) {
-       assert.equal(
-           e.message,
-           'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.');
-     }
+     assert.throws(
+         // tslint:disable-next-line no-any
+         () => (client as any).verifyIdToken(idToken, audience),
+         /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./);
    });
 
 it('should allow scopes to be specified as array', () => {
@@ -183,7 +180,7 @@ it('should allow scopes to be specified as array', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.scope, SCOPE_ARRAY.join(' '));
+  assert.strictEqual(query.scope, SCOPE_ARRAY.join(' '));
 });
 
 it('should set response_type param to code if none is given while generating the consent page url',
@@ -194,7 +191,7 @@ it('should set response_type param to code if none is given while generating the
        throw new Error('Unable to parse querystring');
      }
      const query = qs.parse(parsed.query);
-     assert.equal(query.response_type, 'code');
+     assert.strictEqual(query.response_type, 'code');
    });
 
 it('should verify a valid certificate against a jwt', () => {
@@ -212,15 +209,15 @@ it('should verify a valid certificate against a jwt', () => {
       '"iat":' + now + ',' +
       '"exp":' + expiry + '}';
   const envelope = JSON.stringify({kid: 'keyid', alg: 'RS256'});
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   const login =
       client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
-  assert.equal(login.getUserId(), '123456789');
+  assert.strictEqual(login.getUserId(), '123456789');
 });
 
 it('should fail due to invalid audience', () => {
@@ -242,8 +239,8 @@ it('should fail due to invalid audience', () => {
       '"alg":"RS256"' +
       '}';
 
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -272,8 +269,8 @@ it('should fail due to invalid array of audiences', () => {
       '"alg":"RS256"' +
       '}';
 
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -300,8 +297,8 @@ it('should fail due to invalid signature', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -330,8 +327,8 @@ it('should fail due to invalid envelope', () => {
       '"kid":"keyid"' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -359,8 +356,8 @@ it('should fail due to invalid payload', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -388,8 +385,8 @@ it('should fail due to invalid signature', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  const data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64') + '.' +
+  const data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64') + '.' +
       'broken-signature';
   assert.throws(() => {
     client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience');
@@ -411,8 +408,8 @@ it('should fail due to no expiration date', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -439,8 +436,8 @@ it('should fail due to no issue time', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -468,8 +465,8 @@ it('should fail due to certificate with expiration date in future', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -499,8 +496,8 @@ it('should pass due to expiration date in future with adjusted max expiry',
          '"kid":"keyid",' +
          '"alg":"RS256"' +
          '}';
-     let data = new Buffer(envelope).toString('base64') + '.' +
-         new Buffer(idToken).toString('base64');
+     let data = Buffer.from(envelope).toString('base64') + '.' +
+         Buffer.from(idToken).toString('base64');
      const signer = crypto.createSign('sha256');
      signer.update(data);
      const signature = signer.sign(privateKey, 'base64');
@@ -529,8 +526,8 @@ it('should fail due to token being used to early', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -561,8 +558,8 @@ it('should fail due to token being used to late', () => {
       '"alg":"RS256"' +
       '}';
 
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -590,8 +587,8 @@ it('should fail due to invalid issuer', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -620,8 +617,8 @@ it('should pass due to valid issuer', () => {
       '"kid":"keyid",' +
       '"alg":"RS256"' +
       '}';
-  let data = new Buffer(envelope).toString('base64') + '.' +
-      new Buffer(idToken).toString('base64');
+  let data = Buffer.from(envelope).toString('base64') + '.' +
+      Buffer.from(idToken).toString('base64');
   const signer = crypto.createSign('sha256');
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
@@ -631,12 +628,14 @@ it('should pass due to valid issuer', () => {
 });
 
 it('should be able to retrieve a list of Google certificates', (done) => {
-  const scope = nock(baseUrl).get(certsPath).replyWithFile(200, certsResPath);
+  const scope = nock('https://www.googleapis.com')
+                    .get(certsPath)
+                    .replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
-    assert.equal(err, null);
-    assert.equal(Object.keys(certs).length, 2);
-    assert.notEqual(certs.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
-    assert.notEqual(certs['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
+    assert.strictEqual(err, null);
+    assert.strictEqual(Object.keys(certs!).length, 2);
+    assert.notEqual(certs!.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
+    assert.notEqual(certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'], null);
     scope.done();
     done();
   });
@@ -645,7 +644,7 @@ it('should be able to retrieve a list of Google certificates', (done) => {
 it('should be able to retrieve a list of Google certificates from cache again',
    done => {
      const scope =
-         nock(baseUrl)
+         nock('https://www.googleapis.com')
              .defaultReplyHeaders({
                'Cache-Control':
                    'public, max-age=23641, must-revalidate, no-transform',
@@ -654,12 +653,12 @@ it('should be able to retrieve a list of Google certificates from cache again',
              .get(certsPath)
              .replyWithFile(200, certsResPath);
      client.getFederatedSignonCerts((err, certs) => {
-       assert.equal(err, null);
-       assert.equal(Object.keys(certs).length, 2);
+       assert.strictEqual(err, null);
+       assert.strictEqual(Object.keys(certs!).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
        client.getFederatedSignonCerts((err2, certs2) => {
-         assert.equal(err2, null);
-         assert.equal(Object.keys(certs2).length, 2);
+         assert.strictEqual(err2, null);
+         assert.strictEqual(Object.keys(certs2!).length, 2);
          scope.done();
          done();
        });
@@ -673,7 +672,7 @@ it('should set redirect_uri if not provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.redirect_uri, REDIRECT_URI);
+  assert.strictEqual(query.redirect_uri, REDIRECT_URI);
 });
 
 it('should set client_id if not provided in options', () => {
@@ -683,7 +682,7 @@ it('should set client_id if not provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.client_id, CLIENT_ID);
+  assert.strictEqual(query.client_id, CLIENT_ID);
 });
 
 it('should override redirect_uri if provided in options', () => {
@@ -693,7 +692,7 @@ it('should override redirect_uri if provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.redirect_uri, 'overridden');
+  assert.strictEqual(query.redirect_uri, 'overridden');
 });
 
 it('should override client_id if provided in options', () => {
@@ -703,21 +702,30 @@ it('should override client_id if provided in options', () => {
     throw new Error('Unable to parse querystring');
   }
   const query = qs.parse(parsed.query);
-  assert.equal(query.client_id, 'client_override');
+  assert.strictEqual(query.client_id, 'client_override');
 });
 
 it('should return error in callback on request', done => {
   client.request({}, (err, result) => {
-    assert.equal(err!.message, 'No access, refresh token or API key is set.');
-    assert.equal(result, null);
+    assert.strictEqual(
+        err!.message, 'No access, refresh token or API key is set.');
+    assert.strictEqual(result, undefined);
     done();
+  });
+});
+
+it('should emit warning on refreshAccessToken', async () => {
+  let warned = false;
+  sandbox.stub(process, 'emitWarning').callsFake(() => warned = true);
+  client.refreshAccessToken((err, result) => {
+    assert.strictEqual(warned, true);
   });
 });
 
 it('should return error in callback on refreshAccessToken', done => {
   client.refreshAccessToken((err, result) => {
-    assert.equal(err!.message, 'No refresh token is set.');
-    assert.equal(result, null);
+    assert.strictEqual(err!.message, 'No refresh token is set.');
+    assert.strictEqual(result, undefined);
     done();
   });
 });
@@ -727,7 +735,7 @@ function mockExample() {
   return [
     nock(baseUrl)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(200, {access_token: 'abc123', expires_in: 1}),
     nock('http://example.com').get('/').reply(200)
@@ -743,14 +751,14 @@ it('should refresh token if missing access token', (done) => {
 
   // ensure the tokens event is raised
   client.on('tokens', tokens => {
-    assert.equal(tokens.access_token, accessToken);
+    assert.strictEqual(tokens.access_token, accessToken);
     raisedEvent = true;
   });
 
   client.request({url: 'http://example.com'}, err => {
     scopes.forEach(s => s.done());
     assert(raisedEvent);
-    assert.equal(accessToken, client.credentials.access_token);
+    assert.strictEqual(accessToken, client.credentials.access_token);
     done();
   });
 });
@@ -761,7 +769,7 @@ it('should unify the promise when refreshing the token', async () => {
   const scopes = [
     nock(baseUrl)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(200, {access_token: 'abc123', expires_in: 1}),
     nock('http://example.com').get('/').thrice().reply(200)
@@ -773,7 +781,7 @@ it('should unify the promise when refreshing the token', async () => {
     client.request({url: 'http://example.com'})
   ]);
   scopes.forEach(s => s.done());
-  assert.equal('abc123', client.credentials.access_token);
+  assert.strictEqual('abc123', client.credentials.access_token);
 });
 
 it('should clear the cached refresh token promise after completion',
@@ -783,7 +791,7 @@ it('should clear the cached refresh token promise after completion',
      // promise from getting cached for too long.
      const scopes = [
        nock(baseUrl)
-           .post('/oauth2/v4/token', undefined, {
+           .post('/token', undefined, {
              reqheaders: {'content-type': 'application/x-www-form-urlencoded'}
            })
            .twice()
@@ -795,7 +803,7 @@ it('should clear the cached refresh token promise after completion',
      client.credentials.access_token = null;
      await client.request({url: 'http://example.com'});
      scopes.forEach(s => s.done());
-     assert.equal('abc123', client.credentials.access_token);
+     assert.strictEqual('abc123', client.credentials.access_token);
    });
 
 it('should clear the cached refresh token promise after throw', async () => {
@@ -804,11 +812,11 @@ it('should clear the cached refresh token promise after throw', async () => {
   const scopes = [
     nock(baseUrl)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(500)
         .post(
-            '/oauth2/v4/token', undefined,
+            '/token', undefined,
             {reqheaders: {'content-type': 'application/x-www-form-urlencoded'}})
         .reply(200, {access_token: 'abc123', expires_in: 100000}),
     nock('http://example.com').get('/').reply(200)
@@ -820,7 +828,7 @@ it('should clear the cached refresh token promise after throw', async () => {
   }
   await client.request({url: 'http://example.com'});
   scopes.forEach(s => s.done());
-  assert.equal('abc123', client.credentials.access_token);
+  assert.strictEqual('abc123', client.credentials.access_token);
 });
 
 it('should refresh if access token is expired', (done) => {
@@ -832,7 +840,7 @@ it('should refresh if access token is expired', (done) => {
   const scopes = mockExample();
   client.request({url: 'http://example.com'}, () => {
     scopes.forEach(s => s.done());
-    assert.equal('abc123', client.credentials.access_token);
+    assert.strictEqual('abc123', client.credentials.access_token);
     done();
   });
 });
@@ -852,7 +860,7 @@ it('should refresh if access token will expired soon and time to refresh before 
      };
      const scopes = mockExample();
      await client.request({url: 'http://example.com'});
-     assert.equal('abc123', client.credentials.access_token);
+     assert.strictEqual('abc123', client.credentials.access_token);
      scopes.forEach(s => s.done());
    });
 
@@ -871,8 +879,9 @@ it('should not refresh if access token will not expire soon and time to refresh 
      };
      const scopes = mockExample();
      await client.request({url: 'http://example.com'});
-     assert.equal('initial-access-token', client.credentials.access_token);
-     assert.equal(false, scopes[0].isDone());
+     assert.strictEqual(
+         'initial-access-token', client.credentials.access_token);
+     assert.strictEqual(false, scopes[0].isDone());
      scopes[1].done();
    });
 
@@ -884,8 +893,8 @@ it('should not refresh if not expired', done => {
   };
   const scopes = mockExample();
   client.request({url: 'http://example.com'}, () => {
-    assert.equal('initial-access-token', client.credentials.access_token);
-    assert.equal(false, scopes[0].isDone());
+    assert.strictEqual('initial-access-token', client.credentials.access_token);
+    assert.strictEqual(false, scopes[0].isDone());
     scopes[1].done();
     done();
   });
@@ -898,8 +907,8 @@ it('should assume access token is not expired', done => {
   };
   const scopes = mockExample();
   client.request({url: 'http://example.com'}, () => {
-    assert.equal('initial-access-token', client.credentials.access_token);
-    assert.equal(false, scopes[0].isDone());
+    assert.strictEqual('initial-access-token', client.credentials.access_token);
+    assert.strictEqual(false, scopes[0].isDone());
     scopes[1].done();
     done();
   });
@@ -918,7 +927,7 @@ it('should assume access token is not expired', done => {
     client.request({url: 'http://example.com/access'}, err => {
       scope.done();
       scopes[0].done();
-      assert.equal('abc123', client.credentials.access_token);
+      assert.strictEqual('abc123', client.credentials.access_token);
       done();
     });
   });
@@ -935,20 +944,20 @@ it('should not retry requests with streaming data', done => {
     scope.done();
     const e = err as AxiosError;
     assert(e);
-    assert.equal(e.response!.status, 401);
+    assert.strictEqual(e.response!.status, 401);
     done();
   });
 });
 
 it('should revoke credentials if access token present', done => {
-  const scope = nock('https://accounts.google.com')
-                    .get('/o/oauth2/revoke?token=abc')
+  const scope = nock('https://oauth2.googleapis.com')
+                    .get('/revoke?token=abc')
                     .reply(200, {success: true});
   client.credentials = {access_token: 'abc', refresh_token: 'abc'};
   client.revokeCredentials((err, result) => {
-    assert.equal(err, null);
-    assert.equal(result!.data!.success, true);
-    assert.equal(JSON.stringify(client.credentials), '{}');
+    assert.strictEqual(err, null);
+    assert.strictEqual(result!.data!.success, true);
+    assert.strictEqual(JSON.stringify(client.credentials), '{}');
     scope.done();
     done();
   });
@@ -958,9 +967,9 @@ it('should clear credentials and return error if no access token to revoke',
    done => {
      client.credentials = {refresh_token: 'abc'};
      client.revokeCredentials((err, result) => {
-       assert.equal(err!.message, 'No access token to revoke.');
-       assert.equal(result, null);
-       assert.equal(JSON.stringify(client.credentials), '{}');
+       assert.strictEqual(err!.message, 'No access token to revoke.');
+       assert.strictEqual(result, undefined);
+       assert.strictEqual(JSON.stringify(client.credentials), '{}');
        done();
      });
    });
@@ -968,7 +977,7 @@ it('should clear credentials and return error if no access token to revoke',
 it('getToken should allow a code_verifier to be passed', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -985,7 +994,7 @@ it('getToken should allow a code_verifier to be passed', async () => {
 it('getToken should set redirect_uri if not provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -995,13 +1004,13 @@ it('getToken should set redirect_uri if not provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.redirect_uri, REDIRECT_URI);
+  assert.strictEqual(params.redirect_uri, REDIRECT_URI);
 });
 
 it('getToken should set client_id if not provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1011,13 +1020,13 @@ it('getToken should set client_id if not provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.client_id, CLIENT_ID);
+  assert.strictEqual(params.client_id, CLIENT_ID);
 });
 
 it('getToken should override redirect_uri if provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1028,13 +1037,13 @@ it('getToken should override redirect_uri if provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.redirect_uri, 'overridden');
+  assert.strictEqual(params.redirect_uri, 'overridden');
 });
 
 it('getToken should override client_id if provided in options', async () => {
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1045,14 +1054,14 @@ it('getToken should override client_id if provided in options', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert.equal(params.client_id, 'overridden');
+  assert.strictEqual(params.client_id, 'overridden');
 });
 
 it('should return expiry_date', done => {
   const now = (new Date()).getTime();
   const scope =
       nock(baseUrl)
-          .post('/oauth2/v4/token', undefined, {
+          .post('/token', undefined, {
             reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'}
           })
           .reply(
@@ -1065,21 +1074,6 @@ it('should return expiry_date', done => {
   });
 });
 
-it('should accept custom authBaseUrl and tokenUrl', async () => {
-  const authBaseUrl = 'http://authBaseUrl.com';
-  const tokenUrl = 'http://tokenUrl.com';
-  const client = new OAuth2Client(
-      CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, {authBaseUrl, tokenUrl});
-  const authUrl = client.generateAuthUrl();
-  const authUrlParts = url.parse(authUrl);
-  assert.equal(
-      authBaseUrl.toLowerCase(),
-      authUrlParts.protocol + '//' + authUrlParts.hostname);
-  const scope = nock(tokenUrl).post('/').reply(200, {});
-  const result = await client.getToken('12345');
-  scope.done();
-});
-
 it('should obtain token info', async () => {
   const accessToken = 'abc';
   const tokenInfo = {
@@ -1090,12 +1084,20 @@ it('should obtain token info', async () => {
   };
 
   const scope = nock(baseUrl)
-                    .get(`/oauth2/v3/tokeninfo?access_token=${accessToken}`)
+                    .get(`/tokeninfo?access_token=${accessToken}`)
                     .reply(200, tokenInfo);
 
   const info = await client.getTokenInfo(accessToken);
   scope.done();
-  assert.equal(info.aud, tokenInfo.aud);
-  assert.equal(info.user_id, tokenInfo.user_id);
-  assert.deepEqual(info.scopes, tokenInfo.scope.split(' '));
+  assert.strictEqual(info.aud, tokenInfo.aud);
+  assert.strictEqual(info.user_id, tokenInfo.user_id);
+  assert.deepStrictEqual(info.scopes, tokenInfo.scope.split(' '));
+});
+
+it('should warn about deprecation of getRequestMetadata', done => {
+  const stub = sandbox.stub(messages, 'warn');
+  client.getRequestMetadata(null, () => {
+    assert.strictEqual(stub.calledOnce, true);
+    done();
+  });
 });

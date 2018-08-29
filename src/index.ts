@@ -15,7 +15,8 @@
  */
 import {GoogleAuth} from './auth/googleauth';
 
-export {Compute} from './auth/computeclient';
+export {Compute, ComputeOptions} from './auth/computeclient';
+export {Credentials} from './auth/credentials';
 export {GoogleAuthOptions} from './auth/googleauth';
 export {IAMAuth} from './auth/iam';
 export {JWTAccess} from './auth/jwtaccess';

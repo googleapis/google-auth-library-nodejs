@@ -16,6 +16,9 @@
 
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
+
+import * as messages from '../messages';
+
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
@@ -26,6 +29,7 @@ export interface JWTOptions extends RefreshOptions {
   email?: string;
   keyFile?: string;
   key?: string;
+  keyId?: string;
   scopes?: string|string[];
   subject?: string;
   additionalClaims?: {};
@@ -35,6 +39,7 @@ export class JWT extends OAuth2Client {
   email?: string;
   keyFile?: string;
   key?: string;
+  keyId?: string;
   scopes?: string|string[];
   scope?: string;
   subject?: string;
@@ -53,21 +58,23 @@ export class JWT extends OAuth2Client {
    * @param key value of key
    * @param scopes list of requested scopes or a single scope.
    * @param subject impersonated account's email address.
+   * @param key_id the ID of the key
    */
   constructor(options: JWTOptions);
   constructor(
       email?: string, keyFile?: string, key?: string, scopes?: string|string[],
-      subject?: string);
+      subject?: string, keyId?: string);
   constructor(
       optionsOrEmail?: string|JWTOptions, keyFile?: string, key?: string,
-      scopes?: string|string[], subject?: string) {
+      scopes?: string|string[], subject?: string, keyId?: string) {
     const opts = (optionsOrEmail && typeof optionsOrEmail === 'object') ?
         optionsOrEmail :
-        {email: optionsOrEmail, keyFile, key, scopes, subject};
+        {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
     super({eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis});
     this.email = opts.email;
     this.keyFile = opts.keyFile;
     this.key = opts.key;
+    this.keyId = opts.keyId;
     this.scopes = opts.scopes;
     this.subject = opts.subject;
     this.additionalClaims = opts.additionalClaims;
@@ -84,6 +91,7 @@ export class JWT extends OAuth2Client {
       email: this.email,
       keyFile: this.keyFile,
       key: this.key,
+      keyId: this.keyId,
       scopes,
       subject: this.subject,
       additionalClaims: this.additionalClaims
@@ -97,7 +105,7 @@ export class JWT extends OAuth2Client {
    */
   protected async getRequestMetadataAsync(url?: string|null):
       Promise<RequestMetadataResponse> {
-    if (!this.apiKey && this.createScopedRequired() && url) {
+    if (!this.apiKey && !this.hasScopes() && url) {
       if (this.additionalClaims && (this.additionalClaims as {
                                      target_audience: string
                                    }).target_audience) {
@@ -107,9 +115,11 @@ export class JWT extends OAuth2Client {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
         if (!this.access) {
-          this.access = new JWTAccess(this.email, this.key);
+          this.access = new JWTAccess(this.email, this.key, this.keyId);
         }
-        return this.access.getRequestMetadata(url, this.additionalClaims);
+        const headers =
+            await this.access.getRequestHeaders(url, this.additionalClaims);
+        return {headers};
       }
     } else {
       return super.getRequestMetadataAsync(url);
@@ -119,19 +129,27 @@ export class JWT extends OAuth2Client {
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createScoped before use.
+   * @deprecated
    * @return false if createScoped does not need to be called.
    */
   createScopedRequired() {
-    // If scopes is null, always return true.
-    if (this.scopes) {
-      // For arrays, check the array length.
-      if (this.scopes instanceof Array) {
-        return this.scopes.length === 0;
-      }
-      // For others, convert to a string and check the length.
-      return String(this.scopes).length === 0;
+    messages.warn(messages.JWT_CREATE_SCOPED_DEPRECATED);
+    return !this.hasScopes();
+  }
+
+  /**
+   * Determine if there are currently scopes available.
+   */
+  private hasScopes() {
+    if (!this.scopes) {
+      return false;
     }
-    return true;
+    // For arrays, check the array length.
+    if (this.scopes instanceof Array) {
+      return this.scopes.length > 0;
+    }
+    // For others, convert to a string and check the length.
+    return String(this.scopes).length > 0;
   }
 
   /**
@@ -144,7 +162,7 @@ export class JWT extends OAuth2Client {
   authorize(callback?: (err: Error|null, result?: Credentials) => void):
       Promise<Credentials>|void {
     if (callback) {
-      this.authorizeAsync().then(r => callback(null, r)).catch(callback);
+      this.authorizeAsync().then(r => callback(null, r), callback);
     } else {
       return this.authorizeAsync();
     }
@@ -219,6 +237,7 @@ export class JWT extends OAuth2Client {
     // Extract the relevant information from the json key file.
     this.email = json.client_email;
     this.key = json.private_key;
+    this.keyId = json.private_key_id;
     this.projectId = json.project_id;
   }
 
@@ -234,7 +253,7 @@ export class JWT extends OAuth2Client {
       inputStream: stream.Readable,
       callback?: (err?: Error|null) => void): void|Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback()).catch(callback);
+      this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }
@@ -247,19 +266,18 @@ export class JWT extends OAuth2Client {
             'Must pass in a stream containing the service account auth settings.');
       }
       let s = '';
-      inputStream.setEncoding('utf8');
-      inputStream.on('data', (chunk) => {
-        s += chunk;
-      });
-      inputStream.on('end', () => {
-        try {
-          const data = JSON.parse(s);
-          this.fromJSON(data);
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
-      });
+      inputStream.setEncoding('utf8')
+          .on('error', reject)
+          .on('data', (chunk) => s += chunk)
+          .on('end', () => {
+            try {
+              const data = JSON.parse(s);
+              this.fromJSON(data);
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          });
     });
   }
 

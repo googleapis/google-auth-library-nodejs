@@ -14,19 +14,31 @@
  * limitations under the License.
  */
 
-import jws from 'jws';
-import LRU from 'lru-cache';
+import * as jws from 'jws';
+import * as LRU from 'lru-cache';
 import * as stream from 'stream';
+
+import * as messages from '../messages';
+
 import {JWTInput} from './credentials';
-import {RequestMetadataResponse} from './oauth2client';
+import {Headers, RequestMetadataResponse} from './oauth2client';
+
+const DEFAULT_HEADER: jws.Header = {
+  alg: 'RS256',
+  typ: 'JWT'
+};
+
+export type Claims = {
+  [index: string]: string
+};
 
 export class JWTAccess {
   email?: string|null;
   key?: string|null;
+  keyId?: string|null;
   projectId?: string;
 
-  private cache =
-      LRU<string, RequestMetadataResponse>({max: 500, maxAge: 60 * 60 * 1000});
+  private cache = LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
 
   /**
    * JWTAccess service account credentials.
@@ -36,20 +48,23 @@ export class JWTAccess {
    *
    * @param email the service account email address.
    * @param key the private key that will be used to sign the token.
+   * @param keyId the ID of the private key used to sign the token.
    */
-  constructor(email?: string|null, key?: string|null) {
+  constructor(email?: string|null, key?: string|null, keyId?: string|null) {
     this.email = email;
     this.key = key;
+    this.keyId = keyId;
   }
 
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
-   *
+   * @deprecated
    * @return always false
    */
   createScopedRequired(): boolean {
     // JWT Header authentication does not use scopes.
+    messages.warn(messages.JWT_ACCESS_CREATE_SCOPED_DEPRECATED);
     return false;
   }
 
@@ -59,12 +74,25 @@ export class JWTAccess {
    * @param authURI The URI being authorized.
    * @param additionalClaims An object with a set of additional claims to
    * include in the payload.
+   * @deprecated Please use `getRequestHeaders` instead.
    * @returns An object that includes the authorization header.
    */
-  getRequestMetadata(
-      authURI: string,
-      additionalClaims?: {[index: string]: string}): RequestMetadataResponse {
-    const cachedToken = this.cache.get(authURI);
+  getRequestMetadata(url: string, additionalClaims?: Claims):
+      RequestMetadataResponse {
+    messages.warn(messages.JWT_ACCESS_GET_REQUEST_METADATA_DEPRECATED);
+    return {headers: this.getRequestHeaders(url, additionalClaims)};
+  }
+
+  /**
+   * Get a non-expired access token, after refreshing if necessary.
+   *
+   * @param url The URI being authorized.
+   * @param additionalClaims An object with a set of additional claims to
+   * include in the payload.
+   * @returns An object that includes the authorization header.
+   */
+  getRequestHeaders(url: string, additionalClaims?: Claims): Headers {
+    const cachedToken = this.cache.get(url);
     if (cachedToken) {
       return cachedToken;
     }
@@ -75,7 +103,7 @@ export class JWTAccess {
     // iss == sub == <client email>
     // aud == <the authorization uri>
     const defaultClaims =
-        {iss: this.email, sub: this.email, aud: authURI, exp, iat};
+        {iss: this.email, sub: this.email, aud: url, exp, iat};
 
     // if additionalClaims are provided, ensure they do not collide with
     // other required claims.
@@ -88,14 +116,15 @@ export class JWTAccess {
       }
     }
 
+    const header =
+        this.keyId ? {...DEFAULT_HEADER, kid: this.keyId} : DEFAULT_HEADER;
     const payload = Object.assign(defaultClaims, additionalClaims);
 
     // Sign the jwt and add it to the cache
-    const signedJWT =
-        jws.sign({header: {alg: 'RS256'}, payload, secret: this.key});
-    const res = {headers: {Authorization: `Bearer ${signedJWT}`}};
-    this.cache.set(authURI, res);
-    return res;
+    const signedJWT = jws.sign({header, payload, secret: this.key});
+    const headers = {Authorization: `Bearer ${signedJWT}`};
+    this.cache.set(url, headers);
+    return headers;
   }
 
   /**
@@ -118,6 +147,7 @@ export class JWTAccess {
     // Extract the relevant information from the json key file.
     this.email = json.client_email;
     this.key = json.private_key;
+    this.keyId = json.private_key_id;
     this.projectId = json.project_id;
   }
 
@@ -132,7 +162,7 @@ export class JWTAccess {
   fromStream(inputStream: stream.Readable, callback?: (err?: Error) => void):
       void|Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback()).catch(callback);
+      this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }
@@ -145,19 +175,18 @@ export class JWTAccess {
             'Must pass in a stream containing the service account auth settings.'));
       }
       let s = '';
-      inputStream.setEncoding('utf8');
-      inputStream.on('data', (chunk) => {
-        s += chunk;
-      });
-      inputStream.on('end', () => {
-        try {
-          const data = JSON.parse(s);
-          this.fromJSON(data);
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
+      inputStream.setEncoding('utf8')
+          .on('data', (chunk) => s += chunk)
+          .on('error', reject)
+          .on('end', () => {
+            try {
+              const data = JSON.parse(s);
+              this.fromJSON(data);
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          });
     });
   }
 }

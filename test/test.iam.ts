@@ -14,18 +14,42 @@
  * limitations under the License.
  */
 
-import assert from 'assert';
-import {IAMAuth} from '../src/index';
+import * as assert from 'assert';
+import * as sinon from 'sinon';
 
-it('passes the token and selector to the callback ', done => {
-  const testSelector = 'a-test-selector';
-  const testToken = 'a-test-token';
-  const client = new IAMAuth(testSelector, testToken);
-  client.getRequestMetadata(null, (err, creds) => {
-    assert.strictEqual(err, null, 'no error was expected: got\n' + err);
-    assert.notStrictEqual(creds, null, 'metadata should be present');
-    assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
-    assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
+import {IAMAuth} from '../src';
+import * as messages from '../src/messages';
+
+const testSelector = 'a-test-selector';
+const testToken = 'a-test-token';
+
+let sandbox: sinon.SinonSandbox;
+let client: IAMAuth;
+beforeEach(() => {
+  sandbox = sinon.createSandbox();
+  client = new IAMAuth(testSelector, testToken);
+});
+afterEach(() => {
+  sandbox.restore();
+});
+
+it('passes the token and selector to the callback ', async () => {
+  const creds = client.getRequestHeaders();
+  assert.notStrictEqual(creds, null, 'metadata should be present');
+  assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
+  assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
+});
+
+it('should warn about deprecation of getRequestMetadata', done => {
+  const stub = sandbox.stub(messages, 'warn');
+  client.getRequestMetadata(null, () => {
+    assert.strictEqual(stub.calledOnce, true);
     done();
   });
+});
+
+it('should emit warning for createScopedRequired', () => {
+  const stub = sandbox.stub(process, 'emitWarning');
+  client.createScopedRequired();
+  assert(stub.called);
 });
