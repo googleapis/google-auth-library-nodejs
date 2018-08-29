@@ -17,6 +17,9 @@
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {validate} from './options';
 
+// tslint:disable-next-line variable-name
+const HttpsProxyAgent = require('https-proxy-agent');
+
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
 const PRODUCT_NAME = 'google-api-nodejs-client';
@@ -92,6 +95,14 @@ export class DefaultTransporter {
       } else {
         throw e;
       }
+    }
+
+    // If the user configured an `HTTPS_PROXY` environment variable, create
+    // a custom agent to proxy the request.
+    const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
+    if (proxy) {
+      opts.httpsAgent = new HttpsProxyAgent(proxy);
+      opts.proxy = false;
     }
 
     if (callback) {

@@ -310,14 +310,9 @@ async function main() {
 
 main().catch(console.error);
 ```
+
 #### Using a Proxy
-You can use the following environment variables to proxy HTTP and HTTPS requests:
-
-- `HTTP_PROXY` / `http_proxy`
-- `HTTPS_PROXY` / `https_proxy`
-
-When HTTP_PROXY / http_proxy are set, they will be used to proxy non-SSL requests that do not have an explicit proxy configuration option present. Similarly, HTTPS_PROXY / https_proxy will be respected for SSL requests that do not have an explicit proxy configuration option. It is valid to define a proxy in one of the environment variables, but then override it for a specific request, using the proxy configuration option.
-
+You can set the `HTTPS_PROXY` or `https_proxy` environment variables to proxy HTTPS requests. When `HTTPS_PROXY` or `https_proxy` are set, they will be used to proxy SSL requests that do not have an explicit proxy configuration option present.
 
 ## Compute
 If your application is running on Google Cloud Platform, you can authenticate using the default service account or by specifying a specific service account.
