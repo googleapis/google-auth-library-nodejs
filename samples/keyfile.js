@@ -16,18 +16,17 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const { GoogleAuth } = require('google-auth-library');
+const { auth } = require('google-auth-library');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  const auth = new GoogleAuth({
+  const client = await auth.getClient({
     keyFilename: 'jwt.keys.json',
     scopes: 'https://www.googleapis.com/auth/cloud-platform'
   });
-  const client = await auth.getClient();
-  const projectId = await auth.getDefaultProjectId();
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
   console.log(res.data);

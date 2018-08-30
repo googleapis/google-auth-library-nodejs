@@ -23,8 +23,7 @@ const axios = require('axios');
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  const client = await auth.getClient();
-  const projectId = await auth.getDefaultProjectId();
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const opts = await auth.authorizeRequest();
   const res = await axios.get(url, opts);

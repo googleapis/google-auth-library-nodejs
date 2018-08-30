@@ -255,14 +255,12 @@ async function main() {
     keys.private_key,
     ['https://www.googleapis.com/auth/cloud-platform'],
   );
-  await client.authorize();
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
   console.log(res.data);
 }
 
 main().catch(console.error);
-
 ```
 
 The parameters for the JWT auth client including how to use it with a `.pem` file are explained in [samples/jwt.js](samples/jwt.js).
@@ -302,7 +300,6 @@ async function main() {
   // load the JWT or UserRefreshClient from the keys
   const client = auth.fromJSON(keys);
   client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-  await client.authorize();
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
   console.log(res.data);
@@ -369,10 +366,7 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [oauth]: https://developers.google.com/identity/protocols/OAuth2
 [snyk-image]: https://snyk.io/test/github/google/google-auth-library-nodejs/badge.svg
 [snyk-url]: https://snyk.io/test/github/google/google-auth-library-nodejs
-[stability]: http://nodejs.org/api/stream.html#stream_stream
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
 [stream]: http://nodejs.org/api/stream.html#stream_class_stream_readable
 [devconsole]: https://console.developer.google.com
-[options]: https://github.com/google/google-auth-library-nodejs/tree/master#options
-[gcloud]: https://github.com/GoogleCloudPlatform/gcloud-node
 [cloudplatform]: https://developers.google.com/cloud/
