@@ -33,7 +33,7 @@ async function main() {
   const client = await auth.getClient({
     scopes: 'https://www.googleapis.com/auth/cloud-platform'
   });
-  const projectId = await auth.getDefaultProjectId();
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
 
   // create a new agent with keepAlive enabled

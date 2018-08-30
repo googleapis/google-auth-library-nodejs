@@ -23,7 +23,7 @@ const { auth } = require('google-auth-library');
  */
 async function main() {
   const client = await auth.getClient();
-  const projectId = await auth.getDefaultProjectId();
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
   console.log(res.data);
