@@ -117,7 +117,7 @@ jobs:
       - run:
           name: Decrypt credentials.
           command: |
-            if [[ -z "${SYSTEM_TESTS_ENCRYPTION_KEY}" ]]; then
+            if ! [[ -z "${SYSTEM_TESTS_ENCRYPTION_KEY}" ]]; then
               openssl aes-256-cbc -d -in .circleci/key.json.enc \
                 -out .circleci/key.json \
                 -k "${SYSTEM_TESTS_ENCRYPTION_KEY}"
@@ -145,7 +145,7 @@ jobs:
       - run:
           name: Decrypt credentials.
           command: |
-            if [[ -z "${SYSTEM_TESTS_ENCRYPTION_KEY}" ]]; then
+            if ! [[ -z "${SYSTEM_TESTS_ENCRYPTION_KEY}" ]]; then
               openssl aes-256-cbc -d -in .circleci/key.json.enc \
                 -out .circleci/key.json \
                 -k "${SYSTEM_TESTS_ENCRYPTION_KEY}"
