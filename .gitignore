@@ -1,16 +1,12 @@
 node_modules
 build/
-types/
 .idea
 .vscode
 docs/
 npm-debug.log
 coverage
-*.js.map
 yarn-error.log
-**/*.js
 samples/*.keys.json
-!samples/**/*.js
 .nyc_output
 package-lock.json
 yarn.lock
