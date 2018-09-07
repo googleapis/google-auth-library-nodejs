@@ -140,6 +140,20 @@ export interface GenerateAuthUrlOpts {
   access_type?: string;
 
   /**
+   * The hd (hosted domain) parameter streamlines the login process for G Suite
+   * hosted accounts. By including the domain of the G Suite user (for example,
+   * mycollege.edu), you can indicate that the account selection UI should be
+   * optimized for accounts at that domain. To optimize for G Suite accounts
+   * generally instead of just one domain, use an asterisk: hd=*.
+   * Don't rely on this UI optimization to control who can access your app,
+   * as client-side requests can be modified. Be sure to validate that the
+   * returned ID token has an hd claim value that matches what you expect
+   * (e.g. mycolledge.edu). Unlike the request parameter, the ID token claim is
+   * contained within a security token from Google, so the value can be trusted.
+   */
+  hd?: string;
+
+  /**
    * The 'response_type' will always be set to 'CODE'.
    */
   response_type?: string;
