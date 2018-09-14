@@ -220,7 +220,7 @@ original scopes, or audience for the token.  To get the token info, you can use 
 
 ```js
 // after acquiring an oAuth2Client...
-const tokenInfo = await oAuth2client.getTokenInfo('my-access-token');
+const tokenInfo = await oAuth2Client.getTokenInfo('my-access-token');
 
 // take a look at the scopes originally provisioned for the access token
 console.log(tokenInfo.scopes);
