@@ -346,7 +346,7 @@ See [CONTRIBUTING][contributing].
 
 This library is licensed under Apache 2.0. Full license text is available in [LICENSE][copying].
 
-[Application Default Credentials]: https://developers.google.com/identity/protocols/application-default-credentials#callingnode
+[Application Default Credentials]: https://cloud.google.com/docs/authentication/getting-started
 [apptype]: https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
 [axios]: https://github.com/axios/axios
@@ -367,6 +367,4 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [snyk-image]: https://snyk.io/test/github/google/google-auth-library-nodejs/badge.svg
 [snyk-url]: https://snyk.io/test/github/google/google-auth-library-nodejs
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
-[stream]: http://nodejs.org/api/stream.html#stream_class_stream_readable
 [devconsole]: https://console.developer.google.com
-[cloudplatform]: https://developers.google.com/cloud/

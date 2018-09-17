@@ -259,7 +259,7 @@ export class GoogleAuth {
     if (!isGCE) {
       // We failed to find the default credentials. Bail out with an error.
       throw new Error(
-          'Could not load the default credentials. Browse to https://developers.google.com/accounts/docs/application-default-credentials for more information.');
+          'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.');
     }
 
     // For GCE, just return a default ComputeClient. It will take care of
