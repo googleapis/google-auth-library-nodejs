@@ -18,7 +18,7 @@ $ npm install google-auth-library
 ```
 
 ## Upgrading to 1.x
-The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/google/google-auth-library-nodejs/releases/tag/v1.0.0) for a list of breaking changes, and the upgrade guide.
+The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/googleapis/google-auth-library-nodejs/releases/tag/v1.0.0) for a list of breaking changes, and the upgrade guide.
 
 ## Ways to authenticate
 This library provides a variety of ways to authenticate to your Google services.
@@ -161,7 +161,7 @@ main();
 ```
 
 #### Handling token events
-This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization](https://github.com/google/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
+This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization](https://github.com/googleapis/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
 
 ```js
 const client = await auth.getClient();
@@ -351,20 +351,20 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
 [axios]: https://github.com/axios/axios
 [axiosOpts]: https://github.com/axios/axios#request-config
-[bugs]: https://github.com/google/google-auth-library-nodejs/issues
-[circle-image]: https://circleci.com/gh/google/google-auth-library-nodejs.svg?style=svg
-[circle-url]: https://circleci.com/gh/google/google-auth-library-nodejs
-[codecov-image]: https://codecov.io/gh/google/google-auth-library-nodejs/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/google/google-auth-library-nodejs
-[contributing]: https://github.com/google/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
-[copying]: https://github.com/google/google-auth-library-nodejs/tree/master/LICENSE
-[david-dm-img]: https://david-dm.org/google/google-auth-library-nodejs/status.svg
-[david-dm]: https://david-dm.org/google/google-auth-library-nodejs
+[bugs]: https://github.com/googleapis/google-auth-library-nodejs/issues
+[circle-image]: https://circleci.com/gh/googleapis/google-auth-library-nodejs.svg?style=svg
+[circle-url]: https://circleci.com/gh/googleapis/google-auth-library-nodejs
+[codecov-image]: https://codecov.io/gh/googleapis/google-auth-library-nodejs/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/googleapis/google-auth-library-nodejs
+[contributing]: https://github.com/googleapis/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
+[copying]: https://github.com/googleapis/google-auth-library-nodejs/tree/master/LICENSE
+[david-dm-img]: https://david-dm.org/googleapis/google-auth-library-nodejs/status.svg
+[david-dm]: https://david-dm.org/googleapis/google-auth-library-nodejs
 [node]: http://nodejs.org/
 [npmimg]: https://img.shields.io/npm/v/google-auth-library.svg
 [npm]: https://www.npmjs.org/package/google-auth-library
 [oauth]: https://developers.google.com/identity/protocols/OAuth2
-[snyk-image]: https://snyk.io/test/github/google/google-auth-library-nodejs/badge.svg
-[snyk-url]: https://snyk.io/test/github/google/google-auth-library-nodejs
+[snyk-image]: https://snyk.io/test/github/googleapis/google-auth-library-nodejs/badge.svg
+[snyk-url]: https://snyk.io/test/github/googleapis/google-auth-library-nodejs
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
 [devconsole]: https://console.developer.google.com
