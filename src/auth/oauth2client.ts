@@ -114,8 +114,7 @@ export interface TokenInfo {
   access_type?: string;
 }
 
-
-export interface TokenInfoRequest {
+interface TokenInfoRequest {
   aud: string;
   user_id?: string;
   scope: string;
