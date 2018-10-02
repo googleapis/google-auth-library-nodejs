@@ -16,13 +16,13 @@
 import {GoogleAuth} from './auth/googleauth';
 
 export {Compute, ComputeOptions} from './auth/computeclient';
-export {Credentials} from './auth/credentials';
+export {CredentialBody, CredentialRequest, Credentials, JWTInput} from './auth/credentials';
 export {GoogleAuthOptions} from './auth/googleauth';
-export {IAMAuth} from './auth/iam';
-export {JWTAccess} from './auth/jwtaccess';
-export {JWT} from './auth/jwtclient';
-export {CodeChallengeMethod, OAuth2Client} from './auth/oauth2client';
-export {UserRefreshClient} from './auth/refreshclient';
+export {IAMAuth, RequestMetadata} from './auth/iam';
+export {Claims, JWTAccess} from './auth/jwtaccess';
+export {JWT, JWTOptions} from './auth/jwtclient';
+export {Certificates, CodeChallengeMethod, GenerateAuthUrlOpts, GetTokenOptions, OAuth2Client, OAuth2ClientOptions, RefreshOptions, TokenInfo, VerifyIdTokenOptions} from './auth/oauth2client';
+export {UserRefreshClient, UserRefreshClientOptions} from './auth/refreshclient';
 export {DefaultTransporter} from './transporters';
 
 const auth = new GoogleAuth();
