@@ -34,7 +34,7 @@ They are best suited for cases when the call needs to have the same identity and
 
 #### Download your Service Account Credentials JSON file
 
-To use `Application Default Credentials`, You first need to download a set of JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in the [Google Developers Console][devconsole] and select **Service account** from the **Add credentials** dropdown.
+To use Application Default Credentials, You first need to download a set of JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in the [Google Developers Console][devconsole] and select **Service account** from the **Add credentials** dropdown.
 
 > This file is your *only copy* of these credentials. It should never be
 > committed with your source code, and should be stored securely.
