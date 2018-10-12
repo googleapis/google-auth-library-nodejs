@@ -784,8 +784,7 @@ it('getProjectId should use Cloud SDK when it is available and env vars are not 
      // * Well-known file is set up to point to private2.json
      // * Running on GCE is set to true.
      blockGoogleApplicationCredentialEnvironmentVariable();
-     const stdout = JSON.stringify(
-         {configuration: {properties: {core: {project: fixedProjectId}}}});
+     const stdout = fixedProjectId;
      const stub = sandbox.stub(child_process, 'exec')
                       .callsArgWith(1, null, stdout, null);
      const projectId = await auth.getProjectId();
