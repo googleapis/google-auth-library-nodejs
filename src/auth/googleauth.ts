@@ -560,21 +560,18 @@ export class GoogleAuth {
    */
   private async getDefaultServiceProjectId(): Promise<string|null> {
     return new Promise<string|null>(resolve => {
-      exec(
-          'gcloud config config-helper --format json',
-          (err, stdout, stderr) => {
-            if (!err && stdout) {
-              try {
-                const projectId =
-                    JSON.parse(stdout).configuration.properties.core.project;
-                resolve(projectId);
-                return;
-              } catch (e) {
-                // ignore errors
-              }
-            }
-            resolve(null);
-          });
+      exec('gcloud config get-value project', (err, stdout, stderr) => {
+        if (!err && stdout) {
+          try {
+            const projectId = stdout.trim();
+            resolve(projectId);
+            return;
+          } catch (e) {
+            // ignore errors
+          }
+        }
+        resolve(null);
+      });
     });
   }
 
