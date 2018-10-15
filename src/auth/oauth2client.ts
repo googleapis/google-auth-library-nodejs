@@ -829,14 +829,14 @@ export class OAuth2Client extends AuthClient {
    * @param options that contains all options.
    * @param callback Callback supplying GoogleLogin if successful
    */
-  verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket|null>;
+  verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket>;
   verifyIdToken(
       options: VerifyIdTokenOptions,
-      callback: (err: Error|null, login?: LoginTicket|null) => void): void;
+      callback: (err: Error|null, login?: LoginTicket) => void): void;
   verifyIdToken(
       options: VerifyIdTokenOptions,
-      callback?: (err: Error|null, login?: LoginTicket|null) => void):
-      void|Promise<LoginTicket|null> {
+      callback?: (err: Error|null, login?: LoginTicket) => void):
+      void|Promise<LoginTicket> {
     // This function used to accept two arguments instead of an options object.
     // Check the types to help users upgrade with less pain.
     // This check can be removed after a 2.0 release.
@@ -853,7 +853,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async verifyIdTokenAsync(options: VerifyIdTokenOptions):
-      Promise<LoginTicket|null> {
+      Promise<LoginTicket> {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
