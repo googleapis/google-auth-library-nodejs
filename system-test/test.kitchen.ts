@@ -32,7 +32,7 @@ const spawnp =
       return new Promise((resolve, reject) => {
         cp.spawn(command, args, Object.assign(options, {stdio: 'inherit'}))
             .on('close',
-                (code, signal) => {
+                code => {
                   if (code === 0) {
                     resolve();
                   } else {
@@ -57,7 +57,7 @@ it('should be able to use the d.ts', async () => {
   // stagingPath can be on another filesystem so fs.rename() will fail
   // with EXDEV, hence we use `mv` module here.
   await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
-  await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
+  await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
   await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
 }).timeout(40000);
 
