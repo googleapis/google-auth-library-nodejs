@@ -853,7 +853,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async verifyIdTokenAsync(options: VerifyIdTokenOptions):
-      Promise<LoginTicket|null> {
+      Promise<LoginTicket> {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
