@@ -31,14 +31,15 @@ const spawnp =
     (command: string, args: string[], options: cp.SpawnOptions = {}) => {
       return new Promise((resolve, reject) => {
         cp.spawn(command, args, Object.assign(options, {stdio: 'inherit'}))
-            .on('close', code => {
-              if (code === 0) {
-                resolve();
-              } else {
-                reject(
-                    new Error(`Spawn failed with an exit code of ${code}`));
-              }
-            })
+            .on('close',
+                code => {
+                  if (code === 0) {
+                    resolve();
+                  } else {
+                    reject(
+                        new Error(`Spawn failed with an exit code of ${code}`));
+                  }
+                })
             .on('error', err => {
               reject(err);
             });
