@@ -4,6 +4,46 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## v2.0.1
+
+### Implementation Changes
+- fix: verifyIdToken will never return null ([#488](https://github.com/google/google-auth-library-nodejs/pull/488))
+- Update the url to application default credentials ([#470](https://github.com/google/google-auth-library-nodejs/pull/470))
+- Update omitted parameter 'hd' ([#467](https://github.com/google/google-auth-library-nodejs/pull/467))
+
+### Dependencies
+- chore(deps): update dependency nock to v10 ([#501](https://github.com/google/google-auth-library-nodejs/pull/501))
+- chore(deps): update dependency sinon to v7 ([#502](https://github.com/google/google-auth-library-nodejs/pull/502))
+- chore(deps): update dependency typescript to v3.1.3 ([#503](https://github.com/google/google-auth-library-nodejs/pull/503))
+- chore(deps): update dependency gh-pages to v2 ([#499](https://github.com/google/google-auth-library-nodejs/pull/499))
+- chore(deps): update dependency typedoc to ^0.13.0 ([#497](https://github.com/google/google-auth-library-nodejs/pull/497))
+
+### Documentation
+- docs: Remove code format from Application Default Credentials ([#483](https://github.com/google/google-auth-library-nodejs/pull/483))
+- docs: replace google/ with googleapis/ in URIs ([#472](https://github.com/google/google-auth-library-nodejs/pull/472))
+- Fix typo in readme ([#469](https://github.com/google/google-auth-library-nodejs/pull/469))
+- Update samples and docs for 2.0 ([#459](https://github.com/google/google-auth-library-nodejs/pull/459))
+
+### Internal / Testing Changes
+- chore: update issue templates ([#509](https://github.com/google/google-auth-library-nodejs/pull/509))
+- chore: remove old issue template ([#507](https://github.com/google/google-auth-library-nodejs/pull/507))
+- build: run tests on node11 ([#506](https://github.com/google/google-auth-library-nodejs/pull/506))
+- chore(build): drop hard rejection and update gts in the kitchen test ([#504](https://github.com/google/google-auth-library-nodejs/pull/504))
+- chores(build): do not collect sponge.xml from windows builds ([#500](https://github.com/google/google-auth-library-nodejs/pull/500))
+- chores(build): run codecov on continuous builds ([#495](https://github.com/google/google-auth-library-nodejs/pull/495))
+- chore: update new issue template ([#494](https://github.com/google/google-auth-library-nodejs/pull/494))
+- build: fix codecov uploading on Kokoro ([#490](https://github.com/google/google-auth-library-nodejs/pull/490))
+- test: move kitchen sink tests to system-test ([#489](https://github.com/google/google-auth-library-nodejs/pull/489))
+- Update kokoro config ([#482](https://github.com/google/google-auth-library-nodejs/pull/482))
+- fix: export additional typescript types ([#479](https://github.com/google/google-auth-library-nodejs/pull/479))
+- Don't publish sourcemaps ([#478](https://github.com/google/google-auth-library-nodejs/pull/478))
+- test: remove appveyor config ([#477](https://github.com/google/google-auth-library-nodejs/pull/477))
+- Enable prefer-const in the eslint config ([#473](https://github.com/google/google-auth-library-nodejs/pull/473))
+- Enable no-var in eslint ([#471](https://github.com/google/google-auth-library-nodejs/pull/471))
+- Update CI config ([#468](https://github.com/google/google-auth-library-nodejs/pull/468))
+- Retry npm install in CI ([#465](https://github.com/google/google-auth-library-nodejs/pull/465))
+- Update Kokoro config ([#462](https://github.com/google/google-auth-library-nodejs/pull/462))
+
 ## v2.0.0
 
 Well hello 2.0 🎉  **This release has multiple breaking changes**.   It also has a lot of bug fixes.
