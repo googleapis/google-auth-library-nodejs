@@ -16,7 +16,6 @@
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as crypto from 'crypto';
-import * as http from 'http';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
 import * as messages from '../messages';
@@ -725,7 +724,8 @@ export class OAuth2Client extends AuthClient {
       AxiosPromise<RevokeCredentialsResult>|void {
     const opts = {
       url: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
-          querystring.stringify({token})
+          querystring.stringify({token}),
+      method: 'POST'
     };
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts).then(

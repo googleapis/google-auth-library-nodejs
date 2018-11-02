@@ -951,7 +951,7 @@ it('should not retry requests with streaming data', done => {
 
 it('should revoke credentials if access token present', done => {
   const scope = nock('https://oauth2.googleapis.com')
-                    .get('/revoke?token=abc')
+                    .post('/revoke?token=abc')
                     .reply(200, {success: true});
   client.credentials = {access_token: 'abc', refresh_token: 'abc'};
   client.revokeCredentials((err, result) => {
