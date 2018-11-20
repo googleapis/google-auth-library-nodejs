@@ -38,7 +38,7 @@
     "@types/node": "^10.5.1",
     "@types/pify": "^3.0.2",
     "@types/semver": "^5.5.0",
-    "@types/sinon": "^5.0.1",
+    "@types/sinon": "5.0.5",
     "@types/tmp": "^0.0.33",
     "assert-rejects": "^1.0.0",
     "codecov": "^3.0.2",
