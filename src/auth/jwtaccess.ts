@@ -38,7 +38,7 @@ export class JWTAccess {
   keyId?: string|null;
   projectId?: string;
 
-  private cache = LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
+  private cache = new LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
 
   /**
    * JWTAccess service account credentials.
