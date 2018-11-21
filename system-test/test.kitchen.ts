@@ -17,11 +17,11 @@
 import * as cp from 'child_process';
 import * as mv from 'mv';
 import {ncp} from 'ncp';
-import * as pify from 'pify';
 import * as tmp from 'tmp';
+import {promisify} from 'util';
 
-const mvp = pify(mv);
-const ncpp = pify(ncp);
+const mvp = promisify(mv) as {} as (...args: string[]) => Promise<void>;
+const ncpp = promisify(ncp);
 const keep = !!process.env.GALN_KEEP_TEMPDIRS;
 const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
