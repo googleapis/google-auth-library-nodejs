@@ -1310,12 +1310,14 @@ it('should warn the user if using default Cloud SDK credentials', done => {
     return Promise.resolve(new JWT(CLOUD_SDK_CLIENT_ID));
   };
   sandbox.stub(process, 'emitWarning')
-      .callsFake((message: string, warningOrType: messages.Warning|string) => {
+      .callsFake((message: string|Error, warningOrType?: string) => {
         assert.strictEqual(
             message, messages.PROBLEMATIC_CREDENTIALS_WARNING.message);
         const warningType = typeof warningOrType === 'string' ?
             warningOrType :
-            warningOrType.type;
+            // @types/node doesn't recognize the emitWarning syntax which
+            // tslint:disable-next-line no-any
+            (warningOrType as any).type;
         assert.strictEqual(warningType, messages.WarningTypes.WARNING);
         done();
       });
@@ -1325,12 +1327,14 @@ it('should warn the user if using default Cloud SDK credentials', done => {
 it('should warn the user if using the getDefaultProjectId method', done => {
   mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
   sandbox.stub(process, 'emitWarning')
-      .callsFake((message: string, warningOrType: messages.Warning|string) => {
+      .callsFake((message: string|Error, warningOrType?: string) => {
         assert.strictEqual(
             message, messages.DEFAULT_PROJECT_ID_DEPRECATED.message);
         const warningType = typeof warningOrType === 'string' ?
             warningOrType :
-            warningOrType.type;
+            // @types/node doesn't recognize the emitWarning syntax which
+            // tslint:disable-next-line no-any
+            (warningOrType as any).type;
         assert.strictEqual(warningType, messages.WarningTypes.DEPRECATION);
         done();
       });
