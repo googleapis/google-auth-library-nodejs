@@ -18,12 +18,9 @@ import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
 
 import * as messages from '../messages';
-
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
 import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
-
-const isString = require('lodash.isstring');
 
 export interface JWTOptions extends RefreshOptions {
   email?: string;
@@ -286,7 +283,7 @@ export class JWT extends OAuth2Client {
    * @param apiKey The API Key in string form.
    */
   fromAPIKey(apiKey: string): void {
-    if (!isString(apiKey)) {
+    if (typeof apiKey !== 'string') {
       throw new Error('Must provide an API Key string.');
     }
     this.apiKey = apiKey;
