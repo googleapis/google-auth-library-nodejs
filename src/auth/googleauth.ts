@@ -19,9 +19,9 @@ import {exec} from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
-import * as http from 'http';
 import * as os from 'os';
 import * as path from 'path';
+import * as pify from 'pify';
 import * as stream from 'stream';
 import * as util from 'util';
 
@@ -104,7 +104,7 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput|null = null;
 
-  cachedCredential: JWT|UserRefreshClient|Compute|null = null;
+  cachedCredential: OAuth2Client|null = null;
 
   private keyFilename?: string;
   private scopes?: string|string[];
@@ -218,7 +218,7 @@ export class GoogleAuth {
       };
     }
 
-    let credential: JWT|UserRefreshClient|null;
+    let credential: OAuth2Client|null;
     let projectId: string|null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
@@ -256,17 +256,25 @@ export class GoogleAuth {
           'Unexpected error determining execution environment: ' + e.message);
     }
 
-    if (!isGCE) {
-      // We failed to find the default credentials. Bail out with an error.
-      throw new Error(
-          'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.');
+    if (isGCE) {
+      // For GCE, just return a default ComputeClient. It will take care of the
+      // rest.
+      this.cachedCredential = new Compute(options);
+      projectId = await this.getProjectId();
+      return {projectId, credential: this.cachedCredential};
     }
 
-    // For GCE, just return a default ComputeClient. It will take care of
-    // the rest.
-    this.cachedCredential = new Compute(options);
-    projectId = await this.getProjectId();
-    return {projectId, credential: this.cachedCredential};
+    // lastly, check to see if there's a local login with the Cloud SDk
+    credential = await this._tryGetCredsFromGcloud();
+    if (credential) {
+      this.cachedCredential = credential;
+      projectId = await this.getProjectId();
+      return {projectId, credential};
+    }
+
+    // We failed to find the default credentials. Bail out with an error.
+    throw new Error(
+        'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.');
   }
 
   /**
@@ -299,6 +307,27 @@ export class GoogleAuth {
       throw this.createError(
           'Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable.',
           e);
+    }
+  }
+
+  /**
+   * Attempts to load default credentials from a well-known file location
+   * @return Promise that resolves with the OAuth2Client or null.
+   * @api private
+   */
+  async _tryGetCredsFromGcloud(): Promise<OAuth2Client|null> {
+    try {
+      const listResults = await pify(exec, {multiArgs: true})(
+          'gcloud auth list --filter=status:ACTIVE --format="value(account)"');
+      const name = (listResults[0] as string).trim();
+      const out = await pify(exec)(`gcloud auth describe ${name} --format="json"`);
+      const r = JSON.parse(out);
+      const client = new OAuth2Client(r.client_id, r.client_secret);
+      client.setCredentials(
+          {access_token: r.access_token, refresh_token: r.refresh_token});
+      return client;
+    } catch (e) {
+      return null;
     }
   }
 
