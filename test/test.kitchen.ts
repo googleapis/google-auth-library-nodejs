@@ -39,8 +39,8 @@ const spawnp =
                   if (code === 0) {
                     resolve();
                   } else {
-                    reject(
-                        new Error(`Spawn failed with an exit code of ${code}`));
+                    reject(new Error(`Spawn '${
+                        command}' failed with an exit code of ${code}`));
                   }
                 })
             .on('error', err => {
@@ -63,26 +63,25 @@ before('npm pack and move to staging directory', async () => {
   await ncpp('test/fixtures/kitchen', `${stagingPath}/`);
 });
 
-it('should be able to use the d.ts', async function() {
-  if (process.version.match(/^v[46]\./)) {
-    this.timeout(240000);  // :-(
-  }
-  await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-}).timeout(40000);
+it.only('should be able to use the d.ts', async function() {
+    if (process.version.match(/^v[46]\./)) {
+      this.timeout(240000);  // :-(
+    }
+    await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
+  }).timeout(40000);
 
-it('should be able to webpack the library', async function() {
-  if (process.version.match(/^v[46]\./)) {
-    console.log('not running webpack on node4 or node6.');
-    this.skip();
-    return;
-  }
-  // we expect npm install is executed on the previous step
-  await spawnp('node_modules/.bin/webpack', [], {cwd: `${stagingPath}/`});
-  // TODO: change the above command to 'npx webpack' after removing node6
-  const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
-  const stat = fs.statSync(bundle);
-  assert(stat.size < 256 * 1024);
-}).timeout(20000);
+it.only('should be able to webpack the library', async function() {
+    if (process.version.match(/^v[46]\./)) {
+      console.log('not running webpack on node4 or node6.');
+      this.skip();
+      return;
+    }
+    // we expect npm install is executed on the previous step
+    await spawnp('npx', ['webpack'], {cwd: `${stagingPath}/`});
+    const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
+    const stat = fs.statSync(bundle);
+    assert(stat.size < 256 * 1024);
+  }).timeout(20000);
 
 /**
  * CLEAN UP - remove the staging directory when done.
