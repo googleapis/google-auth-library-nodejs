@@ -3,7 +3,7 @@
 # Google Auth Library
 
 [![npm version][npmimg]][npm]
-[![CircleCI][circle-image]][circle-url]
+[![npm version](https://img.shields.io/npm/v/google-auth-library.svg)](https://www.npmjs.org/package/google-auth-library)
 [![codecov][codecov-image]][codecov-url]
 [![Dependencies][david-dm-img]][david-dm]
 [![Known Vulnerabilities][snyk-image]][snyk-url]
@@ -368,3 +368,4 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [snyk-url]: https://snyk.io/test/github/googleapis/google-auth-library-nodejs
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
 [devconsole]: https://console.developer.google.com
+
