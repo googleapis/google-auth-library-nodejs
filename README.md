@@ -3,7 +3,6 @@
 # Google Auth Library
 
 [![npm version][npmimg]][npm]
-[![CircleCI][circle-image]][circle-url]
 [![codecov][codecov-image]][codecov-url]
 [![Dependencies][david-dm-img]][david-dm]
 [![Known Vulnerabilities][snyk-image]][snyk-url]
@@ -16,9 +15,6 @@ This library is distributed on `npm`. To add it as a dependency, run the followi
 ``` sh
 $ npm install google-auth-library
 ```
-
-## Upgrading to 1.x
-The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/googleapis/google-auth-library-nodejs/releases/tag/v1.0.0) for a list of breaking changes, and the upgrade guide.
 
 ## Ways to authenticate
 This library provides a variety of ways to authenticate to your Google services.
@@ -352,8 +348,6 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [axios]: https://github.com/axios/axios
 [axiosOpts]: https://github.com/axios/axios#request-config
 [bugs]: https://github.com/googleapis/google-auth-library-nodejs/issues
-[circle-image]: https://circleci.com/gh/googleapis/google-auth-library-nodejs.svg?style=svg
-[circle-url]: https://circleci.com/gh/googleapis/google-auth-library-nodejs
 [codecov-image]: https://codecov.io/gh/googleapis/google-auth-library-nodejs/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/googleapis/google-auth-library-nodejs
 [contributing]: https://github.com/googleapis/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
