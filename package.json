@@ -63,11 +63,6 @@
     "!build/src/**/*.map",
     "package.json"
   ],
-  "nyc": {
-    "exclude": [
-      "build/test"
-    ]
-  },
   "scripts": {
     "test": "npm run test-only",
     "test-only": "nyc mocha build/test",
