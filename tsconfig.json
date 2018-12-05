@@ -17,6 +17,7 @@
   ],
   "exclude": [
     "node_modules",
-    "test/fixtures"
+    "test/fixtures",
+    "system-test/*.ts"
   ]
 }

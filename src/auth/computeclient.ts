@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as gcpMetadata from 'gcp-metadata';
-import * as rax from 'retry-axios';
+import * as messages from '../messages';
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
-export interface ComputeOptions extends RefreshOptions {}
-
-// Create a scoped axios instance that will retry 3 times by default
-const ax = axios.create();
-rax.attach(ax);
+export interface ComputeOptions extends RefreshOptions {
+  /**
+   * The service account email to use, or 'default'. A Compute Engine instance
+   * may have multiple service accounts.
+   */
+  serviceAccountEmail?: string;
+}
 
 export class Compute extends OAuth2Client {
-  /**
-   * Google Compute Engine metadata server token endpoint.
-   */
-  protected static readonly _GOOGLE_OAUTH2_TOKEN_URL =
-      `${gcpMetadata.BASE_PATH}/instance/service-accounts/default/token`;
+  private serviceAccountEmail: string;
 
   /**
    * Google Compute Engine service account credentials.
@@ -39,22 +37,25 @@ export class Compute extends OAuth2Client {
    * Retrieve access token from the metadata server.
    * See: https://developers.google.com/compute/docs/authentication
    */
-  constructor(options?: ComputeOptions) {
+  constructor(options: ComputeOptions = {}) {
     super(options);
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};
+    this.serviceAccountEmail = options.serviceAccountEmail || 'default';
   }
 
   /**
    * Indicates whether the credential requires scopes to be created by calling
    * createdScoped before use.
+   * @deprecated
    * @return Boolean indicating if scope is required.
    */
   createScopedRequired() {
     // On compute engine, scopes are specified at the compute instance's
     // creation time, and cannot be changed. For this reason, always return
     // false.
+    messages.warn(messages.COMPUTE_CREATE_SCOPED_DEPRECATED);
     return false;
   }
 
@@ -64,18 +65,10 @@ export class Compute extends OAuth2Client {
    */
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
-    const url = this.tokenUrl ||
-        `${gcpMetadata.HOST_ADDRESS}${Compute._GOOGLE_OAUTH2_TOKEN_URL}`;
-    let res: AxiosResponse<CredentialRequest>|null = null;
-    // request for new token
+    const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
+    let res: AxiosResponse<CredentialRequest>;
     try {
-      // TODO: In 2.0, we should remove the ability to configure the tokenUrl,
-      // and switch this over to use the gcp-metadata package instead.
-      res = await ax.request<CredentialRequest>({
-        url,
-        headers: {[gcpMetadata.HEADER_NAME]: 'Google'},
-        raxConfig: {noResponseRetries: 3, retry: 3, instance: ax}
-      } as rax.RaxConfig);
+      res = await gcpMetadata.instance(tokenPath);
     } catch (e) {
       e.message = 'Could not refresh access token.';
       throw e;
@@ -89,7 +82,6 @@ export class Compute extends OAuth2Client {
     this.emit('tokens', tokens);
     return {tokens, res};
   }
-
 
   protected requestAsync<T>(opts: AxiosRequestConfig, retry = false):
       AxiosPromise<T> {

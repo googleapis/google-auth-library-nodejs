@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-import {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
-import fs from 'fs';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
-import http from 'http';
-import os from 'os';
-import path from 'path';
-import stream from 'stream';
-import util from 'util';
+import * as http from 'http';
+import * as os from 'os';
+import * as path from 'path';
+import * as stream from 'stream';
+import * as util from 'util';
 
+import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
-import {IAMAuth, RequestMetadata} from './iam';
-import {JWTAccess} from './jwtaccess';
 import {JWT, JWTOptions} from './jwtclient';
-import {GetAccessTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
-import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
+import {Headers, OAuth2Client, RefreshOptions} from './oauth2client';
+import {UserRefreshClient} from './refreshclient';
 
 export interface ProjectIdCallback {
   (err?: Error|null, projectId?: string|null): void;
@@ -50,10 +50,6 @@ export interface ADCCallback {
 export interface ADCResponse {
   credential: OAuth2Client;
   projectId: string|null;
-}
-
-interface CredentialResult {
-  default: {email: string;};
 }
 
 export interface GoogleAuthOptions {
@@ -83,11 +79,11 @@ export interface GoogleAuthOptions {
   projectId?: string;
 }
 
+export const CLOUD_SDK_CLIENT_ID =
+    '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
+
 export class GoogleAuth {
   transporter?: Transporter;
-
-  // This shim is in place for compatibility with google-auto-auth.
-  getProjectId = this.getDefaultProjectId;
 
   /**
    * Caches a value indicating whether the auth layer is running on Google
@@ -127,23 +123,36 @@ export class GoogleAuth {
   }
 
   /**
-   * Obtains the default project ID for the application.
-   * @param callback Optional callback
-   * @returns Promise that resolves with project Id (if used without callback)
+   * THIS METHOD HAS BEEN DEPRECATED.
+   * It will be removed in 3.0.  Please use getProjectId instead.
    */
   getDefaultProjectId(): Promise<string>;
   getDefaultProjectId(callback: ProjectIdCallback): void;
   getDefaultProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+    messages.warn(messages.DEFAULT_PROJECT_ID_DEPRECATED);
     if (callback) {
-      this.getDefaultProjectIdAsync()
-          .then(r => callback(null, r))
-          .catch(callback);
+      this.getProjectIdAsync().then(r => callback(null, r), callback);
     } else {
-      return this.getDefaultProjectIdAsync();
+      return this.getProjectIdAsync();
     }
   }
 
-  private getDefaultProjectIdAsync(): Promise<string|null> {
+  /**
+   * Obtains the default project ID for the application.
+   * @param callback Optional callback
+   * @returns Promise that resolves with project Id (if used without callback)
+   */
+  getProjectId(): Promise<string>;
+  getProjectId(callback: ProjectIdCallback): void;
+  getProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+    if (callback) {
+      this.getProjectIdAsync().then(r => callback(null, r), callback);
+    } else {
+      return this.getProjectIdAsync();
+    }
+  }
+
+  private getProjectIdAsync(): Promise<string|null> {
     if (this._cachedProjectId) {
       return Promise.resolve(this._cachedProjectId);
     }
@@ -192,9 +201,8 @@ export class GoogleAuth {
       options = optionsOrCallback;
     }
     if (callback) {
-      this.getApplicationDefaultAsync(options)
-          .then(r => callback!(null, r.credential, r.projectId))
-          .catch(callback);
+      this.getApplicationDefaultAsync(options).then(
+          r => callback!(null, r.credential, r.projectId), callback);
     } else {
       return this.getApplicationDefaultAsync(options);
     }
@@ -206,7 +214,7 @@ export class GoogleAuth {
     if (this.cachedCredential) {
       return {
         credential: this.cachedCredential as JWT | UserRefreshClient,
-        projectId: await this.getDefaultProjectIdAsync()
+        projectId: await this.getProjectIdAsync()
       };
     }
 
@@ -223,7 +231,7 @@ export class GoogleAuth {
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
-      projectId = await this.getDefaultProjectId();
+      projectId = await this.getProjectId();
       return {credential, projectId};
     }
 
@@ -235,29 +243,30 @@ export class GoogleAuth {
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
-      projectId = await this.getDefaultProjectId();
+      projectId = await this.getProjectId();
       return {credential, projectId};
     }
 
+    // Determine if we're running on GCE.
+    let isGCE;
     try {
-      // Determine if we're running on GCE.
-      const gce = await this._checkIsGCE();
-      if (gce) {
-        // For GCE, just return a default ComputeClient. It will take care of
-        // the rest.
-        this.cachedCredential = new Compute(options);
-        projectId = await this.getDefaultProjectId();
-        return {projectId, credential: this.cachedCredential};
-      } else {
-        // We failed to find the default credentials. Bail out with an error.
-        throw new Error(
-            'Could not load the default credentials. Browse to https://developers.google.com/accounts/docs/application-default-credentials for more information.');
-      }
+      isGCE = await this._checkIsGCE();
     } catch (e) {
       throw new Error(
-          'Unexpected error while acquiring application default credentials: ' +
-          e.message);
+          'Unexpected error determining execution environment: ' + e.message);
     }
+
+    if (!isGCE) {
+      // We failed to find the default credentials. Bail out with an error.
+      throw new Error(
+          'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.');
+    }
+
+    // For GCE, just return a default ComputeClient. It will take care of
+    // the rest.
+    this.cachedCredential = new Compute(options);
+    projectId = await this.getProjectId();
+    return {projectId, credential: this.cachedCredential};
   }
 
   /**
@@ -328,7 +337,10 @@ export class GoogleAuth {
       return null;
     }
     // The file seems to exist. Try to use it.
-    return this._getApplicationCredentialsFromFilePath(location, options);
+    const client =
+        await this._getApplicationCredentialsFromFilePath(location, options);
+    this.warnOnProblematicCredentials(client as JWT);
+    return client;
   }
 
   /**
@@ -369,6 +381,17 @@ export class GoogleAuth {
     } catch (err) {
       throw this.createError(
           util.format('Unable to read the file at %s.', filePath), err);
+    }
+  }
+
+  /**
+   * Credentials from the Cloud SDK that are associated with Cloud SDK's project
+   * are problematic because they may not have APIs enabled and have limited
+   * quota. If this is the case, warn about it.
+   */
+  protected warnOnProblematicCredentials(client: JWT) {
+    if (client.email === CLOUD_SDK_CLIENT_ID) {
+      messages.warn(messages.PROBLEMATIC_CREDENTIALS_WARNING);
     }
   }
 
@@ -419,8 +442,7 @@ export class GoogleAuth {
     }
     if (callback) {
       this.fromStreamAsync(inputStream, options)
-          .then(r => callback!(null, r))
-          .catch(callback);
+          .then(r => callback!(null, r), callback);
     } else {
       return this.fromStreamAsync(inputStream, options);
     }
@@ -435,19 +457,18 @@ export class GoogleAuth {
             'Must pass in a stream containing the Google auth settings.');
       }
       let s = '';
-      inputStream.setEncoding('utf8');
-      inputStream.on('data', (chunk) => {
-        s += chunk;
-      });
-      inputStream.on('end', () => {
-        try {
-          const data = JSON.parse(s);
-          const r = this.fromJSON(data, options);
-          return resolve(r);
-        } catch (err) {
-          return reject(err);
-        }
-      });
+      inputStream.setEncoding('utf8')
+          .on('error', reject)
+          .on('data', (chunk) => s += chunk)
+          .on('end', () => {
+            try {
+              const data = JSON.parse(s);
+              const r = this.fromJSON(data, options);
+              return resolve(r);
+            } catch (err) {
+              return reject(err);
+            }
+          });
     });
   }
 
@@ -614,7 +635,7 @@ export class GoogleAuth {
       callback?: (err: Error|null, credentials?: CredentialBody) => void):
       void|Promise<CredentialBody> {
     if (callback) {
-      this.getCredentialsAsync().then(r => callback(null, r)).catch(callback);
+      this.getCredentialsAsync().then(r => callback(null, r), callback);
     } else {
       return this.getCredentialsAsync();
     }
@@ -688,7 +709,7 @@ export class GoogleAuth {
    */
   async getRequestHeaders(url?: string) {
     const client = await this.getClient();
-    return (await client.getRequestMetadata(url)).headers;
+    return client.getRequestHeaders(url);
   }
 
   /**
@@ -696,12 +717,12 @@ export class GoogleAuth {
    * the request options.
    * @param opts Axios or Request options on which to attach the headers
    */
-  async authorizeRequest(
-      opts: {url?: string, uri?: string, headers?: http.IncomingHttpHeaders}) {
+  async authorizeRequest(opts:
+                             {url?: string, uri?: string, headers?: Headers}) {
     opts = opts || {};
     const url = opts.url || opts.uri;
     const client = await this.getClient();
-    const {headers} = await client.getRequestMetadata(url);
+    const headers = await client.getRequestHeaders(url);
     opts.headers = Object.assign(opts.headers || {}, headers);
     return opts;
   }
@@ -723,4 +744,40 @@ export class GoogleAuth {
   getEnv(): Promise<GCPEnv> {
     return getEnv();
   }
+
+  /**
+   * Sign the given data with the current private key, or go out
+   * to the IAM API to sign it.
+   * @param data The data to be signed.
+   */
+  async sign(data: string): Promise<string> {
+    const client = await this.getClient();
+    if (client instanceof JWT && client.key) {
+      const sign = crypto.createSign('RSA-SHA256');
+      sign.update(data);
+      return sign.sign(client.key, 'base64');
+    }
+
+    const projectId = await this.getProjectId();
+    if (!projectId) {
+      throw new Error('Cannot sign data without a project ID.');
+    }
+
+    const creds = await this.getCredentials();
+    if (!creds.client_email) {
+      throw new Error('Cannot sign data without `client_email`.');
+    }
+
+    const id = `projects/${projectId}/serviceAccounts/${creds.client_email}`;
+    const res = await this.request<SignBlobResponse>({
+      method: 'POST',
+      url: `https://iam.googleapis.com/v1/${id}:signBlob`,
+      data: {bytesToSign: Buffer.from(data).toString('base64')}
+    });
+    return res.data.signature;
+  }
+}
+
+export interface SignBlobResponse {
+  signature: string;
 }

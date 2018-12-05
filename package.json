@@ -1,17 +1,14 @@
 {
   "name": "google-auth-library",
-  "version": "1.5.0",
+  "version": "2.0.1",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
-    "node": ">=4"
+    "node": ">=6"
   },
   "main": "./build/src/index.js",
   "types": "./build/src/index.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/google/google-auth-library-nodejs.git"
-  },
+  "repository": "google/google-auth-library-nodejs.git",
   "keywords": [
     "google",
     "api",
@@ -22,32 +19,31 @@
   "dependencies": {
     "axios": "^0.18.0",
     "base64-js": "^1.3.0",
-    "gcp-metadata": "^0.6.3",
+    "gcp-metadata": "^0.7.0",
     "gtoken": "^2.3.0",
+    "https-proxy-agent": "^2.2.1",
     "jws": "^3.1.5",
-    "lodash.isstring": "^4.0.1",
-    "lru-cache": "^4.1.3",
-    "retry-axios": "^0.3.2",
-    "text-encoding-shim": "^1.0.0"
+    "lru-cache": "^5.0.0",
+    "text-encoding-shim": "^1.0.0",
+    "semver": "^5.5.0"
   },
   "devDependencies": {
-    "@justinbeckwith/typedoc": "^0.10.1",
+    "typedoc": "^0.13.0",
     "@types/base64-js": "^1.2.5",
     "@types/jws": "^3.1.0",
-    "@types/lodash.isstring": "^4.0.3",
     "@types/lru-cache": "^4.1.0",
     "@types/mocha": "^5.2.1",
     "@types/mv": "^2.1.0",
     "@types/ncp": "^2.0.1",
     "@types/nock": "^9.1.3",
-    "@types/node": "^10.3.0",
-    "@types/pify": "^3.0.2",
+    "@types/node": "^10.5.1",
+    "@types/semver": "^5.5.0",
     "@types/sinon": "5.0.5",
     "@types/tmp": "^0.0.33",
-    "clang-format": "^1.2.3",
+    "assert-rejects": "^1.0.0",
     "codecov": "^3.0.2",
-    "gh-pages": "^1.2.0",
-    "gts": "^0.6.0",
+    "gts": "^0.9.0",
+    "intelli-espower-loader": "^1.0.1",
     "js-green-licenses": "^0.5.0",
     "karma": "^2.0.2",
     "karma-chrome-launcher": "^2.2.0",
@@ -60,17 +56,15 @@
     "mocha": "^5.2.0",
     "mv": "^2.1.1",
     "ncp": "^2.0.0",
-    "nock": "^9.3.0",
+    "nock": "^10.0.0",
     "null-loader": "^0.1.1",
-    "nyc": "^12.0.2",
-    "opn": "^5.3.0",
-    "pify": "^3.0.0",
+    "nyc": "^13.0.0",
     "prettier": "^1.13.4",
-    "sinon": "^5.0.10",
+    "sinon": "^7.0.0",
     "source-map-support": "^0.5.6",
     "tmp": "^0.0.33",
     "ts-loader": "^4.4.1",
-    "typescript": "~2.9.1",
+    "typescript": "~3.1.0",
     "webpack": "^4.20.2",
     "webpack-bundle-analyzer": "^2.13.1",
     "webpack-cli": "^3.1.1"
@@ -79,6 +73,7 @@
     "LICENSE",
     "README.md",
     "build/src",
+    "!build/src/**/*.map",
     "package.json"
   ],
   "nyc": {
@@ -88,19 +83,22 @@
   },
   "scripts": {
     "test": "npm run test-only",
-    "test-only": "nyc mocha build/test --timeout 10000",
+    "test-only": "nyc mocha build/test",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json",
     "clean": "gts clean",
     "prepare": "npm run compile",
     "check": "gts check",
+    "lint": "npm run check",
     "compile": "tsc -p .",
     "fix": "gts fix && npm run fix-samples",
-    "fix-samples": "prettier --write --single-quote examples/*.js",
+    "fix-samples": "prettier --write --single-quote samples/*.js",
     "pretest": "npm run compile",
     "posttest": "npm run check && npm run license-check",
     "license-check": "jsgl --local .",
-    "generate-docs": "typedoc --excludePrivate --excludeExternals --mode modules --out docs src && touch docs/.nojekyll",
-    "publish-docs": "gh-pages --dotfiles --dist docs --remote upstream"
+    "docs": "exit 0; typedoc --excludePrivate --excludeExternals --mode modules --out docs src && touch docs/.nojekyll",
+    "samples-test": "mocha samples/system-test",
+    "system-test": "mocha build/system-test",
+    "presystem-test": "npm run compile"
   },
   "license": "Apache-2.0"
 }

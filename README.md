@@ -2,7 +2,6 @@
 
 # Google Auth Library
 
-[![Greenkeeper badge][greenkeeperimg]][greenkeeper]
 [![npm version][npmimg]][npm]
 [![CircleCI][circle-image]][circle-url]
 [![codecov][codecov-image]][codecov-url]
@@ -19,13 +18,14 @@ $ npm install google-auth-library
 ```
 
 ## Upgrading to 1.x
-The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/google/google-auth-library-nodejs/releases/tag/v1.0.0) for a list of breaking changes, and the upgrade guide.
+The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/googleapis/google-auth-library-nodejs/releases/tag/v1.0.0) for a list of breaking changes, and the upgrade guide.
 
 ## Ways to authenticate
 This library provides a variety of ways to authenticate to your Google services.
 - [Application Default Credentials](#choosing-the-correct-credential-type-automatically) - Use Application Default Credentials when you use a single identity for all users in your application. Especially useful for applications running on Google Cloud.
 - [OAuth 2](#oauth2) - Use OAuth2 when you need to perform actions on behalf of the end user.
-- [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users.  Especially useful for server->server or server->API communication.
+- [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users. Especially useful for server->server or server->API communication.
+- [Google Compute](#compute) - Directly use a service account on Google Cloud Platform. Useful for server->server or server->API communication.
 
 ## Application Default Credentials
 This library provides an implementation of [Application Default Credentials][] for Node.js. The [Application Default Credentials][] provide a simple way to get authorization credentials for use in calling Google APIs.
@@ -34,7 +34,7 @@ They are best suited for cases when the call needs to have the same identity and
 
 #### Download your Service Account Credentials JSON file
 
-To use `Application Default Credentials`, You first need to download a set of JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in the [Google Developers Console][devconsole] and select **Service account** from the **Add credentials** dropdown.
+To use Application Default Credentials, You first need to download a set of JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in the [Google Developers Console][devconsole] and select **Service account** from the **Add credentials** dropdown.
 
 > This file is your *only copy* of these credentials. It should never be
 > committed with your source code, and should be stored securely.
@@ -58,41 +58,17 @@ The code below shows how to retrieve a default credential type, depending upon t
 const {auth} = require('google-auth-library');
 
 /**
- * Acquire a client, and make a request to an API that's enabled by default.
+ * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
+ * this library will automatically choose the right client based on the environment.
  */
 async function main() {
   const client = await auth.getClient({
     scopes: 'https://www.googleapis.com/auth/cloud-platform'
   });
-  const projectId = await auth.getDefaultProjectId();
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
   console.log(res.data);
-}
-
-/**
- * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
- * this library will automatically choose the right client based on the environment.
- */
-async function getADC() {
-  // Acquire a client and the projectId based on the environment. This method looks
-  // for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables.
-  const res = await auth.getApplicationDefault();
-  let client = res.credential;
-
-  // The createScopedRequired method returns true when running on GAE or a local developer
-  // machine. In that case, the desired scopes must be passed in manually. When the code is
-  // running in GCE or a Managed VM, the scopes are pulled from the GCE metadata server.
-  // See https://cloud.google.com/compute/docs/authentication for more information.
-  if (client.createScopedRequired && client.createScopedRequired()) {
-    // Scopes can be specified either as an array or as a single, space-delimited string.
-    const scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-    client = client.createScoped(scopes);
-  }
-  return {
-    client: client,
-    projectId: res.projectId
-  }
 }
 
 main().catch(console.error);
@@ -185,7 +161,7 @@ main();
 ```
 
 #### Handling token events
-This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization]((https://github.com/google/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
+This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization](https://github.com/googleapis/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
 
 ```js
 const client = await auth.getClient();
@@ -244,7 +220,7 @@ original scopes, or audience for the token.  To get the token info, you can use 
 
 ```js
 // after acquiring an oAuth2Client...
-const tokenInfo = await oAuth2client.getTokenInfo('my-access-token');
+const tokenInfo = await oAuth2Client.getTokenInfo('my-access-token');
 
 // take a look at the scopes originally provisioned for the access token
 console.log(tokenInfo.scopes);
@@ -269,7 +245,7 @@ const oAuth2Client = new OAuth2Client({
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
 ``` js
-const {JWT} = require('../build/src/index');
+const {JWT} = require('google-auth-library');
 const keys = require('./jwt.keys.json');
 
 async function main() {
@@ -279,17 +255,15 @@ async function main() {
     keys.private_key,
     ['https://www.googleapis.com/auth/cloud-platform'],
   );
-  await client.authorize();
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
   console.log(res.data);
 }
 
 main().catch(console.error);
-
 ```
 
-The parameters for the JWT auth client including how to use it with a `.pem` file are explained in [examples/jwt.js](examples/jwt.js).
+The parameters for the JWT auth client including how to use it with a `.pem` file are explained in [samples/jwt.js](samples/jwt.js).
 
 #### Loading credentials from environment variables
 Instead of loading credentials from a key file, you can also provide them using an environment variable and the `GoogleAuth.fromJSON()` method.  This is particularly convenient for systems that deploy directly from source control (Heroku, App Engine, etc).
@@ -326,7 +300,6 @@ async function main() {
   // load the JWT or UserRefreshClient from the keys
   const client = auth.fromJSON(keys);
   client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-  await client.authorize();
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
   console.log(res.data);
@@ -334,13 +307,31 @@ async function main() {
 
 main().catch(console.error);
 ```
+
 #### Using a Proxy
-You can use the following environment variables to proxy HTTP and HTTPS requests:
+You can set the `HTTPS_PROXY` or `https_proxy` environment variables to proxy HTTPS requests. When `HTTPS_PROXY` or `https_proxy` are set, they will be used to proxy SSL requests that do not have an explicit proxy configuration option present.
 
-- `HTTP_PROXY` / `http_proxy`
-- `HTTPS_PROXY` / `https_proxy`
+## Compute
+If your application is running on Google Cloud Platform, you can authenticate using the default service account or by specifying a specific service account.
 
-When HTTP_PROXY / http_proxy are set, they will be used to proxy non-SSL requests that do not have an explicit proxy configuration option present. Similarly, HTTPS_PROXY / https_proxy will be respected for SSL requests that do not have an explicit proxy configuration option. It is valid to define a proxy in one of the environment variables, but then override it for a specific request, using the proxy configuration option.
+**Note**: In most cases, you will want to use [Application Default Credentials](#choosing-the-correct-credential-type-automatically).  Direct use of the `Compute` class is for very specific scenarios.
+
+``` js
+const {Compute} = require('google-auth-library');
+
+async function main() {
+  const client = new Compute({
+    // Specifying the service account email is optional.
+    serviceAccountEmail: 'my-service-account@example.com'
+  });
+  const projectId = 'your-project-id';
+  const url = `https://www.googleapis.com/dns/v1/projects/${project_id}`;
+  const res = await client.request({url});
+  console.log(res.data);
+}
+
+main().catch(console.error);
+```
 
 ## Questions/problems?
 
@@ -355,37 +346,25 @@ See [CONTRIBUTING][contributing].
 
 This library is licensed under Apache 2.0. Full license text is available in [LICENSE][copying].
 
-[apiexplorer]: https://developers.google.com/apis-explorer
-[Application Default Credentials]: https://developers.google.com/identity/protocols/application-default-credentials#callingnode
+[Application Default Credentials]: https://cloud.google.com/docs/authentication/getting-started
 [apptype]: https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
 [axios]: https://github.com/axios/axios
 [axiosOpts]: https://github.com/axios/axios#request-config
-[bugs]: https://github.com/google/google-auth-library-nodejs/issues
-[circle-image]: https://circleci.com/gh/google/google-auth-library-nodejs.svg?style=svg
-[circle-url]: https://circleci.com/gh/google/google-auth-library-nodejs
-[codecov-image]: https://codecov.io/gh/google/google-auth-library-nodejs/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/google/google-auth-library-nodejs
-[contributing]: https://github.com/google/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
-[copying]: https://github.com/google/google-auth-library-nodejs/tree/master/LICENSE
-[david-dm-img]: https://david-dm.org/google/google-auth-library-nodejs/status.svg
-[david-dm]: https://david-dm.org/google/google-auth-library-nodejs
-[greenkeeperimg]: https://badges.greenkeeper.io/google/google-auth-library-nodejs.svg
-[greenkeeper]: https://greenkeeper.io/
+[bugs]: https://github.com/googleapis/google-auth-library-nodejs/issues
+[circle-image]: https://circleci.com/gh/googleapis/google-auth-library-nodejs.svg?style=svg
+[circle-url]: https://circleci.com/gh/googleapis/google-auth-library-nodejs
+[codecov-image]: https://codecov.io/gh/googleapis/google-auth-library-nodejs/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/googleapis/google-auth-library-nodejs
+[contributing]: https://github.com/googleapis/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
+[copying]: https://github.com/googleapis/google-auth-library-nodejs/tree/master/LICENSE
+[david-dm-img]: https://david-dm.org/googleapis/google-auth-library-nodejs/status.svg
+[david-dm]: https://david-dm.org/googleapis/google-auth-library-nodejs
 [node]: http://nodejs.org/
 [npmimg]: https://img.shields.io/npm/v/google-auth-library.svg
 [npm]: https://www.npmjs.org/package/google-auth-library
 [oauth]: https://developers.google.com/identity/protocols/OAuth2
-[snyk-image]: https://snyk.io/test/github/google/google-auth-library-nodejs/badge.svg
-[snyk-url]: https://snyk.io/test/github/google/google-auth-library-nodejs
-[stability]: http://nodejs.org/api/stream.html#stream_stream
+[snyk-image]: https://snyk.io/test/github/googleapis/google-auth-library-nodejs/badge.svg
+[snyk-url]: https://snyk.io/test/github/googleapis/google-auth-library-nodejs
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
-[stream]: http://nodejs.org/api/stream.html#stream_class_stream_readable
-[urlshort]: https://developers.google.com/url-shortener/
-[usingkeys]: https://developers.google.com/console/help/#UsingKeys
 [devconsole]: https://console.developer.google.com
-[oauth]: https://developers.google.com/accounts/docs/OAuth2
-[options]: https://github.com/google/google-auth-library-nodejs/tree/master#options
-[gcloud]: https://github.com/GoogleCloudPlatform/gcloud-node
-[cloudplatform]: https://developers.google.com/cloud/
-

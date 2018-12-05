@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import stream from 'stream';
+import * as stream from 'stream';
 import {JWTInput} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
@@ -114,7 +114,7 @@ export class UserRefreshClient extends OAuth2Client {
   fromStream(inputStream: stream.Readable, callback?: (err?: Error) => void):
       void|Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback()).catch(callback);
+      this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }
@@ -127,19 +127,18 @@ export class UserRefreshClient extends OAuth2Client {
             'Must pass in a stream containing the user refresh token.'));
       }
       let s = '';
-      inputStream.setEncoding('utf8');
-      inputStream.on('data', (chunk) => {
-        s += chunk;
-      });
-      inputStream.on('end', () => {
-        try {
-          const data = JSON.parse(s);
-          this.fromJSON(data);
-          return resolve();
-        } catch (err) {
-          return reject(err);
-        }
-      });
+      inputStream.setEncoding('utf8')
+          .on('error', reject)
+          .on('data', (chunk) => s += chunk)
+          .on('end', () => {
+            try {
+              const data = JSON.parse(s);
+              this.fromJSON(data);
+              return resolve();
+            } catch (err) {
+              return reject(err);
+            }
+          });
     });
   }
 }

@@ -15,9 +15,11 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import http from 'http';
-import querystring from 'querystring';
-import stream from 'stream';
+import * as crypto from 'crypto';
+import * as querystring from 'querystring';
+import * as stream from 'stream';
+
+import * as messages from '../messages';
 
 import {createCrypto, JwkCertificate} from './../crypto/crypto';
 import {BodyResponseCallback} from './../transporters';
@@ -25,6 +27,14 @@ import {isWebpack} from './../webpack';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
+
+export type Certificates = {
+  [index: string]: string|JwkCertificate;
+};
+
+export type Headers = {
+  [index: string]: string
+};
 
 export enum CodeChallengeMethod {
   Plain = 'plain',
@@ -34,10 +44,6 @@ export enum CodeChallengeMethod {
 export enum CertificateFormat {
   PEM = 'PEM',
   JWK = 'JWK'
-}
-
-export interface CertificateDictionary {
-  [key: string]: string|JwkCertificate;
 }
 
 export interface GetTokenOptions {
@@ -115,8 +121,7 @@ export interface TokenInfo {
   access_type?: string;
 }
 
-
-export interface TokenInfoRequest {
+interface TokenInfoRequest {
   aud: string;
   user_id?: string;
   scope: string;
@@ -139,6 +144,20 @@ export interface GenerateAuthUrlOpts {
    * tokens.
    */
   access_type?: string;
+
+  /**
+   * The hd (hosted domain) parameter streamlines the login process for G Suite
+   * hosted accounts. By including the domain of the G Suite user (for example,
+   * mycollege.edu), you can indicate that the account selection UI should be
+   * optimized for accounts at that domain. To optimize for G Suite accounts
+   * generally instead of just one domain, use an asterisk: hd=*.
+   * Don't rely on this UI optimization to control who can access your app,
+   * as client-side requests can be modified. Be sure to validate that the
+   * returned ID token has an hd claim value that matches what you expect
+   * (e.g. mycolledge.edu). Unlike the request parameter, the ID token claim is
+   * contained within a security token from Google, so the value can be trusted.
+   */
+  hd?: string;
 
   /**
    * The 'response_type' will always be set to 'CODE'.
@@ -245,11 +264,6 @@ export interface GenerateAuthUrlOpts {
   code_challenge?: string;
 }
 
-export interface AuthClientOpts {
-  authBaseUrl?: string;
-  tokenUrl?: string;
-}
-
 export interface GetTokenCallback {
   (err: AxiosError|null, token?: Credentials|null,
    res?: AxiosResponse|null): void;
@@ -280,24 +294,22 @@ export interface RefreshAccessTokenResponse {
 }
 
 export interface RequestMetadataResponse {
-  headers: http.IncomingHttpHeaders;
+  headers: Headers;
   res?: AxiosResponse<void>|null;
 }
 
 export interface RequestMetadataCallback {
-  (err: AxiosError|null, headers?: http.IncomingHttpHeaders,
+  (err: AxiosError|null, headers?: Headers,
    res?: AxiosResponse<void>|null): void;
 }
 
 export interface GetFederatedSignonCertsCallback {
-  // tslint:disable-next-line no-any
-  (err: AxiosError|null, certs?: any,
+  (err: AxiosError|null, certs?: Certificates,
    response?: AxiosResponse<void>|null): void;
 }
 
 export interface FederatedSignonCertsResponse {
-  // tslint:disable-next-line no-any
-  certs: CertificateDictionary;
+  certs: Certificates;
   format: CertificateFormat;
   res?: AxiosResponse<void>|null;
 }
@@ -316,8 +328,6 @@ export interface OAuth2ClientOptions extends RefreshOptions {
   clientId?: string;
   clientSecret?: string;
   redirectUri?: string;
-  authBaseUrl?: string;
-  tokenUrl?: string;
 }
 
 export interface RefreshOptions {
@@ -329,12 +339,10 @@ export interface RefreshOptions {
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
-  private certificateCache: CertificateDictionary = {};
+  private certificateCache?: Certificates;
   private certificateExpiry: Date|null = null;
   private certificateCacheFormat: CertificateFormat = CertificateFormat.PEM;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
-  protected authBaseUrl?: string;
-  protected tokenUrl?: string;
 
   // TODO: refactor tests to make this private
   _clientId?: string;
@@ -359,33 +367,23 @@ export class OAuth2Client extends AuthClient {
    * @constructor
    */
   constructor(options?: OAuth2ClientOptions);
-  constructor(
-      clientId?: string, clientSecret?: string, redirectUri?: string,
-      opts?: AuthClientOpts);
+  constructor(clientId?: string, clientSecret?: string, redirectUri?: string);
   constructor(
       optionsOrClientId?: string|OAuth2ClientOptions, clientSecret?: string,
-      redirectUri?: string, authClientOpts: AuthClientOpts = {}) {
+      redirectUri?: string) {
     super();
     const opts = (optionsOrClientId && typeof optionsOrClientId === 'object') ?
         optionsOrClientId :
-        {
-          clientId: optionsOrClientId,
-          clientSecret,
-          redirectUri,
-          tokenUrl: authClientOpts.tokenUrl,
-          authBaseUrl: authClientOpts.authBaseUrl
-        };
+        {clientId: optionsOrClientId, clientSecret, redirectUri};
     this._clientId = opts.clientId;
     this._clientSecret = opts.clientSecret;
     this.redirectUri = opts.redirectUri;
-    this.authBaseUrl = opts.authBaseUrl;
-    this.tokenUrl = opts.tokenUrl;
     this.eagerRefreshThresholdMillis =
         opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
   }
 
   protected static readonly GOOGLE_TOKEN_INFO_URL =
-      'https://www.googleapis.com/oauth2/v3/tokeninfo';
+      'https://oauth2.googleapis.com/tokeninfo';
 
   /**
    * The base URL for auth endpoints.
@@ -397,13 +395,13 @@ export class OAuth2Client extends AuthClient {
    * The base endpoint for token retrieval.
    */
   private static readonly GOOGLE_OAUTH2_TOKEN_URL_ =
-      'https://www.googleapis.com/oauth2/v4/token';
+      'https://oauth2.googleapis.com/token';
 
   /**
    * The base endpoint to revoke tokens.
    */
   private static readonly GOOGLE_OAUTH2_REVOKE_URL_ =
-      'https://accounts.google.com/o/oauth2/revoke';
+      'https://oauth2.googleapis.com/revoke';
 
   /**
    * Google Sign on certificates in PEM format.
@@ -450,9 +448,7 @@ export class OAuth2Client extends AuthClient {
     if (opts.scope instanceof Array) {
       opts.scope = opts.scope.join(' ');
     }
-    const rootUrl =
-        this.authBaseUrl || OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
-
+    const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
     return rootUrl + '?' + querystring.stringify(opts);
   }
 
@@ -496,9 +492,9 @@ export class OAuth2Client extends AuthClient {
         {code: codeOrOptions} :
         codeOrOptions;
     if (callback) {
-      this.getTokenAsync(options)
-          .then(r => callback(null, r.tokens, r.res))
-          .catch(e => callback(e, null, (e as AxiosError).response));
+      this.getTokenAsync(options).then(
+          r => callback(null, r.tokens, r.res),
+          e => callback(e, null, e.response));
     } else {
       return this.getTokenAsync(options);
     }
@@ -506,7 +502,7 @@ export class OAuth2Client extends AuthClient {
 
   private async getTokenAsync(options: GetTokenOptions):
       Promise<GetTokenResponse> {
-    const url = this.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
+    const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const values = {
       code: options.code,
       client_id: options.client_id || this._clientId,
@@ -548,21 +544,22 @@ export class OAuth2Client extends AuthClient {
     }
 
     const p = this.refreshTokenNoCache(refreshToken)
-                  .then(r => {
-                    this.refreshTokenPromises.delete(refreshToken);
-                    return r;
-                  })
-                  .catch(e => {
-                    this.refreshTokenPromises.delete(refreshToken);
-                    throw e;
-                  });
+                  .then(
+                      r => {
+                        this.refreshTokenPromises.delete(refreshToken);
+                        return r;
+                      },
+                      e => {
+                        this.refreshTokenPromises.delete(refreshToken);
+                        throw e;
+                      });
     this.refreshTokenPromises.set(refreshToken, p);
     return p;
   }
 
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
-    const url = this.tokenUrl || OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
+    const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const data = {
       refresh_token: refreshToken,
       client_id: this._clientId,
@@ -592,17 +589,17 @@ export class OAuth2Client extends AuthClient {
   /**
    * Retrieves the access token using refresh token
    *
-   * @deprecated use getRequestMetadata instead.
+   * @deprecated use getRequestHeaders instead.
    * @param callback callback
    */
   refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
   refreshAccessToken(callback: RefreshAccessTokenCallback): void;
   refreshAccessToken(callback?: RefreshAccessTokenCallback):
       Promise<RefreshAccessTokenResponse>|void {
+    messages.warn(messages.REFRESH_ACCESS_TOKEN_DEPRECATED);
     if (callback) {
-      this.refreshAccessTokenAsync()
-          .then(r => callback(null, r.credentials, r.res))
-          .catch(callback);
+      this.refreshAccessTokenAsync().then(
+          r => callback(null, r.credentials, r.res), callback);
     } else {
       return this.refreshAccessTokenAsync();
     }
@@ -629,9 +626,8 @@ export class OAuth2Client extends AuthClient {
   getAccessToken(callback?: GetAccessTokenCallback):
       Promise<GetAccessTokenResponse>|void {
     if (callback) {
-      this.getAccessTokenAsync()
-          .then(r => callback(null, r.token, r.res))
-          .catch(callback);
+      this.getAccessTokenAsync().then(
+          r => callback(null, r.token, r.res), callback);
     } else {
       return this.getAccessTokenAsync();
     }
@@ -645,7 +641,7 @@ export class OAuth2Client extends AuthClient {
         throw new Error('No refresh token is set.');
       }
 
-      const r = await this.refreshAccessToken();
+      const r = await this.refreshAccessTokenAsync();
       if (!r.credentials || (r.credentials && !r.credentials.access_token)) {
         throw new Error('Could not refresh access token.');
       }
@@ -656,17 +652,9 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * getRequestMetadata obtains auth metadata to be used by requests.
+   * Obtain the set of headers required to authenticate a request.
    *
-   * getRequestMetadata is the main authentication interface.  It takes an
-   * optional uri which when present is the endpoint being accessed, and a
-   * callback func(err, metadata_obj, response) where metadata_obj contains
-   * authorization metadata fields and response is an optional response object.
-   *
-   * In OAuth2Client, metadata_obj has the form.
-   *
-   * {Authorization: 'Bearer <access_token_value>'}
-   *
+   * @deprecated Use getRequestHeaders instead.
    * @param url the Uri being authorized
    * @param callback the func described above
    */
@@ -674,13 +662,27 @@ export class OAuth2Client extends AuthClient {
   getRequestMetadata(url: string|null, callback: RequestMetadataCallback): void;
   getRequestMetadata(url: string|null, callback?: RequestMetadataCallback):
       Promise<RequestMetadataResponse>|void {
+    messages.warn(messages.OAUTH_GET_REQUEST_METADATA_DEPRECATED);
     if (callback) {
-      this.getRequestMetadataAsync(url)
-          .then(r => callback(null, r.headers, r.res))
-          .catch(callback);
+      this.getRequestMetadataAsync(url).then(
+          r => callback(null, r.headers, r.res), callback);
     } else {
-      return this.getRequestMetadataAsync(url);
+      return this.getRequestMetadataAsync();
     }
+  }
+
+  /**
+   * The main authentication interface.  It takes an optional url which when
+   * present is the endpoint being accessed, and returns a Promise which
+   * resolves with authorization header fields.
+   *
+   * In OAuth2Client, the result has the form:
+   * { Authorization: 'Bearer <access_token_value>' }
+   * @param url The optional url being authorized
+   */
+  async getRequestHeaders(url?: string): Promise<Headers> {
+    const res = await this.getRequestMetadataAsync(url);
+    return res.headers;
   }
 
   protected async getRequestMetadataAsync(url?: string|null):
@@ -754,11 +756,8 @@ export class OAuth2Client extends AuthClient {
       AxiosPromise<RevokeCredentialsResult>|void {
     const opts = {url: OAuth2Client.getRevokeTokenUrl(token)};
     if (callback) {
-      this.transporter.request<RevokeCredentialsResult>(opts)
-          .then(res => {
-            callback(null, res);
-          })
-          .catch(callback);
+      this.transporter.request<RevokeCredentialsResult>(opts).then(
+          r => callback(null, r), callback);
     } else {
       return this.transporter.request<RevokeCredentialsResult>(opts);
     }
@@ -775,9 +774,7 @@ export class OAuth2Client extends AuthClient {
   revokeCredentials(callback?: BodyResponseCallback<RevokeCredentialsResult>):
       AxiosPromise<RevokeCredentialsResult>|void {
     if (callback) {
-      this.revokeCredentialsAsync()
-          .then(res => callback(null, res))
-          .catch(callback);
+      this.revokeCredentialsAsync().then(res => callback(null, res), callback);
     } else {
       return this.revokeCredentialsAsync();
     }
@@ -806,10 +803,8 @@ export class OAuth2Client extends AuthClient {
   request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
       AxiosPromise<T>|void {
     if (callback) {
-      this.requestAsync<T>(opts).then(r => callback(null, r)).catch(e => {
-        const err = e as AxiosError;
-        const body = err.response ? err.response.data : null;
-        return callback(e, err.response);
+      this.requestAsync<T>(opts).then(r => callback(null, r), e => {
+        return callback(e, e.response);
       });
     } else {
       return this.requestAsync<T>(opts);
@@ -834,16 +829,20 @@ export class OAuth2Client extends AuthClient {
       const res = (e as AxiosError).response;
       if (res) {
         const statusCode = res.status;
-        // Automatically retry 401 and 403 responses if err is set and is
-        // unrelated to response then getting credentials failed, and retrying
-        // won't help
+        // Retry the request for metadata if the following criteria are true:
+        // - We haven't already retried.  It only makes sense to retry once.
+        // - The response was a 401 or a 403
+        // - The request didn't send a readableStream
+        // - An access_token and refresh_token were available, but no
+        //   expiry_date was availabe. This can happen when developers stash
+        //   the access_token and refresh_token for later use, but the
+        //   access_token fails on the first try because it's expired.
+        const mayRequireRefresh = this.credentials &&
+            this.credentials.access_token && this.credentials.refresh_token &&
+            !this.credentials.expiry_date;
         const isReadableStream = res.config.data instanceof stream.Readable;
-        if (!retry && (statusCode === 401 || statusCode === 403) &&
-            !isReadableStream) {
-          /* It only makes sense to retry once, because the retry is intended
-           * to handle expiration-related failures. If refreshing the token
-           * does not fix the failure, then refreshing again probably won't
-           * help */
+        const isAuthErr = statusCode === 401 || statusCode === 403;
+        if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
           await this.refreshAccessTokenAsync();
           return this.requestAsync<T>(opts, true);
         }
@@ -858,14 +857,14 @@ export class OAuth2Client extends AuthClient {
    * @param options that contains all options.
    * @param callback Callback supplying GoogleLogin if successful
    */
-  verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket|null>;
+  verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket>;
   verifyIdToken(
       options: VerifyIdTokenOptions,
-      callback: (err: Error|null, login?: LoginTicket|null) => void): void;
+      callback: (err: Error|null, login?: LoginTicket) => void): void;
   verifyIdToken(
       options: VerifyIdTokenOptions,
-      callback?: (err: Error|null, login?: LoginTicket|null) => void):
-      void|Promise<LoginTicket|null> {
+      callback?: (err: Error|null, login?: LoginTicket) => void):
+      void|Promise<LoginTicket> {
     // This function used to accept two arguments instead of an options object.
     // Check the types to help users upgrade with less pain.
     // This check can be removed after a 2.0 release.
@@ -875,16 +874,14 @@ export class OAuth2Client extends AuthClient {
     }
 
     if (callback) {
-      this.verifyIdTokenAsync(options)
-          .then(r => callback(null, r))
-          .catch(callback);
+      this.verifyIdTokenAsync(options).then(r => callback(null, r), callback);
     } else {
       return this.verifyIdTokenAsync(options);
     }
   }
 
   private async verifyIdTokenAsync(options: VerifyIdTokenOptions):
-      Promise<LoginTicket|null> {
+      Promise<LoginTicket> {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
@@ -983,14 +980,14 @@ export class OAuth2Client extends AuthClient {
       }
     }
 
-    let certificateDictionary: CertificateDictionary = {};
+    let certificates: Certificates = {};
     switch (format) {
       case CertificateFormat.PEM:
-        certificateDictionary = res.data;
+        certificates = res.data;
         break;
       case CertificateFormat.JWK:
         for (const key of res.data.keys) {
-          certificateDictionary[key.kid] = key;
+          certificates[key.kid] = key;
         }
         break;
       default:
@@ -1016,7 +1013,7 @@ export class OAuth2Client extends AuthClient {
    * @return Returns a LoginTicket on verification.
    */
   async verifySignedJwtWithCerts(
-      jwt: string, certs: CertificateDictionary, format: CertificateFormat,
+      jwt: string, certs: Certificates, format: CertificateFormat,
       requiredAudience: string|string[], issuers?: string[],
       maxExpiry?: number) {
     if (!maxExpiry) {
