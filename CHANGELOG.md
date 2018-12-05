@@ -152,3 +152,5 @@ As always, if you run into any problems... please let us know!
 - chore(package): Update gts to the latest version 🚀 (#387)
 - chore(package): update sinon to version 6.0.0 (#386)
 
+## Upgrading to 1.x
+The `1.x` release includes a variety of bug fixes, new features, and breaking changes. Please take care, and see [the release notes](https://github.com/googleapis/google-auth-library-nodejs/releases/tag/v1.0.0) for a list of breaking changes, and the upgrade guide.
