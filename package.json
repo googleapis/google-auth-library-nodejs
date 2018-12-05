@@ -26,7 +26,7 @@
     "semver": "^5.5.0"
   },
   "devDependencies": {
-    "typedoc": "^0.13.0",
+    "@compodoc/compodoc": "^1.1.7",
     "@types/jws": "^3.1.0",
     "@types/lru-cache": "^4.1.0",
     "@types/mocha": "^5.2.1",
@@ -39,6 +39,7 @@
     "@types/tmp": "^0.0.33",
     "assert-rejects": "^1.0.0",
     "codecov": "^3.0.2",
+    "gh-pages": "^2.0.1",
     "gts": "^0.9.0",
     "intelli-espower-loader": "^1.0.1",
     "js-green-licenses": "^0.5.0",
@@ -52,6 +53,7 @@
     "sinon": "^7.0.0",
     "source-map-support": "^0.5.6",
     "tmp": "^0.0.33",
+    "typedoc": "^0.13.0",
     "typescript": "~3.2.0"
   },
   "files": [
@@ -80,7 +82,8 @@
     "pretest": "npm run compile",
     "posttest": "npm run check && npm run license-check",
     "license-check": "jsgl --local .",
-    "docs": "exit 0; typedoc --excludePrivate --excludeExternals --mode modules --out docs src && touch docs/.nojekyll",
+    "docs": "compodoc src/ && touch docs/.nojekyll",
+    "publish-docs": "gh-pages -d docs --remote upstream && git push upstream gh-pages",
     "samples-test": "mocha samples/system-test",
     "system-test": "mocha build/system-test",
     "presystem-test": "npm run compile"
