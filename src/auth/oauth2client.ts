@@ -339,7 +339,7 @@ export interface RefreshOptions {
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
-  private certificateCache?: Certificates;
+  private certificateCache: Certificates = {};
   private certificateExpiry: Date|null = null;
   private certificateCacheFormat: CertificateFormat = CertificateFormat.PEM;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
@@ -924,15 +924,16 @@ export class OAuth2Client extends AuthClient {
    * Gets federated sign-on certificates to use for verifying identity tokens.
    * Returns certs as array structure, where keys are key ids, and values
    * are certificates in either PEM or JWK format.
+   * @param format Certificate format: PEM or JWK.
    * @param callback Callback supplying the certificates
    */
-  getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
+  getFederatedSignonCerts(format: CertificateFormat):
+      Promise<FederatedSignonCertsResponse>;
   getFederatedSignonCerts(
       format: CertificateFormat,
       callback: GetFederatedSignonCertsCallback): void;
   getFederatedSignonCerts(
-      format: CertificateFormat = CertificateFormat.PEM,
-      callback?: GetFederatedSignonCertsCallback):
+      format: CertificateFormat, callback?: GetFederatedSignonCertsCallback):
       Promise<FederatedSignonCertsResponse>|void {
     if (callback) {
       this.getFederatedSignonCertsAsync(format)
@@ -997,9 +998,9 @@ export class OAuth2Client extends AuthClient {
     const now = new Date();
     this.certificateExpiry =
         cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
-    this.certificateCache = certificateDictionary;
+    this.certificateCache = certificates;
     this.certificateCacheFormat = format;
-    return {certs: certificateDictionary, format, res};
+    return {certs: certificates, format, res};
   }
 
   /**
@@ -1007,6 +1008,7 @@ export class OAuth2Client extends AuthClient {
    * and is from the correct audience.
    * @param jwt The jwt to verify (The ID Token in this case).
    * @param certs The array of certs to test the jwt against.
+   * @param format Certificate format: PEM or JWK
    * @param requiredAudience The audience to test the jwt against.
    * @param issuers The allowed issuers of the jwt (Optional).
    * @param maxExpiry The max expiry the certificate can be (Optional).

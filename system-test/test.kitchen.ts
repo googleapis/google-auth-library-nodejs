@@ -53,7 +53,8 @@ const spawnp =
  * Create a staging directory with temp fixtures used
  * to test on a fresh application.
  */
-before('npm pack and move to staging directory', async () => {
+before('npm pack and move to staging directory', async function() {
+  this.timeout(40000);
   console.log(`${__filename} staging area: ${stagingPath}`);
   await spawnp('npm', ['pack']);
   const tarball = `${pkg.name}-${pkg.version}.tgz`;
@@ -62,7 +63,7 @@ before('npm pack and move to staging directory', async () => {
   await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
   await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
   await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
-}).timeout(40000);
+});
 
 it.only('should be able to webpack the library', async function() {
     if (process.version.match(/^v[46]\./)) {
