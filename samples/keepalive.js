@@ -23,7 +23,7 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const { auth } = require('google-auth-library');
+const {auth} = require('google-auth-library');
 const https = require('https');
 
 /**
@@ -31,25 +31,25 @@ const https = require('https');
  */
 async function main() {
   const client = await auth.getClient({
-    scopes: 'https://www.googleapis.com/auth/cloud-platform'
+    scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
 
   // create a new agent with keepAlive enabled
-  const agent = new https.Agent({ keepAlive: true });
+  const agent = new https.Agent({keepAlive: true});
 
   // use the agent as an Axios config param to make the request
   const res = await client.request({
     url,
-    httpsAgent: agent
+    httpsAgent: agent,
   });
   console.log(res.data);
 
   // Re-use the same agent to make the next request over the same connection
   const res2 = await client.request({
     url,
-    httpsAgent: agent
+    httpsAgent: agent,
   });
   console.log(res2.data);
 }

@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { OAuth2Client } = require('google-auth-library');
+const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
@@ -31,7 +31,7 @@ async function main() {
     // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
     // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
     const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
-    const res = await oAuth2Client.request({ url });
+    const res = await oAuth2Client.request({url});
     console.log(res.data);
 
     // After acquiring an access_token, you may want to check on the audience, expiration,
@@ -63,7 +63,7 @@ function getAuthenticatedClient() {
     // Generate the url that will be used for the consent dialog.
     const authorizeUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: 'https://www.googleapis.com/auth/plus.me'
+      scope: 'https://www.googleapis.com/auth/plus.me',
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the

@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { OAuth2Client } = require('google-auth-library');
+const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
@@ -80,7 +80,7 @@ function authorizeClient(client) {
       // consents to providing access.  For illustration purposes,
       // setting the prompt to 'consent' will force this consent
       // every time, forcing a refresh_token to be returned.
-      prompt: 'consent'
+      prompt: 'consent',
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the

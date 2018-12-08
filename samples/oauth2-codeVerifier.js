@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { OAuth2Client } = require('google-auth-library');
+const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
@@ -30,7 +30,7 @@ async function main() {
   // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
   // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
   const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
-  const res = await oAuth2Client.request({ url });
+  const res = await oAuth2Client.request({url});
   console.log(res.data);
 }
 
@@ -59,7 +59,7 @@ function getAuthenticatedClient() {
       // When using `generateCodeVerifier`, make sure to use code_challenge_method 'S256'.
       code_challenge_method: 'S256',
       // Pass along the generated code challenge.
-      code_challenge: codes.codeChallenge
+      code_challenge: codes.codeChallenge,
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the
@@ -77,7 +77,7 @@ function getAuthenticatedClient() {
           // Pass along the generated code verifier that matches our code challenge.
           const r = await oAuth2Client.getToken({
             code: qs.code,
-            codeVerifier: codes.codeVerifier
+            codeVerifier: codes.codeVerifier,
           });
 
           // Make sure to set the credentials on the OAuth2 client.

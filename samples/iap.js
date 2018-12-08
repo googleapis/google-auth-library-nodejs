@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { JWT } = require('google-auth-library');
+const {JWT} = require('google-auth-library');
 
 /**
  * The JWT authorization is ideal for performing server-to-server
@@ -31,10 +31,10 @@ async function main() {
   const client = new JWT({
     email: keys.client_email,
     key: keys.private_key,
-    additionalClaims: { target_audience: clientId }
+    additionalClaims: {target_audience: clientId},
   });
   const url = `https://iap-demo-dot-el-gato.appspot.com`;
-  const res = await client.request({ url });
+  const res = await client.request({url});
   console.log(res.data);
 }
 

@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { OAuth2Client } = require('google-auth-library');
+const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
@@ -32,13 +32,13 @@ async function main() {
     // Verify the id_token, and access the claims.
     const ticket = await oAuth2Client.verifyIdToken({
       idToken: oAuth2Client.credentials.id_token,
-      audience: keys.web.client_id
+      audience: keys.web.client_id,
     });
     console.log(ticket);
 
     // You can use this info to get user information too.
     const url = `https://www.googleapis.com/plus/v1/people/me`;
-    const res = await oAuth2Client.request({ url });
+    const res = await oAuth2Client.request({url});
     console.log(res.data);
   } catch (e) {
     console.error(e);
@@ -67,8 +67,8 @@ function getAuthenticatedClient() {
         'https://www.googleapis.com/auth/plus.me',
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile',
-        'email'
-      ]
+        'email',
+      ],
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the
