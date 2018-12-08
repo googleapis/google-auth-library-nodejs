@@ -17,10 +17,8 @@
  * useful when writing end to end tests.
  */
 
-const { OAuth2Client } = require('google-auth-library');
+const {OAuth2Client} = require('google-auth-library');
 const puppeteer = require('puppeteer');
-const opn = require('opn');
-const querystring = require('querystring');
 const url = require('url');
 const http = require('http');
 
@@ -39,7 +37,7 @@ const config = require('../config.keys.json');
 async function main() {
   const oAuth2Client = await getAuthenticatedClient();
   const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
-  const res = await oAuth2Client.request({ url });
+  const res = await oAuth2Client.request({url});
   console.log(res.data);
 }
 
@@ -58,7 +56,7 @@ function getAuthenticatedClient() {
     const authorizeUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: 'https://www.googleapis.com/auth/plus.me',
-      prompt: 'consent'
+      prompt: 'consent',
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the
@@ -67,13 +65,14 @@ function getAuthenticatedClient() {
       .createServer(async (req, res) => {
         if (req.url.indexOf('/oauth2callback') > -1) {
           // acquire the code from the querystring, and close the web server.
-          const qs = querystring.parse(url.parse(req.url).query);
-          console.log(`Code is ${qs.code}`);
+          const qs = new url.URL(req.url, 'http://localhost:3000').searchParams;
+          const code = qs.get('code');
+          console.log(`Code is ${code}`);
           res.end('Authentication successful! Please return to the console.');
           server.close();
 
           // Now that we have the code, use that to acquire tokens.
-          const r = await oAuth2Client.getToken(qs.code);
+          const r = await oAuth2Client.getToken(code);
           // Make sure to set the credentials on the OAuth2 client.
           oAuth2Client.setCredentials(r.tokens);
           console.info('Tokens acquired.');
@@ -92,7 +91,7 @@ function getAuthenticatedClient() {
  * Use the puppeteer library to sign into Google
  */
 async function doLogin(authorizeUrl) {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
   await page.goto(authorizeUrl);
   await page.mainFrame().waitForSelector('#identifierId');
@@ -104,13 +103,13 @@ async function doLogin(authorizeUrl) {
   console.log('waiting for password field...');
   await page
     .mainFrame()
-    .waitForSelector('#password input[type="password"]', { visible: true });
+    .waitForSelector('#password input[type="password"]', {visible: true});
   console.log('typing password...');
   await page.type('#password input[type="password"]', config.password, {
-    delay: 100
+    delay: 100,
   });
   console.log('clicking sign in button...');
-  await page.click('#passwordNext', { delay: 100 });
+  await page.click('#passwordNext', {delay: 100});
   return browser;
 }
 
