@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as cp from 'child_process';
+import * as execa from 'execa';
 import * as mv from 'mv';
 import {ncp} from 'ncp';
 import * as tmp from 'tmp';
@@ -27,44 +27,25 @@ const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
 const pkg = require('../../package.json');
 
-const spawnp =
-    (command: string, args: string[], options: cp.SpawnOptions = {}) => {
-      return new Promise((resolve, reject) => {
-        cp.spawn(command, args, Object.assign(options, {stdio: 'inherit'}))
-            .on('close',
-                code => {
-                  if (code === 0) {
-                    resolve();
-                  } else {
-                    reject(
-                        new Error(`Spawn failed with an exit code of ${code}`));
-                  }
-                })
-            .on('error', err => {
-              reject(err);
-            });
-      });
-    };
-
 /**
- * Create a staging directory with temp fixtures used
- * to test on a fresh application.
+ * Create a staging directory with temp fixtures used to test on a fresh
+ * application.
  */
 it('should be able to use the d.ts', async () => {
   console.log(`${__filename} staging area: ${stagingPath}`);
-  await spawnp('npm', ['pack']);
+  await execa('npm', ['pack'], {stdio: 'inherit'});
   const tarball = `${pkg.name}-${pkg.version}.tgz`;
   // stagingPath can be on another filesystem so fs.rename() will fail
   // with EXDEV, hence we use `mv` module here.
   await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
   await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
-  await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
+  await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
 }).timeout(40000);
 
 /**
  * CLEAN UP - remove the staging directory when done.
  */
-after('cleanup staging', async () => {
+after('cleanup staging', () => {
   if (!keep) {
     stagingDir.removeCallback();
   }

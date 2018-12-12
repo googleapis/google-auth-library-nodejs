@@ -4,6 +4,7 @@ build/
 .vscode
 docs/
 npm-debug.log
+.coverage
 coverage
 yarn-error.log
 samples/*.keys.json

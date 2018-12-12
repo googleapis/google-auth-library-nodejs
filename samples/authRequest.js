@@ -16,7 +16,7 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const { auth } = require('google-auth-library');
+const {auth} = require('google-auth-library');
 const axios = require('axios');
 
 /**
