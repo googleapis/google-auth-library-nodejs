@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { auth } = require('google-auth-library');
+const {auth} = require('google-auth-library');
 
 /**
  * Instead of loading credentials from a key file, you can also provide
@@ -50,7 +50,7 @@ async function main() {
   const client = auth.fromJSON(keys);
   client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({ url });
+  const res = await client.request({url});
   console.log(res.data);
 }
 

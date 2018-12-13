@@ -16,6 +16,7 @@
 
 import * as assert from 'assert';
 import * as cp from 'child_process';
+import * as execa from 'execa';
 import * as fs from 'fs';
 import * as mv from 'mv';
 import {ncp} from 'ncp';
@@ -30,39 +31,20 @@ const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
 const pkg = require('../../package.json');
 
-const spawnp =
-    (command: string, args: string[], options: cp.SpawnOptions = {}) => {
-      return new Promise((resolve, reject) => {
-        cp.spawn(command, args, Object.assign(options, {stdio: 'inherit'}))
-            .on('close',
-                code => {
-                  if (code === 0) {
-                    resolve();
-                  } else {
-                    reject(new Error(`Spawn '${
-                        command}' failed with an exit code of ${code}`));
-                  }
-                })
-            .on('error', err => {
-              reject(err);
-            });
-      });
-    };
-
 /**
- * Create a staging directory with temp fixtures used
- * to test on a fresh application.
+ * Create a staging directory with temp fixtures used to test on a fresh
+ * application.
  */
 before('npm pack and move to staging directory', async function() {
   this.timeout(40000);
   console.log(`${__filename} staging area: ${stagingPath}`);
-  await spawnp('npm', ['pack']);
+  await execa('npm', ['pack'], {stdio: 'inherit'});
   const tarball = `${pkg.name}-${pkg.version}.tgz`;
   // stagingPath can be on another filesystem so fs.rename() will fail
   // with EXDEV, hence we use `mv` module here.
   await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
   await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
-  await spawnp('npm', ['install'], {cwd: `${stagingPath}/`});
+  await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
 });
 
 it.only('should be able to webpack the library', async function() {
@@ -72,7 +54,7 @@ it.only('should be able to webpack the library', async function() {
       return;
     }
     // we expect npm install is executed on the previous step
-    await spawnp('npx', ['webpack'], {cwd: `${stagingPath}/`});
+    await execa('npx', ['webpack'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
     const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
     const stat = fs.statSync(bundle);
     assert(stat.size < 256 * 1024);
@@ -83,6 +65,6 @@ it.only('should be able to webpack the library', async function() {
  */
 after('cleanup staging directory', async () => {
   if (!keep) {
-    await spawnp('rm', ['-rf', stagingPath]);
+    await execa('rm', ['-rf', stagingPath]);
   }
 });
