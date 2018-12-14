@@ -74,7 +74,6 @@
     "typedoc": "^0.13.0",
     "typescript": "~3.2.0",
     "webpack": "^4.20.2",
-    "webpack-bundle-analyzer": "^2.13.1",
     "webpack-cli": "^3.1.1"
   },
   "files": [
