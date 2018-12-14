@@ -24,6 +24,7 @@ export {JWT, JWTOptions} from './auth/jwtclient';
 export {Certificates, CodeChallengeMethod, GenerateAuthUrlOpts, GetTokenOptions, OAuth2Client, OAuth2ClientOptions, RefreshOptions, TokenInfo, VerifyIdTokenOptions} from './auth/oauth2client';
 export {UserRefreshClient, UserRefreshClientOptions} from './auth/refreshclient';
 export {DefaultTransporter} from './transporters';
+export {GCPEnv} from './auth/envDetect';
 
 const auth = new GoogleAuth();
 export {auth, GoogleAuth};
