@@ -43,7 +43,7 @@ const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 const baseUrl = 'https://oauth2.googleapis.com';
 const certsPath = '/oauth2/v1/certs';
 const certsResPath =
-    path.join(__dirname, '../../test/fixtures/oauthcerts.json');
+    path.join(__dirname, '../../test/fixtures/oauthcertspem.json');
 
 let client: OAuth2Client;
 let sandbox: sinon.SinonSandbox;
@@ -166,9 +166,9 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
        assert.strictEqual(requiredAudience, audience);
        return new LoginTicket('c', payload);
      };
-     return assertRejects(
+     assert.throws(
          // tslint:disable-next-line no-any
-         (client as any).verifyIdToken(idToken, audience),
+         () => (client as any).verifyIdToken(idToken, audience),
          /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./);
    });
 
@@ -969,7 +969,7 @@ it('should not retry requests with streaming data', done => {
 
 it('should revoke credentials if access token present', done => {
   const scope = nock('https://oauth2.googleapis.com')
-                    .post('/revoke?token=abc')
+                    .get('/revoke?token=abc')
                     .reply(200, {success: true});
   client.credentials = {access_token: 'abc', refresh_token: 'abc'};
   client.revokeCredentials((err, result) => {
