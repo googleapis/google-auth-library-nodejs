@@ -17,6 +17,7 @@ import {GoogleAuth} from './auth/googleauth';
 
 export {Compute, ComputeOptions} from './auth/computeclient';
 export {CredentialBody, CredentialRequest, Credentials, JWTInput} from './auth/credentials';
+export {GCPEnv} from './auth/envDetect';
 export {GoogleAuthOptions} from './auth/googleauth';
 export {IAMAuth, RequestMetadata} from './auth/iam';
 export {Claims, JWTAccess} from './auth/jwtaccess';
