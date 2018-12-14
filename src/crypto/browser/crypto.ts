@@ -18,7 +18,7 @@
 // SubtleCrypto interface `window.crypto.subtle`.
 
 import * as base64js from 'base64-js';
-import * as TextEncoding from 'text-encoding-shim';
+require('fast-text-encoding');
 
 import {Crypto, JwkCertificate} from '../crypto';
 
@@ -33,7 +33,7 @@ export class BrowserCrypto implements Crypto {
 
   async sha256DigestBase64(str: string): Promise<string> {
     const arrayBuffer = await window.crypto.subtle.digest(
-        'SHA-256', new TextEncoding.TextEncoder().encode(str));
+        'SHA-256', new TextEncoder().encode(str));
     return base64js.fromByteArray(new Uint8Array(arrayBuffer));
   }
 
@@ -49,7 +49,7 @@ export class BrowserCrypto implements Crypto {
       name: 'RSASSA-PKCS1-v1_5',
       hash: {name: 'SHA-256'},
     };
-    const dataArray = new TextEncoding.TextEncoder().encode(data);
+    const dataArray = new TextEncoder().encode(data);
     // base64js requires padding, so let's add some '='
     while (signature.length % 4 !== 0) {
       signature += '=';
