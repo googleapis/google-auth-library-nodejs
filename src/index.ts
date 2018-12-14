@@ -17,6 +17,7 @@ import {GoogleAuth} from './auth/googleauth';
 
 export {Compute, ComputeOptions} from './auth/computeclient';
 export {CredentialBody, CredentialRequest, Credentials, JWTInput} from './auth/credentials';
+export {GCPEnv} from './auth/envDetect';
 export {GoogleAuthOptions} from './auth/googleauth';
 export {IAMAuth, RequestMetadata} from './auth/iam';
 export {Claims, JWTAccess} from './auth/jwtaccess';
@@ -24,7 +25,6 @@ export {JWT, JWTOptions} from './auth/jwtclient';
 export {Certificates, CodeChallengeMethod, GenerateAuthUrlOpts, GetTokenOptions, OAuth2Client, OAuth2ClientOptions, RefreshOptions, TokenInfo, VerifyIdTokenOptions} from './auth/oauth2client';
 export {UserRefreshClient, UserRefreshClientOptions} from './auth/refreshclient';
 export {DefaultTransporter} from './transporters';
-export {GCPEnv} from './auth/envDetect';
 
 const auth = new GoogleAuth();
 export {auth, GoogleAuth};
