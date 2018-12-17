@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { JWT } = require('google-auth-library');
+const {JWT} = require('google-auth-library');
 
 /**
  * The JWT authorization is ideal for performing server-to-server
@@ -29,10 +29,10 @@ async function main() {
   const client = new JWT({
     email: keys.client_email,
     key: keys.private_key,
-    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
   });
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({ url });
+  const res = await client.request({url});
   console.log(res.data);
 
   // After acquiring an access_token, you may want to check on the audience, expiration,

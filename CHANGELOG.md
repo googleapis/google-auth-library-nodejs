@@ -4,6 +4,46 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## v2.0.2
+
+12-16-2018 10:48 PST
+
+### Fixes
+- fix(types): export GCPEnv type ([#569](https://github.com/google/google-auth-library-nodejs/pull/569))
+- fix: use post for token revocation ([#524](https://github.com/google/google-auth-library-nodejs/pull/524))
+
+### Dependencies
+- fix(deps): update dependency lru-cache to v5 ([#541](https://github.com/google/google-auth-library-nodejs/pull/541))
+
+### Documentation
+- docs: add ref docs again ([#553](https://github.com/google/google-auth-library-nodejs/pull/553))
+- docs: clean up the readme ([#554](https://github.com/google/google-auth-library-nodejs/pull/554))
+
+### Internal / Testing Changes
+- chore(deps): update dependency @types/sinon to v7 ([#568](https://github.com/google/google-auth-library-nodejs/pull/568))
+- refactor: use execa for install tests, run eslint on samples ([#559](https://github.com/google/google-auth-library-nodejs/pull/559))
+- chore(build): inject yoshi automation key ([#566](https://github.com/google/google-auth-library-nodejs/pull/566))
+- chore: update nyc and eslint configs ([#565](https://github.com/google/google-auth-library-nodejs/pull/565))
+- chore: fix publish.sh permission +x ([#563](https://github.com/google/google-auth-library-nodejs/pull/563))
+- fix(build): fix Kokoro release script ([#562](https://github.com/google/google-auth-library-nodejs/pull/562))
+- build: add Kokoro configs for autorelease ([#561](https://github.com/google/google-auth-library-nodejs/pull/561))
+- chore: always nyc report before calling codecov ([#557](https://github.com/google/google-auth-library-nodejs/pull/557))
+- chore: nyc ignore build/test by default ([#556](https://github.com/google/google-auth-library-nodejs/pull/556))
+- chore(build): update the prettier and renovate config ([#552](https://github.com/google/google-auth-library-nodejs/pull/552))
+- chore: update license file ([#551](https://github.com/google/google-auth-library-nodejs/pull/551))
+- fix(build): fix system key decryption ([#547](https://github.com/google/google-auth-library-nodejs/pull/547))
+- chore(deps): update dependency typescript to ~3.2.0 ([#546](https://github.com/google/google-auth-library-nodejs/pull/546))
+- chore(deps): unpin sinon ([#544](https://github.com/google/google-auth-library-nodejs/pull/544))
+- refactor: drop non-required modules ([#542](https://github.com/google/google-auth-library-nodejs/pull/542))
+- chore: add synth.metadata ([#537](https://github.com/google/google-auth-library-nodejs/pull/537))
+- fix: Pin @types/sinon to last compatible version ([#538](https://github.com/google/google-auth-library-nodejs/pull/538))
+- chore(deps): update dependency gts to ^0.9.0 ([#531](https://github.com/google/google-auth-library-nodejs/pull/531))
+- chore: update eslintignore config ([#530](https://github.com/google/google-auth-library-nodejs/pull/530))
+- chore: drop contributors from multiple places ([#528](https://github.com/google/google-auth-library-nodejs/pull/528))
+- chore: use latest npm on Windows ([#527](https://github.com/google/google-auth-library-nodejs/pull/527))
+- chore: update CircleCI config ([#523](https://github.com/google/google-auth-library-nodejs/pull/523))
+- chore: include build in eslintignore ([#516](https://github.com/google/google-auth-library-nodejs/pull/516))
+
 ## v2.0.1
 
 ### Implementation Changes

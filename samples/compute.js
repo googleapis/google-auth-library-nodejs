@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { Compute } = require('google-auth-library');
+const {Compute} = require('google-auth-library');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
@@ -22,11 +22,11 @@ async function main() {
   const client = new Compute({
     // Specifying the serviceAccountEmail is optional. It will use the default
     // service account if one is not defined.
-    serviceAccountEmail: 'some-service-account@example.com'
+    serviceAccountEmail: 'some-service-account@example.com',
   });
   const projectId = 'el-gato';
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
-  const res = await client.request({ url });
+  const res = await client.request({url});
   console.log(res.data);
 }
 
