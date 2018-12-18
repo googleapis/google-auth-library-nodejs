@@ -18,6 +18,7 @@
 // SubtleCrypto interface `window.crypto.subtle`.
 
 import * as base64js from 'base64-js';
+import {CryptoSigner} from '../crypto';
 require('fast-text-encoding');
 
 import {Crypto, JwkCertificate} from '../crypto';
@@ -60,5 +61,9 @@ export class BrowserCrypto implements Crypto {
     const result = await window.crypto.subtle.verify(
         algo, cryptoKey, signatureArray, dataArray);
     return result;
+  }
+
+  createSign(algorithm: string): CryptoSigner {
+    throw new Error("createSign is not implemented for in BrowserCrypto");
   }
 }

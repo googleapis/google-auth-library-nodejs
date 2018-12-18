@@ -30,11 +30,17 @@ export interface JwkCertificate {
   e: string;
 }
 
+export interface CryptoSigner {
+  update(data: string): void;
+  sign(key: string, outputFormat: string): string;
+}
+
 export interface Crypto {
   sha256DigestBase64(str: string): Promise<string>;
   randomBytesBase64(n: number): string;
   verify(pubkey: string|JwkCertificate, data: string|Buffer, signature: string):
       Promise<boolean>;
+  createSign(algorithm: string): CryptoSigner;
 }
 
 export function createCrypto(): Crypto {

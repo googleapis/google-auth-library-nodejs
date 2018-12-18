@@ -15,7 +15,7 @@
  */
 
 import * as crypto from 'crypto';
-import {Crypto} from '../crypto';
+import {Crypto, CryptoSigner} from '../crypto';
 
 export class NodeCrypto implements Crypto {
   async sha256DigestBase64(str: string): Promise<string> {
@@ -31,5 +31,9 @@ export class NodeCrypto implements Crypto {
     const verifier = crypto.createVerify('sha256');
     verifier.update(data);
     return verifier.verify(pubkey, signature, 'base64');
+  }
+
+  createSign(algorithm: string): CryptoSigner {
+    return crypto.createSign(algorithm);
   }
 }
