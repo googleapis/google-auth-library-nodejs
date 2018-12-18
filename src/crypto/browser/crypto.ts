@@ -19,6 +19,10 @@
 
 import * as base64js from 'base64-js';
 import {CryptoSigner} from '../crypto';
+
+// Not all browsers support `TextEncoder`. The following `require` will
+// provide a fast UTF8-only replacement for those browsers that don't support
+// text encoding natively.
 require('fast-text-encoding');
 
 import {Crypto, JwkCertificate} from '../crypto';
@@ -33,9 +37,17 @@ export class BrowserCrypto implements Crypto {
   }
 
   async sha256DigestBase64(str: string): Promise<string> {
-    const arrayBuffer = await window.crypto.subtle.digest(
-        'SHA-256', new TextEncoder().encode(str));
-    return base64js.fromByteArray(new Uint8Array(arrayBuffer));
+    // SubtleCrypto digest() method is async, so we must make
+    // this method async as well.
+
+    // To calculate SHA256 digest using SubtleCrypto, we first
+    // need to convert an input string to an ArrayBuffer:
+    const inputBuffer = new TextEncoder().encode(str);
+
+    // Result is ArrayBuffer ad well.
+    const outputBuffer = await window.crypto.subtle.digest('SHA-256', inputBuffer);
+
+    return base64js.fromByteArray(new Uint8Array(outputBuffer));
   }
 
   randomBytesBase64(count: number): string {
@@ -58,12 +70,15 @@ export class BrowserCrypto implements Crypto {
     const signatureArray = base64js.toByteArray(signature);
     const cryptoKey = await window.crypto.subtle.importKey(
         'jwk', pubkey, algo, true, ['verify']);
+
+    // SubtleCrypto's verify method is async so we must make
+    // this method async as well.
     const result = await window.crypto.subtle.verify(
         algo, cryptoKey, signatureArray, dataArray);
     return result;
   }
 
   createSign(algorithm: string): CryptoSigner {
-    throw new Error('createSign is not implemented for in BrowserCrypto');
+    throw new Error("createSign is not implemented for in BrowserCrypto");
   }
 }
