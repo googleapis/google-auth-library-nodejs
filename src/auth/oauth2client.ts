@@ -18,11 +18,11 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios
 import * as querystring from 'querystring';
 import * as stream from 'stream';
 
-import * as messages from '../messages';
-
 import {createCrypto, JwkCertificate} from '../crypto/crypto';
+import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
 import {isWebpack} from '../webpack';
+
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';

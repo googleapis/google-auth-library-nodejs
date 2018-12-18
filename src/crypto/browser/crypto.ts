@@ -64,6 +64,6 @@ export class BrowserCrypto implements Crypto {
   }
 
   createSign(algorithm: string): CryptoSigner {
-    throw new Error("createSign is not implemented for in BrowserCrypto");
+    throw new Error('createSign is not implemented for in BrowserCrypto');
   }
 }

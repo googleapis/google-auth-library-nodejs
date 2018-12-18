@@ -35,6 +35,13 @@ export interface CryptoSigner {
   sign(key: string, outputFormat: string): string;
 }
 
+// Crypto interface will provide required crypto functions.
+// Use `createCrypto()` factory function to create an instance
+// of Crypto. It will either use Node.js `crypto` module, or
+// use browser's SubtleCrypto interface. Since most of the
+// SubtleCrypto methods return promises, we must make those
+// methods return promises here as well, even though in Node.js
+// they are synchronous.
 export interface Crypto {
   sha256DigestBase64(str: string): Promise<string>;
   randomBytesBase64(n: number): string;

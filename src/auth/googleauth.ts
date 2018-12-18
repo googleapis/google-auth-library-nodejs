@@ -27,13 +27,14 @@ import * as util from 'util';
 import {createCrypto} from '../crypto/crypto';
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
+import {isWebpack} from '../webpack';
+
 import {Compute} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2Client, RefreshOptions} from './oauth2client';
 import {UserRefreshClient} from './refreshclient';
-import {isWebpack} from '../webpack';
 
 export interface ProjectIdCallback {
   (err?: Error|null, projectId?: string|null): void;
