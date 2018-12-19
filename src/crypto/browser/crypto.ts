@@ -45,7 +45,8 @@ export class BrowserCrypto implements Crypto {
     const inputBuffer = new TextEncoder().encode(str);
 
     // Result is ArrayBuffer ad well.
-    const outputBuffer = await window.crypto.subtle.digest('SHA-256', inputBuffer);
+    const outputBuffer =
+        await window.crypto.subtle.digest('SHA-256', inputBuffer);
 
     return base64js.fromByteArray(new Uint8Array(outputBuffer));
   }
@@ -79,6 +80,6 @@ export class BrowserCrypto implements Crypto {
   }
 
   createSign(algorithm: string): CryptoSigner {
-    throw new Error("createSign is not implemented for in BrowserCrypto");
+    throw new Error('createSign is not implemented for in BrowserCrypto');
   }
 }
