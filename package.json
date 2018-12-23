@@ -78,7 +78,7 @@
     "docs": "compodoc src/ && touch docs/.nojekyll",
     "publish-docs": "gh-pages -d docs --remote upstream && git push upstream gh-pages",
     "samples-test": "cd samples/ && npm link ../ && npm test && cd ../",
-    "system-test": "mocha build/system-test",
+    "system-test": "mocha build/system-test --timeout 60000",
     "presystem-test": "npm run compile"
   },
   "license": "Apache-2.0"

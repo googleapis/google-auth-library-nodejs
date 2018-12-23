@@ -41,7 +41,7 @@ describe('pack and install', () => {
     await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
     await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
     await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
-  }).timeout(40000);
+  });
 
   /**
    * CLEAN UP - remove the staging directory when done.
