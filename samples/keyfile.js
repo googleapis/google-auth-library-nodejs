@@ -21,15 +21,20 @@ const {auth} = require('google-auth-library');
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
  */
-async function main() {
+async function main(
+  // Full path to the sevice account credential
+  keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
+) {
   const client = await auth.getClient({
-    keyFilename: 'jwt.keys.json',
+    keyFile: keyFile,
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({url});
+  console.log('DNS Info:');
   console.log(res.data);
 }
 
-main().catch(console.error);
+const args = process.argv.slice(2);
+main(...args).catch(console.error);
