@@ -739,9 +739,23 @@ it('getProjectId should use GCLOUD_PROJECT environment variable when it is set',
      assert.strictEqual(projectId, fixedProjectId);
    });
 
+it('getProjectId should use `gcloud_project` environment variable when it is set',
+   async () => {
+     mockEnvVar('gcloud_project', fixedProjectId);
+     const projectId = await auth.getProjectId();
+     assert.strictEqual(projectId, fixedProjectId);
+   });
+
 it('getProjectId should use GOOGLE_CLOUD_PROJECT environment variable when it is set',
    async () => {
      mockEnvVar('GOOGLE_CLOUD_PROJECT', fixedProjectId);
+     const projectId = await auth.getProjectId();
+     assert.strictEqual(projectId, fixedProjectId);
+   });
+
+it('getProjectId should use `google_cloud_project` environment variable when it is set',
+   async () => {
+     mockEnvVar('google_cloud_project', fixedProjectId);
      const projectId = await auth.getProjectId();
      assert.strictEqual(projectId, fixedProjectId);
    });
@@ -750,6 +764,15 @@ it('getProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it is avail
    async () => {
      mockEnvVar(
          'GOOGLE_APPLICATION_CREDENTIALS',
+         path.join(__dirname, '../../test/fixtures/private2.json'));
+     const projectId = await auth.getProjectId();
+     assert.strictEqual(projectId, fixedProjectId);
+   });
+
+it('getProjectId should use `google_application_credentials` file when it is available',
+   async () => {
+     mockEnvVar(
+         'google_application_credentials',
          path.join(__dirname, '../../test/fixtures/private2.json'));
      const projectId = await auth.getProjectId();
      assert.strictEqual(projectId, fixedProjectId);
