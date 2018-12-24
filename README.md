@@ -86,27 +86,29 @@ Let's take a look at a complete example.
 const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
-const querystring = require('querystring');
 const opn = require('opn');
+const destroyer = require('server-destroy');
 
 // Download your OAuth2 configuration from the Google
-const keys = require('./keys.json');
+const keys = require('./oauth2.keys.json');
 
 /**
  * Start by acquiring a pre-authenticated oAuth2 client.
  */
 async function main() {
-  try {
-    const oAuth2Client = await getAuthenticatedClient();
-    // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
-    // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
-    const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
-    const res = await oAuth2Client.request({url})
-    console.log(res.data);
-  } catch (e) {
-    console.error(e);
-  }
-  process.exit();
+  const oAuth2Client = await getAuthenticatedClient();
+  // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
+  // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
+  const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
+  const res = await oAuth2Client.request({url});
+  console.log(res.data);
+
+  // After acquiring an access_token, you may want to check on the audience, expiration,
+  // or original scopes requested.  You can do that with the `getTokenInfo` method.
+  const tokenInfo = await oAuth2Client.getTokenInfo(
+    oAuth2Client.credentials.access_token
+  );
+  console.log(tokenInfo);
 }
 
 /**
@@ -126,34 +128,43 @@ function getAuthenticatedClient() {
     // Generate the url that will be used for the consent dialog.
     const authorizeUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: 'https://www.googleapis.com/auth/plus.me'
+      scope: 'https://www.googleapis.com/auth/plus.me',
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the
     // only request to our webserver is to /oauth2callback?code=<code>
-    const server = http.createServer(async (req, res) => {
-      if (req.url.indexOf('/oauth2callback') > -1) {
-        // acquire the code from the querystring, and close the web server.
-        const qs = querystring.parse(url.parse(req.url).query);
-        console.log(`Code is ${qs.code}`);
-        res.end('Authentication successful! Please return to the console.');
-        server.close();
+    const server = http
+      .createServer(async (req, res) => {
+        try {
+          if (req.url.indexOf('/oauth2callback') > -1) {
+            // acquire the code from the querystring, and close the web server.
+            const qs = new url.URL(req.url, 'http://localhost:3000')
+              .searchParams;
+            const code = qs.get('code');
+            console.log(`Code is ${code}`);
+            res.end('Authentication successful! Please return to the console.');
+            server.destroy();
 
-        // Now that we have the code, use that to acquire tokens.
-        const r = await oAuth2Client.getToken(qs.code)
-        // Make sure to set the credentials on the OAuth2 client.
-        oAuth2Client.setCredentials(r.tokens);
-        console.info('Tokens acquired.');
-        resolve(oAuth2Client);
-      }
-    }).listen(3000, () => {
-      // open the browser to the authorize url to start the workflow
-      opn(authorizeUrl);
-    });
+            // Now that we have the code, use that to acquire tokens.
+            const r = await oAuth2Client.getToken(code);
+            // Make sure to set the credentials on the OAuth2 client.
+            oAuth2Client.setCredentials(r.tokens);
+            console.info('Tokens acquired.');
+            resolve(oAuth2Client);
+          }
+        } catch (e) {
+          reject(e);
+        }
+      })
+      .listen(3000, () => {
+        // open the browser to the authorize url to start the workflow
+        opn(authorizeUrl, {wait: false}).then(cp => cp.unref());
+      });
+    destroyer(server);
   });
 }
 
-main();
+main().catch(console.error);
 ```
 
 #### Handling token events
@@ -184,8 +195,8 @@ const tokens = await oauth2Client.getToken(code);
 oauth2Client.setCredentials(tokens);
 ```
 
-#### Manually refreshing access token
-If you need to manually refresh the `access_token` associated with your OAuth2 client, ensure the call to `generateAuthUrl` sets the `access_type` to `offline`.  The refresh token will only be returned for the first authorization by the user.  To force consent, set the `prompt` property to `consent`:
+#### Obtaining a new Refresh Token
+If you need to obtain a new `refresh_token`, ensure the call to `generateAuthUrl` sets the `access_type` to `offline`.  The refresh token will only be returned for the first authorization by the user.  To force consent, set the `prompt` property to `consent`:
 
 ```js
 // Generate the url that will be used for the consent dialog.
@@ -200,14 +211,6 @@ const authorizeUrl = oAuth2Client.generateAuthUrl({
   // every time, forcing a refresh_token to be returned.
   prompt: 'consent'
 });
-```
-
-If a refresh_token is set again on `OAuth2Client.credentials.refresh_token`, you can can `refreshAccessToken()`:
-
-``` js
-const tokens = await oauth2Client.refreshAccessToken();
-// your access_token is now refreshed and stored in oauth2Client
-// store these new tokens in a safe place (e.g. database)
 ```
 
 #### Checking `access_token` information
@@ -313,14 +316,14 @@ If your application is running on Google Cloud Platform, you can authenticate us
 **Note**: In most cases, you will want to use [Application Default Credentials](#choosing-the-correct-credential-type-automatically).  Direct use of the `Compute` class is for very specific scenarios.
 
 ``` js
-const {Compute} = require('google-auth-library');
+const {auth, Compute} = require('google-auth-library');
 
 async function main() {
   const client = new Compute({
     // Specifying the service account email is optional.
     serviceAccountEmail: 'my-service-account@example.com'
   });
-  const projectId = 'your-project-id';
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${project_id}`;
   const res = await client.request({url});
   console.log(res.data);
