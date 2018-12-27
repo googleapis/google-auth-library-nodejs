@@ -288,7 +288,8 @@ export class GoogleAuth {
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable(
       options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
-    const credentialsPath = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
+    const credentialsPath = process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
+        process.env['google_application_credentials'];
     if (!credentialsPath || credentialsPath.length === 0) {
       return null;
     }
@@ -583,7 +584,9 @@ export class GoogleAuth {
    * @api private
    */
   private getProductionProjectId() {
-    return process.env['GCLOUD_PROJECT'] || process.env['GOOGLE_CLOUD_PROJECT'];
+    return process.env['GCLOUD_PROJECT'] ||
+        process.env['GOOGLE_CLOUD_PROJECT'] || process.env['gcloud_project'] ||
+        process.env['google_cloud_project'];
   }
 
   /**
