@@ -12,3 +12,4 @@ samples/*.keys.json
 !webpack.config.js
 package-lock.json
 yarn.lock
+dist/
