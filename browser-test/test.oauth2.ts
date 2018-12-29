@@ -17,12 +17,12 @@
 import * as assert from 'assert';
 import {AxiosError} from 'axios';
 import * as fs from 'fs';
-import * as sinon from 'sinon';
 import * as path from 'path';
 import * as qs from 'querystring';
+import * as sinon from 'sinon';
 import * as url from 'url';
 
-import {GoogleAuth, OAuth2Client, DefaultTransporter} from '../src';
+import {DefaultTransporter, GoogleAuth, OAuth2Client} from '../src';
 
 const CLIENT_ID = 'CLIENT_ID';
 const CLIENT_SECRET = 'CLIENT_SECRET';
@@ -30,19 +30,6 @@ const REDIRECT_URI = 'REDIRECT';
 const ACCESS_TYPE = 'offline';
 const SCOPE = 'scopex';
 const baseUrl = 'https://oauth2.googleapis.com';
-
-class FakeTransporter {
-  result: {};
-
-  constructor(result: {}) {
-    this.result = result;
-  }
-
-  // @ts-ignore type check for fake transporter
-  async request() {
-    return this.result;
-  }
-}
 
 describe('Browser OAuth2 tests', () => {
   it('should generate a valid consent page url', done => {
@@ -79,11 +66,10 @@ describe('Browser OAuth2 tests', () => {
       clientSecret: CLIENT_SECRET,
       redirectUri: REDIRECT_URI
     });
-    // @ts-ignore fake transporter assignment
-    const stub = sinon.stub(oauth2client.transporter, "request");
+    const stub = sinon.stub(oauth2client.transporter, 'request');
     // @ts-ignore TS2345
-    stub.returns(Promise.resolve({access_token: 'abc', refresh_token: '123', expires_in: 10}));
-//    oauth2client.transporter = new FakeTransporter({access_token: 'abc', refresh_token: '123', expires_in: 10});
+    stub.returns(Promise.resolve(
+        {access_token: 'abc', refresh_token: '123', expires_in: 10}));
     oauth2client.getToken('code here', (err, tokens) => {
       assert(tokens!.expiry_date! >= now + (10 * 1000));
       assert(tokens!.expiry_date! <= now + (15 * 1000));
