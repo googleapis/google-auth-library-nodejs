@@ -663,7 +663,7 @@ export class GoogleAuth {
     // The GCF metadata server doesn't respect querystring params if this / is
     // not included.
     const {data} = await gcpMetadata.instance(
-        {property: 'service-accounts/', params: {recursive: true}});
+        {property: 'service-accounts/', params: {recursive: 'true'}});
 
     if (!data || !data.default || !data.default.email) {
       throw new Error('Failure from metadata server.');
