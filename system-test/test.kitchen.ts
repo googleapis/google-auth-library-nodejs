@@ -31,7 +31,7 @@ const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
 const pkg = require('../../package.json');
 
-describe('pack and install', () => {
+describe('pack and install', function() {
   /**
    * Create a staging directory with temp fixtures used to test on a fresh
    * application.
