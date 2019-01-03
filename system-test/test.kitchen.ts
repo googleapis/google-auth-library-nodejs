@@ -60,7 +60,7 @@ describe('pack and install', function() {
     const stat = fs.statSync(bundle);
     assert(stat.size < 256 * 1024);
   }).timeout(20000);
-  
+
   /**
    * CLEAN UP - remove the staging directory when done.
    */

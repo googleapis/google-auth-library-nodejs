@@ -26,7 +26,6 @@ import * as url from 'url';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
-import {CertificateFormat} from '../src/auth/oauth2client';
 import * as messages from '../src/messages';
 const assertRejects = require('assert-rejects');
 
@@ -133,9 +132,8 @@ it('should verifyIdToken properly', async () => {
                     .get('/oauth2/v1/certs')
                     .reply(200, fakeCerts);
   client.verifySignedJwtWithCerts = async (
-      jwt: string, certs: {}, format: CertificateFormat,
-      requiredAudience: string|string[], issuers?: string[],
-      theMaxExpiry?: number) => {
+      jwt: string, certs: {}, requiredAudience: string|string[],
+      issuers?: string[], theMaxExpiry?: number) => {
     assert.strictEqual(jwt, idToken);
     assert.strictEqual(JSON.stringify(certs), JSON.stringify(fakeCerts));
     assert.strictEqual(requiredAudience, audience);
@@ -158,9 +156,8 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const audience = 'fakeAudience';
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-     client.verifySignedJwtWithCerts = async (
-         jwt: string, certs: {}, format: CertificateFormat,
-         requiredAudience: string) => {
+     client.verifySignedJwtWithCerts =
+         async (jwt: string, certs: {}, requiredAudience: string) => {
        assert.strictEqual(jwt, idToken);
        assert.deepStrictEqual(certs, fakeCerts);
        assert.strictEqual(requiredAudience, audience);
@@ -220,7 +217,7 @@ it('should verify a valid certificate against a jwt', async () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   const login = await client.verifySignedJwtWithCerts(
-      data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience');
+      data, {keyid: publicKey}, 'testaudience');
   assert.strictEqual(login.getUserId(), '123456789');
 });
 
@@ -250,8 +247,7 @@ it('should fail due to invalid audience', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Wrong recipient/);
 });
 
@@ -283,7 +279,7 @@ it('should fail due to invalid array of audiences', () => {
   const validAudiences = ['testaudience', 'extra-audience'];
   return assertRejects(
       client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, validAudiences),
+          data, {keyid: publicKey}, validAudiences),
       /Wrong recipient/);
 });
 
@@ -311,8 +307,7 @@ it('should fail due to invalid signature', () => {
   // Originally: data += '.'+signature;
   data += signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Wrong number of segments/);
 });
 
@@ -341,8 +336,7 @@ it('should fail due to invalid envelope', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Can\'t parse token envelope/);
 });
 
@@ -371,8 +365,7 @@ it('should fail due to invalid payload', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Can\'t parse token payload/);
 });
 
@@ -398,8 +391,7 @@ it('should fail due to invalid signature', () => {
       Buffer.from(idToken).toString('base64') + '.' +
       'broken-signature';
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Invalid token signature/);
 });
 
@@ -425,8 +417,7 @@ it('should fail due to no expiration date', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /No expiration time/);
 });
 
@@ -454,8 +445,7 @@ it('should fail due to no issue time', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /No issue time/);
 });
 
@@ -484,8 +474,7 @@ it('should fail due to certificate with expiration date in future', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Expiration time too far in future/);
 });
 
@@ -516,8 +505,7 @@ it('should pass due to expiration date in future with adjusted max expiry',
      const signature = signer.sign(privateKey, 'base64');
      data += '.' + signature;
      await client.verifySignedJwtWithCerts(
-         data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience',
-         ['testissuer'], maxExpiry);
+         data, {keyid: publicKey}, 'testaudience', ['testissuer'], maxExpiry);
    });
 
 it('should fail due to token being used to early', () => {
@@ -547,8 +535,7 @@ it('should fail due to token being used to early', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Token used too early/);
 });
 
@@ -580,8 +567,7 @@ it('should fail due to token being used to late', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience'),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
       /Token used too late/);
 });
 
@@ -611,8 +597,7 @@ it('should fail due to invalid issuer', () => {
   data += '.' + signature;
   return assertRejects(
       client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience',
-          ['testissuer']),
+          data, {keyid: publicKey}, 'testaudience', ['testissuer']),
       /Invalid issuer/);
 });
 
@@ -641,15 +626,14 @@ it('should pass due to valid issuer', async () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   await client.verifySignedJwtWithCerts(
-      data, {keyid: publicKey}, CertificateFormat.PEM, 'testaudience',
-      ['testissuer']);
+      data, {keyid: publicKey}, 'testaudience', ['testissuer']);
 });
 
 it('should be able to retrieve a list of Google certificates', (done) => {
   const scope = nock('https://www.googleapis.com')
                     .get(certsPath)
                     .replyWithFile(200, certsResPath);
-  client.getFederatedSignonCerts(CertificateFormat.PEM, (err, certs) => {
+  client.getFederatedSignonCerts((err, certs) => {
     assert.strictEqual(err, null);
     assert.strictEqual(Object.keys(certs!).length, 2);
     assert.notEqual(certs!.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21, null);
@@ -670,11 +654,11 @@ it('should be able to retrieve a list of Google certificates from cache again',
              })
              .get(certsPath)
              .replyWithFile(200, certsResPath);
-     client.getFederatedSignonCerts(CertificateFormat.PEM, (err, certs) => {
+     client.getFederatedSignonCerts((err, certs) => {
        assert.strictEqual(err, null);
        assert.strictEqual(Object.keys(certs!).length, 2);
        scope.done();  // has retrieved from nock... nock no longer will reply
-       client.getFederatedSignonCerts(CertificateFormat.PEM, (err2, certs2) => {
+       client.getFederatedSignonCerts((err2, certs2) => {
          assert.strictEqual(err2, null);
          assert.strictEqual(Object.keys(certs2!).length, 2);
          scope.done();

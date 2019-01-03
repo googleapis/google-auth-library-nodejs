@@ -884,12 +884,9 @@ export class OAuth2Client extends AuthClient {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
-
-    const format: CertificateFormat =
-        isWebpack() ? CertificateFormat.JWK : CertificateFormat.PEM;
-    const response = await this.getFederatedSignonCertsAsync(format);
+    const response = await this.getFederatedSignonCertsAsync();
     const login = await this.verifySignedJwtWithCerts(
-        options.idToken, response.certs, response.format, options.audience,
+        options.idToken, response.certs, options.audience,
         OAuth2Client.ISSUERS_, options.maxExpiry);
 
     return login;
@@ -923,29 +920,25 @@ export class OAuth2Client extends AuthClient {
    * Gets federated sign-on certificates to use for verifying identity tokens.
    * Returns certs as array structure, where keys are key ids, and values
    * are certificates in either PEM or JWK format.
-   * @param format Certificate format: PEM or JWK.
    * @param callback Callback supplying the certificates
    */
-  getFederatedSignonCerts(format: CertificateFormat):
-      Promise<FederatedSignonCertsResponse>;
-  getFederatedSignonCerts(
-      format: CertificateFormat,
-      callback: GetFederatedSignonCertsCallback): void;
-  getFederatedSignonCerts(
-      format: CertificateFormat, callback?: GetFederatedSignonCertsCallback):
+  getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
+  getFederatedSignonCerts(callback: GetFederatedSignonCertsCallback): void;
+  getFederatedSignonCerts(callback?: GetFederatedSignonCertsCallback):
       Promise<FederatedSignonCertsResponse>|void {
     if (callback) {
-      this.getFederatedSignonCertsAsync(format)
+      this.getFederatedSignonCertsAsync()
           .then(r => callback(null, r.certs, r.res))
           .catch(callback);
     } else {
-      return this.getFederatedSignonCertsAsync(format);
+      return this.getFederatedSignonCertsAsync();
     }
   }
 
-  async getFederatedSignonCertsAsync(format: CertificateFormat):
-      Promise<FederatedSignonCertsResponse> {
+  async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
     const nowTime = (new Date()).getTime();
+    const format: CertificateFormat =
+        isWebpack() ? CertificateFormat.JWK : CertificateFormat.PEM;
     if (this.certificateExpiry &&
         (nowTime < this.certificateExpiry.getTime()) &&
         this.certificateCacheFormat === format) {
@@ -1007,16 +1000,14 @@ export class OAuth2Client extends AuthClient {
    * and is from the correct audience.
    * @param jwt The jwt to verify (The ID Token in this case).
    * @param certs The array of certs to test the jwt against.
-   * @param format Certificate format: PEM or JWK
    * @param requiredAudience The audience to test the jwt against.
    * @param issuers The allowed issuers of the jwt (Optional).
    * @param maxExpiry The max expiry the certificate can be (Optional).
    * @return Returns a LoginTicket on verification.
    */
   async verifySignedJwtWithCerts(
-      jwt: string, certs: Certificates, format: CertificateFormat,
-      requiredAudience: string|string[], issuers?: string[],
-      maxExpiry?: number) {
+      jwt: string, certs: Certificates, requiredAudience: string|string[],
+      issuers?: string[], maxExpiry?: number) {
     if (!maxExpiry) {
       maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
     }

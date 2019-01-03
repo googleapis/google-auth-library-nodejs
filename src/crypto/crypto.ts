@@ -24,7 +24,7 @@ import {NodeCrypto} from './node/crypto';
 export interface JwkCertificate {
   kty: string;
   alg: string;
-  use: string;
+  use?: string;
   kid: string;
   n: string;
   e: string;
