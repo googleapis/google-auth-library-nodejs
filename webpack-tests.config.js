@@ -1,16 +1,30 @@
+/**
+ * Copyright 2019 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// This configuration file is used for browser testing with Karma.
+// See karma.conf.js for details.
+
 const path = require('path');
 
 module.exports = {
-  entry: './build/browser-test/test.oauth2.js',
   resolve: {
     extensions: ['.ts', '.js', '.json'],
     alias: {
       '../../package.json': path.resolve(__dirname, 'package.json'),
     },
-  },
-  output: {
-    filename: 'google-auth-library-tests.js',
-    path: path.resolve(__dirname, 'dist'),
   },
   node: {
     child_process: 'empty',
@@ -40,4 +54,5 @@ module.exports = {
   },
   mode: 'production',
   plugins: [],
+  performance: {hints: false},
 };

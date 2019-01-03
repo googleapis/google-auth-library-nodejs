@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,11 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
 import * as url from 'url';
+
+// Not all browsers support `TextEncoder`. The following `require` will
+// provide a fast UTF8-only replacement for those browsers that don't support
+// text encoding natively.
+require('fast-text-encoding');
 
 import {CodeChallengeMethod, DefaultTransporter, GoogleAuth, OAuth2Client} from '../src';
 import {CertificateFormat} from '../src/auth/oauth2client';
@@ -127,7 +132,7 @@ describe('Browser OAuth2 tests', () => {
     const stub = sinon.stub(client.transporter, 'request');
     // @ts-ignore TS2345
     stub.returns(Promise.resolve(
-        {access_token: 'abc', refresh_token: '123', expires_in: 10}));
+        {data: {access_token: 'abc', refresh_token: '123', expires_in: 10}}));
     client.getToken('code here', (err, tokens) => {
       assert(tokens!.expiry_date! >= now + (10 * 1000));
       assert(tokens!.expiry_date! <= now + (15 * 1000));
@@ -136,7 +141,6 @@ describe('Browser OAuth2 tests', () => {
 
   it('getFederatedSignonCerts talks to correct endpoint', async () => {
     const stub = sinon.stub(client.transporter, 'request');
-
     // @ts-ignore TS2345
     stub.returns(Promise.resolve(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE));
     const result = await client.getFederatedSignonCertsAsync();
@@ -150,11 +154,9 @@ describe('Browser OAuth2 tests', () => {
 
   it('getFederatedSignonCerts caches certificates', async () => {
     const stub = sinon.stub(client.transporter, 'request');
-
     // @ts-ignore TS2345
     stub.returns(Promise.resolve(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE));
     const result1 = await client.getFederatedSignonCertsAsync();
-
     const result2 = await client.getFederatedSignonCertsAsync();
     assert(stub.calledOnce);
     assert.deepStrictEqual(result1.certs, result2.certs);
@@ -163,7 +165,7 @@ describe('Browser OAuth2 tests', () => {
 
   it('should generate a valid code verifier and resulting challenge',
      async () => {
-       const codes = await client.generateCodeVerifier();
+      const codes = await client.generateCodeVerifier();
        // ensure the code_verifier matches all requirements
        assert.strictEqual(codes.codeVerifier.length, 128);
        const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
@@ -209,11 +211,10 @@ describe('Browser OAuth2 tests', () => {
       hash: {name: 'SHA-256'},
     };
     const cryptoKey = await window.crypto.subtle.importKey(
-        'jwk', privateKey, algo, true, ['verify']);
+        'jwk', privateKey, algo, true, ['sign']);
     const signature = await window.crypto.subtle.sign(
         algo, cryptoKey, new TextEncoder().encode(data));
-
-    data += '.' + signature;
+    data += '.' + base64js.fromByteArray(new Uint8Array(signature));
     const login = await client.verifySignedJwtWithCerts(
         data, {keyid: publicKey}, 'testaudience');
     assert.strictEqual(login.getUserId(), '123456789');

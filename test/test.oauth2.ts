@@ -278,8 +278,7 @@ it('should fail due to invalid array of audiences', () => {
   data += '.' + signature;
   const validAudiences = ['testaudience', 'extra-audience'];
   return assertRejects(
-      client.verifySignedJwtWithCerts(
-          data, {keyid: publicKey}, validAudiences),
+      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, validAudiences),
       /Wrong recipient/);
 });
 

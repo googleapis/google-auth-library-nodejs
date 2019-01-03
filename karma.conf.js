@@ -1,6 +1,24 @@
-// Karma configuration
+/**
+ * Copyright 2019 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-const webpackConfig = require('./webpack.config.js');
+// Karma configuration
+// Use `npm run browser-test` to run browser tests with Karma.
+
+const webpackConfig = require('./webpack-tests.config.js');
+process.env.CHROME_BIN = require('puppeteer').executablePath();
 
 module.exports = function(config) {
   config.set({
@@ -25,12 +43,7 @@ module.exports = function(config) {
       './browser-test/*.ts': ['webpack', 'sourcemap'],
     },
 
-    webpack: {
-      node: webpackConfig.node,
-      module: webpackConfig.module,
-      resolve: webpackConfig.resolve,
-      mode: webpackConfig.mode,
-    },
+    webpack: webpackConfig,
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
@@ -55,11 +68,11 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: [],
+    browsers: ['ChromeHeadless'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
+    singleRun: true,
 
     // Concurrency level
     // how many browser should be started simultaneous
