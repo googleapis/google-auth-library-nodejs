@@ -31,40 +31,42 @@ const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
 const pkg = require('../../package.json');
 
-/**
- * Create a staging directory with temp fixtures used to test on a fresh
- * application.
- */
-before('npm pack and move to staging directory', async function() {
-  this.timeout(40000);
-  console.log(`${__filename} staging area: ${stagingPath}`);
-  await execa('npm', ['pack'], {stdio: 'inherit'});
-  const tarball = `${pkg.name}-${pkg.version}.tgz`;
-  // stagingPath can be on another filesystem so fs.rename() will fail
-  // with EXDEV, hence we use `mv` module here.
-  await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
-  await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
-  await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
-});
+describe('pack and install', () => {
+  /**
+   * Create a staging directory with temp fixtures used to test on a fresh
+   * application.
+   */
+  before('should be able to use the d.ts', async () => {
+    this.timeout(40000);
+    console.log(`${__filename} staging area: ${stagingPath}`);
+    await execa('npm', ['pack'], {stdio: 'inherit'});
+    const tarball = `${pkg.name}-${pkg.version}.tgz`;
+    // stagingPath can be on another filesystem so fs.rename() will fail
+    // with EXDEV, hence we use `mv` module here.
+    await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
+    await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
+    await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
+  });
 
-it.only('should be able to webpack the library', async function() {
+  it('should be able to webpack the library', async function() {
     if (process.version.match(/^v[46]\./)) {
       console.log('not running webpack on node4 or node6.');
       this.skip();
       return;
     }
-    // we expect npm install is executed on the previous step
+    // we expect npm install is executed in the before hook
     await execa('npx', ['webpack'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
     const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
     const stat = fs.statSync(bundle);
     assert(stat.size < 256 * 1024);
   }).timeout(20000);
-
-/**
- * CLEAN UP - remove the staging directory when done.
- */
-after('cleanup staging directory', async () => {
-  if (!keep) {
-    await execa('rm', ['-rf', stagingPath]);
-  }
+  
+  /**
+   * CLEAN UP - remove the staging directory when done.
+   */
+  after('cleanup staging', () => {
+    if (!keep) {
+      stagingDir.removeCallback();
+    }
+  });
 });

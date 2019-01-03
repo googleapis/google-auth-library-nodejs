@@ -13,10 +13,12 @@
 
 'use strict';
 
-const {Compute} = require('google-auth-library');
+const {auth, Compute} = require('google-auth-library');
 
 /**
- * Acquire a client, and make a request to an API that's enabled by default.
+ * This example directly instantiates a Compute client to acquire credentials.
+ * Generally, you wouldn't directly create this class, rather call the
+ * `auth.getClient()` method to automatically obtain credentials.
  */
 async function main() {
   const client = new Compute({
@@ -24,7 +26,7 @@ async function main() {
     // service account if one is not defined.
     serviceAccountEmail: 'some-service-account@example.com',
   });
-  const projectId = 'el-gato';
+  const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({url});
   console.log(res.data);

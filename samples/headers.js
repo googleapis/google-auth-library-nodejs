@@ -17,19 +17,32 @@
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
 const {auth} = require('google-auth-library');
+const fetch = require('node-fetch');
 
 /**
- * Acquire a client, and make a request to an API that's enabled by default.
+ * This example shows obtaining authenticated HTTP request headers, and using
+ * those headers to construct your own authenticated request. This example uses
+ * node-fetch, but you could use any HTTP client you like.
  */
 async function main() {
-  const client = await auth.getClient({
-    credentials: require('./jwt.keys.json'),
-    scopes: 'https://www.googleapis.com/auth/cloud-platform',
-  });
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
-  const res = await client.request({url});
-  console.log(res.data);
+
+  // obtain an authenticated client
+  const client = await auth.getClient({
+    scopes: 'https://www.googleapis.com/auth/cloud-platform',
+  });
+
+  // Use the client to get authenticated request headers
+  const headers = await client.getRequestHeaders();
+  console.log('Headers:');
+  console.log(headers);
+
+  // Attach those headers to another request, and use it to call a Google API
+  const res = await fetch(url, {headers});
+  const data = await res.json();
+  console.log('DNS Info:');
+  console.log(data);
 }
 
 main().catch(console.error);
