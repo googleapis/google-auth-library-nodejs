@@ -165,7 +165,7 @@ describe('Browser OAuth2 tests', () => {
 
   it('should generate a valid code verifier and resulting challenge',
      async () => {
-      const codes = await client.generateCodeVerifier();
+       const codes = await client.generateCodeVerifier();
        // ensure the code_verifier matches all requirements
        assert.strictEqual(codes.codeVerifier.length, 128);
        const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
