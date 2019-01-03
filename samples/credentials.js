@@ -17,16 +17,33 @@
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
 const {auth} = require('google-auth-library');
-const axios = require('axios');
 
 /**
- * Acquire a client, and make a request to an API that's enabled by default.
+ * This sample demonstrates passing a `credentials` object directly into the
+ * `getClient` method.  This is useful if you're storing the fields requiretd
+ * in environment variables.  The original `client_email` and `private_key`
+ * values are obtained from a service account credential file.
  */
 async function main() {
+  const clientEmail = process.env.CLIENT_EMAIL;
+  const privateKey = process.env.PRIVATE_KEY;
+  if (!clientEmail || !privateKey) {
+    throw new Error(`
+      The CLIENT_EMAIL and PRIVATE_KEY environment variables are required for
+      this sample.
+    `);
+  }
+  const client = await auth.getClient({
+    credentials: {
+      client_email: clientEmail,
+      private_key: privateKey,
+    },
+    scopes: 'https://www.googleapis.com/auth/cloud-platform',
+  });
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
-  const opts = await auth.authorizeRequest();
-  const res = await axios.get(url, opts);
+  const res = await client.request({url});
+  console.log('DNS Info:');
   console.log(res.data);
 }
 
