@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import {assert} from 'chai';
 import {AxiosError} from 'axios';
 import * as base64js from 'base64-js';
 import * as fs from 'fs';
@@ -128,21 +128,19 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getToken should work', async () => {
-    const now = (new Date()).getTime();
-    const stub = sinon.stub(client.transporter, 'request');
-    // @ts-ignore TS2345
-    stub.returns(Promise.resolve(
-        {data: {access_token: 'abc', refresh_token: '123', expires_in: 10}}));
+    const now = Date.now();
+    const stub = sinon.stub(client.transporter, 'request').resolves({
+      data: {access_token: 'abc', refresh_token: '123', expires_in: 10}
+    });
     client.getToken('code here', (err, tokens) => {
-      assert(tokens!.expiry_date! >= now + (10 * 1000));
-      assert(tokens!.expiry_date! <= now + (15 * 1000));
+      assert.isAbove(tokens!.expiry_date!, now + (10 * 1000));
+      assert.isBelow(tokens!.expiry_date!, now + (15 * 1000));
     });
   });
 
   it('getFederatedSignonCerts talks to correct endpoint', async () => {
-    const stub = sinon.stub(client.transporter, 'request');
-    // @ts-ignore TS2345
-    stub.returns(Promise.resolve(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE));
+    const stub = sinon.stub(client.transporter, 'request')
+                     .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
     const result = await client.getFederatedSignonCertsAsync();
     assert.strictEqual(result.format, CertificateFormat.JWK);
     assert.strictEqual(
@@ -153,9 +151,8 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getFederatedSignonCerts caches certificates', async () => {
-    const stub = sinon.stub(client.transporter, 'request');
-    // @ts-ignore TS2345
-    stub.returns(Promise.resolve(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE));
+    const stub = sinon.stub(client.transporter, 'request')
+                     .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
     const result1 = await client.getFederatedSignonCertsAsync();
     const result2 = await client.getFederatedSignonCertsAsync();
     assert(stub.calledOnce);
@@ -166,12 +163,7 @@ describe('Browser OAuth2 tests', () => {
   it('should generate a valid code verifier and resulting challenge',
      async () => {
        const codes = await client.generateCodeVerifierAsync();
-       // ensure the code_verifier matches all requirements
-       assert.strictEqual(codes.codeVerifier.length, 128);
-       const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
-       assert(match);
-       if (!match) return;
-       assert(match.length > 0 && match[0] === codes.codeVerifier);
+       assert.match(codes.codeVerifier, /^[a-zA-Z0-9\-\.~_]{128}$/);
      });
 
   it('should include code challenge and method in the url', async () => {

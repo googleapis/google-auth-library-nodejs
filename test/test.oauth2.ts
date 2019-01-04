@@ -135,7 +135,7 @@ it('should verifyIdToken properly', async () => {
       jwt: string, certs: {}, requiredAudience: string|string[],
       issuers?: string[], theMaxExpiry?: number) => {
     assert.strictEqual(jwt, idToken);
-    assert.strictEqual(JSON.stringify(certs), JSON.stringify(fakeCerts));
+    assert.deepStrictEqual(certs, fakeCerts);
     assert.strictEqual(requiredAudience, audience);
     assert.strictEqual(theMaxExpiry, maxExpiry);
     return new LoginTicket('c', payload);
@@ -969,7 +969,7 @@ it('should revoke credentials if access token present', done => {
   client.revokeCredentials((err, result) => {
     assert.strictEqual(err, null);
     assert.strictEqual(result!.data!.success, true);
-    assert.strictEqual(JSON.stringify(client.credentials), '{}');
+    assert.deepStrictEqual(client.credentials, {});
     scope.done();
     done();
   });
@@ -981,7 +981,7 @@ it('should clear credentials and return error if no access token to revoke',
      client.revokeCredentials((err, result) => {
        assert.strictEqual(err!.message, 'No access token to revoke.');
        assert.strictEqual(result, undefined);
-       assert.strictEqual(JSON.stringify(client.credentials), '{}');
+       assert.deepStrictEqual(client.credentials, {});
        done();
      });
    });
