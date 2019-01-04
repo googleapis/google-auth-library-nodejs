@@ -17,12 +17,10 @@
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
-
 import {createCrypto, JwkCertificate} from '../crypto/crypto';
 import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
 import {isWebpack} from '../webpack';
-
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
@@ -885,7 +883,7 @@ export class OAuth2Client extends AuthClient {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
     const response = await this.getFederatedSignonCertsAsync();
-    const login = await this.verifySignedJwtWithCerts(
+    const login = await this.verifySignedJwtWithCertsAsync(
         options.idToken, response.certs, options.audience,
         OAuth2Client.ISSUERS_, options.maxExpiry);
 
@@ -995,6 +993,13 @@ export class OAuth2Client extends AuthClient {
     return {certs: certificates, format, res};
   }
 
+  verifySignedJwtWithCerts() {
+    // To make the code compatible with browser SubtleCrypto we need to make
+    // this method async.
+    throw new Error(
+        'verifySignedJwtWithCerts is removed, please use verifySignedJwtWithCertsAsync instead.');
+  }
+
   /**
    * Verify the id token is signed with the correct certificate
    * and is from the correct audience.
@@ -1003,9 +1008,9 @@ export class OAuth2Client extends AuthClient {
    * @param requiredAudience The audience to test the jwt against.
    * @param issuers The allowed issuers of the jwt (Optional).
    * @param maxExpiry The max expiry the certificate can be (Optional).
-   * @return Returns a LoginTicket on verification.
+   * @return Returns a promise resolving to LoginTicket on verification.
    */
-  async verifySignedJwtWithCerts(
+  async verifySignedJwtWithCertsAsync(
       jwt: string, certs: Certificates, requiredAudience: string|string[],
       issuers?: string[], maxExpiry?: number) {
     if (!maxExpiry) {

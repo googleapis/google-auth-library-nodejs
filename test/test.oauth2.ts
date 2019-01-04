@@ -131,7 +131,7 @@ it('should verifyIdToken properly', async () => {
   const scope = nock('https://www.googleapis.com')
                     .get('/oauth2/v1/certs')
                     .reply(200, fakeCerts);
-  client.verifySignedJwtWithCerts = async (
+  client.verifySignedJwtWithCertsAsync = async (
       jwt: string, certs: {}, requiredAudience: string|string[],
       issuers?: string[], theMaxExpiry?: number) => {
     assert.strictEqual(jwt, idToken);
@@ -156,7 +156,7 @@ it('should provide a reasonable error in verifyIdToken with wrong parameters',
      const audience = 'fakeAudience';
      const payload =
          {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
-     client.verifySignedJwtWithCerts =
+     client.verifySignedJwtWithCertsAsync =
          async (jwt: string, certs: {}, requiredAudience: string) => {
        assert.strictEqual(jwt, idToken);
        assert.deepStrictEqual(certs, fakeCerts);
@@ -216,7 +216,7 @@ it('should verify a valid certificate against a jwt', async () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  const login = await client.verifySignedJwtWithCerts(
+  const login = await client.verifySignedJwtWithCertsAsync(
       data, {keyid: publicKey}, 'testaudience');
   assert.strictEqual(login.getUserId(), '123456789');
 });
@@ -247,7 +247,8 @@ it('should fail due to invalid audience', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Wrong recipient/);
 });
 
@@ -278,7 +279,8 @@ it('should fail due to invalid array of audiences', () => {
   data += '.' + signature;
   const validAudiences = ['testaudience', 'extra-audience'];
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, validAudiences),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, validAudiences),
       /Wrong recipient/);
 });
 
@@ -306,7 +308,8 @@ it('should fail due to invalid signature', () => {
   // Originally: data += '.'+signature;
   data += signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Wrong number of segments/);
 });
 
@@ -335,7 +338,8 @@ it('should fail due to invalid envelope', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Can\'t parse token envelope/);
 });
 
@@ -364,7 +368,8 @@ it('should fail due to invalid payload', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Can\'t parse token payload/);
 });
 
@@ -390,7 +395,8 @@ it('should fail due to invalid signature', () => {
       Buffer.from(idToken).toString('base64') + '.' +
       'broken-signature';
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Invalid token signature/);
 });
 
@@ -416,7 +422,8 @@ it('should fail due to no expiration date', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /No expiration time/);
 });
 
@@ -444,7 +451,8 @@ it('should fail due to no issue time', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /No issue time/);
 });
 
@@ -473,7 +481,8 @@ it('should fail due to certificate with expiration date in future', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Expiration time too far in future/);
 });
 
@@ -503,7 +512,7 @@ it('should pass due to expiration date in future with adjusted max expiry',
      signer.update(data);
      const signature = signer.sign(privateKey, 'base64');
      data += '.' + signature;
-     await client.verifySignedJwtWithCerts(
+     await client.verifySignedJwtWithCertsAsync(
          data, {keyid: publicKey}, 'testaudience', ['testissuer'], maxExpiry);
    });
 
@@ -534,7 +543,8 @@ it('should fail due to token being used to early', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Token used too early/);
 });
 
@@ -566,7 +576,8 @@ it('should fail due to token being used to late', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(data, {keyid: publicKey}, 'testaudience'),
+      client.verifySignedJwtWithCertsAsync(
+          data, {keyid: publicKey}, 'testaudience'),
       /Token used too late/);
 });
 
@@ -595,7 +606,7 @@ it('should fail due to invalid issuer', () => {
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
   return assertRejects(
-      client.verifySignedJwtWithCerts(
+      client.verifySignedJwtWithCertsAsync(
           data, {keyid: publicKey}, 'testaudience', ['testissuer']),
       /Invalid issuer/);
 });
@@ -624,7 +635,7 @@ it('should pass due to valid issuer', async () => {
   signer.update(data);
   const signature = signer.sign(privateKey, 'base64');
   data += '.' + signature;
-  await client.verifySignedJwtWithCerts(
+  await client.verifySignedJwtWithCertsAsync(
       data, {keyid: publicKey}, 'testaudience', ['testissuer']);
 });
 

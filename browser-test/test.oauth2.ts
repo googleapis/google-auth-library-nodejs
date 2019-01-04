@@ -215,7 +215,7 @@ describe('Browser OAuth2 tests', () => {
     const signature = await window.crypto.subtle.sign(
         algo, cryptoKey, new TextEncoder().encode(data));
     data += '.' + base64js.fromByteArray(new Uint8Array(signature));
-    const login = await client.verifySignedJwtWithCerts(
+    const login = await client.verifySignedJwtWithCertsAsync(
         data, {keyid: publicKey}, 'testaudience');
     assert.strictEqual(login.getUserId(), '123456789');
   });
