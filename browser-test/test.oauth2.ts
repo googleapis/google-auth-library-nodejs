@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {assert} from 'chai';
 import {AxiosError} from 'axios';
 import * as base64js from 'base64-js';
+import {assert} from 'chai';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as qs from 'querystring';
@@ -129,10 +129,14 @@ describe('Browser OAuth2 tests', () => {
 
   it('getToken should work', async () => {
     const now = Date.now();
-    // @ts-ignore TS2345
-    const stub = sinon.stub(client.transporter, 'request').resolves({
-      data: {access_token: 'abc', refresh_token: '123', expires_in: 10}
-    });
+    const stub =
+        sinon
+            .stub(client.transporter, 'request')
+            // @ts-ignore TS2345
+            .resolves({
+              data:
+                  {access_token: 'abc', refresh_token: '123', expires_in: 10}
+            });
     client.getToken('code here', (err, tokens) => {
       assert.isAbove(tokens!.expiry_date!, now + (10 * 1000));
       assert.isBelow(tokens!.expiry_date!, now + (15 * 1000));
@@ -140,8 +144,9 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getFederatedSignonCerts talks to correct endpoint', async () => {
-    // @ts-ignore TS2345
-    const stub = sinon.stub(client.transporter, 'request')
+    const stub = sinon
+                     .stub(client.transporter, 'request')
+                     // @ts-ignore TS2345
                      .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
     const result = await client.getFederatedSignonCertsAsync();
     assert.strictEqual(result.format, CertificateFormat.JWK);
@@ -153,8 +158,9 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getFederatedSignonCerts caches certificates', async () => {
-    // @ts-ignore TS2345
-    const stub = sinon.stub(client.transporter, 'request')
+    const stub = sinon
+                     .stub(client.transporter, 'request')
+                     // @ts-ignore TS2345
                      .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
     const result1 = await client.getFederatedSignonCertsAsync();
     const result2 = await client.getFederatedSignonCertsAsync();
