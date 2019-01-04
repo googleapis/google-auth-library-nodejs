@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,7 @@ import * as util from 'util';
 import {createCrypto} from '../crypto/crypto';
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
-import {isWebpack} from '../webpack';
-
+import {isBrowser} from '../isbrowser';
 import {Compute} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
@@ -755,7 +754,7 @@ export class GoogleAuth {
    */
   async sign(data: string): Promise<string> {
     const client = await this.getClient();
-    if (client instanceof JWT && client.key && !isWebpack()) {
+    if (client instanceof JWT && client.key && !isBrowser()) {
       const crypto = createCrypto();
       const sign = crypto.createSign('RSA-SHA256');
       sign.update(data);

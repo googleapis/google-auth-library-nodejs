@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ it('should throw an error if generateAuthUrl is called with invalid parameters',
 
 it('should generate a valid code verifier and resulting challenge',
    async () => {
-     const codes = await client.generateCodeVerifier();
+     const codes = await client.generateCodeVerifierAsync();
      // ensure the code_verifier matches all requirements
      assert.strictEqual(codes.codeVerifier.length, 128);
      const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
@@ -107,7 +107,7 @@ it('should generate a valid code verifier and resulting challenge',
    });
 
 it('should include code challenge and method in the url', async () => {
-  const codes = await client.generateCodeVerifier();
+  const codes = await client.generateCodeVerifierAsync();
   const authUrl = client.generateAuthUrl({
     code_challenge: codes.codeChallenge,
     code_challenge_method: CodeChallengeMethod.S256
@@ -150,7 +150,7 @@ it('should verifyIdToken properly', async () => {
 });
 
 it('should provide a reasonable error in verifyIdToken with wrong parameters',
-   () => {
+   async () => {
      const fakeCerts = {a: 'a', b: 'b'};
      const idToken = 'idToken';
      const audience = 'fakeAudience';
@@ -963,7 +963,7 @@ it('should not retry requests with streaming data', done => {
 
 it('should revoke credentials if access token present', done => {
   const scope = nock('https://oauth2.googleapis.com')
-                    .get('/revoke?token=abc')
+                    .post('/revoke?token=abc')
                     .reply(200, {success: true});
   client.credentials = {access_token: 'abc', refresh_token: 'abc'};
   client.revokeCredentials((err, result) => {

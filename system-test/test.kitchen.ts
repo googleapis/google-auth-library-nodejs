@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@ const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
 const pkg = require('../../package.json');
 
-describe('pack and install', function() {
+describe('pack and install', () => {
   /**
    * Create a staging directory with temp fixtures used to test on a fresh
    * application.
    */
-  before('should be able to use the d.ts', async () => {
+  before('should be able to use the d.ts', async function() {
     this.timeout(40000);
     console.log(`${__filename} staging area: ${stagingPath}`);
     await execa('npm', ['pack'], {stdio: 'inherit'});

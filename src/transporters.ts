@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {validate} from './options';
-import {isWebpack} from './webpack';
+import {isBrowser} from './isbrowser';
 
 // tslint:disable-next-line variable-name
 const HttpsProxyAgent = require('https-proxy-agent');
@@ -64,7 +64,7 @@ export class DefaultTransporter {
    */
   configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
     opts.headers = opts.headers || {};
-    if (!isWebpack()) {
+    if (!isBrowser()) {
       // set transporter user agent if not in browser
       const uaValue: string = opts.headers['User-Agent'];
       if (!uaValue) {

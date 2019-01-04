@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ export class BrowserCrypto implements Crypto {
     // need to convert an input string to an ArrayBuffer:
     const inputBuffer = new TextEncoder().encode(str);
 
-    // Result is ArrayBuffer ad well.
+    // Result is ArrayBuffer as well.
     const outputBuffer =
         await window.crypto.subtle.digest('SHA-256', inputBuffer);
 

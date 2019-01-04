@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,7 @@ describe('Browser OAuth2 tests', () => {
 
   it('should generate a valid code verifier and resulting challenge',
      async () => {
-       const codes = await client.generateCodeVerifier();
+       const codes = await client.generateCodeVerifierAsync();
        // ensure the code_verifier matches all requirements
        assert.strictEqual(codes.codeVerifier.length, 128);
        const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
@@ -175,7 +175,7 @@ describe('Browser OAuth2 tests', () => {
      });
 
   it('should include code challenge and method in the url', async () => {
-    const codes = await client.generateCodeVerifier();
+    const codes = await client.generateCodeVerifierAsync();
     const authUrl = client.generateAuthUrl({
       code_challenge: codes.codeChallenge,
       code_challenge_method: CodeChallengeMethod.S256

@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
  */
 
 import {create} from 'domain';
-
-import {isWebpack} from '../webpack';
-
+import {isBrowser} from '../isbrowser';
 import {BrowserCrypto} from './browser/crypto';
 import {NodeCrypto} from './node/crypto';
 
@@ -51,7 +49,7 @@ export interface Crypto {
 }
 
 export function createCrypto(): Crypto {
-  if (isWebpack()) {
+  if (isBrowser()) {
     return new BrowserCrypto();
   }
   return new NodeCrypto();

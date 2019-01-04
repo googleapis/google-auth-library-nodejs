@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-export function isWebpack(): boolean {
+export function isBrowser(): boolean {
   return typeof (window) !== 'undefined';
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import * as stream from 'stream';
 import {createCrypto, JwkCertificate} from '../crypto/crypto';
 import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
-import {isWebpack} from '../webpack';
+import {isBrowser} from '../isbrowser';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
@@ -449,12 +449,18 @@ export class OAuth2Client extends AuthClient {
     return rootUrl + '?' + querystring.stringify(opts);
   }
 
+  generateCodeVerifier() {
+    // To make the code compatible with browser SubtleCrypto we need to make
+    // this method async.
+    throw new Error("generateCodeVerifier is removed, please use generateCodeVerifierAsync instead.");
+  }
+
   /**
    * Convenience method to automatically generate a code_verifier, and it's
    * resulting SHA256. If used, this must be paired with a S256
    * code_challenge_method.
    */
-  async generateCodeVerifier() {
+  async generateCodeVerifierAsync() {
     // base64 encoding uses 6 bits per character, and we want to generate128
     // characters. 6*128/8 = 96.
     const crypto = createCrypto();
@@ -751,7 +757,7 @@ export class OAuth2Client extends AuthClient {
   revokeToken(
       token: string, callback?: BodyResponseCallback<RevokeCredentialsResult>):
       AxiosPromise<RevokeCredentialsResult>|void {
-    const opts = {url: OAuth2Client.getRevokeTokenUrl(token)};
+    const opts = {url: OAuth2Client.getRevokeTokenUrl(token), method: 'POST'};
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts).then(
           r => callback(null, r), callback);
@@ -936,7 +942,7 @@ export class OAuth2Client extends AuthClient {
   async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
     const nowTime = (new Date()).getTime();
     const format: CertificateFormat =
-        isWebpack() ? CertificateFormat.JWK : CertificateFormat.PEM;
+        isBrowser() ? CertificateFormat.JWK : CertificateFormat.PEM;
     if (this.certificateExpiry &&
         (nowTime < this.certificateExpiry.getTime()) &&
         this.certificateCacheFormat === format) {
