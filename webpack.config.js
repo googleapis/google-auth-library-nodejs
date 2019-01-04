@@ -39,6 +39,10 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /node_modules\/https-proxy-agent\//,
+        use: 'null-loader',
+      },
+      {
         test: /node_modules\/gtoken\//,
         use: 'null-loader',
       },
@@ -47,7 +51,7 @@ module.exports = {
         use: 'null-loader',
       },
       {
-        test: /node_modules\/https-proxy-agent\//,
+        test: /node_modules\/semver\//,
         use: 'null-loader',
       },
       {
