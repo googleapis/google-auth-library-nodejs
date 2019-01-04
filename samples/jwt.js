@@ -13,19 +13,23 @@
 
 'use strict';
 
-const {JWT} = require('google-auth-library');
-
 /**
  * The JWT authorization is ideal for performing server-to-server
- * communication without asking for user consent.
+ * communication without asking for user consent. Usually, you aren't
+ * going to directly instantiate a JWT instance.  Typically, this is acquired
+ * by using the `auth.getClient()` method.
  *
  * Suggested reading for Admin SDK users using service accounts:
  * https://developers.google.com/admin-sdk/directory/v1/guides/delegation
  **/
 
-const keys = require('./jwt.keys.json');
+const {JWT} = require('google-auth-library');
 
-async function main() {
+async function main(
+  // Full path to the sevice account credential
+  keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
+) {
+  const keys = require(keyFile);
   const client = new JWT({
     email: keys.client_email,
     key: keys.private_key,
@@ -33,6 +37,7 @@ async function main() {
   });
   const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
+  console.log('DNS Info:');
   console.log(res.data);
 
   // After acquiring an access_token, you may want to check on the audience, expiration,
@@ -41,4 +46,5 @@ async function main() {
   console.log(tokenInfo);
 }
 
-main().catch(console.error);
+const args = process.argv.slice(2);
+main(...args).catch(console.error);

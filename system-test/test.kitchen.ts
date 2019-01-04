@@ -27,26 +27,28 @@ const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
 const pkg = require('../../package.json');
 
-/**
- * Create a staging directory with temp fixtures used to test on a fresh
- * application.
- */
-it('should be able to use the d.ts', async () => {
-  console.log(`${__filename} staging area: ${stagingPath}`);
-  await execa('npm', ['pack'], {stdio: 'inherit'});
-  const tarball = `${pkg.name}-${pkg.version}.tgz`;
-  // stagingPath can be on another filesystem so fs.rename() will fail
-  // with EXDEV, hence we use `mv` module here.
-  await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
-  await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
-  await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
-}).timeout(40000);
+describe('pack and install', () => {
+  /**
+   * Create a staging directory with temp fixtures used to test on a fresh
+   * application.
+   */
+  it('should be able to use the d.ts', async () => {
+    console.log(`${__filename} staging area: ${stagingPath}`);
+    await execa('npm', ['pack'], {stdio: 'inherit'});
+    const tarball = `${pkg.name}-${pkg.version}.tgz`;
+    // stagingPath can be on another filesystem so fs.rename() will fail
+    // with EXDEV, hence we use `mv` module here.
+    await mvp(tarball, `${stagingPath}/google-auth-library.tgz`);
+    await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
+    await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
+  });
 
-/**
- * CLEAN UP - remove the staging directory when done.
- */
-after('cleanup staging', () => {
-  if (!keep) {
-    stagingDir.removeCallback();
-  }
+  /**
+   * CLEAN UP - remove the staging directory when done.
+   */
+  after('cleanup staging', () => {
+    if (!keep) {
+      stagingDir.removeCallback();
+    }
+  });
 });

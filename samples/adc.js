@@ -22,10 +22,13 @@ const {auth} = require('google-auth-library');
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  const client = await auth.getClient();
+  const client = await auth.getClient({
+    scopes: 'https://www.googleapis.com/auth/cloud-platform',
+  });
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({url});
+  console.log('DNS Info:');
   console.log(res.data);
 }
 
