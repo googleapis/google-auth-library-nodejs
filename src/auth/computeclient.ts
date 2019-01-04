@@ -66,20 +66,21 @@ export class Compute extends OAuth2Client {
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
-    let data: CredentialRequest;
+    let res: AxiosResponse<CredentialRequest>;
     try {
-      data = await gcpMetadata.instance(tokenPath);
+      res = await gcpMetadata.instance(tokenPath);
     } catch (e) {
       e.message = 'Could not refresh access token.';
       throw e;
     }
-    const tokens = data as Credentials;
-    if (data && data.expires_in) {
-      tokens.expiry_date = ((new Date()).getTime() + (data.expires_in * 1000));
+    const tokens = res.data as Credentials;
+    if (res.data && res.data.expires_in) {
+      tokens.expiry_date =
+          ((new Date()).getTime() + (res.data.expires_in * 1000));
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
-    return {tokens, res: null};
+    return {tokens, res};
   }
 
   protected requestAsync<T>(opts: AxiosRequestConfig, retry = false):
