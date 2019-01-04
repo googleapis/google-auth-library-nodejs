@@ -129,6 +129,7 @@ describe('Browser OAuth2 tests', () => {
 
   it('getToken should work', async () => {
     const now = Date.now();
+    // @ts-ignore TS2345
     const stub = sinon.stub(client.transporter, 'request').resolves({
       data: {access_token: 'abc', refresh_token: '123', expires_in: 10}
     });
@@ -139,6 +140,7 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getFederatedSignonCerts talks to correct endpoint', async () => {
+    // @ts-ignore TS2345
     const stub = sinon.stub(client.transporter, 'request')
                      .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
     const result = await client.getFederatedSignonCertsAsync();
@@ -151,6 +153,7 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getFederatedSignonCerts caches certificates', async () => {
+    // @ts-ignore TS2345
     const stub = sinon.stub(client.transporter, 'request')
                      .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
     const result1 = await client.getFederatedSignonCertsAsync();
