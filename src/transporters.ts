@@ -15,8 +15,9 @@
  */
 
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import {validate} from './options';
+
 import {isBrowser} from './isbrowser';
+import {validate} from './options';
 
 // tslint:disable-next-line variable-name
 const HttpsProxyAgent = require('https-proxy-agent');

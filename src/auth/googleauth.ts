@@ -24,9 +24,10 @@ import * as stream from 'stream';
 import * as util from 'util';
 
 import {createCrypto} from '../crypto/crypto';
+import {isBrowser} from '../isbrowser';
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
-import {isBrowser} from '../isbrowser';
+
 import {Compute} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
