@@ -934,9 +934,8 @@ export class OAuth2Client extends AuthClient {
   getFederatedSignonCerts(callback?: GetFederatedSignonCertsCallback):
       Promise<FederatedSignonCertsResponse>|void {
     if (callback) {
-      this.getFederatedSignonCertsAsync()
-          .then(r => callback(null, r.certs, r.res))
-          .catch(callback);
+      this.getFederatedSignonCertsAsync().then(
+          r => callback(null, r.certs, r.res), callback);
     } else {
       return this.getFederatedSignonCertsAsync();
     }
@@ -961,7 +960,7 @@ export class OAuth2Client extends AuthClient {
         url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_;
         break;
       default:
-        throw new Error('Unsupported certificate format ' + format);
+        throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
       res = await this.transporter.request({url});
@@ -1063,7 +1062,7 @@ export class OAuth2Client extends AuthClient {
 
     const cert = certs[envelope.kid];
     const crypto = createCrypto();
-    const verified: boolean = await crypto.verify(cert, signed, signature);
+    const verified = await crypto.verify(cert, signed, signature);
 
     if (!verified) {
       throw new Error('Invalid token signature: ' + jwt);

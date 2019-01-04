@@ -48,12 +48,7 @@ describe('pack and install', () => {
     await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
   });
 
-  it('should be able to webpack the library', async function() {
-    if (process.version.match(/^v[46]\./)) {
-      console.log('not running webpack on node4 or node6.');
-      this.skip();
-      return;
-    }
+  it('should be able to webpack the library', () => {
     // we expect npm install is executed in the before hook
     await execa('npx', ['webpack'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
     const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
