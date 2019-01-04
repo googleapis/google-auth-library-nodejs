@@ -16,6 +16,7 @@
 
 // Karma configuration
 // Use `npm run browser-test` to run browser tests with Karma.
+const isDocker = require('is-docker')();
 
 const webpackConfig = require('./webpack-tests.config.js');
 process.env.CHROME_BIN = require('puppeteer').executablePath();
@@ -68,7 +69,15 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['ChromeHeadless'],
+    browsers: ['ChromeCustom'],
+    customLaunchers: {
+      ChromeCustom: {
+        base: 'ChromeHeadless',
+        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
+        // more permissions than Docker allows by default)
+        flags: isDocker ? ['--no-sandbox'] : [],
+      },
+    },
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
