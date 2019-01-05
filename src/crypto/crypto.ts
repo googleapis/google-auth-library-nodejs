@@ -46,6 +46,8 @@ export interface Crypto {
   verify(pubkey: string|JwkCertificate, data: string|Buffer, signature: string):
       Promise<boolean>;
   createSign(algorithm: string): CryptoSigner;
+  decodeBase64StringUtf8(base64: string): string;
+  encodeBase64StringUtf8(text: string): string;
 }
 
 export function createCrypto(): Crypto {

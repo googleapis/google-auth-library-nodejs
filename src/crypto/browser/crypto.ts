@@ -82,4 +82,16 @@ export class BrowserCrypto implements Crypto {
   createSign(algorithm: string): CryptoSigner {
     throw new Error('createSign is not implemented in BrowserCrypto');
   }
+
+  decodeBase64StringUtf8(base64: string): string {
+    const uint8array = base64js.toByteArray(base64);
+    const result = new TextDecoder().decode(uint8array);
+    return result;
+  }
+
+  encodeBase64StringUtf8(text: string): string {
+    const uint8array = new TextEncoder().encode(text);
+    const result = base64js.fromByteArray(uint8array);
+    return result;
+  }
 }

@@ -1021,6 +1021,8 @@ export class OAuth2Client extends AuthClient {
   async verifySignedJwtWithCertsAsync(
       jwt: string, certs: Certificates, requiredAudience: string|string[],
       issuers?: string[], maxExpiry?: number) {
+    const crypto = createCrypto();
+
     if (!maxExpiry) {
       maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
     }
@@ -1036,7 +1038,7 @@ export class OAuth2Client extends AuthClient {
     let payload: TokenPayload;
 
     try {
-      envelope = JSON.parse(this.decodeBase64(segments[0]));
+      envelope = JSON.parse(crypto.decodeBase64StringUtf8(segments[0]));
     } catch (err) {
       throw new Error('Can\'t parse token envelope: ' + segments[0]);
     }
@@ -1046,7 +1048,7 @@ export class OAuth2Client extends AuthClient {
     }
 
     try {
-      payload = JSON.parse(this.decodeBase64(segments[1]));
+      payload = JSON.parse(crypto.decodeBase64StringUtf8(segments[1]));
     } catch (err) {
       throw new Error('Can\'t parse token payload: ' + segments[0]);
     }
@@ -1061,7 +1063,6 @@ export class OAuth2Client extends AuthClient {
     }
 
     const cert = certs[envelope.kid];
-    const crypto = createCrypto();
     const verified = await crypto.verify(cert, signed, signature);
 
     if (!verified) {
@@ -1128,16 +1129,6 @@ export class OAuth2Client extends AuthClient {
       }
     }
     return new LoginTicket(envelope, payload);
-  }
-
-  /**
-   * This is a utils method to decode a base64 string
-   * @param b64String The string to base64 decode
-   * @return The decoded string
-   */
-  decodeBase64(b64String: string) {
-    const buffer = Buffer.from(b64String, 'base64');
-    return buffer.toString('utf8');
   }
 
   /**

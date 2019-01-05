@@ -36,4 +36,12 @@ export class NodeCrypto implements Crypto {
   createSign(algorithm: string): CryptoSigner {
     return crypto.createSign(algorithm);
   }
+
+  decodeBase64StringUtf8(base64: string): string {
+    return Buffer.from(base64, 'base64').toString('utf-8');
+  }
+
+  encodeBase64StringUtf8(text: string): string {
+    return Buffer.from(text, 'utf-8').toString('base64');
+  }
 }

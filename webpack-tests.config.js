@@ -34,6 +34,10 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /src\/crypto\/node\/crypto/,
+        use: 'null-loader',
+      },
+      {
         test: /node_modules\/gtoken\//,
         use: 'null-loader',
       },

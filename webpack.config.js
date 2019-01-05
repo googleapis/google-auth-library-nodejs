@@ -39,6 +39,10 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /src\/crypto\/node\/crypto/,
+        use: 'null-loader',
+      },
+      {
         test: /node_modules\/https-proxy-agent\//,
         use: 'null-loader',
       },
