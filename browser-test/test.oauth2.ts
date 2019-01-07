@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-import {AxiosError} from 'axios';
+/// <reference path='../node_modules/@types/sinon/ts3.1/index.d.ts'>
+
+import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios';
 import * as base64js from 'base64-js';
 import {assert} from 'chai';
 import * as fs from 'fs';
@@ -22,6 +24,8 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
 import * as url from 'url';
+
+import {BodyResponseCallback} from '../src/transporters';
 
 // Not all browsers support `TextEncoder`. The following `require` will
 // provide a fast UTF8-only replacement for those browsers that don't support
@@ -130,9 +134,9 @@ describe('Browser OAuth2 tests', () => {
 
   it('getToken should work', async () => {
     const now = Date.now();
-    const stub = sinon.stub(client.transporter, 'request').resolves({
-      data: {access_token: 'abc', refresh_token: '123', expires_in: 10}
-    });
+    const stub = sinon.stub().resolves(
+        {data: {access_token: 'abc', refresh_token: '123', expires_in: 10}});
+    client.transporter.request = stub;
     const response = await client.getToken('code here');
     const tokens = response.tokens;
     assert.isAbove(tokens!.expiry_date!, now + (10 * 1000));
@@ -140,8 +144,9 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getFederatedSignonCerts talks to correct endpoint', async () => {
-    const stub = sinon.stub(client.transporter, 'request')
-                     .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
+    const stub =
+        sinon.stub().resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
+    client.transporter.request = stub;
     const result = await client.getFederatedSignonCertsAsync();
     const expectedCerts: {[kid: string]: JwkCertificate} = {};
     for (const cert of FEDERATED_SIGNON_JWK_CERTS) {
@@ -152,8 +157,9 @@ describe('Browser OAuth2 tests', () => {
   });
 
   it('getFederatedSignonCerts caches certificates', async () => {
-    const stub = sinon.stub(client.transporter, 'request')
-                     .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
+    const stub =
+        sinon.stub().resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
+    client.transporter.request = stub;
     const result1 = await client.getFederatedSignonCertsAsync();
     const result2 = await client.getFederatedSignonCertsAsync();
     assert(stub.calledOnce);
