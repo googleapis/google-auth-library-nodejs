@@ -119,7 +119,7 @@ describe('Browser OAuth2 tests', () => {
 
     const generated = client.generateAuthUrl(opts);
     // can't use URL class in webpack, so parsing URL manually
-    const queryString = generated.replace(/^.*?\?(.*?)(?:#.*)?$/, "$1");
+    const queryString = generated.replace(/^.*?\?(.*?)(?:#.*)?$/, '$1');
     const query = qs.parse(queryString);
     assert.strictEqual(query.response_type, 'code token');
     assert.strictEqual(query.access_type, ACCESS_TYPE);
@@ -176,7 +176,7 @@ describe('Browser OAuth2 tests', () => {
       code_challenge_method: CodeChallengeMethod.S256
     });
     // can't use URL class in webpack, so parsing URL manually
-    const queryString = authUrl.replace(/^.*?\?(.*?)(?:#.*)?$/, "$1");
+    const queryString = authUrl.replace(/^.*?\?(.*?)(?:#.*)?$/, '$1');
     const query = qs.parse(queryString);
     assert.strictEqual(query.code_challenge, codes.codeChallenge);
     assert.strictEqual(query.code_challenge_method, CodeChallengeMethod.S256);
