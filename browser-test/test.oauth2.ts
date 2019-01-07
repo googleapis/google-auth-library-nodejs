@@ -21,7 +21,6 @@ import * as base64js from 'base64-js';
 import {assert} from 'chai';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as qs from 'querystring';
 import * as sinon from 'sinon';
 
 import {BodyResponseCallback} from '../src/transporters';
@@ -118,14 +117,13 @@ describe('Browser OAuth2 tests', () => {
     };
 
     const generated = client.generateAuthUrl(opts);
-    // can't use URL class in webpack, so parsing URL manually
-    const queryString = generated.replace(/^.*?\?(.*?)(?:#.*)?$/, '$1');
-    const query = qs.parse(queryString);
-    assert.strictEqual(query.response_type, 'code token');
-    assert.strictEqual(query.access_type, ACCESS_TYPE);
-    assert.strictEqual(query.scope, SCOPE);
-    assert.strictEqual(query.client_id, CLIENT_ID);
-    assert.strictEqual(query.redirect_uri, REDIRECT_URI);
+    const url = new URL(generated);
+    const params = url.searchParams;
+    assert.strictEqual(params.get('response_type'), 'code token');
+    assert.strictEqual(params.get('access_type'), ACCESS_TYPE);
+    assert.strictEqual(params.get('scope'), SCOPE);
+    assert.strictEqual(params.get('client_id'), CLIENT_ID);
+    assert.strictEqual(params.get('redirect_uri'), REDIRECT_URI);
   });
 
   it('getToken should work', async () => {
@@ -175,11 +173,10 @@ describe('Browser OAuth2 tests', () => {
       code_challenge: codes.codeChallenge,
       code_challenge_method: CodeChallengeMethod.S256
     });
-    // can't use URL class in webpack, so parsing URL manually
-    const queryString = authUrl.replace(/^.*?\?(.*?)(?:#.*)?$/, '$1');
-    const query = qs.parse(queryString);
-    assert.strictEqual(query.code_challenge, codes.codeChallenge);
-    assert.strictEqual(query.code_challenge_method, CodeChallengeMethod.S256);
+    const url = new URL(authUrl);
+    const params = url.searchParams;
+    assert.strictEqual(params.get('code_challenge'), codes.codeChallenge);
+    assert.strictEqual(params.get('code_challenge_method'), CodeChallengeMethod.S256);
   });
 
   it('should verify a valid certificate against a jwt', async () => {
