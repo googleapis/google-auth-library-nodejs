@@ -30,6 +30,7 @@ require('fast-text-encoding');
 
 import {CodeChallengeMethod, DefaultTransporter, GoogleAuth, OAuth2Client} from '../src';
 import {CertificateFormat} from '../src/auth/oauth2client';
+import {JwkCertificate} from '../src/crypto/crypto';
 
 const CLIENT_ID = 'CLIENT_ID';
 const CLIENT_SECRET = 'CLIENT_SECRET';
@@ -137,10 +138,10 @@ describe('Browser OAuth2 tests', () => {
               data:
                   {access_token: 'abc', refresh_token: '123', expires_in: 10}
             });
-    client.getToken('code here', (err, tokens) => {
-      assert.isAbove(tokens!.expiry_date!, now + (10 * 1000));
-      assert.isBelow(tokens!.expiry_date!, now + (15 * 1000));
-    });
+    const response = await client.getToken('code here');
+    const tokens = response.tokens;
+    assert.isAbove(tokens!.expiry_date!, now + (10 * 1000));
+    assert.isBelow(tokens!.expiry_date!, now + (15 * 1000));
   });
 
   it('getFederatedSignonCerts talks to correct endpoint', async () => {
@@ -149,12 +150,12 @@ describe('Browser OAuth2 tests', () => {
                      // @ts-ignore TS2345
                      .resolves(FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE);
     const result = await client.getFederatedSignonCertsAsync();
-    assert.strictEqual(result.format, CertificateFormat.JWK);
-    assert.strictEqual(
-        Object.keys(result.certs).length, FEDERATED_SIGNON_JWK_CERTS.length);
+    const expectedCerts: {[kid: string]: JwkCertificate} = {};
     for (const cert of FEDERATED_SIGNON_JWK_CERTS) {
-      assert.deepStrictEqual(result.certs[cert.kid], cert);
+      expectedCerts[cert.kid] = cert;
     }
+    assert.strictEqual(result.format, CertificateFormat.JWK);
+    assert.deepStrictEqual(result.certs, expectedCerts);
   });
 
   it('getFederatedSignonCerts caches certificates', async () => {
@@ -182,17 +183,15 @@ describe('Browser OAuth2 tests', () => {
       code_challenge_method: CodeChallengeMethod.S256
     });
     const parsed = url.parse(authUrl);
-    if (typeof parsed.query !== 'string') {
-      throw new Error('Unable to parse querystring');
-    }
-    const props = qs.parse(parsed.query);
+    assert.strictEqual(typeof parsed.query, 'string');
+    const props = qs.parse(parsed.query as string);
     assert.strictEqual(props.code_challenge, codes.codeChallenge);
     assert.strictEqual(props.code_challenge_method, CodeChallengeMethod.S256);
   });
 
   it('should verify a valid certificate against a jwt', async () => {
     const maxLifetimeSecs = 86400;
-    const now = new Date().getTime() / 1000;
+    const now = Date.now() / 1000;
     const expiry = now + (maxLifetimeSecs / 2);
     const idToken = '{' +
         '"iss":"testissuer",' +

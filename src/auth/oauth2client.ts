@@ -990,7 +990,7 @@ export class OAuth2Client extends AuthClient {
         }
         break;
       default:
-        throw new Error('Unsupported certificate format ' + format);
+        throw new Error(`Unsupported certificate format ${format}`);
     }
 
     const now = new Date();
