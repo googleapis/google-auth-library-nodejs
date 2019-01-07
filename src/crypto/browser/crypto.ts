@@ -23,7 +23,9 @@ import {CryptoSigner} from '../crypto';
 // Not all browsers support `TextEncoder`. The following `require` will
 // provide a fast UTF8-only replacement for those browsers that don't support
 // text encoding natively.
-require('fast-text-encoding');
+if (typeof TextEncoder === 'undefined') {
+  require('fast-text-encoding');
+}
 
 import {Crypto, JwkCertificate} from '../crypto';
 
