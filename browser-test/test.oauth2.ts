@@ -176,7 +176,8 @@ describe('Browser OAuth2 tests', () => {
     const url = new URL(authUrl);
     const params = url.searchParams;
     assert.strictEqual(params.get('code_challenge'), codes.codeChallenge);
-    assert.strictEqual(params.get('code_challenge_method'), CodeChallengeMethod.S256);
+    assert.strictEqual(
+        params.get('code_challenge_method'), CodeChallengeMethod.S256);
   });
 
   it('should verify a valid certificate against a jwt', async () => {
