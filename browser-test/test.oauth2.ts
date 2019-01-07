@@ -23,7 +23,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
-import * as url from 'url';
 
 import {BodyResponseCallback} from '../src/transporters';
 
@@ -111,7 +110,7 @@ describe('Browser OAuth2 tests', () => {
     });
   });
 
-  it('should generate a valid consent page url', done => {
+  it('should generate a valid consent page url', () => {
     const opts = {
       access_type: ACCESS_TYPE,
       scope: SCOPE,
@@ -119,17 +118,14 @@ describe('Browser OAuth2 tests', () => {
     };
 
     const generated = client.generateAuthUrl(opts);
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
-      throw new Error('Unable to parse querystring');
-    }
-    const query = qs.parse(parsed.query);
+    // can't use URL class in webpack, so parsing URL manually
+    const queryString = generated.replace(/^.*?\?(.*?)(?:#.*)?$/, "$1");
+    const query = qs.parse(queryString);
     assert.strictEqual(query.response_type, 'code token');
     assert.strictEqual(query.access_type, ACCESS_TYPE);
     assert.strictEqual(query.scope, SCOPE);
     assert.strictEqual(query.client_id, CLIENT_ID);
     assert.strictEqual(query.redirect_uri, REDIRECT_URI);
-    done();
   });
 
   it('getToken should work', async () => {
@@ -179,11 +175,11 @@ describe('Browser OAuth2 tests', () => {
       code_challenge: codes.codeChallenge,
       code_challenge_method: CodeChallengeMethod.S256
     });
-    const parsed = url.parse(authUrl);
-    assert.strictEqual(typeof parsed.query, 'string');
-    const props = qs.parse(parsed.query as string);
-    assert.strictEqual(props.code_challenge, codes.codeChallenge);
-    assert.strictEqual(props.code_challenge_method, CodeChallengeMethod.S256);
+    // can't use URL class in webpack, so parsing URL manually
+    const queryString = authUrl.replace(/^.*?\?(.*?)(?:#.*)?$/, "$1");
+    const query = qs.parse(queryString);
+    assert.strictEqual(query.code_challenge, codes.codeChallenge);
+    assert.strictEqual(query.code_challenge_method, CodeChallengeMethod.S256);
   });
 
   it('should verify a valid certificate against a jwt', async () => {
