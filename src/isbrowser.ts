@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-import * as crypto from 'crypto';
-
-export class PemVerifier {
-  verify(
-      pubkey: string, data: string|Buffer, signature: string,
-      encoding: crypto.HexBase64Latin1Encoding) {
-    const verifier = crypto.createVerify('sha256');
-    verifier.update(data);
-    return verifier.verify(pubkey, signature, encoding);
-  }
+export function isBrowser(): boolean {
+  return typeof (window) !== 'undefined';
 }

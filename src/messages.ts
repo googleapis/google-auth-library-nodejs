@@ -15,6 +15,7 @@
  */
 
 import * as semver from 'semver';
+import {isBrowser} from './isbrowser';
 
 export enum WarningTypes {
   WARNING = 'Warning',
@@ -27,7 +28,7 @@ export function warn(warning: Warning) {
     return;
   }
   warning.warned = true;
-  if (semver.satisfies(process.version, '>=8')) {
+  if (!isBrowser() && semver.satisfies(process.version, '>=8')) {
     // @types/node doesn't recognize the emitWarning syntax which
     // accepts a config object, so `as any` it is
     // https://nodejs.org/docs/latest-v8.x/api/process.html#process_process_emitwarning_warning_options

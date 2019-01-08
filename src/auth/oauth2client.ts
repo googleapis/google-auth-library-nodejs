@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,20 @@
  */
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
-import * as crypto from 'crypto';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
+
+import {createCrypto, JwkCertificate} from '../crypto/crypto';
+import {isBrowser} from '../isbrowser';
 import * as messages from '../messages';
-import {PemVerifier} from './../pemverifier';
-import {BodyResponseCallback} from './../transporters';
+import {BodyResponseCallback} from '../transporters';
+
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 
 export type Certificates = {
-  [index: string]: string
+  [index: string]: string|JwkCertificate;
 };
 
 export type Headers = {
@@ -36,6 +38,11 @@ export type Headers = {
 export enum CodeChallengeMethod {
   Plain = 'plain',
   S256 = 'S256'
+}
+
+export enum CertificateFormat {
+  PEM = 'PEM',
+  JWK = 'JWK'
 }
 
 export interface GetTokenOptions {
@@ -302,6 +309,7 @@ export interface GetFederatedSignonCertsCallback {
 
 export interface FederatedSignonCertsResponse {
   certs: Certificates;
+  format: CertificateFormat;
   res?: AxiosResponse<void>|null;
 }
 
@@ -330,8 +338,9 @@ export interface RefreshOptions {
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
-  private certificateCache?: Certificates;
+  private certificateCache: Certificates = {};
   private certificateExpiry: Date|null = null;
+  private certificateCacheFormat: CertificateFormat = CertificateFormat.PEM;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
 
   // TODO: refactor tests to make this private
@@ -394,10 +403,16 @@ export class OAuth2Client extends AuthClient {
       'https://oauth2.googleapis.com/revoke';
 
   /**
-   * Google Sign on certificates.
+   * Google Sign on certificates in PEM format.
    */
-  private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_ =
+  private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_ =
       'https://www.googleapis.com/oauth2/v1/certs';
+
+  /**
+   * Google Sign on certificates in JWK format.
+   */
+  private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_ =
+      'https://www.googleapis.com/oauth2/v3/certs';
 
   /**
    * Clock skew - five minutes in seconds
@@ -436,15 +451,23 @@ export class OAuth2Client extends AuthClient {
     return rootUrl + '?' + querystring.stringify(opts);
   }
 
+  generateCodeVerifier() {
+    // To make the code compatible with browser SubtleCrypto we need to make
+    // this method async.
+    throw new Error(
+        'generateCodeVerifier is removed, please use generateCodeVerifierAsync instead.');
+  }
+
   /**
    * Convenience method to automatically generate a code_verifier, and it's
    * resulting SHA256. If used, this must be paired with a S256
    * code_challenge_method.
    */
-  generateCodeVerifier() {
+  async generateCodeVerifierAsync() {
     // base64 encoding uses 6 bits per character, and we want to generate128
     // characters. 6*128/8 = 96.
-    const randomString = crypto.randomBytes(96).toString('base64');
+    const crypto = createCrypto();
+    const randomString = crypto.randomBytesBase64(96);
     // The valid characters in the code_verifier are [A-Z]/[a-z]/[0-9]/
     // "-"/"."/"_"/"~". Base64 encoded strings are pretty close, so we're just
     // swapping out a few chars.
@@ -452,7 +475,7 @@ export class OAuth2Client extends AuthClient {
         randomString.replace(/\+/g, '~').replace(/=/g, '_').replace(/\//g, '-');
     // Generate the base64 encoded SHA256
     const unencodedCodeChallenge =
-        crypto.createHash('sha256').update(codeVerifier).digest('base64');
+        await crypto.sha256DigestBase64(codeVerifier);
     // We need to use base64UrlEncoding instead of standard base64
     const codeChallenge = unencodedCodeChallenge.split('=')[0]
                               .replace(/\+/g, '-')
@@ -711,6 +734,21 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
+   * Generates an URL to revoke the given token.
+   * @param token The existing token to be revoked.
+   * @param jsonp If set, append callback= parameter to request JSONP response.
+   */
+  static getRevokeTokenUrl(token: string, jsonp?: string): string {
+    let parameters = '';
+    if (jsonp) {
+      parameters = querystring.stringify({token, 'callback': jsonp});
+    } else {
+      parameters = querystring.stringify({token});
+    }
+    return `${OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_}?${parameters}`;
+  }
+
+  /**
    * Revokes the access given to token.
    * @param token The existing token to be revoked.
    * @param callback Optional callback fn.
@@ -722,11 +760,7 @@ export class OAuth2Client extends AuthClient {
   revokeToken(
       token: string, callback?: BodyResponseCallback<RevokeCredentialsResult>):
       AxiosPromise<RevokeCredentialsResult>|void {
-    const opts = {
-      url: OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_ + '?' +
-          querystring.stringify({token}),
-      method: 'POST'
-    };
+    const opts = {url: OAuth2Client.getRevokeTokenUrl(token), method: 'POST'};
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts).then(
           r => callback(null, r), callback);
@@ -857,9 +891,8 @@ export class OAuth2Client extends AuthClient {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
-
     const response = await this.getFederatedSignonCertsAsync();
-    const login = this.verifySignedJwtWithCerts(
+    const login = await this.verifySignedJwtWithCertsAsync(
         options.idToken, response.certs, options.audience,
         OAuth2Client.ISSUERS_, options.maxExpiry);
 
@@ -893,7 +926,7 @@ export class OAuth2Client extends AuthClient {
   /**
    * Gets federated sign-on certificates to use for verifying identity tokens.
    * Returns certs as array structure, where keys are key ids, and values
-   * are PEM encoded certificates.
+   * are certificates in either PEM or JWK format.
    * @param callback Callback supplying the certificates
    */
   getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
@@ -910,14 +943,27 @@ export class OAuth2Client extends AuthClient {
 
   async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
     const nowTime = (new Date()).getTime();
+    const format: CertificateFormat =
+        isBrowser() ? CertificateFormat.JWK : CertificateFormat.PEM;
     if (this.certificateExpiry &&
-        (nowTime < this.certificateExpiry.getTime())) {
-      return {certs: this.certificateCache!};
+        (nowTime < this.certificateExpiry.getTime()) &&
+        this.certificateCacheFormat === format) {
+      return {certs: this.certificateCache, format};
     }
     let res: AxiosResponse;
+    let url: string;
+    switch (format) {
+      case CertificateFormat.PEM:
+        url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_;
+        break;
+      case CertificateFormat.JWK:
+        url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_;
+        break;
+      default:
+        throw new Error(`Unsupported certificate format ${format}`);
+    }
     try {
-      res = await this.transporter.request(
-          {url: OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_CERTS_URL_});
+      res = await this.transporter.request({url});
     } catch (e) {
       throw new Error('Failed to retrieve verification certificates: ' + e);
     }
@@ -933,11 +979,33 @@ export class OAuth2Client extends AuthClient {
       }
     }
 
+    let certificates: Certificates = {};
+    switch (format) {
+      case CertificateFormat.PEM:
+        certificates = res.data;
+        break;
+      case CertificateFormat.JWK:
+        for (const key of res.data.keys) {
+          certificates[key.kid] = key;
+        }
+        break;
+      default:
+        throw new Error(`Unsupported certificate format ${format}`);
+    }
+
     const now = new Date();
     this.certificateExpiry =
         cacheAge === -1 ? null : new Date(now.getTime() + cacheAge);
-    this.certificateCache = res.data;
-    return {certs: res.data, res};
+    this.certificateCache = certificates;
+    this.certificateCacheFormat = format;
+    return {certs: certificates, format, res};
+  }
+
+  verifySignedJwtWithCerts() {
+    // To make the code compatible with browser SubtleCrypto we need to make
+    // this method async.
+    throw new Error(
+        'verifySignedJwtWithCerts is removed, please use verifySignedJwtWithCertsAsync instead.');
   }
 
   /**
@@ -948,11 +1016,13 @@ export class OAuth2Client extends AuthClient {
    * @param requiredAudience The audience to test the jwt against.
    * @param issuers The allowed issuers of the jwt (Optional).
    * @param maxExpiry The max expiry the certificate can be (Optional).
-   * @return Returns a LoginTicket on verification.
+   * @return Returns a promise resolving to LoginTicket on verification.
    */
-  verifySignedJwtWithCerts(
+  async verifySignedJwtWithCertsAsync(
       jwt: string, certs: Certificates, requiredAudience: string|string[],
       issuers?: string[], maxExpiry?: number) {
+    const crypto = createCrypto();
+
     if (!maxExpiry) {
       maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
     }
@@ -968,7 +1038,7 @@ export class OAuth2Client extends AuthClient {
     let payload: TokenPayload;
 
     try {
-      envelope = JSON.parse(this.decodeBase64(segments[0]));
+      envelope = JSON.parse(crypto.decodeBase64StringUtf8(segments[0]));
     } catch (err) {
       throw new Error('Can\'t parse token envelope: ' + segments[0]);
     }
@@ -978,7 +1048,7 @@ export class OAuth2Client extends AuthClient {
     }
 
     try {
-      payload = JSON.parse(this.decodeBase64(segments[1]));
+      payload = JSON.parse(crypto.decodeBase64StringUtf8(segments[1]));
     } catch (err) {
       throw new Error('Can\'t parse token payload: ' + segments[0]);
     }
@@ -991,9 +1061,9 @@ export class OAuth2Client extends AuthClient {
       // If this is not present, then there's no reason to attempt verification
       throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
     }
-    const pem = certs[envelope.kid];
-    const pemVerifier = new PemVerifier();
-    const verified = pemVerifier.verify(pem, signed, signature, 'base64');
+
+    const cert = certs[envelope.kid];
+    const verified = await crypto.verify(cert, signed, signature);
 
     if (!verified) {
       throw new Error('Invalid token signature: ' + jwt);
@@ -1059,16 +1129,6 @@ export class OAuth2Client extends AuthClient {
       }
     }
     return new LoginTicket(envelope, payload);
-  }
-
-  /**
-   * This is a utils method to decode a base64 string
-   * @param b64String The string to base64 decode
-   * @return The decoded string
-   */
-  decodeBase64(b64String: string) {
-    const buffer = Buffer.from(b64String, 'base64');
-    return buffer.toString('utf8');
   }
 
   /**

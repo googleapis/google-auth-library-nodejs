@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 import {AxiosRequestConfig, AxiosResponse} from 'axios';
 import {exec} from 'child_process';
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
-import * as http from 'http';
 import * as os from 'os';
 import * as path from 'path';
 import * as stream from 'stream';
-import * as util from 'util';
 
+import {createCrypto} from '../crypto/crypto';
+import {isBrowser} from '../isbrowser';
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 
@@ -370,9 +369,7 @@ export class GoogleAuth {
       }
     } catch (err) {
       throw this.createError(
-          util.format(
-              'The file at %s does not exist, or it is not a file.', filePath),
-          err);
+          `The file at ${filePath} does not exist, or it is not a file.`, err);
     }
 
     // Now open a read stream on the file, and parse it.
@@ -380,8 +377,7 @@ export class GoogleAuth {
       const readStream = this._createReadStream(filePath);
       return this.fromStream(readStream, options);
     } catch (err) {
-      throw this.createError(
-          util.format('Unable to read the file at %s.', filePath), err);
+      throw this.createError(`Unable to read the file at ${filePath}.`, err);
     }
   }
 
@@ -755,7 +751,8 @@ export class GoogleAuth {
    */
   async sign(data: string): Promise<string> {
     const client = await this.getClient();
-    if (client instanceof JWT && client.key) {
+    const crypto = createCrypto();
+    if (client instanceof JWT && client.key && !isBrowser()) {
       const sign = crypto.createSign('RSA-SHA256');
       sign.update(data);
       return sign.sign(client.key, 'base64');
@@ -775,7 +772,7 @@ export class GoogleAuth {
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
       url: `https://iam.googleapis.com/v1/${id}:signBlob`,
-      data: {bytesToSign: Buffer.from(data).toString('base64')}
+      data: {bytesToSign: crypto.encodeBase64StringUtf8(data)}
     });
     return res.data.signature;
   }

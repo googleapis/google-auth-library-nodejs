@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+
+import {isBrowser} from './isbrowser';
 import {validate} from './options';
 
 // tslint:disable-next-line variable-name
@@ -62,14 +64,16 @@ export class DefaultTransporter {
    * @return Configured options.
    */
   configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
-    // set transporter user agent
     opts.headers = opts.headers || {};
-    const uaValue: string = opts.headers['User-Agent'];
-    if (!uaValue) {
-      opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
-    } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
-      opts.headers['User-Agent'] =
-          `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+    if (!isBrowser()) {
+      // set transporter user agent if not in browser
+      const uaValue: string = opts.headers['User-Agent'];
+      if (!uaValue) {
+        opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
+      } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
+        opts.headers['User-Agent'] =
+            `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+      }
     }
     return opts;
   }

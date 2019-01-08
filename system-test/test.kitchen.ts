@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+import * as assert from 'assert';
+import * as cp from 'child_process';
 import * as execa from 'execa';
+import * as fs from 'fs';
 import * as mv from 'mv';
 import {ncp} from 'ncp';
+import * as path from 'path';
 import * as tmp from 'tmp';
 import {promisify} from 'util';
 
@@ -32,7 +36,8 @@ describe('pack and install', () => {
    * Create a staging directory with temp fixtures used to test on a fresh
    * application.
    */
-  it('should be able to use the d.ts', async () => {
+  before('should be able to use the d.ts', async function() {
+    this.timeout(40000);
     console.log(`${__filename} staging area: ${stagingPath}`);
     await execa('npm', ['pack'], {stdio: 'inherit'});
     const tarball = `${pkg.name}-${pkg.version}.tgz`;
@@ -42,6 +47,14 @@ describe('pack and install', () => {
     await ncpp('system-test/fixtures/kitchen', `${stagingPath}/`);
     await execa('npm', ['install'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
   });
+
+  it('should be able to webpack the library', async () => {
+    // we expect npm install is executed in the before hook
+    await execa('npx', ['webpack'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
+    const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
+    const stat = fs.statSync(bundle);
+    assert(stat.size < 256 * 1024);
+  }).timeout(20000);
 
   /**
    * CLEAN UP - remove the staging directory when done.
