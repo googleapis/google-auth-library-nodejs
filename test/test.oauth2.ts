@@ -15,9 +15,9 @@
  */
 
 import * as assert from 'assert';
-import {AxiosError} from 'axios';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
+import {GaxiosError} from 'gaxios';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as qs from 'querystring';
@@ -27,6 +27,7 @@ import * as url from 'url';
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 import * as messages from '../src/messages';
+
 const assertRejects = require('assert-rejects');
 
 nock.disableNetConnect();
@@ -950,11 +951,12 @@ it('should not retry requests with streaming data', done => {
   const scope = nock('http://example.com').post('/').reply(401);
   client.credentials = {
     access_token: 'initial-access-token',
-    refresh_token: 'refresh-token-placeholder'
+    refresh_token: 'refresh-token-placeholder',
+    expiry_date: (new Date()).getTime() + 500000
   };
   client.request({method: 'POST', url: 'http://example.com', data: s}, err => {
     scope.done();
-    const e = err as AxiosError;
+    const e = err as GaxiosError;
     assert(e);
     assert.strictEqual(e.response!.status, 401);
     done();
@@ -1000,7 +1002,7 @@ it('getToken should allow a code_verifier to be passed', async () => {
   assert(res.res);
   if (!res.res) return;
   const params = qs.parse(res.res.config.data);
-  assert(params.code_verifier === 'its_verified');
+  assert.strictEqual(params.code_verifier, 'its_verified');
 });
 
 it('getToken should set redirect_uri if not provided in options', async () => {

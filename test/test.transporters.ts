@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import {AxiosRequestConfig} from 'axios';
+import {GaxiosOptions} from 'gaxios';
 import * as nock from 'nock';
 
 import {DefaultTransporter, RequestError} from '../src/transporters';
@@ -30,16 +30,6 @@ nock.disableNetConnect();
 
 const defaultUserAgentRE = 'google-api-nodejs-client/\\d+.\\d+.\\d+';
 const transporter = new DefaultTransporter();
-
-it('should set default client user agent if none is set', async () => {
-  const url = 'http://example.com';
-  const scope = nock(url).get('/').reply(200, {});
-  const res = await transporter.request({url});
-  assert.strictEqual(typeof res.config.adapter, 'function');
-  assert.deepStrictEqual(
-      res.config.adapter, require('axios/lib/adapters/http'));
-  scope.done();
-});
 
 it('should set default adapter to node.js', () => {
   const opts = transporter.configure();
@@ -95,7 +85,7 @@ it('should return an error if you try to use request config options', done => {
   transporter.request(
       {
         uri: 'http://example.com/api',
-      } as AxiosRequestConfig,
+      } as GaxiosOptions,
       (error) => {
         assert.strictEqual(error!.message, expected);
         done();
@@ -109,8 +99,7 @@ it('should return an error if you try to use request config options with a promi
          `library is using Axios for requests. Please see https://github.com/axios/axios ` +
          `to learn more about the valid request options.`);
      const uri = 'http://example.com/api';
-     assert.throws(
-         () => transporter.request({uri} as AxiosRequestConfig), expected);
+     assert.throws(() => transporter.request({uri} as GaxiosOptions), expected);
    });
 
 it('should support invocation with async/await', async () => {

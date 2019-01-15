@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {GaxiosError, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
 
@@ -264,53 +264,53 @@ export interface GenerateAuthUrlOpts {
 }
 
 export interface GetTokenCallback {
-  (err: AxiosError|null, token?: Credentials|null,
-   res?: AxiosResponse|null): void;
+  (err: GaxiosError|null, token?: Credentials|null,
+   res?: GaxiosResponse|null): void;
 }
 
 export interface GetTokenResponse {
   tokens: Credentials;
-  res: AxiosResponse|null;
+  res: GaxiosResponse|null;
 }
 
 export interface GetAccessTokenCallback {
-  (err: AxiosError|null, token?: string|null, res?: AxiosResponse|null): void;
+  (err: GaxiosError|null, token?: string|null, res?: GaxiosResponse|null): void;
 }
 
 export interface GetAccessTokenResponse {
   token?: string|null;
-  res?: AxiosResponse|null;
+  res?: GaxiosResponse|null;
 }
 
 export interface RefreshAccessTokenCallback {
-  (err: AxiosError|null, credentials?: Credentials|null,
-   res?: AxiosResponse|null): void;
+  (err: GaxiosError|null, credentials?: Credentials|null,
+   res?: GaxiosResponse|null): void;
 }
 
 export interface RefreshAccessTokenResponse {
   credentials: Credentials;
-  res: AxiosResponse|null;
+  res: GaxiosResponse|null;
 }
 
 export interface RequestMetadataResponse {
   headers: Headers;
-  res?: AxiosResponse<void>|null;
+  res?: GaxiosResponse<void>|null;
 }
 
 export interface RequestMetadataCallback {
-  (err: AxiosError|null, headers?: Headers,
-   res?: AxiosResponse<void>|null): void;
+  (err: GaxiosError|null, headers?: Headers,
+   res?: GaxiosResponse<void>|null): void;
 }
 
 export interface GetFederatedSignonCertsCallback {
-  (err: AxiosError|null, certs?: Certificates,
-   response?: AxiosResponse<void>|null): void;
+  (err: GaxiosError|null, certs?: Certificates,
+   response?: GaxiosResponse<void>|null): void;
 }
 
 export interface FederatedSignonCertsResponse {
   certs: Certificates;
   format: CertificateFormat;
-  res?: AxiosResponse<void>|null;
+  res?: GaxiosResponse<void>|null;
 }
 
 export interface RevokeCredentialsResult {
@@ -715,7 +715,7 @@ export class OAuth2Client extends AuthClient {
       r = await this.refreshToken(thisCreds.refresh_token);
       tokens = r.tokens;
     } catch (err) {
-      const e = err as AxiosError;
+      const e = err as GaxiosError;
       if (e.response &&
           (e.response.status === 403 || e.response.status === 404)) {
         e.message = 'Could not refresh access token.';
@@ -747,14 +747,17 @@ export class OAuth2Client extends AuthClient {
    * @param token The existing token to be revoked.
    * @param callback Optional callback fn.
    */
-  revokeToken(token: string): AxiosPromise<RevokeCredentialsResult>;
+  revokeToken(token: string): GaxiosPromise<RevokeCredentialsResult>;
   revokeToken(
       token: string,
       callback: BodyResponseCallback<RevokeCredentialsResult>): void;
   revokeToken(
       token: string, callback?: BodyResponseCallback<RevokeCredentialsResult>):
-      AxiosPromise<RevokeCredentialsResult>|void {
-    const opts = {url: OAuth2Client.getRevokeTokenUrl(token), method: 'POST'};
+      GaxiosPromise<RevokeCredentialsResult>|void {
+    const opts: GaxiosOptions = {
+      url: OAuth2Client.getRevokeTokenUrl(token),
+      method: 'POST'
+    };
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts).then(
           r => callback(null, r), callback);
@@ -768,11 +771,11 @@ export class OAuth2Client extends AuthClient {
    * Revokes access token and clears the credentials object
    * @param callback callback
    */
-  revokeCredentials(): AxiosPromise<RevokeCredentialsResult>;
+  revokeCredentials(): GaxiosPromise<RevokeCredentialsResult>;
   revokeCredentials(callback: BodyResponseCallback<RevokeCredentialsResult>):
       void;
   revokeCredentials(callback?: BodyResponseCallback<RevokeCredentialsResult>):
-      AxiosPromise<RevokeCredentialsResult>|void {
+      GaxiosPromise<RevokeCredentialsResult>|void {
     if (callback) {
       this.revokeCredentialsAsync().then(res => callback(null, res), callback);
     } else {
@@ -798,10 +801,10 @@ export class OAuth2Client extends AuthClient {
    * @param callback callback.
    * @return Request object
    */
-  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
-  request<T>(opts: AxiosRequestConfig, callback: BodyResponseCallback<T>): void;
-  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
-      AxiosPromise<T>|void {
+  request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
+  request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
+  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
+      GaxiosPromise<T>|void {
     if (callback) {
       this.requestAsync<T>(opts).then(r => callback(null, r), e => {
         return callback(e, e.response);
@@ -811,9 +814,9 @@ export class OAuth2Client extends AuthClient {
     }
   }
 
-  protected async requestAsync<T>(opts: AxiosRequestConfig, retry = false):
-      Promise<AxiosResponse<T>> {
-    let r2: AxiosResponse;
+  protected async requestAsync<T>(opts: GaxiosOptions, retry = false):
+      Promise<GaxiosResponse<T>> {
+    let r2: GaxiosResponse;
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
       if (r.headers && r.headers.Authorization) {
@@ -826,7 +829,7 @@ export class OAuth2Client extends AuthClient {
       }
       r2 = await this.transporter.request<T>(opts);
     } catch (e) {
-      const res = (e as AxiosError).response;
+      const res = (e as GaxiosError).response;
       if (res) {
         const statusCode = res.status;
         // Retry the request for metadata if the following criteria are true:
@@ -944,7 +947,7 @@ export class OAuth2Client extends AuthClient {
         this.certificateCacheFormat === format) {
       return {certs: this.certificateCache, format};
     }
-    let res: AxiosResponse;
+    let res: GaxiosResponse;
     let url: string;
     switch (format) {
       case CertificateFormat.PEM:

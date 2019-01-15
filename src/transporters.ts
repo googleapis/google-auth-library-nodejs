@@ -14,43 +14,30 @@
  * limitations under the License.
  */
 
-import axios, {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {GaxiosError, GaxiosOptions, GaxiosPromise, GaxiosResponse, request} from 'gaxios';
 
 import {isBrowser} from './isbrowser';
 import {validate} from './options';
-
-// tslint:disable-next-line variable-name
-const HttpsProxyAgent = require('https-proxy-agent');
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
 const PRODUCT_NAME = 'google-api-nodejs-client';
 
 export interface Transporter {
-  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
-  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
-      void;
-  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
-      AxiosPromise|void;
+  request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
+  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
+  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
+      GaxiosPromise|void;
 }
 
 export interface BodyResponseCallback<T> {
   // The `body` object is a truly dynamic type.  It must be `any`.
-  (err: Error|null, res?: AxiosResponse<T>|null): void;
+  (err: Error|null, res?: GaxiosResponse<T>|null): void;
 }
 
-export interface RequestError extends AxiosError {
+export interface RequestError extends GaxiosError {
   errors: Error[];
 }
-
-/**
- * Axios will use XHR if it is available. In the case of Electron,
- * since XHR is there it will try to use that. This leads to OPTIONS
- * preflight requests which googleapis DOES NOT like. This line of
- * code pins the adapter to ensure it uses node.
- * https://github.com/google/google-api-nodejs-client/issues/1083
- */
-axios.defaults.adapter = require('axios/lib/adapters/http');
 
 export class DefaultTransporter {
   /**
@@ -60,10 +47,10 @@ export class DefaultTransporter {
 
   /**
    * Configures request options before making a request.
-   * @param opts AxiosRequestConfig options.
+   * @param opts GaxiosOptions options.
    * @return Configured options.
    */
-  configure(opts: AxiosRequestConfig = {}): AxiosRequestConfig {
+  configure(opts: GaxiosOptions = {}): GaxiosOptions {
     opts.headers = opts.headers || {};
     if (!isBrowser()) {
       // set transporter user agent if not in browser
@@ -79,16 +66,15 @@ export class DefaultTransporter {
   }
 
   /**
-   * Makes a request using Axios with given options.
-   * @param opts AxiosRequestConfig options.
-   * @param callback optional callback that contains AxiosResponse object.
-   * @return AxiosPromise, assuming no callback is passed.
+   * Makes a request using Gaxios with given options.
+   * @param opts GaxiosOptions options.
+   * @param callback optional callback that contains GaxiosResponse object.
+   * @return GaxiosPromise, assuming no callback is passed.
    */
-  request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
-  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
-      void;
-  request<T>(opts: AxiosRequestConfig, callback?: BodyResponseCallback<T>):
-      AxiosPromise|void {
+  request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
+  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
+  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
+      GaxiosPromise|void {
     // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
     try {
@@ -101,16 +87,8 @@ export class DefaultTransporter {
       }
     }
 
-    // If the user configured an `HTTPS_PROXY` environment variable, create
-    // a custom agent to proxy the request.
-    const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
-    if (proxy) {
-      opts.httpsAgent = new HttpsProxyAgent(proxy);
-      opts.proxy = false;
-    }
-
     if (callback) {
-      axios(opts).then(
+      request<T>(opts).then(
           r => {
             callback(null, r);
           },
@@ -118,7 +96,7 @@ export class DefaultTransporter {
             callback(this.processError(e));
           });
     } else {
-      return axios(opts).catch(e => {
+      return request<T>(opts).catch(e => {
         throw this.processError(e);
       });
     }
@@ -127,7 +105,7 @@ export class DefaultTransporter {
   /**
    * Changes the error to include details from the body.
    */
-  private processError(e: AxiosError): RequestError {
+  private processError(e: GaxiosError): RequestError {
     const res = e.response;
     const err = e as RequestError;
     const body = res ? res.data : null;
