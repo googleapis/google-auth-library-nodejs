@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import {AxiosPromise, AxiosRequestConfig} from 'axios';
 import {EventEmitter} from 'events';
+import {GaxiosOptions, GaxiosPromise} from 'gaxios';
 
 import {DefaultTransporter} from '../transporters';
 
@@ -30,9 +30,9 @@ export abstract class AuthClient extends EventEmitter {
   credentials: Credentials = {};
 
   /**
-   * Provides an alternative Axios request implementation with auth credentials
+   * Provides an alternative Gaxios request implementation with auth credentials
    */
-  abstract request<T>(opts: AxiosRequestConfig): AxiosPromise<T>;
+  abstract request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
 
   /**
    * Sets the auth credentials.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 import * as messages from '../messages';
 import {CredentialRequest, Credentials} from './credentials';
@@ -82,10 +82,10 @@ export class Compute extends OAuth2Client {
     return {tokens, res: null};
   }
 
-  protected requestAsync<T>(opts: AxiosRequestConfig, retry = false):
-      AxiosPromise<T> {
+  protected requestAsync<T>(opts: GaxiosOptions, retry = false):
+      GaxiosPromise<T> {
     return super.requestAsync<T>(opts, retry).catch(e => {
-      const res = (e as AxiosError).response;
+      const res = (e as GaxiosError).response;
       if (res && res.status) {
         let helpfulMessage = null;
         if (res.status === 403) {

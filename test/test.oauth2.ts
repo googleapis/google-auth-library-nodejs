@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import {AxiosError} from 'axios';
+import {GaxiosError} from 'gaxios';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as nock from 'nock';
@@ -642,7 +642,9 @@ it('should pass due to valid issuer', async () => {
 it('should be able to retrieve a list of Google certificates', (done) => {
   const scope = nock('https://www.googleapis.com')
                     .get(certsPath)
-                    .replyWithFile(200, certsResPath);
+                    .replyWithFile(200, certsResPath, {
+                      'Content-Type': 'application/json',
+                    });
   client.getFederatedSignonCerts((err, certs) => {
     assert.strictEqual(err, null);
     assert.strictEqual(Object.keys(certs!).length, 2);
@@ -950,11 +952,12 @@ it('should not retry requests with streaming data', done => {
   const scope = nock('http://example.com').post('/').reply(401);
   client.credentials = {
     access_token: 'initial-access-token',
-    refresh_token: 'refresh-token-placeholder'
+    refresh_token: 'refresh-token-placeholder',
+    expiry_date: (new Date()).getTime() + 500000
   };
   client.request({method: 'POST', url: 'http://example.com', data: s}, err => {
     scope.done();
-    const e = err as AxiosError;
+    const e = err as GaxiosError;
     assert(e);
     assert.strictEqual(e.response!.status, 401);
     done();
@@ -999,8 +1002,8 @@ it('getToken should allow a code_verifier to be passed', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
-  assert(params.code_verifier === 'its_verified');
+  const params = qs.parse(res.res.config.body);
+  assert.strictEqual(params.code_verifier, 'its_verified"');
 });
 
 it('getToken should set redirect_uri if not provided in options', async () => {
@@ -1015,7 +1018,7 @@ it('getToken should set redirect_uri if not provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
+  const params = qs.parse(res.res.config.body);
   assert.strictEqual(params.redirect_uri, REDIRECT_URI);
 });
 
@@ -1031,7 +1034,7 @@ it('getToken should set client_id if not provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
+  const params = qs.parse(res.res.config.body);
   assert.strictEqual(params.client_id, CLIENT_ID);
 });
 
@@ -1048,7 +1051,7 @@ it('getToken should override redirect_uri if provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
+  const params = qs.parse(res.res.config.body);
   assert.strictEqual(params.redirect_uri, 'overridden');
 });
 
@@ -1065,7 +1068,7 @@ it('getToken should override client_id if provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.data);
+  const params = qs.parse(res.res.config.body);
   assert.strictEqual(params.client_id, 'overridden');
 });
 

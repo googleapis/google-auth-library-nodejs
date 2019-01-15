@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {AxiosRequestConfig, AxiosResponse} from 'axios';
+import {GaxiosOptions, GaxiosResponse} from 'gaxios';
 import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as gcpMetadata from 'gcp-metadata';
@@ -732,7 +732,7 @@ export class GoogleAuth {
    * @param opts Axios request options for the HTTP request.
    */
   // tslint:disable-next-line no-any
-  async request<T = any>(opts: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async request<T = any>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
     const client = await this.getClient();
     return client.request<T>(opts);
   }
