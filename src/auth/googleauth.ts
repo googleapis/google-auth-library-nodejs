@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {GaxiosOptions, GaxiosResponse} from 'gaxios';
 import {exec} from 'child_process';
 import * as fs from 'fs';
+import {GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 import * as os from 'os';
 import * as path from 'path';

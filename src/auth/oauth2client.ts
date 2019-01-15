@@ -754,7 +754,10 @@ export class OAuth2Client extends AuthClient {
   revokeToken(
       token: string, callback?: BodyResponseCallback<RevokeCredentialsResult>):
       GaxiosPromise<RevokeCredentialsResult>|void {
-    const opts: GaxiosOptions = {url: OAuth2Client.getRevokeTokenUrl(token), method: 'POST'};
+    const opts: GaxiosOptions = {
+      url: OAuth2Client.getRevokeTokenUrl(token),
+      method: 'POST'
+    };
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts).then(
           r => callback(null, r), callback);

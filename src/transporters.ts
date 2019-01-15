@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {GaxiosError, GaxiosPromise, GaxiosOptions, GaxiosResponse, request} from 'gaxios';
+import {GaxiosError, GaxiosOptions, GaxiosPromise, GaxiosResponse, request} from 'gaxios';
 
 import {isBrowser} from './isbrowser';
 import {validate} from './options';
@@ -25,8 +25,7 @@ const PRODUCT_NAME = 'google-api-nodejs-client';
 
 export interface Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
-  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
-      void;
+  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
   request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
       GaxiosPromise|void;
 }
@@ -73,8 +72,7 @@ export class DefaultTransporter {
    * @return GaxiosPromise, assuming no callback is passed.
    */
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
-  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
-      void;
+  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
   request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
       GaxiosPromise|void {
     // ensure the user isn't passing in request-style options

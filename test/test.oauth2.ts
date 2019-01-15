@@ -15,9 +15,9 @@
  */
 
 import * as assert from 'assert';
-import {GaxiosError} from 'gaxios';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
+import {GaxiosError} from 'gaxios';
 import * as nock from 'nock';
 import * as path from 'path';
 import * as qs from 'querystring';
@@ -27,6 +27,7 @@ import * as url from 'url';
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 import * as messages from '../src/messages';
+
 const assertRejects = require('assert-rejects');
 
 nock.disableNetConnect();
@@ -642,9 +643,7 @@ it('should pass due to valid issuer', async () => {
 it('should be able to retrieve a list of Google certificates', (done) => {
   const scope = nock('https://www.googleapis.com')
                     .get(certsPath)
-                    .replyWithFile(200, certsResPath, {
-                      'Content-Type': 'application/json',
-                    });
+                    .replyWithFile(200, certsResPath);
   client.getFederatedSignonCerts((err, certs) => {
     assert.strictEqual(err, null);
     assert.strictEqual(Object.keys(certs!).length, 2);
