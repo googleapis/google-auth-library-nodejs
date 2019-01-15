@@ -1002,8 +1002,8 @@ it('getToken should allow a code_verifier to be passed', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.body);
-  assert.strictEqual(params.code_verifier, 'its_verified"');
+  const params = qs.parse(res.res.config.data);
+  assert.strictEqual(params.code_verifier, 'its_verified');
 });
 
 it('getToken should set redirect_uri if not provided in options', async () => {
@@ -1018,7 +1018,7 @@ it('getToken should set redirect_uri if not provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.body);
+  const params = qs.parse(res.res.config.data);
   assert.strictEqual(params.redirect_uri, REDIRECT_URI);
 });
 
@@ -1034,7 +1034,7 @@ it('getToken should set client_id if not provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.body);
+  const params = qs.parse(res.res.config.data);
   assert.strictEqual(params.client_id, CLIENT_ID);
 });
 
@@ -1051,7 +1051,7 @@ it('getToken should override redirect_uri if provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.body);
+  const params = qs.parse(res.res.config.data);
   assert.strictEqual(params.redirect_uri, 'overridden');
 });
 
@@ -1068,7 +1068,7 @@ it('getToken should override client_id if provided in options', async () => {
   scope.done();
   assert(res.res);
   if (!res.res) return;
-  const params = qs.parse(res.res.config.body);
+  const params = qs.parse(res.res.config.data);
   assert.strictEqual(params.client_id, 'overridden');
 });
 
