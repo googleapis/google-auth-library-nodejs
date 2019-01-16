@@ -4,6 +4,48 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## v3.0.0
+
+01-16-2019 10:00 PST
+
+Welcome to 3.0 🎉  This release has it all.  New features, bug fixes, breaking changes, performance improvements - something for everyone!  The biggest addition to this release is support for the browser via Webpack.
+
+**This release has breaking changes.**  This release has a few breaking changes. These changes are unlikely to affect most clients.
+
+#### BREAKING: Migration from `axios` to `gaxios`
+The 2.0 version of this library used the [axios](https://github.com/axios/axios) library for making HTTP requests. In the 3.0 release, this has been replaced by a *mostly* API compatible library [gaxios](https://github.com/JustinBeckwith/gaxios). The new request library natively supports proxies, and comes with a smaller dependency chain. While this is mostly an implementation detail, the `request` method was directly exposed via the `GoogleAuth.request` and `OAuth2Client.request` methods.  The gaxios library aims to provide an API compatible implementation of axios, but that can never be 100% promised.  If you run into bugs or differences that cause issues - please do let us know.
+
+#### BREAKING: `generateCodeVerifier` is now `generateCodeVerifierAsync`
+The `OAuth2Client.generateCodeVerifier` method has been replaced by the `OAuth2Client.generateCodeVerifierAsync` method.  It has changed from a synchronous method to an asynchronous method to support async browser crypto APIs required for Webpack support.
+
+#### BREAKING: `generateCodeVerifier` is now `generateCodeVerifierAsync`
+The `OAuth2Client.verifySignedJwtWithCerts` method has been replaced by the `OAuth2Client.verifySignedJwtWithCerts` method.  It has changed from a synchronous method to an asynchronous method to support async browser crypto APIs required for Webpack support.
+
+
+### New Features
+- feat: make it webpackable ([#371](https://github.com/google/google-auth-library-nodejs/pull/371))
+
+### Bug Fixes
+- fix: accept lowercase env vars ([#578](https://github.com/google/google-auth-library-nodejs/pull/578))
+
+### Dependencies
+- chore(deps): update gtoken ([#592](https://github.com/google/google-auth-library-nodejs/pull/592))
+- fix(deps): upgrade to gcp-metadata v0.9.3 ([#586](https://github.com/google/google-auth-library-nodejs/pull/586))
+
+### Documentation
+- docs: update bug report link ([#585](https://github.com/google/google-auth-library-nodejs/pull/585))
+- docs: clarify access and refresh token docs ([#577](https://github.com/google/google-auth-library-nodejs/pull/577))
+
+### Internal / Testing Changes
+- refactor(deps): use `gaxios` for HTTP requests instead of `axios` ([#593](https://github.com/google/google-auth-library-nodejs/pull/593))
+- fix: some browser fixes ([#590](https://github.com/google/google-auth-library-nodejs/pull/590))
+- chore(deps): update dependency ts-loader to v5 ([#588](https://github.com/google/google-auth-library-nodejs/pull/588))
+- chore(deps): update dependency karma to v3 ([#587](https://github.com/google/google-auth-library-nodejs/pull/587))
+- build: check broken links in generated docs ([#579](https://github.com/google/google-auth-library-nodejs/pull/579))
+- chore(deps): drop unused dep on typedoc ([#583](https://github.com/google/google-auth-library-nodejs/pull/583))
+- build: add browser test running on Kokoro ([#584](https://github.com/google/google-auth-library-nodejs/pull/584))
+- test: improve samples and add tests ([#576](https://github.com/google/google-auth-library-nodejs/pull/576))
+
 ## v2.0.2
 
 12-16-2018 10:48 PST
