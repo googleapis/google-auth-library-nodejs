@@ -35,35 +35,36 @@ async function main() {
 }
 
 /**
- * Create a new OAuth2Client, and go through the OAuth2 content
- * workflow.  Return the full client to the callback.
+ * Create a new OAuth2Client, and go through the OAuth2 content workflow.
+ * Return the full client to the callback.
  */
-function getAuthenticatedClient() {
+async function getAuthenticatedClient() {
+  // create an oAuth client to authorize the API call. Secrets are kept in a
+  // `keys.json` file, which should be downloaded from the Google Developers
+  // Console.
+  const oAuth2Client = new OAuth2Client(
+    keys.web.client_id,
+    keys.web.client_secret,
+    keys.web.redirect_uris[0]
+  );
+
+  // Generate a code_verifier and code_challenge
+  const codes = await oAuth2Client.generateCodeVerifierAsync();
+  console.log(codes);
+
+  // Generate the url that will be used for the consent dialog.
+  const authorizeUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: 'https://www.googleapis.com/auth/plus.me',
+    // When using `generateCodeVerifier`, make sure to use code_challenge_method 'S256'.
+    code_challenge_method: 'S256',
+    // Pass along the generated code challenge.
+    code_challenge: codes.codeChallenge,
+  });
+
+  // Open an http server to accept the oauth callback. In this simple example,
+  // the only request to our webserver is to /oauth2callback?code=<code>.
   return new Promise((resolve, reject) => {
-    // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
-    // which should be downloaded from the Google Developers Console.
-    const oAuth2Client = new OAuth2Client(
-      keys.web.client_id,
-      keys.web.client_secret,
-      keys.web.redirect_uris[0]
-    );
-
-    // Generate a code_verifier and code_challenge
-    const codes = oAuth2Client.generateCodeVerifier();
-    console.log(codes);
-
-    // Generate the url that will be used for the consent dialog.
-    const authorizeUrl = oAuth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: 'https://www.googleapis.com/auth/plus.me',
-      // When using `generateCodeVerifier`, make sure to use code_challenge_method 'S256'.
-      code_challenge_method: 'S256',
-      // Pass along the generated code challenge.
-      code_challenge: codes.codeChallenge,
-    });
-
-    // Open an http server to accept the oauth callback. In this simple example, the
-    // only request to our webserver is to /oauth2callback?code=<code>
     const server = http
       .createServer(async (req, res) => {
         try {
