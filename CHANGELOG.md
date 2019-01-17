@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## v3.0.1
+
+01-16-2019 21:04 PST
+
+### Bug Fixes
+- fix(deps): upgrade to the latest gaxios ([#596](https://github.com/googleapis/google-auth-library-nodejs/pull/596))
+
 ## v3.0.0
 
 01-16-2019 10:00 PST
