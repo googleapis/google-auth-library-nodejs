@@ -642,7 +642,7 @@ export class OAuth2Client extends AuthClient {
   private async getAccessTokenAsync(): Promise<GetAccessTokenResponse> {
     const shouldRefresh =
         !this.credentials.access_token || this.isTokenExpiring();
-    if (shouldRefresh && this.credentials.refresh_token) {
+    if (shouldRefresh) {
       if (!this.credentials.refresh_token) {
         throw new Error('No refresh token is set.');
       }
