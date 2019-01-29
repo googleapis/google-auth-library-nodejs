@@ -36,7 +36,7 @@ const config = require('../config.keys.json');
 
 async function main() {
   const oAuth2Client = await getAuthenticatedClient();
-  const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
+  const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
   const res = await oAuth2Client.request({url});
   console.log(res.data);
 }
@@ -55,7 +55,7 @@ function getAuthenticatedClient() {
     // Generate the url that will be used for the consent dialog.
     const authorizeUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: 'https://www.googleapis.com/auth/plus.me',
+      scope: 'https://www.googleapis.com/auth/userinfo.profile',
       prompt: 'consent',
     });
 

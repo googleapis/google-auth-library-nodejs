@@ -16,7 +16,7 @@
 
 /// <reference path='../node_modules/@types/sinon/ts3.1/index.d.ts'>
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios';
+import {AxiosError, AxiosPromise, GaxiosOptions} from 'axios';
 import * as base64js from 'base64-js';
 import {assert} from 'chai';
 import * as fs from 'fs';

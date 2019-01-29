@@ -27,9 +27,9 @@ const keys = require('./oauth2.keys.json');
  */
 async function main() {
   const oAuth2Client = await getAuthenticatedClient();
-  // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
-  // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
-  const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
+  // Make a simple request to the People API using our pre-authenticated client. The `request()` method
+  // takes an GaxiosOptions object.  Visit https://github.com/JustinBeckwith/gaxios.
+  const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
   const res = await oAuth2Client.request({url});
   console.log(res.data);
 }
@@ -55,7 +55,7 @@ async function getAuthenticatedClient() {
   // Generate the url that will be used for the consent dialog.
   const authorizeUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: 'https://www.googleapis.com/auth/plus.me',
+    scope: 'https://www.googleapis.com/auth/userinfo.profile',
     // When using `generateCodeVerifier`, make sure to use code_challenge_method 'S256'.
     code_challenge_method: 'S256',
     // Pass along the generated code challenge.
