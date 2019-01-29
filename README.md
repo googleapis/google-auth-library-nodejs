@@ -97,9 +97,9 @@ const keys = require('./oauth2.keys.json');
  */
 async function main() {
   const oAuth2Client = await getAuthenticatedClient();
-  // Make a simple request to the Google Plus API using our pre-authenticated client. The `request()` method
-  // takes an AxiosRequestConfig object.  Visit https://github.com/axios/axios#request-config.
-  const url = 'https://www.googleapis.com/plus/v1/people?query=pizza';
+  // Make a simple request to the People API using our pre-authenticated client. The `request()` method
+  // takes an GaxiosOptions object.  Visit https://github.com/JustinBeckwith/gaxios.
+  const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
   const res = await oAuth2Client.request({url});
   console.log(res.data);
 
@@ -128,7 +128,7 @@ function getAuthenticatedClient() {
     // Generate the url that will be used for the consent dialog.
     const authorizeUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: 'https://www.googleapis.com/auth/plus.me',
+      scope: 'https://www.googleapis.com/auth/userinfo.profile',
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the
@@ -204,7 +204,7 @@ const authorizeUrl = oAuth2Client.generateAuthUrl({
   // To get a refresh token, you MUST set access_type to `offline`.
   access_type: 'offline',
   // set the appropriate scopes
-  scope: 'https://www.googleapis.com/auth/plus.me',
+  scope: 'https://www.googleapis.com/auth/userinfo.profile',
   // A refresh token is only returned the first time the user
   // consents to providing access.  For illustration purposes,
   // setting the prompt to 'consent' will force this consent
@@ -348,8 +348,6 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [Application Default Credentials]: https://cloud.google.com/docs/authentication/getting-started
 [apptype]: https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
-[axios]: https://github.com/axios/axios
-[axiosOpts]: https://github.com/axios/axios#request-config
 [bugs]: https://github.com/googleapis/google-auth-library-nodejs/issues
 [codecov-image]: https://codecov.io/gh/googleapis/google-auth-library-nodejs/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/googleapis/google-auth-library-nodejs

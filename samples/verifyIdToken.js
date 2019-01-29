@@ -36,7 +36,7 @@ async function main() {
   console.log(ticket);
 
   // You can use this info to get user information too.
-  const url = `https://www.googleapis.com/plus/v1/people/me`;
+  const url = `https://people.googleapis.com/v1/people/me?personFields=names`;
   const res = await oAuth2Client.request({url});
   console.log(res.data);
 }
@@ -57,13 +57,7 @@ function getAuthenticatedClient() {
 
     // Generate the url that will be used for the consent dialog.
     const authorizeUrl = oAuth2Client.generateAuthUrl({
-      scope: [
-        'https://www.googleapis.com/auth/plus.login',
-        'https://www.googleapis.com/auth/plus.me',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        'email',
-      ],
+      scope: 'https://www.googleapis.com/auth/userinfo.profile',
     });
 
     // Open an http server to accept the oauth callback. In this simple example, the

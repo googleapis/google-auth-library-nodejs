@@ -16,21 +16,16 @@
 
 /// <reference path='../node_modules/@types/sinon/ts3.1/index.d.ts'>
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios';
 import * as base64js from 'base64-js';
 import {assert} from 'chai';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as sinon from 'sinon';
-
-import {BodyResponseCallback} from '../src/transporters';
 
 // Not all browsers support `TextEncoder`. The following `require` will
 // provide a fast UTF8-only replacement for those browsers that don't support
 // text encoding natively.
 require('fast-text-encoding');
 
-import {CodeChallengeMethod, DefaultTransporter, GoogleAuth, OAuth2Client} from '../src';
+import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {CertificateFormat} from '../src/auth/oauth2client';
 import {JwkCertificate} from '../src/crypto/crypto';
 
@@ -39,7 +34,6 @@ const CLIENT_SECRET = 'CLIENT_SECRET';
 const REDIRECT_URI = 'REDIRECT';
 const ACCESS_TYPE = 'offline';
 const SCOPE = 'scopex';
-const baseUrl = 'https://oauth2.googleapis.com';
 const FEDERATED_SIGNON_JWK_CERTS = [
   {
     'kid': '4665c2781899014617337df9cbf220686505a06c',
