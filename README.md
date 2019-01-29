@@ -348,8 +348,6 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [Application Default Credentials]: https://cloud.google.com/docs/authentication/getting-started
 [apptype]: https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png
 [authdocs]: https://developers.google.com/accounts/docs/OAuth2Login
-[axios]: https://github.com/axios/axios
-[axiosOpts]: https://github.com/JustinBeckwith/gaxios
 [bugs]: https://github.com/googleapis/google-auth-library-nodejs/issues
 [codecov-image]: https://codecov.io/gh/googleapis/google-auth-library-nodejs/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/googleapis/google-auth-library-nodejs
