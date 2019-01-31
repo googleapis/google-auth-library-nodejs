@@ -31,8 +31,8 @@ import {Compute} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {Headers, OAuth2Client, RefreshOptions} from './oauth2client';
-import {UserRefreshClient} from './refreshclient';
+import {Headers, OAuth2Client, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
+import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
 
 export interface ProjectIdCallback {
   (err?: Error|null, projectId?: string|null): void;
@@ -66,6 +66,11 @@ export interface GoogleAuthOptions {
    * Object containing client_email and private_key properties
    */
   credentials?: CredentialBody;
+
+  /**
+   * Options object passed to the constructor of the client
+   */
+  clientOptions?: JWTOptions|OAuth2ClientOptions|UserRefreshClientOptions;
 
   /**
    * Required scopes for the desired API request
@@ -107,6 +112,7 @@ export class GoogleAuth {
 
   private keyFilename?: string;
   private scopes?: string|string[];
+  private clientOptions?: RefreshOptions;
 
   /**
    * Export DefaultTransporter as a static property of the class.
@@ -119,6 +125,7 @@ export class GoogleAuth {
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
+    this.clientOptions = opts.clientOptions;
   }
 
   /**
@@ -395,6 +402,7 @@ export class GoogleAuth {
   /**
    * Create a credentials instance using the given input options.
    * @param json The input object.
+   * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
   fromJSON(json: JWTInput, options?: RefreshOptions): JWT|UserRefreshClient {
@@ -678,16 +686,19 @@ export class GoogleAuth {
           options.keyFilename || options.keyFile || this.keyFilename;
       this.scopes = options.scopes || this.scopes;
       this.jsonContent = options.credentials || this.jsonContent;
+      this.clientOptions = options.clientOptions;
     }
     if (!this.cachedCredential) {
       if (this.jsonContent) {
-        this.cachedCredential = await this.fromJSON(this.jsonContent);
+        this.cachedCredential =
+            await this.fromJSON(this.jsonContent, this.clientOptions);
       } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
-        this.cachedCredential = await this.fromStreamAsync(stream);
+        this.cachedCredential =
+            await this.fromStreamAsync(stream, this.clientOptions);
       } else {
-        await this.getApplicationDefaultAsync();
+        await this.getApplicationDefaultAsync(this.clientOptions);
       }
     }
     return this.cachedCredential!;
