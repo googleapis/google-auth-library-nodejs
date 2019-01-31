@@ -1401,4 +1401,21 @@ describe('googleauth', () => {
     await auth.getDefaultProjectId();
     assert.strictEqual(count, 0);
   });
+
+  it('should pass options to the JWT constructor via getClient', async () => {
+    const subject = 'science!';
+    const auth = new GoogleAuth({keyFilename: './test/fixtures/private.json'});
+    const client = await auth.getClient({clientOptions: {subject}}) as JWT;
+    assert.strictEqual(client.subject, subject);
+  });
+
+  it('should pass options to the JWT constructor via constructor', async () => {
+    const subject = 'science!';
+    const auth = new GoogleAuth({
+      keyFilename: './test/fixtures/private.json',
+      clientOptions: {subject}
+    });
+    const client = await auth.getClient() as JWT;
+    assert.strictEqual(client.subject, subject);
+  });
 });
