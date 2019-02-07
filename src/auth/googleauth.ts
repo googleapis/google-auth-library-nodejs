@@ -598,6 +598,10 @@ export class GoogleAuth {
    * @api private
    */
   private async getFileProjectId(): Promise<string|undefined|null> {
+    if (!this.cachedCredential && this.keyFilename) {
+      await this.getClient();
+    }
+
     if (this.cachedCredential) {
       // Try to read the project ID from the cached credentials file
       return this.cachedCredential.projectId;
