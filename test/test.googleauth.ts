@@ -794,7 +794,8 @@ describe('googleauth', () => {
 
     sandbox.stub(process, 'env').value(envVars);
 
-    const keyFilename = path.join(__dirname, '../../test/fixtures/private2.json');
+    const keyFilename =
+        path.join(__dirname, '../../test/fixtures/private2.json');
     const auth = new GoogleAuth({keyFilename});
     const projectId = await auth.getProjectId();
     assert.strictEqual(projectId, fixedProjectId);
