@@ -4,6 +4,29 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## v3.1.0
+
+02-08-2019 08:29 PST
+
+### Bug fixes
+- fix: use key file when fetching project id ([#618](https://github.com/googleapis/google-auth-library-nodejs/pull/618))
+- fix: Throw error if there is no refresh token despite the necessity of refreshing ([#605](https://github.com/googleapis/google-auth-library-nodejs/pull/605))
+
+### New Features
+- feat: allow passing constructor options to getClient ([#611](https://github.com/googleapis/google-auth-library-nodejs/pull/611))
+
+### Documentation
+- docs: update contributing path in README ([#621](https://github.com/googleapis/google-auth-library-nodejs/pull/621))
+- chore: move CONTRIBUTING.md to root ([#619](https://github.com/googleapis/google-auth-library-nodejs/pull/619))
+- docs: add lint/fix example to contributing guide ([#615](https://github.com/googleapis/google-auth-library-nodejs/pull/615))
+- docs: use the People API for samples ([#609](https://github.com/googleapis/google-auth-library-nodejs/pull/609))
+
+### Internal / Testing Changes
+- chore(deps): update dependency typescript to ~3.3.0 ([#612](https://github.com/googleapis/google-auth-library-nodejs/pull/612))
+- chore(deps): update dependency eslint-config-prettier to v4 ([#604](https://github.com/googleapis/google-auth-library-nodejs/pull/604))
+- build: ignore googleapis.com in doc link check ([#602](https://github.com/googleapis/google-auth-library-nodejs/pull/602))
+- chore(deps): update dependency karma to v4 ([#603](https://github.com/googleapis/google-auth-library-nodejs/pull/603))
+
 ## v3.0.1
 
 01-16-2019 21:04 PST
