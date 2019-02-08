@@ -784,6 +784,23 @@ describe('googleauth', () => {
        assert.strictEqual(projectId, fixedProjectId);
      });
 
+  it('getProjectId should use `keyFilename` when it is available', async () => {
+    const envVars = Object.assign({}, process.env, {
+      GCLOUD_PROJECT: undefined,
+      gcloud_project: undefined,
+      google_cloud_project: undefined,
+      GOOGLE_CLOUD_PROJECT: undefined,
+    });
+
+    sandbox.stub(process, 'env').value(envVars);
+
+    const keyFilename =
+        path.join(__dirname, '../../test/fixtures/private2.json');
+    const auth = new GoogleAuth({keyFilename});
+    const projectId = await auth.getProjectId();
+    assert.strictEqual(projectId, fixedProjectId);
+  });
+
   it('getProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it is available',
      async () => {
        const envVars = Object.assign({}, process.env, {

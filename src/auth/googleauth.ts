@@ -603,6 +603,15 @@ export class GoogleAuth {
       return this.cachedCredential.projectId;
     }
 
+    // Ensure the projectId is loaded from the keyFile if available.
+    if (this.keyFilename) {
+      const creds = await this.getClient();
+
+      if (creds && creds.projectId) {
+        return creds.projectId;
+      }
+    }
+
     // Try to load a credentials file and read its project ID
     const r = await this._tryGetApplicationCredentialsFromEnvironmentVariable();
     if (r) {
