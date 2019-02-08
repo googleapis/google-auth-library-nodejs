@@ -351,7 +351,7 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [bugs]: https://github.com/googleapis/google-auth-library-nodejs/issues
 [codecov-image]: https://codecov.io/gh/googleapis/google-auth-library-nodejs/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/googleapis/google-auth-library-nodejs
-[contributing]: https://github.com/googleapis/google-auth-library-nodejs/blob/master/.github/CONTRIBUTING.md
+[contributing]: https://github.com/googleapis/google-auth-library-nodejs/blob/master/CONTRIBUTING.md
 [copying]: https://github.com/googleapis/google-auth-library-nodejs/tree/master/LICENSE
 [david-dm-img]: https://david-dm.org/googleapis/google-auth-library-nodejs/status.svg
 [david-dm]: https://david-dm.org/googleapis/google-auth-library-nodejs
