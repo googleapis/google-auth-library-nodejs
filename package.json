@@ -78,7 +78,8 @@
     "ts-loader": "^5.0.0",
     "typescript": "~3.3.0",
     "webpack": "^4.20.2",
-    "webpack-cli": "^3.1.1"
+    "webpack-cli": "^3.1.1",
+    "broken-link-checker-local": "^0.2.0"
   },
   "files": [
     "build/src",
@@ -99,7 +100,9 @@
     "system-test": "mocha build/system-test --timeout 60000",
     "presystem-test": "npm run compile",
     "webpack": "webpack",
-    "browser-test": "karma start"
+    "browser-test": "karma start",
+    "docs-test": "blcl docs -r --exclude www.googleapis.com",
+    "predocs-test": "npm run docs"
   },
   "license": "Apache-2.0"
 }
