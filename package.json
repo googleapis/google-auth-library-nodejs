@@ -64,12 +64,13 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^3.0.0",
     "keypair": "^1.0.1",
+    "linkinator": "^1.1.2",
     "mocha": "^5.2.0",
     "mv": "^2.1.1",
     "ncp": "^2.0.0",
     "nock": "^10.0.0",
     "null-loader": "^0.1.1",
-    "nyc": "^13.0.0",
+    "nyc": "^13.3.0",
     "prettier": "^1.13.4",
     "puppeteer": "^1.11.0",
     "sinon": "^7.0.0",
@@ -78,8 +79,7 @@
     "ts-loader": "^5.0.0",
     "typescript": "~3.3.0",
     "webpack": "^4.20.2",
-    "webpack-cli": "^3.1.1",
-    "linkinator": "^1.1.2"
+    "webpack-cli": "^3.1.1"
   },
   "files": [
     "build/src",
