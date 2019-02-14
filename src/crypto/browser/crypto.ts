@@ -18,8 +18,9 @@
 // SubtleCrypto interface `window.crypto.subtle`.
 
 import * as base64js from 'base64-js';
-import {CryptoSigner} from '../crypto';
+
 import {isBrowser} from '../../isbrowser';
+import {CryptoSigner} from '../crypto';
 
 // Not all browsers support `TextEncoder`. The following `require` will
 // provide a fast UTF8-only replacement for those browsers that don't support
