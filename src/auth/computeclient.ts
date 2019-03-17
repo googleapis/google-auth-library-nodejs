@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+import * as arrify from 'arrify';
 import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
+
 import * as messages from '../messages';
+
 import {CredentialRequest, Credentials} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
@@ -26,10 +29,17 @@ export interface ComputeOptions extends RefreshOptions {
    * may have multiple service accounts.
    */
   serviceAccountEmail?: string;
+  /**
+   * The scopes that will be requested when acquiring service account
+   * credentials. Only applicable to modern App Engine and Cloud Function
+   * runtimes as of March 2019.
+   */
+  scopes?: string|string[];
 }
 
 export class Compute extends OAuth2Client {
   private serviceAccountEmail: string;
+  scopes: string[];
 
   /**
    * Google Compute Engine service account credentials.
@@ -43,6 +53,7 @@ export class Compute extends OAuth2Client {
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};
     this.serviceAccountEmail = options.serviceAccountEmail || 'default';
+    this.scopes = arrify(options.scopes);
   }
 
   /**
@@ -68,7 +79,13 @@ export class Compute extends OAuth2Client {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let data: CredentialRequest;
     try {
-      data = await gcpMetadata.instance(tokenPath);
+      data = await gcpMetadata.instance({
+        property: tokenPath,
+        params: {
+          scopes: this.scopes
+          // TODO: clean up before submit, fix upstream type bug
+        } as {}
+      });
     } catch (e) {
       e.message = `Could not refresh access token: ${e.message}`;
       this.wrapError(e);
