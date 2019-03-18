@@ -4,6 +4,32 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## v3.1.1
+
+03-18-2019 08:32 PDT
+
+### Bug Fixes
+- fix: Avoid loading fast-text-encoding if not in browser environment ([#627](https://github.com/google/google-auth-library-nodejs/pull/627))
+
+### Dependencies
+- fix(deps): update dependency gcp-metadata to v1 ([#632](https://github.com/google/google-auth-library-nodejs/pull/632))
+
+### Documentation
+- docs: update links in contrib guide ([#630](https://github.com/google/google-auth-library-nodejs/pull/630))
+
+### Internal / Testing Changes
+- build: use per-repo publish token ([#641](https://github.com/google/google-auth-library-nodejs/pull/641))
+- build: Add docuploader credentials to node publish jobs ([#639](https://github.com/google/google-auth-library-nodejs/pull/639))
+- build: use node10 to run samples-test, system-test etc ([#638](https://github.com/google/google-auth-library-nodejs/pull/638))
+- build: update release configuration
+- chore(deps): update dependency @types/lru-cache to v5 ([#635](https://github.com/google/google-auth-library-nodejs/pull/635))
+- chore(deps): update dependency mocha to v6
+- chore: fix lint ([#631](https://github.com/google/google-auth-library-nodejs/pull/631))
+- build: use linkinator for docs test ([#628](https://github.com/google/google-auth-library-nodejs/pull/628))
+- chore(deps): update dependency @types/tmp to ^0.0.34 ([#629](https://github.com/google/google-auth-library-nodejs/pull/629))
+- build: create docs test npm scripts ([#625](https://github.com/google/google-auth-library-nodejs/pull/625))
+- build: test using @grpc/grpc-js in CI ([#624](https://github.com/google/google-auth-library-nodejs/pull/624))
+
 ## v3.1.0
 
 02-08-2019 08:29 PST
