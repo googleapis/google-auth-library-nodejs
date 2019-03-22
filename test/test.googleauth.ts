@@ -1188,6 +1188,28 @@ describe('googleauth', () => {
     assert.strictEqual(jwt.key, body!.private_key);
   });
 
+  it('getCredentials should call getClient to load credentials', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    mockEnvVar(
+        'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
+
+    const spy = sinon.spy(auth, 'getClient');
+    const body = await auth.getCredentials();
+
+    const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+    if (!(result instanceof JWT)) {
+      throw new assert.AssertionError(
+          {message: 'Credentials are not a JWT object'});
+    }
+
+    assert.notEqual(null, body);
+    assert(spy.calledOnce);
+    assert.strictEqual(result.email, body!.client_email);
+    assert.strictEqual(result.key, body!.private_key);
+  });
+
   it('getCredentials should handle valid file path', async () => {
     // Set up a mock to return path to a valid credentials file.
     blockGoogleApplicationCredentialEnvironmentVariable();

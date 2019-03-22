@@ -658,6 +658,8 @@ export class GoogleAuth {
   }
 
   private async getCredentialsAsync(): Promise<CredentialBody> {
+    await this.getClient();
+
     if (this.jsonContent) {
       const credential: CredentialBody = {
         client_email: this.jsonContent.client_email,
