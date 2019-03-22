@@ -1199,8 +1199,10 @@ describe('googleauth', () => {
 
     const result =
         await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
-    if (!(result instanceof JWT))
-      throw new assert.AssertionError({ message: 'Credentials are not a JWT object'});
+    if (!(result instanceof JWT)) {
+      throw new assert.AssertionError(
+          {message: 'Credentials are not a JWT object'});
+    }
 
     assert.notEqual(null, body);
     assert(spy.calledOnce);
