@@ -4,6 +4,16 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## v3.1.2
+
+03-22-2019 15:38 PDT
+
+### Implementation Changes
+- fix: getCredential(): load credentials with getClient() ([#648](https://github.com/google/google-auth-library-nodejs/pull/648))
+
+### Internal / Testing Changes
+- chore: publish to npm using wombat ([#645](https://github.com/google/google-auth-library-nodejs/pull/645))
+
 ## v3.1.1
 
 03-18-2019 08:32 PDT
