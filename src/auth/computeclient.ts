@@ -70,7 +70,7 @@ export class Compute extends OAuth2Client {
     try {
       data = await gcpMetadata.instance(tokenPath);
     } catch (e) {
-      e.message = 'Could not refresh access token.';
+      e.message = `Could not refresh access token: ${e.message}`;
       throw e;
     }
     const tokens = data as Credentials;
