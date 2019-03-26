@@ -1104,7 +1104,7 @@ describe('googleauth', () => {
      async () => {
        assert.notEqual(true, auth.isGCE);
        const scope = nockNotGCE();
-       const isGCE = await auth._checkIsGCE();
+       await auth._checkIsGCE();
        assert.strictEqual(false, auth.isGCE);
        scope.done();
      });
@@ -1116,7 +1116,7 @@ describe('googleauth', () => {
        const scope = nockIsGCE();
        await auth._checkIsGCE();
        assert.strictEqual(true, auth.isGCE);
-       const isGCE2 = await auth._checkIsGCE();
+       await auth._checkIsGCE();
        assert.strictEqual(true, auth.isGCE);
        scope.done();
      });
@@ -1134,42 +1134,51 @@ describe('googleauth', () => {
 
   it('getCredentials should get metadata from the server when running on GCE',
      async () => {
-       nockIsGCE();
-       const isGCE = await auth._checkIsGCE();
-       assert.strictEqual(true, auth.isGCE);
        const response = {
          default: {
            email: 'test-creds@test-creds.iam.gserviceaccount.com',
            private_key: null
          }
        };
-       nock.cleanAll();
-       const scope =
-           nock(host).get(svcAccountPath).reply(200, response, HEADERS);
-       const body = await auth.getCredentials();
-       assert(body);
-       assert.strictEqual(
-           body!.client_email, 'test-creds@test-creds.iam.gserviceaccount.com');
-       assert.strictEqual(body!.private_key, undefined);
-       scope.done();
-     });
-
-  it('getCredentials should error if metadata server is not reachable',
-     async () => {
-       const scopes =
-           [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(404)];
+       const scopes = [
+         nockIsGCE(),
+         nock(host).get(svcAccountPath).reply(200, response, HEADERS)
+       ];
+       blockGoogleApplicationCredentialEnvironmentVariable();
+       auth._fileExists = () => false;
        await auth._checkIsGCE();
        assert.strictEqual(true, auth.isGCE);
-       await assertRejects(auth.getCredentials());
+       const body = await auth.getCredentials();
+       assert.ok(body);
+       assert.strictEqual(
+           body.client_email, 'test-creds@test-creds.iam.gserviceaccount.com');
+       assert.strictEqual(body.private_key, undefined);
        scopes.forEach(s => s.done());
      });
 
+  it('getCredentials should error if metadata server is not reachable', async () => {
+    const scopes =
+        [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(404)];
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    auth._fileExists = () => false;
+    await auth._checkIsGCE();
+    assert.strictEqual(true, auth.isGCE);
+    await assertRejects(
+        auth.getCredentials(),
+        /Unsuccessful response status code. Request failed with status code 404/);
+    scopes.forEach(s => s.done());
+  });
+
   it('getCredentials should error if body is empty', async () => {
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    auth._fileExists = () => false;
     const scopes =
         [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {})];
     await auth._checkIsGCE();
     assert.strictEqual(true, auth.isGCE);
-    await assertRejects(auth.getCredentials());
+    await assertRejects(
+        auth.getCredentials(),
+        /Invalid response from metadata service: incorrect Metadata-Flavor header./);
     scopes.forEach(s => s.done());
   });
 
@@ -1184,8 +1193,8 @@ describe('googleauth', () => {
     const jwt = result as JWT;
     const body = await auth.getCredentials();
     assert.notEqual(null, body);
-    assert.strictEqual(jwt.email, body!.client_email);
-    assert.strictEqual(jwt.key, body!.private_key);
+    assert.strictEqual(jwt.email, body.client_email);
+    assert.strictEqual(jwt.key, body.private_key);
   });
 
   it('getCredentials should call getClient to load credentials', async () => {
@@ -1233,7 +1242,8 @@ describe('googleauth', () => {
   it('getCredentials should return error when env const is not set',
      async () => {
        // Set up a mock to return a null path string
-       mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
+       blockGoogleApplicationCredentialEnvironmentVariable();
+       auth._fileExists = () => false;
        const client =
            await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
        assert.strictEqual(null, client);
