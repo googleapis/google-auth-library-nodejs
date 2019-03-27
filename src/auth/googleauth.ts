@@ -258,8 +258,9 @@ export class GoogleAuth {
     try {
       isGCE = await this._checkIsGCE();
     } catch (e) {
-      throw new Error(
-          'Unexpected error determining execution environment: ' + e.message);
+      e.message =
+          `Unexpected error determining execution environment: ${e.message}`;
+      throw e;
     }
 
     if (!isGCE) {
@@ -303,9 +304,10 @@ export class GoogleAuth {
       return this._getApplicationCredentialsFromFilePath(
           credentialsPath, options);
     } catch (e) {
-      throw this.createError(
-          'Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable.',
-          e);
+      e.message =
+          `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${
+              e.message}`;
+      throw e;
     }
   }
 
@@ -375,17 +377,14 @@ export class GoogleAuth {
         throw new Error();
       }
     } catch (err) {
-      throw this.createError(
-          `The file at ${filePath} does not exist, or it is not a file.`, err);
+      err.message = `The file at ${
+          filePath} does not exist, or it is not a file. ${err.message}`;
+      throw err;
     }
 
     // Now open a read stream on the file, and parse it.
-    try {
-      const readStream = this._createReadStream(filePath);
-      return this.fromStream(readStream, options);
-    } catch (err) {
-      throw this.createError(`Unable to read the file at ${filePath}.`, err);
-    }
+    const readStream = this._createReadStream(filePath);
+    return this.fromStream(readStream, options);
   }
 
   /**
@@ -542,22 +541,6 @@ export class GoogleAuth {
    */
   _mockWellKnownFilePath(filePath: string) {
     return filePath;
-  }
-
-  // Creates an Error containing the given message, and includes the message
-  // from the optional err passed in.
-  private createError(message: string, err: Error) {
-    let s = message || '';
-    if (err) {
-      const errorMessage = String(err);
-      if (errorMessage && errorMessage.length > 0) {
-        if (s.length > 0) {
-          s += ' ';
-        }
-        s += errorMessage;
-      }
-    }
-    return Error(s);
   }
 
   /**
