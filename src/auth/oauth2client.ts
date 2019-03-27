@@ -718,7 +718,7 @@ export class OAuth2Client extends AuthClient {
       const e = err as GaxiosError;
       if (e.response &&
           (e.response.status === 403 || e.response.status === 404)) {
-        e.message = 'Could not refresh access token.';
+        e.message = `Could not refresh access token: ${e.message}`;
       }
       throw e;
     }
@@ -962,7 +962,8 @@ export class OAuth2Client extends AuthClient {
     try {
       res = await this.transporter.request({url});
     } catch (e) {
-      throw new Error('Failed to retrieve verification certificates: ' + e);
+      e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      throw e;
     }
 
     const cacheControl = res ? res.headers['cache-control'] : undefined;
@@ -1037,7 +1038,9 @@ export class OAuth2Client extends AuthClient {
     try {
       envelope = JSON.parse(crypto.decodeBase64StringUtf8(segments[0]));
     } catch (err) {
-      throw new Error('Can\'t parse token envelope: ' + segments[0]);
+      err.message =
+          `Can't parse token envelope: ${segments[0]}': ${err.message}`;
+      throw err;
     }
 
     if (!envelope) {
@@ -1047,7 +1050,8 @@ export class OAuth2Client extends AuthClient {
     try {
       payload = JSON.parse(crypto.decodeBase64StringUtf8(segments[1]));
     } catch (err) {
-      throw new Error('Can\'t parse token payload: ' + segments[0]);
+      err.message = `Can't parse token payload '${segments[0]}`;
+      throw err;
     }
 
     if (!payload) {
