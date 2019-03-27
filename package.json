@@ -25,7 +25,7 @@
     "https-proxy-agent": "^2.2.1",
     "jws": "^3.1.5",
     "lru-cache": "^5.0.0",
-    "semver": "^5.5.0"
+    "semver": "^6.0.0"
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.7",
