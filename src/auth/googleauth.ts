@@ -170,19 +170,24 @@ export class GoogleAuth {
     // - Cloud SDK: `gcloud config config-helper --format json`
     // - GCE project ID from metadata server)
     if (!this._getDefaultProjectIdPromise) {
-      this._getDefaultProjectIdPromise =
-          new Promise(async (resolve, reject) => {
-            try {
-              const projectId = this.getProductionProjectId() ||
-                  await this.getFileProjectId() ||
-                  await this.getDefaultServiceProjectId() ||
-                  await this.getGCEProjectId();
-              this._cachedProjectId = projectId;
-              resolve(projectId);
-            } catch (e) {
-              reject(e);
-            }
-          });
+      this._getDefaultProjectIdPromise = new Promise(async (resolve, reject) => {
+        try {
+          const projectId = this.getProductionProjectId() ||
+              await this.getFileProjectId() ||
+              await this.getDefaultServiceProjectId() ||
+              await this.getGCEProjectId();
+          this._cachedProjectId = projectId;
+          if (!projectId) {
+            throw new Error(
+                'Unable to detect a Project Id in the current environment. \n' +
+                'To learn more about authentication and Google APIs, visit: \n' +
+                'https://cloud.google.com/docs/authentication/getting-started');
+          }
+          resolve(projectId);
+        } catch (e) {
+          reject(e);
+        }
+      });
     }
     return this._getDefaultProjectIdPromise;
   }

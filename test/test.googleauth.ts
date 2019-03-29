@@ -1467,4 +1467,14 @@ describe('googleauth', () => {
     const client = await auth.getClient() as JWT;
     assert.strictEqual(client.subject, subject);
   });
+
+  it('should throw if getProjectId cannot find a projectId', async () => {
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    auth._fileExists = () => false;
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+    await assertRejects(
+        auth.getProjectId(),
+        /Unable to detect a Project Id in the current environment/);
+  });
 });
