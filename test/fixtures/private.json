@@ -3,5 +3,6 @@
   "private_key": "privatekey",
   "client_email": "hello@youarecool.com",
   "client_id": "client123",
-  "type": "service_account"
+  "type": "service_account",
+  "project_id": "not-a-project-id"
 }
