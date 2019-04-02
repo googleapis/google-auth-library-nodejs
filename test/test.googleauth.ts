@@ -78,7 +78,7 @@ describe('googleauth', () => {
     return nock(host).get(instancePath).reply(404);
   }
 
-  function createGetProjectIdNock(projectId: string) {
+  function createGetProjectIdNock(projectId = 'not-real') {
     return nock(host)
         .get(`${BASE_PATH}/project/project-id`)
         .reply(200, projectId, HEADERS);
@@ -106,11 +106,6 @@ describe('googleauth', () => {
             .get(tokenPath)
             .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
     return {auth, scopes: [scope1, scope2]};
-  }
-
-  // Matches the ending of a string.
-  function stringEndsWith(str: string, suffix: string) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
   }
 
   // Simulates a path join.
@@ -871,16 +866,13 @@ describe('googleauth', () => {
 
   it('getApplicationDefault should return a new credential the first time and a cached credential the second time',
      async () => {
-       const scope = nockNotGCE();
        // Create a function which will set up a GoogleAuth instance to match
        // on an environment variable json file, but not on anything else.
        mockEnvVar(
            'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-       auth._fileExists = () => false;
 
        // Ask for credentials, the first time.
        const result = await auth.getApplicationDefault();
-       scope.isDone();
        assert.notEqual(null, result);
 
        // Capture the returned credential.
@@ -931,11 +923,11 @@ describe('googleauth', () => {
      async () => {
        blockGoogleApplicationCredentialEnvironmentVariable();
        auth._fileExists = () => false;
-       const scope = nockIsGCE();
+       const scopes = [nockIsGCE(), createGetProjectIdNock()];
 
        // Ask for credentials, the first time.
        const result = await auth.getApplicationDefault();
-       scope.done();
+       scopes.forEach(x => x.done());
        assert.notEqual(null, result);
 
        // Capture the returned credential.
@@ -1012,9 +1004,9 @@ describe('googleauth', () => {
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
        auth._fileExists = () => false;
-       const scope = nockIsGCE();
+       const scopes = [nockIsGCE(), createGetProjectIdNock()];
        const res = await auth.getApplicationDefault();
-       scope.done();
+       scopes.forEach(x => x.done());
        // This indicates that we got a ComputeClient instance back, rather than
        // a JWTClient.
        assert.strictEqual(
@@ -1141,7 +1133,7 @@ describe('googleauth', () => {
          }
        };
        const scopes = [
-         nockIsGCE(),
+         nockIsGCE(), createGetProjectIdNock(),
          nock(host).get(svcAccountPath).reply(200, response, HEADERS)
        ];
        blockGoogleApplicationCredentialEnvironmentVariable();
@@ -1157,8 +1149,10 @@ describe('googleauth', () => {
      });
 
   it('getCredentials should error if metadata server is not reachable', async () => {
-    const scopes =
-        [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(404)];
+    const scopes = [
+      nockIsGCE(), createGetProjectIdNock(),
+      nock(HOST_ADDRESS).get(svcAccountPath).reply(404)
+    ];
     blockGoogleApplicationCredentialEnvironmentVariable();
     auth._fileExists = () => false;
     await auth._checkIsGCE();
@@ -1172,8 +1166,10 @@ describe('googleauth', () => {
   it('getCredentials should error if body is empty', async () => {
     blockGoogleApplicationCredentialEnvironmentVariable();
     auth._fileExists = () => false;
-    const scopes =
-        [nockIsGCE(), nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {})];
+    const scopes = [
+      nockIsGCE(), createGetProjectIdNock(),
+      nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {})
+    ];
     await auth._checkIsGCE();
     assert.strictEqual(true, auth.isGCE);
     await assertRejects(
@@ -1305,6 +1301,7 @@ describe('googleauth', () => {
 
   it('should get an access token', async () => {
     const {auth, scopes} = mockGCE();
+    scopes.push(createGetProjectIdNock());
     const token = await auth.getAccessToken();
     scopes.forEach(s => s.done());
     assert.strictEqual(token, 'abc123');
@@ -1312,6 +1309,7 @@ describe('googleauth', () => {
 
   it('should get request headers', async () => {
     const {auth, scopes} = mockGCE();
+    scopes.push(createGetProjectIdNock());
     const headers = await auth.getRequestHeaders();
     scopes.forEach(s => s.done());
     assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
@@ -1319,6 +1317,7 @@ describe('googleauth', () => {
 
   it('should authorize the request', async () => {
     const {auth, scopes} = mockGCE();
+    scopes.push(createGetProjectIdNock());
     const opts = await auth.authorizeRequest({url: 'http://example.com'});
     scopes.forEach(s => s.done());
     assert.deepStrictEqual(opts.headers, {Authorization: 'Bearer abc123'});
@@ -1359,9 +1358,9 @@ describe('googleauth', () => {
   it('should make the request', async () => {
     const url = 'http://example.com';
     const {auth, scopes} = mockGCE();
+    scopes.push(createGetProjectIdNock());
     const data = {breakfast: 'coffee'};
-    const scope = nock(url).get('/').reply(200, data);
-    scopes.push(scope);
+    scopes.push(nock(url).get('/').reply(200, data));
     const res = await auth.request({url});
     scopes.forEach(s => s.done());
     assert.deepStrictEqual(res.data, data);
@@ -1466,5 +1465,15 @@ describe('googleauth', () => {
     });
     const client = await auth.getClient() as JWT;
     assert.strictEqual(client.subject, subject);
+  });
+
+  it('should throw if getProjectId cannot find a projectId', async () => {
+    blockGoogleApplicationCredentialEnvironmentVariable();
+    auth._fileExists = () => false;
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+    await assertRejects(
+        auth.getProjectId(),
+        /Unable to detect a Project Id in the current environment/);
   });
 });
