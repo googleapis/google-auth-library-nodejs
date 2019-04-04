@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-const {execSync} = require('child_process');
+const cp = require('child_process');
 const {assert} = require('chai');
 const fs = require('fs');
 const {promisify} = require('util');
+
+const execSync = (cmd) => cp.execSync(cmd, {encoding: 'utf-8'});
 
 const readFile = promisify(fs.readFile);
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
