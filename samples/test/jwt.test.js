@@ -46,14 +46,13 @@ describe('samples', () => {
 
   it('should allow directly passing creds', async () => {
     const keys = JSON.parse(await readFile(keyFile, 'utf8'));
-    const res = await execa('node', ['credentials'], {
+    const stdout = execSync('node credentials', {
       env: {
         CLIENT_EMAIL: keys.client_email,
         PRIVATE_KEY: keys.private_key,
       },
     });
-    assert.isEmpty(res.stderr);
-    assert.match(res.stdout, /DNS Info:/);
+    assert.match(stdout, /DNS Info:/);
   });
 
   it('should obtain headers for a request', async () => {
