@@ -14,40 +14,33 @@
  * limitations under the License.
  */
 
-const execa = require('execa');
+const {execSync} = require('child_process');
 const {assert} = require('chai');
 const fs = require('fs');
 const {promisify} = require('util');
 
 const readFile = promisify(fs.readFile);
-
-const exec = async cmd => {
-  const res = await execa.shell(cmd);
-  assert.isEmpty(res.stderr);
-  return res.stdout;
-};
-
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 describe('samples', () => {
   it('should acquire application default credentials', async () => {
-    const output = await exec('node adc');
+    const output = execSync('node adc');
     assert.match(output, /DNS Info:/);
   });
 
   it.skip('should acquire compute credentials', async () => {
     // TODO: need to figure out deploying to GCF for this to work
-    const output = await exec('node compute');
+    const output = execSync('node compute');
     assert.match(output, /DNS Info:/);
   });
 
   it('should create a JWT', async () => {
-    const output = await exec('node jwt');
+    const output = execSync('node jwt');
     assert.match(output, /DNS Info:/);
   });
 
   it('should read from a keyfile', async () => {
-    const output = await exec('node keyfile');
+    const output = execSync('node keyfile');
     assert.match(output, /DNS Info:/);
   });
 
@@ -64,7 +57,7 @@ describe('samples', () => {
   });
 
   it('should obtain headers for a request', async () => {
-    const output = await exec('node headers');
+    const output = execSync('node headers');
     assert.match(output, /Headers:/);
     assert.match(output, /DNS Info:/);
   });
