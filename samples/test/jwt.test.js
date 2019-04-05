@@ -19,7 +19,9 @@ const {assert} = require('chai');
 const fs = require('fs');
 const {promisify} = require('util');
 
-const execSync = cmd => cp.execSync(cmd, {encoding: 'utf-8'});
+const execSync = (cmd, opts) => {
+  return cp.execSync(cmd, Object.assign({encoding: 'utf-8'}, opts));
+}
 
 const readFile = promisify(fs.readFile);
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -49,10 +51,10 @@ describe('samples', () => {
   it('should allow directly passing creds', async () => {
     const keys = JSON.parse(await readFile(keyFile, 'utf8'));
     const stdout = execSync('node credentials', {
-      env: {
+      env: Object.assign({}, process.env, {
         CLIENT_EMAIL: keys.client_email,
         PRIVATE_KEY: keys.private_key,
-      },
+      }),
     });
     assert.match(stdout, /DNS Info:/);
   });
