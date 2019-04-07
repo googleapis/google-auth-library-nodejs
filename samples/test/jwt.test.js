@@ -14,57 +14,53 @@
  * limitations under the License.
  */
 
-const execa = require('execa');
+const cp = require('child_process');
 const {assert} = require('chai');
 const fs = require('fs');
 const {promisify} = require('util');
 
-const readFile = promisify(fs.readFile);
-
-const exec = async cmd => {
-  const res = await execa.shell(cmd);
-  assert.isEmpty(res.stderr);
-  return res.stdout;
+const execSync = (cmd, opts) => {
+  return cp.execSync(cmd, Object.assign({encoding: 'utf-8'}, opts));
 };
 
+const readFile = promisify(fs.readFile);
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 describe('samples', () => {
   it('should acquire application default credentials', async () => {
-    const output = await exec('node adc');
+    const output = execSync('node adc');
     assert.match(output, /DNS Info:/);
   });
 
   it.skip('should acquire compute credentials', async () => {
     // TODO: need to figure out deploying to GCF for this to work
-    const output = await exec('node compute');
+    const output = execSync('node compute');
     assert.match(output, /DNS Info:/);
   });
 
   it('should create a JWT', async () => {
-    const output = await exec('node jwt');
+    const output = execSync('node jwt');
     assert.match(output, /DNS Info:/);
   });
 
   it('should read from a keyfile', async () => {
-    const output = await exec('node keyfile');
+    const output = execSync('node keyfile');
     assert.match(output, /DNS Info:/);
   });
 
   it('should allow directly passing creds', async () => {
     const keys = JSON.parse(await readFile(keyFile, 'utf8'));
-    const res = await execa('node', ['credentials'], {
-      env: {
+    const stdout = execSync('node credentials', {
+      env: Object.assign({}, process.env, {
         CLIENT_EMAIL: keys.client_email,
         PRIVATE_KEY: keys.private_key,
-      },
+      }),
     });
-    assert.isEmpty(res.stderr);
-    assert.match(res.stdout, /DNS Info:/);
+    assert.match(stdout, /DNS Info:/);
   });
 
   it('should obtain headers for a request', async () => {
-    const output = await exec('node headers');
+    const output = execSync('node headers');
     assert.match(output, /Headers:/);
     assert.match(output, /DNS Info:/);
   });
