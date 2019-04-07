@@ -21,7 +21,7 @@ const {promisify} = require('util');
 
 const execSync = (cmd, opts) => {
   return cp.execSync(cmd, Object.assign({encoding: 'utf-8'}, opts));
-}
+};
 
 const readFile = promisify(fs.readFile);
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
