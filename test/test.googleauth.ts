@@ -55,6 +55,12 @@ describe('googleauth', () => {
   const sandbox = sinon.createSandbox();
   beforeEach(() => {
     auth = new GoogleAuth();
+    const envVars = Object.assign({}, process.env, {
+      GCLOUD_PROJECT: undefined,
+      GOOGLE_APPLICATION_CREDENTIALS: undefined,
+      google_application_credentials: undefined
+    });
+    sandbox.stub(process, 'env').value(envVars);
   });
 
   afterEach(() => {
@@ -98,7 +104,6 @@ describe('googleauth', () => {
   // Pretend that we're GCE, and mock an access token.
   function mockGCE() {
     const scope1 = nockIsGCE();
-    blockGoogleApplicationCredentialEnvironmentVariable();
     const auth = new GoogleAuth();
     auth._fileExists = () => false;
     const scope2 =
@@ -111,17 +116,6 @@ describe('googleauth', () => {
   // Simulates a path join.
   function pathJoin(item1: string, item2: string) {
     return item1 + ':' + item2;
-  }
-
-  // Blocks the GOOGLE_APPLICATION_CREDENTIALS by default. This is necessary in
-  // case it is actually set on the host machine executing the test.
-  function blockGoogleApplicationCredentialEnvironmentVariable() {
-    const envVars = Object.assign({}, process.env, {
-      GCLOUD_PROJECT: undefined,
-      GOOGLE_APPLICATION_CREDENTIALS: undefined,
-      google_application_credentials: undefined
-    });
-    return sandbox.stub(process, 'env').value(envVars);
   }
 
   // Intercepts the specified environment variable, returning the specified
@@ -542,7 +536,6 @@ describe('googleauth', () => {
   it('_tryGetApplicationCredentialsFromWellKnownFile should build the correct directory for Windows',
      async () => {
        let correctLocation = false;
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -562,7 +555,6 @@ describe('googleauth', () => {
   it('_tryGetApplicationCredentialsFromWellKnownFile should build the correct directory for non-Windows',
      () => {
        let correctLocation = false;
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'linux';
@@ -581,7 +573,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should fail on Windows when APPDATA is not defined',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -597,7 +588,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should fail on non-Windows when HOME is not defined',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('HOME');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'linux';
@@ -613,7 +603,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should fail on Windows when file does not exist',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -629,7 +618,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should fail on non-Windows when file does not exist',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'linux';
@@ -645,7 +633,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should succeeds on Windows',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -660,7 +647,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should succeeds on non-Windows',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'linux';
@@ -675,7 +661,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure on Windows',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -688,7 +673,6 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure on non-Windows',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'linux';
@@ -842,7 +826,6 @@ describe('googleauth', () => {
        // * Environment variable is not set.
        // * Well-known file is set up to point to private2.json
        // * Running on GCE is set to true.
-       blockGoogleApplicationCredentialEnvironmentVariable();
        const stdout = JSON.stringify(
            {configuration: {properties: {core: {project: fixedProjectId}}}});
        const stub = sandbox.stub(child_process, 'exec')
@@ -854,7 +837,6 @@ describe('googleauth', () => {
 
   it('getProjectId should use GCE when well-known file and env const are not set',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        const stub =
            sandbox.stub(child_process, 'exec').callsArgWith(1, null, '', null);
        const scope = createGetProjectIdNock(fixedProjectId);
@@ -921,7 +903,6 @@ describe('googleauth', () => {
 
   it('getApplicationDefault should cache the credential when using GCE',
      async () => {
-       blockGoogleApplicationCredentialEnvironmentVariable();
        auth._fileExists = () => false;
        const scopes = [nockIsGCE(), createGetProjectIdNock()];
 
@@ -974,7 +955,6 @@ describe('googleauth', () => {
        // * Environment variable is not set.
        // * Well-known file is set up to point to private2.json
        // * Running on GCE is set to true.
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -999,7 +979,6 @@ describe('googleauth', () => {
        // * Environment variable is not set.
        // * Well-known file is not set.
        // * Running on GCE is set to true.
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -1019,7 +998,6 @@ describe('googleauth', () => {
        // * Environment variable is not set.
        // * Well-known file is not set.
        // * Running on GCE is set to true.
-       blockGoogleApplicationCredentialEnvironmentVariable();
        mockEnvVar('APPDATA', 'foo');
        auth._pathJoin = pathJoin;
        auth._osPlatform = () => 'win32';
@@ -1136,7 +1114,6 @@ describe('googleauth', () => {
          nockIsGCE(), createGetProjectIdNock(),
          nock(host).get(svcAccountPath).reply(200, response, HEADERS)
        ];
-       blockGoogleApplicationCredentialEnvironmentVariable();
        auth._fileExists = () => false;
        await auth._checkIsGCE();
        assert.strictEqual(true, auth.isGCE);
@@ -1153,7 +1130,6 @@ describe('googleauth', () => {
       nockIsGCE(), createGetProjectIdNock(),
       nock(HOST_ADDRESS).get(svcAccountPath).reply(404)
     ];
-    blockGoogleApplicationCredentialEnvironmentVariable();
     auth._fileExists = () => false;
     await auth._checkIsGCE();
     assert.strictEqual(true, auth.isGCE);
@@ -1164,7 +1140,6 @@ describe('googleauth', () => {
   });
 
   it('getCredentials should error if body is empty', async () => {
-    blockGoogleApplicationCredentialEnvironmentVariable();
     auth._fileExists = () => false;
     const scopes = [
       nockIsGCE(), createGetProjectIdNock(),
@@ -1180,7 +1155,6 @@ describe('googleauth', () => {
 
   it('getCredentials should handle valid environment variable', async () => {
     // Set up a mock to return path to a valid credentials file.
-    blockGoogleApplicationCredentialEnvironmentVariable();
     mockEnvVar(
         'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
     const result =
@@ -1195,7 +1169,6 @@ describe('googleauth', () => {
 
   it('getCredentials should call getClient to load credentials', async () => {
     // Set up a mock to return path to a valid credentials file.
-    blockGoogleApplicationCredentialEnvironmentVariable();
     mockEnvVar(
         'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
 
@@ -1217,7 +1190,6 @@ describe('googleauth', () => {
 
   it('getCredentials should handle valid file path', async () => {
     // Set up a mock to return path to a valid credentials file.
-    blockGoogleApplicationCredentialEnvironmentVariable();
     mockEnvVar('APPDATA', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'win32';
@@ -1238,7 +1210,6 @@ describe('googleauth', () => {
   it('getCredentials should return error when env const is not set',
      async () => {
        // Set up a mock to return a null path string
-       blockGoogleApplicationCredentialEnvironmentVariable();
        auth._fileExists = () => false;
        const client =
            await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
@@ -1401,7 +1372,6 @@ describe('googleauth', () => {
      });
 
   it('should warn the user if using default Cloud SDK credentials', done => {
-    blockGoogleApplicationCredentialEnvironmentVariable();
     mockEnvVar('HOME', 'foo');
     auth._pathJoin = pathJoin;
     auth._osPlatform = () => 'linux';
@@ -1468,7 +1438,6 @@ describe('googleauth', () => {
   });
 
   it('should throw if getProjectId cannot find a projectId', async () => {
-    blockGoogleApplicationCredentialEnvironmentVariable();
     auth._fileExists = () => false;
     // tslint:disable-next-line no-any
     sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
