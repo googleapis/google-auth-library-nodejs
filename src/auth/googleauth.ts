@@ -499,7 +499,7 @@ export class GoogleAuth {
    * @api private
    */
   private _isWindows() {
-    const sys = this._osPlatform();
+    const sys = os.platform();
     if (sys && sys.length >= 3) {
       if (sys.substring(0, 3).toLowerCase() === 'win') {
         return true;
@@ -514,14 +514,6 @@ export class GoogleAuth {
    */
   _createReadStream(filePath: string) {
     return fs.createReadStream(filePath);
-  }
-
-  /**
-   * Gets the current operating system platform. Allows mocking.
-   * @api private
-   */
-  _osPlatform() {
-    return os.platform();
   }
 
   /**
