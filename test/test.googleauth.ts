@@ -20,8 +20,10 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
+import * as os from 'os';
 import * as path from 'path';
 import * as sinon from 'sinon';
+
 const assertRejects = require('assert-rejects');
 
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
@@ -53,6 +55,7 @@ const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 describe('googleauth', () => {
   let auth: GoogleAuth;
   const sandbox = sinon.createSandbox();
+  let osStub: sinon.SinonStub;
   beforeEach(() => {
     auth = new GoogleAuth();
     const envVars = Object.assign({}, process.env, {
@@ -61,12 +64,19 @@ describe('googleauth', () => {
       google_application_credentials: undefined
     });
     sandbox.stub(process, 'env').value(envVars);
+    osStub = sandbox.stub(os, 'platform').returns('linux');
   });
 
   afterEach(() => {
     nock.cleanAll();
     sandbox.restore();
   });
+
+  function mockWindows() {
+    osStub.returns('win32');
+    mockEnvVar('APPDATA', 'foo');
+    auth._pathJoin = pathJoin;
+  }
 
   function nockIsGCE() {
     return nock(host).get(instancePath).reply(200, {}, HEADERS);
@@ -536,9 +546,7 @@ describe('googleauth', () => {
   it('_tryGetApplicationCredentialsFromWellKnownFile should build the correct directory for Windows',
      async () => {
        let correctLocation = false;
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => true;
        auth._getApplicationCredentialsFromFilePath = (filePath: string) => {
          if (filePath === 'foo:gcloud:application_default_credentials.json') {
@@ -557,7 +565,6 @@ describe('googleauth', () => {
        let correctLocation = false;
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'linux';
        auth._fileExists = () => true;
        auth._getApplicationCredentialsFromFilePath = (filePath: string) => {
          if (filePath ===
@@ -573,9 +580,8 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should fail on Windows when APPDATA is not defined',
      async () => {
+       mockWindows();
        mockEnvVar('APPDATA');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
        auth._fileExists = () => true;
        auth._getApplicationCredentialsFromFilePath =
            (filePath: string): Promise<JWT|UserRefreshClient> => {
@@ -590,7 +596,6 @@ describe('googleauth', () => {
      async () => {
        mockEnvVar('HOME');
        auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'linux';
        auth._fileExists = () => true;
        auth._getApplicationCredentialsFromFilePath =
            (filePath: string): Promise<JWT|UserRefreshClient> => {
@@ -603,9 +608,7 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should fail on Windows when file does not exist',
      async () => {
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => false;
        auth._getApplicationCredentialsFromFilePath =
            (filePath: string): Promise<JWT|UserRefreshClient> => {
@@ -620,7 +623,6 @@ describe('googleauth', () => {
      async () => {
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'linux';
        auth._fileExists = () => false;
        auth._getApplicationCredentialsFromFilePath =
            (filePath: string): Promise<JWT|UserRefreshClient> => {
@@ -633,9 +635,7 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should succeeds on Windows',
      async () => {
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => true;
        auth._getApplicationCredentialsFromFilePath = (filePath: string) => {
          return Promise.resolve(new JWT('hello'));
@@ -649,7 +649,6 @@ describe('googleauth', () => {
      async () => {
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'linux';
        auth._fileExists = () => true;
        auth._getApplicationCredentialsFromFilePath = (filePath: string) => {
          return Promise.resolve(new JWT('hello'));
@@ -661,9 +660,7 @@ describe('googleauth', () => {
 
   it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure on Windows',
      async () => {
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => true;
        sandbox.stub(auth, '_getApplicationCredentialsFromFilePath')
            .rejects('🤮');
@@ -675,7 +672,6 @@ describe('googleauth', () => {
      async () => {
        mockEnvVar('HOME', 'foo');
        auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'linux';
        auth._fileExists = () => true;
        sandbox.stub(auth, '_getApplicationCredentialsFromFilePath')
            .rejects('🤮');
@@ -931,9 +927,7 @@ describe('googleauth', () => {
        // * Running on GCE is set to true.
        mockEnvVar(
            'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => true;
        nockIsGCE();
        insertWellKnownFilePathIntoAuth(
@@ -955,9 +949,7 @@ describe('googleauth', () => {
        // * Environment variable is not set.
        // * Well-known file is set up to point to private2.json
        // * Running on GCE is set to true.
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => true;
        nockIsGCE();
        insertWellKnownFilePathIntoAuth(
@@ -979,9 +971,7 @@ describe('googleauth', () => {
        // * Environment variable is not set.
        // * Well-known file is not set.
        // * Running on GCE is set to true.
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => false;
        const scopes = [nockIsGCE(), createGetProjectIdNock()];
        const res = await auth.getApplicationDefault();
@@ -998,9 +988,7 @@ describe('googleauth', () => {
        // * Environment variable is not set.
        // * Well-known file is not set.
        // * Running on GCE is set to true.
-       mockEnvVar('APPDATA', 'foo');
-       auth._pathJoin = pathJoin;
-       auth._osPlatform = () => 'win32';
+       mockWindows();
        auth._fileExists = () => false;
        sandbox.stub(auth, '_checkIsGCE').rejects('🤮');
        await assertRejects(
@@ -1016,9 +1004,7 @@ describe('googleauth', () => {
     mockEnvVar(
         'GOOGLE_APPLICATION_CREDENTIALS', './test/fixtures/private.json');
     mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
-    mockEnvVar('APPDATA', 'foo');
-    auth._pathJoin = pathJoin;
-    auth._osPlatform = () => 'win32';
+    mockWindows();
     auth._fileExists = () => true;
     auth._checkIsGCE = () => Promise.resolve(true);
     insertWellKnownFilePathIntoAuth(
@@ -1190,9 +1176,7 @@ describe('googleauth', () => {
 
   it('getCredentials should handle valid file path', async () => {
     // Set up a mock to return path to a valid credentials file.
-    mockEnvVar('APPDATA', 'foo');
-    auth._pathJoin = pathJoin;
-    auth._osPlatform = () => 'win32';
+    mockWindows();
     auth._fileExists = () => true;
     auth._checkIsGCE = () => Promise.resolve(true);
     insertWellKnownFilePathIntoAuth(
@@ -1374,7 +1358,6 @@ describe('googleauth', () => {
   it('should warn the user if using default Cloud SDK credentials', done => {
     mockEnvVar('HOME', 'foo');
     auth._pathJoin = pathJoin;
-    auth._osPlatform = () => 'linux';
     auth._fileExists = () => true;
     auth._getApplicationCredentialsFromFilePath = () => {
       return Promise.resolve(new JWT(CLOUD_SDK_CLIENT_ID));
