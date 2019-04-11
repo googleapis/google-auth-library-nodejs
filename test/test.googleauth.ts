@@ -21,6 +21,7 @@ import * as fs from 'fs';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
+import * as path from 'path';
 import * as sinon from 'sinon';
 
 const assertRejects = require('assert-rejects');
@@ -49,10 +50,12 @@ const private2JSON = require('../../test/fixtures/private2.json');
 const refreshJSON = require('../../test/fixtures/refresh.json');
 const fixedProjectId = 'my-awesome-project';
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
-const wellKnownPathWindows =
-    'C:/fake/home/gcloud/application_default_credentials.json';
-const wellKnownPathLinux =
-    '/fake/user/.config/gcloud/application_default_credentials.json';
+const wellKnownPathWindows = path.join(
+    'C:', 'fake', 'home', 'gcloud', 'application_default_credentials.json');
+console.log(wellKnownPathWindows);
+const wellKnownPathLinux = path.join(
+    '/', 'fake', 'user', '.config', 'gcloud',
+    'application_default_credentials.json');
 
 describe('googleauth', () => {
   let auth: GoogleAuth;
@@ -76,7 +79,7 @@ describe('googleauth', () => {
       GCLOUD_PROJECT: undefined,
       GOOGLE_APPLICATION_CREDENTIALS: undefined,
       google_application_credentials: undefined,
-      HOME: '/fake/user'
+      HOME: path.join('/', 'fake', 'user')
     });
     sandbox.stub(process, 'env').value(envVars);
     osStub = sandbox.stub(os, 'platform').returns('linux');
@@ -117,7 +120,7 @@ describe('googleauth', () => {
   function mockWindows() {
     osStub.returns('win32');
     process.env.HOME = '';
-    process.env.APPDATA = 'C:/fake/home';
+    process.env.APPDATA = path.join('C:', 'fake', 'home');
   }
 
   function mockWindowsWellKnownFile() {
@@ -850,10 +853,7 @@ describe('googleauth', () => {
        // Set up the creds.
        // * Environment variable is not set.
        // * Well-known file is set up to point to private2.json
-       // * Running on GCE is set to true.
-       mockWindows();
-       nockIsGCE();
-       mockWindowsWellKnownFile();
+       mockLinuxWellKnownFile();
 
        const res = await auth.getApplicationDefault();
        const client = res.credential as JWT;
