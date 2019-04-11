@@ -52,7 +52,6 @@ const fixedProjectId = 'my-awesome-project';
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 const wellKnownPathWindows = path.join(
     'C:', 'fake', 'home', 'gcloud', 'application_default_credentials.json');
-console.log(wellKnownPathWindows);
 const wellKnownPathLinux = path.join(
     '/', 'fake', 'user', '.config', 'gcloud',
     'application_default_credentials.json');
