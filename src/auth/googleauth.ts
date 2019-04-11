@@ -339,9 +339,7 @@ export class GoogleAuth {
     if (location) {
       location =
           path.join(location, 'gcloud', 'application_default_credentials.json');
-      console.log(`location: ${location}`);
       if (!fs.existsSync(location)) {
-        console.log('DOES NOT EXIST!!!!1');
         location = null;
       }
     }
