@@ -332,17 +332,14 @@ export class GoogleAuth {
       // Linux or Mac
       const home = process.env['HOME'];
       if (home) {
-        location = this._pathJoin(home, '.config');
+        location = path.join(home, '.config');
       }
     }
     // If we found the root path, expand it.
     if (location) {
-      location = this._pathJoin(location, 'gcloud');
       location =
-          this._pathJoin(location, 'application_default_credentials.json');
-      location = this._mockWellKnownFilePath(location);
-      // Check whether the file exists.
-      if (!this._fileExists(location)) {
+          path.join(location, 'gcloud', 'application_default_credentials.json');
+      if (!fs.existsSync(location)) {
         location = null;
       }
     }
@@ -388,7 +385,7 @@ export class GoogleAuth {
     }
 
     // Now open a read stream on the file, and parse it.
-    const readStream = this._createReadStream(filePath);
+    const readStream = fs.createReadStream(filePath);
     return this.fromStream(readStream, options);
   }
 
@@ -506,38 +503,6 @@ export class GoogleAuth {
       }
     }
     return false;
-  }
-
-  /**
-   * Creates a file stream. Allows mocking.
-   * @api private
-   */
-  _createReadStream(filePath: string) {
-    return fs.createReadStream(filePath);
-  }
-
-  /**
-   * Determines whether a file exists. Allows mocking.
-   * @api private
-   */
-  _fileExists(filePath: string) {
-    return fs.existsSync(filePath);
-  }
-
-  /**
-   * Joins two parts of a path. Allows mocking.
-   * @api private
-   */
-  _pathJoin(item1: string, item2: string) {
-    return path.join(item1, item2);
-  }
-
-  /**
-   * Allows mocking of the path to a well-known file.
-   * @api private
-   */
-  _mockWellKnownFilePath(filePath: string) {
-    return filePath;
   }
 
   /**
