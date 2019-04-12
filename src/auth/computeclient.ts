@@ -87,27 +87,20 @@ export class Compute extends OAuth2Client {
     return super.requestAsync<T>(opts, retry).catch(e => {
       const res = (e as GaxiosError).response;
       if (res && res.status) {
-        let helpfulMessage = null;
-        if (res.status === 403) {
-          helpfulMessage =
-              'A Forbidden error was returned while attempting to retrieve an access ' +
-              'token for the Compute Engine built-in service account. This may be because the Compute ' +
-              'Engine instance does not have the correct permission scopes specified.';
-        } else if (res.status === 404) {
-          helpfulMessage =
-              'A Not Found error was returned while attempting to retrieve an access' +
-              'token for the Compute Engine built-in service account. This may be because the Compute ' +
-              'Engine instance does not have any permission scopes specified.';
-        }
-        if (helpfulMessage) {
-          if (e && e.message && !retry) {
-            helpfulMessage += ' ' + e.message;
-          }
-          if (e) {
-            e.message = helpfulMessage;
-          } else {
-            e = new Error(helpfulMessage);
-            (e as NodeJS.ErrnoException).code = res.status.toString();
+        (e as NodeJS.ErrnoException).code = res.status.toString();
+        if (!retry) {
+          if (res.status === 403) {
+            e.message =
+                'A Forbidden error was returned while attempting to retrieve an access ' +
+                'token for the Compute Engine built-in service account. This may be because the Compute ' +
+                'Engine instance does not have the correct permission scopes specified: ' +
+                e.message;
+          } else if (res.status === 404) {
+            e.message =
+                'A Not Found error was returned while attempting to retrieve an access' +
+                'token for the Compute Engine built-in service account. This may be because the Compute ' +
+                'Engine instance does not have any permission scopes specified: ' +
+                e.message;
           }
         }
       }
