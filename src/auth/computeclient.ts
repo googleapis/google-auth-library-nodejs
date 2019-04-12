@@ -71,6 +71,7 @@ export class Compute extends OAuth2Client {
       data = await gcpMetadata.instance(tokenPath);
     } catch (e) {
       e.message = `Could not refresh access token: ${e.message}`;
+      this.wrapError(e);
       throw e;
     }
     const tokens = data as Credentials;
@@ -82,29 +83,23 @@ export class Compute extends OAuth2Client {
     return {tokens, res: null};
   }
 
-  protected requestAsync<T>(opts: GaxiosOptions, retry = false):
-      GaxiosPromise<T> {
-    return super.requestAsync<T>(opts, retry).catch(e => {
-      const res = (e as GaxiosError).response;
-      if (res && res.status) {
-        (e as NodeJS.ErrnoException).code = res.status.toString();
-        if (!retry) {
-          if (res.status === 403) {
-            e.message =
-                'A Forbidden error was returned while attempting to retrieve an access ' +
-                'token for the Compute Engine built-in service account. This may be because the Compute ' +
-                'Engine instance does not have the correct permission scopes specified: ' +
-                e.message;
-          } else if (res.status === 404) {
-            e.message =
-                'A Not Found error was returned while attempting to retrieve an access' +
-                'token for the Compute Engine built-in service account. This may be because the Compute ' +
-                'Engine instance does not have any permission scopes specified: ' +
-                e.message;
-          }
-        }
+  protected wrapError(e: GaxiosError) {
+    const res = e.response;
+    if (res && res.status) {
+      e.code = res.status.toString();
+      if (res.status === 403) {
+        e.message =
+            'A Forbidden error was returned while attempting to retrieve an access ' +
+            'token for the Compute Engine built-in service account. This may be because the Compute ' +
+            'Engine instance does not have the correct permission scopes specified: ' +
+            e.message;
+      } else if (res.status === 404) {
+        e.message =
+            'A Not Found error was returned while attempting to retrieve an access' +
+            'token for the Compute Engine built-in service account. This may be because the Compute ' +
+            'Engine instance does not have any permission scopes specified: ' +
+            e.message;
       }
-      throw e;
-    });
+    }
   }
 }
