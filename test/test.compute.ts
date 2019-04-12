@@ -37,11 +37,10 @@ function mockExample() {
 }
 
 // set up compute client.
-let sandbox: sinon.SinonSandbox;
+const sandbox = sinon.createSandbox();
 let compute: Compute;
 beforeEach(() => {
   compute = new Compute();
-  sandbox = sinon.createSandbox();
 });
 
 afterEach(() => {
@@ -129,37 +128,22 @@ it('should return false for createScopedRequired', () => {
 });
 
 it('should return a helpful message on request response.statusCode 403', async () => {
-  // Mock the credentials object. Make sure there's no expiry_date set.
-  compute.credentials = {refresh_token: 'hello', access_token: 'goodbye'};
-
-  const scopes = [
-    nock(url).get('/').reply(403), nock(HOST_ADDRESS).get(tokenPath).reply(403)
-  ];
-
+  const scope = mockToken(403);
   const expected = new RegExp(
       'A Forbidden error was returned while attempting to retrieve an access ' +
       'token for the Compute Engine built-in service account. This may be because the ' +
       'Compute Engine instance does not have the correct permission scopes specified. ' +
       'Could not refresh access token.');
-
   await assertRejects(compute.request({url}), expected);
-  scopes.forEach(s => s.done());
+  scope.done();
 });
 
 it('should return a helpful message on request response.statusCode 404', async () => {
-  // Mock the credentials object.
-  compute.credentials = {
-    refresh_token: 'hello',
-    access_token: 'goodbye',
-    expiry_date: (new Date(9999, 1, 1)).getTime()
-  };
-  // Mock the request method to return a 404.
-  const scope = nock(url).get('/').reply(404);
+  const scope = mockToken(404);
   const expected = new RegExp(
       'A Not Found error was returned while attempting to retrieve an access' +
       'token for the Compute Engine built-in service account. This may be because the ' +
       'Compute Engine instance does not have any permission scopes specified.');
-
   await assertRejects(compute.request({url}), expected);
   scope.done();
 });
