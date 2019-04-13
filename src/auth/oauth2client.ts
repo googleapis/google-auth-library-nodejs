@@ -595,14 +595,12 @@ export class OAuth2Client extends AuthClient {
   /**
    * Retrieves the access token using refresh token
    *
-   * @deprecated use getRequestHeaders instead.
    * @param callback callback
    */
   refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
   refreshAccessToken(callback: RefreshAccessTokenCallback): void;
   refreshAccessToken(callback?: RefreshAccessTokenCallback):
       Promise<RefreshAccessTokenResponse>|void {
-    messages.warn(messages.REFRESH_ACCESS_TOKEN_DEPRECATED);
     if (callback) {
       this.refreshAccessTokenAsync().then(
           r => callback(null, r.credentials, r.res), callback);

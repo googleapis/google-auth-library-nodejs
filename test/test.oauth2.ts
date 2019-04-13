@@ -727,14 +727,6 @@ it('should return error in callback on request', done => {
   });
 });
 
-it('should emit warning on refreshAccessToken', async () => {
-  let warned = false;
-  sandbox.stub(process, 'emitWarning').callsFake(() => warned = true);
-  client.refreshAccessToken((err, result) => {
-    assert.strictEqual(warned, true);
-  });
-});
-
 it('should return error in callback on refreshAccessToken', done => {
   client.refreshAccessToken((err, result) => {
     assert.strictEqual(err!.message, 'No refresh token is set.');
