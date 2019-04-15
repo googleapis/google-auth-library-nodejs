@@ -84,8 +84,8 @@ The 2.0 version of this library used the [axios](https://github.com/axios/axios)
 #### BREAKING: `generateCodeVerifier` is now `generateCodeVerifierAsync`
 The `OAuth2Client.generateCodeVerifier` method has been replaced by the `OAuth2Client.generateCodeVerifierAsync` method.  It has changed from a synchronous method to an asynchronous method to support async browser crypto APIs required for Webpack support.
 
-#### BREAKING: `generateCodeVerifier` is now `generateCodeVerifierAsync`
-The `OAuth2Client.verifySignedJwtWithCerts` method has been replaced by the `OAuth2Client.verifySignedJwtWithCerts` method.  It has changed from a synchronous method to an asynchronous method to support async browser crypto APIs required for Webpack support.
+#### BREAKING: `verifySignedJwtWithCerts` is now `verifySignedJwtWithCertsAsync`
+The `OAuth2Client.verifySignedJwtWithCerts` method has been replaced by the `OAuth2Client.verifySignedJwtWithCertsAsync` method. It has changed from a synchronous method to an asynchronous method to support async browser crypto APIs required for Webpack support.
 
 
 ### New Features
