@@ -565,6 +565,9 @@ export class OAuth2Client extends AuthClient {
 
   protected async refreshTokenNoCache(refreshToken?: string|
                                       null): Promise<GetTokenResponse> {
+    if (!refreshToken) {
+      throw new Error('No refresh token is set.');
+    }
     const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
     const data = {
       refresh_token: refreshToken,
@@ -612,9 +615,6 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async refreshAccessTokenAsync() {
-    if (!this.credentials.refresh_token) {
-      throw new Error('No refresh token is set.');
-    }
     const r = await this.refreshToken(this.credentials.refresh_token);
     const tokens = r.tokens as Credentials;
     tokens.refresh_token = this.credentials.refresh_token;
