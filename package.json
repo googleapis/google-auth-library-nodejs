@@ -53,7 +53,7 @@
     "gh-pages": "^2.0.1",
     "gts": "^0.9.0",
     "intelli-espower-loader": "^1.0.1",
-    "is-docker": "^1.1.0",
+    "is-docker": "^2.0.0",
     "js-green-licenses": "^0.5.0",
     "karma": "^4.0.0",
     "karma-chrome-launcher": "^2.2.0",
