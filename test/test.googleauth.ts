@@ -1139,10 +1139,10 @@ describe('googleauth', () => {
 
   it('should allow passing a scope to get a Compute client', async () => {
     const scopes = ['http://examples.com/is/a/scope'];
-    const scope = nockIsGCE();
+    const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
     const client = await auth.getClient({scopes}) as Compute;
     assert.strictEqual(client.scopes, scopes);
-    scope.done();
+    nockScopes.forEach(x => x.done());
   });
 
   it('should get an access token', async () => {
