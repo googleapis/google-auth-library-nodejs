@@ -29,6 +29,7 @@ const assertRejects = require('assert-rejects');
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
+import {Compute} from '../src/auth/computeclient';
 import * as messages from '../src/messages';
 
 nock.disableNetConnect();
@@ -1134,6 +1135,14 @@ describe('googleauth', () => {
     const keyFilename = './test/fixtures/private.json';
     const client = await auth.getClient({scopes, keyFilename}) as JWT;
     assert.strictEqual(client.scopes, scopes);
+  });
+
+  it('should allow passing a scope to get a Compute client', async () => {
+    const scopes = ['http://examples.com/is/a/scope'];
+    const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
+    const client = await auth.getClient({scopes}) as Compute;
+    assert.strictEqual(client.scopes, scopes);
+    nockScopes.forEach(x => x.done());
   });
 
   it('should get an access token', async () => {

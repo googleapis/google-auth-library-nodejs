@@ -17,6 +17,7 @@
     "client library"
   ],
   "dependencies": {
+    "arrify": "^1.0.1",
     "base64-js": "^1.3.0",
     "fast-text-encoding": "^1.0.0",
     "gaxios": "^1.2.1",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.7",
+    "@types/arrify": "^1.0.4",
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
     "@types/execa": "^0.9.0",

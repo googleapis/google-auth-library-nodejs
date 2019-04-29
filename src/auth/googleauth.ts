@@ -27,7 +27,7 @@ import {isBrowser} from '../isbrowser';
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 
-import {Compute} from './computeclient';
+import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
@@ -219,7 +219,7 @@ export class GoogleAuth {
     }
   }
 
-  private async getApplicationDefaultAsync(options?: RefreshOptions):
+  private async getApplicationDefaultAsync(options: RefreshOptions = {}):
       Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
@@ -276,6 +276,7 @@ export class GoogleAuth {
 
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
+    (options as ComputeOptions).scopes = this.scopes;
     this.cachedCredential = new Compute(options);
     projectId = await this.getProjectId();
     return {projectId, credential: this.cachedCredential};

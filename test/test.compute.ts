@@ -20,15 +20,19 @@ import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {Compute} from '../src';
 const assertRejects = require('assert-rejects');
+import * as qs from 'querystring';
 
 nock.disableNetConnect();
 
 const url = 'http://example.com';
-
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
-function mockToken(statusCode = 200) {
+function mockToken(statusCode = 200, scopes?: string[]) {
+  let path = tokenPath;
+  if (scopes && scopes.length > 0) {
+    path += '?' + qs.stringify({scopes});
+  }
   return nock(HOST_ADDRESS)
-      .get(tokenPath, undefined, {reqheaders: HEADERS})
+      .get(path, undefined, {reqheaders: HEADERS})
       .reply(statusCode, {access_token: 'abc123', expires_in: 10000}, HEADERS);
 }
 
@@ -59,6 +63,17 @@ it('should get an access token for the first request', async () => {
   const scopes = [mockToken(), mockExample()];
   await compute.request({url});
   scopes.forEach(s => s.done());
+  assert.strictEqual(compute.credentials.access_token, 'abc123');
+});
+
+it('should include scopes when asking for the token', async () => {
+  const scopes = [
+    'https://www.googleapis.com/reader', 'https://www.googleapis.com/auth/plus'
+  ];
+  const nockScopes = [mockToken(200, scopes), mockExample()];
+  const compute = new Compute({scopes});
+  await compute.request({url});
+  nockScopes.forEach(s => s.done());
   assert.strictEqual(compute.credentials.access_token, 'abc123');
 });
 
