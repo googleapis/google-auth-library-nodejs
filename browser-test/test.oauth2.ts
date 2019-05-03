@@ -122,11 +122,9 @@ describe('Browser OAuth2 tests', () => {
 
   it('getToken should work', async () => {
     const now = Date.now();
-    const stub = sinon
-      .stub()
-      .resolves({
-        data: {access_token: 'abc', refresh_token: '123', expires_in: 10},
-      });
+    const stub = sinon.stub().resolves({
+      data: {access_token: 'abc', refresh_token: '123', expires_in: 10},
+    });
     client.transporter.request = stub;
     const response = await client.getToken('code here');
     const tokens = response.tokens;
