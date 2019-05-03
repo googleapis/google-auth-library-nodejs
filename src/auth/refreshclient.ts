@@ -28,7 +28,7 @@ export class UserRefreshClient extends OAuth2Client {
   // TODO: refactor tests to make this private
   // In a future gts release, the _propertyName rule will be lifted.
   // This is also a hard one because `this.refreshToken` is a function.
-  _refreshToken?: string|null;
+  _refreshToken?: string | null;
 
   /**
    * User Refresh Token credentials.
@@ -41,21 +41,24 @@ export class UserRefreshClient extends OAuth2Client {
   constructor(options: UserRefreshClientOptions);
   constructor(clientId?: string, clientSecret?: string, refreshToken?: string);
   constructor(
-      optionsOrClientId?: string|UserRefreshClientOptions,
-      clientSecret?: string, refreshToken?: string,
-      eagerRefreshThresholdMillis?: number) {
-    const opts = (optionsOrClientId && typeof optionsOrClientId === 'object') ?
-        optionsOrClientId :
-        {
-          clientId: optionsOrClientId,
-          clientSecret,
-          refreshToken,
-          eagerRefreshThresholdMillis
-        };
+    optionsOrClientId?: string | UserRefreshClientOptions,
+    clientSecret?: string,
+    refreshToken?: string,
+    eagerRefreshThresholdMillis?: number
+  ) {
+    const opts =
+      optionsOrClientId && typeof optionsOrClientId === 'object'
+        ? optionsOrClientId
+        : {
+            clientId: optionsOrClientId,
+            clientSecret,
+            refreshToken,
+            eagerRefreshThresholdMillis,
+          };
     super({
       clientId: opts.clientId,
       clientSecret: opts.clientSecret,
-      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis
+      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis,
     });
     this._refreshToken = opts.refreshToken;
   }
@@ -65,8 +68,9 @@ export class UserRefreshClient extends OAuth2Client {
    * @param refreshToken An ignored refreshToken..
    * @param callback Optional callback.
    */
-  protected async refreshTokenNoCache(refreshToken?: string|
-                                      null): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(
+    refreshToken?: string | null
+  ): Promise<GetTokenResponse> {
     return super.refreshTokenNoCache(this._refreshToken);
   }
 
@@ -78,23 +82,28 @@ export class UserRefreshClient extends OAuth2Client {
   fromJSON(json: JWTInput): void {
     if (!json) {
       throw new Error(
-          'Must pass in a JSON object containing the user refresh token');
+        'Must pass in a JSON object containing the user refresh token'
+      );
     }
     if (json.type !== 'authorized_user') {
       throw new Error(
-          'The incoming JSON object does not have the "authorized_user" type');
+        'The incoming JSON object does not have the "authorized_user" type'
+      );
     }
     if (!json.client_id) {
       throw new Error(
-          'The incoming JSON object does not contain a client_id field');
+        'The incoming JSON object does not contain a client_id field'
+      );
     }
     if (!json.client_secret) {
       throw new Error(
-          'The incoming JSON object does not contain a client_secret field');
+        'The incoming JSON object does not contain a client_secret field'
+      );
     }
     if (!json.refresh_token) {
       throw new Error(
-          'The incoming JSON object does not contain a refresh_token field');
+        'The incoming JSON object does not contain a refresh_token field'
+      );
     }
     this._clientId = json.client_id;
     this._clientSecret = json.client_secret;
@@ -109,10 +118,14 @@ export class UserRefreshClient extends OAuth2Client {
    * @param callback Optional callback.
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
-  fromStream(inputStream: stream.Readable, callback: (err?: Error) => void):
-      void;
-  fromStream(inputStream: stream.Readable, callback?: (err?: Error) => void):
-      void|Promise<void> {
+  fromStream(
+    inputStream: stream.Readable,
+    callback: (err?: Error) => void
+  ): void;
+  fromStream(
+    inputStream: stream.Readable,
+    callback?: (err?: Error) => void
+  ): void | Promise<void> {
     if (callback) {
       this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
@@ -123,22 +136,24 @@ export class UserRefreshClient extends OAuth2Client {
   private async fromStreamAsync(inputStream: stream.Readable): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (!inputStream) {
-        return reject(new Error(
-            'Must pass in a stream containing the user refresh token.'));
+        return reject(
+          new Error('Must pass in a stream containing the user refresh token.')
+        );
       }
       let s = '';
-      inputStream.setEncoding('utf8')
-          .on('error', reject)
-          .on('data', (chunk) => s += chunk)
-          .on('end', () => {
-            try {
-              const data = JSON.parse(s);
-              this.fromJSON(data);
-              return resolve();
-            } catch (err) {
-              return reject(err);
-            }
-          });
+      inputStream
+        .setEncoding('utf8')
+        .on('error', reject)
+        .on('data', chunk => (s += chunk))
+        .on('end', () => {
+          try {
+            const data = JSON.parse(s);
+            this.fromJSON(data);
+            return resolve();
+          } catch (err) {
+            return reject(err);
+          }
+        });
     });
   }
 }

@@ -25,17 +25,17 @@ import {Headers, RequestMetadataResponse} from './oauth2client';
 
 const DEFAULT_HEADER: jws.Header = {
   alg: 'RS256',
-  typ: 'JWT'
+  typ: 'JWT',
 };
 
-export type Claims = {
-  [index: string]: string
-};
+export interface Claims {
+  [index: string]: string;
+}
 
 export class JWTAccess {
-  email?: string|null;
-  key?: string|null;
-  keyId?: string|null;
+  email?: string | null;
+  key?: string | null;
+  keyId?: string | null;
   projectId?: string;
 
   private cache = new LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
@@ -50,7 +50,11 @@ export class JWTAccess {
    * @param key the private key that will be used to sign the token.
    * @param keyId the ID of the private key used to sign the token.
    */
-  constructor(email?: string|null, key?: string|null, keyId?: string|null) {
+  constructor(
+    email?: string | null,
+    key?: string | null,
+    keyId?: string | null
+  ) {
     this.email = email;
     this.key = key;
     this.keyId = keyId;
@@ -77,8 +81,10 @@ export class JWTAccess {
    * @deprecated Please use `getRequestHeaders` instead.
    * @returns An object that includes the authorization header.
    */
-  getRequestMetadata(url: string, additionalClaims?: Claims):
-      RequestMetadataResponse {
+  getRequestMetadata(
+    url: string,
+    additionalClaims?: Claims
+  ): RequestMetadataResponse {
     messages.warn(messages.JWT_ACCESS_GET_REQUEST_METADATA_DEPRECATED);
     return {headers: this.getRequestHeaders(url, additionalClaims)};
   }
@@ -97,27 +103,34 @@ export class JWTAccess {
       return cachedToken;
     }
     const iat = Math.floor(new Date().getTime() / 1000);
-    const exp = iat + 3600;  // 3600 seconds = 1 hour
+    const exp = iat + 3600; // 3600 seconds = 1 hour
 
     // The payload used for signed JWT headers has:
     // iss == sub == <client email>
     // aud == <the authorization uri>
-    const defaultClaims =
-        {iss: this.email, sub: this.email, aud: url, exp, iat};
+    const defaultClaims = {
+      iss: this.email,
+      sub: this.email,
+      aud: url,
+      exp,
+      iat,
+    };
 
     // if additionalClaims are provided, ensure they do not collide with
     // other required claims.
     if (additionalClaims) {
       for (const claim in defaultClaims) {
         if (additionalClaims[claim]) {
-          throw new Error(`The '${
-              claim}' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`);
+          throw new Error(
+            `The '${claim}' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`
+          );
         }
       }
     }
 
-    const header =
-        this.keyId ? {...DEFAULT_HEADER, kid: this.keyId} : DEFAULT_HEADER;
+    const header = this.keyId
+      ? {...DEFAULT_HEADER, kid: this.keyId}
+      : DEFAULT_HEADER;
     const payload = Object.assign(defaultClaims, additionalClaims);
 
     // Sign the jwt and add it to the cache
@@ -134,15 +147,18 @@ export class JWTAccess {
   fromJSON(json: JWTInput): void {
     if (!json) {
       throw new Error(
-          'Must pass in a JSON object containing the service account auth settings.');
+        'Must pass in a JSON object containing the service account auth settings.'
+      );
     }
     if (!json.client_email) {
       throw new Error(
-          'The incoming JSON object does not contain a client_email field');
+        'The incoming JSON object does not contain a client_email field'
+      );
     }
     if (!json.private_key) {
       throw new Error(
-          'The incoming JSON object does not contain a private_key field');
+        'The incoming JSON object does not contain a private_key field'
+      );
     }
     // Extract the relevant information from the json key file.
     this.email = json.client_email;
@@ -157,10 +173,14 @@ export class JWTAccess {
    * @param callback Optional callback.
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
-  fromStream(inputStream: stream.Readable, callback: (err?: Error) => void):
-      void;
-  fromStream(inputStream: stream.Readable, callback?: (err?: Error) => void):
-      void|Promise<void> {
+  fromStream(
+    inputStream: stream.Readable,
+    callback: (err?: Error) => void
+  ): void;
+  fromStream(
+    inputStream: stream.Readable,
+    callback?: (err?: Error) => void
+  ): void | Promise<void> {
     if (callback) {
       this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
@@ -171,22 +191,26 @@ export class JWTAccess {
   private fromStreamAsync(inputStream: stream.Readable): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!inputStream) {
-        reject(new Error(
-            'Must pass in a stream containing the service account auth settings.'));
+        reject(
+          new Error(
+            'Must pass in a stream containing the service account auth settings.'
+          )
+        );
       }
       let s = '';
-      inputStream.setEncoding('utf8')
-          .on('data', (chunk) => s += chunk)
-          .on('error', reject)
-          .on('end', () => {
-            try {
-              const data = JSON.parse(s);
-              this.fromJSON(data);
-              resolve();
-            } catch (err) {
-              reject(err);
-            }
-          });
+      inputStream
+        .setEncoding('utf8')
+        .on('data', chunk => (s += chunk))
+        .on('error', reject)
+        .on('end', () => {
+          try {
+            const data = JSON.parse(s);
+            this.fromJSON(data);
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        });
     });
   }
 }

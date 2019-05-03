@@ -20,14 +20,19 @@ import * as stream from 'stream';
 import * as messages from '../messages';
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {JWTAccess} from './jwtaccess';
-import {GetTokenResponse, OAuth2Client, RefreshOptions, RequestMetadataResponse} from './oauth2client';
+import {
+  GetTokenResponse,
+  OAuth2Client,
+  RefreshOptions,
+  RequestMetadataResponse,
+} from './oauth2client';
 
 export interface JWTOptions extends RefreshOptions {
   email?: string;
   keyFile?: string;
   key?: string;
   keyId?: string;
-  scopes?: string|string[];
+  scopes?: string | string[];
   subject?: string;
   additionalClaims?: {};
 }
@@ -37,7 +42,7 @@ export class JWT extends OAuth2Client {
   keyFile?: string;
   key?: string;
   keyId?: string;
-  scopes?: string|string[];
+  scopes?: string | string[];
   scope?: string;
   subject?: string;
   gtoken?: GoogleToken;
@@ -59,14 +64,25 @@ export class JWT extends OAuth2Client {
    */
   constructor(options: JWTOptions);
   constructor(
-      email?: string, keyFile?: string, key?: string, scopes?: string|string[],
-      subject?: string, keyId?: string);
+    email?: string,
+    keyFile?: string,
+    key?: string,
+    scopes?: string | string[],
+    subject?: string,
+    keyId?: string
+  );
   constructor(
-      optionsOrEmail?: string|JWTOptions, keyFile?: string, key?: string,
-      scopes?: string|string[], subject?: string, keyId?: string) {
-    const opts = (optionsOrEmail && typeof optionsOrEmail === 'object') ?
-        optionsOrEmail :
-        {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
+    optionsOrEmail?: string | JWTOptions,
+    keyFile?: string,
+    key?: string,
+    scopes?: string | string[],
+    subject?: string,
+    keyId?: string
+  ) {
+    const opts =
+      optionsOrEmail && typeof optionsOrEmail === 'object'
+        ? optionsOrEmail
+        : {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
     super({eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis});
     this.email = opts.email;
     this.keyFile = opts.keyFile;
@@ -83,7 +99,7 @@ export class JWT extends OAuth2Client {
    * @param scopes List of requested scopes or a single scope.
    * @return The cloned instance.
    */
-  createScoped(scopes?: string|string[]) {
+  createScoped(scopes?: string | string[]) {
     return new JWT({
       email: this.email,
       keyFile: this.keyFile,
@@ -91,7 +107,7 @@ export class JWT extends OAuth2Client {
       keyId: this.keyId,
       scopes,
       subject: this.subject,
-      additionalClaims: this.additionalClaims
+      additionalClaims: this.additionalClaims,
     });
   }
 
@@ -100,12 +116,16 @@ export class JWT extends OAuth2Client {
    *
    * @param url the URI being authorized.
    */
-  protected async getRequestMetadataAsync(url?: string|null):
-      Promise<RequestMetadataResponse> {
+  protected async getRequestMetadataAsync(
+    url?: string | null
+  ): Promise<RequestMetadataResponse> {
     if (!this.apiKey && !this.hasScopes() && url) {
-      if (this.additionalClaims && (this.additionalClaims as {
-                                     target_audience: string
-                                   }).target_audience) {
+      if (
+        this.additionalClaims &&
+        (this.additionalClaims as {
+          target_audience: string;
+        }).target_audience
+      ) {
         const {tokens} = await this.refreshToken();
         return {headers: {Authorization: `Bearer ${tokens.id_token}`}};
       } else {
@@ -114,8 +134,10 @@ export class JWT extends OAuth2Client {
         if (!this.access) {
           this.access = new JWTAccess(this.email, this.key, this.keyId);
         }
-        const headers =
-            await this.access.getRequestHeaders(url, this.additionalClaims);
+        const headers = await this.access.getRequestHeaders(
+          url,
+          this.additionalClaims
+        );
         return {headers};
       }
     } else {
@@ -155,9 +177,10 @@ export class JWT extends OAuth2Client {
    * @returns Promise that resolves with credentials
    */
   authorize(): Promise<Credentials>;
-  authorize(callback: (err: Error|null, result?: Credentials) => void): void;
-  authorize(callback?: (err: Error|null, result?: Credentials) => void):
-      Promise<Credentials>|void {
+  authorize(callback: (err: Error | null, result?: Credentials) => void): void;
+  authorize(
+    callback?: (err: Error | null, result?: Credentials) => void
+  ): Promise<Credentials> | void {
     if (callback) {
       this.authorizeAsync().then(r => callback(null, r), callback);
     } else {
@@ -182,8 +205,9 @@ export class JWT extends OAuth2Client {
    * @param refreshToken ignored
    * @private
    */
-  protected async refreshTokenNoCache(refreshToken?: string|
-                                      null): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(
+    refreshToken?: string | null
+  ): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
     const token = await gtoken.getToken();
     const tokens = {
@@ -191,7 +215,7 @@ export class JWT extends OAuth2Client {
       token_type: 'Bearer',
       expiry_date: gtoken.expiresAt,
       // tslint:disable-next-line no-any
-      id_token: (gtoken.rawToken! as any).id_token
+      id_token: (gtoken.rawToken! as any).id_token,
     };
     this.emit('tokens', tokens);
     return {res: null, tokens};
@@ -208,7 +232,7 @@ export class JWT extends OAuth2Client {
         scope: this.scopes,
         keyFile: this.keyFile,
         key: this.key,
-        additionalClaims: this.additionalClaims
+        additionalClaims: this.additionalClaims,
       });
     }
     return this.gtoken;
@@ -221,15 +245,18 @@ export class JWT extends OAuth2Client {
   fromJSON(json: JWTInput): void {
     if (!json) {
       throw new Error(
-          'Must pass in a JSON object containing the service account auth settings.');
+        'Must pass in a JSON object containing the service account auth settings.'
+      );
     }
     if (!json.client_email) {
       throw new Error(
-          'The incoming JSON object does not contain a client_email field');
+        'The incoming JSON object does not contain a client_email field'
+      );
     }
     if (!json.private_key) {
       throw new Error(
-          'The incoming JSON object does not contain a private_key field');
+        'The incoming JSON object does not contain a private_key field'
+      );
     }
     // Extract the relevant information from the json key file.
     this.email = json.client_email;
@@ -245,10 +272,13 @@ export class JWT extends OAuth2Client {
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(
-      inputStream: stream.Readable, callback: (err?: Error|null) => void): void;
+    inputStream: stream.Readable,
+    callback: (err?: Error | null) => void
+  ): void;
   fromStream(
-      inputStream: stream.Readable,
-      callback?: (err?: Error|null) => void): void|Promise<void> {
+    inputStream: stream.Readable,
+    callback?: (err?: Error | null) => void
+  ): void | Promise<void> {
     if (callback) {
       this.fromStreamAsync(inputStream).then(r => callback(), callback);
     } else {
@@ -260,21 +290,23 @@ export class JWT extends OAuth2Client {
     return new Promise<void>((resolve, reject) => {
       if (!inputStream) {
         throw new Error(
-            'Must pass in a stream containing the service account auth settings.');
+          'Must pass in a stream containing the service account auth settings.'
+        );
       }
       let s = '';
-      inputStream.setEncoding('utf8')
-          .on('error', reject)
-          .on('data', (chunk) => s += chunk)
-          .on('end', () => {
-            try {
-              const data = JSON.parse(s);
-              this.fromJSON(data);
-              resolve();
-            } catch (e) {
-              reject(e);
-            }
-          });
+      inputStream
+        .setEncoding('utf8')
+        .on('error', reject)
+        .on('data', chunk => (s += chunk))
+        .on('end', () => {
+          try {
+            const data = JSON.parse(s);
+            this.fromJSON(data);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        });
     });
   }
 

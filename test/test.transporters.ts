@@ -39,27 +39,31 @@ it('should set default adapter to node.js', () => {
 
 it('should append default client user agent to the existing user agent', () => {
   const applicationName = 'MyTestApplication-1.0';
-  const opts = transporter.configure(
-      {headers: {'User-Agent': applicationName}, url: ''});
+  const opts = transporter.configure({
+    headers: {'User-Agent': applicationName},
+    url: '',
+  });
   const re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
   assert(re.test(opts.headers!['User-Agent']));
 });
 
-it('should not append default client user agent to the existing user agent more than once',
-   () => {
-     const appName = 'MyTestApplication-1.0 google-api-nodejs-client/foobear';
-     const opts =
-         transporter.configure({headers: {'User-Agent': appName}, url: ''});
-     assert.strictEqual(opts.headers!['User-Agent'], appName);
-   });
+it('should not append default client user agent to the existing user agent more than once', () => {
+  const appName = 'MyTestApplication-1.0 google-api-nodejs-client/foobear';
+  const opts = transporter.configure({
+    headers: {'User-Agent': appName},
+    url: '',
+  });
+  assert.strictEqual(opts.headers!['User-Agent'], appName);
+});
 
 it('should create a single error from multiple response errors', done => {
   const firstError = {message: 'Error 1'};
   const secondError = {message: 'Error 2'};
   const url = 'http://example.com';
-  const scope = nock(url).get('/').reply(
-      400, {error: {code: 500, errors: [firstError, secondError]}});
-  transporter.request({url}, (error) => {
+  const scope = nock(url)
+    .get('/')
+    .reply(400, {error: {code: 500, errors: [firstError, secondError]}});
+  transporter.request({url}, error => {
     scope.done();
     assert.strictEqual(error!.message, 'Error 1\nError 2');
     assert.strictEqual((error as RequestError).code, 500);
@@ -70,7 +74,9 @@ it('should create a single error from multiple response errors', done => {
 
 it('should return an error for a 404 response', done => {
   const url = 'http://example.com';
-  const scope = nock(url).get('/').reply(404, 'Not found');
+  const scope = nock(url)
+    .get('/')
+    .reply(404, 'Not found');
   transporter.request({url}, error => {
     scope.done();
     assert.strictEqual(error!.message, 'Not found');
@@ -81,30 +87,33 @@ it('should return an error for a 404 response', done => {
 
 it('should return an error if you try to use request config options', done => {
   const expected =
-      '\'uri\' is not a valid configuration option. Please use \'url\' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.';
+    "'uri' is not a valid configuration option. Please use 'url' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.";
   transporter.request(
-      {
-        uri: 'http://example.com/api',
-      } as GaxiosOptions,
-      (error) => {
-        assert.strictEqual(error!.message, expected);
-        done();
-      });
+    {
+      uri: 'http://example.com/api',
+    } as GaxiosOptions,
+    error => {
+      assert.strictEqual(error!.message, expected);
+      done();
+    }
+  );
 });
 
-it('should return an error if you try to use request config options with a promise',
-   async () => {
-     const expected = new RegExp(
-         `'uri' is not a valid configuration option. Please use 'url' instead. This ` +
-         `library is using Axios for requests. Please see https://github.com/axios/axios ` +
-         `to learn more about the valid request options.`);
-     const uri = 'http://example.com/api';
-     assert.throws(() => transporter.request({uri} as GaxiosOptions), expected);
-   });
+it('should return an error if you try to use request config options with a promise', async () => {
+  const expected = new RegExp(
+    `'uri' is not a valid configuration option. Please use 'url' instead. This ` +
+      `library is using Axios for requests. Please see https://github.com/axios/axios ` +
+      `to learn more about the valid request options.`
+  );
+  const uri = 'http://example.com/api';
+  assert.throws(() => transporter.request({uri} as GaxiosOptions), expected);
+});
 
 it('should support invocation with async/await', async () => {
   const url = 'http://example.com';
-  const scope = nock(url).get('/').reply(200);
+  const scope = nock(url)
+    .get('/')
+    .reply(200);
   const res = await transporter.request({url});
   scope.done();
   assert.strictEqual(res.status, 200);
@@ -112,14 +121,18 @@ it('should support invocation with async/await', async () => {
 
 it('should throw if using async/await', async () => {
   const url = 'http://example.com';
-  const scope = nock(url).get('/').reply(500, '🦃');
+  const scope = nock(url)
+    .get('/')
+    .reply(500, '🦃');
   await assertRejects(transporter.request({url}), /🦃/);
   scope.done();
 });
 
 it('should work with a callback', done => {
   const url = 'http://example.com';
-  const scope = nock(url).get('/').reply(200);
+  const scope = nock(url)
+    .get('/')
+    .reply(200);
   transporter.request({url}, (err, res) => {
     scope.done();
     assert.strictEqual(err, null);
@@ -128,19 +141,20 @@ it('should work with a callback', done => {
   });
 });
 
+// tslint:disable-next-line ban
 it.skip('should use the https proxy if one is configured', async () => {
   process.env['https_proxy'] = 'https://han:solo@proxy-server:1234';
   const transporter = new DefaultTransporter();
   const scope = nock('https://proxy-server:1234')
-                    .get('https://example.com/fake', undefined, {
-                      reqheaders: {
-                        'host': 'example.com',
-                        'accept': /.*/g,
-                        'user-agent': /google-api-nodejs-client\/.*/g,
-                        'proxy-authorization': /.*/g
-                      }
-                    })
-                    .reply(200);
+    .get('https://example.com/fake', undefined, {
+      reqheaders: {
+        host: 'example.com',
+        accept: /.*/g,
+        'user-agent': /google-api-nodejs-client\/.*/g,
+        'proxy-authorization': /.*/g,
+      },
+    })
+    .reply(200);
   const url = 'https://example.com/fake';
   const result = await transporter.request({url});
   scope.done();

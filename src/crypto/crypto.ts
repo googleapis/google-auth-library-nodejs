@@ -43,8 +43,11 @@ export interface CryptoSigner {
 export interface Crypto {
   sha256DigestBase64(str: string): Promise<string>;
   randomBytesBase64(n: number): string;
-  verify(pubkey: string|JwkCertificate, data: string|Buffer, signature: string):
-      Promise<boolean>;
+  verify(
+    pubkey: string | JwkCertificate,
+    data: string | Buffer,
+    signature: string
+  ): Promise<boolean>;
   createSign(algorithm: string): CryptoSigner;
   decodeBase64StringUtf8(base64: string): string;
   encodeBase64StringUtf8(text: string): string;
