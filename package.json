@@ -30,7 +30,6 @@
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.7",
-    "@types/arrify": "^1.0.4",
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
     "@types/execa": "^0.9.0",

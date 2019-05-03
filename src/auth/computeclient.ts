@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as arrify from 'arrify';
-import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
+import arrify = require('arrify');
+import {GaxiosError} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 
 import * as messages from '../messages';
