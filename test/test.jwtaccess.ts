@@ -47,13 +47,6 @@ afterEach(() => {
   sandbox.restore();
 });
 
-it('should emit warning for createScopedRequired', () => {
-  const stub = sandbox.stub(process, 'emitWarning');
-  // tslint:disable-next-line deprecation
-  client.createScopedRequired();
-  assert(stub.called);
-});
-
 it('getRequestHeaders should create a signed JWT token as the access token', () => {
   const client = new JWTAccess(email, keys.private);
   const headers = client.getRequestHeaders(testUri);
@@ -104,12 +97,6 @@ it('getRequestHeaders should not return cached tokens older than an hour', () =>
     // return date.now to it's normally scheduled programming
     Date.now = realDateNow;
   }
-});
-
-it('createScopedRequired should return false', () => {
-  const client = new JWTAccess('foo@serviceaccount.com', null);
-  // tslint:disable-next-line deprecation
-  assert.strictEqual(false, client.createScopedRequired());
 });
 
 it('fromJson should error on null json', () => {
@@ -179,12 +166,4 @@ it('fromStream should construct a JWT Header instance from a stream', async () =
   // Ensure that the correct bits were pulled from the stream.
   assert.strictEqual(json.private_key, client.key);
   assert.strictEqual(json.client_email, client.email);
-});
-
-it('should warn about deprecation of getRequestMetadata', () => {
-  const client = new JWTAccess(email, keys.private);
-  const stub = sandbox.stub(messages, 'warn');
-  // tslint:disable-next-line deprecation
-  client.getRequestMetadata(testUri);
-  assert.strictEqual(stub.calledOnce, true);
 });

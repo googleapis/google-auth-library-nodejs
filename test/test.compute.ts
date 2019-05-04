@@ -131,19 +131,6 @@ it('should not refresh if access token has not expired', async () => {
   scope.done();
 });
 
-it('should emit warning for createScopedRequired', () => {
-  let called = false;
-  sandbox.stub(process, 'emitWarning').callsFake(() => (called = true));
-  // tslint:disable-next-line deprecation
-  compute.createScopedRequired();
-  assert.strictEqual(called, true);
-});
-
-it('should return false for createScopedRequired', () => {
-  // tslint:disable-next-line deprecation
-  assert.strictEqual(false, compute.createScopedRequired());
-});
-
 it('should return a helpful message on request response.statusCode 403', async () => {
   const scope = mockToken(403);
   const expected = new RegExp(
