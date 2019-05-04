@@ -42,6 +42,7 @@ it('passes the token and selector to the callback ', async () => {
 
 it('should warn about deprecation of getRequestMetadata', done => {
   const stub = sandbox.stub(messages, 'warn');
+  // tslint:disable-next-line deprecation
   client.getRequestMetadata(null, () => {
     assert.strictEqual(stub.calledOnce, true);
     done();
@@ -50,6 +51,7 @@ it('should warn about deprecation of getRequestMetadata', done => {
 
 it('should emit warning for createScopedRequired', () => {
   const stub = sandbox.stub(process, 'emitWarning');
+  // tslint:disable-next-line deprecation
   client.createScopedRequired();
   assert(stub.called);
 });

@@ -28,9 +28,16 @@ it('should return envelope', () => {
 });
 
 it('should return attributes from getAttributes', () => {
-  const payload =
-      {aud: 'aud', sub: 'sub', iss: 'iss', iat: 1514162443, exp: 1514166043};
+  const payload = {
+    aud: 'aud',
+    sub: 'sub',
+    iss: 'iss',
+    iat: 1514162443,
+    exp: 1514166043,
+  };
   const ticket = new LoginTicket('myenvelope', payload);
-  assert.deepStrictEqual(
-      ticket.getAttributes(), {envelope: 'myenvelope', payload});
+  assert.deepStrictEqual(ticket.getAttributes(), {
+    envelope: 'myenvelope',
+    payload,
+  });
 });

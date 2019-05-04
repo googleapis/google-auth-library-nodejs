@@ -30,7 +30,7 @@ const json = {
   private_key: 'privatekey',
   client_email: 'hello@youarecool.com',
   client_id: 'client123',
-  type: 'service_account'
+  type: 'service_account',
 };
 
 const keys = keypair(1024 /* bitsize of private key */);
@@ -49,29 +49,31 @@ afterEach(() => {
 
 it('should emit warning for createScopedRequired', () => {
   const stub = sandbox.stub(process, 'emitWarning');
+  // tslint:disable-next-line deprecation
   client.createScopedRequired();
   assert(stub.called);
 });
 
-it('getRequestHeaders should create a signed JWT token as the access token',
-   () => {
-     const client = new JWTAccess(email, keys.private);
-     const headers = client.getRequestHeaders(testUri);
-     assert.notStrictEqual(null, headers, 'an creds object should be present');
-     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
-     assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
-     const payload = decoded.payload;
-     assert.strictEqual(email, payload.iss);
-     assert.strictEqual(email, payload.sub);
-     assert.strictEqual(testUri, payload.aud);
-   });
+it('getRequestHeaders should create a signed JWT token as the access token', () => {
+  const client = new JWTAccess(email, keys.private);
+  const headers = client.getRequestHeaders(testUri);
+  assert.notStrictEqual(null, headers, 'an creds object should be present');
+  const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+  assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
+  const payload = decoded.payload;
+  assert.strictEqual(email, payload.iss);
+  assert.strictEqual(email, payload.sub);
+  assert.strictEqual(testUri, payload.aud);
+});
 
 it('getRequestHeaders should set key id in header when available', () => {
   const client = new JWTAccess(email, keys.private, '101');
   const headers = client.getRequestHeaders(testUri);
   const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
   assert.deepStrictEqual(
-      {alg: 'RS256', typ: 'JWT', kid: '101'}, decoded.header);
+    {alg: 'RS256', typ: 'JWT', kid: '101'},
+    decoded.header
+  );
 });
 
 it('getRequestHeaders should not allow overriding with additionalClaims', () => {
@@ -82,32 +84,31 @@ it('getRequestHeaders should not allow overriding with additionalClaims', () => 
   }, /^Error: The 'iss' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.$/);
 });
 
-it('getRequestHeaders should return a cached token on the second request',
-   () => {
-     const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestHeaders(testUri);
-     const res2 = client.getRequestHeaders(testUri);
-     assert.strictEqual(res, res2);
-   });
+it('getRequestHeaders should return a cached token on the second request', () => {
+  const client = new JWTAccess(email, keys.private);
+  const res = client.getRequestHeaders(testUri);
+  const res2 = client.getRequestHeaders(testUri);
+  assert.strictEqual(res, res2);
+});
 
-it('getRequestHeaders should not return cached tokens older than an hour',
-   () => {
-     const client = new JWTAccess(email, keys.private);
-     const res = client.getRequestHeaders(testUri);
-     const realDateNow = Date.now;
-     try {
-       // go forward in time one hour (plus a little)
-       Date.now = () => realDateNow() + (1000 * 60 * 60) + 10;
-       const res2 = client.getRequestHeaders(testUri);
-       assert.notEqual(res, res2);
-     } finally {
-       // return date.now to it's normally scheduled programming
-       Date.now = realDateNow;
-     }
-   });
+it('getRequestHeaders should not return cached tokens older than an hour', () => {
+  const client = new JWTAccess(email, keys.private);
+  const res = client.getRequestHeaders(testUri);
+  const realDateNow = Date.now;
+  try {
+    // go forward in time one hour (plus a little)
+    Date.now = () => realDateNow() + 1000 * 60 * 60 + 10;
+    const res2 = client.getRequestHeaders(testUri);
+    assert.notStrictEqual(res, res2);
+  } finally {
+    // return date.now to it's normally scheduled programming
+    Date.now = realDateNow;
+  }
+});
 
 it('createScopedRequired should return false', () => {
   const client = new JWTAccess('foo@serviceaccount.com', null);
+  // tslint:disable-next-line deprecation
   assert.strictEqual(false, client.createScopedRequired());
 });
 
@@ -156,7 +157,7 @@ it('fromJson should create JWT with private_key_id', () => {
   assert.strictEqual(json.private_key_id, client.keyId);
 });
 
-it('fromStream should error on null stream', (done) => {
+it('fromStream should error on null stream', done => {
   // Test verifies invalid parameter tests, which requires cast to any.
   // tslint:disable-next-line no-any
   (client as any).fromStream(null, (err: Error) => {
@@ -165,26 +166,25 @@ it('fromStream should error on null stream', (done) => {
   });
 });
 
-it('fromStream should construct a JWT Header instance from a stream',
-   async () => {
-     // Read the contents of the file into a json object.
-     const fileContents =
-         fs.readFileSync('./test/fixtures/private.json', 'utf-8');
-     const json = JSON.parse(fileContents);
+it('fromStream should construct a JWT Header instance from a stream', async () => {
+  // Read the contents of the file into a json object.
+  const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
+  const json = JSON.parse(fileContents);
 
-     // Now open a stream on the same file.
-     const stream = fs.createReadStream('./test/fixtures/private.json');
+  // Now open a stream on the same file.
+  const stream = fs.createReadStream('./test/fixtures/private.json');
 
-     // And pass it into the fromStream method.
-     await client.fromStream(stream);
-     // Ensure that the correct bits were pulled from the stream.
-     assert.strictEqual(json.private_key, client.key);
-     assert.strictEqual(json.client_email, client.email);
-   });
+  // And pass it into the fromStream method.
+  await client.fromStream(stream);
+  // Ensure that the correct bits were pulled from the stream.
+  assert.strictEqual(json.private_key, client.key);
+  assert.strictEqual(json.client_email, client.email);
+});
 
 it('should warn about deprecation of getRequestMetadata', () => {
   const client = new JWTAccess(email, keys.private);
   const stub = sandbox.stub(messages, 'warn');
+  // tslint:disable-next-line deprecation
   client.getRequestMetadata(testUri);
   assert.strictEqual(stub.calledOnce, true);
 });

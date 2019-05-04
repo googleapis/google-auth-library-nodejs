@@ -19,7 +19,7 @@ import {isBrowser} from './isbrowser';
 
 export enum WarningTypes {
   WARNING = 'Warning',
-  DEPRECATION = 'DeprecationWarning'
+  DEPRECATION = 'DeprecationWarning',
 }
 
 export function warn(warning: Warning) {
@@ -59,8 +59,8 @@ export const PROBLEMATIC_CREDENTIALS_WARNING = {
     'instead. If your application continues to use end user credentials from',
     'Cloud SDK, you might receive a "quota exceeded" or "API not enabled" error.',
     'For more information about service accounts, see',
-    'https://cloud.google.com/docs/authentication/.'
-  ].join(' ')
+    'https://cloud.google.com/docs/authentication/.',
+  ].join(' '),
 };
 
 export const DEFAULT_PROJECT_ID_DEPRECATED = {
@@ -69,8 +69,8 @@ export const DEFAULT_PROJECT_ID_DEPRECATED = {
   message: [
     'The `getDefaultProjectId` method has been deprecated, and will be removed',
     'in the 3.0 release of google-auth-library. Please use the `getProjectId`',
-    'method instead.'
-  ].join(' ')
+    'method instead.',
+  ].join(' '),
 };
 
 export const COMPUTE_CREATE_SCOPED_DEPRECATED = {
@@ -78,8 +78,8 @@ export const COMPUTE_CREATE_SCOPED_DEPRECATED = {
   type: WarningTypes.DEPRECATION,
   message: [
     'The `createScopedRequired` method on the `Compute` class has been deprecated,',
-    'and will be removed in the 3.0 release of google-auth-library.'
-  ].join(' ')
+    'and will be removed in the 3.0 release of google-auth-library.',
+  ].join(' '),
 };
 
 export const JWT_CREATE_SCOPED_DEPRECATED = {
@@ -87,8 +87,8 @@ export const JWT_CREATE_SCOPED_DEPRECATED = {
   type: WarningTypes.DEPRECATION,
   message: [
     'The `createScopedRequired` method on the `JWT` class has been deprecated,',
-    'and will be removed in the 3.0 release of google-auth-library.'
-  ].join(' ')
+    'and will be removed in the 3.0 release of google-auth-library.',
+  ].join(' '),
 };
 
 export const IAM_CREATE_SCOPED_DEPRECATED = {
@@ -96,8 +96,8 @@ export const IAM_CREATE_SCOPED_DEPRECATED = {
   type: WarningTypes.DEPRECATION,
   message: [
     'The `createScopedRequired` method on the `IAM` class has been deprecated,',
-    'and will be removed in the 3.0 release of google-auth-library.'
-  ].join(' ')
+    'and will be removed in the 3.0 release of google-auth-library.',
+  ].join(' '),
 };
 
 export const JWT_ACCESS_CREATE_SCOPED_DEPRECATED = {
@@ -105,8 +105,8 @@ export const JWT_ACCESS_CREATE_SCOPED_DEPRECATED = {
   type: WarningTypes.DEPRECATION,
   message: [
     'The `createScopedRequired` method on the `JWTAccess` class has been deprecated,',
-    'and will be removed in the 3.0 release of google-auth-library.'
-  ].join(' ')
+    'and will be removed in the 3.0 release of google-auth-library.',
+  ].join(' '),
 };
 
 export const REFRESH_ACCESS_TOKEN_DEPRECATED = {
@@ -115,8 +115,8 @@ export const REFRESH_ACCESS_TOKEN_DEPRECATED = {
   message: [
     'The `refreshAccessToken` method has been deprecated, and will be removed',
     'in the 3.0 release of google-auth-library. Please use the `getRequestHeaders`',
-    'method instead.'
-  ].join(' ')
+    'method instead.',
+  ].join(' '),
 };
 export const OAUTH_GET_REQUEST_METADATA_DEPRECATED = {
   code: 'google-auth-library:DEP004',
@@ -124,8 +124,8 @@ export const OAUTH_GET_REQUEST_METADATA_DEPRECATED = {
   message: [
     'The `getRequestMetadata` method on the `OAuth2` class has been deprecated,',
     'and will be removed in the 3.0 release of google-auth-library. Please use',
-    'the `getRequestHeaders` method instead.'
-  ].join(' ')
+    'the `getRequestHeaders` method instead.',
+  ].join(' '),
 };
 
 export const IAM_GET_REQUEST_METADATA_DEPRECATED = {
@@ -134,8 +134,8 @@ export const IAM_GET_REQUEST_METADATA_DEPRECATED = {
   message: [
     'The `getRequestMetadata` method on the `IAM` class has been deprecated,',
     'and will be removed in the 3.0 release of google-auth-library. Please use',
-    'the `getRequestHeaders` method instead.'
-  ].join(' ')
+    'the `getRequestHeaders` method instead.',
+  ].join(' '),
 };
 
 export const JWT_ACCESS_GET_REQUEST_METADATA_DEPRECATED = {
@@ -144,6 +144,6 @@ export const JWT_ACCESS_GET_REQUEST_METADATA_DEPRECATED = {
   message: [
     'The `getRequestMetadata` method on the `JWTAccess` class has been deprecated,',
     'and will be removed in the 3.0 release of google-auth-library. Please use',
-    'the `getRequestHeaders` method instead.'
-  ].join(' ')
+    'the `getRequestHeaders` method instead.',
+  ].join(' '),
 };

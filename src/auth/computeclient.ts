@@ -34,7 +34,7 @@ export interface ComputeOptions extends RefreshOptions {
    * credentials. Only applicable to modern App Engine and Cloud Function
    * runtimes as of March 2019.
    */
-  scopes?: string|string[];
+  scopes?: string | string[];
 }
 
 export class Compute extends OAuth2Client {
@@ -74,17 +74,18 @@ export class Compute extends OAuth2Client {
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */
-  protected async refreshTokenNoCache(refreshToken?: string|
-                                      null): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(
+    refreshToken?: string | null
+  ): Promise<GetTokenResponse> {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let data: CredentialRequest;
     try {
       data = await gcpMetadata.instance({
         property: tokenPath,
         params: {
-          scopes: this.scopes
+          scopes: this.scopes,
           // TODO: clean up before submit, fix upstream type bug
-        } as {}
+        } as {},
       });
     } catch (e) {
       e.message = `Could not refresh access token: ${e.message}`;
@@ -93,7 +94,7 @@ export class Compute extends OAuth2Client {
     }
     const tokens = data as Credentials;
     if (data && data.expires_in) {
-      tokens.expiry_date = ((new Date()).getTime() + (data.expires_in * 1000));
+      tokens.expiry_date = new Date().getTime() + data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
@@ -106,16 +107,16 @@ export class Compute extends OAuth2Client {
       e.code = res.status.toString();
       if (res.status === 403) {
         e.message =
-            'A Forbidden error was returned while attempting to retrieve an access ' +
-            'token for the Compute Engine built-in service account. This may be because the Compute ' +
-            'Engine instance does not have the correct permission scopes specified: ' +
-            e.message;
+          'A Forbidden error was returned while attempting to retrieve an access ' +
+          'token for the Compute Engine built-in service account. This may be because the Compute ' +
+          'Engine instance does not have the correct permission scopes specified: ' +
+          e.message;
       } else if (res.status === 404) {
         e.message =
-            'A Not Found error was returned while attempting to retrieve an access' +
-            'token for the Compute Engine built-in service account. This may be because the Compute ' +
-            'Engine instance does not have any permission scopes specified: ' +
-            e.message;
+          'A Not Found error was returned while attempting to retrieve an access' +
+          'token for the Compute Engine built-in service account. This may be because the Compute ' +
+          'Engine instance does not have any permission scopes specified: ' +
+          e.message;
       }
     }
   }

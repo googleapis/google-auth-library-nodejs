@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import {GaxiosError, GaxiosOptions, GaxiosPromise, GaxiosResponse, request} from 'gaxios';
+import {
+  GaxiosError,
+  GaxiosOptions,
+  GaxiosPromise,
+  GaxiosResponse,
+  request,
+} from 'gaxios';
 
 import {isBrowser} from './isbrowser';
 import {validate} from './options';
@@ -26,13 +32,15 @@ const PRODUCT_NAME = 'google-api-nodejs-client';
 export interface Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
   request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
-  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
-      GaxiosPromise|void;
+  request<T>(
+    opts: GaxiosOptions,
+    callback?: BodyResponseCallback<T>
+  ): GaxiosPromise | void;
 }
 
 export interface BodyResponseCallback<T> {
   // The `body` object is a truly dynamic type.  It must be `any`.
-  (err: Error|null, res?: GaxiosResponse<T>|null): void;
+  (err: Error | null, res?: GaxiosResponse<T> | null): void;
 }
 
 export interface RequestError extends GaxiosError {
@@ -58,8 +66,9 @@ export class DefaultTransporter {
       if (!uaValue) {
         opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
       } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
-        opts.headers['User-Agent'] =
-            `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+        opts.headers['User-Agent'] = `${uaValue} ${
+          DefaultTransporter.USER_AGENT
+        }`;
       }
     }
     return opts;
@@ -73,8 +82,10 @@ export class DefaultTransporter {
    */
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
   request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
-  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>):
-      GaxiosPromise|void {
+  request<T>(
+    opts: GaxiosOptions,
+    callback?: BodyResponseCallback<T>
+  ): GaxiosPromise | void {
     // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
     try {
@@ -89,12 +100,13 @@ export class DefaultTransporter {
 
     if (callback) {
       request<T>(opts).then(
-          r => {
-            callback(null, r);
-          },
-          e => {
-            callback(this.processError(e));
-          });
+        r => {
+          callback(null, r);
+        },
+        e => {
+          callback(this.processError(e));
+        }
+      );
     } else {
       return request<T>(opts).catch(e => {
         throw this.processError(e);
@@ -114,8 +126,9 @@ export class DefaultTransporter {
         err.message = body.error;
         err.code = res.status.toString();
       } else if (Array.isArray(body.error.errors)) {
-        err.message =
-            body.error.errors.map((err2: Error) => err2.message).join('\n');
+        err.message = body.error.errors
+          .map((err2: Error) => err2.message)
+          .join('\n');
         err.code = body.error.code;
         err.errors = body.error.errors;
       } else {

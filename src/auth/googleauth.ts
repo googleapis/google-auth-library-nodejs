@@ -31,24 +31,33 @@ import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {Headers, OAuth2Client, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
+import {
+  Headers,
+  OAuth2Client,
+  OAuth2ClientOptions,
+  RefreshOptions,
+} from './oauth2client';
 import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
 
 export interface ProjectIdCallback {
-  (err?: Error|null, projectId?: string|null): void;
+  (err?: Error | null, projectId?: string | null): void;
 }
 
 export interface CredentialCallback {
-  (err: Error|null, result?: UserRefreshClient|JWT): void;
+  (err: Error | null, result?: UserRefreshClient | JWT): void;
 }
 
 export interface ADCCallback {
-  (err: Error|null, credential?: OAuth2Client, projectId?: string|null): void;
+  (
+    err: Error | null,
+    credential?: OAuth2Client,
+    projectId?: string | null
+  ): void;
 }
 
 export interface ADCResponse {
   credential: OAuth2Client;
-  projectId: string|null;
+  projectId: string | null;
 }
 
 export interface GoogleAuthOptions {
@@ -70,12 +79,12 @@ export interface GoogleAuthOptions {
   /**
    * Options object passed to the constructor of the client
    */
-  clientOptions?: JWTOptions|OAuth2ClientOptions|UserRefreshClientOptions;
+  clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions;
 
   /**
    * Required scopes for the desired API request
    */
-  scopes?: string|string[];
+  scopes?: string | string[];
 
   /**
    * Your project ID.
@@ -84,7 +93,7 @@ export interface GoogleAuthOptions {
 }
 
 export const CLOUD_SDK_CLIENT_ID =
-    '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
+  '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
 export class GoogleAuth {
   transporter?: Transporter;
@@ -102,16 +111,16 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  private _getDefaultProjectIdPromise?: Promise<string|null>;
-  private _cachedProjectId?: string|null;
+  private _getDefaultProjectIdPromise?: Promise<string | null>;
+  private _cachedProjectId?: string | null;
 
   // To save the contents of the JSON credential file
-  jsonContent: JWTInput|null = null;
+  jsonContent: JWTInput | null = null;
 
-  cachedCredential: JWT|UserRefreshClient|Compute|null = null;
+  cachedCredential: JWT | UserRefreshClient | Compute | null = null;
 
   private keyFilename?: string;
-  private scopes?: string|string[];
+  private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
 
   /**
@@ -134,7 +143,9 @@ export class GoogleAuth {
    */
   getDefaultProjectId(): Promise<string>;
   getDefaultProjectId(callback: ProjectIdCallback): void;
-  getDefaultProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+  getDefaultProjectId(
+    callback?: ProjectIdCallback
+  ): Promise<string | null> | void {
     messages.warn(messages.DEFAULT_PROJECT_ID_DEPRECATED);
     if (callback) {
       this.getProjectIdAsync().then(r => callback(null, r), callback);
@@ -150,7 +161,7 @@ export class GoogleAuth {
    */
   getProjectId(): Promise<string>;
   getProjectId(callback: ProjectIdCallback): void;
-  getProjectId(callback?: ProjectIdCallback): Promise<string|null>|void {
+  getProjectId(callback?: ProjectIdCallback): Promise<string | null> | void {
     if (callback) {
       this.getProjectIdAsync().then(r => callback(null, r), callback);
     } else {
@@ -158,7 +169,7 @@ export class GoogleAuth {
     }
   }
 
-  private getProjectIdAsync(): Promise<string|null> {
+  private getProjectIdAsync(): Promise<string | null> {
     if (this._cachedProjectId) {
       return Promise.resolve(this._cachedProjectId);
     }
@@ -170,24 +181,28 @@ export class GoogleAuth {
     // - Cloud SDK: `gcloud config config-helper --format json`
     // - GCE project ID from metadata server)
     if (!this._getDefaultProjectIdPromise) {
-      this._getDefaultProjectIdPromise = new Promise(async (resolve, reject) => {
-        try {
-          const projectId = this.getProductionProjectId() ||
-              await this.getFileProjectId() ||
-              await this.getDefaultServiceProjectId() ||
-              await this.getGCEProjectId();
-          this._cachedProjectId = projectId;
-          if (!projectId) {
-            throw new Error(
+      this._getDefaultProjectIdPromise = new Promise(
+        async (resolve, reject) => {
+          try {
+            const projectId =
+              this.getProductionProjectId() ||
+              (await this.getFileProjectId()) ||
+              (await this.getDefaultServiceProjectId()) ||
+              (await this.getGCEProjectId());
+            this._cachedProjectId = projectId;
+            if (!projectId) {
+              throw new Error(
                 'Unable to detect a Project Id in the current environment. \n' +
-                'To learn more about authentication and Google APIs, visit: \n' +
-                'https://cloud.google.com/docs/authentication/getting-started');
+                  'To learn more about authentication and Google APIs, visit: \n' +
+                  'https://cloud.google.com/docs/authentication/getting-started'
+              );
+            }
+            resolve(projectId);
+          } catch (e) {
+            reject(e);
           }
-          resolve(projectId);
-        } catch (e) {
-          reject(e);
         }
-      });
+      );
     }
     return this._getDefaultProjectIdPromise;
   }
@@ -203,9 +218,10 @@ export class GoogleAuth {
   getApplicationDefault(options: RefreshOptions): Promise<ADCResponse>;
   getApplicationDefault(options: RefreshOptions, callback: ADCCallback): void;
   getApplicationDefault(
-      optionsOrCallback: ADCCallback|RefreshOptions = {},
-      callback?: ADCCallback): void|Promise<ADCResponse> {
-    let options: RefreshOptions|undefined;
+    optionsOrCallback: ADCCallback | RefreshOptions = {},
+    callback?: ADCCallback
+  ): void | Promise<ADCResponse> {
+    let options: RefreshOptions | undefined;
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;
     } else {
@@ -213,30 +229,33 @@ export class GoogleAuth {
     }
     if (callback) {
       this.getApplicationDefaultAsync(options).then(
-          r => callback!(null, r.credential, r.projectId), callback);
+        r => callback!(null, r.credential, r.projectId),
+        callback
+      );
     } else {
       return this.getApplicationDefaultAsync(options);
     }
   }
 
-  private async getApplicationDefaultAsync(options: RefreshOptions = {}):
-      Promise<ADCResponse> {
+  private async getApplicationDefaultAsync(
+    options: RefreshOptions = {}
+  ): Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
       return {
         credential: this.cachedCredential as JWT | UserRefreshClient,
-        projectId: await this.getProjectIdAsync()
+        projectId: await this.getProjectIdAsync(),
       };
     }
 
-    let credential: JWT|UserRefreshClient|null;
-    let projectId: string|null;
+    let credential: JWT | UserRefreshClient | null;
+    let projectId: string | null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
-    credential =
-        await this._tryGetApplicationCredentialsFromEnvironmentVariable(
-            options);
+    credential = await this._tryGetApplicationCredentialsFromEnvironmentVariable(
+      options
+    );
     if (credential) {
       if (credential instanceof JWT) {
         credential.scopes = this.scopes;
@@ -247,8 +266,9 @@ export class GoogleAuth {
     }
 
     // Look in the well-known credential file location.
-    credential =
-        await this._tryGetApplicationCredentialsFromWellKnownFile(options);
+    credential = await this._tryGetApplicationCredentialsFromWellKnownFile(
+      options
+    );
     if (credential) {
       if (credential instanceof JWT) {
         credential.scopes = this.scopes;
@@ -263,15 +283,17 @@ export class GoogleAuth {
     try {
       isGCE = await this._checkIsGCE();
     } catch (e) {
-      e.message =
-          `Unexpected error determining execution environment: ${e.message}`;
+      e.message = `Unexpected error determining execution environment: ${
+        e.message
+      }`;
       throw e;
     }
 
     if (!isGCE) {
       // We failed to find the default credentials. Bail out with an error.
       throw new Error(
-          'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.');
+        'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.'
+      );
     }
 
     // For GCE, just return a default ComputeClient. It will take care of
@@ -300,19 +322,23 @@ export class GoogleAuth {
    * @api private
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable(
-      options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
-    const credentialsPath = process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
-        process.env['google_application_credentials'];
+    options?: RefreshOptions
+  ): Promise<JWT | UserRefreshClient | null> {
+    const credentialsPath =
+      process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
+      process.env['google_application_credentials'];
     if (!credentialsPath || credentialsPath.length === 0) {
       return null;
     }
     try {
       return this._getApplicationCredentialsFromFilePath(
-          credentialsPath, options);
+        credentialsPath,
+        options
+      );
     } catch (e) {
-      e.message =
-          `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${
-              e.message}`;
+      e.message = `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${
+        e.message
+      }`;
       throw e;
     }
   }
@@ -323,7 +349,8 @@ export class GoogleAuth {
    * @api private
    */
   async _tryGetApplicationCredentialsFromWellKnownFile(
-      options?: RefreshOptions): Promise<JWT|UserRefreshClient|null> {
+    options?: RefreshOptions
+  ): Promise<JWT | UserRefreshClient | null> {
     // First, figure out the location of the file, depending upon the OS type.
     let location = null;
     if (this._isWindows()) {
@@ -338,8 +365,11 @@ export class GoogleAuth {
     }
     // If we found the root path, expand it.
     if (location) {
-      location =
-          path.join(location, 'gcloud', 'application_default_credentials.json');
+      location = path.join(
+        location,
+        'gcloud',
+        'application_default_credentials.json'
+      );
       if (!fs.existsSync(location)) {
         location = null;
       }
@@ -349,8 +379,10 @@ export class GoogleAuth {
       return null;
     }
     // The file seems to exist. Try to use it.
-    const client =
-        await this._getApplicationCredentialsFromFilePath(location, options);
+    const client = await this._getApplicationCredentialsFromFilePath(
+      location,
+      options
+    );
     this.warnOnProblematicCredentials(client as JWT);
     return client;
   }
@@ -362,8 +394,9 @@ export class GoogleAuth {
    * @api private
    */
   async _getApplicationCredentialsFromFilePath(
-      filePath: string,
-      options: RefreshOptions = {}): Promise<JWT|UserRefreshClient> {
+    filePath: string,
+    options: RefreshOptions = {}
+  ): Promise<JWT | UserRefreshClient> {
     // Make sure the path looks like a string.
     if (!filePath || filePath.length === 0) {
       throw new Error('The file path is invalid.');
@@ -380,8 +413,9 @@ export class GoogleAuth {
         throw new Error();
       }
     } catch (err) {
-      err.message = `The file at ${
-          filePath} does not exist, or it is not a file. ${err.message}`;
+      err.message = `The file at ${filePath} does not exist, or it is not a file. ${
+        err.message
+      }`;
       throw err;
     }
 
@@ -407,11 +441,12 @@ export class GoogleAuth {
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
-  fromJSON(json: JWTInput, options?: RefreshOptions): JWT|UserRefreshClient {
-    let client: UserRefreshClient|JWT;
+  fromJSON(json: JWTInput, options?: RefreshOptions): JWT | UserRefreshClient {
+    let client: UserRefreshClient | JWT;
     if (!json) {
       throw new Error(
-          'Must pass in a JSON object containing the Google auth settings.');
+        'Must pass in a JSON object containing the Google auth settings.'
+      );
     }
     this.jsonContent = json;
     options = options || {};
@@ -430,17 +465,22 @@ export class GoogleAuth {
    * @param inputStream The input stream.
    * @param callback Optional callback.
    */
-  fromStream(inputStream: stream.Readable): Promise<JWT|UserRefreshClient>;
+  fromStream(inputStream: stream.Readable): Promise<JWT | UserRefreshClient>;
   fromStream(inputStream: stream.Readable, callback: CredentialCallback): void;
-  fromStream(inputStream: stream.Readable, options: RefreshOptions):
-      Promise<JWT|UserRefreshClient>;
   fromStream(
-      inputStream: stream.Readable, options: RefreshOptions,
-      callback: CredentialCallback): void;
+    inputStream: stream.Readable,
+    options: RefreshOptions
+  ): Promise<JWT | UserRefreshClient>;
   fromStream(
-      inputStream: stream.Readable,
-      optionsOrCallback: RefreshOptions|CredentialCallback = {},
-      callback?: CredentialCallback): Promise<JWT|UserRefreshClient>|void {
+    inputStream: stream.Readable,
+    options: RefreshOptions,
+    callback: CredentialCallback
+  ): void;
+  fromStream(
+    inputStream: stream.Readable,
+    optionsOrCallback: RefreshOptions | CredentialCallback = {},
+    callback?: CredentialCallback
+  ): Promise<JWT | UserRefreshClient> | void {
     let options: RefreshOptions = {};
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;
@@ -448,34 +488,39 @@ export class GoogleAuth {
       options = optionsOrCallback;
     }
     if (callback) {
-      this.fromStreamAsync(inputStream, options)
-          .then(r => callback!(null, r), callback);
+      this.fromStreamAsync(inputStream, options).then(
+        r => callback!(null, r),
+        callback
+      );
     } else {
       return this.fromStreamAsync(inputStream, options);
     }
   }
 
   private fromStreamAsync(
-      inputStream: stream.Readable,
-      options?: RefreshOptions): Promise<JWT|UserRefreshClient> {
+    inputStream: stream.Readable,
+    options?: RefreshOptions
+  ): Promise<JWT | UserRefreshClient> {
     return new Promise((resolve, reject) => {
       if (!inputStream) {
         throw new Error(
-            'Must pass in a stream containing the Google auth settings.');
+          'Must pass in a stream containing the Google auth settings.'
+        );
       }
       let s = '';
-      inputStream.setEncoding('utf8')
-          .on('error', reject)
-          .on('data', (chunk) => s += chunk)
-          .on('end', () => {
-            try {
-              const data = JSON.parse(s);
-              const r = this.fromJSON(data, options);
-              return resolve(r);
-            } catch (err) {
-              return reject(err);
-            }
-          });
+      inputStream
+        .setEncoding('utf8')
+        .on('error', reject)
+        .on('data', chunk => (s += chunk))
+        .on('end', () => {
+          try {
+            const data = JSON.parse(s);
+            const r = this.fromJSON(data, options);
+            return resolve(r);
+          } catch (err) {
+            return reject(err);
+          }
+        });
     });
   }
 
@@ -509,23 +554,24 @@ export class GoogleAuth {
   /**
    * Run the Google Cloud SDK command that prints the default project ID
    */
-  private async getDefaultServiceProjectId(): Promise<string|null> {
-    return new Promise<string|null>(resolve => {
+  private async getDefaultServiceProjectId(): Promise<string | null> {
+    return new Promise<string | null>(resolve => {
       exec(
-          'gcloud config config-helper --format json',
-          (err, stdout, stderr) => {
-            if (!err && stdout) {
-              try {
-                const projectId =
-                    JSON.parse(stdout).configuration.properties.core.project;
-                resolve(projectId);
-                return;
-              } catch (e) {
-                // ignore errors
-              }
+        'gcloud config config-helper --format json',
+        (err, stdout, stderr) => {
+          if (!err && stdout) {
+            try {
+              const projectId = JSON.parse(stdout).configuration.properties.core
+                .project;
+              resolve(projectId);
+              return;
+            } catch (e) {
+              // ignore errors
             }
-            resolve(null);
-          });
+          }
+          resolve(null);
+        }
+      );
     });
   }
 
@@ -534,16 +580,19 @@ export class GoogleAuth {
    * @api private
    */
   private getProductionProjectId() {
-    return process.env['GCLOUD_PROJECT'] ||
-        process.env['GOOGLE_CLOUD_PROJECT'] || process.env['gcloud_project'] ||
-        process.env['google_cloud_project'];
+    return (
+      process.env['GCLOUD_PROJECT'] ||
+      process.env['GOOGLE_CLOUD_PROJECT'] ||
+      process.env['gcloud_project'] ||
+      process.env['google_cloud_project']
+    );
   }
 
   /**
    * Loads the project id from the GOOGLE_APPLICATION_CREDENTIALS json file.
    * @api private
    */
-  private async getFileProjectId(): Promise<string|undefined|null> {
+  private async getFileProjectId(): Promise<string | undefined | null> {
     if (this.cachedCredential) {
       // Try to read the project ID from the cached credentials file
       return this.cachedCredential.projectId;
@@ -592,10 +641,11 @@ export class GoogleAuth {
    */
   getCredentials(): Promise<CredentialBody>;
   getCredentials(
-      callback: (err: Error|null, credentials?: CredentialBody) => void): void;
+    callback: (err: Error | null, credentials?: CredentialBody) => void
+  ): void;
   getCredentials(
-      callback?: (err: Error|null, credentials?: CredentialBody) => void):
-      void|Promise<CredentialBody> {
+    callback?: (err: Error | null, credentials?: CredentialBody) => void
+  ): void | Promise<CredentialBody> {
     if (callback) {
       this.getCredentialsAsync().then(r => callback(null, r), callback);
     } else {
@@ -609,7 +659,7 @@ export class GoogleAuth {
     if (this.jsonContent) {
       const credential: CredentialBody = {
         client_email: this.jsonContent.client_email,
-        private_key: this.jsonContent.private_key
+        private_key: this.jsonContent.private_key,
       };
       return credential;
     }
@@ -623,8 +673,10 @@ export class GoogleAuth {
     // NOTE: The trailing '/' at the end of service-accounts/ is very important!
     // The GCF metadata server doesn't respect querystring params if this / is
     // not included.
-    const data = await gcpMetadata.instance(
-        {property: 'service-accounts/', params: {recursive: 'true'}});
+    const data = await gcpMetadata.instance({
+      property: 'service-accounts/',
+      params: {recursive: 'true'},
+    });
 
     if (!data || !data.default || !data.default.email) {
       throw new Error('Failure from metadata server.');
@@ -640,20 +692,24 @@ export class GoogleAuth {
   async getClient(options?: GoogleAuthOptions) {
     if (options) {
       this.keyFilename =
-          options.keyFilename || options.keyFile || this.keyFilename;
+        options.keyFilename || options.keyFile || this.keyFilename;
       this.scopes = options.scopes || this.scopes;
       this.jsonContent = options.credentials || this.jsonContent;
       this.clientOptions = options.clientOptions;
     }
     if (!this.cachedCredential) {
       if (this.jsonContent) {
-        this.cachedCredential =
-            await this.fromJSON(this.jsonContent, this.clientOptions);
+        this.cachedCredential = await this.fromJSON(
+          this.jsonContent,
+          this.clientOptions
+        );
       } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
-        this.cachedCredential =
-            await this.fromStreamAsync(stream, this.clientOptions);
+        this.cachedCredential = await this.fromStreamAsync(
+          stream,
+          this.clientOptions
+        );
       } else {
         await this.getApplicationDefaultAsync(this.clientOptions);
       }
@@ -684,8 +740,11 @@ export class GoogleAuth {
    * the request options.
    * @param opts Axios or Request options on which to attach the headers
    */
-  async authorizeRequest(opts:
-                             {url?: string, uri?: string, headers?: Headers}) {
+  async authorizeRequest(opts: {
+    url?: string;
+    uri?: string;
+    headers?: Headers;
+  }) {
     opts = opts || {};
     const url = opts.url || opts.uri;
     const client = await this.getClient();
@@ -740,7 +799,7 @@ export class GoogleAuth {
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
       url: `https://iam.googleapis.com/v1/${id}:signBlob`,
-      data: {bytesToSign: crypto.encodeBase64StringUtf8(data)}
+      data: {bytesToSign: crypto.encodeBase64StringUtf8(data)},
     });
     return res.data.signature;
   }

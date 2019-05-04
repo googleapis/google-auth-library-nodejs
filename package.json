@@ -52,7 +52,7 @@
     "eslint-plugin-prettier": "^3.0.0",
     "execa": "^1.0.0",
     "gh-pages": "^2.0.1",
-    "gts": "^0.9.0",
+    "gts": "^1.0.0",
     "intelli-espower-loader": "^1.0.1",
     "is-docker": "^2.0.0",
     "js-green-licenses": "^0.5.0",
