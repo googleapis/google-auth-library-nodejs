@@ -138,23 +138,6 @@ export class GoogleAuth {
   }
 
   /**
-   * THIS METHOD HAS BEEN DEPRECATED.
-   * It will be removed in 3.0.  Please use getProjectId instead.
-   */
-  getDefaultProjectId(): Promise<string>;
-  getDefaultProjectId(callback: ProjectIdCallback): void;
-  getDefaultProjectId(
-    callback?: ProjectIdCallback
-  ): Promise<string | null> | void {
-    messages.warn(messages.DEFAULT_PROJECT_ID_DEPRECATED);
-    if (callback) {
-      this.getProjectIdAsync().then(r => callback(null, r), callback);
-    } else {
-      return this.getProjectIdAsync();
-    }
-  }
-
-  /**
    * Obtains the default project ID for the application.
    * @param callback Optional callback
    * @returns Promise that resolves with project Id (if used without callback)

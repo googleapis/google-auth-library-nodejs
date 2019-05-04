@@ -630,28 +630,6 @@ export class OAuth2Client extends AuthClient {
     return {tokens, res};
   }
 
-  /**
-   * Retrieves the access token using refresh token
-   *
-   * @deprecated use getRequestHeaders instead.
-   * @param callback callback
-   */
-  refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
-  refreshAccessToken(callback: RefreshAccessTokenCallback): void;
-  refreshAccessToken(
-    callback?: RefreshAccessTokenCallback
-  ): Promise<RefreshAccessTokenResponse> | void {
-    messages.warn(messages.REFRESH_ACCESS_TOKEN_DEPRECATED);
-    if (callback) {
-      this.refreshAccessTokenAsync().then(
-        r => callback(null, r.credentials, r.res),
-        callback
-      );
-    } else {
-      return this.refreshAccessTokenAsync();
-    }
-  }
-
   private async refreshAccessTokenAsync() {
     const r = await this.refreshToken(this.credentials.refresh_token);
     const tokens = r.tokens as Credentials;
@@ -695,33 +673,6 @@ export class OAuth2Client extends AuthClient {
       return {token: r.credentials.access_token, res: r.res};
     } else {
       return {token: this.credentials.access_token};
-    }
-  }
-
-  /**
-   * Obtain the set of headers required to authenticate a request.
-   *
-   * @deprecated Use getRequestHeaders instead.
-   * @param url the Uri being authorized
-   * @param callback the func described above
-   */
-  getRequestMetadata(url?: string | null): Promise<RequestMetadataResponse>;
-  getRequestMetadata(
-    url: string | null,
-    callback: RequestMetadataCallback
-  ): void;
-  getRequestMetadata(
-    url: string | null,
-    callback?: RequestMetadataCallback
-  ): Promise<RequestMetadataResponse> | void {
-    messages.warn(messages.OAUTH_GET_REQUEST_METADATA_DEPRECATED);
-    if (callback) {
-      this.getRequestMetadataAsync(url).then(
-        r => callback(null, r.headers, r.res),
-        callback
-      );
-    } else {
-      return this.getRequestMetadataAsync();
     }
   }
 
