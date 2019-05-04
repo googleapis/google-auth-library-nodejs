@@ -1251,4 +1251,18 @@ describe(__filename, () => {
       /No refresh token is set./
     );
   });
+<<<<<<< HEAD
+=======
+
+  it('should throw if tries to refresh but no refresh token is available', async () => {
+    client.setCredentials({
+      access_token: 'initial-access-token',
+      expiry_date: new Date().getTime() - 1000,
+    });
+    await assertRejects(
+      client.getRequestHeaders('http://example.com'),
+      /No refresh token is set./
+    );
+  });
+>>>>>>> master
 });

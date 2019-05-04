@@ -97,6 +97,15 @@ it('getRequestHeaders should not return cached tokens older than an hour', () =>
     // return date.now to it's normally scheduled programming
     Date.now = realDateNow;
   }
+<<<<<<< HEAD
+=======
+});
+
+it('createScopedRequired should return false', () => {
+  const client = new JWTAccess('foo@serviceaccount.com', null);
+  // tslint:disable-next-line deprecation
+  assert.strictEqual(false, client.createScopedRequired());
+>>>>>>> master
 });
 
 it('fromJson should error on null json', () => {
@@ -157,6 +166,7 @@ it('fromStream should construct a JWT Header instance from a stream', async () =
   // Read the contents of the file into a json object.
   const fileContents = fs.readFileSync('./test/fixtures/private.json', 'utf-8');
   const json = JSON.parse(fileContents);
+<<<<<<< HEAD
 
   // Now open a stream on the same file.
   const stream = fs.createReadStream('./test/fixtures/private.json');
@@ -166,4 +176,23 @@ it('fromStream should construct a JWT Header instance from a stream', async () =
   // Ensure that the correct bits were pulled from the stream.
   assert.strictEqual(json.private_key, client.key);
   assert.strictEqual(json.client_email, client.email);
+=======
+
+  // Now open a stream on the same file.
+  const stream = fs.createReadStream('./test/fixtures/private.json');
+
+  // And pass it into the fromStream method.
+  await client.fromStream(stream);
+  // Ensure that the correct bits were pulled from the stream.
+  assert.strictEqual(json.private_key, client.key);
+  assert.strictEqual(json.client_email, client.email);
+});
+
+it('should warn about deprecation of getRequestMetadata', () => {
+  const client = new JWTAccess(email, keys.private);
+  const stub = sandbox.stub(messages, 'warn');
+  // tslint:disable-next-line deprecation
+  client.getRequestMetadata(testUri);
+  assert.strictEqual(stub.calledOnce, true);
+>>>>>>> master
 });
