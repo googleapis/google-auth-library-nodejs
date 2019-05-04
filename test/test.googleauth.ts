@@ -24,8 +24,6 @@ import * as os from 'os';
 import * as path from 'path';
 import * as sinon from 'sinon';
 
-const assertRejects = require('assert-rejects');
-
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
@@ -408,13 +406,13 @@ describe('googleauth', () => {
   });
 
   it('getApplicationCredentialsFromFilePath should error on invalid symlink', async () => {
-    await assertRejects(
+    await assert.rejects(
       auth._getApplicationCredentialsFromFilePath('./test/fixtures/badlink')
     );
   });
 
   it('getApplicationCredentialsFromFilePath should error on valid link to invalid data', async () => {
-    await assertRejects(
+    await assert.rejects(
       auth._getApplicationCredentialsFromFilePath('./test/fixtures/emptylink')
     );
   });
@@ -464,11 +462,13 @@ describe('googleauth', () => {
   it('getApplicationCredentialsFromFilePath should error on directory', async () => {
     // Make sure that the following path actually does point to a directory.
     const directory = './test/fixtures';
-    await assertRejects(auth._getApplicationCredentialsFromFilePath(directory));
+    await assert.rejects(
+      auth._getApplicationCredentialsFromFilePath(directory)
+    );
   });
 
   it('getApplicationCredentialsFromFilePath should handle errors thrown from createReadStream', async () => {
-    await assertRejects(
+    await assert.rejects(
       auth._getApplicationCredentialsFromFilePath('./does/not/exist.json'),
       /ENOENT: no such file or directory/
     );
@@ -476,7 +476,7 @@ describe('googleauth', () => {
 
   it('getApplicationCredentialsFromFilePath should handle errors thrown from fromStream', async () => {
     sandbox.stub(auth, 'fromStream').throws('🤮');
-    await assertRejects(
+    await assert.rejects(
       auth._getApplicationCredentialsFromFilePath(
         './test/fixtures/private.json'
       ),
@@ -487,7 +487,7 @@ describe('googleauth', () => {
   it('getApplicationCredentialsFromFilePath should handle errors passed from fromStream', async () => {
     // Set up a mock to return an error from the fromStream method.
     sandbox.stub(auth, 'fromStream').throws('🤮');
-    await assertRejects(
+    await assert.rejects(
       auth._getApplicationCredentialsFromFilePath(
         './test/fixtures/private.json'
       ),
@@ -625,7 +625,7 @@ describe('googleauth', () => {
     mockWindows();
     mockWindowsWellKnownFile();
     sandbox.stub(auth, '_getApplicationCredentialsFromFilePath').rejects('🤮');
-    await assertRejects(
+    await assert.rejects(
       auth._tryGetApplicationCredentialsFromWellKnownFile(),
       /🤮/
     );
@@ -634,7 +634,7 @@ describe('googleauth', () => {
   it('_tryGetApplicationCredentialsFromWellKnownFile should pass along a failure on non-Windows', async () => {
     mockLinuxWellKnownFile();
     sandbox.stub(auth, '_getApplicationCredentialsFromFilePath').rejects('🤮');
-    await assertRejects(
+    await assert.rejects(
       auth._tryGetApplicationCredentialsFromWellKnownFile(),
       /🤮/
     );
@@ -889,7 +889,7 @@ describe('googleauth', () => {
     // * Running on GCE is set to true.
     mockWindows();
     sandbox.stub(auth, '_checkIsGCE').rejects('🤮');
-    await assertRejects(
+    await assert.rejects(
       auth.getApplicationDefault(),
       /Unexpected error determining execution environment/
     );
@@ -947,7 +947,7 @@ describe('googleauth', () => {
   it('_checkIsGCE should throw on unexpected errors', async () => {
     assert.notStrictEqual(true, auth.isGCE);
     const scope = nock404GCE();
-    await assertRejects(auth._checkIsGCE());
+    await assert.rejects(auth._checkIsGCE());
     assert.strictEqual(undefined, auth.isGCE);
     scope.done();
   });
@@ -1017,7 +1017,7 @@ describe('googleauth', () => {
     ];
     await auth._checkIsGCE();
     assert.strictEqual(true, auth.isGCE);
-    await assertRejects(
+    await assert.rejects(
       auth.getCredentials(),
       /Unsuccessful response status code. Request failed with status code 404/
     );
@@ -1034,7 +1034,7 @@ describe('googleauth', () => {
     ];
     await auth._checkIsGCE();
     assert.strictEqual(true, auth.isGCE);
-    await assertRejects(
+    await assert.rejects(
       auth.getCredentials(),
       /Invalid response from metadata service: incorrect Metadata-Flavor header./
     );
@@ -1097,7 +1097,7 @@ describe('googleauth', () => {
     // Set up a mock to return a null path string
     const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
     assert.strictEqual(null, client);
-    await assertRejects(auth.getCredentials());
+    await assert.rejects(auth.getCredentials());
   });
 
   it('should use jsonContent if available', async () => {
@@ -1116,7 +1116,7 @@ describe('googleauth', () => {
   });
 
   it('should error when invalid keyFilename passed to getClient', async () => {
-    await assertRejects(
+    await assert.rejects(
       auth.getClient({keyFilename: './funky/fresh.json'}),
       /ENOENT: no such file or directory/
     );
@@ -1339,7 +1339,7 @@ describe('googleauth', () => {
   it('should throw if getProjectId cannot find a projectId', async () => {
     // tslint:disable-next-line no-any
     sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-    await assertRejects(
+    await assert.rejects(
       auth.getProjectId(),
       /Unable to detect a Project Id in the current environment/
     );

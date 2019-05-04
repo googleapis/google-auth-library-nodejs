@@ -17,9 +17,7 @@
 import * as assert from 'assert';
 import {GaxiosOptions} from 'gaxios';
 import * as nock from 'nock';
-
 import {DefaultTransporter, RequestError} from '../src/transporters';
-const assertRejects = require('assert-rejects');
 
 const savedEnv = process.env;
 afterEach(() => {
@@ -124,7 +122,7 @@ it('should throw if using async/await', async () => {
   const scope = nock(url)
     .get('/')
     .reply(500, '🦃');
-  await assertRejects(transporter.request({url}), /🦃/);
+  await assert.rejects(transporter.request({url}), /🦃/);
   scope.done();
 });
 
