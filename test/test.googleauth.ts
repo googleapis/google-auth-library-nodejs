@@ -23,6 +23,7 @@ import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
 import * as sinon from 'sinon';
+import {onWindows} from './util';
 
 const assertRejects = require('assert-rejects');
 
@@ -402,18 +403,30 @@ describe('googleauth', () => {
   });
 
   it('getApplicationCredentialsFromFilePath should not error on valid symlink', async () => {
+    if (onWindows()) {
+      // git does not create symlinks on Windows
+      return;
+    }
     await auth._getApplicationCredentialsFromFilePath(
       './test/fixtures/goodlink'
     );
   });
 
   it('getApplicationCredentialsFromFilePath should error on invalid symlink', async () => {
+    if (onWindows()) {
+      // git does not create symlinks on Windows
+      return;
+    }
     await assertRejects(
       auth._getApplicationCredentialsFromFilePath('./test/fixtures/badlink')
     );
   });
 
   it('getApplicationCredentialsFromFilePath should error on valid link to invalid data', async () => {
+    if (onWindows()) {
+      // git does not create symlinks on Windows
+      return;
+    }
     await assertRejects(
       auth._getApplicationCredentialsFromFilePath('./test/fixtures/emptylink')
     );
@@ -810,6 +823,9 @@ describe('googleauth', () => {
   });
 
   it('getApplicationDefault should cache the credential when using GCE', async () => {
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     const scopes = [nockIsGCE(), createGetProjectIdNock()];
 
     // Ask for credentials, the first time.
@@ -819,7 +835,6 @@ describe('googleauth', () => {
 
     // Capture the returned credential.
     const cachedCredential = result.credential;
-
     // Ask for credentials again, from the same auth instance. We expect
     // a cached instance this time.
     const result2 = (await auth.getApplicationDefault()).credential;
@@ -871,6 +886,10 @@ describe('googleauth', () => {
     // * Environment variable is not set.
     // * Well-known file is not set.
     // * Running on GCE is set to true.
+
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     const scopes = [nockIsGCE(), createGetProjectIdNock()];
     const res = await auth.getApplicationDefault();
     scopes.forEach(x => x.done());
@@ -982,6 +1001,9 @@ describe('googleauth', () => {
   });
 
   it('getCredentials should get metadata from the server when running on GCE', async () => {
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     const response = {
       default: {
         email: 'test-creds@test-creds.iam.gserviceaccount.com',
@@ -1008,6 +1030,9 @@ describe('googleauth', () => {
   });
 
   it('getCredentials should error if metadata server is not reachable', async () => {
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     const scopes = [
       nockIsGCE(),
       createGetProjectIdNock(),
@@ -1025,6 +1050,9 @@ describe('googleauth', () => {
   });
 
   it('getCredentials should error if body is empty', async () => {
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     const scopes = [
       nockIsGCE(),
       createGetProjectIdNock(),
@@ -1155,6 +1183,9 @@ describe('googleauth', () => {
   });
 
   it('should allow passing a scope to get a Compute client', async () => {
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     const scopes = ['http://examples.com/is/a/scope'];
     const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
     const client = (await auth.getClient({scopes})) as Compute;
@@ -1164,6 +1195,10 @@ describe('googleauth', () => {
 
   it('should get an access token', async () => {
     const {auth, scopes} = mockGCE();
+
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     scopes.push(createGetProjectIdNock());
     const token = await auth.getAccessToken();
     scopes.forEach(s => s.done());
@@ -1172,6 +1207,10 @@ describe('googleauth', () => {
 
   it('should get request headers', async () => {
     const {auth, scopes} = mockGCE();
+
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     scopes.push(createGetProjectIdNock());
     const headers = await auth.getRequestHeaders();
     scopes.forEach(s => s.done());
@@ -1180,6 +1219,10 @@ describe('googleauth', () => {
 
   it('should authorize the request', async () => {
     const {auth, scopes} = mockGCE();
+
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     scopes.push(createGetProjectIdNock());
     const opts = await auth.authorizeRequest({url: 'http://example.com'});
     scopes.forEach(s => s.done());
@@ -1221,6 +1264,10 @@ describe('googleauth', () => {
   it('should make the request', async () => {
     const url = 'http://example.com';
     const {auth, scopes} = mockGCE();
+
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+
     scopes.push(createGetProjectIdNock());
     const data = {breakfast: 'coffee'};
     scopes.push(
