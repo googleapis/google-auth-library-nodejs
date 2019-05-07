@@ -23,7 +23,6 @@ import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
 import * as sinon from 'sinon';
-import {onWindows} from './util';
 
 const assertRejects = require('assert-rejects');
 
@@ -34,6 +33,8 @@ import {Compute} from '../src/auth/computeclient';
 import * as messages from '../src/messages';
 
 nock.disableNetConnect();
+
+const isWindows = process.platform === 'win32';
 
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 const host = HOST_ADDRESS;
@@ -118,7 +119,11 @@ describe('googleauth', () => {
       .withArgs(wellKnownPathWindows)
       .returnsArg(0);
 
-    sandbox.stub(child_process, 'exec').callsArgWith(1, null, '', null);
+    sandbox
+      .stub(child_process, 'exec')
+      .callThrough()
+      .withArgs('gcloud config config-helper --format json', undefined)
+      .callsArgWith(1, null, '', null);
 
     const fakeStat = {isFile: () => true} as fs.Stats;
     sandbox
@@ -407,7 +412,7 @@ describe('googleauth', () => {
   });
 
   it('getApplicationCredentialsFromFilePath should not error on valid symlink', async () => {
-    if (onWindows()) {
+    if (isWindows) {
       // git does not create symlinks on Windows
       return;
     }
@@ -423,7 +428,7 @@ describe('googleauth', () => {
   });
 
   it('getApplicationCredentialsFromFilePath should error on valid link to invalid data', async () => {
-    if (onWindows()) {
+    if (isWindows) {
       // git does not create symlinks on Windows
       return;
     }
