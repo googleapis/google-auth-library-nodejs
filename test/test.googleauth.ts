@@ -51,7 +51,6 @@ const BASE_URL = [
 const privateJSON = require('../../test/fixtures/private.json');
 const private2JSON = require('../../test/fixtures/private2.json');
 const refreshJSON = require('../../test/fixtures/refresh.json');
-const fixedProjectId = 'my-awesome-project';
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 const wellKnownPathWindows = path.join(
   'C:',
@@ -102,6 +101,7 @@ describe('googleauth', () => {
       .callsFake(() => exposeLinuxWellKnownFile)
       .withArgs(wellKnownPathWindows)
       .callsFake(() => exposeWindowsWellKnownFile);
+
     sandbox
       .stub(fs, 'createReadStream')
       .callThrough()
@@ -117,6 +117,8 @@ describe('googleauth', () => {
       .returnsArg(0)
       .withArgs(wellKnownPathWindows)
       .returnsArg(0);
+
+    sandbox.stub(child_process, 'exec').callsArgWith(1, null, '', null);
 
     const fakeStat = {isFile: () => true} as fs.Stats;
     sandbox
@@ -196,6 +198,8 @@ describe('googleauth', () => {
   function mockGCE() {
     const scope1 = nockIsGCE();
     const auth = new GoogleAuth();
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
     const scope2 = nock(HOST_ADDRESS)
       .get(tokenPath)
       .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
@@ -413,10 +417,6 @@ describe('googleauth', () => {
   });
 
   it('getApplicationCredentialsFromFilePath should error on invalid symlink', async () => {
-    if (onWindows()) {
-      // git does not create symlinks on Windows
-      return;
-    }
     await assertRejects(
       auth._getApplicationCredentialsFromFilePath('./test/fixtures/badlink')
     );
@@ -654,12 +654,12 @@ describe('googleauth', () => {
   });
 
   it('getProjectId should return a new projectId the first time and a cached projectId the second time', async () => {
-    mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+    mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
 
     // Ask for credentials, the first time.
     const projectIdPromise = auth.getProjectId();
     const projectId = await projectIdPromise;
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
 
     // Null out all the private functions that make this method work
     // tslint:disable-next-line no-any
@@ -674,7 +674,7 @@ describe('googleauth', () => {
     const projectId2 = await auth.getProjectId();
 
     // Make sure we get the original cached projectId back
-    assert.strictEqual(fixedProjectId, projectId2);
+    assert.strictEqual(STUB_PROJECT, projectId2);
 
     // Now create a second GoogleAuth instance, and ask for projectId.
     // We should get a new projectId instance this time.
@@ -685,52 +685,52 @@ describe('googleauth', () => {
   });
 
   it('getProjectId should use GCLOUD_PROJECT environment variable when it is set', async () => {
-    mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+    mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
     const projectId = await auth.getProjectId();
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should use `gcloud_project` environment variable when it is set', async () => {
-    process.env.gcloud_project = fixedProjectId;
+    process.env.gcloud_project = STUB_PROJECT;
     const projectId = await auth.getProjectId();
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should use GOOGLE_CLOUD_PROJECT environment variable when it is set', async () => {
-    process.env.GOOGLE_CLOUD_PROJECT = fixedProjectId;
+    process.env.GOOGLE_CLOUD_PROJECT = STUB_PROJECT;
     const projectId = await auth.getProjectId();
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should use `google_cloud_project` environment variable when it is set', async () => {
-    process.env['google_cloud_project'] = fixedProjectId;
+    process.env['google_cloud_project'] = STUB_PROJECT;
     const projectId = await auth.getProjectId();
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should use `keyFilename` when it is available', async () => {
     const auth = new GoogleAuth({keyFilename: './test/fixtures/private2.json'});
     const projectId = await auth.getProjectId();
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should use GOOGLE_APPLICATION_CREDENTIALS file when it is available', async () => {
     process.env.GOOGLE_APPLICATION_CREDENTIALS =
       './test/fixtures/private2.json';
     const projectId = await auth.getProjectId();
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should use `google_application_credentials` file when it is available', async () => {
     process.env['google_application_credentials'] =
       './test/fixtures/private2.json';
     const projectId = await auth.getProjectId();
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should prefer configured projectId', async () => {
-    mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
-    mockEnvVar('GOOGLE_CLOUD_PROJECT', fixedProjectId);
+    mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+    mockEnvVar('GOOGLE_CLOUD_PROJECT', STUB_PROJECT);
     mockEnvVar(
       'GOOGLE_APPLICATION_CREDENTIALS',
       './test/fixtures/private2.json'
@@ -747,24 +747,24 @@ describe('googleauth', () => {
     // * Well-known file is set up to point to private2.json
     // * Running on GCE is set to true.
     const stdout = JSON.stringify({
-      configuration: {properties: {core: {project: fixedProjectId}}},
+      configuration: {properties: {core: {project: STUB_PROJECT}}},
     });
+
+    ((child_process.exec as unknown) as sinon.SinonStub).restore();
     const stub = sandbox
       .stub(child_process, 'exec')
       .callsArgWith(1, null, stdout, null);
     const projectId = await auth.getProjectId();
     assert(stub.calledOnce);
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
   });
 
   it('getProjectId should use GCE when well-known file and env const are not set', async () => {
-    const stub = sandbox
-      .stub(child_process, 'exec')
-      .callsArgWith(1, null, '', null);
-    const scope = createGetProjectIdNock(fixedProjectId);
+    const scope = createGetProjectIdNock(STUB_PROJECT);
     const projectId = await auth.getProjectId();
+    const stub = (child_process.exec as unknown) as sinon.SinonStub;
     assert(stub.calledOnce);
-    assert.strictEqual(projectId, fixedProjectId);
+    assert.strictEqual(projectId, STUB_PROJECT);
     scope.done();
   });
 
@@ -823,9 +823,6 @@ describe('googleauth', () => {
   });
 
   it('getApplicationDefault should cache the credential when using GCE', async () => {
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     const scopes = [nockIsGCE(), createGetProjectIdNock()];
 
     // Ask for credentials, the first time.
@@ -886,10 +883,6 @@ describe('googleauth', () => {
     // * Environment variable is not set.
     // * Well-known file is not set.
     // * Running on GCE is set to true.
-
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     const scopes = [nockIsGCE(), createGetProjectIdNock()];
     const res = await auth.getApplicationDefault();
     scopes.forEach(x => x.done());
@@ -923,7 +916,7 @@ describe('googleauth', () => {
       'GOOGLE_APPLICATION_CREDENTIALS',
       './test/fixtures/private2.json'
     );
-    mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+    mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
     mockWindows();
     mockGCE();
     mockWindowsWellKnownFile();
@@ -932,7 +925,7 @@ describe('googleauth', () => {
     const client = res.credential as JWT;
     assert.strictEqual(private2JSON.private_key, client.key);
     assert.strictEqual(private2JSON.client_email, client.email);
-    assert.strictEqual(res.projectId, fixedProjectId);
+    assert.strictEqual(res.projectId, STUB_PROJECT);
     assert.strictEqual(undefined, client.keyFile);
     assert.strictEqual(undefined, client.subject);
     assert.strictEqual(undefined, client.scope);
@@ -1001,9 +994,6 @@ describe('googleauth', () => {
   });
 
   it('getCredentials should get metadata from the server when running on GCE', async () => {
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     const response = {
       default: {
         email: 'test-creds@test-creds.iam.gserviceaccount.com',
@@ -1030,9 +1020,6 @@ describe('googleauth', () => {
   });
 
   it('getCredentials should error if metadata server is not reachable', async () => {
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     const scopes = [
       nockIsGCE(),
       createGetProjectIdNock(),
@@ -1050,9 +1037,6 @@ describe('googleauth', () => {
   });
 
   it('getCredentials should error if body is empty', async () => {
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     const scopes = [
       nockIsGCE(),
       createGetProjectIdNock(),
@@ -1183,9 +1167,6 @@ describe('googleauth', () => {
   });
 
   it('should allow passing a scope to get a Compute client', async () => {
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     const scopes = ['http://examples.com/is/a/scope'];
     const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
     const client = (await auth.getClient({scopes})) as Compute;
@@ -1195,10 +1176,6 @@ describe('googleauth', () => {
 
   it('should get an access token', async () => {
     const {auth, scopes} = mockGCE();
-
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     scopes.push(createGetProjectIdNock());
     const token = await auth.getAccessToken();
     scopes.forEach(s => s.done());
@@ -1207,10 +1184,6 @@ describe('googleauth', () => {
 
   it('should get request headers', async () => {
     const {auth, scopes} = mockGCE();
-
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     scopes.push(createGetProjectIdNock());
     const headers = await auth.getRequestHeaders();
     scopes.forEach(s => s.done());
@@ -1219,10 +1192,6 @@ describe('googleauth', () => {
 
   it('should authorize the request', async () => {
     const {auth, scopes} = mockGCE();
-
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     scopes.push(createGetProjectIdNock());
     const opts = await auth.authorizeRequest({url: 'http://example.com'});
     scopes.forEach(s => s.done());
@@ -1264,10 +1233,6 @@ describe('googleauth', () => {
   it('should make the request', async () => {
     const url = 'http://example.com';
     const {auth, scopes} = mockGCE();
-
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-
     scopes.push(createGetProjectIdNock());
     const data = {breakfast: 'coffee'};
     scopes.push(
@@ -1297,10 +1262,10 @@ describe('googleauth', () => {
 
   it('sign should hit the IAM endpoint if no private_key is available', async () => {
     const {auth, scopes} = mockGCE();
-    mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+    mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
     const email = 'google@auth.library';
     const iamUri = `https://iam.googleapis.com`;
-    const iamPath = `/v1/projects/${fixedProjectId}/serviceAccounts/${email}:signBlob`;
+    const iamPath = `/v1/projects/${STUB_PROJECT}/serviceAccounts/${email}:signBlob`;
     const signature = 'erutangis';
     const data = 'abc123';
     scopes.push(
@@ -1339,7 +1304,7 @@ describe('googleauth', () => {
   });
 
   it('should warn the user if using the getDefaultProjectId method', done => {
-    mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+    mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
     sandbox.stub(process, 'emitWarning').callsFake((message, warningOrType) => {
       assert.strictEqual(
         message,
@@ -1359,7 +1324,7 @@ describe('googleauth', () => {
 
   it('should only emit warnings once', async () => {
     // The warning was used above, so invoking it here should have no effect.
-    mockEnvVar('GCLOUD_PROJECT', fixedProjectId);
+    mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
     let count = 0;
     sandbox.stub(process, 'emitWarning').callsFake(() => count++);
     await auth.getDefaultProjectId();
@@ -1384,8 +1349,6 @@ describe('googleauth', () => {
   });
 
   it('should throw if getProjectId cannot find a projectId', async () => {
-    // tslint:disable-next-line no-any
-    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
     await assertRejects(
       auth.getProjectId(),
       /Unable to detect a Project Id in the current environment/
