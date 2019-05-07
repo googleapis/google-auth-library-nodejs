@@ -122,7 +122,7 @@ describe('googleauth', () => {
     sandbox
       .stub(child_process, 'exec')
       .callThrough()
-      .withArgs('gcloud config config-helper --format json', undefined)
+      .withArgs('gcloud config config-helper --format json', sinon.match.func)
       .callsArgWith(1, null, '', null);
 
     const fakeStat = {isFile: () => true} as fs.Stats;
@@ -768,6 +768,7 @@ describe('googleauth', () => {
     const scope = createGetProjectIdNock(STUB_PROJECT);
     const projectId = await auth.getProjectId();
     const stub = (child_process.exec as unknown) as sinon.SinonStub;
+    stub.restore();
     assert(stub.calledOnce);
     assert.strictEqual(projectId, STUB_PROJECT);
     scope.done();
