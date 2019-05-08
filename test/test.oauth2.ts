@@ -15,6 +15,7 @@
  */
 
 import * as assert from 'assert';
+const assertRejects = require('assert-rejects');
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import {GaxiosError} from 'gaxios';
@@ -27,8 +28,6 @@ import * as url from 'url';
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 import * as messages from '../src/messages';
-
-const assertRejects = require('assert-rejects');
 
 nock.disableNetConnect();
 

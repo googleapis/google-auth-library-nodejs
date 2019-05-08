@@ -16,10 +16,9 @@
 
 import * as assert from 'assert';
 import {GaxiosOptions} from 'gaxios';
-import * as nock from 'nock';
-
-import {DefaultTransporter, RequestError} from '../src/transporters';
 const assertRejects = require('assert-rejects');
+import * as nock from 'nock';
+import {DefaultTransporter, RequestError} from '../src/transporters';
 
 const savedEnv = process.env;
 afterEach(() => {

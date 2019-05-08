@@ -15,6 +15,7 @@
  */
 
 import * as assert from 'assert';
+const assertRejects = require('assert-rejects');
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -23,8 +24,6 @@ import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
 import * as sinon from 'sinon';
-
-const assertRejects = require('assert-rejects');
 
 import {GoogleAuth, JWT, UserRefreshClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
@@ -1355,6 +1354,8 @@ describe('googleauth', () => {
   });
 
   it('should throw if getProjectId cannot find a projectId', async () => {
+    // tslint:disable-next-line no-any
+    sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
     await assertRejects(
       auth.getProjectId(),
       /Unable to detect a Project Id in the current environment/
