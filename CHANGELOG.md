@@ -4,6 +4,36 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [4.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v3.1.2...v4.0.0) (2019-05-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependency arrify to v2 ([#684](https://www.github.com/googleapis/google-auth-library-nodejs/issues/684)) ([1757ee2](https://www.github.com/googleapis/google-auth-library-nodejs/commit/1757ee2))
+* **deps:** update dependency gaxios to v2 ([#681](https://www.github.com/googleapis/google-auth-library-nodejs/issues/681)) ([770ad2f](https://www.github.com/googleapis/google-auth-library-nodejs/commit/770ad2f))
+* **deps:** update dependency gcp-metadata to v2 ([#701](https://www.github.com/googleapis/google-auth-library-nodejs/issues/701)) ([be20528](https://www.github.com/googleapis/google-auth-library-nodejs/commit/be20528))
+* **deps:** update dependency gtoken to v3 ([#702](https://www.github.com/googleapis/google-auth-library-nodejs/issues/702)) ([2c538e5](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2c538e5))
+* re-throw original exception and preserve message in compute client ([#668](https://www.github.com/googleapis/google-auth-library-nodejs/issues/668)) ([dffd1cc](https://www.github.com/googleapis/google-auth-library-nodejs/commit/dffd1cc))
+* surface original stack trace and message with errors ([#651](https://www.github.com/googleapis/google-auth-library-nodejs/issues/651)) ([8fb65eb](https://www.github.com/googleapis/google-auth-library-nodejs/commit/8fb65eb))
+* throw on missing refresh token in all cases ([#670](https://www.github.com/googleapis/google-auth-library-nodejs/issues/670)) ([0a02946](https://www.github.com/googleapis/google-auth-library-nodejs/commit/0a02946))
+* throw when adc cannot acquire a projectId ([#658](https://www.github.com/googleapis/google-auth-library-nodejs/issues/658)) ([ba48164](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ba48164))
+* **deps:** update dependency semver to v6 ([#655](https://www.github.com/googleapis/google-auth-library-nodejs/issues/655)) ([ec56c88](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ec56c88))
+
+
+### Build System
+
+* upgrade engines field to >=8.10.0 ([#686](https://www.github.com/googleapis/google-auth-library-nodejs/issues/686)) ([377d5c6](https://www.github.com/googleapis/google-auth-library-nodejs/commit/377d5c6))
+
+
+### Features
+
+* support scopes on compute credentials ([#642](https://www.github.com/googleapis/google-auth-library-nodejs/issues/642)) ([1811b7f](https://www.github.com/googleapis/google-auth-library-nodejs/commit/1811b7f))
+
+
+### BREAKING CHANGES
+
+* upgrade engines field to >=8.10.0 (#686)
+
 ## v3.1.2
 
 03-22-2019 15:38 PDT
