@@ -15,6 +15,7 @@
  */
 
 import * as assert from 'assert';
+const assertRejects = require('assert-rejects');
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
@@ -151,7 +152,7 @@ it('should return a helpful message on request response.statusCode 403', async (
       'Compute Engine instance does not have the correct permission scopes specified. ' +
       'Could not refresh access token.'
   );
-  await assert.rejects(compute.request({url}), expected);
+  await assertRejects(compute.request({url}), expected);
   scope.done();
 });
 
@@ -162,7 +163,7 @@ it('should return a helpful message on request response.statusCode 404', async (
       'token for the Compute Engine built-in service account. This may be because the ' +
       'Compute Engine instance does not have any permission scopes specified.'
   );
-  await assert.rejects(compute.request({url}), expected);
+  await assertRejects(compute.request({url}), expected);
   scope.done();
 });
 
@@ -181,7 +182,7 @@ it('should return a helpful message on token refresh response.statusCode 403', a
       'Compute Engine instance does not have the correct permission scopes specified. ' +
       'Could not refresh access token.'
   );
-  await assert.rejects(compute.request({}), expected);
+  await assertRejects(compute.request({}), expected);
   scope.done();
 });
 
@@ -203,7 +204,7 @@ it('should return a helpful message on token refresh response.statusCode 404', a
       'refresh access token.'
   );
 
-  await assert.rejects(compute.request({}), expected);
+  await assertRejects(compute.request({}), expected);
   scope.done();
 });
 

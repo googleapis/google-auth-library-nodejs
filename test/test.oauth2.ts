@@ -15,6 +15,7 @@
  */
 
 import * as assert from 'assert';
+const assertRejects = require('assert-rejects');
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import {GaxiosError} from 'gaxios';
@@ -277,7 +278,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -317,7 +318,7 @@ describe(__filename, () => {
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
     const validAudiences = ['testaudience', 'extra-audience'];
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -350,7 +351,7 @@ describe(__filename, () => {
     const signature = signer.sign(privateKey, 'base64');
     // Originally: data += '.'+signature;
     data += signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -388,7 +389,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -426,7 +427,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -462,7 +463,7 @@ describe(__filename, () => {
       Buffer.from(idToken).toString('base64') +
       '.' +
       'broken-signature';
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -495,7 +496,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -530,7 +531,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -568,7 +569,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -646,7 +647,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -687,7 +688,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -725,7 +726,7 @@ describe(__filename, () => {
     signer.update(data);
     const signature = signer.sign(privateKey, 'base64');
     data += '.' + signature;
-    return assert.rejects(
+    return assertRejects(
       client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
@@ -1268,7 +1269,7 @@ describe(__filename, () => {
       access_token: 'initial-access-token',
       expiry_date: new Date().getTime() - 1000,
     });
-    await assert.rejects(
+    await assertRejects(
       client.getRequestHeaders('http://example.com'),
       /No refresh token is set./
     );

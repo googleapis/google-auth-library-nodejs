@@ -16,6 +16,7 @@
 
 import * as assert from 'assert';
 import {GaxiosOptions} from 'gaxios';
+const assertRejects = require('assert-rejects');
 import * as nock from 'nock';
 import {DefaultTransporter, RequestError} from '../src/transporters';
 
@@ -122,7 +123,7 @@ it('should throw if using async/await', async () => {
   const scope = nock(url)
     .get('/')
     .reply(500, '🦃');
-  await assert.rejects(transporter.request({url}), /🦃/);
+  await assertRejects(transporter.request({url}), /🦃/);
   scope.done();
 });
 

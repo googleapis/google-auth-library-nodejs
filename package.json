@@ -42,6 +42,7 @@
     "@types/semver": "^6.0.0",
     "@types/sinon": "^7.0.0",
     "@types/tmp": "^0.1.0",
+    "assert-rejects": "^1.0.0",
     "chai": "^4.2.0",
     "codecov": "^3.0.2",
     "eslint": "^5.10.0",
