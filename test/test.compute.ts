@@ -15,11 +15,11 @@
  */
 
 import * as assert from 'assert';
+const assertRejects = require('assert-rejects');
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {Compute} from '../src';
-const assertRejects = require('assert-rejects');
 import * as qs from 'querystring';
 
 nock.disableNetConnect();
