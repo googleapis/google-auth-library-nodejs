@@ -481,9 +481,7 @@ describe('googleauth', () => {
   it('getApplicationCredentialsFromFilePath should error on directory', async () => {
     // Make sure that the following path actually does point to a directory.
     const directory = './test/fixtures';
-    await assertRejects(
-      auth._getApplicationCredentialsFromFilePath(directory)
-    );
+    await assertRejects(auth._getApplicationCredentialsFromFilePath(directory));
   });
 
   it('getApplicationCredentialsFromFilePath should handle errors thrown from createReadStream', async () => {
