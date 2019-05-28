@@ -756,7 +756,7 @@ export class OAuth2Client extends AuthClient {
     }
 
     if (this.apiKey) {
-      return {headers: {}};
+      return {headers: {'X-Goog-Api-Key': this.apiKey}};
     }
     let r: GetTokenResponse | null = null;
     let tokens: Credentials | null = null;

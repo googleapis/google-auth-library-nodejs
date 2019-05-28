@@ -257,6 +257,12 @@ describe('googleauth', () => {
     scope.done();
   });
 
+  it('should put the api key in the headers', async () => {
+    const client = auth.fromAPIKey(API_KEY);
+    const headers = await client.getRequestHeaders();
+    assert.strictEqual(headers['X-Goog-Api-Key'], API_KEY);
+  });
+
   it('should make a request while preserving original parameters', async () => {
     const OTHER_QS_PARAM = {test: 'abc'};
     const scope = nock(BASE_URL)
