@@ -67,6 +67,14 @@ export class BrowserCrypto implements Crypto {
     return base64js.fromByteArray(array);
   }
 
+  private static padBase64(base64: string): string {
+    // base64js requires padding, so let's add some '='
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    return base64;
+  }
+
   async verify(
     pubkey: JwkCertificate,
     data: string,
@@ -77,11 +85,9 @@ export class BrowserCrypto implements Crypto {
       hash: {name: 'SHA-256'},
     };
     const dataArray = new TextEncoder().encode(data);
-    // base64js requires padding, so let's add some '='
-    while (signature.length % 4 !== 0) {
-      signature += '=';
-    }
-    const signatureArray = base64js.toByteArray(signature);
+    const signatureArray = base64js.toByteArray(
+      BrowserCrypto.padBase64(signature)
+    );
     const cryptoKey = await window.crypto.subtle.importKey(
       'jwk',
       pubkey,
@@ -106,7 +112,7 @@ export class BrowserCrypto implements Crypto {
   }
 
   decodeBase64StringUtf8(base64: string): string {
-    const uint8array = base64js.toByteArray(base64);
+    const uint8array = base64js.toByteArray(BrowserCrypto.padBase64(base64));
     const result = new TextDecoder().decode(uint8array);
     return result;
   }
