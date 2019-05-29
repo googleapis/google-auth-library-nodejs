@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {create} from 'domain';
 import {isBrowser} from '../isbrowser';
 import {BrowserCrypto} from './browser/crypto';
 import {NodeCrypto} from './node/crypto';
