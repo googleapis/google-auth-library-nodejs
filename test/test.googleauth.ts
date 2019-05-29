@@ -242,9 +242,8 @@ describe('googleauth', () => {
   it('should make a request with the api key', async () => {
     const scope = nock(BASE_URL)
       .post(ENDPOINT)
-      .query({key: API_KEY})
-      .reply(uri => {
-        assert(uri.indexOf('key=' + API_KEY) > -1);
+      .reply(function(uri) {
+        assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
         return [200, RESPONSE_BODY];
       });
     const client = auth.fromAPIKey(API_KEY);
@@ -267,9 +266,9 @@ describe('googleauth', () => {
     const OTHER_QS_PARAM = {test: 'abc'};
     const scope = nock(BASE_URL)
       .post(ENDPOINT)
-      .query({test: OTHER_QS_PARAM.test, key: API_KEY})
-      .reply(uri => {
-        assert(uri.indexOf('key=' + API_KEY) > -1);
+      .query({test: OTHER_QS_PARAM.test})
+      .reply(function(uri) {
+        assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
         assert(uri.indexOf('test=' + OTHER_QS_PARAM.test) > -1);
         return [200, RESPONSE_BODY];
       });

@@ -885,9 +885,9 @@ export class OAuth2Client extends AuthClient {
         opts.headers = opts.headers || {};
         opts.headers.Authorization = r.headers.Authorization;
       }
-
       if (this.apiKey) {
-        opts.params = Object.assign(opts.params || {}, {key: this.apiKey});
+        opts.headers = opts.headers || {};
+        opts.headers['X-Goog-Api-Key'] = this.apiKey;
       }
       r2 = await this.transporter.request<T>(opts);
     } catch (e) {
