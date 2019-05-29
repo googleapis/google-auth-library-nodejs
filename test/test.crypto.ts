@@ -1,11 +1,11 @@
+import * as nativeCrypto from 'crypto';
 import * as fs from 'fs';
 import {assert} from 'chai';
 import {createCrypto} from '../src/crypto/crypto';
 import {NodeCrypto} from '../src/crypto/node/crypto';
 
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
-// The private key used for signing the test message below
-// is in ./test/fixtures/private.pem.
+const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 
 describe('Node.js crypto tests', () => {
   const crypto = createCrypto();
@@ -47,10 +47,21 @@ describe('Node.js crypto tests', () => {
     assert(verified);
   });
 
-  it('should not createSign', () => {
-    assert.throws(() => {
-      crypto.createSign('never worked');
-    });
+  it('should create a signer that works', () => {
+    const message = 'This message is signed';
+    const expectedSignatureBase64 = [
+      'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
+      'm4cCbeXdR1MEmWVhNJjZQFv3KL3tDAnl0Q4bTcSR/',
+      'mmhXaRjdxyJ6xAUp0KcbVq6xsDIbnnYHSgYr3zVoS',
+      'dRRefWSWTknN1S69fNmKEfUeBIJA93xitr3pbqtLC',
+      'bP28XNU=',
+    ].join('');
+
+    const signer = crypto.createSign('SHA256');
+    assert(signer);
+    signer.update(message);
+    const signatureBase64 = signer.sign(privateKey, 'base64');
+    assert.strictEqual(signatureBase64, expectedSignatureBase64);
   });
 
   it('should decode unpadded base64', () => {
