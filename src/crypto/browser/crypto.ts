@@ -33,10 +33,14 @@ import {Crypto, JwkCertificate} from '../crypto';
 
 export class BrowserCrypto implements Crypto {
   constructor() {
-    if (typeof (window) === 'undefined' || window.crypto === undefined ||
-        window.crypto.subtle === undefined) {
+    if (
+      typeof window === 'undefined' ||
+      window.crypto === undefined ||
+      window.crypto.subtle === undefined
+    ) {
       throw new Error(
-          'SubtleCrypto not found. Make sure it\'s an https:// website.');
+        "SubtleCrypto not found. Make sure it's an https:// website."
+      );
     }
   }
 
@@ -49,8 +53,10 @@ export class BrowserCrypto implements Crypto {
     const inputBuffer = new TextEncoder().encode(str);
 
     // Result is ArrayBuffer as well.
-    const outputBuffer =
-        await window.crypto.subtle.digest('SHA-256', inputBuffer);
+    const outputBuffer = await window.crypto.subtle.digest(
+      'SHA-256',
+      inputBuffer
+    );
 
     return base64js.fromByteArray(new Uint8Array(outputBuffer));
   }
@@ -61,25 +67,43 @@ export class BrowserCrypto implements Crypto {
     return base64js.fromByteArray(array);
   }
 
-  async verify(pubkey: JwkCertificate, data: string, signature: string):
-      Promise<boolean> {
+  private static padBase64(base64: string): string {
+    // base64js requires padding, so let's add some '='
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    return base64;
+  }
+
+  async verify(
+    pubkey: JwkCertificate,
+    data: string,
+    signature: string
+  ): Promise<boolean> {
     const algo = {
       name: 'RSASSA-PKCS1-v1_5',
       hash: {name: 'SHA-256'},
     };
     const dataArray = new TextEncoder().encode(data);
-    // base64js requires padding, so let's add some '='
-    while (signature.length % 4 !== 0) {
-      signature += '=';
-    }
-    const signatureArray = base64js.toByteArray(signature);
+    const signatureArray = base64js.toByteArray(
+      BrowserCrypto.padBase64(signature)
+    );
     const cryptoKey = await window.crypto.subtle.importKey(
-        'jwk', pubkey, algo, true, ['verify']);
+      'jwk',
+      pubkey,
+      algo,
+      true,
+      ['verify']
+    );
 
     // SubtleCrypto's verify method is async so we must make
     // this method async as well.
     const result = await window.crypto.subtle.verify(
-        algo, cryptoKey, signatureArray, dataArray);
+      algo,
+      cryptoKey,
+      signatureArray,
+      dataArray
+    );
     return result;
   }
 
@@ -88,7 +112,7 @@ export class BrowserCrypto implements Crypto {
   }
 
   decodeBase64StringUtf8(base64: string): string {
-    const uint8array = base64js.toByteArray(base64);
+    const uint8array = base64js.toByteArray(BrowserCrypto.padBase64(base64));
     const result = new TextDecoder().decode(uint8array);
     return result;
   }

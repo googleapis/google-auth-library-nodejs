@@ -54,8 +54,9 @@ export class IAMAuth {
    * metadata.
    */
   getRequestMetadata(
-      unusedUri: string|null,
-      metadataFn: (err: Error|null, metadata?: RequestMetadata) => void) {
+    unusedUri: string | null,
+    metadataFn: (err: Error | null, metadata?: RequestMetadata) => void
+  ) {
     messages.warn(messages.IAM_GET_REQUEST_METADATA_DEPRECATED);
     metadataFn(null, this.getRequestHeaders());
   }
@@ -66,7 +67,7 @@ export class IAMAuth {
   getRequestHeaders() {
     return {
       'x-goog-iam-authority-selector': this.selector,
-      'x-goog-iam-authorization-token': this.token
+      'x-goog-iam-authorization-token': this.token,
     };
   }
 }

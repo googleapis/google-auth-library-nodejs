@@ -21,10 +21,10 @@ export enum GCPEnv {
   KUBERNETES_ENGINE = 'KUBERNETES_ENGINE',
   CLOUD_FUNCTIONS = 'CLOUD_FUNCTIONS',
   COMPUTE_ENGINE = 'COMPUTE_ENGINE',
-  NONE = 'NONE'
+  NONE = 'NONE',
 }
 
-let env: GCPEnv|undefined;
+let env: GCPEnv | undefined;
 
 export function clear() {
   env = undefined;

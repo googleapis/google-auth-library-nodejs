@@ -24,7 +24,7 @@ function createJSON() {
     client_secret: 'privatekey',
     client_id: 'client123',
     refresh_token: 'refreshtoken',
-    type: 'authorized_user'
+    type: 'authorized_user',
   };
 }
 
@@ -114,7 +114,7 @@ it('fromStream should read the stream and create a UserRefreshClient', done => {
 
   // And pass it into the fromStream method.
   const refresh = new UserRefreshClient();
-  refresh.fromStream(stream, (err) => {
+  refresh.fromStream(stream, err => {
     assert.ifError(err);
     // Ensure that the correct bits were pulled from the stream.
     assert.strictEqual(json.client_id, refresh._clientId);
