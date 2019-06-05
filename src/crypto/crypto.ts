@@ -47,7 +47,10 @@ export interface Crypto {
     data: string | Buffer,
     signature: string
   ): Promise<boolean>;
-  createSign(algorithm: string): CryptoSigner;
+  sign(
+    privateKey: string | JwkCertificate,
+    data: string | Buffer
+  ): Promise<string>;
   decodeBase64StringUtf8(base64: string): string;
   encodeBase64StringUtf8(text: string): string;
 }

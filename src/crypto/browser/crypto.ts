@@ -107,8 +107,24 @@ export class BrowserCrypto implements Crypto {
     return result;
   }
 
-  createSign(algorithm: string): CryptoSigner {
-    throw new Error('createSign is not implemented in BrowserCrypto');
+  async sign(privateKey: JwkCertificate, data: string): Promise<string> {
+    const algo = {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: {name: 'SHA-256'},
+    };
+    const dataArray = new TextEncoder().encode(data);
+    const cryptoKey = await window.crypto.subtle.importKey(
+      'jwk',
+      privateKey,
+      algo,
+      true,
+      ['sign']
+    );
+
+    // SubtleCrypto's sign method is async so we must make
+    // this method async as well.
+    const result = await window.crypto.subtle.sign(algo, cryptoKey, dataArray);
+    return base64js.fromByteArray(new Uint8Array(result));
   }
 
   decodeBase64StringUtf8(base64: string): string {

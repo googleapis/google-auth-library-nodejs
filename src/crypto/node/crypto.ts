@@ -36,11 +36,15 @@ export class NodeCrypto implements Crypto {
   ): Promise<boolean> {
     const verifier = crypto.createVerify('sha256');
     verifier.update(data);
+    verifier.end();
     return verifier.verify(pubkey, signature, 'base64');
   }
 
-  createSign(algorithm: string): CryptoSigner {
-    return crypto.createSign(algorithm);
+  async sign(privateKey: string, data: string | Buffer): Promise<string> {
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(data);
+    signer.end();
+    return signer.sign(privateKey, 'base64');
   }
 
   decodeBase64StringUtf8(base64: string): string {
