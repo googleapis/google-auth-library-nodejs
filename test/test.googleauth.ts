@@ -71,7 +71,7 @@ const wellKnownPathLinux = path.join(
 describe('googleauth', () => {
   let auth: GoogleAuth;
   const sandbox = sinon.createSandbox();
-  let osStub: sinon.SinonStub;
+  let osStub: sinon.SinonStub<[], NodeJS.Platform>;
   let exposeWindowsWellKnownFile: boolean;
   let exposeLinuxWellKnownFile: boolean;
   let createLinuxWellKnownStream: Function;
