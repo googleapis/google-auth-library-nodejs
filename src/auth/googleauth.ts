@@ -779,10 +779,9 @@ export class GoogleAuth {
   async sign(data: string): Promise<string> {
     const client = await this.getClient();
     const crypto = createCrypto();
-    if (client instanceof JWT && client.key && !isBrowser()) {
-      const sign = crypto.createSign('RSA-SHA256');
-      sign.update(data);
-      return sign.sign(client.key, 'base64');
+    if (client instanceof JWT && client.key) {
+      const sign = await crypto.sign(client.key, data);
+      return sign;
     }
 
     const projectId = await this.getProjectId();

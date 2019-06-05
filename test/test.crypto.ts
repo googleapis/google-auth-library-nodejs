@@ -47,7 +47,7 @@ describe('Node.js crypto tests', () => {
     assert(verified);
   });
 
-  it('should create a signer that works', () => {
+  it('should sign a message', async () => {
     const message = 'This message is signed';
     const expectedSignatureBase64 = [
       'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
@@ -57,10 +57,7 @@ describe('Node.js crypto tests', () => {
       'bP28XNU=',
     ].join('');
 
-    const signer = crypto.createSign('SHA256');
-    assert(signer);
-    signer.update(message);
-    const signatureBase64 = signer.sign(privateKey, 'base64');
+    const signatureBase64 = await crypto.sign(privateKey, message);
     assert.strictEqual(signatureBase64, expectedSignatureBase64);
   });
 

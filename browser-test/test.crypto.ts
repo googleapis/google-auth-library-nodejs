@@ -1,19 +1,24 @@
+/**
+ * Copyright 2019 Google LLC. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import * as base64js from 'base64-js';
 import {assert} from 'chai';
 import {createCrypto} from '../src/crypto/crypto';
 import {BrowserCrypto} from '../src/crypto/browser/crypto';
-
-// The following public key was copied from JWK RFC 7517:
-// https://tools.ietf.org/html/rfc7517
-// The private key used for signing the test message below was taken from the same RFC.
-const publicKey = {
-  kty: 'RSA',
-  n:
-    '0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw',
-  e: 'AQAB',
-  alg: 'RS256',
-  kid: '2011-04-29',
-};
+import {privateKey, publicKey} from './fixtures/keys';
 
 // Not all browsers support `TextEncoder`. The following `require` will
 // provide a fast UTF8-only replacement for those browsers that don't support
@@ -64,10 +69,18 @@ describe('Browser crypto tests', () => {
     assert(verified);
   });
 
-  it('should not createSign', () => {
-    assert.throws(() => {
-      crypto.createSign('never worked');
-    });
+  it('should sign a message', async () => {
+    const message = 'This message is signed';
+    const expectedSignatureBase64 = [
+      'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
+      'm4cCbeXdR1MEmWVhNJjZQFv3KL3tDAnl0Q4bTcSR/',
+      'mmhXaRjdxyJ6xAUp0KcbVq6xsDIbnnYHSgYr3zVoS',
+      'dRRefWSWTknN1S69fNmKEfUeBIJA93xitr3pbqtLC',
+      'bP28XNU=',
+    ].join('');
+
+    const signatureBase64 = await crypto.sign(privateKey, message);
+    assert.strictEqual(signatureBase64, expectedSignatureBase64);
   });
 
   it('should decode unpadded base64', () => {
