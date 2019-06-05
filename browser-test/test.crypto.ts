@@ -72,11 +72,15 @@ describe('Browser crypto tests', () => {
   it('should sign a message', async () => {
     const message = 'This message is signed';
     const expectedSignatureBase64 = [
-      'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
-      'm4cCbeXdR1MEmWVhNJjZQFv3KL3tDAnl0Q4bTcSR/',
-      'mmhXaRjdxyJ6xAUp0KcbVq6xsDIbnnYHSgYr3zVoS',
-      'dRRefWSWTknN1S69fNmKEfUeBIJA93xitr3pbqtLC',
-      'bP28XNU=',
+      'BE1qD48LdssePdMmOhcanOd8V+i4yLSOL0H2EXNyy',
+      'lCePnldIsLVqrOJnVkd0MUKxS/Y9B0te2tqlS8psP',
+      'j9IWjcpiQeT9wUDRadxHIX26W6JHgSCOzOavpJCbh',
+      'M3Kez7QEwbkrI54rYu7qgx/mmckxkC0vhg0Z5OQbO',
+      'IXfILVs1ztNNdt9r/ZzNVxTMKhL3nHLfjVqG/LUGy',
+      'RhFhjzLvIJAfL0CSEfycUvm6t5NVzF4SkZ8KKQ7wJ',
+      'vLw492bRB/633GJOZ1prVjAUQUI64BXFrvRgWsxLK',
+      'M0XtF5tNbC+eIDrH0LiMraAhcZwj1iWofH1h/dg3E',
+      'xtU9UWfbed/yfw==',
     ].join('');
 
     const signatureBase64 = await crypto.sign(privateKey, message);
