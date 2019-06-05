@@ -107,10 +107,7 @@ export class BrowserCrypto implements Crypto {
     return result;
   }
 
-  async sign(
-    privateKey: JwkCertificate,
-    data: string
-  ): Promise<string> {
+  async sign(privateKey: JwkCertificate, data: string): Promise<string> {
     const algo = {
       name: 'RSASSA-PKCS1-v1_5',
       hash: {name: 'SHA-256'},
@@ -126,11 +123,7 @@ export class BrowserCrypto implements Crypto {
 
     // SubtleCrypto's sign method is async so we must make
     // this method async as well.
-    const result = await window.crypto.subtle.sign(
-      algo,
-      cryptoKey,
-      dataArray
-    );
+    const result = await window.crypto.subtle.sign(algo, cryptoKey, dataArray);
     return base64js.fromByteArray(new Uint8Array(result));
   }
 

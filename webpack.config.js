@@ -28,7 +28,7 @@ module.exports = {
   },
   output: {
     library: 'GoogleAuth',
-    filename: 'google-auth-library.min.js',
+    filename: 'google-auth-library.js',
     path: path.resolve(__dirname, 'dist'),
   },
   node: {
@@ -65,6 +65,6 @@ module.exports = {
       },
     ],
   },
-  mode: 'production',
+  mode: 'development',
   plugins: [],
 };

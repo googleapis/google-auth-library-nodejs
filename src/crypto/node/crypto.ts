@@ -40,10 +40,7 @@ export class NodeCrypto implements Crypto {
     return verifier.verify(pubkey, signature, 'base64');
   }
 
-  async sign(
-    privateKey: string,
-    data: string | Buffer
-  ): Promise<string> {
+  async sign(privateKey: string, data: string | Buffer): Promise<string> {
     const signer = crypto.createSign('RSA-SHA256');
     signer.update(data);
     signer.end();
