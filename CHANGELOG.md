@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [4.1.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.1.0...v4.1.1) (2019-06-05)
+
+
+### Bug Fixes
+
+* pad base64 strings for base64js ([#722](https://www.github.com/googleapis/google-auth-library-nodejs/issues/722)) ([81e0a23](https://www.github.com/googleapis/google-auth-library-nodejs/commit/81e0a23))
+
 ## [4.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.0.0...v4.1.0) (2019-05-29)
 
 
