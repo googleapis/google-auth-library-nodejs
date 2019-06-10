@@ -66,9 +66,9 @@ export class DefaultTransporter {
       if (!uaValue) {
         opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
       } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
-        opts.headers['User-Agent'] = `${uaValue} ${
-          DefaultTransporter.USER_AGENT
-        }`;
+        opts.headers[
+          'User-Agent'
+        ] = `${uaValue} ${DefaultTransporter.USER_AGENT}`;
       }
     }
     return opts;
