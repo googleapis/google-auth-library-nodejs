@@ -92,7 +92,7 @@
     "fix": "gts fix && eslint --fix '**/*.js'",
     "pretest": "npm run compile",
     "license-check": "jsgl --local .",
-    "docs": "compodoc src/ && touch docs/.nojekyll",
+    "docs": "compodoc src/",
     "samples-test": "cd samples/ && npm link ../ && npm test && cd ../",
     "system-test": "mocha build/system-test --timeout 60000",
     "presystem-test": "npm run compile",
