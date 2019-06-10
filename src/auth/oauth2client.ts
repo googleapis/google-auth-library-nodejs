@@ -1121,9 +1121,7 @@ export class OAuth2Client extends AuthClient {
     try {
       envelope = JSON.parse(crypto.decodeBase64StringUtf8(segments[0]));
     } catch (err) {
-      err.message = `Can't parse token envelope: ${segments[0]}': ${
-        err.message
-      }`;
+      err.message = `Can't parse token envelope: ${segments[0]}': ${err.message}`;
       throw err;
     }
 

@@ -27,11 +27,7 @@ export function validate(options: any) {
   ];
   for (const pair of vpairs) {
     if (options[pair.invalid]) {
-      const e = `'${
-        pair.invalid
-      }' is not a valid configuration option. Please use '${
-        pair.expected
-      }' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.`;
+      const e = `'${pair.invalid}' is not a valid configuration option. Please use '${pair.expected}' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.`;
       throw new Error(e);
     }
   }

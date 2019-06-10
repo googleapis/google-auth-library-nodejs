@@ -283,9 +283,7 @@ export class GoogleAuth {
     try {
       isGCE = await this._checkIsGCE();
     } catch (e) {
-      e.message = `Unexpected error determining execution environment: ${
-        e.message
-      }`;
+      e.message = `Unexpected error determining execution environment: ${e.message}`;
       throw e;
     }
 
@@ -336,9 +334,7 @@ export class GoogleAuth {
         options
       );
     } catch (e) {
-      e.message = `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${
-        e.message
-      }`;
+      e.message = `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${e.message}`;
       throw e;
     }
   }
@@ -413,9 +409,7 @@ export class GoogleAuth {
         throw new Error();
       }
     } catch (err) {
-      err.message = `The file at ${filePath} does not exist, or it is not a file. ${
-        err.message
-      }`;
+      err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
       throw err;
     }
 
