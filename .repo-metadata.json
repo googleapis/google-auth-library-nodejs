@@ -2,7 +2,7 @@
   "name": "google-auth-library",
   "name_pretty": "Google Auth Library",
   "product_documentation": "https://cloud.google.com/docs/authentication/",
-  "client_documentation": "https://googleapis.dev/nodejs/google-auth-library/latest/",
+  "client_documentation": "https://googleapis.dev/nodejs/google-auth-library/latest",
   "release_level": "ga",
   "language": "nodejs",
   "repo": "googleapis/google-auth-library-nodejs",
