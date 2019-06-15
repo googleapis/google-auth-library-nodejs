@@ -88,7 +88,7 @@ export class Compute extends OAuth2Client {
           scopes: this.scopes.join(','),
         };
         // TODO: clean up before submit, fix upstream type bug
-      };
+      }
       data = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
       e.message = `Could not refresh access token: ${e.message}`;
