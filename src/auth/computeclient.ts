@@ -83,7 +83,7 @@ export class Compute extends OAuth2Client {
       data = await gcpMetadata.instance({
         property: tokenPath,
         params: {
-          scopes: this.scopes,
+          scopes: this.scopes.join(','),
           // TODO: clean up before submit, fix upstream type bug
         } as {},
       });
