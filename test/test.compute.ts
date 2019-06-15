@@ -29,7 +29,7 @@ const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 function mockToken(statusCode = 200, scopes?: string[]) {
   let path = tokenPath;
   if (scopes && scopes.length > 0) {
-    path += '?' + qs.stringify({scopes});
+    path += `?scopes=${encodeURIComponent(scopes.join(','))}`;
   }
   return nock(HOST_ADDRESS)
     .get(path, undefined, {reqheaders: HEADERS})
