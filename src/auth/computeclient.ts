@@ -87,7 +87,6 @@ export class Compute extends OAuth2Client {
         instanceOptions.params = {
           scopes: this.scopes.join(','),
         };
-        // TODO: clean up before submit, fix upstream type bug
       }
       data = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
