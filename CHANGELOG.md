@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [4.2.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.1...v4.2.2) (2019-06-18)
+
+
+### Bug Fixes
+
+* **compute:** correctly specify scopes when fetching token ([#735](https://www.github.com/googleapis/google-auth-library-nodejs/issues/735)) ([4803e3c](https://www.github.com/googleapis/google-auth-library-nodejs/commit/4803e3c))
+
 ### [4.2.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.0...v4.2.1) (2019-06-14)
 
 
