@@ -29,7 +29,7 @@ const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
 function mockToken(statusCode = 200, scopes?: string[]) {
   let path = tokenPath;
   if (scopes && scopes.length > 0) {
-    path += '?' + qs.stringify({scopes});
+    path += `?scopes=${encodeURIComponent(scopes.join(','))}`;
   }
   return nock(HOST_ADDRESS)
     .get(path, undefined, {reqheaders: HEADERS})
@@ -68,15 +68,25 @@ it('should get an access token for the first request', async () => {
   assert.strictEqual(compute.credentials.access_token, 'abc123');
 });
 
-it('should include scopes when asking for the token', async () => {
+it('should URI-encode and comma-separate scopes when fetching the token', async () => {
   const scopes = [
     'https://www.googleapis.com/reader',
     'https://www.googleapis.com/auth/plus',
   ];
-  const nockScopes = [mockToken(200, scopes), mockExample()];
+
+  const path = `${tokenPath}?scopes=${encodeURIComponent(scopes.join(','))}`;
+
+  const tokenFetchNock = nock(HOST_ADDRESS)
+    .get(path, undefined, {reqheaders: HEADERS})
+    .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
+  const apiRequestNock = mockExample();
+
   const compute = new Compute({scopes});
   await compute.request({url});
-  nockScopes.forEach(s => s.done());
+
+  tokenFetchNock.done();
+  apiRequestNock.done();
+
   assert.strictEqual(compute.credentials.access_token, 'abc123');
 });
 

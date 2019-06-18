@@ -80,13 +80,15 @@ export class Compute extends OAuth2Client {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let data: CredentialRequest;
     try {
-      data = await gcpMetadata.instance({
+      const instanceOptions: gcpMetadata.Options = {
         property: tokenPath,
-        params: {
-          scopes: this.scopes,
-          // TODO: clean up before submit, fix upstream type bug
-        } as {},
-      });
+      };
+      if (this.scopes.length > 0) {
+        instanceOptions.params = {
+          scopes: this.scopes.join(','),
+        };
+      }
+      data = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
       e.message = `Could not refresh access token: ${e.message}`;
       this.wrapError(e);
