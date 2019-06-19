@@ -25,14 +25,14 @@ export function warn(warning: Warning) {
     return;
   }
   warning.warned = true;
-  if (!process.emitWarning) {
-    console.warn(warning.message);
-  } else {
+  if (typeof process !== 'undefined' && process.emitWarning) {
     // @types/node doesn't recognize the emitWarning syntax which
     // accepts a config object, so `as any` it is
     // https://nodejs.org/docs/latest-v8.x/api/process.html#process_process_emitwarning_warning_options
     // tslint:disable-next-line no-any
     process.emitWarning(warning.message, warning as any);
+  } else {
+    console.warn(warning.message);
   }
 }
 
