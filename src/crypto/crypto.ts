@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {isBrowser} from '../isbrowser';
 import {BrowserCrypto} from './browser/crypto';
 import {NodeCrypto} from './node/crypto';
 
@@ -56,8 +55,12 @@ export interface Crypto {
 }
 
 export function createCrypto(): Crypto {
-  if (isBrowser()) {
+  if (hasBrowserCrypto()) {
     return new BrowserCrypto();
   }
   return new NodeCrypto();
+}
+
+export function hasBrowserCrypto() {
+  return window && window.crypto && window.crypto.subtle;
 }

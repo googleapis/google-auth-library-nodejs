@@ -23,7 +23,6 @@ import * as path from 'path';
 import * as stream from 'stream';
 
 import {createCrypto} from '../crypto/crypto';
-import {isBrowser} from '../isbrowser';
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 

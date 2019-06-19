@@ -23,8 +23,7 @@ import {
 import * as querystring from 'querystring';
 import * as stream from 'stream';
 
-import {createCrypto, JwkCertificate} from '../crypto/crypto';
-import {isBrowser} from '../isbrowser';
+import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
 
@@ -1015,7 +1014,7 @@ export class OAuth2Client extends AuthClient {
 
   async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
     const nowTime = new Date().getTime();
-    const format: CertificateFormat = isBrowser()
+    const format = hasBrowserCrypto()
       ? CertificateFormat.JWK
       : CertificateFormat.PEM;
     if (

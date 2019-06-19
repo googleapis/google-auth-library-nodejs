@@ -15,7 +15,6 @@
  */
 
 import * as assert from 'assert';
-import * as cp from 'child_process';
 import * as execa from 'execa';
 import * as fs from 'fs';
 import * as mv from 'mv';
