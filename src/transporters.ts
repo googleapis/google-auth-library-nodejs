@@ -58,7 +58,7 @@ export class DefaultTransporter {
    */
   configure(opts: GaxiosOptions = {}): GaxiosOptions {
     opts.headers = opts.headers || {};
-    if (!window) {
+    if (typeof window === 'undefined') {
       // set transporter user agent if not in browser
       const uaValue: string = opts.headers['User-Agent'];
       if (!uaValue) {

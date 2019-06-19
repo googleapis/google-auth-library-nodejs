@@ -62,5 +62,9 @@ export function createCrypto(): Crypto {
 }
 
 export function hasBrowserCrypto() {
-  return window && window.crypto && window.crypto.subtle;
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.crypto !== 'undefined' &&
+    typeof window.crypto.subtle !== 'undefined'
+  );
 }
