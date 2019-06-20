@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import * as semver from 'semver';
-import {isBrowser} from './isbrowser';
-
 export enum WarningTypes {
   WARNING = 'Warning',
   DEPRECATION = 'DeprecationWarning',
@@ -28,18 +25,14 @@ export function warn(warning: Warning) {
     return;
   }
   warning.warned = true;
-  if (isBrowser()) {
-    console.warn(warning.message);
-  } else if (semver.satisfies(process.version, '>=8')) {
+  if (typeof process !== 'undefined' && process.emitWarning) {
     // @types/node doesn't recognize the emitWarning syntax which
     // accepts a config object, so `as any` it is
     // https://nodejs.org/docs/latest-v8.x/api/process.html#process_process_emitwarning_warning_options
     // tslint:disable-next-line no-any
     process.emitWarning(warning.message, warning as any);
   } else {
-    // This path can be removed once we drop support for Node 6.
-    // https://nodejs.org/docs/latest-v6.x/api/process.html#process_process_emitwarning_warning_name_ctor
-    process.emitWarning(warning.message, warning.type);
+    console.warn(warning.message);
   }
 }
 

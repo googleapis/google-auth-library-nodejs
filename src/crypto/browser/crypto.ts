@@ -19,13 +19,10 @@
 
 import * as base64js from 'base64-js';
 
-import {isBrowser} from '../../isbrowser';
-import {CryptoSigner} from '../crypto';
-
 // Not all browsers support `TextEncoder`. The following `require` will
 // provide a fast UTF8-only replacement for those browsers that don't support
 // text encoding natively.
-if (isBrowser() && typeof TextEncoder === 'undefined') {
+if (typeof TextEncoder === 'undefined') {
   require('fast-text-encoding');
 }
 

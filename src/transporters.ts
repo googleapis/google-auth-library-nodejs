@@ -21,8 +21,6 @@ import {
   GaxiosResponse,
   request,
 } from 'gaxios';
-
-import {isBrowser} from './isbrowser';
 import {validate} from './options';
 
 // tslint:disable-next-line no-var-requires
@@ -60,7 +58,7 @@ export class DefaultTransporter {
    */
   configure(opts: GaxiosOptions = {}): GaxiosOptions {
     opts.headers = opts.headers || {};
-    if (!isBrowser()) {
+    if (typeof window === 'undefined') {
       // set transporter user agent if not in browser
       const uaValue: string = opts.headers['User-Agent'];
       if (!uaValue) {

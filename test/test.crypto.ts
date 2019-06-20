@@ -1,4 +1,3 @@
-import * as nativeCrypto from 'crypto';
 import * as fs from 'fs';
 import {assert} from 'chai';
 import {createCrypto} from '../src/crypto/crypto';

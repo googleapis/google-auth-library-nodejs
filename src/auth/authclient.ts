@@ -18,7 +18,6 @@ import {EventEmitter} from 'events';
 import {GaxiosOptions, GaxiosPromise} from 'gaxios';
 
 import {DefaultTransporter} from '../transporters';
-
 import {Credentials} from './credentials';
 
 export declare interface AuthClient {

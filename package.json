@@ -24,8 +24,7 @@
     "gcp-metadata": "^2.0.0",
     "gtoken": "^3.0.0",
     "jws": "^3.1.5",
-    "lru-cache": "^5.0.0",
-    "semver": "^6.0.0"
+    "lru-cache": "^5.0.0"
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.7",
@@ -39,7 +38,6 @@
     "@types/ncp": "^2.0.1",
     "@types/nock": "^10.0.3",
     "@types/node": "^10.5.1",
-    "@types/semver": "^6.0.0",
     "@types/sinon": "^7.0.0",
     "@types/tmp": "^0.1.0",
     "assert-rejects": "^1.0.0",
@@ -68,7 +66,7 @@
     "ncp": "^2.0.0",
     "nock": "^10.0.0",
     "null-loader": "^3.0.0",
-    "nyc": "^14.0.0",
+    "nyc": "^14.1.1",
     "prettier": "^1.13.4",
     "puppeteer": "^1.11.0",
     "sinon": "^7.0.0",

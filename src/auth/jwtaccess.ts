@@ -19,7 +19,6 @@ import * as LRU from 'lru-cache';
 import * as stream from 'stream';
 
 import * as messages from '../messages';
-
 import {JWTInput} from './credentials';
 import {Headers, RequestMetadataResponse} from './oauth2client';
 
