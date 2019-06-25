@@ -22,7 +22,7 @@ import * as base64js from 'base64-js';
 // Not all browsers support `TextEncoder`. The following `require` will
 // provide a fast UTF8-only replacement for those browsers that don't support
 // text encoding natively.
-if (typeof TextEncoder === 'undefined') {
+if (typeof process === 'undefined' && typeof TextEncoder === 'undefined') {
   require('fast-text-encoding');
 }
 
