@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [4.2.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.3...v4.2.4) (2019-06-25)
+
+
+### Bug Fixes
+
+* only require fast-text-encoding when needed ([#740](https://www.github.com/googleapis/google-auth-library-nodejs/issues/740)) ([04fcd77](https://www.github.com/googleapis/google-auth-library-nodejs/commit/04fcd77))
+
 ### [4.2.3](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.2...v4.2.3) (2019-06-24)
 
 
