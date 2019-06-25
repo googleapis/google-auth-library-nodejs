@@ -73,4 +73,10 @@ describe('Node.js crypto tests', () => {
     const encodedString = crypto.encodeBase64StringUtf8(originalString);
     assert.strictEqual(encodedString, base64String);
   });
+
+  it('should not load fast-text-encoding while running in nodejs', () => {
+    const loadedModules = Object.keys(require('module')._cache);
+    const hits = loadedModules.filter(x => x.includes('fast-text-encoding'));
+    assert.strictEqual(hits.length, 0);
+  });
 });
