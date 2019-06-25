@@ -41,5 +41,8 @@ module.exports = {
     sourceFiles: false,
     systemName: 'google-auth-library',
     theme: 'lumen'
+  },
+  markdown: {
+    idInHeadings: true
   }
 };
