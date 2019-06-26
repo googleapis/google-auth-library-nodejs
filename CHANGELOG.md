@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [4.2.5](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.4...v4.2.5) (2019-06-26)
+
+
+### Bug Fixes
+
+* **docs:** make anchors work in jsdoc ([#742](https://www.github.com/googleapis/google-auth-library-nodejs/issues/742)) ([7901456](https://www.github.com/googleapis/google-auth-library-nodejs/commit/7901456))
+
 ### [4.2.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.3...v4.2.4) (2019-06-25)
 
 
