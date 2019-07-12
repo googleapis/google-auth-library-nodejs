@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import * as hash from 'object-hash';
 import {exec} from 'child_process';
 import * as fs from 'fs';
 import {GaxiosOptions, GaxiosResponse} from 'gaxios';
@@ -117,6 +118,7 @@ export class GoogleAuth {
   jsonContent: JWTInput | null = null;
 
   cachedCredential: JWT | UserRefreshClient | Compute | null = null;
+  private _cachedCredentialHash = '';
 
   private keyFilename?: string;
   private scopes?: string | string[];
@@ -240,9 +242,11 @@ export class GoogleAuth {
     options: RefreshOptions = {}
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
-    if (this.cachedCredential) {
+    if (this.getCachedCredential(options)) {
       return {
-        credential: this.cachedCredential as JWT | UserRefreshClient,
+        credential: this.getCachedCredential(options) as
+          | JWT
+          | UserRefreshClient,
         projectId: await this.getProjectIdAsync(),
       };
     }
@@ -259,7 +263,7 @@ export class GoogleAuth {
       if (credential instanceof JWT) {
         credential.scopes = this.scopes;
       }
-      this.cachedCredential = credential;
+      this.setCachedCredential(credential, options);
       projectId = await this.getProjectId();
       return {credential, projectId};
     }
@@ -272,7 +276,7 @@ export class GoogleAuth {
       if (credential instanceof JWT) {
         credential.scopes = this.scopes;
       }
-      this.cachedCredential = credential;
+      this.setCachedCredential(credential, options);
       projectId = await this.getProjectId();
       return {credential, projectId};
     }
@@ -296,9 +300,9 @@ export class GoogleAuth {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     (options as ComputeOptions).scopes = this.scopes;
-    this.cachedCredential = new Compute(options);
+    this.setCachedCredential(new Compute(options), options);
     projectId = await this.getProjectId();
-    return {projectId, credential: this.cachedCredential};
+    return {projectId, credential: this.getCachedCredential(options)!};
   }
 
   /**
@@ -586,9 +590,9 @@ export class GoogleAuth {
    * @api private
    */
   private async getFileProjectId(): Promise<string | undefined | null> {
-    if (this.cachedCredential) {
+    if (this.getCachedCredential()) {
       // Try to read the project ID from the cached credentials file
-      return this.cachedCredential.projectId;
+      return this.getCachedCredential()!.projectId;
     }
 
     // Ensure the projectId is loaded from the keyFile if available.
@@ -690,24 +694,74 @@ export class GoogleAuth {
       this.jsonContent = options.credentials || this.jsonContent;
       this.clientOptions = options.clientOptions;
     }
-    if (!this.cachedCredential) {
+    if (!this.getCachedCredential(options)) {
       if (this.jsonContent) {
-        this.cachedCredential = await this.fromJSON(
-          this.jsonContent,
-          this.clientOptions
+        this.setCachedCredential(
+          await this.fromJSON(this.jsonContent, this.clientOptions),
+          options
         );
       } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
-        this.cachedCredential = await this.fromStreamAsync(
-          stream,
-          this.clientOptions
+        this.setCachedCredential(
+          await this.fromStreamAsync(stream, this.clientOptions),
+          options
         );
       } else {
         await this.getApplicationDefaultAsync(this.clientOptions);
       }
     }
-    return this.cachedCredential!;
+    return this.getCachedCredential()!;
+  }
+
+  /**
+   * Setter for cached credential object. opts parameter is hashed and used to
+   * potentially invalidate cache. This allows getClient() to be called
+   * multiple times with different configurations.
+   *
+   * @private
+   */
+  private setCachedCredential(
+    _cachedCredential: JWT | UserRefreshClient | Compute | null,
+    opts?: GoogleAuthOptions | RefreshOptions
+  ) {
+    if (typeof opts !== 'undefined' && Object.keys(opts).length !== 0) {
+      this._cachedCredentialHash = this.hashOpts(opts);
+    }
+    this.cachedCredential = _cachedCredential;
+  }
+
+  /**
+   * Getter for cached credential object. opts parameter is hashed and used to
+   * potentially invalidate cache. This allows getClient() to be called
+   * multiple times with different configurations.
+   *
+   * @private
+   */
+  private getCachedCredential(
+    opts?: GoogleAuthOptions | RefreshOptions
+  ): JWT | UserRefreshClient | Compute | null {
+    // the options appear to have changed since they were cached, invalidate
+    // the cache and store the new configuration.
+    if (
+      typeof opts !== 'undefined' &&
+      Object.keys(opts).length !== 0 &&
+      this._cachedCredentialHash !== this.hashOpts(opts)
+    ) {
+      return null;
+    }
+    return this.cachedCredential;
+  }
+
+  private hashOpts(opts: object): string {
+    const exclude = ['__proto__', 'prototype', 'constructor'];
+    return hash(opts, {
+      algorithm: 'md5',
+      unorderedArrays: true,
+      excludeKeys: (key: string) => {
+        return exclude.indexOf(key) !== -1;
+      },
+    });
   }
 
   /**
