@@ -146,17 +146,6 @@ export class JWT extends OAuth2Client {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createScoped before use.
-   * @deprecated
-   * @return false if createScoped does not need to be called.
-   */
-  createScopedRequired() {
-    messages.warn(messages.JWT_CREATE_SCOPED_DEPRECATED);
-    return !this.hasScopes();
-  }
-
-  /**
    * Determine if there are currently scopes available.
    */
   private hasScopes() {

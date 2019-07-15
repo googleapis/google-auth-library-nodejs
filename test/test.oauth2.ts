@@ -865,22 +865,6 @@ describe(__filename, () => {
     });
   });
 
-  it('should emit warning on refreshAccessToken', async () => {
-    let warned = false;
-    sandbox.stub(process, 'emitWarning').callsFake(() => (warned = true));
-    client.refreshAccessToken((err, result) => {
-      assert.strictEqual(warned, true);
-    });
-  });
-
-  it('should return error in callback on refreshAccessToken', done => {
-    client.refreshAccessToken((err, result) => {
-      assert.strictEqual(err!.message, 'No refresh token is set.');
-      assert.strictEqual(result, undefined);
-      done();
-    });
-  });
-
   function mockExample() {
     return [
       nock(baseUrl)
@@ -1254,14 +1238,6 @@ describe(__filename, () => {
     assert.strictEqual(info.aud, tokenInfo.aud);
     assert.strictEqual(info.user_id, tokenInfo.user_id);
     assert.deepStrictEqual(info.scopes, tokenInfo.scope.split(' '));
-  });
-
-  it('should warn about deprecation of getRequestMetadata', done => {
-    const stub = sandbox.stub(messages, 'warn');
-    client.getRequestMetadata(null, () => {
-      assert.strictEqual(stub.calledOnce, true);
-      done();
-    });
   });
 
   it('should throw if tries to refresh but no refresh token is available', async () => {
