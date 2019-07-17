@@ -52,7 +52,7 @@ function isAppEngine() {
 }
 
 function isCloudFunction() {
-  return !!process.env.FUNCTION_NAME;
+  return !!(process.env.FUNCTION_NAME || process.env.FUNCTION_TARGET);
 }
 
 async function isKubernetesEngine() {

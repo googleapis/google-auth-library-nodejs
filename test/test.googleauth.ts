@@ -1226,9 +1226,16 @@ describe('googleauth', () => {
     scope.done();
   });
 
-  it('should get the current environment if GCF', async () => {
+  it('should get the current environment if GCF 8 and below', async () => {
     envDetect.clear();
     mockEnvVar('FUNCTION_NAME', 'DOGGY');
+    const env = await auth.getEnv();
+    assert.strictEqual(env, envDetect.GCPEnv.CLOUD_FUNCTIONS);
+  });
+
+  it('should get the current environment if GCF 10 and up', async () => {
+    envDetect.clear();
+    mockEnvVar('FUNCTION_TARGET', 'KITTY');
     const env = await auth.getEnv();
     assert.strictEqual(env, envDetect.GCPEnv.CLOUD_FUNCTIONS);
   });
