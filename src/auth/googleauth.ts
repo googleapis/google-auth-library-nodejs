@@ -459,7 +459,10 @@ export class GoogleAuth {
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
-  private _cacheClientFromJSON(json: JWTInput, options?: RefreshOptions): JWT | UserRefreshClient {
+  private _cacheClientFromJSON(
+    json: JWTInput,
+    options?: RefreshOptions
+  ): JWT | UserRefreshClient {
     let client: UserRefreshClient | JWT;
     // create either a UserRefreshClient or JWT client.
     options = options || {};
@@ -708,17 +711,11 @@ export class GoogleAuth {
   async getClient() {
     if (!this.cachedCredential) {
       if (this.jsonContent) {
-        this._cacheClientFromJSON(
-          this.jsonContent,
-          this.clientOptions
-        );
+        this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
       } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
-        await this.fromStreamAsync(
-          stream,
-          this.clientOptions
-        );
+        await this.fromStreamAsync(stream, this.clientOptions);
       } else {
         await this.getApplicationDefaultAsync(this.clientOptions);
       }

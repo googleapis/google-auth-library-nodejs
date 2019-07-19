@@ -235,7 +235,7 @@ describe('googleauth', () => {
     const auth = new GoogleAuth({keyFilename: './test/fixtures/private.json'});
     auth.fromJSON({
       client_email: 'batman@example.com',
-      private_key: 'abc123'
+      private_key: 'abc123',
     });
     const client = (await auth.getClient()) as JWT;
     assert.strictEqual(client.email, 'hello@youarecool.com');
@@ -1149,10 +1149,7 @@ describe('googleauth', () => {
 
   it('should error when invalid keyFilename passed to getClient', async () => {
     const auth = new GoogleAuth({keyFilename: './funky/fresh.json'});
-    await assertRejects(
-      auth.getClient(),
-      /ENOENT: no such file or directory/
-    );
+    await assertRejects(auth.getClient(), /ENOENT: no such file or directory/);
   });
 
   it('should accept credentials to get a client', async () => {
