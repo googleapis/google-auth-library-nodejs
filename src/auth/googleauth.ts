@@ -441,7 +441,6 @@ export class GoogleAuth {
         'Must pass in a JSON object containing the Google auth settings.'
       );
     }
-    this.jsonContent = json;
     options = options || {};
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
@@ -451,6 +450,18 @@ export class GoogleAuth {
     }
     client.fromJSON(json);
     return client;
+  }
+
+  /**
+   * Create a credentials instance using the given input options.
+   * @param json The input object.
+   * @param options The JWT or UserRefresh options for the client
+   * @returns JWT or UserRefresh Client with data
+   */
+  private _cacheJWTInput(json: JWTInput, options?: RefreshOptions): JWT | UserRefreshClient {
+    let client: UserRefreshClient | JWT;
+    this.jsonContent = json;
+    return this.fromJSON(json, options);
   }
 
   /**
@@ -508,7 +519,7 @@ export class GoogleAuth {
         .on('end', () => {
           try {
             const data = JSON.parse(s);
-            const r = this.fromJSON(data, options);
+            const r = this._cacheJWTInput(data, options);
             return resolve(r);
           } catch (err) {
             return reject(err);
@@ -683,16 +694,9 @@ export class GoogleAuth {
    * options were passed, use Application Default Credentials.
    */
   async getClient(options?: GoogleAuthOptions) {
-    if (options) {
-      this.keyFilename =
-        options.keyFilename || options.keyFile || this.keyFilename;
-      this.scopes = options.scopes || this.scopes;
-      this.jsonContent = options.credentials || this.jsonContent;
-      this.clientOptions = options.clientOptions;
-    }
     if (!this.cachedCredential) {
       if (this.jsonContent) {
-        this.cachedCredential = await this.fromJSON(
+        this.cachedCredential = await this._cacheJWTInput(
           this.jsonContent,
           this.clientOptions
         );
