@@ -25,13 +25,14 @@ const fetch = require('node-fetch');
  * node-fetch, but you could use any HTTP client you like.
  */
 async function main() {
+  // create auth instance with custom scopes.
+  const auth = new GoogleAuth({
+    scopes: 'https://www.googleapis.com/auth/cloud-platform',
+  });
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
 
   // obtain an authenticated client
-  const auth = new GoogleAuth({
-    scopes: 'https://www.googleapis.com/auth/cloud-platform',
-  });
   const client = await auth.getClient();
   // Use the client to get authenticated request headers
   const headers = await client.getRequestHeaders();
