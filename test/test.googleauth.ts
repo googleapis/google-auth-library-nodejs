@@ -1377,4 +1377,12 @@ describe('googleauth', () => {
       /Unable to detect a Project Id in the current environment/
     );
   });
+
+  it('should throw if options are passed to getClient()', async () => {
+    const auth = new GoogleAuth();
+    await assertRejects(
+      auth.getClient({hello: 'world'}),
+      /Passing options to getClient is forbidden in v5.0.0/
+    );
+  });
 });

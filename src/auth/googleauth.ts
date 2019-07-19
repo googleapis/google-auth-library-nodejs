@@ -46,6 +46,8 @@ export interface CredentialCallback {
   (err: Error | null, result?: UserRefreshClient | JWT): void;
 }
 
+interface DeprecatedGetClientOptions {}
+
 export interface ADCCallback {
   (
     err: Error | null,
@@ -708,7 +710,12 @@ export class GoogleAuth {
    * Automatically obtain a client based on the provided configuration.  If no
    * options were passed, use Application Default Credentials.
    */
-  async getClient() {
+  async getClient(options?: DeprecatedGetClientOptions) {
+    if (options) {
+      throw new Error(
+        'Passing options to getClient is forbidden in v5.0.0. Use new GoogleAuth(opts) instead.'
+      );
+    }
     if (!this.cachedCredential) {
       if (this.jsonContent) {
         this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
