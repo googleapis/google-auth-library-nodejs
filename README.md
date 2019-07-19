@@ -46,21 +46,22 @@ Before making your API call, you must be sure the API you're calling has been en
 
 Rather than manually creating an OAuth2 client, JWT client, or Compute client, the auth library can create the correct credential type for you, depending upon the environment your code is running under.
 
-For example, a JWT auth client will be created when your code is running on your local developer machine, and a Compute client will be created when the same code is running on Google Cloud Platform. If you need a specific set of scopes, you can pass those in the form of a string or an array into the `auth.getClient` method.
+For example, a JWT auth client will be created when your code is running on your local developer machine, and a Compute client will be created when the same code is running on Google Cloud Platform. If you need a specific set of scopes, you can pass those in the form of a string or an array to the `GoogleAuth` constructor.
 
 The code below shows how to retrieve a default credential type, depending upon the runtime environment.
 
 ```js
-const {auth} = require('google-auth-library');
+const {GoogleAuth} = require('google-auth-library');
 
 /**
  * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
  * this library will automatically choose the right client based on the environment.
  */
 async function main() {
-  const client = await auth.getClient({
+  const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform'
   });
+  const client = await auth.getClient();
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
@@ -168,6 +169,7 @@ main().catch(console.error);
 ```
 
 #### Handling token events
+
 This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization](https://github.com/googleapis/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
 
 ```js
