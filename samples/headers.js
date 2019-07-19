@@ -16,7 +16,7 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const {auth} = require('google-auth-library');
+const {GoogleAuth} = require('google-auth-library');
 const fetch = require('node-fetch');
 
 /**
@@ -29,10 +29,10 @@ async function main() {
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
 
   // obtain an authenticated client
-  const client = await auth.getClient({
+  const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
-
+  const client = await auth.getClient();
   // Use the client to get authenticated request headers
   const headers = await client.getRequestHeaders();
   console.log('Headers:');

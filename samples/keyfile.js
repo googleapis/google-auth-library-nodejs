@@ -16,7 +16,7 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const {auth} = require('google-auth-library');
+const {GoogleAuth} = require('google-auth-library');
 
 /**
  * Acquire a client, and make a request to an API that's enabled by default.
@@ -25,10 +25,11 @@ async function main(
   // Full path to the sevice account credential
   keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
 ) {
-  const client = await auth.getClient({
+  const auth = new GoogleAuth({
     keyFile: keyFile,
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
+  const client = await auth.getClient();
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({url});
