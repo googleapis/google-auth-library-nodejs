@@ -1134,7 +1134,7 @@ describe('googleauth', () => {
 
   it('should use jsonContent if available', async () => {
     const json = createJwtJSON();
-    auth.fromJSON(json);
+    const auth = new GoogleAuth({credentials: json});
     // We know this returned a cached result if a nock scope isn't required
     const body = await auth.getCredentials();
     assert.notStrictEqual(body, null);

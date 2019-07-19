@@ -453,15 +453,27 @@ export class GoogleAuth {
   }
 
   /**
-   * Create a credentials instance using the given input options.
+   * Return a JWT or UserRefreshClient from JavaScript object, caching both the
+   * object used to instantiate and the client.
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
-  private _cacheJWTInput(json: JWTInput, options?: RefreshOptions): JWT | UserRefreshClient {
+  private _cacheClientFromJSON(json: JWTInput, options?: RefreshOptions): JWT | UserRefreshClient {
     let client: UserRefreshClient | JWT;
+    // create either a UserRefreshClient or JWT client.
+    options = options || {};
+    if (json.type === 'authorized_user') {
+      client = new UserRefreshClient(options);
+    } else {
+      (options as JWTOptions).scopes = this.scopes;
+      client = new JWT(options);
+    }
+    client.fromJSON(json);
+    // cache both raw data used to instantiate client and client itself.
     this.jsonContent = json;
-    return this.fromJSON(json, options);
+    this.cachedCredential = client;
+    return this.cachedCredential;
   }
 
   /**
@@ -519,7 +531,7 @@ export class GoogleAuth {
         .on('end', () => {
           try {
             const data = JSON.parse(s);
-            const r = this._cacheJWTInput(data, options);
+            const r = this._cacheClientFromJSON(data, options);
             return resolve(r);
           } catch (err) {
             return reject(err);
@@ -693,17 +705,17 @@ export class GoogleAuth {
    * Automatically obtain a client based on the provided configuration.  If no
    * options were passed, use Application Default Credentials.
    */
-  async getClient(options?: GoogleAuthOptions) {
+  async getClient() {
     if (!this.cachedCredential) {
       if (this.jsonContent) {
-        this.cachedCredential = await this._cacheJWTInput(
+        this._cacheClientFromJSON(
           this.jsonContent,
           this.clientOptions
         );
       } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
-        this.cachedCredential = await this.fromStreamAsync(
+        await this.fromStreamAsync(
           stream,
           this.clientOptions
         );
