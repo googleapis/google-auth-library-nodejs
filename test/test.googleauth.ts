@@ -231,6 +231,16 @@ describe('googleauth', () => {
     });
   });
 
+  it('fromJson should not overwrite previous client configuration', async () => {
+    const auth = new GoogleAuth({keyFilename: './test/fixtures/private.json'});
+    auth.fromJSON({
+      client_email: 'batman@example.com',
+      private_key: 'abc123',
+    });
+    const client = (await auth.getClient()) as JWT;
+    assert.strictEqual(client.email, 'hello@youarecool.com');
+  });
+
   it('fromAPIKey should error given an invalid api key', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
@@ -1124,7 +1134,7 @@ describe('googleauth', () => {
 
   it('should use jsonContent if available', async () => {
     const json = createJwtJSON();
-    auth.fromJSON(json);
+    const auth = new GoogleAuth({credentials: json});
     // We know this returned a cached result if a nock scope isn't required
     const body = await auth.getCredentials();
     assert.notStrictEqual(body, null);
@@ -1138,10 +1148,8 @@ describe('googleauth', () => {
   });
 
   it('should error when invalid keyFilename passed to getClient', async () => {
-    await assertRejects(
-      auth.getClient({keyFilename: './funky/fresh.json'}),
-      /ENOENT: no such file or directory/
-    );
+    const auth = new GoogleAuth({keyFilename: './funky/fresh.json'});
+    await assertRejects(auth.getClient(), /ENOENT: no such file or directory/);
   });
 
   it('should accept credentials to get a client', async () => {
@@ -1165,21 +1173,24 @@ describe('googleauth', () => {
   it('should allow passing scopes to get a client', async () => {
     const scopes = ['http://examples.com/is/a/scope'];
     const keyFilename = './test/fixtures/private.json';
-    const client = (await auth.getClient({scopes, keyFilename})) as JWT;
+    const auth = new GoogleAuth({scopes, keyFilename});
+    const client = (await auth.getClient()) as JWT;
     assert.strictEqual(client.scopes, scopes);
   });
 
   it('should allow passing a scope to get a client', async () => {
     const scopes = 'http://examples.com/is/a/scope';
     const keyFilename = './test/fixtures/private.json';
-    const client = (await auth.getClient({scopes, keyFilename})) as JWT;
+    const auth = new GoogleAuth({scopes, keyFilename});
+    const client = (await auth.getClient()) as JWT;
     assert.strictEqual(client.scopes, scopes);
   });
 
   it('should allow passing a scope to get a Compute client', async () => {
     const scopes = ['http://examples.com/is/a/scope'];
     const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
-    const client = (await auth.getClient({scopes})) as Compute;
+    const auth = new GoogleAuth({scopes});
+    const client = (await auth.getClient()) as Compute;
     assert.strictEqual(client.scopes, scopes);
     nockScopes.forEach(x => x.done());
   });
@@ -1348,13 +1359,6 @@ describe('googleauth', () => {
     assert.strictEqual(count, 0);
   });
 
-  it('should pass options to the JWT constructor via getClient', async () => {
-    const subject = 'science!';
-    const auth = new GoogleAuth({keyFilename: './test/fixtures/private.json'});
-    const client = (await auth.getClient({clientOptions: {subject}})) as JWT;
-    assert.strictEqual(client.subject, subject);
-  });
-
   it('should pass options to the JWT constructor via constructor', async () => {
     const subject = 'science!';
     const auth = new GoogleAuth({
@@ -1371,6 +1375,14 @@ describe('googleauth', () => {
     await assertRejects(
       auth.getProjectId(),
       /Unable to detect a Project Id in the current environment/
+    );
+  });
+
+  it('should throw if options are passed to getClient()', async () => {
+    const auth = new GoogleAuth();
+    await assertRejects(
+      auth.getClient({hello: 'world'}),
+      /Passing options to getClient is forbidden in v5.0.0/
     );
   });
 });

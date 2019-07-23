@@ -16,7 +16,7 @@
 /**
  * Import the GoogleAuth library, and create a new GoogleAuth client.
  */
-const {auth} = require('google-auth-library');
+const {GoogleAuth} = require('google-auth-library');
 
 /**
  * This sample demonstrates passing a `credentials` object directly into the
@@ -33,13 +33,14 @@ async function main() {
       this sample.
     `);
   }
-  const client = await auth.getClient({
+  const auth = new GoogleAuth({
     credentials: {
       client_email: clientEmail,
       private_key: privateKey,
     },
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
+  const client = await auth.getClient();
   const projectId = await auth.getProjectId();
   const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({url});

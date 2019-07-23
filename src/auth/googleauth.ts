@@ -46,6 +46,8 @@ export interface CredentialCallback {
   (err: Error | null, result?: UserRefreshClient | JWT): void;
 }
 
+interface DeprecatedGetClientOptions {}
+
 export interface ADCCallback {
   (
     err: Error | null,
@@ -441,7 +443,6 @@ export class GoogleAuth {
         'Must pass in a JSON object containing the Google auth settings.'
       );
     }
-    this.jsonContent = json;
     options = options || {};
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
@@ -451,6 +452,33 @@ export class GoogleAuth {
     }
     client.fromJSON(json);
     return client;
+  }
+
+  /**
+   * Return a JWT or UserRefreshClient from JavaScript object, caching both the
+   * object used to instantiate and the client.
+   * @param json The input object.
+   * @param options The JWT or UserRefresh options for the client
+   * @returns JWT or UserRefresh Client with data
+   */
+  private _cacheClientFromJSON(
+    json: JWTInput,
+    options?: RefreshOptions
+  ): JWT | UserRefreshClient {
+    let client: UserRefreshClient | JWT;
+    // create either a UserRefreshClient or JWT client.
+    options = options || {};
+    if (json.type === 'authorized_user') {
+      client = new UserRefreshClient(options);
+    } else {
+      (options as JWTOptions).scopes = this.scopes;
+      client = new JWT(options);
+    }
+    client.fromJSON(json);
+    // cache both raw data used to instantiate client and client itself.
+    this.jsonContent = json;
+    this.cachedCredential = client;
+    return this.cachedCredential;
   }
 
   /**
@@ -508,7 +536,7 @@ export class GoogleAuth {
         .on('end', () => {
           try {
             const data = JSON.parse(s);
-            const r = this.fromJSON(data, options);
+            const r = this._cacheClientFromJSON(data, options);
             return resolve(r);
           } catch (err) {
             return reject(err);
@@ -682,27 +710,19 @@ export class GoogleAuth {
    * Automatically obtain a client based on the provided configuration.  If no
    * options were passed, use Application Default Credentials.
    */
-  async getClient(options?: GoogleAuthOptions) {
+  async getClient(options?: DeprecatedGetClientOptions) {
     if (options) {
-      this.keyFilename =
-        options.keyFilename || options.keyFile || this.keyFilename;
-      this.scopes = options.scopes || this.scopes;
-      this.jsonContent = options.credentials || this.jsonContent;
-      this.clientOptions = options.clientOptions;
+      throw new Error(
+        'Passing options to getClient is forbidden in v5.0.0. Use new GoogleAuth(opts) instead.'
+      );
     }
     if (!this.cachedCredential) {
       if (this.jsonContent) {
-        this.cachedCredential = await this.fromJSON(
-          this.jsonContent,
-          this.clientOptions
-        );
+        this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
       } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);
         const stream = fs.createReadStream(filePath);
-        this.cachedCredential = await this.fromStreamAsync(
-          stream,
-          this.clientOptions
-        );
+        await this.fromStreamAsync(stream, this.clientOptions);
       } else {
         await this.getApplicationDefaultAsync(this.clientOptions);
       }
