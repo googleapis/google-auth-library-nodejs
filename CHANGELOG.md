@@ -4,6 +4,17 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.6...v5.0.0) (2019-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* getOptions() no longer accepts GoogleAuthOptions (#749)
+
+### Code Refactoring
+
+* getOptions() no longer accepts GoogleAuthOptions ([#749](https://www.github.com/googleapis/google-auth-library-nodejs/issues/749)) ([ba58e3b](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ba58e3b))
+
 ### [4.2.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.5...v4.2.6) (2019-07-23)
 
 
