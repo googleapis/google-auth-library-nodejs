@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [4.2.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.5...v4.2.6) (2019-07-23)
+
+
+### Bug Fixes
+
+* use FUNCTION_TARGET to detect GCF 10 and above ([#748](https://www.github.com/googleapis/google-auth-library-nodejs/issues/748)) ([ca17685](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ca17685))
+
 ### [4.2.5](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.4...v4.2.5) (2019-06-26)
 
 
