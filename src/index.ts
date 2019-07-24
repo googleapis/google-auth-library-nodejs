@@ -23,7 +23,7 @@ export {
   JWTInput,
 } from './auth/credentials';
 export {GCPEnv} from './auth/envDetect';
-export {GoogleAuthOptions} from './auth/googleauth';
+export {GoogleAuthOptions, ProjectIdCallback} from './auth/googleauth';
 export {IAMAuth, RequestMetadata} from './auth/iam';
 export {Claims, JWTAccess} from './auth/jwtaccess';
 export {JWT, JWTOptions} from './auth/jwtclient';
