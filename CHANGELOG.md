@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.0.0...v5.1.0) (2019-07-24)
+
+
+### Features
+
+* **types:** expose ProjectIdCallback interface ([#753](https://www.github.com/googleapis/google-auth-library-nodejs/issues/753)) ([5577f0d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/5577f0d))
+
 ## [5.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v4.2.6...v5.0.0) (2019-07-23)
 
 
