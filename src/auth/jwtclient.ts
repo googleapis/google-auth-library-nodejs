@@ -214,7 +214,7 @@ export class JWT extends OAuth2Client {
       access_token: token.access_token,
       token_type: 'Bearer',
       expiry_date: gtoken.expiresAt,
-      id_token: gtoken.idToken
+      id_token: gtoken.idToken,
     };
     this.emit('tokens', tokens);
     return {res: null, tokens};
