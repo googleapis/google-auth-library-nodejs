@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.1.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.1.0...v5.1.1) (2019-07-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency google-auth-library to v5 ([#759](https://www.github.com/googleapis/google-auth-library-nodejs/issues/759)) ([e32a12b](https://www.github.com/googleapis/google-auth-library-nodejs/commit/e32a12b))
+
 ## [5.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.0.0...v5.1.0) (2019-07-24)
 
 
