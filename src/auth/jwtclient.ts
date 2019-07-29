@@ -211,11 +211,10 @@ export class JWT extends OAuth2Client {
     const gtoken = this.createGToken();
     const token = await gtoken.getToken();
     const tokens = {
-      access_token: token,
+      access_token: token.access_token,
       token_type: 'Bearer',
       expiry_date: gtoken.expiresAt,
-      // tslint:disable-next-line no-any
-      id_token: (gtoken.rawToken! as any).id_token,
+      id_token: gtoken.idToken,
     };
     this.emit('tokens', tokens);
     return {res: null, tokens};
