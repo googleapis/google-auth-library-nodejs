@@ -25,7 +25,7 @@ import {validate} from './options';
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
-const PRODUCT_NAME = 'google-api-nodejs-client';
+const PRODUCT_NAME = 'google-auth-library';
 
 export interface Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
@@ -57,18 +57,19 @@ export class DefaultTransporter {
    * @return Configured options.
    */
   configure(opts: GaxiosOptions = {}): GaxiosOptions {
-    opts.headers = opts.headers || {};
+    const headers = Object.assign({}, opts.headers || {});
     if (typeof window === 'undefined') {
       // set transporter user agent if not in browser
-      const uaValue: string = opts.headers['User-Agent'];
-      if (!uaValue) {
-        opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
+      const uaValue: string = headers['User-Agent'];
+      if (!headers.hasOwnProperty('User-Agent')) {
+        headers['User-Agent'] = DefaultTransporter.USER_AGENT;
+      } else if (!uaValue) {
+        delete headers['User-Agent'];
       } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
-        opts.headers[
-          'User-Agent'
-        ] = `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+        headers['User-Agent'] = `${uaValue} ${DefaultTransporter.USER_AGENT}`;
       }
     }
+    opts.headers = headers;
     return opts;
   }
 

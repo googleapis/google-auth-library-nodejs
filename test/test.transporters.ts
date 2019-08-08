@@ -27,7 +27,7 @@ afterEach(() => {
 
 nock.disableNetConnect();
 
-const defaultUserAgentRE = 'google-api-nodejs-client/\\d+.\\d+.\\d+';
+const defaultUserAgentRE = 'google-auth-library/\\d+.\\d+.\\d+';
 const transporter = new DefaultTransporter();
 
 it('should set default adapter to node.js', () => {
@@ -47,7 +47,24 @@ it('should append default client user agent to the existing user agent', () => {
 });
 
 it('should not append default client user agent to the existing user agent more than once', () => {
-  const appName = 'MyTestApplication-1.0 google-api-nodejs-client/foobear';
+  const appName = 'MyTestApplication-1.0 google-auth-library/foobear';
+  const opts = transporter.configure({
+    headers: {'User-Agent': appName},
+    url: '',
+  });
+  assert.strictEqual(opts.headers!['User-Agent'], appName);
+});
+
+it('should respect an empty User-Agent, and drop the value from headers', () => {
+  const opts = transporter.configure({
+    headers: {'User-Agent': null},
+    url: '',
+  });
+  assert.strictEqual(opts.headers!.hasOwnProperty('User-Agent'), false);
+});
+
+it('should respect empty', () => {
+  const appName = 'MyTestApplication-1.0 google-auth-library/foobear';
   const opts = transporter.configure({
     headers: {'User-Agent': appName},
     url: '',
