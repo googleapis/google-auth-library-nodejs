@@ -25,7 +25,7 @@ import {validate} from './options';
 
 // tslint:disable-next-line no-var-requires
 const pkg = require('../../package.json');
-const PRODUCT_NAME = 'google-auth-library';
+const PRODUCT_NAME = 'google-auth-library-nodejs';
 
 export interface Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
