@@ -73,9 +73,7 @@ it('should append to x-goog-api-client header if it exists', () => {
   });
   console.info(opts.headers);
   assert(
-    /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(
-      opts.headers!['x-goog-api-client']
-    )
+    /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(opts.headers!['x-goog-api-client'])
   );
 });
 
