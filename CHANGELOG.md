@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.2.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.1.2...v5.2.0) (2019-08-09)
+
+
+### Features
+
+* populate x-goog-api-client header for auth ([#772](https://www.github.com/googleapis/google-auth-library-nodejs/issues/772)) ([526dcf6](https://www.github.com/googleapis/google-auth-library-nodejs/commit/526dcf6))
+
 ### [5.1.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.1.1...v5.1.2) (2019-08-05)
 
 
