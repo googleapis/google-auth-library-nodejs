@@ -68,6 +68,18 @@ export class DefaultTransporter {
           'User-Agent'
         ] = `${uaValue} ${DefaultTransporter.USER_AGENT}`;
       }
+      // track google-auth-library-nodejs version:
+      const authVersion = `auth/${pkg.version}`;
+      if (opts.headers['x-goog-api-client']) {
+        opts.headers[
+          'x-goog-api-client'
+        ] = `${opts.headers['x-goog-api-client']} ${authVersion}`;
+      } else {
+        const nodeVersion = process.version.replace(/^v/, '');
+        opts.headers[
+          'x-goog-api-client'
+        ] = `gl-node/${nodeVersion} ${authVersion}`;
+      }
     }
     return opts;
   }

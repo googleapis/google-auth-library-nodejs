@@ -55,6 +55,28 @@ it('should not append default client user agent to the existing user agent more 
   assert.strictEqual(opts.headers!['User-Agent'], appName);
 });
 
+it('should add x-goog-api-client header if none exists', () => {
+  const opts = transporter.configure({
+    url: '',
+  });
+  assert(
+    /^gl-node\/[.-\w$]+ auth\/[.-\w$]+$/.test(
+      opts.headers!['x-goog-api-client']
+    )
+  );
+});
+
+it('should append to x-goog-api-client header if it exists', () => {
+  const opts = transporter.configure({
+    headers: {'x-goog-api-client': 'gdcl/1.0.0'},
+    url: '',
+  });
+  console.info(opts.headers);
+  assert(
+    /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(opts.headers!['x-goog-api-client'])
+  );
+});
+
 it('should create a single error from multiple response errors', done => {
   const firstError = {message: 'Error 1'};
   const secondError = {message: 'Error 2'};
