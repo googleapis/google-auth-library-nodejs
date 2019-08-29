@@ -37,13 +37,14 @@ import {
   RefreshOptions,
 } from './oauth2client';
 import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
+import {Impersonated, ImpersonatedOptions} from './impersonated';
 
 export interface ProjectIdCallback {
   (err?: Error | null, projectId?: string | null): void;
 }
 
 export interface CredentialCallback {
-  (err: Error | null, result?: UserRefreshClient | JWT): void;
+  (err: Error | null, result?: UserRefreshClient | JWT | Impersonated): void;
 }
 
 interface DeprecatedGetClientOptions {}
@@ -80,7 +81,7 @@ export interface GoogleAuthOptions {
   /**
    * Options object passed to the constructor of the client
    */
-  clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions;
+  clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions | ImpersonatedOptions;
 
   /**
    * Required scopes for the desired API request
@@ -118,7 +119,7 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | null = null;
 
-  cachedCredential: JWT | UserRefreshClient | Compute | null = null;
+  cachedCredential: JWT | UserRefreshClient | Compute | Impersonated | null = null;
 
   private keyFilename?: string;
   private scopes?: string | string[];
