@@ -81,7 +81,11 @@ export interface GoogleAuthOptions {
   /**
    * Options object passed to the constructor of the client
    */
-  clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions | ImpersonatedOptions;
+  clientOptions?:
+    | JWTOptions
+    | OAuth2ClientOptions
+    | UserRefreshClientOptions
+    | ImpersonatedOptions;
 
   /**
    * Required scopes for the desired API request
@@ -119,7 +123,12 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | null = null;
 
-  cachedCredential: JWT | UserRefreshClient | Compute | Impersonated | null = null;
+  cachedCredential:
+    | JWT
+    | UserRefreshClient
+    | Compute
+    | Impersonated
+    | null = null;
 
   private keyFilename?: string;
   private scopes?: string | string[];

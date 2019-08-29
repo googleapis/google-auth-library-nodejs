@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import { GaxiosError, GaxiosOptions, GaxiosPromise } from 'gaxios';
-import { GetTokenResponse, Headers, OAuth2Client, RefreshOptions, RequestMetadataResponse } from './oauth2client';
+import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {
+  GetTokenResponse,
+  Headers,
+  OAuth2Client,
+  RefreshOptions,
+  RequestMetadataResponse,
+} from './oauth2client';
 
 export interface ImpersonatedOptions extends RefreshOptions {
   sourceClient?: OAuth2Client;
@@ -31,7 +37,6 @@ export interface TokenResponse {
 }
 
 export class Impersonated extends OAuth2Client {
-
   private sourceClient: OAuth2Client;
   private targetPrincipal: string;
   private targetScopes: string[];
@@ -42,24 +47,24 @@ export class Impersonated extends OAuth2Client {
    * Impersonated service account credentials.
    *
    * Create a new access token by impersonating another service account.
-   * 
-   * Impersonated Credentials allowing credentials issued to a user or 
-   * service account to impersonate another. The source project using 
-   * Impersonated Credentials must enable the "IAMCredentials" API. 
-   * Also, the target service account must grant the orginating principal 
+   *
+   * Impersonated Credentials allowing credentials issued to a user or
+   * service account to impersonate another. The source project using
+   * Impersonated Credentials must enable the "IAMCredentials" API.
+   * Also, the target service account must grant the orginating principal
    * the "Service Account Token Creator" IAM role.
    *
    * @param credentials the service account email address.
-   * @param sourceClient the source credential used as to acquire the 
+   * @param sourceClient the source credential used as to acquire the
    * impersonated credentials
    * @param targetPrincipal the service account to impersonate.
    * @param delegates the chained list of delegates required to grant the
-   *  final access_token. If set, the sequence of identities must have 
-   * "Service Account Token Creator" capability granted to the preceding 
-   * identity. For example, if set to [serviceAccountB, serviceAccountC], 
+   *  final access_token. If set, the sequence of identities must have
+   * "Service Account Token Creator" capability granted to the preceding
+   * identity. For example, if set to [serviceAccountB, serviceAccountC],
    * the sourceCredential must have the Token Creator role on serviceAccountB.
-   * serviceAccountB must have the Token Creator on serviceAccountC. 
-   * Finally, C must have Token Creator on target_principal. 
+   * serviceAccountB must have the Token Creator on serviceAccountC.
+   * Finally, C must have Token Creator on target_principal.
    * If left unset, sourceCredential must have that role on targetPrincipal.
    * @param targetScopes scopes to request during the authorization grant.
    * @param lifetime number of seconds the delegated credential should be
@@ -67,7 +72,10 @@ export class Impersonated extends OAuth2Client {
    */
   constructor(options: ImpersonatedOptions = {}) {
     super(options);
-    this.credentials = { expiry_date: 1, refresh_token: 'impersonated-placeholder' };
+    this.credentials = {
+      expiry_date: 1,
+      refresh_token: 'impersonated-placeholder',
+    };
     this.sourceClient = options.sourceClient || new OAuth2Client();
     this.targetPrincipal = options.targetPrincipal || '';
     this.delegates = options.delegates || [];
@@ -79,57 +87,79 @@ export class Impersonated extends OAuth2Client {
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */
-  protected async refreshToken(refreshToken?: string |
-    null): Promise<GetTokenResponse> {
-
+  protected async refreshToken(
+    refreshToken?: string | null
+  ): Promise<GetTokenResponse> {
     const iat = Math.floor(new Date().getTime() / 1000);
 
     if (this.credentials.expiry_date) {
       if (this.credentials.expiry_date <= iat) {
-        const token = await this.sourceClient.getAccessToken().then(res => {
-          let name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
-          let u = `https://iamcredentials.googleapis.com/v1/${name}:generateAccessToken`;
+        const token = await this.sourceClient
+          .getAccessToken()
+          .then(res => {
+            const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
+            const u = `https://iamcredentials.googleapis.com/v1/${name}:generateAccessToken`;
 
-          let body = {
-            "delegates": this.delegates,
-            "scope": this.targetScopes,
-            "lifetime": this.lifetime + "s"
-          }
+            const body = {
+              delegates: this.delegates,
+              scope: this.targetScopes,
+              lifetime: this.lifetime + 's',
+            };
 
-          return this.sourceClient.request(
-            {
-              url: u,
-              data: body,
-              method: 'POST'
-            }).then(function (resp) {
-              let tokenResponse = resp.data as TokenResponse;
-              return { 'accessToken': tokenResponse.accessToken, 'expireTime': (Date.parse(tokenResponse.expireTime)) / 1000, 'resp': resp };
-            }).catch(function (error) {
-              if (error.response.status = 403) {
-                if (error.response.data.error.message == 'The caller does not have permission') {
-                  throw ('Error: Unable to impersonate: sourceCredential lacks IAM Token Creator role on targetCredential')
+            return this.sourceClient
+              .request({
+                url: u,
+                data: body,
+                method: 'POST',
+              })
+              .then(resp => {
+                const tokenResponse = resp.data as TokenResponse;
+                return {
+                  accessToken: tokenResponse.accessToken,
+                  expireTime: Date.parse(tokenResponse.expireTime) / 1000,
+                  resp: resp,
+                };
+              })
+              .catch(error => {
+                if (error.response.status === 403) {
+                  if (
+                    error.response.data.error.message ===
+                    'The caller does not have permission'
+                  ) {
+                    throw new Error(
+                      'Error: Unable to impersonate: sourceCredential lacks IAM Token Creator role on targetCredential'
+                    );
+                  }
+                  if (
+                    error.response.data.error.message ===
+                    'Request had insufficient authentication scopes.'
+                  ) {
+                    throw new Error(
+                      'Error: Unable to impersonate: sourceCredential lacks cloud-platform or IAM scope'
+                    );
+                  }
                 }
-                if (error.response.data.error.message == 'Request had insufficient authentication scopes.') {
-                  throw ('Error: Unable to impersonate: sourceCredential lacks cloud-platform or IAM scope')
-                }
-              }
-              throw ('Error: Unable to impersonate: ' + error)
-            });
-        }).catch(function (error) {
-          throw ("Error: Unable to refresh sourceCredential: " + error);
-        });
+                throw new Error('Error: Unable to impersonate: ' + error);
+              });
+          })
+          .catch(error => {
+            throw new Error(
+              'Error: Unable to refresh sourceCredential: ' + error
+            );
+          });
 
         this.credentials.access_token = token.accessToken;
         this.credentials.expiry_date = token.expireTime;
       }
-      return { 'tokens': this.credentials, 'res': null };
+      return {tokens: this.credentials, res: null};
     }
-    throw ("Error: Root credentials.expiry_date not set ");
+    throw new Error('Error: Root credentials.expiry_date not set ');
   }
 
-
-  protected requestAsync<T>(opts: GaxiosOptions, retry = false):
-    GaxiosPromise<T> {
+  protected requestAsync<T>(
+    opts: GaxiosOptions,
+    retry = false
+  ): GaxiosPromise<T> {
     return super.requestAsync<T>(opts, retry).catch(e => {
       const res = (e as GaxiosError).response;
       if (res && res.status) {
@@ -139,8 +169,7 @@ export class Impersonated extends OAuth2Client {
             'A Forbidden error was returned while attempting access the target Resource as ' +
             'the Impersonated Account.';
         } else if (res.status === 404) {
-          helpfulMessage =
-            'Target Resource was not found.';
+          helpfulMessage = 'Target Resource was not found.';
         }
         if (helpfulMessage) {
           if (e && e.message && !retry) {
@@ -172,7 +201,6 @@ export class Impersonated extends OAuth2Client {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-
     if (this.isTokenExpiring()) {
       await this.getAccessToken();
     }
@@ -180,7 +208,6 @@ export class Impersonated extends OAuth2Client {
     const headers = {
       Authorization: 'Bearer ' + this.credentials.access_token,
     };
-    return { headers };
+    return {headers};
   }
-
 }

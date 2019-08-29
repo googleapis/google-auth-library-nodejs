@@ -18,8 +18,8 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import { Impersonated, JWT } from '../src';
-import { CredentialRequest } from '../src/auth/credentials';
+import {Impersonated, JWT} from '../src';
+import {CredentialRequest} from '../src/auth/credentials';
 const assertRejects = require('assert-rejects');
 
 const keypair = require('keypair');
@@ -54,15 +54,15 @@ beforeEach(() => {
     ['http://bar', 'http://foo'],
     'bar@subjectaccount.com'
   );
-  const scope = createGTokenMock({ access_token: 'initial-access-token' });
+  const scope = createGTokenMock({access_token: 'initial-access-token'});
   jwt.authorize((err, creds) => {
     scope.done();
     impersonated = new Impersonated({
       sourceClient: jwt,
-      targetPrincipal: "target@project.iam.gserviceaccount.com",
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
-      targetScopes: ["https://www.googleapis.com/auth/cloud-platform"]
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
     });
   });
 });
@@ -72,13 +72,11 @@ afterEach(() => {
   sandbox.restore();
 });
 
-
 it('should refresh if access token has expired', async () => {
   const scopes = [mockExample()];
   impersonated.credentials.access_token = 'initial-access-token';
   impersonated.credentials.expiry_date = new Date().getTime() - 10000;
-  await impersonated.request({ url });
+  await impersonated.request({url});
   assert.strictEqual(impersonated.credentials.access_token, 'abc123');
   scopes.forEach(s => s.done());
 });
-
