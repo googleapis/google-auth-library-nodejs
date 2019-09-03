@@ -30,7 +30,7 @@ async function main() {
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const projectId = await auth.getProjectId();
-  const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
 
   // obtain an authenticated client
   const client = await auth.getClient();

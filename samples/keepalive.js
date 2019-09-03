@@ -35,7 +35,7 @@ async function main() {
   });
   const client = await auth.getClient();
   const projectId = await auth.getProjectId();
-  const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
 
   // create a new agent with keepAlive enabled
   const agent = new https.Agent({keepAlive: true});
