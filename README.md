@@ -326,7 +326,7 @@ async function main() {
     serviceAccountEmail: 'my-service-account@example.com'
   });
   const projectId = await auth.getProjectId();
-  const url = `https://dns.googleapis.com/dns/v1/projects/${project_id}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({url});
   console.log(res.data);
 }
