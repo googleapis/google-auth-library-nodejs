@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.2.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.0...v5.2.1) (2019-09-06)
+
+
+### Bug Fixes
+
+* **deps:** nock@next has types that work with our libraries ([#783](https://www.github.com/googleapis/google-auth-library-nodejs/issues/783)) ([a253709](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a253709))
+* **docs:** fix variable name in README.md ([#782](https://www.github.com/googleapis/google-auth-library-nodejs/issues/782)) ([d8c70b9](https://www.github.com/googleapis/google-auth-library-nodejs/commit/d8c70b9))
+
 ## [5.2.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.1.2...v5.2.0) (2019-08-09)
 
 
