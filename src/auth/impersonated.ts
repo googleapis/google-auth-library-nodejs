@@ -29,6 +29,7 @@ export interface ImpersonatedOptions extends RefreshOptions {
   targetScopes?: string[];
   delegates?: string[];
   lifetime?: number | 3600;
+  endpoint?: string | 'https://iamcredentials.googleapis.com';
 }
 
 export interface TokenResponse {
@@ -42,6 +43,7 @@ export class Impersonated extends OAuth2Client {
   private targetScopes: string[];
   private delegates: string[];
   private lifetime: number;
+  private endpoint: string;
 
   /**
    * Impersonated service account credentials.
@@ -69,6 +71,7 @@ export class Impersonated extends OAuth2Client {
    * @param targetScopes scopes to request during the authorization grant.
    * @param lifetime number of seconds the delegated credential should be
    * valid for (up to 3600).
+   * @param endpoint api endpoint override. 
    */
   constructor(options: ImpersonatedOptions = {}) {
     super(options);
@@ -81,6 +84,7 @@ export class Impersonated extends OAuth2Client {
     this.delegates = options.delegates || [];
     this.targetScopes = options.targetScopes || [];
     this.lifetime = options.lifetime || 3600;
+    this.endpoint = options.endpoint || 'https://iamcredentials.googleapis.com';
   }
 
   /**
@@ -98,7 +102,7 @@ export class Impersonated extends OAuth2Client {
           .getAccessToken()
           .then(res => {
             const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
-            const u = `https://iamcredentials.googleapis.com/v1/${name}:generateAccessToken`;
+            const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
 
             const body = {
               delegates: this.delegates,
