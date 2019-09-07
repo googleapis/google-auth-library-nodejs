@@ -63,7 +63,7 @@ async function main() {
   });
   const client = await auth.getClient();
   const projectId = await auth.getProjectId();
-  const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
   console.log(res.data);
 }
@@ -183,7 +183,7 @@ client.on('tokens', (tokens) => {
   console.log(tokens.access_token);
 });
 
-const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
+const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
 const res = await client.request({ url });
 // The `tokens` event would now be raised if this was the first request
 ```
@@ -256,7 +256,7 @@ async function main() {
     keys.private_key,
     ['https://www.googleapis.com/auth/cloud-platform'],
   );
-  const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
   console.log(res.data);
 }
@@ -301,7 +301,7 @@ async function main() {
   // load the JWT or UserRefreshClient from the keys
   const client = auth.fromJSON(keys);
   client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-  const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${keys.project_id}`;
   const res = await client.request({url});
   console.log(res.data);
 }
@@ -326,7 +326,7 @@ async function main() {
     serviceAccountEmail: 'my-service-account@example.com'
   });
   const projectId = await auth.getProjectId();
-  const url = `https://www.googleapis.com/dns/v1/projects/${project_id}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${project_id}`;
   const res = await client.request({url});
   console.log(res.data);
 }

@@ -27,7 +27,7 @@ async function main() {
     serviceAccountEmail: 'some-service-account@example.com',
   });
   const projectId = await auth.getProjectId();
-  const url = `https://www.googleapis.com/dns/v1/projects/${projectId}`;
+  const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({url});
   console.log(res.data);
 }
