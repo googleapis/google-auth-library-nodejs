@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.2.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.1...v5.2.2) (2019-09-17)
+
+
+### Bug Fixes
+
+* **deps:** update to gcp-metadata and address envDetect performance issues ([#787](https://www.github.com/googleapis/google-auth-library-nodejs/issues/787)) ([651b5d4](https://www.github.com/googleapis/google-auth-library-nodejs/commit/651b5d4))
+
 ### [5.2.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.0...v5.2.1) (2019-09-06)
 
 
