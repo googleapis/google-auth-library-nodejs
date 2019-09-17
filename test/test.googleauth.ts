@@ -19,7 +19,12 @@ const assertRejects = require('assert-rejects');
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
-import {BASE_PATH, HEADERS, HOST_ADDRESS, SECONDARY_HOST_ADDRESS} from 'gcp-metadata';
+import {
+  BASE_PATH,
+  HEADERS,
+  HOST_ADDRESS,
+  SECONDARY_HOST_ADDRESS,
+} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
@@ -169,8 +174,8 @@ describe('googleauth', () => {
       done: () => {
         primary.done();
         secondary.done();
-      }
-    }
+      },
+    };
   }
 
   function nockNotGCE() {
@@ -184,8 +189,8 @@ describe('googleauth', () => {
       done: () => {
         primary.done();
         secondary.done();
-      }
-    }
+      },
+    };
   }
 
   function nock500GCE() {
@@ -200,8 +205,8 @@ describe('googleauth', () => {
       done: () => {
         primary.done();
         secondary.done();
-      }
-    }
+      },
+    };
   }
 
   function nock404GCE() {
