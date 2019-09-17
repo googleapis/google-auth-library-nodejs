@@ -36,10 +36,12 @@ export async function getEnv() {
       env = GCPEnv.APP_ENGINE;
     } else if (isCloudFunction()) {
       env = GCPEnv.CLOUD_FUNCTIONS;
-    } else if (await isKubernetesEngine()) {
-      env = GCPEnv.KUBERNETES_ENGINE;
     } else if (await isComputeEngine()) {
-      env = GCPEnv.COMPUTE_ENGINE;
+      if (await isKubernetesEngine()) {
+        env = GCPEnv.KUBERNETES_ENGINE;
+      } else {
+        env = GCPEnv.COMPUTE_ENGINE;
+      }
     } else {
       env = GCPEnv.NONE;
     }
