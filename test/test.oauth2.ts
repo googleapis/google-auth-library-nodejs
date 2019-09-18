@@ -1094,6 +1094,32 @@ describe(__filename, () => {
         done();
       });
     });
+
+    it(`should refresh token if the server returns ${code} with forceRefreshOnFailure`, done => {
+      const client = new OAuth2Client({
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        redirectUri: REDIRECT_URI,
+        forceRefreshOnFailure: true,
+      });
+      const scope = nock('http://example.com')
+        .get('/access')
+        .reply(code, {
+          error: {code, message: 'Invalid Credentials'},
+        });
+      const scopes = mockExample();
+      client.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'refresh-token-placeholder',
+        expiry_date: new Date().getTime() + 500000,
+      };
+      client.request({url: 'http://example.com/access'}, err => {
+        scope.done();
+        scopes[0].done();
+        assert.strictEqual('abc123', client.credentials.access_token);
+        done();
+      });
+    });
   });
 
   it('should not retry requests with streaming data', done => {

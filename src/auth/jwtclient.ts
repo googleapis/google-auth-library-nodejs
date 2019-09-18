@@ -83,7 +83,10 @@ export class JWT extends OAuth2Client {
       optionsOrEmail && typeof optionsOrEmail === 'object'
         ? optionsOrEmail
         : {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
-    super({eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis});
+    super({
+      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis,
+      forceRefreshOnFailure: opts.forceRefreshOnFailure,
+    });
     this.email = opts.email;
     this.keyFile = opts.keyFile;
     this.key = opts.key;

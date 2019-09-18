@@ -354,6 +354,12 @@ export interface RefreshOptions {
   // milliseconds from expiring".
   // Defaults to a value of 300000 (5 minutes).
   eagerRefreshThresholdMillis?: number;
+
+  // Whether to attempt to lazily refresh tokens on 401/403 responses
+  // even if an attempt is made to refresh the token preemptively based
+  // on the expiry_date.
+  // Defaults to false.
+  forceRefreshOnFailure?: boolean;
 }
 
 export class OAuth2Client extends AuthClient {
@@ -374,6 +380,8 @@ export class OAuth2Client extends AuthClient {
   projectId?: string;
 
   eagerRefreshThresholdMillis: number;
+
+  forceRefreshOnFailure: boolean;
 
   /**
    * Handles OAuth2 flow for Google APIs.
@@ -402,6 +410,7 @@ export class OAuth2Client extends AuthClient {
     this.redirectUri = opts.redirectUri;
     this.eagerRefreshThresholdMillis =
       opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
+    this.forceRefreshOnFailure = !!opts.forceRefreshOnFailure;
   }
 
   protected static readonly GOOGLE_TOKEN_INFO_URL =
@@ -896,15 +905,18 @@ export class OAuth2Client extends AuthClient {
         // - We haven't already retried.  It only makes sense to retry once.
         // - The response was a 401 or a 403
         // - The request didn't send a readableStream
-        // - An access_token and refresh_token were available, but no
-        //   expiry_date was availabe. This can happen when developers stash
-        //   the access_token and refresh_token for later use, but the
-        //   access_token fails on the first try because it's expired.
+        // - An access_token and refresh_token were available, but either no
+        //   expiry_date was available or the forceRefreshOnFailure flag is set.
+        //   The absent expiry_date case can happen when developers stash the
+        //   access_token and refresh_token for later use, but the access_token
+        //   fails on the first try because it's expired. Some developers may
+        //   choose to enable forceRefreshOnFailure to mitigate time-related
+        //   errors.
         const mayRequireRefresh =
           this.credentials &&
           this.credentials.access_token &&
           this.credentials.refresh_token &&
-          !this.credentials.expiry_date;
+          (!this.credentials.expiry_date || this.forceRefreshOnFailure);
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
