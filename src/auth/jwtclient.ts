@@ -210,7 +210,7 @@ export class JWT extends OAuth2Client {
   ): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
     const token = await gtoken.getToken({
-      forceRefresh: this.isTokenExpiring()
+      forceRefresh: this.isTokenExpiring(),
     });
     const tokens = {
       access_token: token.access_token,
