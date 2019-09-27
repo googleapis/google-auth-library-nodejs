@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.3.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.2...v5.3.0) (2019-09-27)
+
+
+### Features
+
+* if token expires soon, force refresh ([#794](https://www.github.com/googleapis/google-auth-library-nodejs/issues/794)) ([fecd4f4](https://www.github.com/googleapis/google-auth-library-nodejs/commit/fecd4f4))
+
 ### [5.2.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.1...v5.2.2) (2019-09-17)
 
 
