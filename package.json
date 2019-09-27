@@ -22,7 +22,7 @@
     "fast-text-encoding": "^1.0.0",
     "gaxios": "^2.0.0",
     "gcp-metadata": "^3.0.0",
-    "gtoken": "^4.0.0",
+    "gtoken": "^4.1.0",
     "jws": "^3.1.5",
     "lru-cache": "^5.0.0"
   },
