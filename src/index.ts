@@ -28,6 +28,9 @@ export {IAMAuth, RequestMetadata} from './auth/iam';
 export {Claims, JWTAccess} from './auth/jwtaccess';
 export {JWT, JWTOptions} from './auth/jwtclient';
 export {
+  AuthClient,
+} from './auth/authclient';
+export {
   Certificates,
   CodeChallengeMethod,
   GenerateAuthUrlOpts,
