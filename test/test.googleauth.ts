@@ -203,16 +203,33 @@ describe('googleauth', () => {
 
     return {
       done: () => {
-        primary.done();
-        secondary.done();
+        try {
+          primary.done();
+          secondary.done();
+        } catch (err) {
+          // secondary can sometimes complete prior to primary.
+        }
       },
     };
   }
 
   function nock404GCE() {
-    return nock(host)
+    const primary = nock(host)
       .get(instancePath)
       .reply(404);
+    const secondary = nock(SECONDARY_HOST_ADDRESS)
+      .get(instancePath)
+      .reply(404);
+    return {
+      done: () => {
+        try {
+          primary.done();
+          secondary.done();
+        } catch (err) {
+          // secondary can sometimes complete prior to primary.
+        }
+      },
+    };
   }
 
   function createGetProjectIdNock(projectId = 'not-real') {
