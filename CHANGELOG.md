@@ -399,7 +399,9 @@ const client = await auth.getClient({
 });
 ```
 
-#### s`refreshAccessToken`
+#### Deprecate `refreshAccessToken`
+
+_Note: `refreshAccessToken` is no longer deprecated._
 
 `getAccessToken`, `getRequestMetadata`, and `request` methods will all refresh the token if needed automatically.
 
