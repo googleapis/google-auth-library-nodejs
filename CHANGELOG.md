@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.4.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.3.0...v5.4.0) (2019-10-08)
+
+
+### Features
+
+* do not deprecate refreshAccessToken ([#804](https://www.github.com/googleapis/google-auth-library-nodejs/issues/804)) ([f05de11](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f05de11))
+
 ## [5.3.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.2...v5.3.0) (2019-09-27)
 
 
