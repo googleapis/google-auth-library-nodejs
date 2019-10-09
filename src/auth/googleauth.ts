@@ -26,6 +26,7 @@ import {createCrypto} from '../crypto/crypto';
 import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 
+import {AuthClient} from './authclient';
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {GCPEnv, getEnv} from './envDetect';
@@ -96,9 +97,7 @@ export interface GoogleAuthOptions {
 export const CLOUD_SDK_CLIENT_ID =
   '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
-export class GoogleAuth {
-  transporter?: Transporter;
-
+export class GoogleAuth extends AuthClient {
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
@@ -130,6 +129,7 @@ export class GoogleAuth {
   static DefaultTransporter = DefaultTransporter;
 
   constructor(opts?: GoogleAuthOptions) {
+    super();
     opts = opts || {};
     this._cachedProjectId = opts.projectId || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
