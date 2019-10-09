@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.4.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.3.0...v5.4.0) (2019-10-08)
+
+
+### Features
+
+* do not deprecate refreshAccessToken ([#804](https://www.github.com/googleapis/google-auth-library-nodejs/issues/804)) ([f05de11](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f05de11))
+
 ## [5.3.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.2...v5.3.0) (2019-09-27)
 
 
@@ -399,10 +406,13 @@ const client = await auth.getClient({
 });
 ```
 
-#### The `refreshAccessToken` method has been deprecated
-The `OAuth2.refreshAccessToken` method has been deprecated.  The `getAccessToken`, `getRequestMetadata`, and `request` methods will all refresh the token if needed automatically.   There is no need to ever manually refresh the token.
+#### Deprecate `refreshAccessToken`
 
-As always, if you run into any problems... please let us know!
+_Note: `refreshAccessToken` is no longer deprecated._
+
+`getAccessToken`, `getRequestMetadata`, and `request` methods will all refresh the token if needed automatically.
+
+You should not need to invoke `refreshAccessToken` directly except in [certain edge-cases](https://github.com/googleapis/google-auth-library-nodejs/issues/575).
 
 ### Features
 - Set private_key_id in JWT access token header like other google auth libraries. (#450)

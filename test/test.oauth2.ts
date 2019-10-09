@@ -865,11 +865,11 @@ describe(__filename, () => {
     });
   });
 
-  it('should emit warning on refreshAccessToken', async () => {
+  it('should not emit warning on refreshAccessToken', async () => {
     let warned = false;
     sandbox.stub(process, 'emitWarning').callsFake(() => (warned = true));
     client.refreshAccessToken((err, result) => {
-      assert.strictEqual(warned, true);
+      assert.strictEqual(warned, false);
     });
   });
 
