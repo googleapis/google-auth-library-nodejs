@@ -640,7 +640,6 @@ export class OAuth2Client extends AuthClient {
   refreshAccessToken(
     callback?: RefreshAccessTokenCallback
   ): Promise<RefreshAccessTokenResponse> | void {
-    messages.warn(messages.REFRESH_ACCESS_TOKEN_DEPRECATED);
     if (callback) {
       this.refreshAccessTokenAsync().then(
         r => callback(null, r.credentials, r.res),

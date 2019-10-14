@@ -19,7 +19,12 @@ const assertRejects = require('assert-rejects');
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
-import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
+import {
+  BASE_PATH,
+  HEADERS,
+  HOST_ADDRESS,
+  SECONDARY_HOST_ADDRESS,
+} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
@@ -158,27 +163,81 @@ describe('googleauth', () => {
   }
 
   function nockIsGCE() {
-    return nock(host)
+    const primary = nock(host)
       .get(instancePath)
       .reply(200, {}, HEADERS);
+    const secondary = nock(SECONDARY_HOST_ADDRESS)
+      .get(instancePath)
+      .reply(200, {}, HEADERS);
+
+    return {
+      done: () => {
+        try {
+          primary.done();
+          secondary.done();
+        } catch (_err) {
+          // secondary can sometimes complete prior to primary.
+        }
+      },
+    };
   }
 
   function nockNotGCE() {
-    return nock(host)
+    const primary = nock(host)
       .get(instancePath)
       .replyWithError({code: 'ENOTFOUND'});
+    const secondary = nock(SECONDARY_HOST_ADDRESS)
+      .get(instancePath)
+      .replyWithError({code: 'ENOTFOUND'});
+    return {
+      done: () => {
+        try {
+          primary.done();
+          secondary.done();
+        } catch (_err) {
+          // secondary can sometimes complete prior to primary.
+        }
+      },
+    };
   }
 
   function nock500GCE() {
-    return nock(host)
+    const primary = nock(host)
       .get(instancePath)
-      .reply(500);
+      .reply(500, {}, HEADERS);
+    const secondary = nock(SECONDARY_HOST_ADDRESS)
+      .get(instancePath)
+      .reply(500, {}, HEADERS);
+
+    return {
+      done: () => {
+        try {
+          primary.done();
+          secondary.done();
+        } catch (err) {
+          // secondary can sometimes complete prior to primary.
+        }
+      },
+    };
   }
 
   function nock404GCE() {
-    return nock(host)
+    const primary = nock(host)
       .get(instancePath)
       .reply(404);
+    const secondary = nock(SECONDARY_HOST_ADDRESS)
+      .get(instancePath)
+      .reply(404);
+    return {
+      done: () => {
+        try {
+          primary.done();
+          secondary.done();
+        } catch (err) {
+          // secondary can sometimes complete prior to primary.
+        }
+      },
+    };
   }
 
   function createGetProjectIdNock(projectId = 'not-real') {

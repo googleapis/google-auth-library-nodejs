@@ -4,6 +4,42 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.4.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.4.0...v5.4.1) (2019-10-10)
+
+
+### Bug Fixes
+
+* **deps:** updats to gcp-metadata with debug option ([#811](https://www.github.com/googleapis/google-auth-library-nodejs/issues/811)) ([744e3e8](https://www.github.com/googleapis/google-auth-library-nodejs/commit/744e3e8fea223eb4fb115ef0a4d36ad88fc6921a))
+
+## [5.4.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.3.0...v5.4.0) (2019-10-08)
+
+
+### Features
+
+* do not deprecate refreshAccessToken ([#804](https://www.github.com/googleapis/google-auth-library-nodejs/issues/804)) ([f05de11](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f05de11))
+
+## [5.3.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.2...v5.3.0) (2019-09-27)
+
+
+### Features
+
+* if token expires soon, force refresh ([#794](https://www.github.com/googleapis/google-auth-library-nodejs/issues/794)) ([fecd4f4](https://www.github.com/googleapis/google-auth-library-nodejs/commit/fecd4f4))
+
+### [5.2.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.1...v5.2.2) (2019-09-17)
+
+
+### Bug Fixes
+
+* **deps:** update to gcp-metadata and address envDetect performance issues ([#787](https://www.github.com/googleapis/google-auth-library-nodejs/issues/787)) ([651b5d4](https://www.github.com/googleapis/google-auth-library-nodejs/commit/651b5d4))
+
+### [5.2.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.2.0...v5.2.1) (2019-09-06)
+
+
+### Bug Fixes
+
+* **deps:** nock@next has types that work with our libraries ([#783](https://www.github.com/googleapis/google-auth-library-nodejs/issues/783)) ([a253709](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a253709))
+* **docs:** fix variable name in README.md ([#782](https://www.github.com/googleapis/google-auth-library-nodejs/issues/782)) ([d8c70b9](https://www.github.com/googleapis/google-auth-library-nodejs/commit/d8c70b9))
+
 ## [5.2.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.1.2...v5.2.0) (2019-08-09)
 
 
@@ -377,10 +413,13 @@ const client = await auth.getClient({
 });
 ```
 
-#### The `refreshAccessToken` method has been deprecated
-The `OAuth2.refreshAccessToken` method has been deprecated.  The `getAccessToken`, `getRequestMetadata`, and `request` methods will all refresh the token if needed automatically.   There is no need to ever manually refresh the token.
+#### Deprecate `refreshAccessToken`
 
-As always, if you run into any problems... please let us know!
+_Note: `refreshAccessToken` is no longer deprecated._
+
+`getAccessToken`, `getRequestMetadata`, and `request` methods will all refresh the token if needed automatically.
+
+You should not need to invoke `refreshAccessToken` directly except in [certain edge-cases](https://github.com/googleapis/google-auth-library-nodejs/issues/575).
 
 ### Features
 - Set private_key_id in JWT access token header like other google auth libraries. (#450)
