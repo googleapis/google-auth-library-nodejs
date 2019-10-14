@@ -172,8 +172,12 @@ describe('googleauth', () => {
 
     return {
       done: () => {
-        primary.done();
-        secondary.done();
+        try {
+          primary.done();
+          secondary.done();
+        } catch (_err) {
+          // secondary can sometimes complete prior to primary.
+        }
       },
     };
   }
@@ -187,8 +191,12 @@ describe('googleauth', () => {
       .replyWithError({code: 'ENOTFOUND'});
     return {
       done: () => {
-        primary.done();
-        secondary.done();
+        try {
+          primary.done();
+          secondary.done();
+        } catch (_err) {
+          // secondary can sometimes complete prior to primary.
+        }
       },
     };
   }
