@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.5.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.4.1...v5.5.0) (2019-10-14)
+
+
+### Features
+
+* **refresh:** add forceRefreshOnFailure flag for refreshing token on error ([#790](https://www.github.com/googleapis/google-auth-library-nodejs/issues/790)) ([54cf477](https://www.github.com/googleapis/google-auth-library-nodejs/commit/54cf4770f487fd1db48f2444c86109ca97608ed1))
+
 ### [5.4.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.4.0...v5.4.1) (2019-10-10)
 
 
