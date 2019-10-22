@@ -71,9 +71,25 @@ it('should append to x-goog-api-client header if it exists', () => {
     headers: {'x-goog-api-client': 'gdcl/1.0.0'},
     url: '',
   });
-  console.info(opts.headers);
   assert(
     /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(opts.headers!['x-goog-api-client'])
+  );
+});
+
+// see: https://github.com/googleapis/google-auth-library-nodejs/issues/819
+it('should not append x-goog-api-client header multiple times', () => {
+  const opts = {
+    headers: {'x-goog-api-client': 'gdcl/1.0.0'},
+    url: '',
+  };
+  let configuredOpts = transporter.configure(opts);
+  console.info(configuredOpts);
+  configuredOpts = transporter.configure(opts);
+  console.info(configuredOpts);
+  assert(
+    /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(
+      configuredOpts.headers!['x-goog-api-client']
+    )
   );
 });
 

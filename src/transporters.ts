@@ -70,11 +70,14 @@ export class DefaultTransporter {
       }
       // track google-auth-library-nodejs version:
       const authVersion = `auth/${pkg.version}`;
-      if (opts.headers['x-goog-api-client']) {
+      if (
+        opts.headers['x-goog-api-client'] &&
+        !opts.headers['x-goog-api-client'].includes(authVersion)
+      ) {
         opts.headers[
           'x-goog-api-client'
         ] = `${opts.headers['x-goog-api-client']} ${authVersion}`;
-      } else {
+      } else if (!opts.headers['x-goog-api-client']) {
         const nodeVersion = process.version.replace(/^v/, '');
         opts.headers[
           'x-goog-api-client'
