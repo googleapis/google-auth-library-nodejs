@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.5.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.0...v5.5.1) (2019-10-22)
+
+
+### Bug Fixes
+
+* **deps:** update gaxios dependency ([#817](https://www.github.com/googleapis/google-auth-library-nodejs/issues/817)) ([6730698](https://www.github.com/googleapis/google-auth-library-nodejs/commit/6730698b876eb52889acfead33bc4af52a8a7ba5))
+* don't append x-goog-api-client multiple times ([#820](https://www.github.com/googleapis/google-auth-library-nodejs/issues/820)) ([a46b271](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a46b271947b635377eacbdfcd22ae363ce9260a1))
+
 ## [5.5.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.4.1...v5.5.0) (2019-10-14)
 
 
