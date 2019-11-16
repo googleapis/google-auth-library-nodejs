@@ -364,4 +364,4 @@ This library is licensed under Apache 2.0. Full license text is available in [LI
 [snyk-image]: https://snyk.io/test/github/googleapis/google-auth-library-nodejs/badge.svg
 [snyk-url]: https://snyk.io/test/github/googleapis/google-auth-library-nodejs
 [stackoverflow]: http://stackoverflow.com/questions/tagged/google-auth-library-nodejs
-[devconsole]: https://console.developer.google.com
+[devconsole]: https://console.cloud.google.com/
