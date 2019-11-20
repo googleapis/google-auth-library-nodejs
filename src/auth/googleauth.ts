@@ -745,7 +745,16 @@ export class GoogleAuth {
    */
   async getRequestHeaders(url?: string) {
     const client = await this.getClient();
-    return client.getRequestHeaders(url);
+    let headers = client.getRequestHeaders(url);
+    // quota_project, stored in application_default_credentials.json, is set in
+    // the x-goog-user-project header, to indicate an alternate account for
+    // billing and quota:
+    if (this.jsonContent && this.jsonContent.quota_project) {
+      headers = Object.assign({}, headers, {
+        'x-goog-user-project': this.jsonContent.quota_project,
+      });
+    }
+    return headers;
   }
 
   /**
