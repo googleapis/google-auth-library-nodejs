@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.5.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.1...v5.5.2) (2019-11-20)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v2 ([#821](https://www.github.com/googleapis/google-auth-library-nodejs/issues/821)) ([2c04117](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2c0411708761cc7debdda1af1e593d82cb4aed31))
+* **docs:** add jsdoc-region-tag plugin ([#826](https://www.github.com/googleapis/google-auth-library-nodejs/issues/826)) ([558677f](https://www.github.com/googleapis/google-auth-library-nodejs/commit/558677fd90d3451e9ac4bf6d0b98907e3313f287))
+
 ### [5.5.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.0...v5.5.1) (2019-10-22)
 
 
