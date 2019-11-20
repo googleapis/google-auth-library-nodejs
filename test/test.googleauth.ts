@@ -1474,12 +1474,8 @@ describe('googleauth', () => {
       .reply(200, {});
 
     const auth = new GoogleAuth();
-    // Force jsonContent to load, and then remove the quota_project parameter.
-    await auth.getClient();
-    delete auth.jsonContent!.quota_project;
-
     const headers = await auth.getRequestHeaders();
-    assert.strictEqual(headers['x-goog-user-project'], undefined);
+    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
     req.done();
   });
 });
