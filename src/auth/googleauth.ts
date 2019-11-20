@@ -749,10 +749,15 @@ export class GoogleAuth {
     // quota_project, stored in application_default_credentials.json, is set in
     // the x-goog-user-project header, to indicate an alternate account for
     // billing and quota:
-    if (this.jsonContent && this.jsonContent.quota_project) {
-      headers = Object.assign({}, headers, {
-        'x-goog-user-project': this.jsonContent.quota_project,
-      });
+    if (this.jsonContent?.quota_project) {
+      // If x-goog-user-project has explicitly been set in the client headers,
+      // it takes precedence.
+      headers = Object.assign(
+        {
+          'x-goog-user-project': this.jsonContent.quota_project,
+        },
+        headers
+      );
     }
     return headers;
   }
