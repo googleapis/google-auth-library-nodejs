@@ -16,7 +16,12 @@
 
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+import {
+  Headers,
+  GetTokenResponse,
+  OAuth2Client,
+  RefreshOptions,
+} from './oauth2client';
 
 export interface UserRefreshClientOptions extends RefreshOptions {
   clientId?: string;
@@ -112,6 +117,7 @@ export class UserRefreshClient extends OAuth2Client {
     this._clientSecret = json.client_secret;
     this._refreshToken = json.refresh_token;
     this.credentials.refresh_token = json.refresh_token;
+    this.quotaProject = json.quota_project;
   }
 
   /**
