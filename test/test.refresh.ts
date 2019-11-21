@@ -133,7 +133,9 @@ it('getRequestHeaders should populate x-goog-user-project header if quota_projec
     .reply(200, {});
 
   // Fake loading default credentials with quota project set:
-  const stream = fs.createReadStream('./test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json');
+  const stream = fs.createReadStream(
+    './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+  );
   const refresh = new UserRefreshClient();
   await refresh.fromStream(stream);
 

@@ -744,6 +744,9 @@ export class OAuth2Client extends AuthClient {
    */
   async getRequestHeaders(url?: string): Promise<Headers> {
     const headers = (await this.getRequestMetadataAsync(url)).headers;
+    // quota_project, stored in application_default_credentials.json, is set in
+    // the x-goog-user-project header, to indicate an alternate account for
+    // billing and quota:
     if (
       !headers['x-goog-user-project'] && // don't override a value the user sets.
       this.quotaProject
