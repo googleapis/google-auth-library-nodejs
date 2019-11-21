@@ -1445,7 +1445,7 @@ describe('googleauth', () => {
     );
   });
 
-  it('getRequestHeaders() populates x-goog-user-project with quota_project if present', async () => {
+  it('getRequestHeaders populates x-goog-user-project with quota_project if present', async () => {
     // Fake a home directory in our fixtures path.
     mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
     mockEnvVar('HOME', './test/fixtures/config-with-quota');
@@ -1462,7 +1462,7 @@ describe('googleauth', () => {
     req.done();
   });
 
-  it('getRequestHeaders() does not populate x-goog-user-project if quota_project is not present', async () => {
+  it('getRequestHeaders does not populate x-goog-user-project if quota_project is not present', async () => {
     // Fake a home directory in our fixtures path.
     mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
     mockEnvVar('HOME', './test/fixtures/config-no-quota');
@@ -1479,7 +1479,7 @@ describe('googleauth', () => {
     req.done();
   });
 
-  it('getRequestHeaders() populates x-goog-user-project when called on returned client', async () => {
+  it('getRequestHeaders populates x-goog-user-project when called on returned client', async () => {
     // Fake a home directory in our fixtures path.
     mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
     mockEnvVar('HOME', './test/fixtures/config-with-quota');
