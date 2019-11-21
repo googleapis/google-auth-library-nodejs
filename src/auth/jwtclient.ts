@@ -267,6 +267,7 @@ export class JWT extends OAuth2Client {
     this.key = json.private_key;
     this.keyId = json.private_key_id;
     this.projectId = json.project_id;
+    this.quotaProject = json.quota_project;
   }
 
   /**

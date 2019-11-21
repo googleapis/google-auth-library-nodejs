@@ -16,6 +16,7 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
+import * as nock from 'nock';
 import {UserRefreshClient} from '../src';
 
 // Creates a standard JSON credentials object for testing.
@@ -122,4 +123,22 @@ it('fromStream should read the stream and create a UserRefreshClient', done => {
     assert.strictEqual(json.refresh_token, refresh._refreshToken);
     done();
   });
+});
+
+it('getRequestHeaders should populate x-goog-user-project header if quota_project present', async () => {
+  // The first time auth.getRequestHeaders() is called /token endpoint is used to
+  // fetch a JWT.
+  const req = nock('https://oauth2.googleapis.com')
+    .post('/token')
+    .reply(200, {});
+
+  // Fake loading default credentials with quota project set:
+  const stream = fs.createReadStream(
+    './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+  );
+  const refresh = new UserRefreshClient();
+  await refresh.fromStream(stream);
+
+  const headers = await refresh.getRequestHeaders();
+  assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
 });

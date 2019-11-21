@@ -28,7 +28,7 @@ import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
 
 import {AuthClient} from './authclient';
-import {CredentialRequest, Credentials} from './credentials';
+import {CredentialRequest, Credentials, JWTInput} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 
 export interface Certificates {
@@ -367,6 +367,7 @@ export class OAuth2Client extends AuthClient {
   private certificateCache: Certificates = {};
   private certificateExpiry: Date | null = null;
   private certificateCacheFormat: CertificateFormat = CertificateFormat.PEM;
+  protected quotaProject?: string;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
 
   // TODO: refactor tests to make this private
@@ -742,8 +743,17 @@ export class OAuth2Client extends AuthClient {
    * @param url The optional url being authorized
    */
   async getRequestHeaders(url?: string): Promise<Headers> {
-    const res = await this.getRequestMetadataAsync(url);
-    return res.headers;
+    const headers = (await this.getRequestMetadataAsync(url)).headers;
+    // quota_project, stored in application_default_credentials.json, is set in
+    // the x-goog-user-project header, to indicate an alternate account for
+    // billing and quota:
+    if (
+      !headers['x-goog-user-project'] && // don't override a value the user sets.
+      this.quotaProject
+    ) {
+      headers['x-goog-user-project'] = this.quotaProject;
+    }
+    return headers;
   }
 
   protected async getRequestMetadataAsync(
