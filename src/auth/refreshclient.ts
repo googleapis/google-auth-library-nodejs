@@ -115,7 +115,7 @@ export class UserRefreshClient extends OAuth2Client {
     this._clientSecret = json.client_secret;
     this._refreshToken = json.refresh_token;
     this.credentials.refresh_token = json.refresh_token;
-    this.quotaProject = json.quota_project;
+    this.quotaProjectId = json.quota_project_id;
   }
 
   /**

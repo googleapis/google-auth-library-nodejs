@@ -123,7 +123,7 @@ it('fromStream should read the stream and create a UserRefreshClient', done => {
   });
 });
 
-it('getRequestHeaders should populate x-goog-user-project header if quota_project present', async () => {
+it('getRequestHeaders should populate x-goog-user-project header if quota_project_id present', async () => {
   // The first time auth.getRequestHeaders() is called /token endpoint is used to
   // fetch a JWT.
   const req = nock('https://oauth2.googleapis.com')

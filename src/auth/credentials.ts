@@ -37,7 +37,7 @@ export interface JWTInput {
   client_id?: string;
   client_secret?: string;
   refresh_token?: string;
-  quota_project?: string;
+  quota_project_id?: string;
 }
 
 export interface CredentialBody {
