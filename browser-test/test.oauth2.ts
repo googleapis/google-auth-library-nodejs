@@ -15,6 +15,7 @@
 import * as base64js from 'base64-js';
 import {assert} from 'chai';
 import * as sinon from 'sinon';
+import {URL} from 'url';
 import {privateKey, publicKey} from './fixtures/keys';
 
 // Not all browsers support `TextEncoder`. The following `require` will
@@ -120,14 +121,14 @@ describe('Browser OAuth2 tests', () => {
     client.transporter.request = stub;
     const result1 = await client.getFederatedSignonCertsAsync();
     const result2 = await client.getFederatedSignonCertsAsync();
-    assert(stub.calledOnce);
+    assert.ok(stub.calledOnce);
     assert.deepStrictEqual(result1.certs, result2.certs);
     assert.deepStrictEqual(result1.format, result2.format);
   });
 
   it('should generate a valid code verifier and resulting challenge', async () => {
     const codes = await client.generateCodeVerifierAsync();
-    assert.match(codes.codeVerifier, /^[a-zA-Z0-9\-\.~_]{128}$/);
+    assert.match(codes.codeVerifier, /^[a-zA-Z0-9\-.~_]{128}$/);
   });
 
   it('should include code challenge and method in the url', async () => {
@@ -166,8 +167,10 @@ describe('Browser OAuth2 tests', () => {
       '}';
     const envelope = JSON.stringify({kid: 'keyid', alg: 'RS256'});
     let data =
+      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       base64js.fromByteArray(new TextEncoder().encode(envelope)) +
       '.' +
+      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       base64js.fromByteArray(new TextEncoder().encode(idToken));
     const algo = {
       name: 'RSASSA-PKCS1-v1_5',
@@ -183,6 +186,7 @@ describe('Browser OAuth2 tests', () => {
     const signature = await window.crypto.subtle.sign(
       algo,
       cryptoKey,
+      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       new TextEncoder().encode(data)
     );
     data += '.' + base64js.fromByteArray(new Uint8Array(signature));

@@ -1,9 +1,20 @@
 {
-  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "lib": ["es2015", "dom"],
+    "lib": ["es2016", "dom"],
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "pretty": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017"
   },
   "include": [
     "src/*.ts",
@@ -15,6 +26,7 @@
     "browser-test/**/*.ts"
   ],
   "exclude": [
-    "test/fixtures"
+    "test/fixtures",
+    "node_modules"
   ]
 }

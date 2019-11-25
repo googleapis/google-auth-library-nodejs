@@ -26,7 +26,7 @@ import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
 
 import {AuthClient} from './authclient';
-import {CredentialRequest, Credentials, JWTInput} from './credentials';
+import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 
 export interface Certificates {
@@ -368,18 +368,12 @@ export class OAuth2Client extends AuthClient {
   protected quotaProjectId?: string;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
 
-  // TODO: refactor tests to make this private
+  // Both of these should probably be private.
   _clientId?: string;
-
-  // TODO: refactor tests to make this private
   _clientSecret?: string;
-
   apiKey?: string;
-
   projectId?: string;
-
   eagerRefreshThresholdMillis: number;
-
   forceRefreshOnFailure: boolean;
 
   /**
@@ -628,7 +622,6 @@ export class OAuth2Client extends AuthClient {
     });
 
     const tokens = res.data as Credentials;
-    // TODO: de-duplicate this code from a few spots
     if (res.data && res.data.expires_in) {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
@@ -755,6 +748,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   protected async getRequestMetadataAsync(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     url?: string | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
@@ -897,11 +891,15 @@ export class OAuth2Client extends AuthClient {
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
       if (r.headers && r.headers.Authorization) {
+        // eslint-disable-next-line require-atomic-updates
         opts.headers = opts.headers || {};
+        // eslint-disable-next-line require-atomic-updates
         opts.headers.Authorization = r.headers.Authorization;
       }
       if (this.apiKey) {
+        // eslint-disable-next-line require-atomic-updates
         opts.headers = opts.headers || {};
+        // eslint-disable-next-line require-atomic-updates
         opts.headers['X-Goog-Api-Key'] = this.apiKey;
       }
       r2 = await this.transporter.request<T>(opts);
@@ -1144,21 +1142,21 @@ export class OAuth2Client extends AuthClient {
     }
 
     if (!envelope) {
-      throw new Error("Can't parse token envelope: " + segments[0]);
+      throw new Error(`Can't parse token envelope: ${segments[0]}`);
     }
 
     try {
       payload = JSON.parse(crypto.decodeBase64StringUtf8(segments[1]));
     } catch (err) {
-      err.message = `Can't parse token payload '${segments[0]}`;
+      err.message = `Can't parse token payload: ${segments[0]}`;
       throw err;
     }
 
     if (!payload) {
-      throw new Error("Can't parse token payload: " + segments[1]);
+      throw new Error(`Can't parse token payload: ${segments[1]}`);
     }
 
-    if (!certs.hasOwnProperty(envelope.kid)) {
+    if (!envelope.kid) {
       // If this is not present, then there's no reason to attempt verification
       throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
     }

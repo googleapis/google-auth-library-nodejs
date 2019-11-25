@@ -21,6 +21,7 @@ import * as sinon from 'sinon';
 import {JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const keypair = require('keypair');
 const PEM_PATH = './test/fixtures/private.pem';
 const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
@@ -72,7 +73,6 @@ afterEach(() => {
 it('should emit warning for createScopedRequired', () => {
   let called = false;
   sandbox.stub(process, 'emitWarning').callsFake(() => (called = true));
-  // tslint:disable-next-line deprecation
   jwt.createScopedRequired();
   assert.strictEqual(called, true);
 });
@@ -124,7 +124,7 @@ it('should accept scope as string', done => {
   });
 
   const scope = createGTokenMock({access_token: 'initial-access-token'});
-  jwt.authorize((err, creds) => {
+  jwt.authorize(() => {
     scope.done();
     assert.strictEqual('http://foo', jwt.gtoken!.scope);
     done();
@@ -591,7 +591,6 @@ it('createScopedRequired should return true when scopes is null', () => {
     keyFile: '/path/to/key.pem',
     subject: 'bar@subjectaccount.com',
   });
-  // tslint:disable-next-line deprecation
   assert.strictEqual(true, jwt.createScopedRequired());
 });
 
@@ -602,7 +601,6 @@ it('createScopedRequired should return true when scopes is an empty array', () =
     scopes: [],
     subject: 'bar@subjectaccount.com',
   });
-  // tslint:disable-next-line deprecation
   assert.strictEqual(true, jwt.createScopedRequired());
 });
 
@@ -613,7 +611,6 @@ it('createScopedRequired should return true when scopes is an empty string', () 
     scopes: '',
     subject: 'bar@subjectaccount.com',
   });
-  // tslint:disable-next-line deprecation
   assert.strictEqual(true, jwt.createScopedRequired());
 });
 
@@ -624,7 +621,6 @@ it('createScopedRequired should return false when scopes is a filled-in string',
     scopes: 'http://foo',
     subject: 'bar@subjectaccount.com',
   });
-  // tslint:disable-next-line deprecation
   assert.strictEqual(false, jwt.createScopedRequired());
 });
 
@@ -635,8 +631,6 @@ it('createScopedRequired should return false when scopes is a filled-in array', 
     scopes: ['http://bar', 'http://foo'],
     subject: 'bar@subjectaccount.com',
   });
-
-  // tslint:disable-next-line deprecation
   assert.strictEqual(false, jwt.createScopedRequired());
 });
 
@@ -647,14 +641,13 @@ it('createScopedRequired should return false when scopes is not an array or a st
     scopes: '2',
     subject: 'bar@subjectaccount.com',
   });
-  // tslint:disable-next-line deprecation
   assert.strictEqual(false, jwt.createScopedRequired());
 });
 
 it('fromJson should error on null json', () => {
   assert.throws(() => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (jwt as any).fromJSON(null);
   });
 });
@@ -738,7 +731,7 @@ it('should error on missing refresh_token', () => {
 
 it('fromStream should error on null stream', done => {
   // Test verifies invalid parameter tests, which requires cast to any.
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (jwt as any).fromStream(null, (err: Error) => {
     assert.strictEqual(true, err instanceof Error);
     done();
@@ -770,7 +763,7 @@ it('fromStream should read the stream and create a jwt', done => {
 it('fromAPIKey should error without api key', () => {
   assert.throws(() => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (jwt as any).fromAPIKey(undefined);
   });
 });
@@ -779,7 +772,7 @@ it('fromAPIKey should error with invalid api key type', () => {
   const KEY = 'test';
   assert.throws(() => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     jwt.fromAPIKey({key: KEY} as any);
   });
 });
@@ -799,7 +792,7 @@ it('getCredentials should handle a key', async () => {
 it('getCredentials should handle a p12 keyFile', async () => {
   const jwt = new JWT({keyFile: P12_PATH});
   const {private_key, client_email} = await jwt.getCredentials();
-  assert(private_key);
+  assert.ok(private_key);
   assert.strictEqual(client_email, undefined);
 });
 

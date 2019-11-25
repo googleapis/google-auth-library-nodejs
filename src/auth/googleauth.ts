@@ -44,6 +44,7 @@ export interface CredentialCallback {
   (err: Error | null, result?: UserRefreshClient | JWT): void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface DeprecatedGetClientOptions {}
 
 export interface ADCCallback {
@@ -181,6 +182,7 @@ export class GoogleAuth {
     // - GCE project ID from metadata server)
     if (!this._getDefaultProjectIdPromise) {
       this._getDefaultProjectIdPromise = new Promise(
+        // eslint-disable-next-line no-async-promise-executor
         async (resolve, reject) => {
           try {
             const projectId =
@@ -575,22 +577,19 @@ export class GoogleAuth {
    */
   private async getDefaultServiceProjectId(): Promise<string | null> {
     return new Promise<string | null>(resolve => {
-      exec(
-        'gcloud config config-helper --format json',
-        (err, stdout, stderr) => {
-          if (!err && stdout) {
-            try {
-              const projectId = JSON.parse(stdout).configuration.properties.core
-                .project;
-              resolve(projectId);
-              return;
-            } catch (e) {
-              // ignore errors
-            }
+      exec('gcloud config config-helper --format json', (err, stdout) => {
+        if (!err && stdout) {
+          try {
+            const projectId = JSON.parse(stdout).configuration.properties.core
+              .project;
+            resolve(projectId);
+            return;
+          } catch (e) {
+            // ignore errors
           }
-          resolve(null);
         }
-      );
+        resolve(null);
+      });
     });
   }
 
@@ -760,6 +759,7 @@ export class GoogleAuth {
     const url = opts.url || opts.uri;
     const client = await this.getClient();
     const headers = await client.getRequestHeaders(url);
+    // eslint-disable-next-line require-atomic-updates
     opts.headers = Object.assign(opts.headers || {}, headers);
     return opts;
   }
@@ -769,7 +769,7 @@ export class GoogleAuth {
    * HTTP request using the given options.
    * @param opts Axios request options for the HTTP request.
    */
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async request<T = any>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
     const client = await this.getClient();
     return client.request<T>(opts);

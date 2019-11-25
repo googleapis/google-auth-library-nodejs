@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-const assertRejects = require('assert-rejects');
+import assertRejects = require('assert-rejects');
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
@@ -106,7 +106,7 @@ it('should emit an event for a new access token', async () => {
   await compute.request({url});
   assert.strictEqual(compute.credentials.access_token, 'abc123');
   scopes.forEach(s => s.done());
-  assert(raisedEvent);
+  assert.ok(raisedEvent);
 });
 
 it('should refresh if access token will expired soon and time to refresh before expiration is set', async () => {
@@ -141,13 +141,11 @@ it('should not refresh if access token has not expired', async () => {
 it('should emit warning for createScopedRequired', () => {
   let called = false;
   sandbox.stub(process, 'emitWarning').callsFake(() => (called = true));
-  // tslint:disable-next-line deprecation
   compute.createScopedRequired();
   assert.strictEqual(called, true);
 });
 
 it('should return false for createScopedRequired', () => {
-  // tslint:disable-next-line deprecation
   assert.strictEqual(false, compute.createScopedRequired());
 });
 

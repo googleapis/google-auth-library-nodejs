@@ -179,7 +179,7 @@ export class JWTAccess {
     callback?: (err?: Error) => void
   ): void | Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback(), callback);
+      this.fromStreamAsync(inputStream).then(() => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }

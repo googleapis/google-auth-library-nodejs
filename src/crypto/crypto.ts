@@ -52,17 +52,20 @@ export interface Crypto {
   encodeBase64StringUtf8(text: string): string;
 }
 
+export function hasBrowserCrypto() {
+  return (
+    // eslint-disable-next-line no-undef
+    typeof window !== 'undefined' &&
+    // eslint-disable-next-line no-undef
+    typeof window.crypto !== 'undefined' &&
+    // eslint-disable-next-line no-undef
+    typeof window.crypto.subtle !== 'undefined'
+  );
+}
+
 export function createCrypto(): Crypto {
   if (hasBrowserCrypto()) {
     return new BrowserCrypto();
   }
   return new NodeCrypto();
-}
-
-export function hasBrowserCrypto() {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.crypto !== 'undefined' &&
-    typeof window.crypto.subtle !== 'undefined'
-  );
 }

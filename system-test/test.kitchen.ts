@@ -26,7 +26,7 @@ const ncpp = promisify(ncp);
 const keep = !!process.env.GALN_KEEP_TEMPDIRS;
 const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
-const pkg = require('../../package.json');
+const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
 describe('pack and install', () => {
   /**
@@ -50,7 +50,7 @@ describe('pack and install', () => {
     await execa('npx', ['webpack'], {cwd: `${stagingPath}/`, stdio: 'inherit'});
     const bundle = path.join(stagingPath, 'dist', 'bundle.min.js');
     const stat = fs.statSync(bundle);
-    assert(stat.size < 256 * 1024);
+    assert.ok(stat.size < 256 * 1024);
   }).timeout(20000);
 
   /**

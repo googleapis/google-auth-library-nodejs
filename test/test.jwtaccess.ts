@@ -20,6 +20,7 @@ import * as sinon from 'sinon';
 import {JWTAccess} from '../src';
 import * as messages from '../src/messages';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const keypair = require('keypair');
 
 // Creates a standard JSON credentials object for testing.
@@ -47,9 +48,8 @@ afterEach(() => {
 
 it('should emit warning for createScopedRequired', () => {
   const stub = sandbox.stub(process, 'emitWarning');
-  // tslint:disable-next-line deprecation
   client.createScopedRequired();
-  assert(stub.called);
+  assert.ok(stub.called);
 });
 
 it('getRequestHeaders should create a signed JWT token as the access token', () => {
@@ -106,14 +106,13 @@ it('getRequestHeaders should not return cached tokens older than an hour', () =>
 
 it('createScopedRequired should return false', () => {
   const client = new JWTAccess('foo@serviceaccount.com', null);
-  // tslint:disable-next-line deprecation
   assert.strictEqual(false, client.createScopedRequired());
 });
 
 it('fromJson should error on null json', () => {
   assert.throws(() => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (client as any).fromJSON(null);
   });
 });
@@ -157,7 +156,7 @@ it('fromJson should create JWT with private_key_id', () => {
 
 it('fromStream should error on null stream', done => {
   // Test verifies invalid parameter tests, which requires cast to any.
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (client as any).fromStream(null, (err: Error) => {
     assert.strictEqual(true, err instanceof Error);
     done();
@@ -182,7 +181,6 @@ it('fromStream should construct a JWT Header instance from a stream', async () =
 it('should warn about deprecation of getRequestMetadata', () => {
   const client = new JWTAccess(email, keys.private);
   const stub = sandbox.stub(messages, 'warn');
-  // tslint:disable-next-line deprecation
   client.getRequestMetadata(testUri);
   assert.strictEqual(stub.calledOnce, true);
 });

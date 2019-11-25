@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-const assertRejects = require('assert-rejects');
+import assertRejects = require('assert-rejects');
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import {GaxiosError} from 'gaxios';
@@ -21,7 +21,7 @@ import * as nock from 'nock';
 import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
-import * as url from 'url';
+import {URL} from 'url';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
@@ -71,16 +71,15 @@ describe(__filename, () => {
     });
 
     const generated = oauth2client.generateAuthUrl(opts);
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(generated);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const query = qs.parse(parsed.query);
-    assert.strictEqual(query.response_type, 'code token');
-    assert.strictEqual(query.access_type, ACCESS_TYPE);
-    assert.strictEqual(query.scope, SCOPE);
-    assert.strictEqual(query.client_id, CLIENT_ID);
-    assert.strictEqual(query.redirect_uri, REDIRECT_URI);
+    assert.strictEqual(url.searchParams.get('response_type'), 'code token');
+    assert.strictEqual(url.searchParams.get('access_type'), ACCESS_TYPE);
+    assert.strictEqual(url.searchParams.get('scope'), SCOPE);
+    assert.strictEqual(url.searchParams.get('client_id'), CLIENT_ID);
+    assert.strictEqual(url.searchParams.get('redirect_uri'), REDIRECT_URI);
     done();
   });
 
@@ -100,10 +99,9 @@ describe(__filename, () => {
     const codes = await client.generateCodeVerifierAsync();
     // ensure the code_verifier matches all requirements
     assert.strictEqual(codes.codeVerifier.length, 128);
-    const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
-    assert(match);
-    if (!match) return;
-    assert(match.length > 0 && match[0] === codes.codeVerifier);
+    const match = codes.codeVerifier.match(/[a-zA-Z0-9\-.~_]*/);
+    assert.ok(match);
+    assert.ok(match!.length > 0 && match![0] === codes.codeVerifier);
   });
 
   it('should include code challenge and method in the url', async () => {
@@ -112,13 +110,18 @@ describe(__filename, () => {
       code_challenge: codes.codeChallenge,
       code_challenge_method: CodeChallengeMethod.S256,
     });
-    const parsed = url.parse(authUrl);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(authUrl);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const props = qs.parse(parsed.query);
-    assert.strictEqual(props.code_challenge, codes.codeChallenge);
-    assert.strictEqual(props.code_challenge_method, CodeChallengeMethod.S256);
+    assert.strictEqual(
+      url.searchParams.get('code_challenge'),
+      codes.codeChallenge
+    );
+    assert.strictEqual(
+      url.searchParams.get('code_challenge_method'),
+      CodeChallengeMethod.S256
+    );
   });
 
   it('should verifyIdToken properly', async () => {
@@ -180,7 +183,7 @@ describe(__filename, () => {
       return new LoginTicket('c', payload);
     };
     assert.throws(
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       () => (client as any).verifyIdToken(idToken, audience),
       /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./
     );
@@ -193,22 +196,20 @@ describe(__filename, () => {
       response_type: 'code token',
     };
     const generated = client.generateAuthUrl(opts);
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(generated);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const query = qs.parse(parsed.query);
-    assert.strictEqual(query.scope, SCOPE_ARRAY.join(' '));
+    assert.strictEqual(url.searchParams.get('scope'), SCOPE_ARRAY.join(' '));
   });
 
   it('should set response_type param to code if none is given while generating the consent page url', () => {
     const generated = client.generateAuthUrl();
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(generated);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const query = qs.parse(parsed.query);
-    assert.strictEqual(query.response_type, 'code');
+    assert.strictEqual(url.searchParams.get('response_type'), 'code');
   });
 
   it('should verify a valid certificate against a jwt', async () => {
@@ -393,7 +394,7 @@ describe(__filename, () => {
         {keyid: publicKey},
         'testaudience'
       ),
-      /Can\'t parse token envelope/
+      /Can't parse token envelope/
     );
   });
 
@@ -431,7 +432,7 @@ describe(__filename, () => {
         {keyid: publicKey},
         'testaudience'
       ),
-      /Can\'t parse token payload/
+      /Can't parse token payload/
     );
   });
 
@@ -814,42 +815,38 @@ describe(__filename, () => {
 
   it('should set redirect_uri if not provided in options', () => {
     const generated = client.generateAuthUrl({});
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(generated);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const query = qs.parse(parsed.query);
-    assert.strictEqual(query.redirect_uri, REDIRECT_URI);
+    assert.strictEqual(url.searchParams.get('redirect_uri'), REDIRECT_URI);
   });
 
   it('should set client_id if not provided in options', () => {
     const generated = client.generateAuthUrl({});
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(generated);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const query = qs.parse(parsed.query);
-    assert.strictEqual(query.client_id, CLIENT_ID);
+    assert.strictEqual(url.searchParams.get('client_id'), CLIENT_ID);
   });
 
   it('should override redirect_uri if provided in options', () => {
     const generated = client.generateAuthUrl({redirect_uri: 'overridden'});
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(generated);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const query = qs.parse(parsed.query);
-    assert.strictEqual(query.redirect_uri, 'overridden');
+    assert.strictEqual(url.searchParams.get('redirect_uri'), 'overridden');
   });
 
   it('should override client_id if provided in options', () => {
     const generated = client.generateAuthUrl({client_id: 'client_override'});
-    const parsed = url.parse(generated);
-    if (typeof parsed.query !== 'string') {
+    const url = new URL(generated);
+    if (typeof url.search !== 'string') {
       throw new Error('Unable to parse querystring');
     }
-    const query = qs.parse(parsed.query);
-    assert.strictEqual(query.client_id, 'client_override');
+    assert.strictEqual(url.searchParams.get('client_id'), 'client_override');
   });
 
   it('should return error in callback on request', done => {
@@ -866,7 +863,7 @@ describe(__filename, () => {
   it('should not emit warning on refreshAccessToken', async () => {
     let warned = false;
     sandbox.stub(process, 'emitWarning').callsFake(() => (warned = true));
-    client.refreshAccessToken((err, result) => {
+    client.refreshAccessToken(() => {
       assert.strictEqual(warned, false);
     });
   });
@@ -905,9 +902,9 @@ describe(__filename, () => {
       raisedEvent = true;
     });
 
-    client.request({url: 'http://example.com'}, err => {
+    client.request({url: 'http://example.com'}, () => {
       scopes.forEach(s => s.done());
-      assert(raisedEvent);
+      assert.ok(raisedEvent);
       assert.strictEqual(accessToken, client.credentials.access_token);
       done();
     });
@@ -955,6 +952,7 @@ describe(__filename, () => {
     ];
     client.credentials = {refresh_token: 'refresh-token-placeholder'};
     await client.request({url: 'http://example.com'});
+    // eslint-disable-next-line require-atomic-updates
     client.credentials.access_token = null;
     await client.request({url: 'http://example.com'});
     scopes.forEach(s => s.done());
@@ -981,7 +979,9 @@ describe(__filename, () => {
     client.credentials = {refresh_token: 'refresh-token-placeholder'};
     try {
       await client.request({url: 'http://example.com'});
-    } catch (e) {}
+    } catch (e) {
+      // do nothing
+    }
     await client.request({url: 'http://example.com'});
     scopes.forEach(s => s.done());
     assert.strictEqual('abc123', client.credentials.access_token);
@@ -1085,7 +1085,7 @@ describe(__filename, () => {
         access_token: 'initial-access-token',
         refresh_token: 'refresh-token-placeholder',
       };
-      client.request({url: 'http://example.com/access'}, err => {
+      client.request({url: 'http://example.com/access'}, () => {
         scope.done();
         scopes[0].done();
         assert.strictEqual('abc123', client.credentials.access_token);
@@ -1111,7 +1111,7 @@ describe(__filename, () => {
         refresh_token: 'refresh-token-placeholder',
         expiry_date: new Date().getTime() + 500000,
       };
-      client.request({url: 'http://example.com/access'}, err => {
+      client.request({url: 'http://example.com/access'}, () => {
         scope.done();
         scopes[0].done();
         assert.strictEqual('abc123', client.credentials.access_token);
@@ -1135,7 +1135,7 @@ describe(__filename, () => {
       err => {
         scope.done();
         const e = err as GaxiosError;
-        assert(e);
+        assert.ok(e);
         assert.strictEqual(e.response!.status, 401);
         done();
       }
@@ -1177,7 +1177,7 @@ describe(__filename, () => {
       codeVerifier: 'its_verified',
     });
     scope.done();
-    assert(res.res);
+    assert.ok(res.res);
     if (!res.res) return;
     const params = qs.parse(res.res.config.data);
     assert.strictEqual(params.code_verifier, 'its_verified');
@@ -1191,7 +1191,7 @@ describe(__filename, () => {
       .reply(200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
     const res = await client.getToken({code: 'code here'});
     scope.done();
-    assert(res.res);
+    assert.ok(res.res);
     if (!res.res) return;
     const params = qs.parse(res.res.config.data);
     assert.strictEqual(params.redirect_uri, REDIRECT_URI);
@@ -1205,7 +1205,7 @@ describe(__filename, () => {
       .reply(200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
     const res = await client.getToken({code: 'code here'});
     scope.done();
-    assert(res.res);
+    assert.ok(res.res);
     if (!res.res) return;
     const params = qs.parse(res.res.config.data);
     assert.strictEqual(params.client_id, CLIENT_ID);
@@ -1222,7 +1222,7 @@ describe(__filename, () => {
       redirect_uri: 'overridden',
     });
     scope.done();
-    assert(res.res);
+    assert.ok(res.res);
     if (!res.res) return;
     const params = qs.parse(res.res.config.data);
     assert.strictEqual(params.redirect_uri, 'overridden');
@@ -1239,7 +1239,7 @@ describe(__filename, () => {
       client_id: 'overridden',
     });
     scope.done();
-    assert(res.res);
+    assert.ok(res.res);
     if (!res.res) return;
     const params = qs.parse(res.res.config.data);
     assert.strictEqual(params.client_id, 'overridden');
@@ -1253,8 +1253,8 @@ describe(__filename, () => {
       })
       .reply(200, {access_token: 'abc', refresh_token: '123', expires_in: 10});
     client.getToken('code here', (err, tokens) => {
-      assert(tokens!.expiry_date! >= now + 10 * 1000);
-      assert(tokens!.expiry_date! <= now + 15 * 1000);
+      assert.ok(tokens!.expiry_date! >= now + 10 * 1000);
+      assert.ok(tokens!.expiry_date! <= now + 15 * 1000);
       scope.done();
       done();
     });

@@ -27,7 +27,7 @@ describe('Browser crypto tests', () => {
   const crypto = createCrypto();
 
   it('should create a BrowserCrypto instance', () => {
-    assert(crypto instanceof BrowserCrypto);
+    assert.ok(crypto instanceof BrowserCrypto);
   });
 
   it('should calculate SHA256 digest', async () => {
@@ -64,7 +64,7 @@ describe('Browser crypto tests', () => {
       'xtU9UWfbed/yfw',
     ].join(''); // note: no padding
     const verified = await crypto.verify(publicKey, message, signatureBase64);
-    assert(verified);
+    assert.ok(verified);
   });
 
   it('should sign a message', async () => {

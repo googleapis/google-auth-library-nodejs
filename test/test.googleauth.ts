@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-const assertRejects = require('assert-rejects');
+import assertRejects = require('assert-rejects');
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -51,9 +51,15 @@ const BASE_URL = [
   STUB_PROJECT,
 ].join('/');
 
-const privateJSON = require('../../test/fixtures/private.json');
-const private2JSON = require('../../test/fixtures/private2.json');
-const refreshJSON = require('../../test/fixtures/refresh.json');
+const privateJSON = JSON.parse(
+  fs.readFileSync('./test/fixtures/private.json', 'utf8')
+);
+const private2JSON = JSON.parse(
+  fs.readFileSync('./test/fixtures/private2.json', 'utf8')
+);
+const refreshJSON = JSON.parse(
+  fs.readFileSync('./test/fixtures/refresh.json', 'utf8')
+);
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 const wellKnownPathWindows = path.join(
   'C:',
@@ -259,7 +265,7 @@ describe('googleauth', () => {
   function mockGCE() {
     const scope1 = nockIsGCE();
     const auth = new GoogleAuth();
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
     const scope2 = nock(HOST_ADDRESS)
       .get(tokenPath)
@@ -276,14 +282,14 @@ describe('googleauth', () => {
 
   it('fromJSON should support the instantiated named export', () => {
     const result = auth.fromJSON(createJwtJSON());
-    assert(result);
+    assert.ok(result);
   });
 
   it('fromJson should error on null json', () => {
     const auth = new GoogleAuth();
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (auth as any).fromJSON(null);
     });
   });
@@ -301,7 +307,7 @@ describe('googleauth', () => {
   it('fromAPIKey should error given an invalid api key', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (auth as any).fromAPIKey(null);
     });
   });
@@ -309,7 +315,7 @@ describe('googleauth', () => {
   it('should make a request with the api key', async () => {
     const scope = nock(BASE_URL)
       .post(ENDPOINT)
-      .reply(function(uri) {
+      .reply(function() {
         assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
         return [200, RESPONSE_BODY];
       });
@@ -336,7 +342,7 @@ describe('googleauth', () => {
       .query({test: OTHER_QS_PARAM.test})
       .reply(function(uri) {
         assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
-        assert(uri.indexOf('test=' + OTHER_QS_PARAM.test) > -1);
+        assert.ok(uri.indexOf('test=' + OTHER_QS_PARAM.test) > -1);
         return [200, RESPONSE_BODY];
       });
     const client = auth.fromAPIKey(API_KEY);
@@ -422,7 +428,7 @@ describe('googleauth', () => {
 
   it('fromStream should error on null stream', done => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (auth as any).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
@@ -511,7 +517,7 @@ describe('googleauth', () => {
   it('getApplicationCredentialsFromFilePath should error on null file path', async () => {
     try {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (auth as any)._getApplicationCredentialsFromFilePath(null);
     } catch (e) {
       return;
@@ -531,7 +537,7 @@ describe('googleauth', () => {
   it('getApplicationCredentialsFromFilePath should error on non-string file path', async () => {
     try {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await auth._getApplicationCredentialsFromFilePath(2 as any);
     } catch (e) {
       return;
@@ -588,7 +594,7 @@ describe('googleauth', () => {
     const result = await auth._getApplicationCredentialsFromFilePath(
       './test/fixtures/private.json'
     );
-    assert(result);
+    assert.ok(result);
     const jwt = result as JWT;
     assert.strictEqual(privateJSON.private_key, jwt.key);
     assert.strictEqual(privateJSON.client_email, jwt.email);
@@ -602,7 +608,7 @@ describe('googleauth', () => {
       './test/fixtures/private.json',
       {eagerRefreshThresholdMillis: 7000}
     );
-    assert(result);
+    assert.ok(result);
     const jwt = result as JWT;
     assert.strictEqual(privateJSON.private_key, jwt.key);
     assert.strictEqual(privateJSON.client_email, jwt.email);
@@ -620,8 +626,6 @@ describe('googleauth', () => {
   });
 
   it('tryGetApplicationCredentialsFromEnvironmentVariable should return null when env const is empty string', async () => {
-    // Set up a mock to return an empty path string.
-    const stub = mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
     const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
     assert.strictEqual(client, null);
   });
@@ -738,7 +742,7 @@ describe('googleauth', () => {
     assert.strictEqual(projectId, STUB_PROJECT);
 
     // Null out all the private functions that make this method work
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anyd = auth as any;
     anyd.getProductionProjectId = null;
     anyd.getFileProjectId = null;
@@ -831,7 +835,7 @@ describe('googleauth', () => {
       .stub(child_process, 'exec')
       .callsArgWith(1, null, stdout, null);
     const projectId = await auth.getProjectId();
-    assert(stub.calledOnce);
+    assert.ok(stub.calledOnce);
     assert.strictEqual(projectId, STUB_PROJECT);
   });
 
@@ -840,7 +844,7 @@ describe('googleauth', () => {
     const projectId = await auth.getProjectId();
     const stub = (child_process.exec as unknown) as sinon.SinonStub;
     stub.restore();
-    assert(stub.calledOnce);
+    assert.ok(stub.calledOnce);
     assert.strictEqual(projectId, STUB_PROJECT);
     scope.done();
   });
@@ -863,12 +867,12 @@ describe('googleauth', () => {
     // Make sure our special test bit is not set yet, indicating that
     // this is a new credentials instance.
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     assert.strictEqual(undefined, (cachedCredential as any).specialTestBit);
 
     // Now set the special test bit.
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (cachedCredential as any).specialTestBit = 'monkey';
 
     // Ask for credentials again, from the same auth instance. We expect
@@ -881,7 +885,7 @@ describe('googleauth', () => {
     // the object instance is the same.
     // Test verifies invalid parameter tests, which requires cast to
     // any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     assert.strictEqual('monkey', (result2 as any).specialTestBit);
     assert.strictEqual(cachedCredential, result2);
 
@@ -894,7 +898,7 @@ describe('googleauth', () => {
     // Make sure we get a new (non-cached) credential instance back.
     // Test verifies invalid parameter tests, which requires cast to
     // any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     assert.strictEqual(undefined, (result3 as any).specialTestBit);
     assert.notStrictEqual(cachedCredential, result3);
   });
@@ -1137,7 +1141,7 @@ describe('googleauth', () => {
       './test/fixtures/private.json'
     );
     const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
-    assert(result);
+    assert.ok(result);
     const jwt = result as JWT;
     const body = await auth.getCredentials();
     assert.notStrictEqual(null, body);
@@ -1163,7 +1167,7 @@ describe('googleauth', () => {
     }
 
     assert.notStrictEqual(null, body);
-    assert(spy.calledOnce);
+    assert.ok(spy.calledOnce);
     assert.strictEqual(result.email, body!.client_email);
     assert.strictEqual(result.key, body!.private_key);
   });
@@ -1174,7 +1178,7 @@ describe('googleauth', () => {
     auth._checkIsGCE = () => Promise.resolve(true);
     mockWindowsWellKnownFile();
     const result = await auth.getApplicationDefault();
-    assert(result);
+    assert.ok(result);
     const jwt = result.credential as JWT;
     const body = await auth.getCredentials();
     assert.notStrictEqual(null, body);
@@ -1278,7 +1282,7 @@ describe('googleauth', () => {
 
   it('should get the current environment if GCE', async () => {
     envDetect.clear();
-    const {auth, scopes} = mockGCE();
+    const {auth} = mockGCE();
     const env = await auth.getEnv();
     assert.strictEqual(env, envDetect.GCPEnv.COMPUTE_ENGINE);
   });
@@ -1286,12 +1290,16 @@ describe('googleauth', () => {
   it('should get the current environment if GKE', async () => {
     envDetect.clear();
     const {auth, scopes} = mockGCE();
-    const scope = nock(host)
-      .get(`${instancePath}/attributes/cluster-name`)
-      .reply(200, {}, HEADERS);
+    // We never actually ask for a token, so don't bother with the call to obtain it
+    delete scopes[1];
+    scopes.push(
+      nock(host)
+        .get(`${instancePath}/attributes/cluster-name`)
+        .reply(200, {}, HEADERS)
+    );
     const env = await auth.getEnv();
     assert.strictEqual(env, envDetect.GCPEnv.KUBERNETES_ENGINE);
-    scope.done();
+    scopes.forEach(x => x.done());
   });
 
   it('should get the current environment if GCF 8 and below', async () => {
@@ -1349,7 +1357,7 @@ describe('googleauth', () => {
     const {auth, scopes} = mockGCE();
     mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
     const email = 'google@auth.library';
-    const iamUri = `https://iam.googleapis.com`;
+    const iamUri = 'https://iam.googleapis.com';
     const iamPath = `/v1/projects/${STUB_PROJECT}/serviceAccounts/${email}:signBlob`;
     const signature = 'erutangis';
     const data = 'abc123';
@@ -1366,28 +1374,6 @@ describe('googleauth', () => {
     assert.strictEqual(value, signature);
   });
 
-  // tslint:disable-next-line ban
-  it.skip('should warn the user if using default Cloud SDK credentials', done => {
-    exposeLinuxWellKnownFile = true;
-    createLinuxWellKnownStream = () =>
-      fs.createReadStream('./test/fixtures/wellKnown.json');
-    sandbox.stub(process, 'emitWarning').callsFake((message, warningOrType) => {
-      assert.strictEqual(
-        message,
-        messages.PROBLEMATIC_CREDENTIALS_WARNING.message
-      );
-      const warningType =
-        typeof warningOrType === 'string'
-          ? warningOrType
-          : // @types/node doesn't recognize the emitWarning syntax which
-            // tslint:disable-next-line no-any
-            (warningOrType as any).type;
-      assert.strictEqual(warningType, messages.WarningTypes.WARNING);
-      done();
-    });
-    auth._tryGetApplicationCredentialsFromWellKnownFile();
-  });
-
   it('should warn the user if using the getDefaultProjectId method', done => {
     mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
     sandbox.stub(process, 'emitWarning').callsFake((message, warningOrType) => {
@@ -1399,7 +1385,7 @@ describe('googleauth', () => {
         typeof warningOrType === 'string'
           ? warningOrType
           : // @types/node doesn't recognize the emitWarning syntax which
-            // tslint:disable-next-line no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (warningOrType as any).type;
       assert.strictEqual(warningType, messages.WarningTypes.DEPRECATION);
       done();
@@ -1427,7 +1413,7 @@ describe('googleauth', () => {
   });
 
   it('should throw if getProjectId cannot find a projectId', async () => {
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
     await assertRejects(
       auth.getProjectId(),

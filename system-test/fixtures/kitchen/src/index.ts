@@ -7,6 +7,7 @@ async function getToken() {
   const token = await jwt.getToken('token');
   const projectId = await auth.getProjectId();
   const creds = await auth.getApplicationDefault();
+  console.log(projectId, creds);
   return token;
 }
 getToken();

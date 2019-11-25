@@ -11,27 +11,32 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import * as assert from 'assert';
 import * as gal from '../src';
 
-it('should publicly export GoogleAuth', () => {
-  const cjs = require('../src/');
-  assert.strictEqual(cjs.GoogleAuth, gal.GoogleAuth);
-});
+describe(__filename, () => {
+  it('should publicly export GoogleAuth', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cjs = require('../src');
+    assert.strictEqual(cjs.GoogleAuth, gal.GoogleAuth);
+  });
 
-it('should publicly export DefaultTransporter', () => {
-  const cjs = require('../src');
-  assert.strictEqual(cjs.DefaultTransporter, gal.DefaultTransporter);
-});
+  it('should publicly export DefaultTransporter', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cjs = require('../src');
+    assert.strictEqual(cjs.DefaultTransporter, gal.DefaultTransporter);
+  });
 
-it('should export all the things', () => {
-  assert(gal.CodeChallengeMethod);
-  assert(gal.Compute);
-  assert(gal.DefaultTransporter);
-  assert(gal.IAMAuth);
-  assert(gal.JWT);
-  assert(gal.JWTAccess);
-  assert(gal.OAuth2Client);
-  assert(gal.UserRefreshClient);
-  assert(gal.GoogleAuth);
+  it('should export all the things', () => {
+    assert.ok(gal.CodeChallengeMethod);
+    assert.ok(gal.Compute);
+    assert.ok(gal.DefaultTransporter);
+    assert.ok(gal.IAMAuth);
+    assert.ok(gal.JWT);
+    assert.ok(gal.JWTAccess);
+    assert.ok(gal.OAuth2Client);
+    assert.ok(gal.UserRefreshClient);
+    assert.ok(gal.GoogleAuth);
+  });
 });

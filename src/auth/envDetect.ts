@@ -28,25 +28,6 @@ export function clear() {
   env = undefined;
 }
 
-export async function getEnv() {
-  if (!env) {
-    if (isAppEngine()) {
-      env = GCPEnv.APP_ENGINE;
-    } else if (isCloudFunction()) {
-      env = GCPEnv.CLOUD_FUNCTIONS;
-    } else if (await isComputeEngine()) {
-      if (await isKubernetesEngine()) {
-        env = GCPEnv.KUBERNETES_ENGINE;
-      } else {
-        env = GCPEnv.COMPUTE_ENGINE;
-      }
-    } else {
-      env = GCPEnv.NONE;
-    }
-  }
-  return env;
-}
-
 function isAppEngine() {
   return !!(process.env.GAE_SERVICE || process.env.GAE_MODULE_NAME);
 }
@@ -66,4 +47,26 @@ async function isKubernetesEngine() {
 
 async function isComputeEngine() {
   return gcpMetadata.isAvailable();
+}
+
+export async function getEnv() {
+  if (!env) {
+    if (isAppEngine()) {
+      env = GCPEnv.APP_ENGINE;
+    } else if (isCloudFunction()) {
+      env = GCPEnv.CLOUD_FUNCTIONS;
+    } else if (await isComputeEngine()) {
+      if (await isKubernetesEngine()) {
+        // eslint-disable-next-line require-atomic-updates
+        env = GCPEnv.KUBERNETES_ENGINE;
+      } else {
+        // eslint-disable-next-line require-atomic-updates
+        env = GCPEnv.COMPUTE_ENGINE;
+      }
+    } else {
+      // eslint-disable-next-line require-atomic-updates
+      env = GCPEnv.NONE;
+    }
+  }
+  return env;
 }

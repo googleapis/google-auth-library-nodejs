@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as assert from 'assert';
+import {assert} from 'chai';
 import {GaxiosOptions} from 'gaxios';
-const assertRejects = require('assert-rejects');
+import assertRejects = require('assert-rejects');
 import * as nock from 'nock';
 import {DefaultTransporter, RequestError} from '../src/transporters';
 
@@ -31,7 +31,7 @@ const transporter = new DefaultTransporter();
 it('should set default adapter to node.js', () => {
   const opts = transporter.configure();
   const re = new RegExp(defaultUserAgentRE);
-  assert(re.test(opts.headers!['User-Agent']));
+  assert.match(opts.headers!['User-Agent'], re);
 });
 
 it('should append default client user agent to the existing user agent', () => {
@@ -41,7 +41,7 @@ it('should append default client user agent to the existing user agent', () => {
     url: '',
   });
   const re = new RegExp(applicationName + ' ' + defaultUserAgentRE);
-  assert(re.test(opts.headers!['User-Agent']));
+  assert.ok(re.test(opts.headers!['User-Agent']));
 });
 
 it('should not append default client user agent to the existing user agent more than once', () => {
@@ -57,7 +57,7 @@ it('should add x-goog-api-client header if none exists', () => {
   const opts = transporter.configure({
     url: '',
   });
-  assert(
+  assert.ok(
     /^gl-node\/[.-\w$]+ auth\/[.-\w$]+$/.test(
       opts.headers!['x-goog-api-client']
     )
@@ -69,7 +69,7 @@ it('should append to x-goog-api-client header if it exists', () => {
     headers: {'x-goog-api-client': 'gdcl/1.0.0'},
     url: '',
   });
-  assert(
+  assert.ok(
     /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(opts.headers!['x-goog-api-client'])
   );
 });
@@ -84,7 +84,7 @@ it('should not append x-goog-api-client header multiple times', () => {
   console.info(configuredOpts);
   configuredOpts = transporter.configure(opts);
   console.info(configuredOpts);
-  assert(
+  assert.ok(
     /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(
       configuredOpts.headers!['x-goog-api-client']
     )
@@ -101,7 +101,7 @@ it('should create a single error from multiple response errors', done => {
   transporter.request({url}, error => {
     scope.done();
     assert.strictEqual(error!.message, 'Error 1\nError 2');
-    assert.strictEqual((error as RequestError).code, 500);
+    assert.strictEqual(Number((error as RequestError).code), 500);
     assert.strictEqual((error as RequestError).errors.length, 2);
     done();
   });
@@ -136,9 +136,9 @@ it('should return an error if you try to use request config options', done => {
 
 it('should return an error if you try to use request config options with a promise', async () => {
   const expected = new RegExp(
-    `'uri' is not a valid configuration option. Please use 'url' instead. This ` +
-      `library is using Axios for requests. Please see https://github.com/axios/axios ` +
-      `to learn more about the valid request options.`
+    "'uri' is not a valid configuration option. Please use 'url' instead. This " +
+      'library is using Axios for requests. Please see https://github.com/axios/axios ' +
+      'to learn more about the valid request options.'
   );
   const uri = 'http://example.com/api';
   assert.throws(() => transporter.request({uri} as GaxiosOptions), expected);
@@ -174,24 +174,4 @@ it('should work with a callback', done => {
     assert.strictEqual(res!.status, 200);
     done();
   });
-});
-
-// tslint:disable-next-line ban
-it.skip('should use the https proxy if one is configured', async () => {
-  process.env['https_proxy'] = 'https://han:solo@proxy-server:1234';
-  const transporter = new DefaultTransporter();
-  const scope = nock('https://proxy-server:1234')
-    .get('https://example.com/fake', undefined, {
-      reqheaders: {
-        host: 'example.com',
-        accept: /.*/g,
-        'user-agent': /google-api-nodejs-client\/.*/g,
-        'proxy-authorization': /.*/g,
-      },
-    })
-    .reply(200);
-  const url = 'https://example.com/fake';
-  const result = await transporter.request({url});
-  scope.done();
-  assert.strictEqual(result.status, 200);
 });

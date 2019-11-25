@@ -1,0 +1,8 @@
+{
+  "env": {
+    "browser": true
+  },
+  "rules": {
+    "node/no-unsupported-features/node-builtins": "off"
+  }
+}

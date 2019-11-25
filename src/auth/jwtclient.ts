@@ -207,6 +207,7 @@ export class JWT extends OAuth2Client {
    * @private
    */
   protected async refreshTokenNoCache(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
@@ -283,7 +284,7 @@ export class JWT extends OAuth2Client {
     callback?: (err?: Error | null) => void
   ): void | Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback(), callback);
+      this.fromStreamAsync(inputStream).then(() => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }

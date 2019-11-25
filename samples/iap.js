@@ -33,7 +33,7 @@ async function main() {
     key: keys.private_key,
     additionalClaims: {target_audience: clientId},
   });
-  const url = `https://iap-demo-dot-el-gato.appspot.com`;
+  const url = 'https://iap-demo-dot-el-gato.appspot.com';
   const res = await client.request({url});
   console.log(res.data);
 }
