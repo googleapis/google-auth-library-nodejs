@@ -742,15 +742,6 @@ export class OAuth2Client extends AuthClient {
    */
   async getRequestHeaders(url?: string): Promise<Headers> {
     const headers = (await this.getRequestMetadataAsync(url)).headers;
-    // quota_project_id, stored in application_default_credentials.json, is set in
-    // the x-goog-user-project header, to indicate an alternate account for
-    // billing and quota:
-    if (
-      !headers['x-goog-user-project'] && // don't override a value the user sets.
-      this.quotaProjectId
-    ) {
-      headers['x-goog-user-project'] = this.quotaProjectId;
-    }
     return headers;
   }
 
@@ -793,9 +784,20 @@ export class OAuth2Client extends AuthClient {
     credentials.token_type = credentials.token_type || 'Bearer';
     tokens.refresh_token = credentials.refresh_token;
     this.credentials = tokens;
-    const headers = {
+    const headers: {[index: string]: string} = {
       Authorization: credentials.token_type + ' ' + tokens.access_token,
     };
+
+    // quota_project_id, stored in application_default_credentials.json, is set in
+    // the x-goog-user-project header, to indicate an alternate account for
+    // billing and quota:
+    if (
+      !headers['x-goog-user-project'] && // don't override a value the user sets.
+      this.quotaProjectId
+    ) {
+      headers['x-goog-user-project'] = this.quotaProjectId;
+    }
+
     return {headers, res: r.res};
   }
 
@@ -896,12 +898,14 @@ export class OAuth2Client extends AuthClient {
     let r2: GaxiosResponse;
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
+      opts.headers = opts.headers || {};
+      if (r.headers?.['x-goog-user-project']) {
+        opts.headers['x-goog-user-project'] = r.headers['x-goog-user-project'];
+      }
       if (r.headers && r.headers.Authorization) {
-        opts.headers = opts.headers || {};
         opts.headers.Authorization = r.headers.Authorization;
       }
       if (this.apiKey) {
-        opts.headers = opts.headers || {};
         opts.headers['X-Goog-Api-Key'] = this.apiKey;
       }
       r2 = await this.transporter.request<T>(opts);
