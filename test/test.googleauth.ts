@@ -1444,54 +1444,70 @@ describe('googleauth', () => {
   });
 
   it('getRequestHeaders populates x-goog-user-project with quota_project if present', async () => {
-    // Fake a home directory in our fixtures path.
-    mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
-    mockEnvVar('HOME', './test/fixtures/config-with-quota');
-    mockEnvVar('APPDATA', './test/fixtures/config-with-quota/.config');
-    // The first time auth.getClient() is called /token endpoint is used to
-    // fetch a JWT.
-    const req = nock('https://oauth2.googleapis.com')
-      .post('/token')
-      .reply(200, {});
-
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
     const auth = new GoogleAuth();
     const headers = await auth.getRequestHeaders();
     assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
-    req.done();
+    tokenReq.done();
   });
 
   it('getRequestHeaders does not populate x-goog-user-project if quota_project is not present', async () => {
-    // Fake a home directory in our fixtures path.
-    mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
-    mockEnvVar('HOME', './test/fixtures/config-no-quota');
-    mockEnvVar('APPDATA', './test/fixtures/config-no-quota/.config');
-    // The first time auth.getClient() is called /token endpoint is used to
-    // fetch a JWT.
-    const req = nock('https://oauth2.googleapis.com')
-      .post('/token')
-      .reply(200, {});
-
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-no-quota'
+    );
     const auth = new GoogleAuth();
     const headers = await auth.getRequestHeaders();
     assert.strictEqual(headers['x-goog-user-project'], undefined);
-    req.done();
+    tokenReq.done();
   });
 
   it('getRequestHeaders populates x-goog-user-project when called on returned client', async () => {
-    // Fake a home directory in our fixtures path.
-    mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
-    mockEnvVar('HOME', './test/fixtures/config-with-quota');
-    mockEnvVar('APPDATA', './test/fixtures/config-with-quota/.config');
-    // The first time auth.getClient() is called /token endpoint is used to
-    // fetch a JWT.
-    const req = nock('https://oauth2.googleapis.com')
-      .post('/token')
-      .reply(200, {});
-
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
     const auth = new GoogleAuth();
     const client = await auth.getClient();
     const headers = await client.getRequestHeaders();
     assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
-    req.done();
+    tokenReq.done();
   });
+
+  it('populates x-goog-user-project when request is made', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
+    const auth = new GoogleAuth();
+    const client = await auth.getClient();
+    const apiReq = nock(BASE_URL)
+      .post(ENDPOINT)
+      .reply(function(uri) {
+        assert.strictEqual(
+          this.req.headers['x-goog-user-project'][0],
+          'my-quota-project'
+        );
+        return [200, RESPONSE_BODY];
+      });
+    const res = await client.request({
+      url: BASE_URL + ENDPOINT,
+      method: 'POST',
+      data: {test: true},
+    });
+    assert.strictEqual(RESPONSE_BODY, res.data);
+    tokenReq.done();
+    apiReq.done();
+  });
+
+  function mockApplicationDefaultCredentials(path: string) {
+    // Fake a home directory in our fixtures path.
+    mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
+    mockEnvVar('HOME', path);
+    mockEnvVar('APPDATA', `${path}/.config`);
+    // The first time auth.getClient() is called /token endpoint is used to
+    // fetch a JWT.
+    return nock('https://oauth2.googleapis.com')
+      .post('/token')
+      .reply(200, {});
+  }
 });
