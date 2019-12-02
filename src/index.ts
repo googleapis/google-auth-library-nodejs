@@ -28,6 +28,7 @@ export {JWT, JWTOptions} from './auth/jwtclient';
 export {
   Certificates,
   CodeChallengeMethod,
+  CodeVerifierResults,
   GenerateAuthUrlOpts,
   GetTokenOptions,
   OAuth2Client,

@@ -29,6 +29,24 @@ import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials, JWTInput} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 
+/**
+ * The results from the `generateCodeVerifierAsync` method.  To learn more,
+ * See the sample:
+ * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
+ */
+export interface CodeVerifierResults {
+  /**
+   * The code verifier that will be used when calling `getToken` to obtain a new
+   * access token.
+   */
+  codeVerifier: string;
+  /**
+   * The code_challenge that should be sent with the `generateAuthUrl` call
+   * to obtain a verifiable authentication url.
+   */
+  codeChallenge?: string;
+}
+
 export interface Certificates {
   [index: string]: string | JwkCertificate;
 }
@@ -485,7 +503,7 @@ export class OAuth2Client extends AuthClient {
     return rootUrl + '?' + querystring.stringify(opts);
   }
 
-  generateCodeVerifier() {
+  generateCodeVerifier(): void {
     // To make the code compatible with browser SubtleCrypto we need to make
     // this method async.
     throw new Error(
@@ -497,8 +515,11 @@ export class OAuth2Client extends AuthClient {
    * Convenience method to automatically generate a code_verifier, and it's
    * resulting SHA256. If used, this must be paired with a S256
    * code_challenge_method.
+   *
+   * For a full example see:
+   * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
    */
-  async generateCodeVerifierAsync() {
+  async generateCodeVerifierAsync(): Promise<CodeVerifierResults> {
     // base64 encoding uses 6 bits per character, and we want to generate128
     // characters. 6*128/8 = 96.
     const crypto = createCrypto();
