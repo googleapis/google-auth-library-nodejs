@@ -4,6 +4,22 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.6.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.1...v5.6.0) (2019-12-02)
+
+
+### Features
+
+* populate x-goog-user-project for requestAsync ([#837](https://www.github.com/googleapis/google-auth-library-nodejs/issues/837)) ([5a068fb](https://www.github.com/googleapis/google-auth-library-nodejs/commit/5a068fb8f5a3827ab70404f1d9699a97f962bdad))
+* set x-goog-user-project header, with quota_project from default credentials ([#829](https://www.github.com/googleapis/google-auth-library-nodejs/issues/829)) ([3240d16](https://www.github.com/googleapis/google-auth-library-nodejs/commit/3240d16f05171781fe6d70d64c476bceb25805a5))
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v2 ([#821](https://www.github.com/googleapis/google-auth-library-nodejs/issues/821)) ([2c04117](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2c0411708761cc7debdda1af1e593d82cb4aed31))
+* **docs:** add jsdoc-region-tag plugin ([#826](https://www.github.com/googleapis/google-auth-library-nodejs/issues/826)) ([558677f](https://www.github.com/googleapis/google-auth-library-nodejs/commit/558677fd90d3451e9ac4bf6d0b98907e3313f287))
+* expand on x-goog-user-project to handle auth.getClient() ([#831](https://www.github.com/googleapis/google-auth-library-nodejs/issues/831)) ([3646b7f](https://www.github.com/googleapis/google-auth-library-nodejs/commit/3646b7f9deb296aaff602dd2168ce93f014ce840))
+* use quota_project_id field instead of quota_project ([#832](https://www.github.com/googleapis/google-auth-library-nodejs/issues/832)) ([8933966](https://www.github.com/googleapis/google-auth-library-nodejs/commit/8933966659f3b07f5454a2756fa52d92fea147d2))
+
 ### [5.5.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.0...v5.5.1) (2019-10-22)
 
 
