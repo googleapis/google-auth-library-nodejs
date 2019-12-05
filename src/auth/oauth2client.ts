@@ -920,7 +920,7 @@ export class OAuth2Client extends AuthClient {
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
       opts.headers = opts.headers || {};
-      if (r.headers?.['x-goog-user-project']) {
+      if (r.headers && r.headers['x-goog-user-project']) {
         opts.headers['x-goog-user-project'] = r.headers['x-goog-user-project'];
       }
       if (r.headers && r.headers.Authorization) {
