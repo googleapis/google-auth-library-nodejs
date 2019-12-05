@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.6.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.6.0...v5.6.1) (2019-12-05)
+
+
+### Bug Fixes
+
+* **deps:** pin TypeScript below 3.7.0 ([#845](https://www.github.com/googleapis/google-auth-library-nodejs/issues/845)) ([a9c6e92](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a9c6e9284efe8102974c57c9824ed6275d743c7a))
+* **docs:** improve types and docs for generateCodeVerifierAsync ([#840](https://www.github.com/googleapis/google-auth-library-nodejs/issues/840)) ([04dae9c](https://www.github.com/googleapis/google-auth-library-nodejs/commit/04dae9c271f0099025188489c61fd245d482832b))
+
 ## [5.6.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.1...v5.6.0) (2019-12-02)
 
 
