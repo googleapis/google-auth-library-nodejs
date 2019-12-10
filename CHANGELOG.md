@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.7.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.6.1...v5.7.0) (2019-12-10)
+
+
+### Features
+
+* make x-goog-user-project work for additional auth clients ([#848](https://www.github.com/googleapis/google-auth-library-nodejs/issues/848)) ([46af865](https://www.github.com/googleapis/google-auth-library-nodejs/commit/46af865172103c6f28712d78b30c2291487cbe86))
+
 ### [5.6.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.6.0...v5.6.1) (2019-12-05)
 
 
