@@ -17,6 +17,7 @@ import {GaxiosOptions, GaxiosPromise} from 'gaxios';
 
 import {DefaultTransporter} from '../transporters';
 import {Credentials} from './credentials';
+import {Headers} from './oauth2client';
 
 export declare interface AuthClient {
   on(event: 'tokens', listener: (tokens: Credentials) => void): this;
@@ -47,9 +48,7 @@ export abstract class AuthClient extends EventEmitter {
    *
    * @param headers objedcdt to append additional headers to.
    */
-  protected addSharedMetadataHeaders(headers: {
-    [key: string]: string;
-  }): {[key: string]: string} {
+  protected addSharedMetadataHeaders(headers: Headers): Headers {
     // quota_project_id, stored in application_default_credentials.json, is set in
     // the x-goog-user-project header, to indicate an alternate account for
     // billing and quota:
