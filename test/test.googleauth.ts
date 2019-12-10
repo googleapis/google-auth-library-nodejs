@@ -1469,6 +1469,7 @@ describe('googleauth', () => {
     );
     const auth = new GoogleAuth();
     const client = await auth.getClient();
+    assert(client instanceof UserRefreshClient);
     const headers = await client.getRequestHeaders();
     assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
     tokenReq.done();
@@ -1480,6 +1481,7 @@ describe('googleauth', () => {
     );
     const auth = new GoogleAuth();
     const client = await auth.getClient();
+    assert(client instanceof UserRefreshClient);
     const apiReq = nock(BASE_URL)
       .post(ENDPOINT)
       .reply(function(uri) {

@@ -128,7 +128,11 @@ export class JWT extends OAuth2Client {
         }).target_audience
       ) {
         const {tokens} = await this.refreshToken();
-        return {headers: {Authorization: `Bearer ${tokens.id_token}`}};
+        return {
+          headers: this.addSharedMetadataHeaders({
+            Authorization: `Bearer ${tokens.id_token}`,
+          }),
+        };
       } else {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
@@ -139,7 +143,7 @@ export class JWT extends OAuth2Client {
           url,
           this.additionalClaims
         );
-        return {headers};
+        return {headers: this.addSharedMetadataHeaders(headers)};
       }
     } else {
       return super.getRequestMetadataAsync(url);

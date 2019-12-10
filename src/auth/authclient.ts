@@ -17,12 +17,14 @@ import {GaxiosOptions, GaxiosPromise} from 'gaxios';
 
 import {DefaultTransporter} from '../transporters';
 import {Credentials} from './credentials';
+import {Headers} from './oauth2client';
 
 export declare interface AuthClient {
   on(event: 'tokens', listener: (tokens: Credentials) => void): this;
 }
 
 export abstract class AuthClient extends EventEmitter {
+  protected quotaProjectId?: string;
   transporter = new DefaultTransporter();
   credentials: Credentials = {};
 
@@ -36,5 +38,26 @@ export abstract class AuthClient extends EventEmitter {
    */
   setCredentials(credentials: Credentials) {
     this.credentials = credentials;
+  }
+
+  /**
+   * Append additional headers, e.g., x-goog-user-project, shared across the
+   * classes inheriting AuthClient. This method should be used by any method
+   * that overrides getRequestMetadataAsync(), which is a shared helper for
+   * setting request information in both gRPC and HTTP API calls.
+   *
+   * @param headers objedcdt to append additional headers to.
+   */
+  protected addSharedMetadataHeaders(headers: Headers): Headers {
+    // quota_project_id, stored in application_default_credentials.json, is set in
+    // the x-goog-user-project header, to indicate an alternate account for
+    // billing and quota:
+    if (
+      !headers['x-goog-user-project'] && // don't override a value the user sets.
+      this.quotaProjectId
+    ) {
+      headers['x-goog-user-project'] = this.quotaProjectId;
+    }
+    return headers;
   }
 }

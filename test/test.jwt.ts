@@ -18,7 +18,7 @@ import * as jws from 'jws';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {JWT} from '../src';
+import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 
 const keypair = require('keypair');
@@ -809,4 +809,23 @@ it('getCredentials should handle a json keyFile', async () => {
   const {private_key, client_email} = await jwt.getCredentials();
   assert.strictEqual(private_key, json.private_key);
   assert.strictEqual(client_email, json.client_email);
+});
+
+it('getRequestHeaders populates x-goog-user-project for JWT client', async () => {
+  const auth = new GoogleAuth({
+    credentials: Object.assign(
+      require('../../test/fixtures/service-account-with-quota.json'),
+      {
+        private_key: keypair(1024 /* bitsize of private key */).private,
+      }
+    ),
+  });
+  const client = await auth.getClient();
+  assert(client instanceof JWT);
+  // If a URL isn't provided to authorize, the OAuth2Client super class is
+  // executed, which was already exercised.
+  const headers = await client.getRequestHeaders(
+    'http:/example.com/my_test_service'
+  );
+  assert.strictEqual(headers['x-goog-user-project'], 'fake-quota-project');
 });
