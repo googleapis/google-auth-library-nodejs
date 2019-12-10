@@ -812,17 +812,20 @@ it('getCredentials should handle a json keyFile', async () => {
 });
 
 it('getRequestHeaders populates x-goog-user-project for JWT client', async () => {
-  // The first time auth.getClient() is called /token endpoint is used to
-  // fetch a JWT.
-  const tokenReq = nock('https://www.googleapis.com')
-    .post('/oauth2/v4/token')
-    .reply(200, {});
   const auth = new GoogleAuth({
-    credentials: require('../../test/fixtures/service-account-with-quota.json'),
+    credentials: Object.assign(
+      require('../../test/fixtures/service-account-with-quota.json'),
+      {
+        private_key: keypair(1024 /* bitsize of private key */).private,
+      }
+    ),
   });
   const client = await auth.getClient();
   assert(client instanceof JWT);
-  const headers = await client.getRequestHeaders();
+  // If a URL isn't provided to authorize, the OAuth2Client super class is
+  // executed, which was already exercised.
+  const headers = await client.getRequestHeaders(
+    'http:/example.com/my_test_service'
+  );
   assert.strictEqual(headers['x-goog-user-project'], 'fake-quota-project');
-  tokenReq.done();
 });
