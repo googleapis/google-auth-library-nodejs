@@ -383,7 +383,6 @@ export class OAuth2Client extends AuthClient {
   private certificateCache: Certificates = {};
   private certificateExpiry: Date | null = null;
   private certificateCacheFormat: CertificateFormat = CertificateFormat.PEM;
-  protected quotaProjectId?: string;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
 
   // TODO: refactor tests to make this private
@@ -808,18 +807,7 @@ export class OAuth2Client extends AuthClient {
     const headers: {[index: string]: string} = {
       Authorization: credentials.token_type + ' ' + tokens.access_token,
     };
-
-    // quota_project_id, stored in application_default_credentials.json, is set in
-    // the x-goog-user-project header, to indicate an alternate account for
-    // billing and quota:
-    if (
-      !headers['x-goog-user-project'] && // don't override a value the user sets.
-      this.quotaProjectId
-    ) {
-      headers['x-goog-user-project'] = this.quotaProjectId;
-    }
-
-    return {headers, res: r.res};
+    return {headers: this.addSharedMetadataHeaders(headers), res: r.res};
   }
 
   /**

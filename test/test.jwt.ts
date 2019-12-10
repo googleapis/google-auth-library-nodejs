@@ -18,7 +18,7 @@ import * as jws from 'jws';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {JWT} from '../src';
+import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 
 const keypair = require('keypair');
@@ -809,4 +809,20 @@ it('getCredentials should handle a json keyFile', async () => {
   const {private_key, client_email} = await jwt.getCredentials();
   assert.strictEqual(private_key, json.private_key);
   assert.strictEqual(client_email, json.client_email);
+});
+
+it('getRequestHeaders populates x-goog-user-project for JWT client', async () => {
+  // The first time auth.getClient() is called /token endpoint is used to
+  // fetch a JWT.
+  const tokenReq = nock('https://www.googleapis.com')
+    .post('/oauth2/v4/token')
+    .reply(200, {});
+  const auth = new GoogleAuth({
+    credentials: require('../../test/fixtures/service-account-with-quota.json'),
+  });
+  const client = await auth.getClient();
+  assert(client instanceof JWT);
+  const headers = await client.getRequestHeaders();
+  assert.strictEqual(headers['x-goog-user-project'], 'fake-quota-project');
+  tokenReq.done();
 });
