@@ -1,22 +1,25 @@
-/**
- * Copyright 2015 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2015 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+import {
+  Headers,
+  GetTokenResponse,
+  OAuth2Client,
+  RefreshOptions,
+} from './oauth2client';
 
 export interface UserRefreshClientOptions extends RefreshOptions {
   clientId?: string;
@@ -44,7 +47,8 @@ export class UserRefreshClient extends OAuth2Client {
     optionsOrClientId?: string | UserRefreshClientOptions,
     clientSecret?: string,
     refreshToken?: string,
-    eagerRefreshThresholdMillis?: number
+    eagerRefreshThresholdMillis?: number,
+    forceRefreshOnFailure?: boolean
   ) {
     const opts =
       optionsOrClientId && typeof optionsOrClientId === 'object'
@@ -54,11 +58,13 @@ export class UserRefreshClient extends OAuth2Client {
             clientSecret,
             refreshToken,
             eagerRefreshThresholdMillis,
+            forceRefreshOnFailure,
           };
     super({
       clientId: opts.clientId,
       clientSecret: opts.clientSecret,
       eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis,
+      forceRefreshOnFailure: opts.forceRefreshOnFailure,
     });
     this._refreshToken = opts.refreshToken;
   }
@@ -109,6 +115,7 @@ export class UserRefreshClient extends OAuth2Client {
     this._clientSecret = json.client_secret;
     this._refreshToken = json.refresh_token;
     this.credentials.refresh_token = json.refresh_token;
+    this.quotaProjectId = json.quota_project_id;
   }
 
   /**

@@ -1,18 +1,16 @@
-/**
- * Copyright 2019 Google LLC. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import {
   GaxiosError,
@@ -28,8 +26,26 @@ import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
 
 import {AuthClient} from './authclient';
-import {CredentialRequest, Credentials} from './credentials';
+import {CredentialRequest, Credentials, JWTInput} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
+
+/**
+ * The results from the `generateCodeVerifierAsync` method.  To learn more,
+ * See the sample:
+ * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
+ */
+export interface CodeVerifierResults {
+  /**
+   * The code verifier that will be used when calling `getToken` to obtain a new
+   * access token.
+   */
+  codeVerifier: string;
+  /**
+   * The code_challenge that should be sent with the `generateAuthUrl` call
+   * to obtain a verifiable authentication url.
+   */
+  codeChallenge?: string;
+}
 
 export interface Certificates {
   [index: string]: string | JwkCertificate;
@@ -354,6 +370,12 @@ export interface RefreshOptions {
   // milliseconds from expiring".
   // Defaults to a value of 300000 (5 minutes).
   eagerRefreshThresholdMillis?: number;
+
+  // Whether to attempt to lazily refresh tokens on 401/403 responses
+  // even if an attempt is made to refresh the token preemptively based
+  // on the expiry_date.
+  // Defaults to false.
+  forceRefreshOnFailure?: boolean;
 }
 
 export class OAuth2Client extends AuthClient {
@@ -374,6 +396,8 @@ export class OAuth2Client extends AuthClient {
   projectId?: string;
 
   eagerRefreshThresholdMillis: number;
+
+  forceRefreshOnFailure: boolean;
 
   /**
    * Handles OAuth2 flow for Google APIs.
@@ -402,6 +426,7 @@ export class OAuth2Client extends AuthClient {
     this.redirectUri = opts.redirectUri;
     this.eagerRefreshThresholdMillis =
       opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
+    this.forceRefreshOnFailure = !!opts.forceRefreshOnFailure;
   }
 
   protected static readonly GOOGLE_TOKEN_INFO_URL =
@@ -477,7 +502,7 @@ export class OAuth2Client extends AuthClient {
     return rootUrl + '?' + querystring.stringify(opts);
   }
 
-  generateCodeVerifier() {
+  generateCodeVerifier(): void {
     // To make the code compatible with browser SubtleCrypto we need to make
     // this method async.
     throw new Error(
@@ -489,8 +514,11 @@ export class OAuth2Client extends AuthClient {
    * Convenience method to automatically generate a code_verifier, and it's
    * resulting SHA256. If used, this must be paired with a S256
    * code_challenge_method.
+   *
+   * For a full example see:
+   * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
    */
-  async generateCodeVerifierAsync() {
+  async generateCodeVerifierAsync(): Promise<CodeVerifierResults> {
     // base64 encoding uses 6 bits per character, and we want to generate128
     // characters. 6*128/8 = 96.
     const crypto = createCrypto();
@@ -733,8 +761,8 @@ export class OAuth2Client extends AuthClient {
    * @param url The optional url being authorized
    */
   async getRequestHeaders(url?: string): Promise<Headers> {
-    const res = await this.getRequestMetadataAsync(url);
-    return res.headers;
+    const headers = (await this.getRequestMetadataAsync(url)).headers;
+    return headers;
   }
 
   protected async getRequestMetadataAsync(
@@ -776,10 +804,10 @@ export class OAuth2Client extends AuthClient {
     credentials.token_type = credentials.token_type || 'Bearer';
     tokens.refresh_token = credentials.refresh_token;
     this.credentials = tokens;
-    const headers = {
+    const headers: {[index: string]: string} = {
       Authorization: credentials.token_type + ' ' + tokens.access_token,
     };
-    return {headers, res: r.res};
+    return {headers: this.addSharedMetadataHeaders(headers), res: r.res};
   }
 
   /**
@@ -879,12 +907,14 @@ export class OAuth2Client extends AuthClient {
     let r2: GaxiosResponse;
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
+      opts.headers = opts.headers || {};
+      if (r.headers && r.headers['x-goog-user-project']) {
+        opts.headers['x-goog-user-project'] = r.headers['x-goog-user-project'];
+      }
       if (r.headers && r.headers.Authorization) {
-        opts.headers = opts.headers || {};
         opts.headers.Authorization = r.headers.Authorization;
       }
       if (this.apiKey) {
-        opts.headers = opts.headers || {};
         opts.headers['X-Goog-Api-Key'] = this.apiKey;
       }
       r2 = await this.transporter.request<T>(opts);
@@ -896,15 +926,18 @@ export class OAuth2Client extends AuthClient {
         // - We haven't already retried.  It only makes sense to retry once.
         // - The response was a 401 or a 403
         // - The request didn't send a readableStream
-        // - An access_token and refresh_token were available, but no
-        //   expiry_date was availabe. This can happen when developers stash
-        //   the access_token and refresh_token for later use, but the
-        //   access_token fails on the first try because it's expired.
+        // - An access_token and refresh_token were available, but either no
+        //   expiry_date was available or the forceRefreshOnFailure flag is set.
+        //   The absent expiry_date case can happen when developers stash the
+        //   access_token and refresh_token for later use, but the access_token
+        //   fails on the first try because it's expired. Some developers may
+        //   choose to enable forceRefreshOnFailure to mitigate time-related
+        //   errors.
         const mayRequireRefresh =
           this.credentials &&
           this.credentials.access_token &&
           this.credentials.refresh_token &&
-          !this.credentials.expiry_date;
+          (!this.credentials.expiry_date || this.forceRefreshOnFailure);
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {

@@ -1,18 +1,16 @@
-/**
- * Copyright 2013 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2013 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import * as assert from 'assert';
 import * as fs from 'fs';
@@ -20,7 +18,7 @@ import * as jws from 'jws';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {JWT} from '../src';
+import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 
 const keypair = require('keypair');
@@ -811,4 +809,23 @@ it('getCredentials should handle a json keyFile', async () => {
   const {private_key, client_email} = await jwt.getCredentials();
   assert.strictEqual(private_key, json.private_key);
   assert.strictEqual(client_email, json.client_email);
+});
+
+it('getRequestHeaders populates x-goog-user-project for JWT client', async () => {
+  const auth = new GoogleAuth({
+    credentials: Object.assign(
+      require('../../test/fixtures/service-account-with-quota.json'),
+      {
+        private_key: keypair(1024 /* bitsize of private key */).private,
+      }
+    ),
+  });
+  const client = await auth.getClient();
+  assert(client instanceof JWT);
+  // If a URL isn't provided to authorize, the OAuth2Client super class is
+  // executed, which was already exercised.
+  const headers = await client.getRequestHeaders(
+    'http:/example.com/my_test_service'
+  );
+  assert.strictEqual(headers['x-goog-user-project'], 'fake-quota-project');
 });

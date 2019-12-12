@@ -1,18 +1,16 @@
-/**
- * Copyright 2019 Google LLC. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import * as assert from 'assert';
 const assertRejects = require('assert-rejects');
@@ -1086,6 +1084,32 @@ describe(__filename, () => {
       client.credentials = {
         access_token: 'initial-access-token',
         refresh_token: 'refresh-token-placeholder',
+      };
+      client.request({url: 'http://example.com/access'}, err => {
+        scope.done();
+        scopes[0].done();
+        assert.strictEqual('abc123', client.credentials.access_token);
+        done();
+      });
+    });
+
+    it(`should refresh token if the server returns ${code} with forceRefreshOnFailure`, done => {
+      const client = new OAuth2Client({
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        redirectUri: REDIRECT_URI,
+        forceRefreshOnFailure: true,
+      });
+      const scope = nock('http://example.com')
+        .get('/access')
+        .reply(code, {
+          error: {code, message: 'Invalid Credentials'},
+        });
+      const scopes = mockExample();
+      client.credentials = {
+        access_token: 'initial-access-token',
+        refresh_token: 'refresh-token-placeholder',
+        expiry_date: new Date().getTime() + 500000,
       };
       client.request({url: 'http://example.com/access'}, err => {
         scope.done();

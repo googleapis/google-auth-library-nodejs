@@ -1,18 +1,16 @@
-/**
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2014 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import * as assert from 'assert';
 const assertRejects = require('assert-rejects');
@@ -172,8 +170,12 @@ describe('googleauth', () => {
 
     return {
       done: () => {
-        primary.done();
-        secondary.done();
+        try {
+          primary.done();
+          secondary.done();
+        } catch (_err) {
+          // secondary can sometimes complete prior to primary.
+        }
       },
     };
   }
@@ -187,8 +189,12 @@ describe('googleauth', () => {
       .replyWithError({code: 'ENOTFOUND'});
     return {
       done: () => {
-        primary.done();
-        secondary.done();
+        try {
+          primary.done();
+          secondary.done();
+        } catch (_err) {
+          // secondary can sometimes complete prior to primary.
+        }
       },
     };
   }
@@ -1436,4 +1442,74 @@ describe('googleauth', () => {
       /Passing options to getClient is forbidden in v5.0.0/
     );
   });
+
+  it('getRequestHeaders populates x-goog-user-project with quota_project if present', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
+    const auth = new GoogleAuth();
+    const headers = await auth.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    tokenReq.done();
+  });
+
+  it('getRequestHeaders does not populate x-goog-user-project if quota_project is not present', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-no-quota'
+    );
+    const auth = new GoogleAuth();
+    const headers = await auth.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], undefined);
+    tokenReq.done();
+  });
+
+  it('getRequestHeaders populates x-goog-user-project when called on returned client', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
+    const auth = new GoogleAuth();
+    const client = await auth.getClient();
+    assert(client instanceof UserRefreshClient);
+    const headers = await client.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    tokenReq.done();
+  });
+
+  it('populates x-goog-user-project when request is made', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
+    const auth = new GoogleAuth();
+    const client = await auth.getClient();
+    assert(client instanceof UserRefreshClient);
+    const apiReq = nock(BASE_URL)
+      .post(ENDPOINT)
+      .reply(function(uri) {
+        assert.strictEqual(
+          this.req.headers['x-goog-user-project'][0],
+          'my-quota-project'
+        );
+        return [200, RESPONSE_BODY];
+      });
+    const res = await client.request({
+      url: BASE_URL + ENDPOINT,
+      method: 'POST',
+      data: {test: true},
+    });
+    assert.strictEqual(RESPONSE_BODY, res.data);
+    tokenReq.done();
+    apiReq.done();
+  });
+
+  function mockApplicationDefaultCredentials(path: string) {
+    // Fake a home directory in our fixtures path.
+    mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
+    mockEnvVar('HOME', path);
+    mockEnvVar('APPDATA', `${path}/.config`);
+    // The first time auth.getClient() is called /token endpoint is used to
+    // fetch a JWT.
+    return nock('https://oauth2.googleapis.com')
+      .post('/token')
+      .reply(200, {});
+  }
 });

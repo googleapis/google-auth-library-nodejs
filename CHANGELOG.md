@@ -4,6 +4,59 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.7.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.6.1...v5.7.0) (2019-12-10)
+
+
+### Features
+
+* make x-goog-user-project work for additional auth clients ([#848](https://www.github.com/googleapis/google-auth-library-nodejs/issues/848)) ([46af865](https://www.github.com/googleapis/google-auth-library-nodejs/commit/46af865172103c6f28712d78b30c2291487cbe86))
+
+### [5.6.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.6.0...v5.6.1) (2019-12-05)
+
+
+### Bug Fixes
+
+* **deps:** pin TypeScript below 3.7.0 ([#845](https://www.github.com/googleapis/google-auth-library-nodejs/issues/845)) ([a9c6e92](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a9c6e9284efe8102974c57c9824ed6275d743c7a))
+* **docs:** improve types and docs for generateCodeVerifierAsync ([#840](https://www.github.com/googleapis/google-auth-library-nodejs/issues/840)) ([04dae9c](https://www.github.com/googleapis/google-auth-library-nodejs/commit/04dae9c271f0099025188489c61fd245d482832b))
+
+## [5.6.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.1...v5.6.0) (2019-12-02)
+
+
+### Features
+
+* populate x-goog-user-project for requestAsync ([#837](https://www.github.com/googleapis/google-auth-library-nodejs/issues/837)) ([5a068fb](https://www.github.com/googleapis/google-auth-library-nodejs/commit/5a068fb8f5a3827ab70404f1d9699a97f962bdad))
+* set x-goog-user-project header, with quota_project from default credentials ([#829](https://www.github.com/googleapis/google-auth-library-nodejs/issues/829)) ([3240d16](https://www.github.com/googleapis/google-auth-library-nodejs/commit/3240d16f05171781fe6d70d64c476bceb25805a5))
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v2 ([#821](https://www.github.com/googleapis/google-auth-library-nodejs/issues/821)) ([2c04117](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2c0411708761cc7debdda1af1e593d82cb4aed31))
+* **docs:** add jsdoc-region-tag plugin ([#826](https://www.github.com/googleapis/google-auth-library-nodejs/issues/826)) ([558677f](https://www.github.com/googleapis/google-auth-library-nodejs/commit/558677fd90d3451e9ac4bf6d0b98907e3313f287))
+* expand on x-goog-user-project to handle auth.getClient() ([#831](https://www.github.com/googleapis/google-auth-library-nodejs/issues/831)) ([3646b7f](https://www.github.com/googleapis/google-auth-library-nodejs/commit/3646b7f9deb296aaff602dd2168ce93f014ce840))
+* use quota_project_id field instead of quota_project ([#832](https://www.github.com/googleapis/google-auth-library-nodejs/issues/832)) ([8933966](https://www.github.com/googleapis/google-auth-library-nodejs/commit/8933966659f3b07f5454a2756fa52d92fea147d2))
+
+### [5.5.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.5.0...v5.5.1) (2019-10-22)
+
+
+### Bug Fixes
+
+* **deps:** update gaxios dependency ([#817](https://www.github.com/googleapis/google-auth-library-nodejs/issues/817)) ([6730698](https://www.github.com/googleapis/google-auth-library-nodejs/commit/6730698b876eb52889acfead33bc4af52a8a7ba5))
+* don't append x-goog-api-client multiple times ([#820](https://www.github.com/googleapis/google-auth-library-nodejs/issues/820)) ([a46b271](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a46b271947b635377eacbdfcd22ae363ce9260a1))
+
+## [5.5.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.4.1...v5.5.0) (2019-10-14)
+
+
+### Features
+
+* **refresh:** add forceRefreshOnFailure flag for refreshing token on error ([#790](https://www.github.com/googleapis/google-auth-library-nodejs/issues/790)) ([54cf477](https://www.github.com/googleapis/google-auth-library-nodejs/commit/54cf4770f487fd1db48f2444c86109ca97608ed1))
+
+### [5.4.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.4.0...v5.4.1) (2019-10-10)
+
+
+### Bug Fixes
+
+* **deps:** updats to gcp-metadata with debug option ([#811](https://www.github.com/googleapis/google-auth-library-nodejs/issues/811)) ([744e3e8](https://www.github.com/googleapis/google-auth-library-nodejs/commit/744e3e8fea223eb4fb115ef0a4d36ad88fc6921a))
+
 ## [5.4.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.3.0...v5.4.0) (2019-10-08)
 
 

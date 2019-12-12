@@ -1,18 +1,16 @@
-/**
- * Copyright 2013 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2013 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
@@ -83,7 +81,10 @@ export class JWT extends OAuth2Client {
       optionsOrEmail && typeof optionsOrEmail === 'object'
         ? optionsOrEmail
         : {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
-    super({eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis});
+    super({
+      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis,
+      forceRefreshOnFailure: opts.forceRefreshOnFailure,
+    });
     this.email = opts.email;
     this.keyFile = opts.keyFile;
     this.key = opts.key;
@@ -127,7 +128,11 @@ export class JWT extends OAuth2Client {
         }).target_audience
       ) {
         const {tokens} = await this.refreshToken();
-        return {headers: {Authorization: `Bearer ${tokens.id_token}`}};
+        return {
+          headers: this.addSharedMetadataHeaders({
+            Authorization: `Bearer ${tokens.id_token}`,
+          }),
+        };
       } else {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
@@ -138,7 +143,7 @@ export class JWT extends OAuth2Client {
           url,
           this.additionalClaims
         );
-        return {headers};
+        return {headers: this.addSharedMetadataHeaders(headers)};
       }
     } else {
       return super.getRequestMetadataAsync(url);
@@ -264,6 +269,7 @@ export class JWT extends OAuth2Client {
     this.key = json.private_key;
     this.keyId = json.private_key_id;
     this.projectId = json.project_id;
+    this.quotaProjectId = json.quota_project_id;
   }
 
   /**
