@@ -29,6 +29,12 @@
 Before running the samples, make sure you've followed the steps outlined in
 [Using the client library](https://github.com/googleapis/google-auth-library-nodejs#using-the-client-library).
 
+`cd samples`
+
+`npm install`
+
+`cd ..`
+
 ## Samples
 
 
@@ -42,7 +48,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node adc.js`
+`node samples/adc.js`
 
 
 -----
@@ -59,7 +65,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node compute.js`
+`node samples/compute.js`
 
 
 -----
@@ -76,7 +82,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node credentials.js`
+`node samples/credentials.js`
 
 
 -----
@@ -93,7 +99,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node headers.js`
+`node samples/headers.js`
 
 
 -----
@@ -110,7 +116,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node iap.js`
+`node samples/iap.js`
 
 
 -----
@@ -127,7 +133,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node jwt.js`
+`node samples/jwt.js`
 
 
 -----
@@ -144,7 +150,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node keepalive.js`
+`node samples/keepalive.js`
 
 
 -----
@@ -161,7 +167,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node keyfile.js`
+`node samples/keyfile.js`
 
 
 -----
@@ -178,7 +184,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node oauth2-codeVerifier.js`
+`node samples/oauth2-codeVerifier.js`
 
 
 -----
@@ -195,7 +201,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node oauth2.js`
+`node samples/oauth2.js`
 
 
 -----
@@ -212,7 +218,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node verifyIdToken.js`
+`node samples/verifyIdToken.js`
 
 
 
