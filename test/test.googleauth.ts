@@ -22,6 +22,7 @@ import {
   HEADERS,
   HOST_ADDRESS,
   SECONDARY_HOST_ADDRESS,
+  resetIsAvailableCache,
 } from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
@@ -80,6 +81,7 @@ describe('googleauth', () => {
   let createLinuxWellKnownStream: Function;
   let createWindowsWellKnownStream: Function;
   beforeEach(() => {
+    resetIsAvailableCache();
     auth = new GoogleAuth();
     exposeWindowsWellKnownFile = false;
     exposeLinuxWellKnownFile = false;
@@ -1289,6 +1291,26 @@ describe('googleauth', () => {
     const scope = nock(host)
       .get(`${instancePath}/attributes/cluster-name`)
       .reply(200, {}, HEADERS);
+    const env = await auth.getEnv();
+    assert.strictEqual(env, envDetect.GCPEnv.KUBERNETES_ENGINE);
+    scope.done();
+  });
+
+  it('should cache prior call to getEnv(), when GCE', async () => {
+    envDetect.clear();
+    const {auth, scopes} = mockGCE();
+    auth.getEnv();
+    const env = await auth.getEnv();
+    assert.strictEqual(env, envDetect.GCPEnv.COMPUTE_ENGINE);
+  });
+
+  it('should cache prior call to getEnv(), when GKE', async () => {
+    envDetect.clear();
+    const {auth, scopes} = mockGCE();
+    const scope = nock(host)
+      .get(`${instancePath}/attributes/cluster-name`)
+      .reply(200, {}, HEADERS);
+    auth.getEnv();
     const env = await auth.getEnv();
     assert.strictEqual(env, envDetect.GCPEnv.KUBERNETES_ENGINE);
     scope.done();
