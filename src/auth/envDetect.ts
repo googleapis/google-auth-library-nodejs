@@ -22,27 +22,34 @@ export enum GCPEnv {
   NONE = 'NONE',
 }
 
-let env: GCPEnv | undefined;
+let envPromise: Promise<GCPEnv> | undefined;
 
 export function clear() {
-  env = undefined;
+  envPromise = undefined;
 }
 
 export async function getEnv() {
-  if (!env) {
-    if (isAppEngine()) {
-      env = GCPEnv.APP_ENGINE;
-    } else if (isCloudFunction()) {
-      env = GCPEnv.CLOUD_FUNCTIONS;
-    } else if (await isComputeEngine()) {
-      if (await isKubernetesEngine()) {
-        env = GCPEnv.KUBERNETES_ENGINE;
-      } else {
-        env = GCPEnv.COMPUTE_ENGINE;
-      }
+  if (envPromise) {
+    return envPromise;
+  }
+  envPromise = getEnvMemoized();
+  return envPromise;
+}
+
+async function getEnvMemoized(): Promise<GCPEnv> {
+  let env = GCPEnv.NONE;
+  if (isAppEngine()) {
+    env = GCPEnv.APP_ENGINE;
+  } else if (isCloudFunction()) {
+    env = GCPEnv.CLOUD_FUNCTIONS;
+  } else if (await isComputeEngine()) {
+    if (await isKubernetesEngine()) {
+      env = GCPEnv.KUBERNETES_ENGINE;
     } else {
-      env = GCPEnv.NONE;
+      env = GCPEnv.COMPUTE_ENGINE;
     }
+  } else {
+    env = GCPEnv.NONE;
   }
   return env;
 }
