@@ -37,7 +37,7 @@ export async function getEnv() {
 }
 
 async function getEnvMemoized(): Promise<GCPEnv> {
-  let env: GCPEnv | undefined;
+  let env = GCPEnv.NONE;
   if (isAppEngine()) {
     env = GCPEnv.APP_ENGINE;
   } else if (isCloudFunction()) {
