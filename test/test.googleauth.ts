@@ -22,7 +22,7 @@ import {
   HEADERS,
   HOST_ADDRESS,
   SECONDARY_HOST_ADDRESS,
-  resetIsAvailableCache
+  resetIsAvailableCache,
 } from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
