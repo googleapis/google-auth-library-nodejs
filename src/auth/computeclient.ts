@@ -84,7 +84,7 @@ export class Compute extends OAuth2Client {
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
     if (this.targetAudience) {
-      return await this.fetchIdToken();
+      return this.fetchIdToken();
     }
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let data: CredentialRequest;
@@ -114,7 +114,6 @@ export class Compute extends OAuth2Client {
 
   /**
    * Fetches an ID token.
-   * @param targetAudience Audience of the ID token
    */
   private async fetchIdToken(): Promise<GetTokenResponse> {
     const idTokenPath =
