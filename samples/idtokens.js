@@ -21,10 +21,10 @@ const {GoogleAuth} = require('google-auth-library');
 
 async function main() {
   const targetAudience = 'iap-client-id';
-  const iapUrl = 'https://some.iap.url';
+  const url = 'https://some.iap.url';
   const auth = new GoogleAuth();
   const client = await auth.getIdTokenClient(targetAudience);
-  const res = await client.request({iapUrl});
+  const res = await client.request({url});
   console.log(res.data);
 }
 
