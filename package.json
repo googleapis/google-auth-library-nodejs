@@ -64,7 +64,7 @@
     "ncp": "^2.0.0",
     "nock": "^11.3.2",
     "null-loader": "^3.0.0",
-    "nyc": "^14.1.1",
+    "c8": "^7.0.0",
     "prettier": "^1.13.4",
     "puppeteer": "^2.0.0",
     "sinon": "^8.0.0",
@@ -80,7 +80,7 @@
     "!build/src/**/*.map"
   ],
   "scripts": {
-    "test": "nyc mocha build/test",
+    "test": "c8 mocha build/test",
     "clean": "gts clean",
     "prepare": "npm run compile",
     "lint": "gts check && eslint '**/*.js' && jsgl --local .",
