@@ -1523,6 +1523,38 @@ describe('googleauth', () => {
     apiReq.done();
   });
 
+  it('should return a Compute client for getIdTokenClient', async () => {
+    const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
+    const auth = new GoogleAuth();
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof Compute);
+  });
+
+  it('should return a JWT client for getIdTokenClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/private.json'
+    );
+
+    const auth = new GoogleAuth();
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof JWT);
+  });
+
+  it('should call getClient for getIdTokenClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/private.json'
+    );
+
+    const spy = sinon.spy(auth, 'getClient');
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof JWT);
+    assert(spy.calledOnce);
+  });
+
   function mockApplicationDefaultCredentials(path: string) {
     // Fake a home directory in our fixtures path.
     mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');

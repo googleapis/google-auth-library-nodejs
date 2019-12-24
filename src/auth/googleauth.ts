@@ -729,6 +729,15 @@ export class GoogleAuth {
   }
 
   /**
+   * @param targetAudience the audience for the fetched ID token.
+   * @throws Error
+   */
+  async getIdTokenClient(targetAudience: string) {
+    const client = await this.getClient();
+    return client.getIdTokenClient(targetAudience);
+  }
+
+  /**
    * Automatically obtain application default credentials, and return
    * an access token for making requests.
    */

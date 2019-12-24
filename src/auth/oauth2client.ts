@@ -1024,6 +1024,14 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
+   * @param targetAudience the audience for the fetched ID token.
+   * @throws Error
+   */
+  getIdTokenClient(targetAudience: string): OAuth2Client {
+    throw new Error('fetching ID tokens is not supported for this client.');
+  }
+
+  /**
    * Gets federated sign-on certificates to use for verifying identity tokens.
    * Returns certs as array structure, where keys are key ids, and values
    * are certificates in either PEM or JWK format.

@@ -151,6 +151,21 @@ export class JWT extends OAuth2Client {
   }
 
   /**
+   * @param targetAudience the audience for the fetched ID token.
+   * @return URL to consent page.
+   */
+  getIdTokenClient(targetAudience: string): OAuth2Client {
+    return new JWT({
+      additionalClaims: {target_audience: targetAudience},
+      iss: this.email,
+      sub: this.subject,
+      scope: this.scopes,
+      keyFile: this.keyFile,
+      key: this.key,
+    } as JWTOptions);
+  }
+
+  /**
    * Indicates whether the credential requires scopes to be created by calling
    * createScoped before use.
    * @deprecated

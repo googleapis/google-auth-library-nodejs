@@ -27,6 +27,12 @@ export interface ComputeOptions extends RefreshOptions {
    * may have multiple service accounts.
    */
   serviceAccountEmail?: string;
+
+  /**
+   * The audience to use when requesting an ID token.
+   */
+  targetAudience?: string;
+
   /**
    * The scopes that will be requested when acquiring service account
    * credentials. Only applicable to modern App Engine and Cloud Function
@@ -37,6 +43,7 @@ export interface ComputeOptions extends RefreshOptions {
 
 export class Compute extends OAuth2Client {
   private serviceAccountEmail: string;
+  private targetAudience?: string;
   scopes: string[];
 
   /**
@@ -51,6 +58,7 @@ export class Compute extends OAuth2Client {
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};
     this.serviceAccountEmail = options.serviceAccountEmail || 'default';
+    this.targetAudience = options.targetAudience;
     this.scopes = arrify(options.scopes);
   }
 
@@ -75,6 +83,9 @@ export class Compute extends OAuth2Client {
   protected async refreshTokenNoCache(
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
+    if (this.targetAudience) {
+      return await this.fetchIdToken();
+    }
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let data: CredentialRequest;
     try {
@@ -99,6 +110,41 @@ export class Compute extends OAuth2Client {
     }
     this.emit('tokens', tokens);
     return {tokens, res: null};
+  }
+
+  /**
+   * Fetches an ID token.
+   * @param targetAudience Audience of the ID token
+   */
+  private async fetchIdToken(): Promise<GetTokenResponse> {
+    const idTokenPath =
+      `service-accounts/${this.serviceAccountEmail}/identity` +
+      `?audience=${this.targetAudience}`;
+    let idToken: string;
+    try {
+      const instanceOptions: gcpMetadata.Options = {
+        property: idTokenPath,
+      };
+      idToken = await gcpMetadata.instance(instanceOptions);
+    } catch (e) {
+      e.message = `Could not fetch ID token: ${e.message}`;
+      throw e;
+    }
+
+    const tokens = {id_token: idToken} as Credentials;
+    this.emit('tokens', tokens);
+    return {tokens, res: null};
+  }
+
+  /**
+   * @param targetAudience the audience for the fetched ID token.
+   * @return Compute client for fetching ID token.
+   */
+  getIdTokenClient(targetAudience: string): OAuth2Client {
+    return new Compute({
+      targetAudience,
+      serviceAccountEmail: this.serviceAccountEmail,
+    });
   }
 
   protected wrapError(e: GaxiosError) {
