@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
+import {describe, it} from 'mocha';
 import {LoginTicket} from '../src/auth/loginticket';
 
 it('should return null userId even if no payload', () => {

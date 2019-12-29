@@ -14,6 +14,7 @@
 
 const cp = require('child_process');
 const {assert} = require('chai');
+const {describe, it} = require('mocha');
 const fs = require('fs');
 const {promisify} = require('util');
 
