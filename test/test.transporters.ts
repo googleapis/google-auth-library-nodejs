@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
+import {describe, it} from 'mocha';
 import {GaxiosOptions} from 'gaxios';
 const assertRejects = require('assert-rejects');
 import * as nock from 'nock';
