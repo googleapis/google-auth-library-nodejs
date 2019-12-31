@@ -45,7 +45,7 @@
     "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-prettier": "^3.0.0",
-    "execa": "^3.0.0",
+    "execa": "^4.0.0",
     "gts": "^1.1.2",
     "is-docker": "^2.0.0",
     "js-green-licenses": "^1.0.0",
