@@ -4,6 +4,18 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.8.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.7.0...v5.8.0) (2020-01-06)
+
+
+### Features
+
+* cache results of getEnv() ([#857](https://www.github.com/googleapis/google-auth-library-nodejs/issues/857)) ([d4545a9](https://www.github.com/googleapis/google-auth-library-nodejs/commit/d4545a9001184fac0b67e7073e463e3efd345037))
+
+
+### Bug Fixes
+
+* **deps:** update dependency jws to v4 ([#851](https://www.github.com/googleapis/google-auth-library-nodejs/issues/851)) ([71366d4](https://www.github.com/googleapis/google-auth-library-nodejs/commit/71366d43406047ce9e1d818d59a14191fb678e3a))
+
 ## [5.7.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.6.1...v5.7.0) (2019-12-10)
 
 
