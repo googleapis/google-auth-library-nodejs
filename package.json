@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "5.7.0",
+  "version": "5.8.0",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
@@ -43,9 +43,9 @@
     "codecov": "^3.0.2",
     "eslint": "^6.0.0",
     "eslint-config-prettier": "^6.0.0",
-    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-prettier": "^3.0.0",
-    "execa": "^3.0.0",
+    "execa": "^4.0.0",
     "gts": "^1.1.2",
     "is-docker": "^2.0.0",
     "js-green-licenses": "^1.0.0",
@@ -59,12 +59,12 @@
     "karma-webpack": "^4.0.0",
     "keypair": "^1.0.1",
     "linkinator": "^1.5.0",
-    "mocha": "^6.0.0",
+    "mocha": "^7.0.0",
     "mv": "^2.1.1",
     "ncp": "^2.0.0",
     "nock": "^11.3.2",
     "null-loader": "^3.0.0",
-    "nyc": "^14.1.1",
+    "c8": "^7.0.0",
     "prettier": "^1.13.4",
     "puppeteer": "^2.0.0",
     "sinon": "^8.0.0",
@@ -80,7 +80,7 @@
     "!build/src/**/*.map"
   ],
   "scripts": {
-    "test": "nyc mocha build/test",
+    "test": "c8 mocha build/test",
     "clean": "gts clean",
     "prepare": "npm run compile",
     "lint": "gts check && eslint '**/*.js' && jsgl --local .",
