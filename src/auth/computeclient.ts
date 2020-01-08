@@ -28,7 +28,6 @@ export interface ComputeOptions extends RefreshOptions {
    * may have multiple service accounts.
    */
   serviceAccountEmail?: string;
-
   /**
    * The scopes that will be requested when acquiring service account
    * credentials. Only applicable to modern App Engine and Cloud Function

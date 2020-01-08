@@ -23,8 +23,7 @@ async function main() {
   const targetAudience = 'iap-client-id';
   const url = 'https://some.iap.url';
   const auth = new GoogleAuth();
-  const idTokenProvider = await auth.getClient();
-  const client = new IdTokenClient({targetAudience, idTokenProvider})
+  const client = auth.getIdTokenClient(targetAudience);
   const res = await client.request({url});
   console.log(res.data);
 }

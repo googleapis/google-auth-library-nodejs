@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import {
   GaxiosError,
   GaxiosOptions,
@@ -30,7 +29,6 @@ export interface IdTokenOptions {
    * The client to make the request to fetch an ID token.
    */
   idTokenProvider: IdTokenProvider;
-
   /**
    * The audience to use when requesting an ID token.
    */
