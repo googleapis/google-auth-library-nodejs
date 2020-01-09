@@ -29,7 +29,6 @@ import {CredentialBody, JWTInput} from './credentials';
 import {IdTokenClient, IdTokenProvider} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-
 import {
   Headers,
   OAuth2Client,
