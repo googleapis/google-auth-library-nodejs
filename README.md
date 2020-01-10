@@ -334,6 +334,33 @@ async function main() {
 main().catch(console.error);
 ```
 
+## Working with ID Tokens
+If your application is running behind Cloud Run, or using Cloud Identity-Aware
+Proxy (IAP), you wll need to fetch an ID token to access your application. For
+this, the auth client a method `getIdTokenClient`.
+
+``` js
+// Make a request to a protected Cloud Run or Cloud Identity-Aware Proxy (IAP) resource
+const {GoogleAuth} = require('google-auth-library');
+
+async function main() {
+  const targetAudience = 'cloud-run-or-iap-client-id';
+  const url = 'https://cloud-run-or-iap-url.com';
+  const auth = new GoogleAuth();
+  const client = auth.getIdTokenClient(targetAudience);
+  const res = await client.request({url});
+  console.log(res.data);
+}
+
+main().catch(console.error);
+```
+
+For invoking Cloud Run services, your service account will need the [`Cloud Run Invoker`](https://cloud.google.com/run/docs/authenticating/service-to-service) IAM
+permission.
+
+For invoking Cloud Identity-Aware Proxy, see how to [secure your apps with
+signed headers](https://cloud.google.com/iap/docs/signed-headers-howto).
+
 ## Questions/problems?
 
 * Ask your development related questions on [Stack Overflow][stackoverflow].

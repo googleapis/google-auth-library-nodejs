@@ -17,7 +17,7 @@
  * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
  * this library will automatically choose the right client based on the environment.
  */
-const {GoogleAuth, IdTokenClient} = require('google-auth-library');
+const {GoogleAuth} = require('google-auth-library');
 
 async function main() {
   const targetAudience = 'iap-client-id';
