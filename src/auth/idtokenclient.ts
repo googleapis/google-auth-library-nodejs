@@ -12,17 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  GaxiosError,
-  GaxiosOptions,
-  GaxiosPromise,
-  GaxiosResponse,
-} from 'gaxios';
-
 import {BodyResponseCallback} from '../transporters';
 
-import {AuthClient} from './authclient';
-import {OAuth2Client} from './oauth2client';
+import {Credentials} from './credentials';
+import {Headers, OAuth2Client, RequestMetadataResponse} from './oauth2client';
 
 export interface IdTokenOptions {
   /**
@@ -39,7 +32,7 @@ export interface IdTokenProvider {
   fetchIdToken: (targetAudience: string) => Promise<string>;
 }
 
-export class IdTokenClient extends AuthClient {
+export class IdTokenClient extends OAuth2Client {
   targetAudience: string;
   idTokenProvider: IdTokenProvider;
 
@@ -55,47 +48,20 @@ export class IdTokenClient extends AuthClient {
     this.idTokenProvider = options.idTokenProvider;
   }
 
-  /**
-   * Provides a request implementation with OAuth 2.0 flow. If credentials have
-   * a refresh_token, in cases of HTTP 401 and 403 responses, it automatically
-   * asks for a new access token and replays the unsuccessful request.
-   * @param opts Request options.
-   * @param callback callback.
-   * @return Request object
-   */
-  request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
-  request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
-  request<T>(
-    opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
-  ): GaxiosPromise<T> | void {
-    if (callback) {
-      this.requestAsync<T>(opts).then(
-        r => callback(null, r),
-        e => {
-          return callback(e, e.response);
-        }
+  protected async getRequestMetadataAsync(
+    url?: string | null
+  ): Promise<RequestMetadataResponse> {
+    let idTokenCreds : Credentials;
+    if (!this.credentials.id_token) {
+      const idToken = await this.idTokenProvider.fetchIdToken(
+        this.targetAudience
       );
-    } else {
-      return this.requestAsync<T>(opts);
+      this.credentials = {id_token: idToken} as Credentials;
     }
-  }
 
-  protected async requestAsync<T>(
-    opts: GaxiosOptions,
-    retry = false
-  ): Promise<GaxiosResponse<T>> {
-    let r2: GaxiosResponse;
-
-    const idToken = await this.idTokenProvider.fetchIdToken(
-      this.targetAudience
-    );
-
-    opts.headers = opts.headers || {};
-    opts.headers.Authorization = `Bearer ${idToken}`;
-
-    r2 = await this.transporter.request<T>(opts);
-
-    return r2;
+    const headers: Headers = {
+      Authorization: 'Bearer ' + this.credentials.id_token
+    };
+    return {headers};
   }
 }
