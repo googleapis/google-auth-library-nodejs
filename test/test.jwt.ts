@@ -840,7 +840,7 @@ it('should return an ID token for fetchIdToken', async () => {
   });
 
   const scope = createGTokenMock({id_token: 'abc123'});
-  const idtoken = await jwt.fetchIdToken('a-target-audience')
+  const idtoken = await jwt.fetchIdToken('a-target-audience');
   scope.done();
   assert.strictEqual(idtoken, 'abc123');
 });

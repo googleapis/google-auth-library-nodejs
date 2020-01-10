@@ -87,7 +87,9 @@ export class IdTokenClient extends AuthClient {
   ): Promise<GaxiosResponse<T>> {
     let r2: GaxiosResponse;
 
-    const idToken = await this.idTokenProvider.fetchIdToken(this.targetAudience);
+    const idToken = await this.idTokenProvider.fetchIdToken(
+      this.targetAudience
+    );
 
     opts.headers = opts.headers || {};
     opts.headers.Authorization = `Bearer ${idToken}`;
