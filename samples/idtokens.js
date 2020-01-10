@@ -13,19 +13,30 @@
 
 'use strict';
 
-/**
- * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
- * this library will automatically choose the right client based on the environment.
- */
-const {GoogleAuth} = require('google-auth-library');
+async function main(
+  url = 'https://some.iap.url',
+  targetAudience = 'iap-client-id'
+) {
+  // [START google_auth_idtoken]
+  /**
+   * TODO(developer): Uncomment these variables before running the sample.
+   */
+  // const url = 'https://some.iap.url';
+  // const targetAudience = 'iap-client-id';
 
-async function main() {
-  const targetAudience = 'iap-client-id';
-  const url = 'https://some.iap.url';
+  const {GoogleAuth} = require('google-auth-library');
   const auth = new GoogleAuth();
-  const client = auth.getIdTokenClient(targetAudience);
-  const res = await client.request({url});
-  console.log(res.data);
+
+  async function request() {
+    console.info(`request ${url} with target audience ${targetAudience}`);
+    const client = await auth.getIdTokenClient(targetAudience);
+    const res = await client.request({url});
+    console.info(res.data);
+  }
+
+  request();
+  // [END google_auth_idtoken]
 }
 
-main().catch(console.error);
+const args = process.argv.slice(2);
+main(...args).catch(console.error);

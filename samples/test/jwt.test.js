@@ -63,4 +63,12 @@ describe('samples', () => {
     assert.match(output, /Headers:/);
     assert.match(output, /DNS Info:/);
   });
+
+  it('should fetch ID token based on target audience', async () => {
+    // process.env.CLOUD_RUN_URL should be a cloud run container, protected with
+    // IAP, running gcr.io/cloudrun/hello:
+    const url = process.env.CLOUD_RUN_URL || 'https://hello-rftcw63abq-uc.a.run.app';
+    const output = execSync(`node idtokens ${url} ${url}`);
+    assert.match(output, /What's next?/);
+  });
 });
