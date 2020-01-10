@@ -14,28 +14,26 @@
 'use strict';
 
 async function main(
-  url = 'https://some.iap.url',
-  targetAudience = 'iap-client-id'
+  url = 'https://service-1234-uc.a.run.app'
 ) {
-  // [START google_auth_idtoken]
+  // [START google_auth_idtoken_cloudrun]
   /**
    * TODO(developer): Uncomment these variables before running the sample.
    */
-  // const url = 'https://some.iap.url';
-  // const targetAudience = 'iap-client-id';
+  // const url = 'https://service-1234-uc.a.run.app';
 
   const {GoogleAuth} = require('google-auth-library');
   const auth = new GoogleAuth();
 
   async function request() {
-    console.info(`request ${url} with target audience ${targetAudience}`);
-    const client = await auth.getIdTokenClient(targetAudience);
+    console.info(`request Cloud Run ${url}`);
+    const client = await auth.getIdTokenClient(url);
     const res = await client.request({url});
     console.info(res.data);
   }
 
   request();
-  // [END google_auth_idtoken]
+  // [END google_auth_idtoken_cloudrun]
 }
 
 const args = process.argv.slice(2);
