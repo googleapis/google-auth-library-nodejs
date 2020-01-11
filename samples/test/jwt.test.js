@@ -81,6 +81,6 @@ describe('samples', () => {
     const targetAudience =
       process.env.IAP_CLIENT_ID || '170454875485-fbn7jalc9214bb67lslv1pbvmnijrb20.apps.googleusercontent.com';
     const output = execSync(`node idtokens-iap ${url} ${targetAudience}`);
-    assert.match(output, /What's next?/);
+    assert.match(output, /Hello, world/);
   });
 });

@@ -428,6 +428,9 @@
       "path": "src/auth/iam.ts"
     },
     {
+      "path": "src/auth/idtokenclient.ts"
+    },
+    {
       "path": "src/auth/oauth2client.ts"
     },
     {
@@ -473,7 +476,10 @@
       "path": "samples/headers.js"
     },
     {
-      "path": "samples/iap.js"
+      "path": "samples/idtokens-cloudrun.js"
+    },
+    {
+      "path": "samples/idtokens-iap.js"
     },
     {
       "path": "samples/jwt.js"
