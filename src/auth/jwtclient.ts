@@ -165,7 +165,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       key: this.key,
       additionalClaims: {target_audience: targetAudience},
     });
-    const token = await gtoken.getToken({
+    await gtoken.getToken({
       forceRefresh: true,
     });
     if (!gtoken.idToken) {

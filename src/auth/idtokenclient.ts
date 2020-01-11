@@ -51,17 +51,29 @@ export class IdTokenClient extends OAuth2Client {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    let idTokenCreds : Credentials;
-    if (!this.credentials.id_token) {
+    let thisCreds : Credentials = this.credentials;
+
+    if (!thisCreds.id_token || (thisCreds.expiry_date || 0) < Date.now()) {
       const idToken = await this.idTokenProvider.fetchIdToken(
         this.targetAudience
       );
-      this.credentials = {id_token: idToken} as Credentials;
+      this.credentials = {
+        id_token: idToken,
+        expiry_date: this.getIdTokenExpiryDate(idToken)
+      } as Credentials;
     }
 
     const headers: Headers = {
       Authorization: 'Bearer ' + this.credentials.id_token
     };
     return {headers};
+  }
+
+  private getIdTokenExpiryDate(idToken: string): number | void {
+    const payloadB64 = idToken.split('.')[1];
+    if (payloadB64) {
+      const payload = JSON.parse(Buffer.from(payloadB64, 'base64').toString('ascii'));
+      return payload.exp * 1000;
+    }
   }
 }
