@@ -29,7 +29,7 @@ async function main(
     if (!targetAudience) {
       // Use the request URL hostname as the target audience for Cloud Run requests
       const {URL} = require('url');
-      targetAudience = new URL(url).origin
+      targetAudience = new URL(url).origin;
     }
     console.info(
       `request Cloud Run ${url} with target audience ${targetAudience}`
