@@ -28,11 +28,12 @@ async function main(
   async function request() {
     if (!targetAudience) {
       // Use the request URL hostname as the target audience for Cloud Run requests
-      const urlParser = require('url')
-      const parsedUrl = urlParser.parse(url)
-      targetAudience = parsedUrl.protocol + '//' + parsedUrl.hostname
+      const {URL} = require('url');
+      targetAudience = new URL(url).origin
     }
-    console.info(`request Cloud Run ${url} with target audience ${targetAudience}`);
+    console.info(
+      `request Cloud Run ${url} with target audience ${targetAudience}`
+    );
     const client = await auth.getIdTokenClient(targetAudience);
     const res = await client.request({url});
     console.info(res.data);
