@@ -248,3 +248,22 @@ it('should request the identity endpoint for fetchIdToken', async () => {
 
   assert.strictEqual(idToken, 'abc123');
 });
+
+it('should throw an error if metadata server is unavailable', async () => {
+  const targetAudience = 'a-target-audience';
+  const path = `${identityPath}?audience=${targetAudience}`;
+
+  const tokenFetchNock = nock(HOST_ADDRESS)
+    .get(path, undefined, {reqheaders: HEADERS})
+    .reply(500, 'a server error!', HEADERS);
+
+  const compute = new Compute();
+  try {
+    const idToken = await compute.fetchIdToken(targetAudience);
+  } catch {
+    tokenFetchNock.done();
+    return;
+  }
+
+  assert.fail('failed to throw');
+});

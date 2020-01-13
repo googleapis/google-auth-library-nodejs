@@ -1564,10 +1564,15 @@ describe('googleauth', () => {
       'GOOGLE_APPLICATION_CREDENTIALS',
       './test/fixtures/refresh.json'
     );
+    mockEnvVar(
+      'GOOGLE_CLOUD_PROJECT',
+      'some-project-id'
+    );
 
     try {
       const client = await auth.getIdTokenClient('a-target-audience');
     } catch (e) {
+      assert(e.message.startsWith('Cannot fetch ID token in this environment'));
       return;
     }
     assert.fail('failed to throw');

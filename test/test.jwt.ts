@@ -844,3 +844,21 @@ it('should return an ID token for fetchIdToken', async () => {
   scope.done();
   assert.strictEqual(idtoken, 'abc123');
 });
+
+it('should throw an error if ID token is not set', async () => {
+  const keys = keypair(1024 /* bitsize of private key */);
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    key: keys.private,
+    subject: 'ignored@subjectaccount.com',
+  });
+
+  const scope = createGTokenMock({access_token: 'a-token'});
+  try {
+    const idtoken = await jwt.fetchIdToken('a-target-audience');
+  } catch {
+    scope.done();
+    return;
+  }
+  assert.fail('failed to throw');
+});
