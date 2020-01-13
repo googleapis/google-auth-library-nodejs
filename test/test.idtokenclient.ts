@@ -13,14 +13,14 @@
 // limitations under the License.
 import * as assert from 'assert';
 import {it} from 'mocha';
+import * as fs from 'fs';
 import * as nock from 'nock';
-import * as sinon from 'sinon';
 
 import {IdTokenClient, JWT} from '../src';
 import {CredentialRequest} from '../src/auth/credentials';
 
-const keypair = require('keypair');
-
+const PEM_PATH = './test/fixtures/private.pem';
+const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
 nock.disableNetConnect();
 
 function createGTokenMock(body: CredentialRequest) {
@@ -29,22 +29,15 @@ function createGTokenMock(body: CredentialRequest) {
     .reply(200, body);
 }
 
-let sandbox: sinon.SinonSandbox;
-beforeEach(() => {
-  sandbox = sinon.createSandbox();
-});
-
 afterEach(() => {
   nock.cleanAll();
-  sandbox.restore();
 });
 
 it('should determine expiry_date from JWT', async () => {
-  const keys = keypair(1024 /* bitsize of private key */);
   const idToken = 'header.eyJleHAiOiAxNTc4NzAyOTU2fQo.signature';
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
-    key: keys.private,
+    key: PEM_CONTENTS,
     subject: 'ignored@subjectaccount.com',
   });
 
@@ -57,10 +50,9 @@ it('should determine expiry_date from JWT', async () => {
 });
 
 it('should refresh ID token if expired', async () => {
-  const keys = keypair(1024 /* bitsize of private key */);
   const jwt = new JWT({
     email: 'foo@serviceaccount.com',
-    key: keys.private,
+    key: PEM_CONTENTS,
     subject: 'ignored@subjectaccount.com',
   });
 
