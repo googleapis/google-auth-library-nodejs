@@ -259,7 +259,7 @@ it('should throw an error if metadata server is unavailable', async () => {
 
   const compute = new Compute();
   try {
-    const idToken = await compute.fetchIdToken(targetAudience);
+    await compute.fetchIdToken(targetAudience);
   } catch {
     tokenFetchNock.done();
     return;

@@ -44,7 +44,7 @@ function main(
     console.info(res.data);
   }
 
-  request().catch((err) => {
+  request().catch(err => {
     console.error(err.message);
     process.exitCode = 1;
   });

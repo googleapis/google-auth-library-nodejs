@@ -63,7 +63,27 @@ it('should refresh ID token if expired', async () => {
     id_token: 'an-identity-token',
     expiry_date: new Date().getTime() - 1000,
   };
-  await client.getRequestHeaders();
+  const headers = await client.getRequestHeaders();
   scope.done();
   assert.strictEqual(client.credentials.id_token, 'abc123');
+  assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
+});
+
+it('should refresh ID token if expiry_date not set', async () => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    key: PEM_CONTENTS,
+    subject: 'ignored@subjectaccount.com',
+  });
+
+  const scope = createGTokenMock({id_token: 'abc123'});
+  const targetAudience = 'a-target-audience';
+  const client = new IdTokenClient({idTokenProvider: jwt, targetAudience});
+  client.credentials = {
+    id_token: 'an-identity-token',
+  };
+  const headers = await client.getRequestHeaders();
+  scope.done();
+  assert.strictEqual(client.credentials.id_token, 'abc123');
+  assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
 });
