@@ -830,3 +830,33 @@ it('getRequestHeaders populates x-goog-user-project for JWT client', async () =>
   );
   assert.strictEqual(headers['x-goog-user-project'], 'fake-quota-project');
 });
+
+it('should return an ID token for fetchIdToken', async () => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    key: PEM_CONTENTS,
+    subject: 'ignored@subjectaccount.com',
+  });
+
+  const scope = createGTokenMock({id_token: 'abc123'});
+  const idtoken = await jwt.fetchIdToken('a-target-audience');
+  scope.done();
+  assert.strictEqual(idtoken, 'abc123');
+});
+
+it('should throw an error if ID token is not set', async () => {
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    key: PEM_CONTENTS,
+    subject: 'ignored@subjectaccount.com',
+  });
+
+  const scope = createGTokenMock({access_token: 'a-token'});
+  try {
+    await jwt.fetchIdToken('a-target-audience');
+  } catch {
+    scope.done();
+    return;
+  }
+  assert.fail('failed to throw');
+});

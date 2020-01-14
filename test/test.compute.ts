@@ -24,6 +24,7 @@ nock.disableNetConnect();
 
 const url = 'http://example.com';
 const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
+const identityPath = `${BASE_PATH}/instance/service-accounts/default/identity`;
 function mockToken(statusCode = 200, scopes?: string[]) {
   let path = tokenPath;
   if (scopes && scopes.length > 0) {
@@ -230,4 +231,39 @@ it('should accept a custom service account', async () => {
   await compute.request({url});
   scopes.forEach(s => s.done());
   assert.strictEqual(compute.credentials.access_token, 'abc123');
+});
+
+it('should request the identity endpoint for fetchIdToken', async () => {
+  const targetAudience = 'a-target-audience';
+  const path = `${identityPath}?audience=${targetAudience}`;
+
+  const tokenFetchNock = nock(HOST_ADDRESS)
+    .get(path, undefined, {reqheaders: HEADERS})
+    .reply(200, 'abc123', HEADERS);
+
+  const compute = new Compute();
+  const idToken = await compute.fetchIdToken(targetAudience);
+
+  tokenFetchNock.done();
+
+  assert.strictEqual(idToken, 'abc123');
+});
+
+it('should throw an error if metadata server is unavailable', async () => {
+  const targetAudience = 'a-target-audience';
+  const path = `${identityPath}?audience=${targetAudience}`;
+
+  const tokenFetchNock = nock(HOST_ADDRESS)
+    .get(path, undefined, {reqheaders: HEADERS})
+    .reply(500, 'a server error!', HEADERS);
+
+  const compute = new Compute();
+  try {
+    await compute.fetchIdToken(targetAudience);
+  } catch {
+    tokenFetchNock.done();
+    return;
+  }
+
+  assert.fail('failed to throw');
 });

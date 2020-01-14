@@ -26,6 +26,7 @@ import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
+import {IdTokenClient, IdTokenProvider} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {
@@ -726,6 +727,21 @@ export class GoogleAuth {
       }
     }
     return this.cachedCredential!;
+  }
+
+  /**
+   * Creates a client which will fetch an ID token for authorization.
+   * @param targetAudience the audience for the fetched ID token.
+   * @returns IdTokenClient for making HTTP calls authenticated with ID tokens.
+   */
+  async getIdTokenClient(targetAudience: string): Promise<IdTokenClient> {
+    const client = await this.getClient();
+    if (!('fetchIdToken' in client)) {
+      throw new Error(
+        'Cannot fetch ID token in this environment, use GCE or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a service account credentials JSON file.'
+      );
+    }
+    return new IdTokenClient({targetAudience, idTokenProvider: client});
   }
 
   /**

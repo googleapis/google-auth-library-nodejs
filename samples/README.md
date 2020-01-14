@@ -107,16 +107,33 @@ __Usage:__
 
 
 
-### Iap
+### ID Tokens with IAP
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/iap.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js).
 
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/iap.js,samples/README.md)
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md)
 
 __Usage:__
 
 
-`node samples/iap.js`
+`node samples/idtokens-iap.js`
+
+
+-----
+
+
+
+
+### ID Tokens with Cloud Run
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-cloudrun.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-cloudrun.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/idtokens-cloudrun.js`
 
 
 -----

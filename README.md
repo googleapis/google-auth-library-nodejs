@@ -334,6 +334,51 @@ async function main() {
 main().catch(console.error);
 ```
 
+## Working with ID Tokens
+If your application is running behind Cloud Run, or using Cloud Identity-Aware
+Proxy (IAP), you will need to fetch an ID token to access your application. For
+this, use the method `getIdTokenClient` on the `GoogleAuth` client.
+
+For invoking Cloud Run services, your service account will need the
+[`Cloud Run Invoker`](https://cloud.google.com/run/docs/authenticating/service-to-service)
+IAM permission.
+
+``` js
+// Make a request to a protected Cloud Run
+const {GoogleAuth} = require('google-auth-library');
+
+async function main() {
+  const url = 'https://cloud-run-url.com';
+  const auth = new GoogleAuth();
+  const client = auth.getIdTokenClient(url);
+  const res = await client.request({url});
+  console.log(res.data);
+}
+
+main().catch(console.error);
+```
+
+For invoking Cloud Identity-Aware Proxy, you will need to pass the Client ID
+used when you set up your protected resource as the target audience.
+
+``` js
+// Make a request to a protected Cloud Identity-Aware Proxy (IAP) resource
+const {GoogleAuth} = require('google-auth-library');
+
+async function main()
+  const targetAudience = 'iap-client-id';
+  const url = 'https://iap-url.com';
+  const auth = new GoogleAuth();
+  const client = auth.getIdTokenClient(targetAudience);
+  const res = await client.request({url});
+  console.log(res.data);
+}
+
+main().catch(console.error);
+```
+
+See how to [secure your IAP app with signed headers](https://cloud.google.com/iap/docs/signed-headers-howto).
+
 ## Questions/problems?
 
 * Ask your development related questions on [Stack Overflow][stackoverflow].

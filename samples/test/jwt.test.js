@@ -63,4 +63,25 @@ describe('samples', () => {
     assert.match(output, /Headers:/);
     assert.match(output, /DNS Info:/);
   });
+
+  it('should fetch ID token for Cloud Run', async () => {
+    // process.env.CLOUD_RUN_URL should be a cloud run container, protected with
+    // IAP, running gcr.io/cloudrun/hello:
+    const url =
+      process.env.CLOUD_RUN_URL || 'https://hello-rftcw63abq-uc.a.run.app';
+    const output = execSync(`node idtokens-cloudrun ${url}`);
+    assert.match(output, /What's next?/);
+  });
+
+  it('should fetch ID token for IAP', async () => {
+    // process.env.CLOUD_RUN_URL should be a cloud run container, protected with
+    // IAP, running gcr.io/cloudrun/hello:
+    const url =
+      process.env.IAP_URL || 'https://nodejs-docs-samples-iap.appspot.com';
+    const targetAudience =
+      process.env.IAP_CLIENT_ID ||
+      '170454875485-fbn7jalc9214bb67lslv1pbvmnijrb20.apps.googleusercontent.com';
+    const output = execSync(`node idtokens-iap ${url} ${targetAudience}`);
+    assert.match(output, /Hello, world/);
+  });
 });
