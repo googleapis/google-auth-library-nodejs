@@ -51,9 +51,10 @@ export class IdTokenClient extends OAuth2Client {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    const thisCreds: Credentials = this.credentials;
-
-    if (!thisCreds.id_token || (thisCreds.expiry_date || 0) < Date.now()) {
+    if (
+      !this.credentials.id_token ||
+      (this.credentials.expiry_date || 0) < Date.now()
+    ) {
       const idToken = await this.idTokenProvider.fetchIdToken(
         this.targetAudience
       );

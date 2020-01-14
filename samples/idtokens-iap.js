@@ -11,6 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// sample-metadata:
+//   title: ID Tokens for Identity-Aware Proxy (IAP)
+//   description: Requests an IAP-protected resource with an ID Token.
+//   usage: node idtokens-iap.js <url> <target-audience>
+
 'use strict';
 
 async function main(

@@ -11,6 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// sample-metadata:
+//   title: ID Tokens for Cloud Run
+//   description: Requests a Cloud Run URL with an ID Token.
+//   usage: node idtokens-cloudrun.js <url> [<target-audience>]
+
 'use strict';
 
 async function main(
