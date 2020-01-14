@@ -18,7 +18,7 @@
 
 'use strict';
 
-async function main(
+function main(
   url = 'https://service-1234-uc.a.run.app',
   targetAudience = null
 ) {
@@ -44,9 +44,12 @@ async function main(
     console.info(res.data);
   }
 
-  request();
+  request().catch((err) => {
+    console.error(err.message);
+    process.exitCode = 1;
+  });
   // [END google_auth_idtoken_cloudrun]
 }
 
 const args = process.argv.slice(2);
-main(...args).catch(console.error);
+main(...args);

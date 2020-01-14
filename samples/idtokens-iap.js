@@ -18,7 +18,7 @@
 
 'use strict';
 
-async function main(
+function main(
   url = 'https://some.iap.url',
   targetAudience = 'IAP_CLIENT_ID.apps.googleusercontent.com'
 ) {
@@ -39,9 +39,12 @@ async function main(
     console.info(res.data);
   }
 
-  request();
+  request().catch((err) => {
+    console.error(err.message);
+    process.exitCode = 1;
+  });
   // [END google_auth_idtoken_iap]
 }
 
 const args = process.argv.slice(2);
-main(...args).catch(console.error);
+main(...args);
