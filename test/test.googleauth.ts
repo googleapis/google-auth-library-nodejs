@@ -30,7 +30,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as sinon from 'sinon';
 
-import {GoogleAuth, JWT, UserRefreshClient} from '../src';
+import {GoogleAuth, JWT, UserRefreshClient, IdTokenClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
 import {Compute} from '../src/auth/computeclient';
@@ -1522,6 +1522,57 @@ describe('googleauth', () => {
     assert.strictEqual(RESPONSE_BODY, res.data);
     tokenReq.done();
     apiReq.done();
+  });
+
+  it('should return a Compute client for getIdTokenClient', async () => {
+    const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
+    const auth = new GoogleAuth();
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof IdTokenClient);
+    assert(client.idTokenProvider instanceof Compute);
+  });
+
+  it('should return a JWT client for getIdTokenClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/private.json'
+    );
+
+    const auth = new GoogleAuth();
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof IdTokenClient);
+    assert(client.idTokenProvider instanceof JWT);
+  });
+
+  it('should call getClient for getIdTokenClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/private.json'
+    );
+
+    const spy = sinon.spy(auth, 'getClient');
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof IdTokenClient);
+    assert(spy.calledOnce);
+  });
+
+  it('should fail when using UserRefreshClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/refresh.json'
+    );
+    mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
+
+    try {
+      const client = await auth.getIdTokenClient('a-target-audience');
+    } catch (e) {
+      assert(e.message.startsWith('Cannot fetch ID token in this environment'));
+      return;
+    }
+    assert.fail('failed to throw');
   });
 
   function mockApplicationDefaultCredentials(path: string) {
