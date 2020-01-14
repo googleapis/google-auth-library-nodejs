@@ -37,6 +37,7 @@ export {
   TokenInfo,
   VerifyIdTokenOptions,
 } from './auth/oauth2client';
+export {LoginTicket, TokenPayload} from './auth/loginticket';
 export {
   UserRefreshClient,
   UserRefreshClientOptions,
