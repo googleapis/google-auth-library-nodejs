@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.9.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.8.0...v5.9.0) (2020-01-14)
+
+
+### Features
+
+* add methods for fetching and using id tokens ([#867](https://www.github.com/googleapis/google-auth-library-nodejs/issues/867)) ([8036f1a](https://www.github.com/googleapis/google-auth-library-nodejs/commit/8036f1a51d1a103b08daf62c7ce372c9f68cd9d4))
+* export LoginTicket and TokenPayload ([#870](https://www.github.com/googleapis/google-auth-library-nodejs/issues/870)) ([539ea5e](https://www.github.com/googleapis/google-auth-library-nodejs/commit/539ea5e804386b79ecf469838fff19465aeb2ca6))
+
 ## [5.8.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.7.0...v5.8.0) (2020-01-06)
 
 
