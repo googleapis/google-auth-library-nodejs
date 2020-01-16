@@ -235,7 +235,7 @@ it('should accept a custom service account', async () => {
 
 it('should request the identity endpoint for fetchIdToken', async () => {
   const targetAudience = 'a-target-audience';
-  const path = `${identityPath}?audience=${targetAudience}`;
+  const path = `${identityPath}?format=full&audience=${targetAudience}`;
 
   const tokenFetchNock = nock(HOST_ADDRESS)
     .get(path, undefined, {reqheaders: HEADERS})
@@ -251,7 +251,7 @@ it('should request the identity endpoint for fetchIdToken', async () => {
 
 it('should throw an error if metadata server is unavailable', async () => {
   const targetAudience = 'a-target-audience';
-  const path = `${identityPath}?audience=${targetAudience}`;
+  const path = `${identityPath}?format=full&audience=${targetAudience}`;
 
   const tokenFetchNock = nock(HOST_ADDRESS)
     .get(path, undefined, {reqheaders: HEADERS})
