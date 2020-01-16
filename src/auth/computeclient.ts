@@ -109,7 +109,7 @@ export class Compute extends OAuth2Client {
   async fetchIdToken(targetAudience: string): Promise<string> {
     const idTokenPath =
       `service-accounts/${this.serviceAccountEmail}/identity` +
-      `?audience=${targetAudience}`;
+      `?format=full&audience=${targetAudience}`;
     let idToken: string;
     try {
       const instanceOptions: gcpMetadata.Options = {
