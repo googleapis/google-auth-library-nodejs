@@ -1,20 +1,19 @@
-/**
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2014 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import * as assert from 'assert';
+import {describe, it} from 'mocha';
 const assertRejects = require('assert-rejects');
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';
@@ -24,13 +23,14 @@ import {
   HEADERS,
   HOST_ADDRESS,
   SECONDARY_HOST_ADDRESS,
+  resetIsAvailableCache,
 } from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
 import * as sinon from 'sinon';
 
-import {GoogleAuth, JWT, UserRefreshClient} from '../src';
+import {GoogleAuth, JWT, UserRefreshClient, IdTokenClient} from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
 import {Compute} from '../src/auth/computeclient';
@@ -82,6 +82,7 @@ describe('googleauth', () => {
   let createLinuxWellKnownStream: Function;
   let createWindowsWellKnownStream: Function;
   beforeEach(() => {
+    resetIsAvailableCache();
     auth = new GoogleAuth();
     exposeWindowsWellKnownFile = false;
     exposeLinuxWellKnownFile = false;
@@ -1296,6 +1297,26 @@ describe('googleauth', () => {
     scope.done();
   });
 
+  it('should cache prior call to getEnv(), when GCE', async () => {
+    envDetect.clear();
+    const {auth, scopes} = mockGCE();
+    auth.getEnv();
+    const env = await auth.getEnv();
+    assert.strictEqual(env, envDetect.GCPEnv.COMPUTE_ENGINE);
+  });
+
+  it('should cache prior call to getEnv(), when GKE', async () => {
+    envDetect.clear();
+    const {auth, scopes} = mockGCE();
+    const scope = nock(host)
+      .get(`${instancePath}/attributes/cluster-name`)
+      .reply(200, {}, HEADERS);
+    auth.getEnv();
+    const env = await auth.getEnv();
+    assert.strictEqual(env, envDetect.GCPEnv.KUBERNETES_ENGINE);
+    scope.done();
+  });
+
   it('should get the current environment if GCF 8 and below', async () => {
     envDetect.clear();
     mockEnvVar('FUNCTION_NAME', 'DOGGY');
@@ -1444,4 +1465,125 @@ describe('googleauth', () => {
       /Passing options to getClient is forbidden in v5.0.0/
     );
   });
+
+  it('getRequestHeaders populates x-goog-user-project with quota_project if present', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
+    const auth = new GoogleAuth();
+    const headers = await auth.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    tokenReq.done();
+  });
+
+  it('getRequestHeaders does not populate x-goog-user-project if quota_project is not present', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-no-quota'
+    );
+    const auth = new GoogleAuth();
+    const headers = await auth.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], undefined);
+    tokenReq.done();
+  });
+
+  it('getRequestHeaders populates x-goog-user-project when called on returned client', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
+    const auth = new GoogleAuth();
+    const client = await auth.getClient();
+    assert(client instanceof UserRefreshClient);
+    const headers = await client.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    tokenReq.done();
+  });
+
+  it('populates x-goog-user-project when request is made', async () => {
+    const tokenReq = mockApplicationDefaultCredentials(
+      './test/fixtures/config-with-quota'
+    );
+    const auth = new GoogleAuth();
+    const client = await auth.getClient();
+    assert(client instanceof UserRefreshClient);
+    const apiReq = nock(BASE_URL)
+      .post(ENDPOINT)
+      .reply(function(uri) {
+        assert.strictEqual(
+          this.req.headers['x-goog-user-project'][0],
+          'my-quota-project'
+        );
+        return [200, RESPONSE_BODY];
+      });
+    const res = await client.request({
+      url: BASE_URL + ENDPOINT,
+      method: 'POST',
+      data: {test: true},
+    });
+    assert.strictEqual(RESPONSE_BODY, res.data);
+    tokenReq.done();
+    apiReq.done();
+  });
+
+  it('should return a Compute client for getIdTokenClient', async () => {
+    const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
+    const auth = new GoogleAuth();
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof IdTokenClient);
+    assert(client.idTokenProvider instanceof Compute);
+  });
+
+  it('should return a JWT client for getIdTokenClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/private.json'
+    );
+
+    const auth = new GoogleAuth();
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof IdTokenClient);
+    assert(client.idTokenProvider instanceof JWT);
+  });
+
+  it('should call getClient for getIdTokenClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/private.json'
+    );
+
+    const spy = sinon.spy(auth, 'getClient');
+    const client = await auth.getIdTokenClient('a-target-audience');
+    assert(client instanceof IdTokenClient);
+    assert(spy.calledOnce);
+  });
+
+  it('should fail when using UserRefreshClient', async () => {
+    // Set up a mock to return path to a valid credentials file.
+    mockEnvVar(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      './test/fixtures/refresh.json'
+    );
+    mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
+
+    try {
+      const client = await auth.getIdTokenClient('a-target-audience');
+    } catch (e) {
+      assert(e.message.startsWith('Cannot fetch ID token in this environment'));
+      return;
+    }
+    assert.fail('failed to throw');
+  });
+
+  function mockApplicationDefaultCredentials(path: string) {
+    // Fake a home directory in our fixtures path.
+    mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
+    mockEnvVar('HOME', path);
+    mockEnvVar('APPDATA', `${path}/.config`);
+    // The first time auth.getClient() is called /token endpoint is used to
+    // fetch a JWT.
+    return nock('https://oauth2.googleapis.com')
+      .post('/token')
+      .reply(200, {});
+  }
 });

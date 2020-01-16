@@ -1,21 +1,20 @@
-/**
- * Copyright 2018 Google LLC. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 const cp = require('child_process');
 const {assert} = require('chai');
+const {describe, it} = require('mocha');
 const fs = require('fs');
 const {promisify} = require('util');
 
@@ -63,5 +62,26 @@ describe('samples', () => {
     const output = execSync('node headers');
     assert.match(output, /Headers:/);
     assert.match(output, /DNS Info:/);
+  });
+
+  it('should fetch ID token for Cloud Run', async () => {
+    // process.env.CLOUD_RUN_URL should be a cloud run container, protected with
+    // IAP, running gcr.io/cloudrun/hello:
+    const url =
+      process.env.CLOUD_RUN_URL || 'https://hello-rftcw63abq-uc.a.run.app';
+    const output = execSync(`node idtokens-cloudrun ${url}`);
+    assert.match(output, /What's next?/);
+  });
+
+  it('should fetch ID token for IAP', async () => {
+    // process.env.CLOUD_RUN_URL should be a cloud run container, protected with
+    // IAP, running gcr.io/cloudrun/hello:
+    const url =
+      process.env.IAP_URL || 'https://nodejs-docs-samples-iap.appspot.com';
+    const targetAudience =
+      process.env.IAP_CLIENT_ID ||
+      '170454875485-fbn7jalc9214bb67lslv1pbvmnijrb20.apps.googleusercontent.com';
+    const output = execSync(`node idtokens-iap ${url} ${targetAudience}`);
+    assert.match(output, /Hello, world/);
   });
 });

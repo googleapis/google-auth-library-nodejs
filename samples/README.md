@@ -16,10 +16,12 @@
   * [Compute](#compute)
   * [Credentials](#credentials)
   * [Headers](#headers)
-  * [Iap](#iap)
+  * [ID Tokens for Cloud Run](#id-tokens-for-cloud-run)
+  * [ID Tokens for Identity-Aware Proxy (IAP)](#id-tokens-for-identity-aware-proxy-iap)
   * [Jwt](#jwt)
   * [Keepalive](#keepalive)
   * [Keyfile](#keyfile)
+  * [Oauth2-code Verifier](#oauth2-code-verifier)
   * [Oauth2](#oauth2)
   * [Verify Id Token](#verify-id-token)
 
@@ -27,6 +29,12 @@
 
 Before running the samples, make sure you've followed the steps outlined in
 [Using the client library](https://github.com/googleapis/google-auth-library-nodejs#using-the-client-library).
+
+`cd samples`
+
+`npm install`
+
+`cd ..`
 
 ## Samples
 
@@ -41,7 +49,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node adc.js`
+`node samples/adc.js`
 
 
 -----
@@ -58,7 +66,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node compute.js`
+`node samples/compute.js`
 
 
 -----
@@ -75,7 +83,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node credentials.js`
+`node samples/credentials.js`
 
 
 -----
@@ -92,7 +100,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node headers.js`
+`node samples/headers.js`
 
 
 -----
@@ -100,16 +108,37 @@ __Usage:__
 
 
 
-### Iap
+### ID Tokens for Cloud Run
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/iap.js).
+Requests a Cloud Run URL with an ID Token.
 
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/iap.js,samples/README.md)
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-cloudrun.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-cloudrun.js,samples/README.md)
 
 __Usage:__
 
 
-`node iap.js`
+`node idtokens-cloudrun.js <url> [<target-audience>]`
+
+
+-----
+
+
+
+
+### ID Tokens for Identity-Aware Proxy (IAP)
+
+Requests an IAP-protected resource with an ID Token.
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md)
+
+__Usage:__
+
+
+`node idtokens-iap.js <url> <target-audience>`
 
 
 -----
@@ -126,7 +155,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node jwt.js`
+`node samples/jwt.js`
 
 
 -----
@@ -143,7 +172,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node keepalive.js`
+`node samples/keepalive.js`
 
 
 -----
@@ -160,7 +189,24 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node keyfile.js`
+`node samples/keyfile.js`
+
+
+-----
+
+
+
+
+### Oauth2-code Verifier
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2-codeVerifier.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/oauth2-codeVerifier.js`
 
 
 -----
@@ -177,7 +223,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node oauth2.js`
+`node samples/oauth2.js`
 
 
 -----
@@ -194,7 +240,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node verifyIdToken.js`
+`node samples/verifyIdToken.js`
 
 
 
