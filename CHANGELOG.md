@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.9.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.0...v5.9.1) (2020-01-16)
+
+
+### Bug Fixes
+
+* ensures GCE metadata sets email field for ID tokens ([#874](https://www.github.com/googleapis/google-auth-library-nodejs/issues/874)) ([e45b73d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/e45b73dbb22e1c2d8115882006a21337c7d9bd63))
+
 ## [5.9.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.8.0...v5.9.0) (2020-01-14)
 
 
