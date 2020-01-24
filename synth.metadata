@@ -1,0 +1,434 @@
+{
+  "updateTime": "2020-01-24T12:08:38.705266Z",
+  "sources": [
+    {
+      "template": {
+        "name": "node_library",
+        "origin": "synthtool.gcp",
+        "version": "2019.10.17"
+      }
+    }
+  ],
+  "newFiles": [
+    {
+      "path": ".compodocrc"
+    },
+    {
+      "path": ".eslintignore"
+    },
+    {
+      "path": ".eslintrc.yml"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.md"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.md"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/support_request.md"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md"
+    },
+    {
+      "path": ".github/release-please.yml"
+    },
+    {
+      "path": ".gitignore"
+    },
+    {
+      "path": ".jsdoc.js"
+    },
+    {
+      "path": ".kokoro/.gitattributes"
+    },
+    {
+      "path": ".kokoro/browser-test.sh"
+    },
+    {
+      "path": ".kokoro/common.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node10/common.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node10/docs.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node10/lint.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node10/samples-test.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node10/system-test.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node10/test.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node12/common.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node12/test.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node8/browser-test.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node8/common.cfg"
+    },
+    {
+      "path": ".kokoro/continuous/node8/test.cfg"
+    },
+    {
+      "path": ".kokoro/docs.sh"
+    },
+    {
+      "path": ".kokoro/lint.sh"
+    },
+    {
+      "path": ".kokoro/presubmit/node10/common.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node10/docs.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node10/lint.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node10/samples-test.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node10/system-test.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node10/test.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node12/common.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node12/test.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node8/browser-test.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node8/common.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/node8/test.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/windows/common.cfg"
+    },
+    {
+      "path": ".kokoro/presubmit/windows/test.cfg"
+    },
+    {
+      "path": ".kokoro/publish.sh"
+    },
+    {
+      "path": ".kokoro/release/common.cfg"
+    },
+    {
+      "path": ".kokoro/release/docs.cfg"
+    },
+    {
+      "path": ".kokoro/release/docs.sh"
+    },
+    {
+      "path": ".kokoro/release/publish.cfg"
+    },
+    {
+      "path": ".kokoro/samples-test.sh"
+    },
+    {
+      "path": ".kokoro/system-test.sh"
+    },
+    {
+      "path": ".kokoro/test.bat"
+    },
+    {
+      "path": ".kokoro/test.sh"
+    },
+    {
+      "path": ".kokoro/trampoline.sh"
+    },
+    {
+      "path": ".nycrc"
+    },
+    {
+      "path": ".prettierignore"
+    },
+    {
+      "path": ".prettierrc"
+    },
+    {
+      "path": ".repo-metadata.json"
+    },
+    {
+      "path": "CHANGELOG.md"
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md"
+    },
+    {
+      "path": "CONTRIBUTING.md"
+    },
+    {
+      "path": "LICENSE"
+    },
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "browser-test/fixtures/keys.ts"
+    },
+    {
+      "path": "browser-test/test.crypto.ts"
+    },
+    {
+      "path": "browser-test/test.oauth2.ts"
+    },
+    {
+      "path": "codecov.yaml"
+    },
+    {
+      "path": "karma.conf.js"
+    },
+    {
+      "path": "linkinator.config.json"
+    },
+    {
+      "path": "package.json"
+    },
+    {
+      "path": "renovate.json"
+    },
+    {
+      "path": "samples/.eslintrc.yml"
+    },
+    {
+      "path": "samples/README.md"
+    },
+    {
+      "path": "samples/adc.js"
+    },
+    {
+      "path": "samples/compute.js"
+    },
+    {
+      "path": "samples/credentials.js"
+    },
+    {
+      "path": "samples/headers.js"
+    },
+    {
+      "path": "samples/idtokens-cloudrun.js"
+    },
+    {
+      "path": "samples/idtokens-iap.js"
+    },
+    {
+      "path": "samples/jwt.js"
+    },
+    {
+      "path": "samples/keepalive.js"
+    },
+    {
+      "path": "samples/keyfile.js"
+    },
+    {
+      "path": "samples/oauth2-codeVerifier.js"
+    },
+    {
+      "path": "samples/oauth2.js"
+    },
+    {
+      "path": "samples/package.json"
+    },
+    {
+      "path": "samples/puppeteer/.eslintrc.yml"
+    },
+    {
+      "path": "samples/puppeteer/oauth2-test.js"
+    },
+    {
+      "path": "samples/puppeteer/package.json"
+    },
+    {
+      "path": "samples/test/jwt.test.js"
+    },
+    {
+      "path": "samples/verifyIdToken.js"
+    },
+    {
+      "path": "src/auth/authclient.ts"
+    },
+    {
+      "path": "src/auth/computeclient.ts"
+    },
+    {
+      "path": "src/auth/credentials.ts"
+    },
+    {
+      "path": "src/auth/envDetect.ts"
+    },
+    {
+      "path": "src/auth/googleauth.ts"
+    },
+    {
+      "path": "src/auth/iam.ts"
+    },
+    {
+      "path": "src/auth/idtokenclient.ts"
+    },
+    {
+      "path": "src/auth/jwtaccess.ts"
+    },
+    {
+      "path": "src/auth/jwtclient.ts"
+    },
+    {
+      "path": "src/auth/loginticket.ts"
+    },
+    {
+      "path": "src/auth/oauth2client.ts"
+    },
+    {
+      "path": "src/auth/refreshclient.ts"
+    },
+    {
+      "path": "src/crypto/browser/crypto.ts"
+    },
+    {
+      "path": "src/crypto/crypto.ts"
+    },
+    {
+      "path": "src/crypto/node/crypto.ts"
+    },
+    {
+      "path": "src/index.ts"
+    },
+    {
+      "path": "src/messages.ts"
+    },
+    {
+      "path": "src/options.ts"
+    },
+    {
+      "path": "src/transporters.ts"
+    },
+    {
+      "path": "synth.py"
+    },
+    {
+      "path": "system-test/fixtures/kitchen/package.json"
+    },
+    {
+      "path": "system-test/fixtures/kitchen/src/index.ts"
+    },
+    {
+      "path": "system-test/fixtures/kitchen/tsconfig.json"
+    },
+    {
+      "path": "system-test/fixtures/kitchen/webpack.config.js"
+    },
+    {
+      "path": "system-test/test.kitchen.ts"
+    },
+    {
+      "path": "test/fixtures/config-no-quota/.config/gcloud/application_default_credentials.json"
+    },
+    {
+      "path": "test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json"
+    },
+    {
+      "path": "test/fixtures/empty.json"
+    },
+    {
+      "path": "test/fixtures/emptylink"
+    },
+    {
+      "path": "test/fixtures/goodlink"
+    },
+    {
+      "path": "test/fixtures/key.p12"
+    },
+    {
+      "path": "test/fixtures/oauthcertspem.json"
+    },
+    {
+      "path": "test/fixtures/private.json"
+    },
+    {
+      "path": "test/fixtures/private.pem"
+    },
+    {
+      "path": "test/fixtures/private2.json"
+    },
+    {
+      "path": "test/fixtures/public.pem"
+    },
+    {
+      "path": "test/fixtures/refresh.json"
+    },
+    {
+      "path": "test/fixtures/service-account-with-quota.json"
+    },
+    {
+      "path": "test/fixtures/wellKnown.json"
+    },
+    {
+      "path": "test/mocha.opts"
+    },
+    {
+      "path": "test/test.compute.ts"
+    },
+    {
+      "path": "test/test.crypto.ts"
+    },
+    {
+      "path": "test/test.googleauth.ts"
+    },
+    {
+      "path": "test/test.iam.ts"
+    },
+    {
+      "path": "test/test.idtokenclient.ts"
+    },
+    {
+      "path": "test/test.index.ts"
+    },
+    {
+      "path": "test/test.jwt.ts"
+    },
+    {
+      "path": "test/test.jwtaccess.ts"
+    },
+    {
+      "path": "test/test.loginticket.ts"
+    },
+    {
+      "path": "test/test.oauth2.ts"
+    },
+    {
+      "path": "test/test.refresh.ts"
+    },
+    {
+      "path": "test/test.transporters.ts"
+    },
+    {
+      "path": "tsconfig.json"
+    },
+    {
+      "path": "webpack-tests.config.js"
+    },
+    {
+      "path": "webpack.config.js"
+    }
+  ]
+}
