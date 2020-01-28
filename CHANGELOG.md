@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.9.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.1...v5.9.2) (2020-01-28)
+
+
+### Bug Fixes
+
+* populate credentials.refresh_token if provided ([#881](https://www.github.com/googleapis/google-auth-library-nodejs/issues/881)) ([63c4637](https://www.github.com/googleapis/google-auth-library-nodejs/commit/63c4637c57e4113a7b01bf78933a8bff0356c104))
+
 ### [5.9.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.0...v5.9.1) (2020-01-16)
 
 
