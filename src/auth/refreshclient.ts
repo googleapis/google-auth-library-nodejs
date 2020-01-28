@@ -67,6 +67,7 @@ export class UserRefreshClient extends OAuth2Client {
       forceRefreshOnFailure: opts.forceRefreshOnFailure,
     });
     this._refreshToken = opts.refreshToken;
+    this.credentials.refresh_token = opts.refreshToken;
   }
 
   /**
