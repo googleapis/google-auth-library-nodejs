@@ -28,6 +28,13 @@ function createJSON() {
   };
 }
 
+it('populates credentials.refresh_token if provided', () => {
+  const refresh = new UserRefreshClient({
+    refreshToken: 'abc123',
+  });
+  assert.strictEqual(refresh.credentials.refresh_token, 'abc123');
+});
+
 it('fromJSON should error on null json', () => {
   const refresh = new UserRefreshClient();
   assert.throws(() => {
