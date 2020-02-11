@@ -47,11 +47,11 @@ describe('oauth2', () => {
     '../../test/fixtures/oauthcertspem.json'
   );
   const publicKeyEcdsa = fs.readFileSync(
-    './test/fixtures/ecdsa-public.pem',
+    './test/fixtures/fake-ecdsa-public.pem',
     'utf-8'
   );
   const privateKeyEcdsa = fs.readFileSync(
-    './test/fixtures/ecdsa-private.pem',
+    './test/fixtures/fake-ecdsa-private.pem',
     'utf-8'
   );
   const pubkeysResPath = path.join(
