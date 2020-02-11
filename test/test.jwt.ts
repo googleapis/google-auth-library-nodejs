@@ -195,7 +195,7 @@ describe('jwt', () => {
   });
 
   it('gets a jwt header access token', async () => {
-    const keys = keypair(1024 /* bitsize of private key */);
+    const keys = keypair(512 /* bitsize of private key */);
     const email = 'foo@serviceaccount.com';
     const jwt = new JWT({
       email: 'foo@serviceaccount.com',
@@ -216,7 +216,7 @@ describe('jwt', () => {
   });
 
   it('gets a jwt header access token with key id', async () => {
-    const keys = keypair(1024 /* bitsize of private key */);
+    const keys = keypair(512 /* bitsize of private key */);
     const jwt = new JWT({
       email: 'foo@serviceaccount.com',
       key: keys.private,
@@ -236,7 +236,7 @@ describe('jwt', () => {
   });
 
   it('should accept additionalClaims', async () => {
-    const keys = keypair(1024 /* bitsize of private key */);
+    const keys = keypair(512 /* bitsize of private key */);
     const someClaim = 'cat-on-my-desk';
     const jwt = new JWT({
       email: 'foo@serviceaccount.com',
@@ -256,7 +256,7 @@ describe('jwt', () => {
   });
 
   it('should accept additionalClaims that include a target_audience', async () => {
-    const keys = keypair(1024 /* bitsize of private key */);
+    const keys = keypair(512 /* bitsize of private key */);
     const jwt = new JWT({
       email: 'foo@serviceaccount.com',
       key: keys.private,
@@ -821,7 +821,7 @@ describe('jwt', () => {
       credentials: Object.assign(
         require('../../test/fixtures/service-account-with-quota.json'),
         {
-          private_key: keypair(1024 /* bitsize of private key */).private,
+          private_key: keypair(512 /* bitsize of private key */).private,
         }
       ),
     });
