@@ -359,7 +359,7 @@ async function main() {
 main().catch(console.error);
 ```
 
-A complete example can be found in [`samples/idtokens-cloudrun.js`](samples/idtokens-cloudrun.js).
+A complete example can be found in [`samples/idtokens-cloudrun.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-cloudrun.js).
 
 For invoking Cloud Identity-Aware Proxy, you will need to pass the Client ID
 used when you set up your protected resource as the target audience.
@@ -380,7 +380,7 @@ async function main()
 main().catch(console.error);
 ```
 
-A complete example can be found in [`samples/idtokens-iap.js`](samples/idtokens-iap.js).
+A complete example can be found in [`samples/idtokens-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js).
 
 ### Verifying ID Tokens
 
@@ -407,7 +407,7 @@ const ticket = await oAuth2Client.verifySignedJwtWithCertsAsync(
 console.log(ticket)
 ```
 
-A complete example can be found in [`samples/verifyIdToken-iap.js`](samples/verifyIdToken-iap.js).
+A complete example can be found in [`samples/verifyIdToken-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
 
 ## Questions/problems?
 
