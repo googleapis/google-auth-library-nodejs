@@ -16,6 +16,7 @@ import * as assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 const assertRejects = require('assert-rejects');
 import * as crypto from 'crypto';
+import * as formatEcdsa from 'ecdsa-sig-formatter';
 import * as fs from 'fs';
 import {GaxiosError} from 'gaxios';
 import * as nock from 'nock';
@@ -44,6 +45,18 @@ describe('oauth2', () => {
   const certsResPath = path.join(
     __dirname,
     '../../test/fixtures/oauthcertspem.json'
+  );
+  const publicKeyEcdsa = fs.readFileSync(
+    './test/fixtures/fake-ecdsa-public.pem',
+    'utf-8'
+  );
+  const privateKeyEcdsa = fs.readFileSync(
+    './test/fixtures/fake-ecdsa-private.pem',
+    'utf-8'
+  );
+  const pubkeysResPath = path.join(
+    __dirname,
+    '../../test/fixtures/ecdsapublickeys.json'
   );
 
   describe(__filename, () => {
@@ -773,6 +786,45 @@ describe('oauth2', () => {
       );
     });
 
+    it('should pass for ECDSA-encrypted JWTs', async () => {
+      const maxLifetimeSecs = 86400;
+      const now = new Date().getTime() / 1000;
+      const expiry = now + maxLifetimeSecs / 2;
+      const idToken =
+        '{' +
+        '"iss":"testissuer",' +
+        '"aud":"testaudience",' +
+        '"azp":"testauthorisedparty",' +
+        '"email_verified":"true",' +
+        '"id":"123456789",' +
+        '"sub":"123456789",' +
+        '"email":"test@test.com",' +
+        '"iat":' +
+        now +
+        ',' +
+        '"exp":' +
+        expiry +
+        '}';
+      const envelope = '{' + '"kid":"keyid",' + '"alg":"ES256"' + '}';
+      let data =
+        Buffer.from(envelope).toString('base64') +
+        '.' +
+        Buffer.from(idToken).toString('base64');
+      const signer = crypto.createSign('RSA-SHA256');
+      signer.update(data);
+      const signature = formatEcdsa.derToJose(
+        signer.sign(privateKeyEcdsa, 'base64'),
+        'ES256'
+      );
+      data += '.' + signature;
+      await client.verifySignedJwtWithCertsAsync(
+        data,
+        {keyid: publicKeyEcdsa},
+        'testaudience',
+        ['testissuer']
+      );
+    });
+
     it('should be able to retrieve a list of Google certificates', done => {
       const scope = nock('https://www.googleapis.com')
         .get(certsPath)
@@ -812,6 +864,20 @@ describe('oauth2', () => {
           scope.done();
           done();
         });
+      });
+    });
+
+    it('should be able to retrieve a list of IAP certificates', done => {
+      const scope = nock('https://www.gstatic.com')
+        .get('/iap/verify/public_key')
+        .replyWithFile(200, pubkeysResPath);
+      client.getIapPublicKeys((err, pubkeys) => {
+        assert.strictEqual(err, null);
+        assert.strictEqual(Object.keys(pubkeys!).length, 2);
+        assert.notStrictEqual(pubkeys!.f9R3yg, null);
+        assert.notStrictEqual(pubkeys!['2nMJtw'], null);
+        scope.done();
+        done();
       });
     });
 
