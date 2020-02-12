@@ -94,7 +94,8 @@
     "webpack": "webpack",
     "browser-test": "karma start",
     "docs-test": "linkinator docs",
-    "predocs-test": "npm run docs"
+    "predocs-test": "npm run docs",
+    "prelint": "cd samples; npm link ../; npm i"
   },
   "license": "Apache-2.0"
 }
