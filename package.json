@@ -19,6 +19,7 @@
   "dependencies": {
     "arrify": "^2.0.0",
     "base64-js": "^1.3.0",
+    "ecdsa-sig-formatter": "^1.0.11",
     "fast-text-encoding": "^1.0.0",
     "gaxios": "^2.1.0",
     "gcp-metadata": "^3.3.0",

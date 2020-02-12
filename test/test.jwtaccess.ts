@@ -33,7 +33,7 @@ describe('jwtaccess', () => {
     type: 'service_account',
   };
 
-  const keys = keypair(1024 /* bitsize of private key */);
+  const keys = keypair(512 /* bitsize of private key */);
   const testUri = 'http:/example.com/my_test_service';
   const email = 'foo@serviceaccount.com';
 
