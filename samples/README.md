@@ -23,6 +23,7 @@
   * [Keyfile](#keyfile)
   * [Oauth2-code Verifier](#oauth2-code-verifier)
   * [Oauth2](#oauth2)
+  * [Verify Id Token-iap](#verify-id-token-iap)
   * [Verify Id Token](#verify-id-token)
 
 ## Before you begin
@@ -224,6 +225,23 @@ __Usage:__
 
 
 `node samples/oauth2.js`
+
+
+-----
+
+
+
+
+### Verify Id Token-iap
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/verifyIdToken-iap.js`
 
 
 -----
