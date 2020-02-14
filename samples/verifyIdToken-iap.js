@@ -24,7 +24,7 @@ const {OAuth2Client} = require('google-auth-library');
  * Verify the ID token from IAP
  * @see https://cloud.google.com/iap/docs/signed-headers-howto
  */
-async function main(
+function main(
   iapJwt,
   projectNumber = '',
   projectId = '',
@@ -47,15 +47,19 @@ async function main(
 
   const oAuth2Client = new OAuth2Client();
 
-  // Verify the id_token, and access the claims.
-  const response = await oAuth2Client.getIapPublicKeys();
-  const ticket = await oAuth2Client.verifySignedJwtWithCertsAsync(
-    iapJwt,
-    response.pubkeys,
-    expectedAudience,
-    ['https://cloud.google.com/iap']
-  );
 
+  async verifyIdToken() {
+    // Verify the id_token, and access the claims.
+    const response = await oAuth2Client.getIapPublicKeys();
+    return await oAuth2Client.verifySignedJwtWithCertsAsync(
+      iapJwt,
+      response.pubkeys,
+      expectedAudience,
+      ['https://cloud.google.com/iap']
+    );
+  }
+
+  const ticket = verifyIdToken();
   // Print out the info contained in the IAP ID token
   console.log(ticket);
   // [END iap_validate_jwt]
