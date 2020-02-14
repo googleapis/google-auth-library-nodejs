@@ -407,7 +407,7 @@ const ticket = await oAuth2Client.verifySignedJwtWithCertsAsync(
 console.log(ticket)
 ```
 
-A complete example can be found in `samples/verifyIdToken-iap.js`.
+A complete example can be found in [`samples/verifyIdToken-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
 
 ## Questions/problems?
 

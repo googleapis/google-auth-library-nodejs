@@ -11,9 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// sample-metadata:
+//   title: Verifying ID Tokens from Identity-Aware Proxy (IAP)
+//   description: Verifying the signed token from the header of an IAP-protected resource.
+//   usage: node verifyIdToken-iap.js <iap-jwt> [<project-number>] [<project-id>] [<backend-service-id>]
+
 'use strict';
 
-// [START iap_validate_jwt]
 const {OAuth2Client} = require('google-auth-library');
 
 /**
@@ -26,7 +30,12 @@ async function main(
   projectId = '',
   backendServiceId = ''
 ) {
-  // set Audience
+  // [START iap_validate_jwt]
+  /**
+   * TODO(developer): Uncomment these variables before running the sample.
+   */
+  // const iapJwt = 'SOME_ID_TOKEN'; // JWT from the "x-goog-iap-jwt-assertion" header
+
   let expectedAudience = null;
   if (projectNumber && projectId) {
     // Expected Audience for App Engine.
@@ -49,14 +58,13 @@ async function main(
 
   // Print out the info contained in the IAP ID token
   console.log(ticket);
-
+  // [END iap_validate_jwt]
   if (!expectedAudience) {
     console.log(
       'Audience not verified! Supply a projectNumber and projectID to verify'
     );
   }
 }
-// [END iap_validate_jwt]
 
 const args = process.argv.slice(2);
 main(...args).catch(console.error);
