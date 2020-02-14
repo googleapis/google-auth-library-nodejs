@@ -48,7 +48,7 @@ function main(
   const oAuth2Client = new OAuth2Client();
 
 
-  async verifyIdToken() {
+  async function verifyIdToken() {
     // Verify the id_token, and access the claims.
     const response = await oAuth2Client.getIapPublicKeys();
     return await oAuth2Client.verifySignedJwtWithCertsAsync(
