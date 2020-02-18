@@ -22,7 +22,7 @@ function main(
   url = 'https://some.iap.url',
   targetAudience = 'IAP_CLIENT_ID.apps.googleusercontent.com'
 ) {
-  // [START google_auth_idtoken_iap]
+  // [START iap_make_request]
   /**
    * TODO(developer): Uncomment these variables before running the sample.
    */
@@ -43,7 +43,7 @@ function main(
     console.error(err.message);
     process.exitCode = 1;
   });
-  // [END google_auth_idtoken_iap]
+  // [END iap_make_request]
 }
 
 const args = process.argv.slice(2);
