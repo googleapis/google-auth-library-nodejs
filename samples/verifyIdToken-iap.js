@@ -47,20 +47,21 @@ function main(
 
   const oAuth2Client = new OAuth2Client();
 
-  async function verifyIdToken() {
+  async function verify() {
     // Verify the id_token, and access the claims.
     const response = await oAuth2Client.getIapPublicKeys();
-    return await oAuth2Client.verifySignedJwtWithCertsAsync(
+    const ticket = await oAuth2Client.verifySignedJwtWithCertsAsync(
       iapJwt,
       response.pubkeys,
       expectedAudience,
       ['https://cloud.google.com/iap']
     );
+    // Print out the info contained in the IAP ID token
+    console.log(ticket);
   }
 
-  const ticket = verifyIdToken();
-  // Print out the info contained in the IAP ID token
-  console.log(ticket);
+  verify().catch(console.error);
+
   // [END iap_validate_jwt]
   if (!expectedAudience) {
     console.log(
@@ -70,4 +71,4 @@ function main(
 }
 
 const args = process.argv.slice(2);
-main(...args).catch(console.error);
+main(...args);
