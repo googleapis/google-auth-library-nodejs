@@ -11,22 +11,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// sample-metadata:
+//   title: Verifying ID Tokens from Identity-Aware Proxy (IAP)
+//   description: Verifying the signed token from the header of an IAP-protected resource.
+//   usage: node verifyIdToken-iap.js <iap-jwt> [<project-number>] [<project-id>] [<backend-service-id>]
+
 'use strict';
 
-// [START iap_validate_jwt]
 const {OAuth2Client} = require('google-auth-library');
 
 /**
  * Verify the ID token from IAP
  * @see https://cloud.google.com/iap/docs/signed-headers-howto
  */
-async function main(
+function main(
   iapJwt,
   projectNumber = '',
   projectId = '',
   backendServiceId = ''
 ) {
-  // set Audience
+  // [START iap_validate_jwt]
+  /**
+   * TODO(developer): Uncomment these variables before running the sample.
+   */
+  // const iapJwt = 'SOME_ID_TOKEN'; // JWT from the "x-goog-iap-jwt-assertion" header
+
   let expectedAudience = null;
   if (projectNumber && projectId) {
     // Expected Audience for App Engine.
@@ -38,25 +47,27 @@ async function main(
 
   const oAuth2Client = new OAuth2Client();
 
-  // Verify the id_token, and access the claims.
-  const response = await oAuth2Client.getIapPublicKeys();
-  const ticket = await oAuth2Client.verifySignedJwtWithCertsAsync(
-    iapJwt,
-    response.pubkeys,
-    expectedAudience,
-    ['https://cloud.google.com/iap']
-  );
+  async function verifyIdToken() {
+    // Verify the id_token, and access the claims.
+    const response = await oAuth2Client.getIapPublicKeys();
+    return await oAuth2Client.verifySignedJwtWithCertsAsync(
+      iapJwt,
+      response.pubkeys,
+      expectedAudience,
+      ['https://cloud.google.com/iap']
+    );
+  }
 
+  const ticket = verifyIdToken();
   // Print out the info contained in the IAP ID token
   console.log(ticket);
-
+  // [END iap_validate_jwt]
   if (!expectedAudience) {
     console.log(
       'Audience not verified! Supply a projectNumber and projectID to verify'
     );
   }
 }
-// [END iap_validate_jwt]
 
 const args = process.argv.slice(2);
 main(...args).catch(console.error);
