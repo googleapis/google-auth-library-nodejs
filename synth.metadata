@@ -1,11 +1,11 @@
 {
-  "updateTime": "2020-02-14T12:07:57.919077Z",
+  "updateTime": "2020-02-18T18:56:56.357325Z",
   "sources": [
     {
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
-        "sha": "c532b1471becf998743c803c992ab1ec9e29862c"
+        "sha": "0368864e309b70df919011235bc9b14bd8367e6e"
       }
     },
     {

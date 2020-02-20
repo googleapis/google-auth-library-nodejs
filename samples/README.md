@@ -23,7 +23,7 @@
   * [Keyfile](#keyfile)
   * [Oauth2-code Verifier](#oauth2-code-verifier)
   * [Oauth2](#oauth2)
-  * [Verify Id Token-iap](#verify-id-token-iap)
+  * [Verifying ID Tokens from Identity-Aware Proxy (IAP)](#verifying-id-tokens-from-identity-aware-proxy-iap)
   * [Verify Id Token](#verify-id-token)
 
 ## Before you begin
@@ -232,7 +232,9 @@ __Usage:__
 
 
 
-### Verify Id Token-iap
+### Verifying ID Tokens from Identity-Aware Proxy (IAP)
+
+Verifying the signed token from the header of an IAP-protected resource.
 
 View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
 
@@ -241,7 +243,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node samples/verifyIdToken-iap.js`
+`node verifyIdToken-iap.js <iap-jwt> [<project-number>] [<project-id>] [<backend-service-id>]`
 
 
 -----
