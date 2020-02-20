@@ -4,6 +4,18 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [5.10.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.2...v5.10.0) (2020-02-20)
+
+
+### Features
+
+* support for verifying ES256 and retrieving IAP public keys ([#887](https://www.github.com/googleapis/google-auth-library-nodejs/issues/887)) ([a98e386](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a98e38678dc4a5e963356378c75c658e36dccd01))
+
+
+### Bug Fixes
+
+* **docs:** correct links in README ([f6a3194](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f6a3194ff6df97d4fd833ae69ec80c05eab46e7b)), closes [#891](https://www.github.com/googleapis/google-auth-library-nodejs/issues/891)
+
 ### [5.9.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.1...v5.9.2) (2020-01-28)
 
 
