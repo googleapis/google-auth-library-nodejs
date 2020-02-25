@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.10.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.10.0...v5.10.1) (2020-02-25)
+
+
+### Bug Fixes
+
+* if GCF environment detected, increase library timeout ([#899](https://www.github.com/googleapis/google-auth-library-nodejs/issues/899)) ([2577ff2](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2577ff28bf22dfc58bd09e7365471c16f359f109))
+
 ## [5.10.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.2...v5.10.0) (2020-02-20)
 
 
