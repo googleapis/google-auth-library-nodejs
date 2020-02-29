@@ -1376,14 +1376,6 @@ describe('oauth2', () => {
       assert.deepStrictEqual(info.scopes, tokenInfo.scope.split(' '));
     });
 
-    it('should warn about deprecation of getRequestMetadata', done => {
-      const stub = sandbox.stub(messages, 'warn');
-      client.getRequestMetadata(null, () => {
-        assert.strictEqual(stub.calledOnce, true);
-        done();
-      });
-    });
-
     it('should throw if tries to refresh but no refresh token is available', async () => {
       client.setCredentials({
         access_token: 'initial-access-token',
