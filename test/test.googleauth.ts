@@ -1407,30 +1407,6 @@ describe('googleauth', () => {
       assert.strictEqual(value, signature);
     });
 
-    // tslint:disable-next-line ban
-    it.skip('should warn the user if using default Cloud SDK credentials', done => {
-      exposeLinuxWellKnownFile = true;
-      createLinuxWellKnownStream = () =>
-        fs.createReadStream('./test/fixtures/wellKnown.json');
-      sandbox
-        .stub(process, 'emitWarning')
-        .callsFake((message, warningOrType) => {
-          assert.strictEqual(
-            message,
-            messages.PROBLEMATIC_CREDENTIALS_WARNING.message
-          );
-          const warningType =
-            typeof warningOrType === 'string'
-              ? warningOrType
-              : // @types/node doesn't recognize the emitWarning syntax which
-                // tslint:disable-next-line no-any
-                (warningOrType as any).type;
-          assert.strictEqual(warningType, messages.WarningTypes.WARNING);
-          done();
-        });
-      auth._tryGetApplicationCredentialsFromWellKnownFile();
-    });
-
     it('should warn the user if using the getDefaultProjectId method', done => {
       mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
       sandbox
