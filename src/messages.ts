@@ -53,4 +53,3 @@ export const PROBLEMATIC_CREDENTIALS_WARNING = {
     'https://cloud.google.com/docs/authentication/.',
   ].join(' '),
 };
-
