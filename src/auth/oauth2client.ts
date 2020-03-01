@@ -142,6 +142,18 @@ export interface TokenInfo {
    * tokens.
    */
   access_type?: string;
+
+  /**
+   * The user's email address. This value may not be unique to this user and
+   * is not suitable for use as a primary key. Provided only if your scope
+   * included the email scope value.
+   */
+  email?: string;
+
+  /**
+   * True if the user's e-mail address has been verified; otherwise false.
+   */
+  email_verified?: boolean;
 }
 
 interface TokenInfoRequest {
