@@ -379,7 +379,6 @@ export class GoogleAuth {
       location,
       options
     );
-    this.warnOnProblematicCredentials(client as JWT);
     return client;
   }
 
@@ -416,17 +415,6 @@ export class GoogleAuth {
     // Now open a read stream on the file, and parse it.
     const readStream = fs.createReadStream(filePath);
     return this.fromStream(readStream, options);
-  }
-
-  /**
-   * Credentials from the Cloud SDK that are associated with Cloud SDK's project
-   * are problematic because they may not have APIs enabled and have limited
-   * quota. If this is the case, warn about it.
-   */
-  protected warnOnProblematicCredentials(client: JWT) {
-    if (client.email === CLOUD_SDK_CLIENT_ID) {
-      messages.warn(messages.PROBLEMATIC_CREDENTIALS_WARNING);
-    }
   }
 
   /**
