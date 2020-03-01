@@ -824,13 +824,16 @@ export class GoogleAuth {
     const id = `projects/${projectId}/serviceAccounts/${creds.client_email}`;
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
-      url: `https://iam.googleapis.com/v1/${id}:signBlob`,
-      data: {bytesToSign: crypto.encodeBase64StringUtf8(data)},
+      url: `https://iamcredentials.googleapis.com/v1/{name=${id}}`,
+      data: {
+        payload: crypto.encodeBase64StringUtf8(data),
+      },
     });
-    return res.data.signature;
+    return res.data.signedBlob;
   }
 }
 
 export interface SignBlobResponse {
-  signature: string;
+  keyId: string;
+  signedBlob: string;
 }
