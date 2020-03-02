@@ -1390,21 +1390,21 @@ describe('googleauth', () => {
       const {auth, scopes} = mockGCE();
       mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
       const email = 'google@auth.library';
-      const iamUri = `https://iam.googleapis.com`;
-      const iamPath = `/v1/projects/${STUB_PROJECT}/serviceAccounts/${email}:signBlob`;
-      const signature = 'erutangis';
+      const iamUri = `https://iamcredentials.googleapis.com`;
+      const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
+      const signedBlob = 'erutangis';
       const data = 'abc123';
       scopes.push(
         nock(iamUri)
           .post(iamPath)
-          .reply(200, {signature}),
+          .reply(200, {signedBlob}),
         nock(host)
           .get(svcAccountPath)
           .reply(200, {default: {email, private_key: privateKey}}, HEADERS)
       );
       const value = await auth.sign(data);
       scopes.forEach(x => x.done());
-      assert.strictEqual(value, signature);
+      assert.strictEqual(value, signedBlob);
     });
 
     it('should warn the user if using the getDefaultProjectId method', done => {
