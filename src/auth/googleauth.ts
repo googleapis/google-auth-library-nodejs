@@ -362,7 +362,6 @@ export class GoogleAuth {
       location,
       options
     );
-    this.warnOnProblematicCredentials(client as JWT);
     return client;
   }
 
@@ -399,17 +398,6 @@ export class GoogleAuth {
     // Now open a read stream on the file, and parse it.
     const readStream = fs.createReadStream(filePath);
     return this.fromStream(readStream, options);
-  }
-
-  /**
-   * Credentials from the Cloud SDK that are associated with Cloud SDK's project
-   * are problematic because they may not have APIs enabled and have limited
-   * quota. If this is the case, warn about it.
-   */
-  protected warnOnProblematicCredentials(client: JWT) {
-    if (client.email === CLOUD_SDK_CLIENT_ID) {
-      messages.warn(messages.PROBLEMATIC_CREDENTIALS_WARNING);
-    }
   }
 
   /**
@@ -804,16 +792,19 @@ export class GoogleAuth {
       throw new Error('Cannot sign data without `client_email`.');
     }
 
-    const id = `projects/${projectId}/serviceAccounts/${creds.client_email}`;
+    const url = `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${creds.client_email}:signBlob`;
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
-      url: `https://iam.googleapis.com/v1/${id}:signBlob`,
-      data: {bytesToSign: crypto.encodeBase64StringUtf8(data)},
+      url,
+      data: {
+        payload: crypto.encodeBase64StringUtf8(data),
+      },
     });
-    return res.data.signature;
+    return res.data.signedBlob;
   }
 }
 
 export interface SignBlobResponse {
-  signature: string;
+  keyId: string;
+  signedBlob: string;
 }
