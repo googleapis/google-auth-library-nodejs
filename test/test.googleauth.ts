@@ -1391,7 +1391,7 @@ describe('googleauth', () => {
       mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
       const email = 'google@auth.library';
       const iamUri = `https://iamcredentials.googleapis.com`;
-      const iamPath = `/v1/%7Bname=projects/${STUB_PROJECT}/serviceAccounts/${email}%7D`;
+      const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
       const signedBlob = 'erutangis';
       const data = 'abc123';
       scopes.push(

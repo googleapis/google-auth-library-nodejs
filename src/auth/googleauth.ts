@@ -809,10 +809,10 @@ export class GoogleAuth {
       throw new Error('Cannot sign data without `client_email`.');
     }
 
-    const id = `projects/${projectId}/serviceAccounts/${creds.client_email}`;
+    const url = `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${creds.client_email}:signBlob`;
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
-      url: `https://iamcredentials.googleapis.com/v1/{name=${id}}`,
+      url,
       data: {
         payload: crypto.encodeBase64StringUtf8(data),
       },
