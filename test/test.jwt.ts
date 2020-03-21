@@ -71,14 +71,6 @@ describe('jwt', () => {
     sandbox.restore();
   });
 
-  it('should emit warning for createScopedRequired', () => {
-    let called = false;
-    sandbox.stub(process, 'emitWarning').callsFake(() => (called = true));
-    // tslint:disable-next-line deprecation
-    jwt.createScopedRequired();
-    assert.strictEqual(called, true);
-  });
-
   it('should create a dummy refresh token string', () => {
     // It is important that the compute client is created with a refresh token
     // value filled in, or else the rest of the logic will not work.
@@ -585,72 +577,6 @@ describe('jwt', () => {
     });
     const clone = jwt.createScoped('hi');
     assert.notStrictEqual(jwt, clone);
-  });
-
-  it('createScopedRequired should return true when scopes is null', () => {
-    const jwt = new JWT({
-      email: 'foo@serviceaccount.com',
-      keyFile: '/path/to/key.pem',
-      subject: 'bar@subjectaccount.com',
-    });
-    // tslint:disable-next-line deprecation
-    assert.strictEqual(true, jwt.createScopedRequired());
-  });
-
-  it('createScopedRequired should return true when scopes is an empty array', () => {
-    const jwt = new JWT({
-      email: 'foo@serviceaccount.com',
-      keyFile: '/path/to/key.pem',
-      scopes: [],
-      subject: 'bar@subjectaccount.com',
-    });
-    // tslint:disable-next-line deprecation
-    assert.strictEqual(true, jwt.createScopedRequired());
-  });
-
-  it('createScopedRequired should return true when scopes is an empty string', () => {
-    const jwt = new JWT({
-      email: 'foo@serviceaccount.com',
-      keyFile: '/path/to/key.pem',
-      scopes: '',
-      subject: 'bar@subjectaccount.com',
-    });
-    // tslint:disable-next-line deprecation
-    assert.strictEqual(true, jwt.createScopedRequired());
-  });
-
-  it('createScopedRequired should return false when scopes is a filled-in string', () => {
-    const jwt = new JWT({
-      email: 'foo@serviceaccount.com',
-      keyFile: '/path/to/key.pem',
-      scopes: 'http://foo',
-      subject: 'bar@subjectaccount.com',
-    });
-    // tslint:disable-next-line deprecation
-    assert.strictEqual(false, jwt.createScopedRequired());
-  });
-
-  it('createScopedRequired should return false when scopes is a filled-in array', () => {
-    const jwt = new JWT({
-      email: 'foo@serviceaccount.com',
-      keyFile: '/path/to/key.pem',
-      scopes: ['http://bar', 'http://foo'],
-      subject: 'bar@subjectaccount.com',
-    });
-
-    // tslint:disable-next-line deprecation
-    assert.strictEqual(false, jwt.createScopedRequired());
-  });
-
-  it('createScopedRequired should return false when scopes is not an array or a string, but can be used as a string', () => {
-    const jwt = new JWT({
-      email: 'foo@serviceaccount.com',
-      keyFile: '/path/to/key.pem',
-      scopes: '2',
-      subject: 'bar@subjectaccount.com',
-    });
-    // tslint:disable-next-line deprecation
-    assert.strictEqual(false, jwt.createScopedRequired());
   });
 
   it('fromJson should error on null json', () => {

@@ -56,20 +56,6 @@ export class Compute extends OAuth2Client {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   * @deprecated
-   * @return Boolean indicating if scope is required.
-   */
-  createScopedRequired() {
-    // On compute engine, scopes are specified at the compute instance's
-    // creation time, and cannot be changed. For this reason, always return
-    // false.
-    messages.warn(messages.COMPUTE_CREATE_SCOPED_DEPRECATED);
-    return false;
-  }
-
-  /**
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */

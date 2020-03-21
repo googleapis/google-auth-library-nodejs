@@ -16,7 +16,6 @@ import * as assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 import {IAMAuth} from '../src';
-import * as messages from '../src/messages';
 
 describe('iam', () => {
   const testSelector = 'a-test-selector';
@@ -37,21 +36,5 @@ describe('iam', () => {
     assert.notStrictEqual(creds, null, 'metadata should be present');
     assert.strictEqual(creds!['x-goog-iam-authority-selector'], testSelector);
     assert.strictEqual(creds!['x-goog-iam-authorization-token'], testToken);
-  });
-
-  it('should warn about deprecation of getRequestMetadata', done => {
-    const stub = sandbox.stub(messages, 'warn');
-    // tslint:disable-next-line deprecation
-    client.getRequestMetadata(null, () => {
-      assert.strictEqual(stub.calledOnce, true);
-      done();
-    });
-  });
-
-  it('should emit warning for createScopedRequired', () => {
-    const stub = sandbox.stub(process, 'emitWarning');
-    // tslint:disable-next-line deprecation
-    client.createScopedRequired();
-    assert(stub.called);
   });
 });

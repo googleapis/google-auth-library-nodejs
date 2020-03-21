@@ -760,33 +760,6 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * Obtain the set of headers required to authenticate a request.
-   *
-   * @deprecated Use getRequestHeaders instead.
-   * @param url the Uri being authorized
-   * @param callback the func described above
-   */
-  getRequestMetadata(url?: string | null): Promise<RequestMetadataResponse>;
-  getRequestMetadata(
-    url: string | null,
-    callback: RequestMetadataCallback
-  ): void;
-  getRequestMetadata(
-    url: string | null,
-    callback?: RequestMetadataCallback
-  ): Promise<RequestMetadataResponse> | void {
-    messages.warn(messages.OAUTH_GET_REQUEST_METADATA_DEPRECATED);
-    if (callback) {
-      this.getRequestMetadataAsync(url).then(
-        r => callback(null, r.headers, r.res),
-        callback
-      );
-    } else {
-      return this.getRequestMetadataAsync();
-    }
-  }
-
-  /**
    * The main authentication interface.  It takes an optional url which when
    * present is the endpoint being accessed, and returns a Promise which
    * resolves with authorization header fields.

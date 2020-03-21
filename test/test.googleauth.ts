@@ -1407,36 +1407,6 @@ describe('googleauth', () => {
       assert.strictEqual(value, signedBlob);
     });
 
-    it('should warn the user if using the getDefaultProjectId method', done => {
-      mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
-      sandbox
-        .stub(process, 'emitWarning')
-        .callsFake((message, warningOrType) => {
-          assert.strictEqual(
-            message,
-            messages.DEFAULT_PROJECT_ID_DEPRECATED.message
-          );
-          const warningType =
-            typeof warningOrType === 'string'
-              ? warningOrType
-              : // @types/node doesn't recognize the emitWarning syntax which
-                // tslint:disable-next-line no-any
-                (warningOrType as any).type;
-          assert.strictEqual(warningType, messages.WarningTypes.DEPRECATION);
-          done();
-        });
-      auth.getDefaultProjectId();
-    });
-
-    it('should only emit warnings once', async () => {
-      // The warning was used above, so invoking it here should have no effect.
-      mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
-      let count = 0;
-      sandbox.stub(process, 'emitWarning').callsFake(() => count++);
-      await auth.getDefaultProjectId();
-      assert.strictEqual(count, 0);
-    });
-
     it('should pass options to the JWT constructor via constructor', async () => {
       const subject = 'science!';
       const auth = new GoogleAuth({
