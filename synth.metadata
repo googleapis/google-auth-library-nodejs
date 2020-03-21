@@ -1,20 +1,6 @@
 {
-  "updateTime": "2020-02-18T18:56:56.357325Z",
+  "updateTime": "2020-03-03T12:10:12.656651Z",
   "sources": [
-    {
-      "git": {
-        "name": ".",
-        "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
-        "sha": "0368864e309b70df919011235bc9b14bd8367e6e"
-      }
-    },
-    {
-      "git": {
-        "name": "synthtool",
-        "remote": "rpc://devrel/cloud/libraries/tools/autosynth",
-        "sha": "dd7cd93888cbeb1d4c56a1ca814491c7813160e8"
-      }
-    },
     {
       "template": {
         "name": "node_library",
