@@ -4,6 +4,16 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [5.10.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.10.1...v5.10.2) (2020-03-21)
+
+
+### Bug Fixes
+
+* do not warn for SDK creds ([#905](https://www.github.com/googleapis/google-auth-library-nodejs/issues/905)) ([9536840](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9536840f88e77f747bbbc2c1b5b4289018fc23c9))
+* use iamcredentials API to sign blobs ([#908](https://www.github.com/googleapis/google-auth-library-nodejs/issues/908)) ([7b8e4c5](https://www.github.com/googleapis/google-auth-library-nodejs/commit/7b8e4c52e31bb3d448c3ff8c05002188900eaa04))
+* **deps:** update dependency gcp-metadata to v4 ([#918](https://www.github.com/googleapis/google-auth-library-nodejs/issues/918)) ([d337131](https://www.github.com/googleapis/google-auth-library-nodejs/commit/d337131d009cc1f8182f7a1f8a9034433ee3fbf7))
+* **types:** add additional fields to TokenInfo ([#907](https://www.github.com/googleapis/google-auth-library-nodejs/issues/907)) ([5b48eb8](https://www.github.com/googleapis/google-auth-library-nodejs/commit/5b48eb86c108c47d317a0eb96b47c0cae86f98cb))
+
 ### [5.10.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.10.0...v5.10.1) (2020-02-25)
 
 
