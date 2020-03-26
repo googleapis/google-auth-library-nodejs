@@ -14,7 +14,6 @@
 
 import * as assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-const assertRejects = require('assert-rejects');
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
@@ -37,9 +36,7 @@ describe('compute', () => {
   }
 
   function mockExample() {
-    return nock(url)
-      .get('/')
-      .reply(200);
+    return nock(url).get('/').reply(200);
   }
 
   // set up compute client.
@@ -158,7 +155,7 @@ describe('compute', () => {
         'Compute Engine instance does not have the correct permission scopes specified. ' +
         'Could not refresh access token.'
     );
-    await assertRejects(compute.request({url}), expected);
+    await assert.rejects(compute.request({url}), expected);
     scope.done();
   });
 
@@ -169,7 +166,7 @@ describe('compute', () => {
         'token for the Compute Engine built-in service account. This may be because the ' +
         'Compute Engine instance does not have any permission scopes specified.'
     );
-    await assertRejects(compute.request({url}), expected);
+    await assert.rejects(compute.request({url}), expected);
     scope.done();
   });
 
@@ -188,7 +185,7 @@ describe('compute', () => {
         'Compute Engine instance does not have the correct permission scopes specified. ' +
         'Could not refresh access token.'
     );
-    await assertRejects(compute.request({}), expected);
+    await assert.rejects(compute.request({}), expected);
     scope.done();
   });
 
@@ -210,7 +207,7 @@ describe('compute', () => {
         'refresh access token.'
     );
 
-    await assertRejects(compute.request({}), expected);
+    await assert.rejects(compute.request({}), expected);
     scope.done();
   });
 

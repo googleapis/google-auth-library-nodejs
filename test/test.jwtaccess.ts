@@ -21,6 +21,7 @@ import * as sinon from 'sinon';
 import {JWTAccess} from '../src';
 import * as messages from '../src/messages';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const keypair = require('keypair');
 
 describe('jwtaccess', () => {

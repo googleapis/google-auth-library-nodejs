@@ -17,10 +17,7 @@ import {Crypto} from '../crypto';
 
 export class NodeCrypto implements Crypto {
   async sha256DigestBase64(str: string): Promise<string> {
-    return crypto
-      .createHash('sha256')
-      .update(str)
-      .digest('base64');
+    return crypto.createHash('sha256').update(str).digest('base64');
   }
 
   randomBytesBase64(count: number): string {

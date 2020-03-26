@@ -1216,7 +1216,7 @@ export class OAuth2Client extends AuthClient {
       throw new Error("Can't parse token payload: " + segments[1]);
     }
 
-    if (!certs.hasOwnProperty(envelope.kid)) {
+    if (!Object.prototype.hasOwnProperty.call(certs, envelope.kid)) {
       // If this is not present, then there's no reason to attempt verification
       throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
     }

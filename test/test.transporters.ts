@@ -15,7 +15,6 @@
 import * as assert from 'assert';
 import {describe, it, afterEach} from 'mocha';
 import {GaxiosOptions} from 'gaxios';
-const assertRejects = require('assert-rejects');
 import * as nock from 'nock';
 import {DefaultTransporter, RequestError} from '../src/transporters';
 
@@ -111,9 +110,7 @@ describe('transporters', () => {
 
   it('should return an error for a 404 response', done => {
     const url = 'http://example.com';
-    const scope = nock(url)
-      .get('/')
-      .reply(404, 'Not found');
+    const scope = nock(url).get('/').reply(404, 'Not found');
     transporter.request({url}, error => {
       scope.done();
       assert.strictEqual(error!.message, 'Not found');
@@ -148,9 +145,7 @@ describe('transporters', () => {
 
   it('should support invocation with async/await', async () => {
     const url = 'http://example.com';
-    const scope = nock(url)
-      .get('/')
-      .reply(200);
+    const scope = nock(url).get('/').reply(200);
     const res = await transporter.request({url});
     scope.done();
     assert.strictEqual(res.status, 200);
@@ -158,18 +153,14 @@ describe('transporters', () => {
 
   it('should throw if using async/await', async () => {
     const url = 'http://example.com';
-    const scope = nock(url)
-      .get('/')
-      .reply(500, '🦃');
-    await assertRejects(transporter.request({url}), /🦃/);
+    const scope = nock(url).get('/').reply(500, '🦃');
+    await assert.rejects(transporter.request({url}), /🦃/);
     scope.done();
   });
 
   it('should work with a callback', done => {
     const url = 'http://example.com';
-    const scope = nock(url)
-      .get('/')
-      .reply(200);
+    const scope = nock(url).get('/').reply(200);
     transporter.request({url}, (err, res) => {
       scope.done();
       assert.strictEqual(err, null);

@@ -45,6 +45,7 @@ export interface CredentialCallback {
   (err: Error | null, result?: UserRefreshClient | JWT): void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface DeprecatedGetClientOptions {}
 
 export interface ADCCallback {
@@ -164,7 +165,10 @@ export class GoogleAuth {
     // - Cloud SDK: `gcloud config config-helper --format json`
     // - GCE project ID from metadata server)
     if (!this._getDefaultProjectIdPromise) {
+      // TODO: refactor the below code so that it doesn't mix and match
+      // promises and async/await.
       this._getDefaultProjectIdPromise = new Promise(
+        // eslint-disable-next-line no-async-promise-executor
         async (resolve, reject) => {
           try {
             const projectId =

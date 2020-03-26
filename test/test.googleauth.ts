@@ -14,7 +14,6 @@
 
 import * as assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-const assertRejects = require('assert-rejects');
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -54,8 +53,11 @@ describe('googleauth', () => {
     STUB_PROJECT,
   ].join('/');
 
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const privateJSON = require('../../test/fixtures/private.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const private2JSON = require('../../test/fixtures/private2.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const refreshJSON = require('../../test/fixtures/refresh.json');
   const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
   const wellKnownPathWindows = path.join(
@@ -165,9 +167,7 @@ describe('googleauth', () => {
     }
 
     function nockIsGCE() {
-      const primary = nock(host)
-        .get(instancePath)
-        .reply(200, {}, HEADERS);
+      const primary = nock(host).get(instancePath).reply(200, {}, HEADERS);
       const secondary = nock(SECONDARY_HOST_ADDRESS)
         .get(instancePath)
         .reply(200, {}, HEADERS);
@@ -204,9 +204,7 @@ describe('googleauth', () => {
     }
 
     function nock500GCE() {
-      const primary = nock(host)
-        .get(instancePath)
-        .reply(500, {}, HEADERS);
+      const primary = nock(host).get(instancePath).reply(500, {}, HEADERS);
       const secondary = nock(SECONDARY_HOST_ADDRESS)
         .get(instancePath)
         .reply(500, {}, HEADERS);
@@ -224,9 +222,7 @@ describe('googleauth', () => {
     }
 
     function nock404GCE() {
-      const primary = nock(host)
-        .get(instancePath)
-        .reply(404);
+      const primary = nock(host).get(instancePath).reply(404);
       const secondary = nock(SECONDARY_HOST_ADDRESS)
         .get(instancePath)
         .reply(404);
@@ -315,7 +311,7 @@ describe('googleauth', () => {
     it('should make a request with the api key', async () => {
       const scope = nock(BASE_URL)
         .post(ENDPOINT)
-        .reply(function(uri) {
+        .reply(function (uri) {
           assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
           return [200, RESPONSE_BODY];
         });
@@ -340,7 +336,7 @@ describe('googleauth', () => {
       const scope = nock(BASE_URL)
         .post(ENDPOINT)
         .query({test: OTHER_QS_PARAM.test})
-        .reply(function(uri) {
+        .reply(function (uri) {
           assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
           assert(uri.indexOf('test=' + OTHER_QS_PARAM.test) > -1);
           return [200, RESPONSE_BODY];
@@ -501,7 +497,7 @@ describe('googleauth', () => {
     });
 
     it('getApplicationCredentialsFromFilePath should error on invalid symlink', async () => {
-      await assertRejects(
+      await assert.rejects(
         auth._getApplicationCredentialsFromFilePath('./test/fixtures/badlink')
       );
     });
@@ -511,7 +507,7 @@ describe('googleauth', () => {
         // git does not create symlinks on Windows
         return;
       }
-      await assertRejects(
+      await assert.rejects(
         auth._getApplicationCredentialsFromFilePath('./test/fixtures/emptylink')
       );
     });
@@ -561,13 +557,13 @@ describe('googleauth', () => {
     it('getApplicationCredentialsFromFilePath should error on directory', async () => {
       // Make sure that the following path actually does point to a directory.
       const directory = './test/fixtures';
-      await assertRejects(
+      await assert.rejects(
         auth._getApplicationCredentialsFromFilePath(directory)
       );
     });
 
     it('getApplicationCredentialsFromFilePath should handle errors thrown from createReadStream', async () => {
-      await assertRejects(
+      await assert.rejects(
         auth._getApplicationCredentialsFromFilePath('./does/not/exist.json'),
         /ENOENT: no such file or directory/
       );
@@ -575,7 +571,7 @@ describe('googleauth', () => {
 
     it('getApplicationCredentialsFromFilePath should handle errors thrown from fromStream', async () => {
       sandbox.stub(auth, 'fromStream').throws('🤮');
-      await assertRejects(
+      await assert.rejects(
         auth._getApplicationCredentialsFromFilePath(
           './test/fixtures/private.json'
         ),
@@ -586,7 +582,7 @@ describe('googleauth', () => {
     it('getApplicationCredentialsFromFilePath should handle errors passed from fromStream', async () => {
       // Set up a mock to return an error from the fromStream method.
       sandbox.stub(auth, 'fromStream').throws('🤮');
-      await assertRejects(
+      await assert.rejects(
         auth._getApplicationCredentialsFromFilePath(
           './test/fixtures/private.json'
         ),
@@ -726,7 +722,7 @@ describe('googleauth', () => {
       sandbox
         .stub(auth, '_getApplicationCredentialsFromFilePath')
         .rejects('🤮');
-      await assertRejects(
+      await assert.rejects(
         auth._tryGetApplicationCredentialsFromWellKnownFile(),
         /🤮/
       );
@@ -737,7 +733,7 @@ describe('googleauth', () => {
       sandbox
         .stub(auth, '_getApplicationCredentialsFromFilePath')
         .rejects('🤮');
-      await assertRejects(
+      await assert.rejects(
         auth._tryGetApplicationCredentialsFromWellKnownFile(),
         /🤮/
       );
@@ -994,7 +990,7 @@ describe('googleauth', () => {
       // * Running on GCE is set to true.
       mockWindows();
       sandbox.stub(auth, '_checkIsGCE').rejects('🤮');
-      await assertRejects(
+      await assert.rejects(
         auth.getApplicationDefault(),
         /Unexpected error determining execution environment/
       );
@@ -1052,7 +1048,7 @@ describe('googleauth', () => {
     it('_checkIsGCE should throw on unexpected errors', async () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nock500GCE();
-      await assertRejects(auth._checkIsGCE());
+      await assert.rejects(auth._checkIsGCE());
       assert.strictEqual(undefined, auth.isGCE);
       scope.done();
     });
@@ -1096,9 +1092,7 @@ describe('googleauth', () => {
       const scopes = [
         nockIsGCE(),
         createGetProjectIdNock(),
-        nock(host)
-          .get(svcAccountPath)
-          .reply(200, response, HEADERS),
+        nock(host).get(svcAccountPath).reply(200, response, HEADERS),
       ];
       await auth._checkIsGCE();
       assert.strictEqual(true, auth.isGCE);
@@ -1116,13 +1110,11 @@ describe('googleauth', () => {
       const scopes = [
         nockIsGCE(),
         createGetProjectIdNock(),
-        nock(HOST_ADDRESS)
-          .get(svcAccountPath)
-          .reply(404),
+        nock(HOST_ADDRESS).get(svcAccountPath).reply(404),
       ];
       await auth._checkIsGCE();
       assert.strictEqual(true, auth.isGCE);
-      await assertRejects(
+      await assert.rejects(
         auth.getCredentials(),
         /Unsuccessful response status code. Request failed with status code 404/
       );
@@ -1133,13 +1125,11 @@ describe('googleauth', () => {
       const scopes = [
         nockIsGCE(),
         createGetProjectIdNock(),
-        nock(HOST_ADDRESS)
-          .get(svcAccountPath)
-          .reply(200, {}),
+        nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {}),
       ];
       await auth._checkIsGCE();
       assert.strictEqual(true, auth.isGCE);
-      await assertRejects(
+      await assert.rejects(
         auth.getCredentials(),
         /Invalid response from metadata service: incorrect Metadata-Flavor header./
       );
@@ -1202,7 +1192,7 @@ describe('googleauth', () => {
       // Set up a mock to return a null path string
       const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.strictEqual(null, client);
-      await assertRejects(auth.getCredentials());
+      await assert.rejects(auth.getCredentials());
     });
 
     it('should use jsonContent if available', async () => {
@@ -1224,7 +1214,7 @@ describe('googleauth', () => {
 
     it('should error when invalid keyFilename passed to getClient', async () => {
       const auth = new GoogleAuth({keyFilename: './funky/fresh.json'});
-      await assertRejects(
+      await assert.rejects(
         auth.getClient(),
         /ENOENT: no such file or directory/
       );
@@ -1361,11 +1351,7 @@ describe('googleauth', () => {
       const {auth, scopes} = mockGCE();
       scopes.push(createGetProjectIdNock());
       const data = {breakfast: 'coffee'};
-      scopes.push(
-        nock(url)
-          .get('/')
-          .reply(200, data)
-      );
+      scopes.push(nock(url).get('/').reply(200, data));
       const res = await auth.request({url});
       scopes.forEach(s => s.done());
       assert.deepStrictEqual(res.data, data);
@@ -1395,9 +1381,7 @@ describe('googleauth', () => {
       const signedBlob = 'erutangis';
       const data = 'abc123';
       scopes.push(
-        nock(iamUri)
-          .post(iamPath)
-          .reply(200, {signedBlob}),
+        nock(iamUri).post(iamPath).reply(200, {signedBlob}),
         nock(host)
           .get(svcAccountPath)
           .reply(200, {default: {email, private_key: privateKey}}, HEADERS)
@@ -1420,7 +1404,7 @@ describe('googleauth', () => {
     it('should throw if getProjectId cannot find a projectId', async () => {
       // tslint:disable-next-line no-any
       sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
-      await assertRejects(
+      await assert.rejects(
         auth.getProjectId(),
         /Unable to detect a Project Id in the current environment/
       );
@@ -1428,7 +1412,7 @@ describe('googleauth', () => {
 
     it('should throw if options are passed to getClient()', async () => {
       const auth = new GoogleAuth();
-      await assertRejects(
+      await assert.rejects(
         auth.getClient({hello: 'world'}),
         /Passing options to getClient is forbidden in v5.0.0/
       );
@@ -1475,7 +1459,7 @@ describe('googleauth', () => {
       assert(client instanceof UserRefreshClient);
       const apiReq = nock(BASE_URL)
         .post(ENDPOINT)
-        .reply(function(uri) {
+        .reply(function (uri) {
           assert.strictEqual(
             this.req.headers['x-goog-user-project'][0],
             'my-quota-project'

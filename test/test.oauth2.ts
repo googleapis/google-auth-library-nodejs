@@ -14,7 +14,6 @@
 
 import * as assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-const assertRejects = require('assert-rejects');
 import * as crypto from 'crypto';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
 import * as fs from 'fs';
@@ -86,16 +85,12 @@ describe('oauth2', () => {
       });
 
       const generated = oauth2client.generateAuthUrl(opts);
-      const parsed = url.parse(generated);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const query = qs.parse(parsed.query);
-      assert.strictEqual(query.response_type, 'code token');
-      assert.strictEqual(query.access_type, ACCESS_TYPE);
-      assert.strictEqual(query.scope, SCOPE);
-      assert.strictEqual(query.client_id, CLIENT_ID);
-      assert.strictEqual(query.redirect_uri, REDIRECT_URI);
+      const query = new URL(generated).searchParams;
+      assert.strictEqual(query.get('response_type'), 'code token');
+      assert.strictEqual(query.get('access_type'), ACCESS_TYPE);
+      assert.strictEqual(query.get('scope'), SCOPE);
+      assert.strictEqual(query.get('client_id'), CLIENT_ID);
+      assert.strictEqual(query.get('redirect_uri'), REDIRECT_URI);
       done();
     });
 
@@ -115,7 +110,7 @@ describe('oauth2', () => {
       const codes = await client.generateCodeVerifierAsync();
       // ensure the code_verifier matches all requirements
       assert.strictEqual(codes.codeVerifier.length, 128);
-      const match = codes.codeVerifier.match(/[a-zA-Z0-9\-\.~_]*/);
+      const match = codes.codeVerifier.match(/[a-zA-Z0-9-.~_]*/);
       assert(match);
       if (!match) return;
       assert(match.length > 0 && match[0] === codes.codeVerifier);
@@ -127,13 +122,12 @@ describe('oauth2', () => {
         code_challenge: codes.codeChallenge,
         code_challenge_method: CodeChallengeMethod.S256,
       });
-      const parsed = url.parse(authUrl);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const props = qs.parse(parsed.query);
-      assert.strictEqual(props.code_challenge, codes.codeChallenge);
-      assert.strictEqual(props.code_challenge_method, CodeChallengeMethod.S256);
+      const props = new URL(authUrl).searchParams;
+      assert.strictEqual(props.get('code_challenge'), codes.codeChallenge);
+      assert.strictEqual(
+        props.get('code_challenge_method'),
+        CodeChallengeMethod.S256
+      );
     });
 
     it('should verifyIdToken properly', async () => {
@@ -208,22 +202,14 @@ describe('oauth2', () => {
         response_type: 'code token',
       };
       const generated = client.generateAuthUrl(opts);
-      const parsed = url.parse(generated);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const query = qs.parse(parsed.query);
-      assert.strictEqual(query.scope, SCOPE_ARRAY.join(' '));
+      const parsed = new URL(generated).searchParams;
+      assert.strictEqual(parsed.get('scope'), SCOPE_ARRAY.join(' '));
     });
 
     it('should set response_type param to code if none is given while generating the consent page url', () => {
       const generated = client.generateAuthUrl();
-      const parsed = url.parse(generated);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const query = qs.parse(parsed.query);
-      assert.strictEqual(query.response_type, 'code');
+      const parsed = new URL(generated).searchParams;
+      assert.strictEqual(parsed.get('response_type'), 'code');
     });
 
     it('should verify a valid certificate against a jwt', async () => {
@@ -291,7 +277,7 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -331,7 +317,7 @@ describe('oauth2', () => {
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
       const validAudiences = ['testaudience', 'extra-audience'];
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -364,7 +350,7 @@ describe('oauth2', () => {
       const signature = signer.sign(privateKey, 'base64');
       // Originally: data += '.'+signature;
       data += signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -402,13 +388,13 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
           'testaudience'
         ),
-        /Can\'t parse token envelope/
+        /Can't parse token envelope/
       );
     });
 
@@ -440,13 +426,13 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
           'testaudience'
         ),
-        /Can\'t parse token payload/
+        /Can't parse token payload/
       );
     });
 
@@ -476,7 +462,7 @@ describe('oauth2', () => {
         Buffer.from(idToken).toString('base64') +
         '.' +
         'broken-signature';
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -509,7 +495,7 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -544,7 +530,7 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -582,7 +568,7 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -660,7 +646,7 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -701,7 +687,7 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -739,7 +725,7 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = signer.sign(privateKey, 'base64');
       data += '.' + signature;
-      return assertRejects(
+      return assert.rejects(
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
@@ -883,42 +869,26 @@ describe('oauth2', () => {
 
     it('should set redirect_uri if not provided in options', () => {
       const generated = client.generateAuthUrl({});
-      const parsed = url.parse(generated);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const query = qs.parse(parsed.query);
-      assert.strictEqual(query.redirect_uri, REDIRECT_URI);
+      const parsed = new URL(generated).searchParams;
+      assert.strictEqual(parsed.get('redirect_uri'), REDIRECT_URI);
     });
 
     it('should set client_id if not provided in options', () => {
       const generated = client.generateAuthUrl({});
-      const parsed = url.parse(generated);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const query = qs.parse(parsed.query);
-      assert.strictEqual(query.client_id, CLIENT_ID);
+      const parsed = new URL(generated).searchParams;
+      assert.strictEqual(parsed.get('client_id'), CLIENT_ID);
     });
 
     it('should override redirect_uri if provided in options', () => {
       const generated = client.generateAuthUrl({redirect_uri: 'overridden'});
-      const parsed = url.parse(generated);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const query = qs.parse(parsed.query);
-      assert.strictEqual(query.redirect_uri, 'overridden');
+      const parsed = new URL(generated).searchParams;
+      assert.strictEqual(parsed.get('redirect_uri'), 'overridden');
     });
 
     it('should override client_id if provided in options', () => {
       const generated = client.generateAuthUrl({client_id: 'client_override'});
-      const parsed = url.parse(generated);
-      if (typeof parsed.query !== 'string') {
-        throw new Error('Unable to parse querystring');
-      }
-      const query = qs.parse(parsed.query);
-      assert.strictEqual(query.client_id, 'client_override');
+      const parsed = new URL(generated).searchParams;
+      assert.strictEqual(parsed.get('client_id'), 'client_override');
     });
 
     it('should return error in callback on request', done => {
@@ -955,9 +925,7 @@ describe('oauth2', () => {
             reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
           })
           .reply(200, {access_token: 'abc123', expires_in: 1}),
-        nock('http://example.com')
-          .get('/')
-          .reply(200),
+        nock('http://example.com').get('/').reply(200),
       ];
     }
 
@@ -991,10 +959,7 @@ describe('oauth2', () => {
             reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
           })
           .reply(200, {access_token: 'abc123', expires_in: 1}),
-        nock('http://example.com')
-          .get('/')
-          .thrice()
-          .reply(200),
+        nock('http://example.com').get('/').thrice().reply(200),
       ];
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
       await Promise.all([
@@ -1017,10 +982,7 @@ describe('oauth2', () => {
           })
           .twice()
           .reply(200, {access_token: 'abc123', expires_in: 100000}),
-        nock('http://example.com')
-          .get('/')
-          .twice()
-          .reply(200),
+        nock('http://example.com').get('/').twice().reply(200),
       ];
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
       await client.request({url: 'http://example.com'});
@@ -1043,13 +1005,12 @@ describe('oauth2', () => {
             reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
           })
           .reply(200, {access_token: 'abc123', expires_in: 100000}),
-        nock('http://example.com')
-          .get('/')
-          .reply(200),
+        nock('http://example.com').get('/').reply(200),
       ];
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
       try {
         await client.request({url: 'http://example.com'});
+        // eslint-disable-next-line no-empty
       } catch (e) {}
       await client.request({url: 'http://example.com'});
       scopes.forEach(s => s.done());
@@ -1194,9 +1155,7 @@ describe('oauth2', () => {
 
     it('should not retry requests with streaming data', done => {
       const s = fs.createReadStream('./test/fixtures/public.pem');
-      const scope = nock('http://example.com')
-        .post('/')
-        .reply(401);
+      const scope = nock('http://example.com').post('/').reply(401);
       client.credentials = {
         access_token: 'initial-access-token',
         refresh_token: 'refresh-token-placeholder',
@@ -1381,7 +1340,7 @@ describe('oauth2', () => {
         access_token: 'initial-access-token',
         expiry_date: new Date().getTime() - 1000,
       });
-      await assertRejects(
+      await assert.rejects(
         client.getRequestHeaders('http://example.com'),
         /No refresh token is set./
       );
