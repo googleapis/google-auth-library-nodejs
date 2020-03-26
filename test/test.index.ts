@@ -17,11 +17,13 @@ import * as gal from '../src';
 
 describe('index', () => {
   it('should publicly export GoogleAuth', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cjs = require('../src/');
     assert.strictEqual(cjs.GoogleAuth, gal.GoogleAuth);
   });
 
   it('should publicly export DefaultTransporter', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cjs = require('../src');
     assert.strictEqual(cjs.DefaultTransporter, gal.DefaultTransporter);
   });

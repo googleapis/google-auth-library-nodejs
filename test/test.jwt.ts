@@ -23,6 +23,7 @@ import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 
 describe('jwt', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const keypair = require('keypair');
   const PEM_PATH = './test/fixtures/private.pem';
   const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
@@ -288,10 +289,7 @@ describe('jwt', () => {
     // endpoint. This makes sure that refreshToken is called only once.
     const scopes = [
       createGTokenMock({access_token: 'abc123'}),
-      nock('http://example.com')
-        .get('/')
-        .thrice()
-        .reply(200),
+      nock('http://example.com').get('/').thrice().reply(200),
     ];
     const jwt = new JWT({
       email: 'foo@serviceaccount.com',
@@ -316,10 +314,7 @@ describe('jwt', () => {
     const scopes = [
       createGTokenMock({access_token: 'abc123'}),
       createGTokenMock({access_token: 'abc123'}),
-      nock('http://example.com')
-        .get('/')
-        .twice()
-        .reply(200),
+      nock('http://example.com').get('/').twice().reply(200),
     ];
     const jwt = new JWT({
       email: 'foo@serviceaccount.com',
@@ -404,10 +399,7 @@ describe('jwt', () => {
   });
 
   it('should refresh token if the server returns 403', done => {
-    nock('http://example.com')
-      .get('/access')
-      .twice()
-      .reply(403);
+    nock('http://example.com').get('/access').twice().reply(403);
     const jwt = new JWT({
       email: 'foo@serviceaccount.com',
       keyFile: PEM_PATH,
@@ -745,6 +737,7 @@ describe('jwt', () => {
   it('getRequestHeaders populates x-goog-user-project for JWT client', async () => {
     const auth = new GoogleAuth({
       credentials: Object.assign(
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         require('../../test/fixtures/service-account-with-quota.json'),
         {
           private_key: keypair(512 /* bitsize of private key */).private,

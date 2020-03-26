@@ -19,7 +19,7 @@ const isDocker = require('is-docker')();
 const webpackConfig = require('./webpack-tests.config.js');
 process.env.CHROME_BIN = require('puppeteer').executablePath();
 
-module.exports = function(config) {
+module.exports = function (config) {
   config.set({
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
