@@ -751,9 +751,6 @@ export class GoogleAuth {
     const url = opts.url || opts.uri;
     const client = await this.getClient();
     const headers = await client.getRequestHeaders(url);
-    // TODO: the below logic may be an actual race condition, we
-    // should dig into this:
-    // eslint-disable-next-line require-atomic-updates
     opts.headers = Object.assign(opts.headers || {}, headers);
     return opts;
   }

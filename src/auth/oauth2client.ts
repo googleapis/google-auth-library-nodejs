@@ -915,19 +915,14 @@ export class OAuth2Client extends AuthClient {
     let r2: GaxiosResponse;
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
-      // eslint-disable-next-line require-atomic-updates
       opts.headers = opts.headers || {};
-      // TODO: we should eventually address these linting issues below:
       if (r.headers && r.headers['x-goog-user-project']) {
-        // eslint-disable-next-line require-atomic-updates
         opts.headers['x-goog-user-project'] = r.headers['x-goog-user-project'];
       }
       if (r.headers && r.headers.Authorization) {
-        // eslint-disable-next-line require-atomic-updates
         opts.headers.Authorization = r.headers.Authorization;
       }
       if (this.apiKey) {
-        // eslint-disable-next-line require-atomic-updates
         opts.headers['X-Goog-Api-Key'] = this.apiKey;
       }
       r2 = await this.transporter.request<T>(opts);

@@ -986,7 +986,6 @@ describe('oauth2', () => {
       ];
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
       await client.request({url: 'http://example.com'});
-      // eslint-disable-next-line require-atomic-updates
       client.credentials.access_token = null;
       await client.request({url: 'http://example.com'});
       scopes.forEach(s => s.done());
