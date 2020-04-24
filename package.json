@@ -79,7 +79,7 @@
     "prepare": "npm run compile",
     "lint": "gts check",
     "compile": "tsc -p .",
-    "fix": "gts fix && eslint --fix '**/*.js'",
+    "fix": "gts fix",
     "pretest": "npm run compile",
     "docs": "compodoc src/",
     "samples-test": "cd samples/ && npm link ../ && npm test && cd ../",
@@ -89,7 +89,8 @@
     "browser-test": "karma start",
     "docs-test": "linkinator docs",
     "predocs-test": "npm run docs",
-    "prelint": "cd samples; npm link ../; npm i"
+    "prelint": "cd samples; npm link ../; npm install",
+    "precompile": "gts clean"
   },
   "license": "Apache-2.0"
 }
