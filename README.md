@@ -335,6 +335,7 @@ main().catch(console.error);
 ```
 
 ## Working with ID Tokens
+### Fetching ID Tokens
 If your application is running behind Cloud Run, or using Cloud Identity-Aware
 Proxy (IAP), you will need to fetch an ID token to access your application. For
 this, use the method `getIdTokenClient` on the `GoogleAuth` client.
@@ -358,6 +359,8 @@ async function main() {
 main().catch(console.error);
 ```
 
+A complete example can be found in [`samples/idtokens-cloudrun.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-cloudrun.js).
+
 For invoking Cloud Identity-Aware Proxy, you will need to pass the Client ID
 used when you set up your protected resource as the target audience.
 
@@ -377,7 +380,34 @@ async function main()
 main().catch(console.error);
 ```
 
-See how to [secure your IAP app with signed headers](https://cloud.google.com/iap/docs/signed-headers-howto).
+A complete example can be found in [`samples/idtokens-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js).
+
+### Verifying ID Tokens
+
+If you've [secured your IAP app with signed headers](https://cloud.google.com/iap/docs/signed-headers-howto),
+you can use this library to verify the IAP header:
+
+```js
+const {OAuth2Client} = require('google-auth-library');
+// Expected audience for App Engine.
+const expectedAudience = `/projects/your-project-number/apps/your-project-id`;
+// IAP issuer
+const issuers = ['https://cloud.google.com/iap'];
+// Verify the token. OAuth2Client throws an Error if verification fails
+const oAuth2Client = new OAuth2Client();
+const response = await oAuth2Client.getIapCerts();
+const ticket = await oAuth2Client.verifySignedJwtWithCertsAsync(
+  idToken,
+  response.pubkeys,
+  expectedAudience,
+  issuers
+);
+
+// Print out the info contained in the IAP ID token
+console.log(ticket)
+```
+
+A complete example can be found in [`samples/verifyIdToken-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
 
 ## Questions/problems?
 

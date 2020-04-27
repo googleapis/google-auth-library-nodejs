@@ -23,6 +23,8 @@
   * [Keyfile](#keyfile)
   * [Oauth2-code Verifier](#oauth2-code-verifier)
   * [Oauth2](#oauth2)
+  * [Sign Blob](#sign-blob)
+  * [Verifying ID Tokens from Identity-Aware Proxy (IAP)](#verifying-id-tokens-from-identity-aware-proxy-iap)
   * [Verify Id Token](#verify-id-token)
 
 ## Before you begin
@@ -224,6 +226,42 @@ __Usage:__
 
 
 `node samples/oauth2.js`
+
+
+-----
+
+
+
+
+### Sign Blob
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/signBlob.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/signBlob.js`
+
+
+-----
+
+
+
+
+### Verifying ID Tokens from Identity-Aware Proxy (IAP)
+
+Verifying the signed token from the header of an IAP-protected resource.
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md)
+
+__Usage:__
+
+
+`node verifyIdToken-iap.js <iap-jwt> [<project-number>] [<project-id>] [<backend-service-id>]`
 
 
 -----

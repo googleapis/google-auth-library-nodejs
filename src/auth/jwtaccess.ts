@@ -58,35 +58,6 @@ export class JWTAccess {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   * @deprecated
-   * @return always false
-   */
-  createScopedRequired(): boolean {
-    // JWT Header authentication does not use scopes.
-    messages.warn(messages.JWT_ACCESS_CREATE_SCOPED_DEPRECATED);
-    return false;
-  }
-
-  /**
-   * Get a non-expired access token, after refreshing if necessary.
-   *
-   * @param authURI The URI being authorized.
-   * @param additionalClaims An object with a set of additional claims to
-   * include in the payload.
-   * @deprecated Please use `getRequestHeaders` instead.
-   * @returns An object that includes the authorization header.
-   */
-  getRequestMetadata(
-    url: string,
-    additionalClaims?: Claims
-  ): RequestMetadataResponse {
-    messages.warn(messages.JWT_ACCESS_GET_REQUEST_METADATA_DEPRECATED);
-    return {headers: this.getRequestHeaders(url, additionalClaims)};
-  }
-
-  /**
    * Get a non-expired access token, after refreshing if necessary.
    *
    * @param url The URI being authorized.

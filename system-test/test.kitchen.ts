@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it} from 'mocha';
+import {describe, it, before, after} from 'mocha';
 import * as execa from 'execa';
 import * as fs from 'fs';
 import * as mv from 'mv';
@@ -27,6 +27,7 @@ const ncpp = promisify(ncp);
 const keep = !!process.env.GALN_KEEP_TEMPDIRS;
 const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
 const stagingPath = stagingDir.name;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../package.json');
 
 describe('pack and install', () => {
@@ -34,7 +35,7 @@ describe('pack and install', () => {
    * Create a staging directory with temp fixtures used to test on a fresh
    * application.
    */
-  before('should be able to use the d.ts', async function() {
+  before('should be able to use the d.ts', async function () {
     this.timeout(40000);
     console.log(`${__filename} staging area: ${stagingPath}`);
     await execa('npm', ['pack'], {stdio: 'inherit'});

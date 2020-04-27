@@ -84,4 +84,9 @@ describe('samples', () => {
     const output = execSync(`node idtokens-iap ${url} ${targetAudience}`);
     assert.match(output, /Hello, world/);
   });
+
+  it('should sign the blobs with IAM credentials API', () => {
+    const out = execSync('node signBlob');
+    assert.ok(out.length > 0);
+  });
 });

@@ -1,12 +1,13 @@
 import * as fs from 'fs';
 import {assert} from 'chai';
+import {describe, it} from 'mocha';
 import {createCrypto} from '../src/crypto/crypto';
 import {NodeCrypto} from '../src/crypto/node/crypto';
 
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 
-describe('Node.js crypto tests', () => {
+describe('crypto', () => {
   const crypto = createCrypto();
 
   it('should create a NodeCrypto instance', () => {

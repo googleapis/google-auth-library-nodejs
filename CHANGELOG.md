@@ -4,6 +4,72 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [6.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.10.1...v6.0.0) (2020-03-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* typescript@3.7.x introduced some breaking changes in
+generated code.
+* require node 10 in engines field (#926)
+* remove deprecated methods (#906)
+
+### Features
+
+* require node 10 in engines field ([#926](https://www.github.com/googleapis/google-auth-library-nodejs/issues/926)) ([d89c59a](https://www.github.com/googleapis/google-auth-library-nodejs/commit/d89c59a316e9ca5b8c351128ee3e2d91e9729d5c))
+
+
+### Bug Fixes
+
+* do not warn for SDK creds ([#905](https://www.github.com/googleapis/google-auth-library-nodejs/issues/905)) ([9536840](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9536840f88e77f747bbbc2c1b5b4289018fc23c9))
+* use iamcredentials API to sign blobs ([#908](https://www.github.com/googleapis/google-auth-library-nodejs/issues/908)) ([7b8e4c5](https://www.github.com/googleapis/google-auth-library-nodejs/commit/7b8e4c52e31bb3d448c3ff8c05002188900eaa04))
+* **deps:** update dependency gaxios to v3 ([#917](https://www.github.com/googleapis/google-auth-library-nodejs/issues/917)) ([1f4bf61](https://www.github.com/googleapis/google-auth-library-nodejs/commit/1f4bf6128a0dcf22cfe1ec492b2192f513836cb2))
+* **deps:** update dependency gcp-metadata to v4 ([#918](https://www.github.com/googleapis/google-auth-library-nodejs/issues/918)) ([d337131](https://www.github.com/googleapis/google-auth-library-nodejs/commit/d337131d009cc1f8182f7a1f8a9034433ee3fbf7))
+* **types:** add additional fields to TokenInfo ([#907](https://www.github.com/googleapis/google-auth-library-nodejs/issues/907)) ([5b48eb8](https://www.github.com/googleapis/google-auth-library-nodejs/commit/5b48eb86c108c47d317a0eb96b47c0cae86f98cb))
+
+
+### Build System
+
+* update to latest gts and TypeScript ([#927](https://www.github.com/googleapis/google-auth-library-nodejs/issues/927)) ([e11e18c](https://www.github.com/googleapis/google-auth-library-nodejs/commit/e11e18cb33eb60a666980d061c54bb8891cdd242))
+
+
+### Miscellaneous Chores
+
+* remove deprecated methods ([#906](https://www.github.com/googleapis/google-auth-library-nodejs/issues/906)) ([f453fb7](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f453fb7d8355e6dc74800b18d6f43c4e91d4acc9))
+
+### [5.10.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.10.0...v5.10.1) (2020-02-25)
+
+
+### Bug Fixes
+
+* if GCF environment detected, increase library timeout ([#899](https://www.github.com/googleapis/google-auth-library-nodejs/issues/899)) ([2577ff2](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2577ff28bf22dfc58bd09e7365471c16f359f109))
+
+## [5.10.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.2...v5.10.0) (2020-02-20)
+
+
+### Features
+
+* support for verifying ES256 and retrieving IAP public keys ([#887](https://www.github.com/googleapis/google-auth-library-nodejs/issues/887)) ([a98e386](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a98e38678dc4a5e963356378c75c658e36dccd01))
+
+
+### Bug Fixes
+
+* **docs:** correct links in README ([f6a3194](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f6a3194ff6df97d4fd833ae69ec80c05eab46e7b)), closes [#891](https://www.github.com/googleapis/google-auth-library-nodejs/issues/891)
+
+### [5.9.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.1...v5.9.2) (2020-01-28)
+
+
+### Bug Fixes
+
+* populate credentials.refresh_token if provided ([#881](https://www.github.com/googleapis/google-auth-library-nodejs/issues/881)) ([63c4637](https://www.github.com/googleapis/google-auth-library-nodejs/commit/63c4637c57e4113a7b01bf78933a8bff0356c104))
+
+### [5.9.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.9.0...v5.9.1) (2020-01-16)
+
+
+### Bug Fixes
+
+* ensures GCE metadata sets email field for ID tokens ([#874](https://www.github.com/googleapis/google-auth-library-nodejs/issues/874)) ([e45b73d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/e45b73dbb22e1c2d8115882006a21337c7d9bd63))
+
 ## [5.9.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.8.0...v5.9.0) (2020-01-14)
 
 

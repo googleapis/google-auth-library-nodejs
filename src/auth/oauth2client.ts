@@ -20,6 +20,7 @@ import {
 } from 'gaxios';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
+import * as formatEcdsa from 'ecdsa-sig-formatter';
 
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 import * as messages from '../messages';
@@ -28,7 +29,6 @@ import {BodyResponseCallback} from '../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials, JWTInput} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
-
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
@@ -49,6 +49,10 @@ export interface CodeVerifierResults {
 
 export interface Certificates {
   [index: string]: string | JwkCertificate;
+}
+
+export interface PublicKeys {
+  [index: string]: string;
 }
 
 export interface Headers {
@@ -138,6 +142,18 @@ export interface TokenInfo {
    * tokens.
    */
   access_type?: string;
+
+  /**
+   * The user's email address. This value may not be unique to this user and
+   * is not suitable for use as a primary key. Provided only if your scope
+   * included the email scope value.
+   */
+  email?: string;
+
+  /**
+   * True if the user's e-mail address has been verified; otherwise false.
+   */
+  email_verified?: boolean;
 }
 
 interface TokenInfoRequest {
@@ -349,6 +365,19 @@ export interface FederatedSignonCertsResponse {
   res?: GaxiosResponse<void> | null;
 }
 
+export interface GetIapPublicKeysCallback {
+  (
+    err: GaxiosError | null,
+    pubkeys?: PublicKeys,
+    response?: GaxiosResponse<void> | null
+  ): void;
+}
+
+export interface IapPublicKeysResponse {
+  pubkeys: PublicKeys;
+  res?: GaxiosResponse<void> | null;
+}
+
 export interface RevokeCredentialsResult {
   success: boolean;
 }
@@ -461,6 +490,12 @@ export class OAuth2Client extends AuthClient {
    */
   private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_ =
     'https://www.googleapis.com/oauth2/v3/certs';
+
+  /**
+   * Google Sign on certificates in JWK format.
+   */
+  private static readonly GOOGLE_OAUTH2_IAP_PUBLIC_KEY_URL_ =
+    'https://www.gstatic.com/iap/verify/public_key';
 
   /**
    * Clock skew - five minutes in seconds
@@ -721,33 +756,6 @@ export class OAuth2Client extends AuthClient {
       return {token: r.credentials.access_token, res: r.res};
     } else {
       return {token: this.credentials.access_token};
-    }
-  }
-
-  /**
-   * Obtain the set of headers required to authenticate a request.
-   *
-   * @deprecated Use getRequestHeaders instead.
-   * @param url the Uri being authorized
-   * @param callback the func described above
-   */
-  getRequestMetadata(url?: string | null): Promise<RequestMetadataResponse>;
-  getRequestMetadata(
-    url: string | null,
-    callback: RequestMetadataCallback
-  ): void;
-  getRequestMetadata(
-    url: string | null,
-    callback?: RequestMetadataCallback
-  ): Promise<RequestMetadataResponse> | void {
-    messages.warn(messages.OAUTH_GET_REQUEST_METADATA_DEPRECATED);
-    if (callback) {
-      this.getRequestMetadataAsync(url).then(
-        r => callback(null, r.headers, r.res),
-        callback
-      );
-    } else {
-      return this.getRequestMetadataAsync();
     }
   }
 
@@ -1108,6 +1116,43 @@ export class OAuth2Client extends AuthClient {
     return {certs: certificates, format, res};
   }
 
+  /**
+   * Gets federated sign-on certificates to use for verifying identity tokens.
+   * Returns certs as array structure, where keys are key ids, and values
+   * are certificates in either PEM or JWK format.
+   * @param callback Callback supplying the certificates
+   */
+  getIapPublicKeys(): Promise<IapPublicKeysResponse>;
+  getIapPublicKeys(callback: GetIapPublicKeysCallback): void;
+  getIapPublicKeys(
+    callback?: GetIapPublicKeysCallback
+  ): Promise<IapPublicKeysResponse> | void {
+    if (callback) {
+      this.getIapPublicKeysAsync().then(
+        r => callback(null, r.pubkeys, r.res),
+        callback
+      );
+    } else {
+      return this.getIapPublicKeysAsync();
+    }
+  }
+
+  async getIapPublicKeysAsync(): Promise<IapPublicKeysResponse> {
+    const nowTime = new Date().getTime();
+
+    let res: GaxiosResponse;
+    const url: string = OAuth2Client.GOOGLE_OAUTH2_IAP_PUBLIC_KEY_URL_;
+
+    try {
+      res = await this.transporter.request({url});
+    } catch (e) {
+      e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      throw e;
+    }
+
+    return {pubkeys: res.data, res};
+  }
+
   verifySignedJwtWithCerts() {
     // To make the code compatible with browser SubtleCrypto we need to make
     // this method async.
@@ -1128,7 +1173,7 @@ export class OAuth2Client extends AuthClient {
    */
   async verifySignedJwtWithCertsAsync(
     jwt: string,
-    certs: Certificates,
+    certs: Certificates | PublicKeys,
     requiredAudience: string | string[],
     issuers?: string[],
     maxExpiry?: number
@@ -1144,7 +1189,7 @@ export class OAuth2Client extends AuthClient {
       throw new Error('Wrong number of segments in token: ' + jwt);
     }
     const signed = segments[0] + '.' + segments[1];
-    const signature = segments[2];
+    let signature = segments[2];
 
     let envelope;
     let payload: TokenPayload;
@@ -1171,12 +1216,17 @@ export class OAuth2Client extends AuthClient {
       throw new Error("Can't parse token payload: " + segments[1]);
     }
 
-    if (!certs.hasOwnProperty(envelope.kid)) {
+    if (!Object.prototype.hasOwnProperty.call(certs, envelope.kid)) {
       // If this is not present, then there's no reason to attempt verification
       throw new Error('No pem found for envelope: ' + JSON.stringify(envelope));
     }
 
     const cert = certs[envelope.kid];
+
+    if (envelope.alg === 'ES256') {
+      signature = formatEcdsa.joseToDer(signature, 'ES256').toString('base64');
+    }
+
     const verified = await crypto.verify(cert, signed, signature);
 
     if (!verified) {
