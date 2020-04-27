@@ -135,9 +135,9 @@ describe('transporters', () => {
 
   it('should return an error if you try to use request config options with a promise', async () => {
     const expected = new RegExp(
-      `'uri' is not a valid configuration option. Please use 'url' instead. This ` +
-        `library is using Axios for requests. Please see https://github.com/axios/axios ` +
-        `to learn more about the valid request options.`
+      "'uri' is not a valid configuration option. Please use 'url' instead. This " +
+        'library is using Axios for requests. Please see https://github.com/axios/axios ' +
+        'to learn more about the valid request options.'
     );
     const uri = 'http://example.com/api';
     assert.throws(() => transporter.request({uri} as GaxiosOptions), expected);
