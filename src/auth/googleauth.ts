@@ -27,6 +27,7 @@ import {DefaultTransporter, Transporter} from '../transporters';
 import {AuthClient} from './authclient';
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
+import {IdTokenClient, IdTokenProvider} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {
@@ -45,6 +46,7 @@ export interface CredentialCallback {
   (err: Error | null, result?: UserRefreshClient | JWT): void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface DeprecatedGetClientOptions {}
 
 export interface ADCCallback {
@@ -137,23 +139,6 @@ export class GoogleAuth extends AuthClient {
   }
 
   /**
-   * THIS METHOD HAS BEEN DEPRECATED.
-   * It will be removed in 3.0.  Please use getProjectId instead.
-   */
-  getDefaultProjectId(): Promise<string>;
-  getDefaultProjectId(callback: ProjectIdCallback): void;
-  getDefaultProjectId(
-    callback?: ProjectIdCallback
-  ): Promise<string | null> | void {
-    messages.warn(messages.DEFAULT_PROJECT_ID_DEPRECATED);
-    if (callback) {
-      this.getProjectIdAsync().then(r => callback(null, r), callback);
-    } else {
-      return this.getProjectIdAsync();
-    }
-  }
-
-  /**
    * Obtains the default project ID for the application.
    * @param callback Optional callback
    * @returns Promise that resolves with project Id (if used without callback)
@@ -180,7 +165,10 @@ export class GoogleAuth extends AuthClient {
     // - Cloud SDK: `gcloud config config-helper --format json`
     // - GCE project ID from metadata server)
     if (!this._getDefaultProjectIdPromise) {
+      // TODO: refactor the below code so that it doesn't mix and match
+      // promises and async/await.
       this._getDefaultProjectIdPromise = new Promise(
+        // eslint-disable-next-line no-async-promise-executor
         async (resolve, reject) => {
           try {
             const projectId =
@@ -378,7 +366,6 @@ export class GoogleAuth extends AuthClient {
       location,
       options
     );
-    this.warnOnProblematicCredentials(client as JWT);
     return client;
   }
 
@@ -415,17 +402,6 @@ export class GoogleAuth extends AuthClient {
     // Now open a read stream on the file, and parse it.
     const readStream = fs.createReadStream(filePath);
     return this.fromStream(readStream, options);
-  }
-
-  /**
-   * Credentials from the Cloud SDK that are associated with Cloud SDK's project
-   * are problematic because they may not have APIs enabled and have limited
-   * quota. If this is the case, warn about it.
-   */
-  protected warnOnProblematicCredentials(client: JWT) {
-    if (client.email === CLOUD_SDK_CLIENT_ID) {
-      messages.warn(messages.PROBLEMATIC_CREDENTIALS_WARNING);
-    }
   }
 
   /**
@@ -729,6 +705,21 @@ export class GoogleAuth extends AuthClient {
   }
 
   /**
+   * Creates a client which will fetch an ID token for authorization.
+   * @param targetAudience the audience for the fetched ID token.
+   * @returns IdTokenClient for making HTTP calls authenticated with ID tokens.
+   */
+  async getIdTokenClient(targetAudience: string): Promise<IdTokenClient> {
+    const client = await this.getClient();
+    if (!('fetchIdToken' in client)) {
+      throw new Error(
+        'Cannot fetch ID token in this environment, use GCE or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a service account credentials JSON file.'
+      );
+    }
+    return new IdTokenClient({targetAudience, idTokenProvider: client});
+  }
+
+  /**
    * Automatically obtain application default credentials, and return
    * an access token for making requests.
    */
@@ -805,16 +796,19 @@ export class GoogleAuth extends AuthClient {
       throw new Error('Cannot sign data without `client_email`.');
     }
 
-    const id = `projects/${projectId}/serviceAccounts/${creds.client_email}`;
+    const url = `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${creds.client_email}:signBlob`;
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
-      url: `https://iam.googleapis.com/v1/${id}:signBlob`,
-      data: {bytesToSign: crypto.encodeBase64StringUtf8(data)},
+      url,
+      data: {
+        payload: crypto.encodeBase64StringUtf8(data),
+      },
     });
-    return res.data.signature;
+    return res.data.signedBlob;
   }
 }
 
 export interface SignBlobResponse {
-  signature: string;
+  keyId: string;
+  signedBlob: string;
 }

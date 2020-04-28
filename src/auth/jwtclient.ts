@@ -17,6 +17,7 @@ import * as stream from 'stream';
 
 import * as messages from '../messages';
 import {CredentialBody, Credentials, JWTInput} from './credentials';
+import {IdTokenProvider} from './idtokenclient';
 import {JWTAccess} from './jwtaccess';
 import {
   GetTokenResponse,
@@ -35,7 +36,7 @@ export interface JWTOptions extends RefreshOptions {
   additionalClaims?: {};
 }
 
-export class JWT extends OAuth2Client {
+export class JWT extends OAuth2Client implements IdTokenProvider {
   email?: string;
   keyFile?: string;
   key?: string;
@@ -151,14 +152,26 @@ export class JWT extends OAuth2Client {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createScoped before use.
-   * @deprecated
-   * @return false if createScoped does not need to be called.
+   * Fetches an ID token.
+   * @param targetAudience the audience for the fetched ID token.
    */
-  createScopedRequired() {
-    messages.warn(messages.JWT_CREATE_SCOPED_DEPRECATED);
-    return !this.hasScopes();
+  async fetchIdToken(targetAudience: string): Promise<string> {
+    // Create a new gToken for fetching an ID token
+    const gtoken = new GoogleToken({
+      iss: this.email,
+      sub: this.subject,
+      scope: this.scopes,
+      keyFile: this.keyFile,
+      key: this.key,
+      additionalClaims: {target_audience: targetAudience},
+    });
+    await gtoken.getToken({
+      forceRefresh: true,
+    });
+    if (!gtoken.idToken) {
+      throw new Error('Unknown error: Failed to fetch ID token');
+    }
+    return gtoken.idToken;
   }
 
   /**

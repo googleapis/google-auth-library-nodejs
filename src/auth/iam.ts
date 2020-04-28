@@ -33,33 +33,6 @@ export class IAMAuth {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   * @deprecated
-   * @return always false
-   */
-  createScopedRequired() {
-    // IAM authorization does not use scopes.
-    messages.warn(messages.IAM_CREATE_SCOPED_DEPRECATED);
-    return false;
-  }
-
-  /**
-   * Pass the selector and token to the metadataFn callback.
-   * @deprecated
-   * @param unused_uri is required of the credentials interface
-   * @param metadataFn a callback invoked with object containing request
-   * metadata.
-   */
-  getRequestMetadata(
-    unusedUri: string | null,
-    metadataFn: (err: Error | null, metadata?: RequestMetadata) => void
-  ) {
-    messages.warn(messages.IAM_GET_REQUEST_METADATA_DEPRECATED);
-    metadataFn(null, this.getRequestHeaders());
-  }
-
-  /**
    * Acquire the HTTP headers required to make an authenticated request.
    */
   getRequestHeaders() {

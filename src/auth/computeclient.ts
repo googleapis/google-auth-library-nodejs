@@ -19,6 +19,7 @@ import * as gcpMetadata from 'gcp-metadata';
 import * as messages from '../messages';
 
 import {CredentialRequest, Credentials} from './credentials';
+import {IdTokenProvider} from './idtokenclient';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface ComputeOptions extends RefreshOptions {
@@ -55,20 +56,6 @@ export class Compute extends OAuth2Client {
   }
 
   /**
-   * Indicates whether the credential requires scopes to be created by calling
-   * createdScoped before use.
-   * @deprecated
-   * @return Boolean indicating if scope is required.
-   */
-  createScopedRequired() {
-    // On compute engine, scopes are specified at the compute instance's
-    // creation time, and cannot be changed. For this reason, always return
-    // false.
-    messages.warn(messages.COMPUTE_CREATE_SCOPED_DEPRECATED);
-    return false;
-  }
-
-  /**
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */
@@ -99,6 +86,28 @@ export class Compute extends OAuth2Client {
     }
     this.emit('tokens', tokens);
     return {tokens, res: null};
+  }
+
+  /**
+   * Fetches an ID token.
+   * @param targetAudience the audience for the fetched ID token.
+   */
+  async fetchIdToken(targetAudience: string): Promise<string> {
+    const idTokenPath =
+      `service-accounts/${this.serviceAccountEmail}/identity` +
+      `?format=full&audience=${targetAudience}`;
+    let idToken: string;
+    try {
+      const instanceOptions: gcpMetadata.Options = {
+        property: idTokenPath,
+      };
+      idToken = await gcpMetadata.instance(instanceOptions);
+    } catch (e) {
+      e.message = `Could not fetch ID token: ${e.message}`;
+      throw e;
+    }
+
+    return idToken;
   }
 
   protected wrapError(e: GaxiosError) {

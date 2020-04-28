@@ -16,18 +16,27 @@
   * [Compute](#compute)
   * [Credentials](#credentials)
   * [Headers](#headers)
-  * [Iap](#iap)
+  * [ID Tokens for Cloud Run](#id-tokens-for-cloud-run)
+  * [ID Tokens for Identity-Aware Proxy (IAP)](#id-tokens-for-identity-aware-proxy-iap)
   * [Jwt](#jwt)
   * [Keepalive](#keepalive)
   * [Keyfile](#keyfile)
   * [Oauth2-code Verifier](#oauth2-code-verifier)
   * [Oauth2](#oauth2)
+  * [Sign Blob](#sign-blob)
+  * [Verifying ID Tokens from Identity-Aware Proxy (IAP)](#verifying-id-tokens-from-identity-aware-proxy-iap)
   * [Verify Id Token](#verify-id-token)
 
 ## Before you begin
 
 Before running the samples, make sure you've followed the steps outlined in
 [Using the client library](https://github.com/googleapis/google-auth-library-nodejs#using-the-client-library).
+
+`cd samples`
+
+`npm install`
+
+`cd ..`
 
 ## Samples
 
@@ -42,7 +51,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node adc.js`
+`node samples/adc.js`
 
 
 -----
@@ -59,7 +68,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node compute.js`
+`node samples/compute.js`
 
 
 -----
@@ -76,7 +85,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node credentials.js`
+`node samples/credentials.js`
 
 
 -----
@@ -93,7 +102,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node headers.js`
+`node samples/headers.js`
 
 
 -----
@@ -101,16 +110,37 @@ __Usage:__
 
 
 
-### Iap
+### ID Tokens for Cloud Run
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/iap.js).
+Requests a Cloud Run URL with an ID Token.
 
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/iap.js,samples/README.md)
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-cloudrun.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-cloudrun.js,samples/README.md)
 
 __Usage:__
 
 
-`node iap.js`
+`node idtokens-cloudrun.js <url> [<target-audience>]`
+
+
+-----
+
+
+
+
+### ID Tokens for Identity-Aware Proxy (IAP)
+
+Requests an IAP-protected resource with an ID Token.
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md)
+
+__Usage:__
+
+
+`node idtokens-iap.js <url> <target-audience>`
 
 
 -----
@@ -127,7 +157,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node jwt.js`
+`node samples/jwt.js`
 
 
 -----
@@ -144,7 +174,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node keepalive.js`
+`node samples/keepalive.js`
 
 
 -----
@@ -161,7 +191,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node keyfile.js`
+`node samples/keyfile.js`
 
 
 -----
@@ -178,7 +208,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node oauth2-codeVerifier.js`
+`node samples/oauth2-codeVerifier.js`
 
 
 -----
@@ -195,7 +225,43 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node oauth2.js`
+`node samples/oauth2.js`
+
+
+-----
+
+
+
+
+### Sign Blob
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/signBlob.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/signBlob.js`
+
+
+-----
+
+
+
+
+### Verifying ID Tokens from Identity-Aware Proxy (IAP)
+
+Verifying the signed token from the header of an IAP-protected resource.
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md)
+
+__Usage:__
+
+
+`node verifyIdToken-iap.js <iap-jwt> [<project-number>] [<project-id>] [<backend-service-id>]`
 
 
 -----
@@ -212,7 +278,7 @@ View the [source code](https://github.com/googleapis/google-auth-library-nodejs/
 __Usage:__
 
 
-`node verifyIdToken.js`
+`node samples/verifyIdToken.js`
 
 
 

@@ -1,11 +1,17 @@
 {
-  "updateTime": "2019-12-03T12:07:47.595317Z",
   "sources": [
     {
-      "template": {
-        "name": "node_library",
-        "origin": "synthtool.gcp",
-        "version": "2019.10.17"
+      "git": {
+        "name": ".",
+        "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
+        "sha": "0ee02cd7548357ed866552f0bfcda189c042b976"
+      }
+    },
+    {
+      "git": {
+        "name": "synthtool",
+        "remote": "https://github.com/googleapis/synthtool.git",
+        "sha": "19465d3ec5e5acdb01521d8f3bddd311bcbee28d"
       }
     }
   ]

@@ -23,6 +23,7 @@ export {
 export {GCPEnv} from './auth/envDetect';
 export {GoogleAuthOptions, ProjectIdCallback} from './auth/googleauth';
 export {IAMAuth, RequestMetadata} from './auth/iam';
+export {IdTokenClient, IdTokenProvider} from './auth/idtokenclient';
 export {Claims, JWTAccess} from './auth/jwtaccess';
 export {JWT, JWTOptions} from './auth/jwtclient';
 export {
@@ -40,6 +41,7 @@ export {
   TokenInfo,
   VerifyIdTokenOptions,
 } from './auth/oauth2client';
+export {LoginTicket, TokenPayload} from './auth/loginticket';
 export {
   UserRefreshClient,
   UserRefreshClientOptions,

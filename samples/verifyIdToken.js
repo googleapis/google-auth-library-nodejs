@@ -36,7 +36,7 @@ async function main() {
   console.log(ticket);
 
   // You can use this info to get user information too.
-  const url = `https://people.googleapis.com/v1/people/me?personFields=names`;
+  const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
   const res = await oAuth2Client.request({url});
   console.log(res.data);
 }
