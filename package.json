@@ -44,7 +44,7 @@
     "chai": "^4.2.0",
     "codecov": "^3.0.2",
     "execa": "^4.0.0",
-    "gts": "^2.0.0-alpha.8",
+    "gts": "^2.0.0",
     "is-docker": "^2.0.0",
     "karma": "^5.0.0",
     "karma-chrome-launcher": "^3.0.0",
