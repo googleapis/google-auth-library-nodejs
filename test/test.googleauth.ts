@@ -1045,11 +1045,11 @@ describe('googleauth', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('_checkIsGCE should throw on unexpected errors', async () => {
+    it('_checkIsGCE should return false on unexpected errors', async () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nock500GCE();
-      await assert.rejects(auth._checkIsGCE());
-      assert.strictEqual(undefined, auth.isGCE);
+      assert.strictEqual(await auth._checkIsGCE(), false);
+      assert.strictEqual(auth.isGCE, false);
       scope.done();
     });
 
