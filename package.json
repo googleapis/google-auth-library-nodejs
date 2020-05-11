@@ -22,7 +22,7 @@
     "ecdsa-sig-formatter": "^1.0.11",
     "fast-text-encoding": "^1.0.0",
     "gaxios": "^3.0.0",
-    "gcp-metadata": "^4.0.0",
+    "gcp-metadata": "^4.1.0",
     "gtoken": "^5.0.0",
     "jws": "^4.0.0",
     "lru-cache": "^5.0.0"
