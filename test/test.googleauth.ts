@@ -1032,7 +1032,7 @@ describe('googleauth', () => {
       const scope = nockNotGCE();
       assert.notStrictEqual(true, auth.isGCE);
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       scope.done();
     });
 
@@ -1057,7 +1057,7 @@ describe('googleauth', () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockNotGCE();
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       scope.done();
     });
 
@@ -1076,9 +1076,9 @@ describe('googleauth', () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockNotGCE();
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       scope.done();
     });
 
