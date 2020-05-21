@@ -1032,7 +1032,7 @@ describe('googleauth', () => {
       const scope = nockNotGCE();
       assert.notStrictEqual(true, auth.isGCE);
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       scope.done();
     });
 
@@ -1045,11 +1045,11 @@ describe('googleauth', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('_checkIsGCE should throw on unexpected errors', async () => {
+    it('_checkIsGCE should return false on unexpected errors', async () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nock500GCE();
-      await assert.rejects(auth._checkIsGCE());
-      assert.strictEqual(undefined, auth.isGCE);
+      assert.strictEqual(await auth._checkIsGCE(), false);
+      assert.strictEqual(auth.isGCE, false);
       scope.done();
     });
 
@@ -1057,7 +1057,7 @@ describe('googleauth', () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockNotGCE();
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       scope.done();
     });
 
@@ -1076,9 +1076,9 @@ describe('googleauth', () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockNotGCE();
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(false as boolean, auth.isGCE);
       scope.done();
     });
 
@@ -1376,7 +1376,7 @@ describe('googleauth', () => {
       const {auth, scopes} = mockGCE();
       mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
       const email = 'google@auth.library';
-      const iamUri = `https://iamcredentials.googleapis.com`;
+      const iamUri = 'https://iamcredentials.googleapis.com';
       const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
       const signedBlob = 'erutangis';
       const data = 'abc123';

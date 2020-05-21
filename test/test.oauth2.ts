@@ -1067,7 +1067,7 @@ describe('oauth2', () => {
         'initial-access-token',
         client.credentials.access_token
       );
-      assert.strictEqual(false, scopes[0].isDone());
+      assert.strictEqual(false as boolean, scopes[0].isDone());
       scopes[1].done();
     });
 
@@ -1083,7 +1083,7 @@ describe('oauth2', () => {
           'initial-access-token',
           client.credentials.access_token
         );
-        assert.strictEqual(false, scopes[0].isDone());
+        assert.strictEqual(false as boolean, scopes[0].isDone());
         scopes[1].done();
         done();
       });
@@ -1100,7 +1100,7 @@ describe('oauth2', () => {
           'initial-access-token',
           client.credentials.access_token
         );
-        assert.strictEqual(false, scopes[0].isDone());
+        assert.strictEqual(false as boolean, scopes[0].isDone());
         scopes[1].done();
         done();
       });
