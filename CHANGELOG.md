@@ -4,6 +4,17 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.0.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.0...v6.0.1) (2020-05-21)
+
+
+### Bug Fixes
+
+* **deps:** update dependency google-auth-library to v6 ([#930](https://www.github.com/googleapis/google-auth-library-nodejs/issues/930)) ([81fdabe](https://www.github.com/googleapis/google-auth-library-nodejs/commit/81fdabe6fb7f0b8c5114c0d835680a28def822e2))
+* apache license URL ([#468](https://www.github.com/googleapis/google-auth-library-nodejs/issues/468)) ([#936](https://www.github.com/googleapis/google-auth-library-nodejs/issues/936)) ([53831cf](https://www.github.com/googleapis/google-auth-library-nodejs/commit/53831cf72f6669d13692c5665fef5062dc8f6c1a))
+* **deps:** update dependency puppeteer to v3 ([#944](https://www.github.com/googleapis/google-auth-library-nodejs/issues/944)) ([4d6fba0](https://www.github.com/googleapis/google-auth-library-nodejs/commit/4d6fba034cb0e70092656e9aff1ba419fdfca880))
+* fixing tsc error caused by @types/node update ([#965](https://www.github.com/googleapis/google-auth-library-nodejs/issues/965)) ([b94edb0](https://www.github.com/googleapis/google-auth-library-nodejs/commit/b94edb0716572593e4e9cb8a9b9bbfa567f71625))
+* gcp-metadata now warns rather than throwing ([#956](https://www.github.com/googleapis/google-auth-library-nodejs/issues/956)) ([89e16c2](https://www.github.com/googleapis/google-auth-library-nodejs/commit/89e16c2401101d086a8f9d05b8f0771b5c74157c))
+
 ## [6.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.10.1...v6.0.0) (2020-03-26)
 
 
