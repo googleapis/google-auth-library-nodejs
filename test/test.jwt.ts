@@ -393,7 +393,7 @@ describe('jwt', () => {
 
     jwt.request({url: 'http://bar'}, () => {
       assert.strictEqual('initial-access-token', jwt.credentials.access_token);
-      assert.strictEqual(false, scope.isDone());
+      assert.strictEqual(false as boolean, scope.isDone());
       done();
     });
   });
@@ -439,7 +439,7 @@ describe('jwt', () => {
 
     jwt.request({url: 'http://bar'}, () => {
       assert.strictEqual('initial-access-token', jwt.credentials.access_token);
-      assert.strictEqual(false, scope.isDone());
+      assert.strictEqual(false as boolean, scope.isDone());
       done();
     });
   });
@@ -460,7 +460,7 @@ describe('jwt', () => {
 
     jwt.request({url: 'http://bar'}, () => {
       assert.strictEqual('initial-access-token', jwt.credentials.access_token);
-      assert.strictEqual(false, scope.isDone());
+      assert.strictEqual(false as boolean, scope.isDone());
       done();
     });
   });
