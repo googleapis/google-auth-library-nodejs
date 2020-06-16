@@ -4,6 +4,15 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.0.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.1...v6.0.2) (2020-06-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v4 ([#976](https://www.github.com/googleapis/google-auth-library-nodejs/issues/976)) ([9ddfb9b](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9ddfb9befedd10d6c82cbf799c1afea9ba10d444))
+* **tsc:** audience property is not mandatory on verifyIdToken ([#972](https://www.github.com/googleapis/google-auth-library-nodejs/issues/972)) ([17a7e24](https://www.github.com/googleapis/google-auth-library-nodejs/commit/17a7e247cdb798ddf3173cf44ab762665cbce0a1))
+* **types:** add locale property to idtoken ([#974](https://www.github.com/googleapis/google-auth-library-nodejs/issues/974)) ([ebf9bed](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ebf9beda30f251da6adb9ec0bf943019ea0171c5)), closes [#973](https://www.github.com/googleapis/google-auth-library-nodejs/issues/973)
+
 ### [6.0.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.0...v6.0.1) (2020-05-21)
 
 
