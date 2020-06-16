@@ -179,4 +179,10 @@ export interface TokenPayload {
    * a hosted domain.
    */
   hd?: string;
+
+  /**
+   * The user's locale, represented by a BCP 47 language tag.
+   * Might be provided when a name claim is present.
+   */
+  locale?: string;
 }
