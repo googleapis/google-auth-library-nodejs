@@ -384,7 +384,7 @@ export interface RevokeCredentialsResult {
 
 export interface VerifyIdTokenOptions {
   idToken: string;
-  audience: string | string[];
+  audience?: string | string[];
   maxExpiry?: number;
 }
 
@@ -1174,7 +1174,7 @@ export class OAuth2Client extends AuthClient {
   async verifySignedJwtWithCertsAsync(
     jwt: string,
     certs: Certificates | PublicKeys,
-    requiredAudience: string | string[],
+    requiredAudience?: string | string[],
     issuers?: string[],
     maxExpiry?: number
   ) {
