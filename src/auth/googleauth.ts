@@ -594,7 +594,7 @@ export class GoogleAuth {
     }
 
     // Ensure the projectId is loaded from the keyFile if available.
-    if (this.keyFilename) {
+    if (this.keyFilename || this.jsonContent) {
       const creds = await this.getClient();
 
       if (creds && creds.projectId) {
