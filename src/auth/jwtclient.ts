@@ -15,7 +15,6 @@
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
 
-import * as messages from '../messages';
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {IdTokenProvider} from './idtokenclient';
 import {JWTAccess} from './jwtaccess';
@@ -224,6 +223,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    * @private
    */
   protected async refreshTokenNoCache(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
@@ -300,7 +300,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     callback?: (err?: Error | null) => void
   ): void | Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback(), callback);
+      this.fromStreamAsync(inputStream).then(() => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }

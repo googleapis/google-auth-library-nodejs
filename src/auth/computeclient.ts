@@ -16,10 +16,7 @@ import arrify = require('arrify');
 import {GaxiosError} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 
-import * as messages from '../messages';
-
 import {CredentialRequest, Credentials} from './credentials';
-import {IdTokenProvider} from './idtokenclient';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface ComputeOptions extends RefreshOptions {
@@ -60,6 +57,7 @@ export class Compute extends OAuth2Client {
    * @param refreshToken Unused parameter
    */
   protected async refreshTokenNoCache(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;

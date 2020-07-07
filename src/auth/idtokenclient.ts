@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {BodyResponseCallback} from '../transporters';
-
 import {Credentials} from './credentials';
 import {Headers, OAuth2Client, RequestMetadataResponse} from './oauth2client';
 
@@ -49,6 +47,7 @@ export class IdTokenClient extends OAuth2Client {
   }
 
   protected async getRequestMetadataAsync(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     url?: string | null
   ): Promise<RequestMetadataResponse> {
     if (

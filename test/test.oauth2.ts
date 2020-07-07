@@ -22,11 +22,9 @@ import * as nock from 'nock';
 import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
-import * as url from 'url';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
-import * as messages from '../src/messages';
 
 nock.disableNetConnect();
 
@@ -189,7 +187,7 @@ describe('oauth2', () => {
         return new LoginTicket('c', payload);
       };
       assert.throws(
-        // tslint:disable-next-line no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         () => (client as any).verifyIdToken(idToken, audience),
         /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./
       );
@@ -905,7 +903,7 @@ describe('oauth2', () => {
     it('should not emit warning on refreshAccessToken', async () => {
       let warned = false;
       sandbox.stub(process, 'emitWarning').callsFake(() => (warned = true));
-      client.refreshAccessToken((err, result) => {
+      client.refreshAccessToken(() => {
         assert.strictEqual(warned, false);
       });
     });
@@ -942,7 +940,7 @@ describe('oauth2', () => {
         raisedEvent = true;
       });
 
-      client.request({url: 'http://example.com'}, err => {
+      client.request({url: 'http://example.com'}, () => {
         scopes.forEach(s => s.done());
         assert(raisedEvent);
         assert.strictEqual(accessToken, client.credentials.access_token);
@@ -1118,7 +1116,7 @@ describe('oauth2', () => {
           access_token: 'initial-access-token',
           refresh_token: 'refresh-token-placeholder',
         };
-        client.request({url: 'http://example.com/access'}, err => {
+        client.request({url: 'http://example.com/access'}, () => {
           scope.done();
           scopes[0].done();
           assert.strictEqual('abc123', client.credentials.access_token);
@@ -1144,7 +1142,7 @@ describe('oauth2', () => {
           refresh_token: 'refresh-token-placeholder',
           expiry_date: new Date().getTime() + 500000,
         };
-        client.request({url: 'http://example.com/access'}, err => {
+        client.request({url: 'http://example.com/access'}, () => {
           scope.done();
           scopes[0].done();
           assert.strictEqual('abc123', client.credentials.access_token);

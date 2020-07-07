@@ -27,7 +27,7 @@ export function warn(warning: Warning) {
     // @types/node doesn't recognize the emitWarning syntax which
     // accepts a config object, so `as any` it is
     // https://nodejs.org/docs/latest-v8.x/api/process.html#process_process_emitwarning_warning_options
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     process.emitWarning(warning.message, warning as any);
   } else {
     console.warn(warning.message);
