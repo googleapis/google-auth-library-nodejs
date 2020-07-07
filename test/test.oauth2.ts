@@ -40,6 +40,7 @@ describe('oauth2', () => {
   const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
   const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
   const baseUrl = 'https://oauth2.googleapis.com';
+  const tokenInfoUrl = new url.URL('https://www.googleapis.com/oauth2/v1/tokeninfo');
   const certsPath = '/oauth2/v1/certs';
   const certsResPath = path.join(
     __dirname,
@@ -1324,8 +1325,10 @@ describe('oauth2', () => {
         expires_in: 1234,
       };
 
-      const scope = nock(baseUrl)
-        .get(`/tokeninfo?access_token=${accessToken}`)
+      const scope = nock(tokenInfoUrl.origin)
+        .post(tokenInfoUrl.pathname, qs.stringify({access_token: accessToken}), {
+          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+        })
         .reply(200, tokenInfo);
 
       const info = await client.getTokenInfo(accessToken);
