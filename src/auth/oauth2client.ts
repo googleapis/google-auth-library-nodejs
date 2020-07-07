@@ -23,11 +23,10 @@ import * as stream from 'stream';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
 
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
-import * as messages from '../messages';
 import {BodyResponseCallback} from '../transporters';
 
 import {AuthClient} from './authclient';
-import {CredentialRequest, Credentials, JWTInput} from './credentials';
+import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
@@ -774,6 +773,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   protected async getRequestMetadataAsync(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     url?: string | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
@@ -1138,8 +1138,6 @@ export class OAuth2Client extends AuthClient {
   }
 
   async getIapPublicKeysAsync(): Promise<IapPublicKeysResponse> {
-    const nowTime = new Date().getTime();
-
     let res: GaxiosResponse;
     const url: string = OAuth2Client.GOOGLE_OAUTH2_IAP_PUBLIC_KEY_URL_;
 

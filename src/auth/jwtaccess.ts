@@ -16,9 +16,8 @@ import * as jws from 'jws';
 import * as LRU from 'lru-cache';
 import * as stream from 'stream';
 
-import * as messages from '../messages';
 import {JWTInput} from './credentials';
-import {Headers, RequestMetadataResponse} from './oauth2client';
+import {Headers} from './oauth2client';
 
 const DEFAULT_HEADER: jws.Header = {
   alg: 'RS256',
@@ -150,7 +149,7 @@ export class JWTAccess {
     callback?: (err?: Error) => void
   ): void | Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback(), callback);
+      this.fromStreamAsync(inputStream).then(() => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }

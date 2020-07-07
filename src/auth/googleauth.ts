@@ -21,12 +21,11 @@ import * as path from 'path';
 import * as stream from 'stream';
 
 import {createCrypto} from '../crypto/crypto';
-import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
-import {IdTokenClient, IdTokenProvider} from './idtokenclient';
+import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {
@@ -551,22 +550,19 @@ export class GoogleAuth {
    */
   private async getDefaultServiceProjectId(): Promise<string | null> {
     return new Promise<string | null>(resolve => {
-      exec(
-        'gcloud config config-helper --format json',
-        (err, stdout, stderr) => {
-          if (!err && stdout) {
-            try {
-              const projectId = JSON.parse(stdout).configuration.properties.core
-                .project;
-              resolve(projectId);
-              return;
-            } catch (e) {
-              // ignore errors
-            }
+      exec('gcloud config config-helper --format json', (err, stdout) => {
+        if (!err && stdout) {
+          try {
+            const projectId = JSON.parse(stdout).configuration.properties.core
+              .project;
+            resolve(projectId);
+            return;
+          } catch (e) {
+            // ignore errors
           }
-          resolve(null);
         }
-      );
+        resolve(null);
+      });
     });
   }
 
@@ -760,7 +756,7 @@ export class GoogleAuth {
    * HTTP request using the given options.
    * @param opts Axios request options for the HTTP request.
    */
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async request<T = any>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
     const client = await this.getClient();
     return client.request<T>(opts);

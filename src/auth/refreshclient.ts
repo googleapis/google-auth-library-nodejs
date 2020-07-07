@@ -14,12 +14,7 @@
 
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {
-  Headers,
-  GetTokenResponse,
-  OAuth2Client,
-  RefreshOptions,
-} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface UserRefreshClientOptions extends RefreshOptions {
   clientId?: string;
@@ -76,6 +71,7 @@ export class UserRefreshClient extends OAuth2Client {
    * @param callback Optional callback.
    */
   protected async refreshTokenNoCache(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
     return super.refreshTokenNoCache(this._refreshToken);
@@ -135,7 +131,7 @@ export class UserRefreshClient extends OAuth2Client {
     callback?: (err?: Error) => void
   ): void | Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback(), callback);
+      this.fromStreamAsync(inputStream).then(() => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }

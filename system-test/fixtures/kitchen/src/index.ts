@@ -5,8 +5,8 @@ const jwt = new JWT();
 const auth = new GoogleAuth();
 async function getToken() {
   const token = await jwt.getToken('token');
-  const projectId = await auth.getProjectId();
-  const creds = await auth.getApplicationDefault();
+  await auth.getProjectId();
+  await auth.getApplicationDefault();
   return token;
 }
 getToken();
