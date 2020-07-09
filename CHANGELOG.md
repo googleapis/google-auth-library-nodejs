@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.0.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.3...v6.0.4) (2020-07-09)
+
+
+### Bug Fixes
+
+* typeo in nodejs .gitattribute ([#993](https://www.github.com/googleapis/google-auth-library-nodejs/issues/993)) ([ad12ceb](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ad12ceb3309b7db7394fe1fe1d5e7b2e4901141d))
+
 ### [6.0.3](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.2...v6.0.3) (2020-07-06)
 
 
