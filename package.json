@@ -33,7 +33,7 @@
     "@types/chai": "^4.1.7",
     "@types/jws": "^3.1.0",
     "@types/lru-cache": "^5.0.0",
-    "@types/mocha": "^7.0.0",
+    "@types/mocha": "^8.0.0",
     "@types/mv": "^2.1.0",
     "@types/ncp": "^2.0.1",
     "@types/node": "^10.5.1",
