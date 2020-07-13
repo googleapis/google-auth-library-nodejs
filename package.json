@@ -25,7 +25,7 @@
     "gcp-metadata": "^4.1.0",
     "gtoken": "^5.0.0",
     "jws": "^4.0.0",
-    "lru-cache": "^5.0.0"
+    "lru-cache": "^6.0.0"
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.7",
