@@ -459,7 +459,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   protected static readonly GOOGLE_TOKEN_INFO_URL =
-    'https://www.googleapis.com/oauth2/v1/tokeninfo';
+    'https://oauth2.googleapis.com/tokeninfo';
 
   /**
    * The base URL for auth endpoints.
