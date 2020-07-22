@@ -40,7 +40,7 @@ describe('refresh', () => {
     const refresh = new UserRefreshClient();
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (refresh as any).fromJSON(null);
     });
   });
@@ -49,7 +49,6 @@ describe('refresh', () => {
     const refresh = new UserRefreshClient();
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
       refresh.fromJSON({});
     });
   });
@@ -84,28 +83,28 @@ describe('refresh', () => {
   it('fromJSON should create UserRefreshClient with clientId_', () => {
     const json = createJSON();
     const refresh = new UserRefreshClient();
-    const result = refresh.fromJSON(json);
+    refresh.fromJSON(json);
     assert.strictEqual(json.client_id, refresh._clientId);
   });
 
   it('fromJSON should create UserRefreshClient with clientSecret_', () => {
     const json = createJSON();
     const refresh = new UserRefreshClient();
-    const result = refresh.fromJSON(json);
+    refresh.fromJSON(json);
     assert.strictEqual(json.client_secret, refresh._clientSecret);
   });
 
   it('fromJSON should create UserRefreshClient with _refreshToken', () => {
     const json = createJSON();
     const refresh = new UserRefreshClient();
-    const result = refresh.fromJSON(json);
+    refresh.fromJSON(json);
     assert.strictEqual(json.refresh_token, refresh._refreshToken);
   });
 
   it('fromStream should error on null stream', done => {
     const refresh = new UserRefreshClient();
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (refresh as any).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
@@ -151,5 +150,6 @@ describe('refresh', () => {
 
     const headers = await refresh.getRequestHeaders();
     assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    req.done();
   });
 });

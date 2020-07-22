@@ -119,7 +119,7 @@ describe('jwt', () => {
     });
 
     const scope = createGTokenMock({access_token: 'initial-access-token'});
-    jwt.authorize((err, creds) => {
+    jwt.authorize(() => {
       scope.done();
       assert.strictEqual('http://foo', jwt.gtoken!.scope);
       done();
@@ -574,7 +574,7 @@ describe('jwt', () => {
   it('fromJson should error on null json', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (jwt as any).fromJSON(null);
     });
   });
@@ -658,7 +658,7 @@ describe('jwt', () => {
 
   it('fromStream should error on null stream', done => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (jwt as any).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
@@ -693,7 +693,7 @@ describe('jwt', () => {
   it('fromAPIKey should error without api key', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (jwt as any).fromAPIKey(undefined);
     });
   });
@@ -702,7 +702,7 @@ describe('jwt', () => {
     const KEY = 'test';
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       jwt.fromAPIKey({key: KEY} as any);
     });
   });

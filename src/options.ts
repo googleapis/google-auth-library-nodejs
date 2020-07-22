@@ -16,7 +16,7 @@
 // previous version of the API, it referred to a `Request` options object.
 // Now it refers to an Axiox Request Config object.  This is here to help
 // ensure users don't pass invalid options when they upgrade from 0.x to 1.x.
-// tslint:disable-next-line no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function validate(options: any) {
   const vpairs = [
     {invalid: 'uri', expected: 'url'},

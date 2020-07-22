@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as messages from '../messages';
-
 export interface RequestMetadata {
   'x-goog-iam-authority-selector': string;
   'x-goog-iam-authorization-token': string;
