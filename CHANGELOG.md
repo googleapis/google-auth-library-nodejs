@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.0.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.5...v6.0.6) (2020-07-30)
+
+
+### Bug Fixes
+
+* **types:** include scope in credentials type ([#1007](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1007)) ([a2b7d23](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a2b7d23caa5bf253c7c0756396f1b58216182089))
+
 ### [6.0.5](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.4...v6.0.5) (2020-07-13)
 
 
