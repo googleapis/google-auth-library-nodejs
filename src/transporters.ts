@@ -22,6 +22,8 @@ import {
 import {validate} from './options';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
+const HttpsProxyAgent = require('https-proxy-agent/dist/agent');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../package.json');
 
 const PRODUCT_NAME = 'google-api-nodejs-client';
@@ -81,6 +83,11 @@ export class DefaultTransporter {
         opts.headers[
           'x-goog-api-client'
         ] = `gl-node/${nodeVersion} ${authVersion}`;
+      } else if (!opts.agent) {
+        const proxy = process.env.http_proxy;
+        if (proxy) {
+          opts.agent = new HttpsProxyAgent(proxy);
+        }
       }
     }
     return opts;
