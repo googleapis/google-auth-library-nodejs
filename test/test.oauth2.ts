@@ -1323,7 +1323,17 @@ describe('oauth2', () => {
       };
 
       const scope = nock(baseUrl)
-        .get(`/tokeninfo?access_token=${accessToken}`)
+        .post(
+          '/tokeninfo',
+          qs.stringify({
+            access_token: accessToken,
+          }),
+          {
+            reqheaders: {
+              'content-type': 'application/x-www-form-urlencoded',
+            },
+          }
+        )
         .reply(200, tokenInfo);
 
       const info = await client.getTokenInfo(accessToken);
