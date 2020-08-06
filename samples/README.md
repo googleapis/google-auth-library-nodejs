@@ -110,18 +110,36 @@ __Usage:__
 
 
 
-### ID Tokens for Cloud Run
+### ID Tokens for Cloud Functions
 
-Requests a Cloud Run URL with an ID Token.
+Requests a Cloud Functions URL with an ID Token.
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-cloudrun.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js).
 
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-cloudrun.js,samples/README.md)
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md)
 
 __Usage:__
 
 
-`node idtokens-cloudrun.js <url> [<target-audience>]`
+`node idtokens-serverless.js <url> [<target-audience>]`
+
+
+-----
+
+
+
+### ID Tokens for Cloud Run
+
+Requests a Cloud Run URL with an ID Token.
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md)
+
+__Usage:__
+
+
+`node idtokens-serverless.js <url> [<target-audience>]`
 
 
 -----
