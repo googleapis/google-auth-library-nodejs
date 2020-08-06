@@ -117,13 +117,10 @@ export abstract class OAuthClientAuthHandler {
       Object.assign(opts.headers, {
         Authorization: `Bearer ${bearerToken}}`,
       });
-    } else if (
-      typeof this.clientAuthentication !== 'undefined' &&
-      this.clientAuthentication.confidentialClientType === 'basic'
-    ) {
+    } else if (this.clientAuthentication?.confidentialClientType === 'basic') {
       opts.headers = opts.headers || {};
-      const clientId = this.clientAuthentication.clientId;
-      const clientSecret = this.clientAuthentication.clientSecret || '';
+      const clientId = this.clientAuthentication!.clientId;
+      const clientSecret = this.clientAuthentication!.clientSecret || '';
       const base64EncodedCreds = this.crypto.encodeBase64StringUtf8(
         `${clientId}:${clientSecret}`
       );
@@ -141,10 +138,7 @@ export abstract class OAuthClientAuthHandler {
    *   depending on the client authentication mechanism to be used.
    */
   private injectAuthenticatedRequestBody(opts: GaxiosOptions) {
-    if (
-      typeof this.clientAuthentication !== 'undefined' &&
-      this.clientAuthentication.confidentialClientType === 'request-body'
-    ) {
+    if (this.clientAuthentication?.confidentialClientType === 'request-body') {
       const method = (opts.method || 'GET').toUpperCase();
       // Inject authenticated request body.
       if (METHODS_SUPPORTING_REQUEST_BODY.indexOf(method) !== -1) {
@@ -161,27 +155,27 @@ export abstract class OAuthClientAuthHandler {
           opts.data = opts.data || '';
           const data = querystring.parse(opts.data);
           Object.assign(data, {
-            client_id: this.clientAuthentication.clientId,
-            client_secret: this.clientAuthentication.clientSecret || '',
+            client_id: this.clientAuthentication!.clientId,
+            client_secret: this.clientAuthentication!.clientSecret || '',
           });
           opts.data = querystring.stringify(data);
         } else if (contentType === 'application/json') {
           opts.data = opts.data || {};
           Object.assign(opts.data, {
-            client_id: this.clientAuthentication.clientId,
-            client_secret: this.clientAuthentication.clientSecret || '',
+            client_id: this.clientAuthentication!.clientId,
+            client_secret: this.clientAuthentication!.clientSecret || '',
           });
         } else {
           throw new Error(
             `${contentType} content-types are not supported with ` +
-              `${this.clientAuthentication.confidentialClientType} ` +
+              `${this.clientAuthentication!.confidentialClientType} ` +
               'client authentication'
           );
         }
       } else {
         throw new Error(
           `${method} HTTP method does not support ` +
-            `${this.clientAuthentication.confidentialClientType} ` +
+            `${this.clientAuthentication!.confidentialClientType} ` +
             'client authentication'
         );
       }
