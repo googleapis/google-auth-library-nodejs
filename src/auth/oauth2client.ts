@@ -1015,9 +1015,12 @@ export class OAuth2Client extends AuthClient {
    */
   async getTokenInfo(accessToken: string): Promise<TokenInfo> {
     const {data} = await this.transporter.request<TokenInfoRequest>({
-      method: 'GET',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
       url: OAuth2Client.GOOGLE_TOKEN_INFO_URL,
-      params: {access_token: accessToken},
+      data: querystring.stringify({access_token: accessToken}),
     });
     const info = Object.assign(
       {
