@@ -15,6 +15,7 @@
 import {GaxiosOptions} from 'gaxios';
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
+import * as querystring from 'querystring';
 
 import {Headers} from '../src/auth/oauth2client';
 import {
@@ -255,14 +256,16 @@ describe('OAuthClientAuthHandler', () => {
           // Handling of headers should be case insensitive.
           'content-Type': 'application/x-www-form-urlencoded',
         },
-        data: 'key1=value1&key2=value2',
+        data: querystring.stringify({key1: 'value1', key2: 'value2'}),
       };
       const actualOptions = Object.assign({}, originalOptions);
       const expectedOptions = Object.assign({}, originalOptions);
-      const credentials =
-        `client_id=${encodeURIComponent(reqBodyAuth.clientId)}` +
-        `&client_secret=${encodeURIComponent(reqBodyAuth.clientSecret || '')}`;
-      expectedOptions.data = `key1=value1&key2=value2&${credentials}`;
+      expectedOptions.data = querystring.stringify({
+        key1: 'value1',
+        key2: 'value2',
+        client_id: reqBodyAuth.clientId,
+        client_secret: reqBodyAuth.clientSecret,
+      });
 
       handler.testApplyClientAuthenticationOptions(actualOptions);
       assert.deepStrictEqual(expectedOptions, actualOptions);
@@ -276,14 +279,16 @@ describe('OAuthClientAuthHandler', () => {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        data: 'key1=value1&key2=value2',
+        data: querystring.stringify({key1: 'value1', key2: 'value2'}),
       };
       const actualOptions = Object.assign({}, originalOptions);
       const expectedOptions = Object.assign({}, originalOptions);
-      const credentials =
-        `client_id=${encodeURIComponent(reqBodyAuthNoSecret.clientId)}` +
-        '&client_secret=';
-      expectedOptions.data = `key1=value1&key2=value2&${credentials}`;
+      expectedOptions.data = querystring.stringify({
+        key1: 'value1',
+        key2: 'value2',
+        client_id: reqBodyAuth.clientId,
+        client_secret: '',
+      });
 
       handler.testApplyClientAuthenticationOptions(actualOptions);
       assert.deepStrictEqual(expectedOptions, actualOptions);
@@ -300,9 +305,10 @@ describe('OAuthClientAuthHandler', () => {
       };
       const actualOptions = Object.assign({}, originalOptions);
       const expectedOptions = Object.assign({}, originalOptions);
-      expectedOptions.data =
-        `client_id=${encodeURIComponent(reqBodyAuth.clientId)}` +
-        `&client_secret=${encodeURIComponent(reqBodyAuth.clientSecret || '')}`;
+      expectedOptions.data = querystring.stringify({
+        client_id: reqBodyAuth.clientId,
+        client_secret: reqBodyAuth.clientSecret,
+      });
 
       handler.testApplyClientAuthenticationOptions(actualOptions);
       assert.deepStrictEqual(expectedOptions, actualOptions);
