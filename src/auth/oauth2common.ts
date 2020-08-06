@@ -24,7 +24,7 @@ const METHODS_SUPPORTING_REQUEST_BODY = ['PUT', 'POST', 'PATCH'];
  * OAuth error codes.
  * https://tools.ietf.org/html/rfc6749#section-5.2
  */
-export type OAuthErrorCode =
+type OAuthErrorCode =
   | 'invalid_request'
   | 'invalid_client'
   | 'invalid_grant'
