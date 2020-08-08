@@ -16,8 +16,8 @@
   * [Compute](#compute)
   * [Credentials](#credentials)
   * [Headers](#headers)
-  * [ID Tokens for Cloud Run](#id-tokens-for-cloud-run)
   * [ID Tokens for Identity-Aware Proxy (IAP)](#id-tokens-for-identity-aware-proxy-iap)
+  * [ID Tokens for Serverless](#id-tokens-for-serverless)
   * [Jwt](#jwt)
   * [Keepalive](#keepalive)
   * [Keyfile](#keyfile)
@@ -110,43 +110,6 @@ __Usage:__
 
 
 
-### ID Tokens for Cloud Functions
-
-Requests a Cloud Functions URL with an ID Token.
-
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js).
-
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md)
-
-__Usage:__
-
-
-`node idtokens-serverless.js <url> [<target-audience>]`
-
-
------
-
-
-
-### ID Tokens for Cloud Run
-
-Requests a Cloud Run URL with an ID Token.
-
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js).
-
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md)
-
-__Usage:__
-
-
-`node idtokens-serverless.js <url> [<target-audience>]`
-
-
------
-
-
-
-
 ### ID Tokens for Identity-Aware Proxy (IAP)
 
 Requests an IAP-protected resource with an ID Token.
@@ -159,6 +122,25 @@ __Usage:__
 
 
 `node idtokens-iap.js <url> <target-audience>`
+
+
+-----
+
+
+
+
+### ID Tokens for Serverless
+
+Requests a Cloud Run or Cloud Functions URL with an ID Token.
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md)
+
+__Usage:__
+
+
+`node idtokens-serverless.js <url> [<target-audience>]`
 
 
 -----
