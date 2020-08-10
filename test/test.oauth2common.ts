@@ -34,6 +34,18 @@ class TestOAuthClientAuthHandler extends OAuthClientAuthHandler {
   }
 }
 
+/** Custom error object for testing additional fields on an Error. */
+class CustomError extends Error {
+  public readonly code?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(message: string, stack?: any, code?: string) {
+    super(message);
+    this.name = 'CustomError';
+    this.stack = stack;
+    this.code = code;
+  }
+}
+
 describe('OAuthClientAuthHandler', () => {
   const basicAuth: ClientAuthentication = {
     confidentialClientType: 'basic',
@@ -417,5 +429,31 @@ describe('getErrorFromOAuthErrorResponse', () => {
     };
     const error = getErrorFromOAuthErrorResponse(resp);
     assert.strictEqual(error.message, `Error code ${resp.error}`);
+  });
+
+  it('should preserve the original error properties', () => {
+    const originalError = new CustomError(
+      'Original error message',
+      'Error stack',
+      '123456'
+    );
+    const resp = {
+      error: 'unsupported_grant_type',
+      error_description: 'The provided grant_type is unsupported',
+      error_uri: 'https://tools.ietf.org/html/rfc6749',
+    };
+    const expectedError = new CustomError(
+      `Error code ${resp.error}: ${resp.error_description} ` +
+        `- ${resp.error_uri}`,
+      'Error stack',
+      '123456'
+    );
+
+    const actualError = getErrorFromOAuthErrorResponse(resp, originalError);
+    assert.strictEqual(actualError.message, expectedError.message);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    assert.strictEqual((actualError as any).code, expectedError.code);
+    assert.strictEqual(actualError.name, expectedError.name);
+    assert.strictEqual(actualError.stack, expectedError.stack);
   });
 });

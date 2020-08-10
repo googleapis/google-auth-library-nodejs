@@ -172,7 +172,7 @@ describe('StsCredentials', () => {
         // Confirm raw GaxiosResponse appended to response.
         assertGaxiosResponsePresent(resp);
         delete resp.res;
-        assert.deepStrictEqual(stsSuccessfulResponse, resp);
+        assert.deepStrictEqual(resp, stsSuccessfulResponse);
         scope.done();
       });
 
@@ -191,7 +191,7 @@ describe('StsCredentials', () => {
         // Confirm raw GaxiosResponse appended to response.
         assertGaxiosResponsePresent(resp);
         delete resp.res;
-        assert.deepStrictEqual(stsSuccessfulResponse, resp);
+        assert.deepStrictEqual(resp, stsSuccessfulResponse);
         scope.done();
       });
 
@@ -268,7 +268,7 @@ describe('StsCredentials', () => {
         // Confirm raw GaxiosResponse appended to response.
         assertGaxiosResponsePresent(resp);
         delete resp.res;
-        assert.deepStrictEqual(stsSuccessfulResponse, resp);
+        assert.deepStrictEqual(resp, stsSuccessfulResponse);
         scope.done();
       });
 
@@ -293,7 +293,7 @@ describe('StsCredentials', () => {
         // Confirm raw GaxiosResponse appended to response.
         assertGaxiosResponsePresent(resp);
         delete resp.res;
-        assert.deepStrictEqual(stsSuccessfulResponse, resp);
+        assert.deepStrictEqual(resp, stsSuccessfulResponse);
         scope.done();
       });
 
@@ -349,7 +349,7 @@ describe('StsCredentials', () => {
         // Confirm raw GaxiosResponse appended to response.
         assertGaxiosResponsePresent(resp);
         delete resp.res;
-        assert.deepStrictEqual(stsSuccessfulResponse, resp);
+        assert.deepStrictEqual(resp, stsSuccessfulResponse);
         scope.done();
       });
 
@@ -371,7 +371,7 @@ describe('StsCredentials', () => {
         // Confirm raw GaxiosResponse appended to response.
         assertGaxiosResponsePresent(resp);
         delete resp.res;
-        assert.deepStrictEqual(stsSuccessfulResponse, resp);
+        assert.deepStrictEqual(resp, stsSuccessfulResponse);
         scope.done();
       });
 

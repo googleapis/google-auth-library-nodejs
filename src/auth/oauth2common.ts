@@ -186,10 +186,13 @@ export abstract class OAuthClientAuthHandler {
 /**
  * Converts an OAuth error response to a native JavaScript Error.
  * @param resp The OAuth error response to convert to a native Error object.
+ * @param err The optional original error. If provided, the error properties
+ *   will be copied to the new error.
  * @return The converted native Error object.
  */
 export function getErrorFromOAuthErrorResponse(
-  resp: OAuthErrorResponse
+  resp: OAuthErrorResponse,
+  err?: Error
 ): Error {
   // Error response.
   const errorCode = resp.error;
@@ -202,5 +205,25 @@ export function getErrorFromOAuthErrorResponse(
   if (typeof errorUri !== 'undefined') {
     message += ` - ${errorUri}`;
   }
-  return new Error(message);
+  const newError = new Error(message);
+  // Copy properties from original error to newly generated error.
+  if (err) {
+    const keys = Object.keys(err);
+    if (err.stack) {
+      // Copy error.stack if available.
+      keys.push('stack');
+    }
+    keys.forEach(key => {
+      // Do not overwrite the message field.
+      if (key !== 'message') {
+        Object.defineProperty(newError, key, {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          value: (err! as {[index: string]: any})[key],
+          writable: false,
+          enumerable: true,
+        });
+      }
+    });
+  }
+  return newError;
 }

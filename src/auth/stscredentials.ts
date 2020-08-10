@@ -35,15 +35,59 @@ import {
  * https://tools.ietf.org/html/rfc8693#section-2.1
  */
 export interface StsCredentialsOptions {
+  /**
+   * REQUIRED. The value "urn:ietf:params:oauth:grant-type:token-exchange"
+   * indicates that a token exchange is being performed.
+   */
   grantType: string;
+  /**
+   * OPTIONAL. A URI that indicates the target service or resource where the
+   * client intends to use the requested security token.
+   */
   resource?: string;
+  /**
+   * OPTIONAL. The logical name of the target service where the client
+   * intends to use the requested security token.  This serves a purpose
+   * similar to the "resource" parameter but with the client providing a
+   * logical name for the target service.
+   */
   audience?: string;
+  /**
+   * OPTIONAL. A list of space-delimited, case-sensitive strings, as defined
+   * in Section 3.3 of [RFC6749], that allow the client to specify the desired
+   * scope of the requested security token in the context of the service or
+   * resource where the token will be used.
+   */
   scope?: string[];
+  /**
+   * OPTIONAL. An identifier, as described in Section 3 of [RFC8693], eg.
+   * "urn:ietf:params:oauth:token-type:access_token" for the type of the
+   * requested security token.
+   */
   requestedTokenType?: string;
+  /**
+   * REQUIRED. A security token that represents the identity of the party on
+   * behalf of whom the request is being made.
+   */
   subjectToken: string;
+  /**
+   * REQUIRED. An identifier, as described in Section 3 of [RFC8693], that
+   * indicates the type of the security token in the "subject_token" parameter.
+   */
   subjectTokenType: string;
   actingParty?: {
+    /**
+     * OPTIONAL. A security token that represents the identity of the acting
+     * party.  Typically, this will be the party that is authorized to use the
+     * requested security token and act on behalf of the subject.
+     */
     actorToken: string;
+    /**
+     * An identifier, as described in Section 3, that indicates the type of the
+     * security token in the "actor_token" parameter. This is REQUIRED when the
+     * "actor_token" parameter is present in the request but MUST NOT be
+     * included otherwise.
+     */
     actorTokenType: string;
   };
 }
@@ -64,7 +108,8 @@ interface StsRequestOptions {
   actor_token_type?: string;
   client_id?: string;
   client_secret?: string;
-  [key: string]: string | undefined;
+  // GCP-specific non-standard field.
+  options?: string;
 }
 
 /**
@@ -136,8 +181,10 @@ export class StsCredentials extends OAuthClientAuthHandler {
     };
     // Remove undefined fields.
     Object.keys(values).forEach(key => {
-      if (typeof values[key] === 'undefined') {
-        delete values[key];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof (values as {[index: string]: any})[key] === 'undefined') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (values as {[index: string]: any})[key];
       }
     });
 
@@ -169,7 +216,9 @@ export class StsCredentials extends OAuthClientAuthHandler {
       // Translate error to OAuthError.
       if (error.response) {
         throw getErrorFromOAuthErrorResponse(
-          error.response.data as OAuthErrorResponse
+          error.response.data as OAuthErrorResponse,
+          // Preserve other fields from the original error.
+          error
         );
       }
       // Request could fail before the server responds.
