@@ -354,8 +354,8 @@ const {GoogleAuth} = require('google-auth-library');
 async function main() {
   const url = 'https://cloud-run-1234-uc.a.run.app';
   const auth = new GoogleAuth();
-  const client = auth.getIdTokenClient(url);
-  const res = await client.request({url});
+  const client = await auth.getIdTokenClient(url);
+  const res = await client.request({ url, method:'GET' });
   console.log(res.data);
 }
 
@@ -375,7 +375,7 @@ async function main()
   const targetAudience = 'iap-client-id';
   const url = 'https://iap-url.com';
   const auth = new GoogleAuth();
-  const client = auth.getIdTokenClient(targetAudience);
+  const client = await auth.getIdTokenClient(targetAudience);
   const res = await client.request({url});
   console.log(res.data);
 }
@@ -384,6 +384,23 @@ main().catch(console.error);
 ```
 
 A complete example can be found in [`samples/idtokens-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js).
+
+To explicitly acquire the ID token required to make HTTP requests to protected Cloud Run services, you can use the `getRequestMetadataAsync` method.
+
+``` js
+// Make a request to a protected Cloud Run service.
+const {GoogleAuth} = require('google-auth-library');
+
+async function main() {
+  const url = 'https://cloud-run-1234-uc.a.run.app';
+  const auth = new GoogleAuth();
+  const client = await auth.getIdTokenClient(url)
+  const res = await client.getRequestMetadataAsync();
+  console.log(res.headers);
+}
+
+main().catch(console.error);
+```
 
 ### Verifying ID Tokens
 
