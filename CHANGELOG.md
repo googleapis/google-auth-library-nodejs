@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.0.7](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.6...v6.0.7) (2020-08-11)
+
+
+### Bug Fixes
+
+* migrate token info API to not pass token in query string ([#991](https://www.github.com/googleapis/google-auth-library-nodejs/issues/991)) ([a7e5701](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a7e5701a8394d79fe93d28794467747a23cf9ff4))
+
 ### [6.0.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.5...v6.0.6) (2020-07-30)
 
 
