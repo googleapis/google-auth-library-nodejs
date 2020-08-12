@@ -18,6 +18,7 @@ import * as qs from 'querystring';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {createCrypto} from '../src/crypto/crypto';
+import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   EXPIRATION_TIME_OFFSET,
@@ -292,8 +293,12 @@ describe('ExternalAccountClient', () => {
 
     it('should force refresh when cached credential is expired', async () => {
       clock = sinon.useFakeTimers(0);
+      const emittedEvents: Credentials[] = [];
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
+      // Use different expiration time for second token to confirm tokens event
+      // calculates the credentials expiry_date correctly.
+      stsSuccessfulResponse2.expires_in = 1600;
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -324,8 +329,21 @@ describe('ExternalAccountClient', () => {
       ]);
 
       const client = new TestExternalAccountClient(externalAccountOptions);
+      // Listen to tokens events. On every event, push to list of emittedEvents.
+      client.on('tokens', tokens => {
+        emittedEvents.push(tokens);
+      });
       const actualResponse = await client.getAccessToken();
 
+      // tokens event should be triggered once with expected event.
+      assert.strictEqual(emittedEvents.length, 1);
+      assert.deepStrictEqual(emittedEvents[0], {
+        refresh_token: null,
+        expiry_date: new Date().getTime() + ONE_HOUR_IN_SECS * 1000,
+        access_token: stsSuccessfulResponse.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
       // Confirm raw GaxiosResponse appended to response.
       assertGaxiosResponsePresent(actualResponse);
       delete actualResponse.res;
@@ -337,6 +355,9 @@ describe('ExternalAccountClient', () => {
       clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
       const actualCachedResponse = await client.getAccessToken();
 
+      // No new event should be triggered since the cached access token is
+      // returned.
+      assert.strictEqual(emittedEvents.length, 1);
       delete actualCachedResponse.res;
       assert.deepStrictEqual(actualCachedResponse, {
         token: stsSuccessfulResponse.access_token,
@@ -346,6 +367,17 @@ describe('ExternalAccountClient', () => {
       clock.tick(1);
       const actualNewCredResponse = await client.getAccessToken();
 
+      // tokens event should be triggered again with the expected event.
+      assert.strictEqual(emittedEvents.length, 2);
+      assert.deepStrictEqual(emittedEvents[1], {
+        refresh_token: null,
+        // Second expiration time should be used.
+        expiry_date:
+          new Date().getTime() + stsSuccessfulResponse2.expires_in * 1000,
+        access_token: stsSuccessfulResponse2.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
       // Confirm raw GaxiosResponse appended to response.
       assertGaxiosResponsePresent(actualNewCredResponse);
       delete actualNewCredResponse.res;
