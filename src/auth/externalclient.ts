@@ -98,6 +98,9 @@ export abstract class ExternalAccountClient extends AuthClient {
    * object loaded from an external account credentials file.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
+   * @param additionalOptions Optional additional behavior customization
+   *   options. These currently customize expiration threshold time and
+   *   whether to retry on 401/403 API request errors.
    */
   constructor(
     options: ExternalAccountClientOptions,
@@ -110,11 +113,11 @@ export abstract class ExternalAccountClient extends AuthClient {
           `received "${options.type}"`
       );
     }
-    const clientAuth = options!.client_id
+    const clientAuth = options.client_id
       ? ({
           confidentialClientType: 'basic',
-          clientId: options!.client_id,
-          clientSecret: options!.client_secret,
+          clientId: options.client_id,
+          clientSecret: options.client_secret,
         } as ClientAuthentication)
       : undefined;
     this.stsCredential = new sts.StsCredentials(options.token_url, clientAuth);
