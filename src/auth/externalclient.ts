@@ -23,7 +23,7 @@ import * as stream from 'stream';
 import {Credentials} from './credentials';
 import {AuthClient} from './authclient';
 import {BodyResponseCallback} from '../transporters';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
+import {GetAccessTokenResponse, Headers, RefreshOptions} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 
@@ -87,6 +87,10 @@ export abstract class ExternalAccountClient extends AuthClient {
    */
   public scopes?: string | string[];
   private cachedAccessToken: CredentialsWithResponse | null;
+  private eagerRefreshThresholdMillis: number;
+  private forceRefreshOnFailure: boolean;
+  private readonly audience: string;
+  private readonly subjectTokenType: string;
   private readonly stsCredential: sts.StsCredentials;
 
   /**
@@ -95,7 +99,10 @@ export abstract class ExternalAccountClient extends AuthClient {
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
    */
-  constructor(private readonly options: ExternalAccountClientOptions) {
+  constructor(
+    options: ExternalAccountClientOptions,
+    additionalOptions?: RefreshOptions
+  ) {
     super();
     if (options.type !== EXTERNAL_ACCOUNT_TYPE) {
       throw new Error(
@@ -103,21 +110,30 @@ export abstract class ExternalAccountClient extends AuthClient {
           `received "${options.type}"`
       );
     }
-    const clientAuth = this.options!.client_id
+    const clientAuth = options!.client_id
       ? ({
           confidentialClientType: 'basic',
-          clientId: this.options!.client_id,
-          clientSecret: this.options!.client_secret,
+          clientId: options!.client_id,
+          clientSecret: options!.client_secret,
         } as ClientAuthentication)
       : undefined;
-    this.stsCredential = new sts.StsCredentials(
-      this.options.token_url,
-      clientAuth
-    );
+    this.stsCredential = new sts.StsCredentials(options.token_url, clientAuth);
     // Default OAuth scope. This could be overridden via public property.
     this.scopes = [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
+    this.audience = options.audience;
+    this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
+    // As threshold could be zero,
+    // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
+    // zero value.
+    if (typeof additionalOptions?.eagerRefreshThresholdMillis !== 'number') {
+      this.eagerRefreshThresholdMillis = EXPIRATION_TIME_OFFSET;
+    } else {
+      this.eagerRefreshThresholdMillis = additionalOptions!
+        .eagerRefreshThresholdMillis as number;
+    }
+    this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
   }
 
   /**
@@ -229,9 +245,15 @@ export abstract class ExternalAccountClient extends AuthClient {
         // - We haven't already retried.  It only makes sense to retry once.
         // - The response was a 401 or a 403
         // - The request didn't send a readableStream
+        // - forceRefreshOnFailure is true
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
-        if (!retry && isAuthErr && !isReadableStream) {
+        if (
+          !retry &&
+          isAuthErr &&
+          !isReadableStream &&
+          this.forceRefreshOnFailure
+        ) {
           await this.refreshAccessTokenAsync();
           return this.requestAsync<T>(opts, true);
         }
@@ -254,10 +276,10 @@ export abstract class ExternalAccountClient extends AuthClient {
     // Construct the STS credentials options.
     const stsCredentialsOptions: sts.StsCredentialsOptions = {
       grantType: STS_GRANT_TYPE,
-      audience: this.options!.audience,
+      audience: this.audience,
       requestedTokenType: STS_REQUEST_TOKEN_TYPE,
       subjectToken,
-      subjectTokenType: this.options!.subject_token_type,
+      subjectTokenType: this.subjectTokenType,
       scope: this.getScopesArray(),
     };
 
@@ -298,7 +320,7 @@ export abstract class ExternalAccountClient extends AuthClient {
   private isExpired(accessToken: Credentials): boolean {
     const now = new Date().getTime();
     return accessToken.expiry_date
-      ? now >= accessToken.expiry_date - EXPIRATION_TIME_OFFSET
+      ? now >= accessToken.expiry_date - this.eagerRefreshThresholdMillis
       : false;
   }
 

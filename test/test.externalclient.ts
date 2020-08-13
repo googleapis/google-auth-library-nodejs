@@ -388,6 +388,78 @@ describe('ExternalAccountClient', () => {
       scope.done();
     });
 
+    it('should respect eagerRefreshThresholdMillis when provided', async () => {
+      clock = sinon.useFakeTimers(0);
+      const customThresh = 10 * 1000;
+      const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+      stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponse2,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_1',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      const client = new TestExternalAccountClient(externalAccountOptions, {
+        // Override 5min threshold with 10 second threshold.
+        eagerRefreshThresholdMillis: customThresh,
+      });
+      const actualResponse = await client.getAccessToken();
+
+      // Confirm raw GaxiosResponse appended to response.
+      assertGaxiosResponsePresent(actualResponse);
+      delete actualResponse.res;
+      assert.deepStrictEqual(actualResponse, {
+        token: stsSuccessfulResponse.access_token,
+      });
+
+      // Try again. Cached credential should be returned.
+      clock.tick(ONE_HOUR_IN_SECS * 1000 - customThresh - 1);
+      const actualCachedResponse = await client.getAccessToken();
+
+      delete actualCachedResponse.res;
+      assert.deepStrictEqual(actualCachedResponse, {
+        token: stsSuccessfulResponse.access_token,
+      });
+
+      // Simulate credential is expired.
+      // As current time is equal to expirationTime - customThresh,
+      // refresh should be triggered.
+      clock.tick(1);
+      const actualNewCredResponse = await client.getAccessToken();
+
+      // Confirm raw GaxiosResponse appended to response.
+      assertGaxiosResponsePresent(actualNewCredResponse);
+      delete actualNewCredResponse.res;
+      assert.deepStrictEqual(actualNewCredResponse, {
+        token: stsSuccessfulResponse2.access_token,
+      });
+
+      scope.done();
+    });
+
     it('should apply basic auth when client_id/secret are provided', async () => {
       const scope = mockStsTokenExchange([
         {
@@ -780,7 +852,7 @@ describe('ExternalAccountClient', () => {
       );
     });
 
-    it('should retry once on 401 or 403 status code', async () => {
+    it('should retry on 401 on forceRefreshOnFailure=true', async () => {
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
       const authHeaders = {
@@ -841,7 +913,9 @@ describe('ExternalAccountClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions);
+      const client = new TestExternalAccountClient(externalAccountOptions, {
+        forceRefreshOnFailure: true,
+      });
       const actualResponse = await client.request<SampleResponse>({
         url: 'https://example.com/api',
         method: 'POST',
@@ -851,6 +925,58 @@ describe('ExternalAccountClient', () => {
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
+      scopes.forEach(scope => scope.done());
+    });
+
+    it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(401),
+      ];
+
+      const client = new TestExternalAccountClient(externalAccountOptions);
+      await assert.rejects(
+        client.request<SampleResponse>({
+          url: 'https://example.com/api',
+          method: 'POST',
+          headers: exampleHeaders,
+          data: exampleRequest,
+          responseType: 'json',
+        }),
+        {
+          code: '401',
+        }
+      );
+
       scopes.forEach(scope => scope.done());
     });
 
@@ -911,7 +1037,9 @@ describe('ExternalAccountClient', () => {
           .reply(403),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions);
+      const client = new TestExternalAccountClient(externalAccountOptions, {
+        forceRefreshOnFailure: true,
+      });
       await assert.rejects(
         client.request<SampleResponse>({
           url: 'https://example.com/api',
