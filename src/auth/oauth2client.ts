@@ -545,7 +545,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * Convenience method to automatically generate a code_verifier, and it's
+   * Convenience method to automatically generate a code_verifier, and its
    * resulting SHA256. If used, this must be paired with a S256
    * code_challenge_method.
    *
