@@ -56,10 +56,6 @@ export interface ExternalAccountClientOptions {
   token_info_url?: string;
   client_id?: string;
   client_secret?: string;
-  credential_source: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [key: string]: any;
-  };
   quota_project_id?: string;
 }
 
