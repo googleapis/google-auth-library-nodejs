@@ -23,6 +23,7 @@ import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   EXPIRATION_TIME_OFFSET,
   ExternalAccountClient,
+  IamGenerateAccessTokenResponse,
 } from '../src/auth/externalclient';
 import {
   OAuthErrorResponse,
@@ -33,12 +34,27 @@ import {GaxiosError} from 'gaxios';
 
 nock.disableNetConnect();
 
+interface IamGenerateAccessTokenError {
+  error: {
+    code: number;
+    message: string;
+    status: string;
+  };
+}
+
 interface NockMockStsToken {
   statusCode: number;
   response: StsSuccessfulResponse | OAuthErrorResponse;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   request: {[key: string]: any};
   additionalHeaders?: {[key: string]: string};
+}
+
+interface NockMockGenerateAccessToken {
+  statusCode: number;
+  token: string;
+  response: IamGenerateAccessTokenResponse | IamGenerateAccessTokenError;
+  scopes: string[];
 }
 
 interface SampleResponse {
@@ -56,12 +72,66 @@ class TestExternalAccountClient extends ExternalAccountClient {
   }
 }
 
+const ONE_HOUR_IN_SECS = 3600;
+const baseUrl = 'https://sts.googleapis.com';
+const path = '/v1/token';
+const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
+const saBaseUrl = 'https://iamcredentials.googleapis.com';
+const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
+
+function mockStsTokenExchange(nockParams: NockMockStsToken[]): nock.Scope {
+  const scope = nock(baseUrl);
+  nockParams.forEach(nockMockStsToken => {
+    const headers = Object.assign(
+      {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      nockMockStsToken.additionalHeaders || {}
+    );
+    scope
+      .post(path, qs.stringify(nockMockStsToken.request), {
+        reqheaders: headers,
+      })
+      .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
+  });
+  return scope;
+}
+
+function mockGenerateAccessToken(
+  nockParams: NockMockGenerateAccessToken[]
+): nock.Scope {
+  const scope = nock(saBaseUrl);
+  nockParams.forEach(nockMockGenerateAccessToken => {
+    const token = nockMockGenerateAccessToken.token;
+    scope
+      .post(
+        saPath,
+        {
+          scope: nockMockGenerateAccessToken.scopes,
+        },
+        {
+          reqheaders: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+      .reply(
+        nockMockGenerateAccessToken.statusCode,
+        nockMockGenerateAccessToken.response
+      );
+  });
+  return scope;
+}
+
+function assertGaxiosResponsePresent(resp: GetAccessTokenResponse) {
+  const gaxiosResponse = resp.res || {};
+  assert('data' in gaxiosResponse && 'status' in gaxiosResponse);
+}
+
 describe('ExternalAccountClient', () => {
   let clock: sinon.SinonFakeTimers;
-  const ONE_HOUR_IN_SECS = 3600;
   const crypto = createCrypto();
-  const baseUrl = 'https://sts.googleapis.com';
-  const path = '/v1/token';
   const projectNumber = '123456';
   const poolId = 'POOL_ID';
   const providerId = 'PROVIDER_ID';
@@ -99,29 +169,18 @@ describe('ExternalAccountClient', () => {
     expires_in: ONE_HOUR_IN_SECS,
     scope: 'scope1 scope2',
   };
-
-  function assertGaxiosResponsePresent(resp: GetAccessTokenResponse) {
-    const gaxiosResponse = resp.res || {};
-    assert('data' in gaxiosResponse && 'status' in gaxiosResponse);
-  }
-
-  function mockStsTokenExchange(nockParams: NockMockStsToken[]): nock.Scope {
-    const scope = nock(baseUrl);
-    nockParams.forEach(nockMockStsToken => {
-      const headers = Object.assign(
-        {
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        nockMockStsToken.additionalHeaders || {}
-      );
-      scope
-        .post(path, qs.stringify(nockMockStsToken.request), {
-          reqheaders: headers,
-        })
-        .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
-    });
-    return scope;
-  }
+  const externalAccountOptionsWithSA = Object.assign(
+    {
+      service_account_impersonation_url: `${saBaseUrl}${saPath}`,
+    },
+    externalAccountOptions
+  );
+  const externalAccountOptionsWithCredsAndSA = Object.assign(
+    {
+      service_account_impersonation_url: `${saBaseUrl}${saPath}`,
+    },
+    externalAccountOptionsWithCreds
+  );
 
   afterEach(() => {
     nock.cleanAll();
@@ -151,349 +210,804 @@ describe('ExternalAccountClient', () => {
   });
 
   describe('getAccessToken()', () => {
-    it('should resolve with the expected GetAccessTokenResponse', async () => {
-      const scope = mockStsTokenExchange([
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_0',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+    describe('without service account impersonation', () => {
+      it('should resolve with the expected response', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
           },
-        },
-      ]);
+        ]);
 
-      const client = new TestExternalAccountClient(externalAccountOptions);
-      const actualResponse = await client.getAccessToken();
+        const client = new TestExternalAccountClient(externalAccountOptions);
+        const actualResponse = await client.getAccessToken();
 
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualResponse);
-      delete actualResponse.res;
-      assert.deepStrictEqual(actualResponse, {
-        token: stsSuccessfulResponse.access_token,
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
       });
-      scope.done();
+
+      it('should handle underlying token exchange errors', async () => {
+        const errorResponse: OAuthErrorResponse = {
+          error: 'invalid_request',
+          error_description: 'Invalid subject token',
+          error_uri: 'https://tools.ietf.org/html/rfc6749#section-5.2',
+        };
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 400,
+            response: errorResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_1',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(externalAccountOptions);
+        await assert.rejects(
+          client.getAccessToken(),
+          getErrorFromOAuthErrorResponse(errorResponse)
+        );
+        // Next try should succeed.
+        const actualResponse = await client.getAccessToken();
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should use explicit scopes array when provided', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'scope1 scope2',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(externalAccountOptions);
+        client.scopes = ['scope1', 'scope2'];
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should use explicit scopes string when provided', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'scope1',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(externalAccountOptions);
+        client.scopes = 'scope1';
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should force refresh when cached credential is expired', async () => {
+        clock = sinon.useFakeTimers(0);
+        const emittedEvents: Credentials[] = [];
+        const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+        stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
+        // Use different expiration time for second token to confirm tokens
+        // event calculates the credentials expiry_date correctly.
+        stsSuccessfulResponse2.expires_in = 1600;
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse2,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_1',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(externalAccountOptions);
+        // Listen to tokens events. On every event, push to list of
+        // emittedEvents.
+        client.on('tokens', tokens => {
+          emittedEvents.push(tokens);
+        });
+        const actualResponse = await client.getAccessToken();
+
+        // tokens event should be triggered once with expected event.
+        assert.strictEqual(emittedEvents.length, 1);
+        assert.deepStrictEqual(emittedEvents[0], {
+          refresh_token: null,
+          expiry_date: new Date().getTime() + ONE_HOUR_IN_SECS * 1000,
+          access_token: stsSuccessfulResponse.access_token,
+          token_type: 'Bearer',
+          id_token: null,
+        });
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+
+        // Try again. Cached credential should be returned.
+        clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
+        const actualCachedResponse = await client.getAccessToken();
+
+        // No new event should be triggered since the cached access token is
+        // returned.
+        assert.strictEqual(emittedEvents.length, 1);
+        delete actualCachedResponse.res;
+        assert.deepStrictEqual(actualCachedResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+
+        // Simulate credential is expired.
+        clock.tick(1);
+        const actualNewCredResponse = await client.getAccessToken();
+
+        // tokens event should be triggered again with the expected event.
+        assert.strictEqual(emittedEvents.length, 2);
+        assert.deepStrictEqual(emittedEvents[1], {
+          refresh_token: null,
+          // Second expiration time should be used.
+          expiry_date:
+            new Date().getTime() + stsSuccessfulResponse2.expires_in * 1000,
+          access_token: stsSuccessfulResponse2.access_token,
+          token_type: 'Bearer',
+          id_token: null,
+        });
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualNewCredResponse);
+        delete actualNewCredResponse.res;
+        assert.deepStrictEqual(actualNewCredResponse, {
+          token: stsSuccessfulResponse2.access_token,
+        });
+
+        scope.done();
+      });
+
+      it('should respect provided eagerRefreshThresholdMillis', async () => {
+        clock = sinon.useFakeTimers(0);
+        const customThresh = 10 * 1000;
+        const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+        stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse2,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_1',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(externalAccountOptions, {
+          // Override 5min threshold with 10 second threshold.
+          eagerRefreshThresholdMillis: customThresh,
+        });
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+
+        // Try again. Cached credential should be returned.
+        clock.tick(ONE_HOUR_IN_SECS * 1000 - customThresh - 1);
+        const actualCachedResponse = await client.getAccessToken();
+
+        delete actualCachedResponse.res;
+        assert.deepStrictEqual(actualCachedResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+
+        // Simulate credential is expired.
+        // As current time is equal to expirationTime - customThresh,
+        // refresh should be triggered.
+        clock.tick(1);
+        const actualNewCredResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualNewCredResponse);
+        delete actualNewCredResponse.res;
+        assert.deepStrictEqual(actualNewCredResponse, {
+          token: stsSuccessfulResponse2.access_token,
+        });
+
+        scope.done();
+      });
+
+      it('should apply basic auth when credentials are provided', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+            additionalHeaders: {
+              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                basicAuthCreds
+              )}`,
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithCreds
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
     });
 
-    it('should handle underlying token exchange errors', async () => {
-      const errorResponse: OAuthErrorResponse = {
-        error: 'invalid_request',
-        error_description: 'Invalid subject token',
-        error_uri: 'https://tools.ietf.org/html/rfc6749#section-5.2',
+    describe('with service account impersonation', () => {
+      const now = new Date().getTime();
+      const saSuccessResponse = {
+        accessToken: 'SA_ACCESS_TOKEN',
+        expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
       };
-      const scope = mockStsTokenExchange([
-        {
-          statusCode: 400,
-          response: errorResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_0',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
+      const saErrorResponse = {
+        error: {
+          code: 400,
+          message: 'Request contains an invalid argument',
+          status: 'INVALID_ARGUMENT',
         },
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_1',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-        },
-      ]);
+      };
 
-      const client = new TestExternalAccountClient(externalAccountOptions);
-      await assert.rejects(
-        client.getAccessToken(),
-        getErrorFromOAuthErrorResponse(errorResponse)
-      );
-      // Next try should succeed.
-      const actualResponse = await client.getAccessToken();
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualResponse);
-      delete actualResponse.res;
-      assert.deepStrictEqual(actualResponse, {
-        token: stsSuccessfulResponse.access_token,
-      });
-      scope.done();
-    });
+      it('should resolve with the expected response', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
 
-    it('should use explicit scopes array when provided', async () => {
-      const scope = mockStsTokenExchange([
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'scope1 scope2',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_0',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-        },
-      ]);
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSA
+        );
+        const actualResponse = await client.getAccessToken();
 
-      const client = new TestExternalAccountClient(externalAccountOptions);
-      client.scopes = ['scope1', 'scope2'];
-      const actualResponse = await client.getAccessToken();
-
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualResponse);
-      delete actualResponse.res;
-      assert.deepStrictEqual(actualResponse, {
-        token: stsSuccessfulResponse.access_token,
-      });
-      scope.done();
-    });
-
-    it('should use explicit scopes string when provided', async () => {
-      const scope = mockStsTokenExchange([
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'scope1',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_0',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-        },
-      ]);
-
-      const client = new TestExternalAccountClient(externalAccountOptions);
-      client.scopes = 'scope1';
-      const actualResponse = await client.getAccessToken();
-
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualResponse);
-      delete actualResponse.res;
-      assert.deepStrictEqual(actualResponse, {
-        token: stsSuccessfulResponse.access_token,
-      });
-      scope.done();
-    });
-
-    it('should force refresh when cached credential is expired', async () => {
-      clock = sinon.useFakeTimers(0);
-      const emittedEvents: Credentials[] = [];
-      const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
-      stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
-      // Use different expiration time for second token to confirm tokens event
-      // calculates the credentials expiry_date correctly.
-      stsSuccessfulResponse2.expires_in = 1600;
-      const scope = mockStsTokenExchange([
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_0',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-        },
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse2,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_1',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-        },
-      ]);
-
-      const client = new TestExternalAccountClient(externalAccountOptions);
-      // Listen to tokens events. On every event, push to list of emittedEvents.
-      client.on('tokens', tokens => {
-        emittedEvents.push(tokens);
-      });
-      const actualResponse = await client.getAccessToken();
-
-      // tokens event should be triggered once with expected event.
-      assert.strictEqual(emittedEvents.length, 1);
-      assert.deepStrictEqual(emittedEvents[0], {
-        refresh_token: null,
-        expiry_date: new Date().getTime() + ONE_HOUR_IN_SECS * 1000,
-        access_token: stsSuccessfulResponse.access_token,
-        token_type: 'Bearer',
-        id_token: null,
-      });
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualResponse);
-      delete actualResponse.res;
-      assert.deepStrictEqual(actualResponse, {
-        token: stsSuccessfulResponse.access_token,
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
       });
 
-      // Try again. Cached credential should be returned.
-      clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
-      const actualCachedResponse = await client.getAccessToken();
+      it('should handle underlying GenerateAccessToken errors', async () => {
+        const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+        stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse2,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_1',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: saErrorResponse.error.code,
+              response: saErrorResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse2.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
 
-      // No new event should be triggered since the cached access token is
-      // returned.
-      assert.strictEqual(emittedEvents.length, 1);
-      delete actualCachedResponse.res;
-      assert.deepStrictEqual(actualCachedResponse, {
-        token: stsSuccessfulResponse.access_token,
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSA
+        );
+        await assert.rejects(
+          client.getAccessToken(),
+          new RegExp(saErrorResponse.error.message)
+        );
+        // Next try should succeed.
+        const actualResponse = await client.getAccessToken();
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
       });
 
-      // Simulate credential is expired.
-      clock.tick(1);
-      const actualNewCredResponse = await client.getAccessToken();
+      it('should use explicit scopes array when provided', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['scope1', 'scope2'],
+            },
+          ])
+        );
 
-      // tokens event should be triggered again with the expected event.
-      assert.strictEqual(emittedEvents.length, 2);
-      assert.deepStrictEqual(emittedEvents[1], {
-        refresh_token: null,
-        // Second expiration time should be used.
-        expiry_date:
-          new Date().getTime() + stsSuccessfulResponse2.expires_in * 1000,
-        access_token: stsSuccessfulResponse2.access_token,
-        token_type: 'Bearer',
-        id_token: null,
-      });
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualNewCredResponse);
-      delete actualNewCredResponse.res;
-      assert.deepStrictEqual(actualNewCredResponse, {
-        token: stsSuccessfulResponse2.access_token,
-      });
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSA
+        );
+        // These scopes should be used for the iamcredentials call.
+        // https://www.googleapis.com/auth/cloud-platform should be used for the
+        // STS token exchange request.
+        client.scopes = ['scope1', 'scope2'];
+        const actualResponse = await client.getAccessToken();
 
-      scope.done();
-    });
-
-    it('should respect eagerRefreshThresholdMillis when provided', async () => {
-      clock = sinon.useFakeTimers(0);
-      const customThresh = 10 * 1000;
-      const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
-      stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
-      const scope = mockStsTokenExchange([
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_0',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-        },
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse2,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_1',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-        },
-      ]);
-
-      const client = new TestExternalAccountClient(externalAccountOptions, {
-        // Override 5min threshold with 10 second threshold.
-        eagerRefreshThresholdMillis: customThresh,
-      });
-      const actualResponse = await client.getAccessToken();
-
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualResponse);
-      delete actualResponse.res;
-      assert.deepStrictEqual(actualResponse, {
-        token: stsSuccessfulResponse.access_token,
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
       });
 
-      // Try again. Cached credential should be returned.
-      clock.tick(ONE_HOUR_IN_SECS * 1000 - customThresh - 1);
-      const actualCachedResponse = await client.getAccessToken();
+      it('should force refresh when cached credential is expired', async () => {
+        clock = sinon.useFakeTimers(0);
+        const emittedEvents: Credentials[] = [];
+        const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+        stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
+        saSuccessResponse.expireTime = new Date(
+          ONE_HOUR_IN_SECS * 1000
+        ).toISOString();
+        const saSuccessResponse2 = Object.assign({}, saSuccessResponse);
+        saSuccessResponse2.accessToken = 'SA_ACCESS_TOKEN2';
+        const customExpirationInSecs = 1600;
+        saSuccessResponse2.expireTime = new Date(
+          (ONE_HOUR_IN_SECS + customExpirationInSecs) * 1000
+        ).toISOString();
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse2,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_1',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+            {
+              statusCode: 200,
+              response: saSuccessResponse2,
+              token: stsSuccessfulResponse2.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
 
-      delete actualCachedResponse.res;
-      assert.deepStrictEqual(actualCachedResponse, {
-        token: stsSuccessfulResponse.access_token,
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSA
+        );
+        // Listen to tokens events. On every event, push to list of
+        // emittedEvents.
+        client.on('tokens', tokens => {
+          emittedEvents.push(tokens);
+        });
+        const actualResponse = await client.getAccessToken();
+
+        // tokens event should be triggered once with expected event.
+        assert.strictEqual(emittedEvents.length, 1);
+        assert.deepStrictEqual(emittedEvents[0], {
+          refresh_token: null,
+          expiry_date: ONE_HOUR_IN_SECS * 1000,
+          access_token: saSuccessResponse.accessToken,
+          token_type: 'Bearer',
+          id_token: null,
+        });
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+
+        // Try again. Cached credential should be returned.
+        clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
+        const actualCachedResponse = await client.getAccessToken();
+
+        // No new event should be triggered since the cached access token is
+        // returned.
+        assert.strictEqual(emittedEvents.length, 1);
+        delete actualCachedResponse.res;
+        assert.deepStrictEqual(actualCachedResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+
+        // Simulate credential is expired.
+        clock.tick(1);
+        const actualNewCredResponse = await client.getAccessToken();
+
+        // tokens event should be triggered again with the expected event.
+        assert.strictEqual(emittedEvents.length, 2);
+        assert.deepStrictEqual(emittedEvents[1], {
+          refresh_token: null,
+          // Second expiration time should be used.
+          expiry_date: (ONE_HOUR_IN_SECS + customExpirationInSecs) * 1000,
+          access_token: saSuccessResponse2.accessToken,
+          token_type: 'Bearer',
+          id_token: null,
+        });
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualNewCredResponse);
+        delete actualNewCredResponse.res;
+        assert.deepStrictEqual(actualNewCredResponse, {
+          token: saSuccessResponse2.accessToken,
+        });
+
+        scopes.forEach(scope => scope.done());
       });
 
-      // Simulate credential is expired.
-      // As current time is equal to expirationTime - customThresh,
-      // refresh should be triggered.
-      clock.tick(1);
-      const actualNewCredResponse = await client.getAccessToken();
+      it('should respect provided eagerRefreshThresholdMillis', async () => {
+        clock = sinon.useFakeTimers(0);
+        const customThresh = 10 * 1000;
+        const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+        stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
+        saSuccessResponse.expireTime = new Date(
+          ONE_HOUR_IN_SECS * 1000
+        ).toISOString();
+        const saSuccessResponse2 = Object.assign({}, saSuccessResponse);
+        saSuccessResponse2.accessToken = 'SA_ACCESS_TOKEN2';
+        saSuccessResponse2.expireTime = new Date(
+          2 * ONE_HOUR_IN_SECS * 1000
+        ).toISOString();
 
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualNewCredResponse);
-      delete actualNewCredResponse.res;
-      assert.deepStrictEqual(actualNewCredResponse, {
-        token: stsSuccessfulResponse2.access_token,
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse2,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_1',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+            {
+              statusCode: 200,
+              response: saSuccessResponse2,
+              token: stsSuccessfulResponse2.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSA,
+          {
+            // Override 5min threshold with 10 second threshold.
+            eagerRefreshThresholdMillis: customThresh,
+          }
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+
+        // Try again. Cached credential should be returned.
+        clock.tick(ONE_HOUR_IN_SECS * 1000 - customThresh - 1);
+        const actualCachedResponse = await client.getAccessToken();
+
+        delete actualCachedResponse.res;
+        assert.deepStrictEqual(actualCachedResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+
+        // Simulate credential is expired.
+        // As current time is equal to expirationTime - customThresh,
+        // refresh should be triggered.
+        clock.tick(1);
+        const actualNewCredResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualNewCredResponse);
+        delete actualNewCredResponse.res;
+        assert.deepStrictEqual(actualNewCredResponse, {
+          token: saSuccessResponse2.accessToken,
+        });
+
+        scopes.forEach(scope => scope.done());
       });
 
-      scope.done();
-    });
+      it('should apply basic auth when credentials are provided', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+              additionalHeaders: {
+                Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                  basicAuthCreds
+                )}`,
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
 
-    it('should apply basic auth when client_id/secret are provided', async () => {
-      const scope = mockStsTokenExchange([
-        {
-          statusCode: 200,
-          response: stsSuccessfulResponse,
-          request: {
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            audience,
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-            requested_token_type:
-              'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token_0',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          },
-          additionalHeaders: {
-            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
-              basicAuthCreds
-            )}`,
-          },
-        },
-      ]);
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithCredsAndSA
+        );
+        const actualResponse = await client.getAccessToken();
 
-      const client = new TestExternalAccountClient(
-        externalAccountOptionsWithCreds
-      );
-      const actualResponse = await client.getAccessToken();
-
-      // Confirm raw GaxiosResponse appended to response.
-      assertGaxiosResponsePresent(actualResponse);
-      delete actualResponse.res;
-      assert.deepStrictEqual(actualResponse, {
-        token: stsSuccessfulResponse.access_token,
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
       });
-      scope.done();
     });
   });
 
@@ -523,6 +1037,53 @@ describe('ExternalAccountClient', () => {
 
       assert.deepStrictEqual(actualHeaders, expectedHeaders);
       scope.done();
+    });
+
+    it('should inject service account access token in headers', async () => {
+      const now = new Date().getTime();
+      const saSuccessResponse = {
+        accessToken: 'SA_ACCESS_TOKEN',
+        expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
+      };
+      const expectedHeaders = {
+        Authorization: `Bearer ${saSuccessResponse.accessToken}`,
+      };
+      const scopes: nock.Scope[] = [];
+      scopes.push(
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ])
+      );
+      scopes.push(
+        mockGenerateAccessToken([
+          {
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          },
+        ])
+      );
+
+      const client = new TestExternalAccountClient(
+        externalAccountOptionsWithSA
+      );
+      const actualHeaders = await client.getRequestHeaders();
+
+      assert.deepStrictEqual(actualHeaders, expectedHeaders);
+      scopes.forEach(scope => scope.done());
     });
 
     it('should inject the authorization and metadata headers', async () => {
@@ -626,6 +1187,77 @@ describe('ExternalAccountClient', () => {
               subject_token: 'subject_token_0',
               subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
             },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(200, Object.assign({}, exampleResponse)),
+      ];
+
+      const client = new TestExternalAccountClient(optionsWithQuotaProjectId);
+      const actualResponse = await client.request<SampleResponse>({
+        url: 'https://example.com/api',
+        method: 'POST',
+        headers: exampleHeaders,
+        data: exampleRequest,
+        responseType: 'json',
+      });
+
+      assert.deepStrictEqual(actualResponse.data, exampleResponse);
+      scopes.forEach(scope => scope.done());
+    });
+
+    it('should inject service account access token in headers', async () => {
+      const now = new Date().getTime();
+      const saSuccessResponse = {
+        accessToken: 'SA_ACCESS_TOKEN',
+        expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
+      };
+      const quotaProjectId = 'QUOTA_PROJECT_ID';
+      const authHeaders = {
+        Authorization: `Bearer ${saSuccessResponse.accessToken}`,
+        'x-goog-user-project': quotaProjectId,
+      };
+      const optionsWithQuotaProjectId = Object.assign(
+        {quota_project_id: quotaProjectId},
+        externalAccountOptionsWithSA
+      );
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleResponse: SampleResponse = {
+        foo: 'a',
+        bar: 1,
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]),
+        mockGenerateAccessToken([
+          {
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
           },
         ]),
         nock('https://example.com')
