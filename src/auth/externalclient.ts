@@ -60,6 +60,17 @@ export interface ExternalAccountClientOptions {
 }
 
 /**
+ * Interface defining the successful response for iamcredentials
+ * generateAccessToken API.
+ * https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/generateAccessToken
+ */
+export interface IamGenerateAccessTokenResponse {
+  accessToken: string;
+  // ISO format used for expiration time: 2014-10-02T15:01:23.045123456Z
+  expireTime: string;
+}
+
+/**
  * Internal interface for tracking the access token expiration time.
  */
 interface CredentialsWithResponse extends Credentials {
@@ -87,6 +98,7 @@ export abstract class ExternalAccountClient extends AuthClient {
   private forceRefreshOnFailure: boolean;
   private readonly audience: string;
   private readonly subjectTokenType: string;
+  private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
 
   /**
@@ -123,6 +135,8 @@ export abstract class ExternalAccountClient extends AuthClient {
     this.audience = options.audience;
     this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
+    this.serviceAccountImpersonationUrl =
+      options.service_account_impersonation_url;
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
@@ -267,6 +281,9 @@ export abstract class ExternalAccountClient extends AuthClient {
    * External credentials are exchanged for GCP access tokens via the token
    * exchange endpoint and other settings provided in the client options
    * object.
+   * If the service_account_impersonation_url is provided, an additional
+   * step to exchange the external account GCP access token for a service
+   * account impersonated token is performed.
    * @return A promise that resolves with the fresh GCP access tokens.
    */
   protected async refreshAccessTokenAsync(): Promise<CredentialsWithResponse> {
@@ -279,19 +296,34 @@ export abstract class ExternalAccountClient extends AuthClient {
       requestedTokenType: STS_REQUEST_TOKEN_TYPE,
       subjectToken,
       subjectTokenType: this.subjectTokenType,
-      scope: this.getScopesArray(),
+      // generateAccessToken requires the provided access token to have
+      // scopes:
+      // https://www.googleapis.com/auth/iam or
+      // https://www.googleapis.com/auth/cloud-platform
+      // The new service account access token scopes will match the user
+      // provided ones.
+      scope: this.serviceAccountImpersonationUrl
+        ? [DEFAULT_OAUTH_SCOPE]
+        : this.getScopesArray(),
     };
 
     // Exchange the external credentials for a GCP access token.
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions
     );
-    // Save response in cached access token.
-    this.cachedAccessToken = {
-      access_token: stsResponse.access_token,
-      expiry_date: new Date().getTime() + stsResponse.expires_in * 1000,
-      res: stsResponse.res,
-    };
+
+    if (this.serviceAccountImpersonationUrl) {
+      this.cachedAccessToken = await this.getImpersonatedAccessToken(
+        stsResponse.access_token
+      );
+    } else {
+      // Save response in cached access token.
+      this.cachedAccessToken = {
+        access_token: stsResponse.access_token,
+        expiry_date: new Date().getTime() + stsResponse.expires_in * 1000,
+        res: stsResponse.res,
+      };
+    }
 
     // Save credentials.
     this.credentials = {};
@@ -308,6 +340,42 @@ export abstract class ExternalAccountClient extends AuthClient {
     });
     // Return the cached access token.
     return this.cachedAccessToken;
+  }
+
+  /**
+   * Exchanges an external account GCP access token for a service
+   * account impersonated access token using iamcredentials
+   * GenerateAccessToken API.
+   * @param token The access token to exchange for a service account access
+   *   token.
+   * @return A promise that resolves with the service account impersonated
+   *   credentials response.
+   */
+  private async getImpersonatedAccessToken(
+    token: string
+  ): Promise<CredentialsWithResponse> {
+    const opts: GaxiosOptions = {
+      url: this.serviceAccountImpersonationUrl!,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      data: {
+        scope: this.getScopesArray(),
+      },
+      responseType: 'json',
+    };
+    const response = await this.transporter.request<
+      IamGenerateAccessTokenResponse
+    >(opts);
+    const successResponse = response.data;
+    return {
+      access_token: successResponse.accessToken,
+      // Convert from ISO format to timestamp.
+      expiry_date: new Date(successResponse.expireTime).getTime(),
+      res: response,
+    };
   }
 
   /**
