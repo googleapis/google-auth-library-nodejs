@@ -61,6 +61,12 @@ const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+function escapeRegExp(str: string): string {
+  // $& means the whole matched string.
+  return str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+}
+
 function mockStsTokenExchange(nockParams: NockMockStsToken[]): nock.Scope {
   const scope = nock(baseUrl);
   nockParams.forEach(nockMockStsToken => {
@@ -242,7 +248,8 @@ describe('IdentityPoolClient', () => {
         await assert.rejects(
           client.retrieveSubjectToken(),
           new RegExp(
-            `The file at ${invalidFile} does not exist, or it is not a file`
+            `The file at ${escapeRegExp(invalidFile)} does not exist, ` +
+              'or it is not a file'
           )
         );
       });
@@ -261,7 +268,8 @@ describe('IdentityPoolClient', () => {
         await assert.rejects(
           client.retrieveSubjectToken(),
           new RegExp(
-            `The file at ${invalidFile} does not exist, or it is not a file`
+            `The file at ${escapeRegExp(invalidFile)} does not exist, ` +
+              'or it is not a file'
           )
         );
       });
