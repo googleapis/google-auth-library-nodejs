@@ -22,9 +22,9 @@ import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   EXPIRATION_TIME_OFFSET,
-  ExternalAccountClient,
+  BaseExternalAccountClient,
   IamGenerateAccessTokenResponse,
-} from '../src/auth/externalclient';
+} from '../src/auth/baseexternalclient';
 import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
@@ -63,7 +63,7 @@ interface SampleResponse {
 }
 
 /** Test class to test abstract class ExternalAccountClient. */
-class TestExternalAccountClient extends ExternalAccountClient {
+class TestExternalAccountClient extends BaseExternalAccountClient {
   private counter = 0;
 
   async retrieveSubjectToken(): Promise<string> {
@@ -129,7 +129,7 @@ function assertGaxiosResponsePresent(resp: GetAccessTokenResponse) {
   assert('data' in gaxiosResponse && 'status' in gaxiosResponse);
 }
 
-describe('ExternalAccountClient', () => {
+describe('BaseExternalAccountClient', () => {
   let clock: sinon.SinonFakeTimers;
   const crypto = createCrypto();
   const projectNumber = '123456';
