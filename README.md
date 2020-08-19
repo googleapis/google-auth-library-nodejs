@@ -354,7 +354,7 @@ const {GoogleAuth} = require('google-auth-library');
 async function main() {
   const url = 'https://cloud-run-1234-uc.a.run.app';
   const auth = new GoogleAuth();
-  const client = auth.getIdTokenClient(url);
+  const client = await auth.getIdTokenClient(url);
   const res = await client.request({url});
   console.log(res.data);
 }
@@ -375,7 +375,7 @@ async function main()
   const targetAudience = 'iap-client-id';
   const url = 'https://iap-url.com';
   const auth = new GoogleAuth();
-  const client = auth.getIdTokenClient(targetAudience);
+  const client = await auth.getIdTokenClient(targetAudience);
   const res = await client.request({url});
   console.log(res.data);
 }
