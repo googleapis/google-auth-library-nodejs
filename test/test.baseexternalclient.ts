@@ -136,7 +136,7 @@ describe('BaseExternalAccountClient', () => {
   const poolId = 'POOL_ID';
   const providerId = 'PROVIDER_ID';
   const audience =
-    `//iam.googleapis.com/project/${projectNumber}` +
+    `//iam.googleapis.com/projects/${projectNumber}` +
     `/locations/global/workloadIdentityPools/${poolId}/` +
     `providers/${providerId}`;
   const externalAccountOptions = {
