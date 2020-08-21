@@ -16,50 +16,25 @@ import * as assert from 'assert';
 import {describe, it} from 'mocha';
 import * as fs from 'fs';
 import * as nock from 'nock';
-import * as qs from 'querystring';
-import {GetAccessTokenResponse} from '../src/auth/oauth2client';
+
 import {
   IdentityPoolClient,
   IdentityPoolClientOptions,
 } from '../src/auth/identitypoolclient';
-import {OAuthErrorResponse} from '../src/auth/oauth2common';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
+import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {
-  BaseExternalAccountClient,
-  IamGenerateAccessTokenResponse,
-} from '../src/auth/baseexternalclient';
+  assertGaxiosResponsePresent,
+  getAudience,
+  getTokenUrl,
+  getServiceAccountImpersonationUrl,
+  mockGenerateAccessToken,
+  mockStsTokenExchange,
+} from './externalclienthelper';
 
 nock.disableNetConnect();
 
-interface IamGenerateAccessTokenError {
-  error: {
-    code: number;
-    message: string;
-    status: string;
-  };
-}
-
-interface NockMockStsToken {
-  statusCode: number;
-  response: StsSuccessfulResponse | OAuthErrorResponse;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  request: {[key: string]: any};
-  additionalHeaders?: {[key: string]: string};
-}
-
-interface NockMockGenerateAccessToken {
-  statusCode: number;
-  token: string;
-  response: IamGenerateAccessTokenResponse | IamGenerateAccessTokenError;
-  scopes: string[];
-}
-
 const ONE_HOUR_IN_SECS = 3600;
-const baseUrl = 'https://sts.googleapis.com';
-const path = '/v1/token';
-const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
-const saBaseUrl = 'https://iamcredentials.googleapis.com';
-const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
 function escapeRegExp(str: string): string {
@@ -67,80 +42,24 @@ function escapeRegExp(str: string): string {
   return str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
 }
 
-function mockStsTokenExchange(nockParams: NockMockStsToken[]): nock.Scope {
-  const scope = nock(baseUrl);
-  nockParams.forEach(nockMockStsToken => {
-    const headers = Object.assign(
-      {
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      nockMockStsToken.additionalHeaders || {}
-    );
-    scope
-      .post(path, qs.stringify(nockMockStsToken.request), {
-        reqheaders: headers,
-      })
-      .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
-  });
-  return scope;
-}
-
-function mockGenerateAccessToken(
-  nockParams: NockMockGenerateAccessToken[]
-): nock.Scope {
-  const scope = nock(saBaseUrl);
-  nockParams.forEach(nockMockGenerateAccessToken => {
-    const token = nockMockGenerateAccessToken.token;
-    scope
-      .post(
-        saPath,
-        {
-          scope: nockMockGenerateAccessToken.scopes,
-        },
-        {
-          reqheaders: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-      .reply(
-        nockMockGenerateAccessToken.statusCode,
-        nockMockGenerateAccessToken.response
-      );
-  });
-  return scope;
-}
-
-function assertGaxiosResponsePresent(resp: GetAccessTokenResponse) {
-  const gaxiosResponse = resp.res || {};
-  assert('data' in gaxiosResponse && 'status' in gaxiosResponse);
-}
-
 describe('IdentityPoolClient', () => {
   const fileSubjectToken = fs.readFileSync(
     './test/fixtures/external-subject-token.txt',
     'utf-8'
   );
-  const projectNumber = '123456';
-  const poolId = 'POOL_ID';
-  const providerId = 'PROVIDER_ID';
-  const audience =
-    `//iam.googleapis.com/projects/${projectNumber}` +
-    `/locations/global/workloadIdentityPools/${poolId}/` +
-    `providers/${providerId}`;
+  const audience = getAudience();
   const fileSourcedOptions = {
     type: 'external_account',
     audience,
     subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-    token_url: `${baseUrl}${path}`,
+    token_url: getTokenUrl(),
     credential_source: {
       file: './test/fixtures/external-subject-token.txt',
     },
   };
   const fileSourcedOptionsWithSA = Object.assign(
     {
-      service_account_impersonation_url: `${saBaseUrl}${saPath}`,
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
     fileSourcedOptions
   );
@@ -148,7 +67,7 @@ describe('IdentityPoolClient', () => {
     type: 'external_account',
     audience,
     subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-    token_url: `${baseUrl}${path}`,
+    token_url: getTokenUrl(),
     credential_source: {
       file: './test/fixtures/not-found',
     },
@@ -164,7 +83,7 @@ describe('IdentityPoolClient', () => {
     type: 'external_account',
     audience,
     subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-    token_url: `${baseUrl}${path}`,
+    token_url: getTokenUrl(),
     credential_source: {
       url: `${metadataBaseUrl}${metadataPath}`,
       headers: metadataHeaders,
@@ -172,7 +91,7 @@ describe('IdentityPoolClient', () => {
   };
   const urlSourcedOptionsWithSA = Object.assign(
     {
-      service_account_impersonation_url: `${saBaseUrl}${saPath}`,
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
     urlSourcedOptions
   );
@@ -197,7 +116,7 @@ describe('IdentityPoolClient', () => {
         type: 'external_account',
         audience,
         subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-        token_url: `${baseUrl}${path}`,
+        token_url: getTokenUrl(),
         credential_source: {
           other: 'invalid',
         },

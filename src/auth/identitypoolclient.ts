@@ -14,12 +14,15 @@
 
 import {GaxiosOptions} from 'gaxios';
 import * as fs from 'fs';
+import {promisify} from 'util';
 
 import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
 import {RefreshOptions} from './oauth2client';
+
+const readFile = promisify(fs.readFile);
 
 /**
  * Url-sourced/file-sourced credentials json interface.
@@ -109,21 +112,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       throw err;
     }
 
-    const stream = fs.createReadStream(filePath);
-    return new Promise<string>((resolve, reject) => {
-      let s = '';
-      stream
-        .setEncoding('utf8')
-        .on('error', reject)
-        .on('data', chunk => (s += chunk))
-        .on('end', () => {
-          try {
-            resolve(s);
-          } catch (err) {
-            reject(err);
-          }
-        });
-    });
+    return readFile(filePath, {encoding: 'utf8'});
   }
 
   /**
