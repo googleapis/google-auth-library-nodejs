@@ -1,0 +1,140 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import {GaxiosOptions} from 'gaxios';
+import * as fs from 'fs';
+import {promisify} from 'util';
+
+import {
+  BaseExternalAccountClient,
+  BaseExternalAccountClientOptions,
+} from './baseexternalclient';
+import {RefreshOptions} from './oauth2client';
+
+const readFile = promisify(fs.readFile);
+
+/**
+ * Url-sourced/file-sourced credentials json interface.
+ * This is used for K8s and Azure workloads.
+ */
+export interface IdentityPoolClientOptions
+  extends BaseExternalAccountClientOptions {
+  credential_source: {
+    file?: string;
+    url?: string;
+    headers?: {
+      [key: string]: string;
+    };
+  };
+}
+
+/**
+ * Defines the Url-sourced and file-sourced external account clients mainly
+ * used for K8s and Azure workloads.
+ */
+export class IdentityPoolClient extends BaseExternalAccountClient {
+  private readonly file?: string;
+  private readonly url?: string;
+  private readonly headers?: {[key: string]: string};
+
+  /**
+   * Instantiate an IdentityPoolClient instance using the provided JSON
+   * object loaded from an external account credentials file.
+   * An error is thrown if the credential is not a valid file-sourced or
+   * url-sourced credential.
+   * @param options The external account options object typically loaded
+   *   from the external account JSON credential file.
+   * @param additionalOptions Optional additional behavior customization
+   *   options. These currently customize expiration threshold time and
+   *   whether to retry on 401/403 API request errors.
+   */
+  constructor(
+    options: IdentityPoolClientOptions,
+    additionalOptions?: RefreshOptions
+  ) {
+    super(options, additionalOptions);
+    this.file = options.credential_source.file;
+    this.url = options.credential_source.url;
+    this.headers = options.credential_source.headers;
+    if (!this.file && !this.url) {
+      throw new Error('No valid Identity Pool "credential_source" provided');
+    }
+  }
+
+  /**
+   * Triggered when a external subject token is needed to be exchanged for a GCP
+   * access token via GCP STS endpoint.
+   * This uses the `options.credential_source` object to figure out how
+   * to retrieve the token using the current environment. In this case,
+   * this either retrieves the local credential from a file location (k8s
+   * workload) or by sending a GET request to a local metadata server (Azure
+   * workloads).
+   * @return A promise that resolves with the external subject token.
+   */
+  async retrieveSubjectToken(): Promise<string> {
+    if (this.file) {
+      return await this.getTokenFromFile(this.file!);
+    } else {
+      return await this.getTokenFromUrl(this.url!, this.headers);
+    }
+  }
+
+  /**
+   * Looks up the external subject token in the file path provided and
+   * resolves with that token.
+   * @param file The file path where the external credential is located.
+   * @return A promise that resolves with the external subject token.
+   */
+  private getTokenFromFile(filePath: string): Promise<string> {
+    // Make sure there is a file at the path. lstatSync will throw if there is
+    // nothing there.
+    try {
+      // Resolve path to actual file in case of symlink. Expect a thrown error
+      // if not resolvable.
+      filePath = fs.realpathSync(filePath);
+
+      if (!fs.lstatSync(filePath).isFile()) {
+        throw new Error();
+      }
+    } catch (err) {
+      err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
+      throw err;
+    }
+
+    return readFile(filePath, {encoding: 'utf8'});
+  }
+
+  /**
+   * Sends a GET request to the URL provided and resolves with the returned
+   * external subject token.
+   * @param url The URL to call to retrieve the subject token. This is typically
+   *   a local metadata server.
+   * @param headers The optional additional headers to send with the request to
+   *   the metadata server url.
+   * @return A promise that resolves with the external subject token.
+   */
+  private async getTokenFromUrl(
+    url: string,
+    headers?: {[key: string]: string}
+  ): Promise<string> {
+    const opts: GaxiosOptions = {
+      url,
+      method: 'GET',
+      headers,
+      responseType: 'text',
+    };
+    const response = await this.transporter.request<string>(opts);
+    return response.data;
+  }
+}

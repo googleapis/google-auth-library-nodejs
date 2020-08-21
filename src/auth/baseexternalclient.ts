@@ -47,7 +47,7 @@ const EXTERNAL_ACCOUNT_TYPE = 'external_account';
 /**
  * Base external account credentials json interface.
  */
-export interface ExternalAccountClientOptions {
+export interface BaseExternalAccountClientOptions {
   type: string;
   audience: string;
   subject_token_type: string;
@@ -86,7 +86,7 @@ interface CredentialsWithResponse extends Credentials {
  * retrieving the external credential based on the environment and
  * credential_source will be left for the subclasses.
  */
-export abstract class ExternalAccountClient extends AuthClient {
+export abstract class BaseExternalAccountClient extends AuthClient {
   /**
    * OAuth scopes for the GCP access token to use. When not provided,
    * the default https://www.googleapis.com/auth/cloud-platform is
@@ -102,7 +102,7 @@ export abstract class ExternalAccountClient extends AuthClient {
   private readonly stsCredential: sts.StsCredentials;
 
   /**
-   * Instantiate an ExternalAccountClient instance using the provided JSON
+   * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
@@ -111,7 +111,7 @@ export abstract class ExternalAccountClient extends AuthClient {
    *   whether to retry on 401/403 API request errors.
    */
   constructor(
-    options: ExternalAccountClientOptions,
+    options: BaseExternalAccountClientOptions,
     additionalOptions?: RefreshOptions
   ) {
     super();

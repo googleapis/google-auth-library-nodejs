@@ -14,7 +14,6 @@
 
 import * as assert from 'assert';
 import {describe, it, afterEach} from 'mocha';
-import * as qs from 'querystring';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {createCrypto} from '../src/crypto/crypto';
@@ -22,40 +21,23 @@ import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   EXPIRATION_TIME_OFFSET,
-  ExternalAccountClient,
-  IamGenerateAccessTokenResponse,
-} from '../src/auth/externalclient';
+  BaseExternalAccountClient,
+} from '../src/auth/baseexternalclient';
 import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import {GetAccessTokenResponse} from '../src/auth/oauth2client';
 import {GaxiosError} from 'gaxios';
+import {
+  assertGaxiosResponsePresent,
+  getAudience,
+  getTokenUrl,
+  getServiceAccountImpersonationUrl,
+  mockGenerateAccessToken,
+  mockStsTokenExchange,
+} from './externalclienthelper';
 
 nock.disableNetConnect();
-
-interface IamGenerateAccessTokenError {
-  error: {
-    code: number;
-    message: string;
-    status: string;
-  };
-}
-
-interface NockMockStsToken {
-  statusCode: number;
-  response: StsSuccessfulResponse | OAuthErrorResponse;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  request: {[key: string]: any};
-  additionalHeaders?: {[key: string]: string};
-}
-
-interface NockMockGenerateAccessToken {
-  statusCode: number;
-  token: string;
-  response: IamGenerateAccessTokenResponse | IamGenerateAccessTokenError;
-  scopes: string[];
-}
 
 interface SampleResponse {
   foo: string;
@@ -63,7 +45,7 @@ interface SampleResponse {
 }
 
 /** Test class to test abstract class ExternalAccountClient. */
-class TestExternalAccountClient extends ExternalAccountClient {
+class TestExternalAccountClient extends BaseExternalAccountClient {
   private counter = 0;
 
   async retrieveSubjectToken(): Promise<string> {
@@ -73,77 +55,16 @@ class TestExternalAccountClient extends ExternalAccountClient {
 }
 
 const ONE_HOUR_IN_SECS = 3600;
-const baseUrl = 'https://sts.googleapis.com';
-const path = '/v1/token';
-const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
-const saBaseUrl = 'https://iamcredentials.googleapis.com';
-const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 
-function mockStsTokenExchange(nockParams: NockMockStsToken[]): nock.Scope {
-  const scope = nock(baseUrl);
-  nockParams.forEach(nockMockStsToken => {
-    const headers = Object.assign(
-      {
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      nockMockStsToken.additionalHeaders || {}
-    );
-    scope
-      .post(path, qs.stringify(nockMockStsToken.request), {
-        reqheaders: headers,
-      })
-      .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
-  });
-  return scope;
-}
-
-function mockGenerateAccessToken(
-  nockParams: NockMockGenerateAccessToken[]
-): nock.Scope {
-  const scope = nock(saBaseUrl);
-  nockParams.forEach(nockMockGenerateAccessToken => {
-    const token = nockMockGenerateAccessToken.token;
-    scope
-      .post(
-        saPath,
-        {
-          scope: nockMockGenerateAccessToken.scopes,
-        },
-        {
-          reqheaders: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-      .reply(
-        nockMockGenerateAccessToken.statusCode,
-        nockMockGenerateAccessToken.response
-      );
-  });
-  return scope;
-}
-
-function assertGaxiosResponsePresent(resp: GetAccessTokenResponse) {
-  const gaxiosResponse = resp.res || {};
-  assert('data' in gaxiosResponse && 'status' in gaxiosResponse);
-}
-
-describe('ExternalAccountClient', () => {
+describe('BaseExternalAccountClient', () => {
   let clock: sinon.SinonFakeTimers;
   const crypto = createCrypto();
-  const projectNumber = '123456';
-  const poolId = 'POOL_ID';
-  const providerId = 'PROVIDER_ID';
-  const audience =
-    `//iam.googleapis.com/project/${projectNumber}` +
-    `/locations/global/workloadIdentityPools/${poolId}/` +
-    `providers/${providerId}`;
+  const audience = getAudience();
   const externalAccountOptions = {
     type: 'external_account',
     audience,
     subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-    token_url: `${baseUrl}${path}`,
+    token_url: getTokenUrl(),
     credential_source: {
       file: '/var/run/secrets/goog.id/token',
     },
@@ -152,7 +73,7 @@ describe('ExternalAccountClient', () => {
     type: 'external_account',
     audience,
     subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-    token_url: `${baseUrl}${path}`,
+    token_url: getTokenUrl(),
     credential_source: {
       file: '/var/run/secrets/goog.id/token',
     },
@@ -171,13 +92,13 @@ describe('ExternalAccountClient', () => {
   };
   const externalAccountOptionsWithSA = Object.assign(
     {
-      service_account_impersonation_url: `${saBaseUrl}${saPath}`,
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
     externalAccountOptions
   );
   const externalAccountOptionsWithCredsAndSA = Object.assign(
     {
-      service_account_impersonation_url: `${saBaseUrl}${saPath}`,
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
     externalAccountOptionsWithCreds
   );
