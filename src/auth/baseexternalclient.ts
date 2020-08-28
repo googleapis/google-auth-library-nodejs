@@ -96,7 +96,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private cachedAccessToken: CredentialsWithResponse | null;
   private eagerRefreshThresholdMillis: number;
   private forceRefreshOnFailure: boolean;
-  private readonly audience: string;
+  protected readonly audience: string;
   private readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
