@@ -99,7 +99,7 @@ export function fromArrayBufferToHex(arrayBuffer: ArrayBuffer): string {
   // Convert bytes to hex string.
   return byteArray
     .map(byte => {
-      return byte === 0 ? '' : byte.toString(16).padStart(2, '0');
+      return byte.toString(16).padStart(2, '0');
     })
     .join('');
 }
