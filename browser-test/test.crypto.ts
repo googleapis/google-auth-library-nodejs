@@ -157,8 +157,9 @@ describe('Browser crypto tests', () => {
   });
 
   it('should expose a method to convert an ArrayBuffer to hex', () => {
-    const arrayBuffer = stringToArrayBuffer('Hello World!');
-    const expectedHexEncoding = '48656c6c6f20576f726c6421';
+    const arrayBuffer = new Uint8Array([4, 8, 0, 12, 16, 0])
+      .buffer as ArrayBuffer;
+    const expectedHexEncoding = '0408000c1000';
 
     const calculatedHexEncoding = fromArrayBufferToHex(arrayBuffer);
     assert.strictEqual(calculatedHexEncoding, expectedHexEncoding);

@@ -22,6 +22,8 @@ import {GaxiosOptions} from 'gaxios';
 interface AwsRequestSignerTest {
   // Test description.
   description: string;
+  // The mock time when the signature is generated.
+  referenceDate: Date;
   // AWS request signer instance.
   instance: AwsRequestSigner;
   // The raw input request.
@@ -35,16 +37,12 @@ describe('AwsRequestSigner', () => {
   // Load AWS credentials from a sample security_credentials response.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials.json');
-  const referenceDate = new Date('2020-08-11T06:55:22.345Z');
-  const amzDate = '20200811T065522Z';
-  const dateStamp = '20200811';
-  const awsRegion = 'us-east-2';
   const accessKeyId = awsSecurityCredentials.AccessKeyId;
   const secretAccessKey = awsSecurityCredentials.SecretAccessKey;
   const token = awsSecurityCredentials.Token;
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers(referenceDate);
+    clock = sinon.useFakeTimers(0);
   });
 
   afterEach(() => {
@@ -101,14 +99,445 @@ describe('AwsRequestSigner', () => {
     // https://docs.aws.amazon.com/general/latest/gr/sigv4-signed-request-examples.html
     const getRequestOptionsTests: AwsRequestSignerTest[] = [
       {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-vanilla.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-vanilla.sreq
+        description: 'signed GET request (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'GET',
+          url: 'https://host.foo.com',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            'b27ccfbfa7df52a200ff74193ca6e32d4b48b8856fab7ebf1c595d0670a7e470';
+          return {
+            url: 'https://host.foo.com',
+            method: 'GET',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-relative-relative.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-relative-relative.sreq
+        description:
+          'signed GET request with relative path (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'GET',
+          url: 'https://host.foo.com/foo/bar/../..',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            'b27ccfbfa7df52a200ff74193ca6e32d4b48b8856fab7ebf1c595d0670a7e470';
+          return {
+            url: 'https://host.foo.com/foo/bar/../..',
+            method: 'GET',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-slash-dot-slash.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-slash-dot-slash.sreq
+        description: 'signed GET request with /./ path (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'GET',
+          url: 'https://host.foo.com/./',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            'b27ccfbfa7df52a200ff74193ca6e32d4b48b8856fab7ebf1c595d0670a7e470';
+          return {
+            url: 'https://host.foo.com/./',
+            method: 'GET',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-slash-pointless-dot.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-slash-pointless-dot.sreq
+        description:
+          'signed GET request with pointless dot path (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'GET',
+          url: 'https://host.foo.com/./foo',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            '910e4d6c9abafaf87898e1eb4c929135782ea25bb0279703146455745391e63a';
+          return {
+            url: 'https://host.foo.com/./foo',
+            method: 'GET',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-utf8.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-utf8.sreq
+        description: 'signed GET request with utf8 path (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'GET',
+          url: 'https://host.foo.com/%E1%88%B4',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            '8d6634c189aa8c75c2e51e106b6b5121bed103fdb351f7d7d4381c738823af74';
+          return {
+            url: 'https://host.foo.com/%E1%88%B4',
+            method: 'GET',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-vanilla-query-order-key-case.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-vanilla-query-order-key-case.sreq
+        description:
+          'signed GET request with uplicate query key (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'GET',
+          url: 'https://host.foo.com/?foo=Zoo&foo=aha',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            'be7148d34ebccdc6423b19085378aa0bee970bdc61d144bd1a8c48c33079ab09';
+          return {
+            url: 'https://host.foo.com/?foo=Zoo&foo=aha',
+            method: 'GET',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-vanilla-ut8-query.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-vanilla-ut8-query.sreq
+        description: 'signed GET request with utf8 query (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'GET',
+          url: 'https://host.foo.com/?ሴ=bar',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            '6fb359e9a05394cc7074e0feb42573a2601abc0c869a953e8c5c12e4e01f1a8c';
+          return {
+            url: 'https://host.foo.com/?ሴ=bar',
+            method: 'GET',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-header-key-sort.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-header-key-sort.sreq
+        description:
+          'signed POST request with sorted headers (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'POST',
+          url: 'https://host.foo.com/',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            ZOO: 'zoobar',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            'b7a95a52518abbca0964a999a880429ab734f35ebbf1235bd79a5de87756dc4a';
+          return {
+            url: 'https://host.foo.com/',
+            method: 'POST',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host;zoo, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+              ZOO: 'zoobar',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-header-value-case.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-header-value-case.sreq
+        description:
+          'signed POST request with upper case header value from ' +
+          'AWS Python test harness',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'POST',
+          url: 'https://host.foo.com/',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            zoo: 'ZOOBAR',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            '273313af9d0c265c531e11db70bbd653f3ba074c1009239e8559d3987039cad7';
+          return {
+            url: 'https://host.foo.com/',
+            method: 'POST',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host;zoo, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+              zoo: 'ZOOBAR',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-header-value-trim.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-header-value-trim.sreq
+        description:
+          'signed POST request with header and no body (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'POST',
+          url: 'https://host.foo.com',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            p: 'phfft',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            'debf546796015d6f6ded8626f5ce98597c33b47b9164cf6b17b4642036fcb592';
+          return {
+            url: 'https://host.foo.com',
+            method: 'POST',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host;p, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+              p: 'phfft',
+            },
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-x-www-form-urlencoded.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-x-www-form-urlencoded.sreq
+        description:
+          'signed POST request with body and no header (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'POST',
+          url: 'https://host.foo.com',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+          body: 'foo=bar',
+        },
+        getSignedRequest: () => {
+          const signature =
+            '5a15b22cf462f047318703b92e6f4f38884e4a7ab7b1d6426ca46a8bd1c26cbc';
+          return {
+            url: 'https://host.foo.com',
+            method: 'POST',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                'aws4_request, SignedHeaders=content-type;date;host, ' +
+                `Signature=${signature}`,
+              host: 'host.foo.com',
+              'Content-Type': 'application/x-www-form-urlencoded',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+            body: 'foo=bar',
+          };
+        },
+      },
+      {
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-vanilla-query.req
+        // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/post-vanilla-query.sreq
+        description:
+          'signed POST request with querystring (AWS botocore tests)',
+        referenceDate: new Date('2011-09-09T23:36:00.000Z'),
+        instance: new AwsRequestSigner(async () => {
+          return {
+            accessKeyId: 'AKIDEXAMPLE',
+            secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+          };
+        }, 'us-east-1'),
+        originalRequest: {
+          method: 'POST',
+          url: 'https://host.foo.com/?foo=bar',
+          headers: {
+            date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+          },
+        },
+        getSignedRequest: () => {
+          const signature =
+            'b6e3b79003ce0743a491606ba1035a804593b0efb1e20a11cba83f8c25a57a92';
+          return {
+            url: 'https://host.foo.com/?foo=bar',
+            method: 'POST',
+            headers: {
+              Authorization:
+                'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
+                `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
+              host: 'host.foo.com',
+              date: 'Mon, 09 Sep 2011 23:36:00 GMT',
+            },
+          };
+        },
+      },
+      {
         description: 'signed GET request',
-        instance: new AwsRequestSigner(getCredentials, awsRegion),
+        referenceDate: new Date('2020-08-11T06:55:22.345Z'),
+        instance: new AwsRequestSigner(getCredentials, 'us-east-2'),
         originalRequest: {
           url:
             'https://ec2.us-east-2.amazonaws.com?' +
             'Action=DescribeRegions&Version=2013-10-15',
         },
         getSignedRequest: () => {
+          const amzDate = '20200811T065522Z';
+          const dateStamp = '20200811';
           const signature =
             '631ea80cddfaa545fdadb120dc92c9f18166e38a5c47b50fab9fce476e022855';
           return {
@@ -119,7 +548,7 @@ describe('AwsRequestSigner', () => {
             headers: {
               Authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
-                `${dateStamp}/${awsRegion}/ec2/aws4_request, SignedHeaders=host;` +
+                `${dateStamp}/us-east-2/ec2/aws4_request, SignedHeaders=host;` +
                 `x-amz-date;x-amz-security-token, Signature=${signature}`,
               host: 'ec2.us-east-2.amazonaws.com',
               'x-amz-date': amzDate,
@@ -130,7 +559,8 @@ describe('AwsRequestSigner', () => {
       },
       {
         description: 'signed POST request',
-        instance: new AwsRequestSigner(getCredentials, awsRegion),
+        referenceDate: new Date('2020-08-11T06:55:22.345Z'),
+        instance: new AwsRequestSigner(getCredentials, 'us-east-2'),
         originalRequest: {
           url:
             'https://sts.us-east-2.amazonaws.com' +
@@ -138,6 +568,8 @@ describe('AwsRequestSigner', () => {
           method: 'POST',
         },
         getSignedRequest: () => {
+          const amzDate = '20200811T065522Z';
+          const dateStamp = '20200811';
           const signature =
             '73452984e4a880ffdc5c392355733ec3f5ba310d5e0609a89244440cadfe7a7a';
           return {
@@ -149,7 +581,7 @@ describe('AwsRequestSigner', () => {
               'x-amz-date': amzDate,
               Authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
-                `${dateStamp}/${awsRegion}/sts/aws4_request, SignedHeaders=host;` +
+                `${dateStamp}/us-east-2/sts/aws4_request, SignedHeaders=host;` +
                 `x-amz-date;x-amz-security-token, Signature=${signature}`,
               host: 'sts.us-east-2.amazonaws.com',
               'x-amz-security-token': token,
@@ -159,7 +591,8 @@ describe('AwsRequestSigner', () => {
       },
       {
         description: 'signed request when AWS credentials have no token',
-        instance: new AwsRequestSigner(getCredentialsWithoutToken, awsRegion),
+        referenceDate: new Date('2020-08-11T06:55:22.345Z'),
+        instance: new AwsRequestSigner(getCredentialsWithoutToken, 'us-east-2'),
         originalRequest: {
           url:
             'https://sts.us-east-2.amazonaws.com' +
@@ -167,6 +600,8 @@ describe('AwsRequestSigner', () => {
           method: 'POST',
         },
         getSignedRequest: () => {
+          const amzDate = '20200811T065522Z';
+          const dateStamp = '20200811';
           const signature =
             'd095ba304919cd0d5570ba8a3787884ee78b860f268ed040ba23831d55536d56';
           return {
@@ -178,7 +613,7 @@ describe('AwsRequestSigner', () => {
               'x-amz-date': amzDate,
               Authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
-                `${dateStamp}/${awsRegion}/sts/aws4_request, SignedHeaders=host;` +
+                `${dateStamp}/us-east-2/sts/aws4_request, SignedHeaders=host;` +
                 `x-amz-date, Signature=${signature}`,
               host: 'sts.us-east-2.amazonaws.com',
             },
@@ -187,7 +622,8 @@ describe('AwsRequestSigner', () => {
       },
       {
         description: 'signed POST request with additional headers/body',
-        instance: new AwsRequestSigner(getCredentials, awsRegion),
+        referenceDate: new Date('2020-08-11T06:55:22.345Z'),
+        instance: new AwsRequestSigner(getCredentials, 'us-east-2'),
         originalRequest: {
           url: 'https://dynamodb.us-east-2.amazonaws.com/',
           method: 'POST',
@@ -198,6 +634,8 @@ describe('AwsRequestSigner', () => {
           body: JSON.stringify(requestParams),
         },
         getSignedRequest: () => {
+          const amzDate = '20200811T065522Z';
+          const dateStamp = '20200811';
           const signature =
             'fdaa5b9cc9c86b80fe61eaf504141c0b3523780349120f2bd8145448456e0385';
           return {
@@ -206,7 +644,7 @@ describe('AwsRequestSigner', () => {
             headers: {
               Authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
-                `${dateStamp}/${awsRegion}/dynamodb/aws4_request, SignedHeaders=` +
+                `${dateStamp}/us-east-2/dynamodb/aws4_request, SignedHeaders=` +
                 'content-type;host;x-amz-date;x-amz-security-token;x-amz-target' +
                 `, Signature=${signature}`,
               'Content-Type': 'application/x-amz-json-1.0',
@@ -221,7 +659,8 @@ describe('AwsRequestSigner', () => {
       },
       {
         description: 'signed POST request with additional headers/data',
-        instance: new AwsRequestSigner(getCredentials, awsRegion),
+        referenceDate: new Date('2020-08-11T06:55:22.345Z'),
+        instance: new AwsRequestSigner(getCredentials, 'us-east-2'),
         originalRequest: {
           url: 'https://dynamodb.us-east-2.amazonaws.com/',
           method: 'POST',
@@ -232,6 +671,8 @@ describe('AwsRequestSigner', () => {
           data: requestParams,
         },
         getSignedRequest: () => {
+          const amzDate = '20200811T065522Z';
+          const dateStamp = '20200811';
           const signature =
             'fdaa5b9cc9c86b80fe61eaf504141c0b3523780349120f2bd8145448456e0385';
           return {
@@ -240,7 +681,7 @@ describe('AwsRequestSigner', () => {
             headers: {
               Authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
-                `${dateStamp}/${awsRegion}/dynamodb/aws4_request, SignedHeaders=` +
+                `${dateStamp}/us-east-2/dynamodb/aws4_request, SignedHeaders=` +
                 'content-type;host;x-amz-date;x-amz-security-token;x-amz-target' +
                 `, Signature=${signature}`,
               'Content-Type': 'application/x-amz-json-1.0',
@@ -257,6 +698,7 @@ describe('AwsRequestSigner', () => {
 
     getRequestOptionsTests.forEach(test => {
       it(`should resolve with the expected ${test.description}`, async () => {
+        clock.tick(test.referenceDate.getTime());
         const actualSignedRequest = await test.instance.getRequestOptions(
           test.originalRequest
         );
@@ -267,11 +709,11 @@ describe('AwsRequestSigner', () => {
     it('should reject with underlying getCredentials error', async () => {
       const awsRequestSigner = new AwsRequestSigner(
         getCredentialsUnsuccessful,
-        awsRegion
+        'us-east-2'
       );
       const options: GaxiosOptions = {
         url:
-          `https://sts.${awsRegion}.amazonaws.com` +
+          'https://sts.us-east-2.amazonaws.com' +
           '?Action=GetCallerIdentity&Version=2011-06-15',
         method: 'POST',
       };
@@ -286,7 +728,10 @@ describe('AwsRequestSigner', () => {
       const invalidOptionsError = new Error(
         '"url" is required in "amzOptions"'
       );
-      const awsRequestSigner = new AwsRequestSigner(getCredentials, awsRegion);
+      const awsRequestSigner = new AwsRequestSigner(
+        getCredentials,
+        'us-east-2'
+      );
 
       await assert.rejects(
         awsRequestSigner.getRequestOptions({}),

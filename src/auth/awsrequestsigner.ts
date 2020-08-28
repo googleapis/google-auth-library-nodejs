@@ -30,7 +30,7 @@ type HttpMethod =
 
 /** Interface defining the AWS authorization header map for signed requests. */
 interface AwsAuthHeaderMap {
-  amzDate: string;
+  amzDate?: string;
   authorizationHeader: string;
   canonicalQuerystring: string;
 }
@@ -115,8 +115,9 @@ export class AwsRequestSigner {
     );
     // Append additional optional headers, eg. X-Amz-Target, Content-Type, etc.
     const headers: {[key: string]: string} = Object.assign(
+      // Add x-amz-date if available.
+      headerMap.amzDate ? {'x-amz-date': headerMap.amzDate} : {},
       {
-        'x-amz-date': headerMap.amzDate,
         Authorization: headerMap.authorizationHeader,
         host: uri.host,
       },
@@ -230,8 +231,10 @@ async function generateAuthenticationHeaderMap(
   const amzHeaders = Object.assign(
     {
       host,
-      'x-amz-date': amzDate,
     },
+    // Previously the date was not fixed with x-amz- and could be provided manually.
+    // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-header-value-trim.req
+    reformattedAdditionalAmzHeaders.date ? {} : {'x-amz-date': amzDate},
     reformattedAdditionalAmzHeaders
   );
   let canonicalHeaders = '';
@@ -273,7 +276,8 @@ async function generateAuthenticationHeaderMap(
     `Signature=${fromArrayBufferToHex(signature)}`;
 
   return {
-    amzDate,
+    // Do not return x-amz-date if date is available.
+    amzDate: reformattedAdditionalAmzHeaders.date ? undefined : amzDate,
     authorizationHeader,
     canonicalQuerystring,
   };
