@@ -24,21 +24,6 @@ import {describe, it} from 'mocha';
 // text encoding natively.
 require('fast-text-encoding');
 
-/**
- * Converts a string to an ArrayBuffer.
- * https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
- * @param str The string to convert to an ArrayBuffer.
- * @return The ArrayBuffer representation of the string.
- */
-function stringToArrayBuffer(str: string): ArrayBuffer {
-  const arrayBuffer = new ArrayBuffer(str.length * 2);
-  const arrayBufferView = new Uint16Array(arrayBuffer);
-  for (let i = 0; i < str.length; i++) {
-    arrayBufferView[i] = str.charCodeAt(i);
-  }
-  return arrayBuffer;
-}
-
 describe('Browser crypto tests', () => {
   const crypto = createCrypto();
 
@@ -142,7 +127,9 @@ describe('Browser crypto tests', () => {
 
     it('using an ArrayBuffer key', async () => {
       const message = 'The quick brown fox jumps over the lazy dog';
-      const key = stringToArrayBuffer('key');
+      // String "key" ArrayBuffer representation.
+      const key = new Uint8Array([107, 0, 101, 0, 121, 0])
+        .buffer as ArrayBuffer;
       const expectedHexHash =
         'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
       const extectedHash = new Uint8Array(
