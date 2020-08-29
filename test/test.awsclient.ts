@@ -35,7 +35,7 @@ const ONE_HOUR_IN_SECS = 3600;
 describe('AwsClient', () => {
   let clock: sinon.SinonFakeTimers;
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials.json');
+  const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials-fake.json');
   const referenceDate = new Date('2020-08-11T06:55:22.345Z');
   const amzDate = '20200811T065522Z';
   const dateStamp = '20200811';
