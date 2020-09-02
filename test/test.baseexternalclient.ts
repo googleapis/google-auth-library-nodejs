@@ -33,6 +33,7 @@ import {
   getAudience,
   getTokenUrl,
   getServiceAccountImpersonationUrl,
+  mockCloudResourceManager,
   mockGenerateAccessToken,
   mockStsTokenExchange,
 } from './externalclienthelper';
@@ -102,6 +103,17 @@ describe('BaseExternalAccountClient', () => {
     },
     externalAccountOptionsWithCreds
   );
+  const indeterminableProjectIdAudiences = [
+    // Legacy K8s audience format.
+    'identitynamespace:1f12345:my_provider',
+    // Unrealistic audiences.
+    '//iam.googleapis.com/projects',
+    '//iam.googleapis.com/projects/',
+    '//iam.googleapis.com/project/123456',
+    '//iam.googleapis.com/projects//123456',
+    '//iam.googleapis.com/prefix_projects/123456',
+    '//iam.googleapis.com/projects_suffix/123456',
+  ];
 
   afterEach(() => {
     nock.cleanAll();
@@ -126,6 +138,139 @@ describe('BaseExternalAccountClient', () => {
     it('should not throw on valid options', () => {
       assert.doesNotThrow(() => {
         return new TestExternalAccountClient(externalAccountOptions);
+      });
+    });
+  });
+
+  describe('projectNumber', () => {
+    it('should be set if determinable', () => {
+      const projectNumber = 'my-proj-number';
+      const options = Object.assign({}, externalAccountOptions);
+      options.audience = getAudience(projectNumber);
+      const client = new TestExternalAccountClient(options);
+
+      assert.equal(client.projectNumber, projectNumber);
+    });
+
+    indeterminableProjectIdAudiences.forEach(audience => {
+      it(`should resolve with null on audience=${audience}`, async () => {
+        const modifiedOptions = Object.assign({}, externalAccountOptions);
+        modifiedOptions.audience = audience;
+        const client = new TestExternalAccountClient(modifiedOptions);
+
+        assert(client.projectNumber === null);
+      });
+    });
+  });
+
+  describe('getProjectId()', () => {
+    it('should resolve with projectId when determinable', async () => {
+      const projectNumber = 'my-proj-number';
+      const projectId = 'my-proj-id';
+      const response = {
+        projectNumber,
+        projectId,
+        lifecycleState: 'ACTIVE',
+        name: 'project-name',
+        createTime: '2018-11-06T04:42:54.109Z',
+        parent: {
+          type: 'folder',
+          id: '12345678901',
+        },
+      };
+      const options = Object.assign({}, externalAccountOptions);
+      options.audience = getAudience(projectNumber);
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience: options.audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]),
+        mockCloudResourceManager(
+          projectNumber,
+          stsSuccessfulResponse.access_token,
+          200,
+          response
+        ),
+      ];
+      const client = new TestExternalAccountClient(options);
+
+      const actualProjectId = await client.getProjectId();
+
+      assert.strictEqual(actualProjectId, projectId);
+      assert.strictEqual(client.projectId, projectId);
+
+      // Next call should return cached result.
+      const cachedProjectId = await client.getProjectId();
+
+      assert.strictEqual(cachedProjectId, projectId);
+      scopes.forEach(scope => scope.done());
+    });
+
+    it('should reject on request error', async () => {
+      const projectNumber = 'my-proj-number';
+      const response = {
+        error: {
+          code: 403,
+          message: 'The caller does not have permission',
+          status: 'PERMISSION_DENIED',
+        },
+      };
+      const options = Object.assign({}, externalAccountOptions);
+      options.audience = getAudience(projectNumber);
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience: options.audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]),
+        mockCloudResourceManager(
+          projectNumber,
+          stsSuccessfulResponse.access_token,
+          403,
+          response
+        ),
+      ];
+      const client = new TestExternalAccountClient(options);
+
+      await assert.rejects(
+        client.getProjectId(),
+        /The caller does not have permission/
+      );
+
+      assert.strictEqual(client.projectId, null);
+      scopes.forEach(scope => scope.done());
+    });
+
+    indeterminableProjectIdAudiences.forEach(audience => {
+      it(`should resolve with null on audience=${audience}`, async () => {
+        const modifiedOptions = Object.assign({}, externalAccountOptions);
+        modifiedOptions.audience = audience;
+        const client = new TestExternalAccountClient(modifiedOptions);
+
+        const actualProjectId = await client.getProjectId();
+        assert(actualProjectId === null);
+        assert(client.projectId === null);
       });
     });
   });

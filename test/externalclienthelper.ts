@@ -18,9 +18,12 @@ import * as qs from 'querystring';
 import {GetAccessTokenResponse} from '../src/auth/oauth2client';
 import {OAuthErrorResponse} from '../src/auth/oauth2common';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {IamGenerateAccessTokenResponse} from '../src/auth/baseexternalclient';
+import {
+  IamGenerateAccessTokenResponse,
+  ProjectInfo,
+} from '../src/auth/baseexternalclient';
 
-interface IamGenerateAccessTokenError {
+interface CloudRequestError {
   error: {
     code: number;
     message: string;
@@ -39,11 +42,11 @@ interface NockMockStsToken {
 interface NockMockGenerateAccessToken {
   statusCode: number;
   token: string;
-  response: IamGenerateAccessTokenResponse | IamGenerateAccessTokenError;
+  response: IamGenerateAccessTokenResponse | CloudRequestError;
   scopes: string[];
 }
 
-const projectNumber = '123456';
+const defaultProjectNumber = '123456';
 const poolId = 'POOL_ID';
 const providerId = 'PROVIDER_ID';
 const baseUrl = 'https://sts.googleapis.com';
@@ -99,7 +102,9 @@ export function mockGenerateAccessToken(
   return scope;
 }
 
-export function getAudience(): string {
+export function getAudience(
+  projectNumber: string = defaultProjectNumber
+): string {
   return (
     `//iam.googleapis.com/projects/${projectNumber}` +
     `/locations/global/workloadIdentityPools/${poolId}/` +
@@ -118,4 +123,19 @@ export function getServiceAccountImpersonationUrl(): string {
 export function assertGaxiosResponsePresent(resp: GetAccessTokenResponse) {
   const gaxiosResponse = resp.res || {};
   assert('data' in gaxiosResponse && 'status' in gaxiosResponse);
+}
+
+export function mockCloudResourceManager(
+  projectNumber: string,
+  accessToken: string,
+  statusCode: number,
+  response: ProjectInfo | CloudRequestError
+): nock.Scope {
+  return nock('https://cloudresourcemanager.googleapis.com')
+    .get(`/v1/projects/${projectNumber}`, undefined, {
+      reqheaders: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    .reply(statusCode, response);
 }
