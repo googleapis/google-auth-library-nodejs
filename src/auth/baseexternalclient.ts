@@ -42,7 +42,7 @@ const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
  */
 export const EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
 /** The credentials JSON file type for external account clients. */
-const EXTERNAL_ACCOUNT_TYPE = 'external_account';
+export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
 
 /**
  * Base external account credentials json interface.
