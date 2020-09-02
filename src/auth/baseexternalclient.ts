@@ -43,6 +43,9 @@ const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 export const EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
 /** The credentials JSON file type for external account clients. */
 export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
+/** Cloud resource manager URL used to retrieve project information. */
+export const CLOUD_RESOURCE_MANAGER =
+  'https://cloudresourcemanager.googleapis.com/v1/projects/';
 
 /**
  * Base external account credentials json interface.
@@ -68,6 +71,21 @@ export interface IamGenerateAccessTokenResponse {
   accessToken: string;
   // ISO format used for expiration time: 2014-10-02T15:01:23.045123456Z
   expireTime: string;
+}
+
+/**
+ * Interface defining the project information response returned by the cloud
+ * resource manager.
+ * https://cloud.google.com/resource-manager/reference/rest/v1/projects#Project
+ */
+export interface ProjectInfo {
+  projectNumber: string;
+  projectId: string;
+  lifecycleState: string;
+  name: string;
+  createTime?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parent: {[key: string]: any};
 }
 
 /**
@@ -100,6 +118,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
+  public projectId: string | null;
+  public projectNumber: string | null;
 
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
@@ -147,6 +167,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         .eagerRefreshThresholdMillis as number;
     }
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
+    this.projectId = null;
+    this.projectNumber = this.getProjectNumber(this.audience);
   }
 
   /**
@@ -226,6 +248,38 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     } else {
       return this.requestAsync<T>(opts);
     }
+  }
+
+  /**
+   * @return A promise that resolves with the project ID corresponding to the
+   *   current workload identity pool. When not determinable, this resolves with
+   *   null.
+   *   This is introduced to match the current pattern of using the Auth
+   *   library:
+   *   const projectId = await auth.getProjectId();
+   *   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
+   *   const res = await client.request({ url });
+   *   The resource may not have permission
+   *   (resourcemanager.projects.get) to call this API or the required
+   *   scopes may not be selected:
+   *   https://cloud.google.com/resource-manager/reference/rest/v1/projects/get#authorization-scopes
+   */
+  async getProjectId(): Promise<string | null> {
+    if (this.projectId) {
+      // Return previously determined project ID.
+      return this.projectId;
+    } else if (this.projectNumber) {
+      // Preferable not to use request() to avoid retrial policies.
+      const headers = await this.getRequestHeaders();
+      const response = await this.transporter.request<ProjectInfo>({
+        headers,
+        url: `${CLOUD_RESOURCE_MANAGER}${this.projectNumber}`,
+        responseType: 'json',
+      });
+      this.projectId = response.data.projectId;
+      return this.projectId;
+    }
+    return null;
   }
 
   /**
@@ -340,6 +394,25 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     });
     // Return the cached access token.
     return this.cachedAccessToken;
+  }
+
+  /**
+   * Returns the workload identity pool project number if it is determinable
+   * from the audience resource name.
+   * @param audience The STS audience used to determine the project number.
+   * @return The project number associated with the workload identity pool, if
+   *   this can be determined from the STS audience field. Otherwise, null is
+   *   returned.
+   */
+  private getProjectNumber(audience: string): string | null {
+    // STS audience pattern:
+    // //iam.googleapis.com/projects/$PROJECT_NUMBER/locations/...
+    const components = audience.split('/');
+    const projectIndex = components.indexOf('projects');
+    if (projectIndex !== -1 && projectIndex !== components.length - 1) {
+      return components[projectIndex + 1] || null;
+    }
+    return null;
   }
 
   /**
