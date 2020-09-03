@@ -15,6 +15,13 @@
 import {RefreshOptions} from './oauth2client';
 import {
   BaseExternalAccountClient,
+  // This is the identifier in the JSON config for the type of credential.
+  // This string constant indicates that an external account client should be
+  // instantiated.
+  // There are 3 types of JSON configs:
+  // 1. authorized_user => Google end user credential
+  // 2. service_account => Google service account credential
+  // 3. external_Account => non-GCP service (eg. AWS, Azure, K8s)
   EXTERNAL_ACCOUNT_TYPE,
 } from './baseexternalclient';
 import {
