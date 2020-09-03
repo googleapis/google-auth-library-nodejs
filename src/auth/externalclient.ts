@@ -15,7 +15,6 @@
 import {RefreshOptions} from './oauth2client';
 import {
   BaseExternalAccountClient,
-  BaseExternalAccountClientOptions,
   EXTERNAL_ACCOUNT_TYPE,
 } from './baseexternalclient';
 import {
@@ -55,7 +54,7 @@ export class ExternalAccountClient {
    *   provided do not correspond to an external account credential.
    */
   static fromJSON(
-    options: BaseExternalAccountClientOptions,
+    options: ExternalAccountClientOptions,
     additionalOptions?: RefreshOptions
   ): BaseExternalAccountClient | null {
     if (options && options.type === EXTERNAL_ACCOUNT_TYPE) {

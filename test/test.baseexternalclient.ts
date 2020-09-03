@@ -140,6 +140,33 @@ describe('BaseExternalAccountClient', () => {
         return new TestExternalAccountClient(externalAccountOptions);
       });
     });
+
+    it('should set default RefreshOptions', () => {
+      const client = new TestExternalAccountClient(externalAccountOptions);
+
+      assert(!client.forceRefreshOnFailure);
+      assert(client.eagerRefreshThresholdMillis === EXPIRATION_TIME_OFFSET);
+    });
+
+    it('should set custom RefreshOptions', () => {
+      const refreshOptions = {
+        eagerRefreshThresholdMillis: 5000,
+        forceRefreshOnFailure: true,
+      };
+      const client = new TestExternalAccountClient(
+        externalAccountOptions,
+        refreshOptions
+      );
+
+      assert.strictEqual(
+        client.forceRefreshOnFailure,
+        refreshOptions.forceRefreshOnFailure
+      );
+      assert.strictEqual(
+        client.eagerRefreshThresholdMillis,
+        refreshOptions.eagerRefreshThresholdMillis
+      );
+    });
   });
 
   describe('projectNumber', () => {
