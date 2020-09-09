@@ -41,7 +41,13 @@ const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
  * Offset to take into account network delays and server clock skews.
  */
 export const EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
-/** The credentials JSON file type for external account clients. */
+/**
+ * The credentials JSON file type for external account clients.
+ * There are 3 types of JSON configs:
+ * 1. authorized_user => Google end user credential
+ * 2. service_account => Google service account credential
+ * 3. external_Account => non-GCP service (eg. AWS, Azure, K8s)
+ */
 export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
 /** Cloud resource manager URL used to retrieve project information. */
 export const CLOUD_RESOURCE_MANAGER =
@@ -112,14 +118,14 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    */
   public scopes?: string | string[];
   private cachedAccessToken: CredentialsWithResponse | null;
-  private eagerRefreshThresholdMillis: number;
-  private forceRefreshOnFailure: boolean;
   protected readonly audience: string;
   private readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
   public projectId: string | null;
   public projectNumber: string | null;
+  public readonly eagerRefreshThresholdMillis: number;
+  public readonly forceRefreshOnFailure: boolean;
 
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
@@ -467,9 +473,15 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   /**
    * @return The list of scopes for the requested GCP access token.
    */
-  private getScopesArray(): string[] | undefined {
+  private getScopesArray(): string[] {
     // Since scopes can be provided as string or array, the type should
     // be normalized.
-    return typeof this.scopes === 'string' ? [this.scopes] : this.scopes;
+    if (typeof this.scopes === 'string') {
+      return [this.scopes];
+    } else if (typeof this.scopes === 'undefined') {
+      return [DEFAULT_OAUTH_SCOPE];
+    } else {
+      return this.scopes;
+    }
   }
 }
