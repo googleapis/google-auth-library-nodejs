@@ -21,6 +21,7 @@ import * as sinon from 'sinon';
 
 import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
+import * as jwtaccess from '../src/auth/jwtaccess';
 
 describe('jwt', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -782,5 +783,61 @@ describe('jwt', () => {
       return;
     }
     assert.fail('failed to throw');
+  });
+
+  describe('self-signed JWT', () => {
+    const sandbox = sinon.createSandbox();
+    let stubJWTAccess: sinon.SinonStub;
+    beforeEach(() => {
+      stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: sinon.stub().returns({}),
+      });
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('uses self signed JWT when no scopes are provided', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+    });
+
+    it('uses self signed JWT when default scopes are provided', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        defaultScopes: ['http://bar', 'http://foo'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+    });
+
+    it('does not use self signed JWT if target_audience provided', async () => {
+      const keys = keypair(512 /* bitsize of private key */);
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: keys.private,
+        subject: 'ignored@subjectaccount.com',
+        defaultScopes: ['foo', 'bar'],
+        additionalClaims: {target_audience: 'beepboop'},
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      const testUri = 'http:/example.com/my_test_service';
+      const scope = createGTokenMock({id_token: 'abc123'});
+      await jwt.getRequestHeaders(testUri);
+      scope.done();
+      sandbox.assert.notCalled(stubJWTAccess);
+    });
+    // TODO: add tests for defaultScopes being used.
+    // TODO: add test for request being made with expired JWT.
   });
 });

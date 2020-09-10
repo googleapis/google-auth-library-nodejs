@@ -30,6 +30,7 @@ export interface JWTOptions extends RefreshOptions {
   keyFile?: string;
   key?: string;
   keyId?: string;
+  defaultScopes?: string | string[];
   scopes?: string | string[];
   subject?: string;
   additionalClaims?: {};
@@ -40,6 +41,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   keyFile?: string;
   key?: string;
   keyId?: string;
+  defaultScopes?: string | string[];
   scopes?: string | string[];
   scope?: string;
   subject?: string;
@@ -120,7 +122,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    if (!this.apiKey && !this.hasScopes() && url) {
+    if (!this.apiKey && !this.hasUserScopes() && url) {
       if (
         this.additionalClaims &&
         (this.additionalClaims as {
@@ -159,7 +161,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     const gtoken = new GoogleToken({
       iss: this.email,
       sub: this.subject,
-      scope: this.scopes,
+      scope: this.scopes || this.defaultScopes,
       keyFile: this.keyFile,
       key: this.key,
       additionalClaims: {target_audience: targetAudience},
@@ -176,7 +178,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   /**
    * Determine if there are currently scopes available.
    */
-  private hasScopes() {
+  private hasUserScopes() {
     if (!this.scopes) {
       return false;
     }
@@ -248,7 +250,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       this.gtoken = new GoogleToken({
         iss: this.email,
         sub: this.subject,
-        scope: this.scopes,
+        scope: this.scopes || this.defaultScopes,
         keyFile: this.keyFile,
         key: this.key,
         additionalClaims: this.additionalClaims,
