@@ -82,8 +82,8 @@ export interface GoogleAuthOptions {
   clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions;
 
   /**
-   * Scopes populated by a client library by default. We differentiate between
-   * these and user defined scopes when determining the type of auth to use
+   * Scopes populated by the client library by default. We differentiate between
+   * these and user defined scopes when deciding whether to use a self-signed JWT.
    */
   defaultScopes?: string | string[];
 
