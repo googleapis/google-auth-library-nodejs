@@ -335,7 +335,7 @@ main().catch(console.error);
 
 ## Working with ID Tokens
 ### Fetching ID Tokens
-If your application is running behind Cloud Run, or using Cloud Identity-Aware
+If your application is running on Cloud Run or Cloud Functions, or using Cloud Identity-Aware
 Proxy (IAP), you will need to fetch an ID token to access your application. For
 this, use the method `getIdTokenClient` on the `GoogleAuth` client.
 
@@ -343,14 +343,18 @@ For invoking Cloud Run services, your service account will need the
 [`Cloud Run Invoker`](https://cloud.google.com/run/docs/authenticating/service-to-service)
 IAM permission.
 
+For invoking Cloud Functions, your service account will need the
+[`Function Invoker`](https://cloud.google.com/functions/docs/securing/authenticating#function-to-function)
+IAM permission.
+
 ``` js
-// Make a request to a protected Cloud Run
+// Make a request to a protected Cloud Run service.
 const {GoogleAuth} = require('google-auth-library');
 
 async function main() {
-  const url = 'https://cloud-run-url.com';
+  const url = 'https://cloud-run-1234-uc.a.run.app';
   const auth = new GoogleAuth();
-  const client = auth.getIdTokenClient(url);
+  const client = await auth.getIdTokenClient(url);
   const res = await client.request({url});
   console.log(res.data);
 }
@@ -358,7 +362,7 @@ async function main() {
 main().catch(console.error);
 ```
 
-A complete example can be found in [`samples/idtokens-cloudrun.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-cloudrun.js).
+A complete example can be found in [`samples/idtokens-serverless.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js).
 
 For invoking Cloud Identity-Aware Proxy, you will need to pass the Client ID
 used when you set up your protected resource as the target audience.
@@ -371,7 +375,7 @@ async function main()
   const targetAudience = 'iap-client-id';
   const url = 'https://iap-url.com';
   const auth = new GoogleAuth();
-  const client = auth.getIdTokenClient(targetAudience);
+  const client = await auth.getIdTokenClient(targetAudience);
   const res = await client.request({url});
   console.log(res.data);
 }

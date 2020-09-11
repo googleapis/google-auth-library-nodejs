@@ -4,15 +4,65 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
-        "sha": "42e60c46ce4a463f4c50bf4226d945c38146398b"
+        "sha": "5164845bbeb46733a56e0d2c25d6c205e671fe3c"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "dc9caca650c77b7039e2bbc3339ffb34ae78e5b7"
+        "sha": "8cf6d2834ad14318e64429c3b94f6443ae83daf9"
       }
     }
+  ],
+  "generatedFiles": [
+    ".eslintignore",
+    ".eslintrc.json",
+    ".gitattributes",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/ISSUE_TEMPLATE/support_request.md",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/release-please.yml",
+    ".github/workflows/ci.yaml",
+    ".kokoro/.gitattributes",
+    ".kokoro/common.cfg",
+    ".kokoro/continuous/node10/common.cfg",
+    ".kokoro/continuous/node10/docs.cfg",
+    ".kokoro/continuous/node10/test.cfg",
+    ".kokoro/continuous/node12/common.cfg",
+    ".kokoro/continuous/node12/lint.cfg",
+    ".kokoro/continuous/node12/samples-test.cfg",
+    ".kokoro/continuous/node12/system-test.cfg",
+    ".kokoro/continuous/node12/test.cfg",
+    ".kokoro/docs.sh",
+    ".kokoro/lint.sh",
+    ".kokoro/populate-secrets.sh",
+    ".kokoro/presubmit/node10/common.cfg",
+    ".kokoro/presubmit/node12/common.cfg",
+    ".kokoro/presubmit/node12/samples-test.cfg",
+    ".kokoro/presubmit/node12/system-test.cfg",
+    ".kokoro/presubmit/node12/test.cfg",
+    ".kokoro/publish.sh",
+    ".kokoro/release/docs-devsite.cfg",
+    ".kokoro/release/docs-devsite.sh",
+    ".kokoro/release/docs.cfg",
+    ".kokoro/release/docs.sh",
+    ".kokoro/release/publish.cfg",
+    ".kokoro/samples-test.sh",
+    ".kokoro/system-test.sh",
+    ".kokoro/test.bat",
+    ".kokoro/test.sh",
+    ".kokoro/trampoline.sh",
+    ".mocharc.js",
+    ".nycrc",
+    ".prettierignore",
+    ".prettierrc.js",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "api-extractor.json",
+    "renovate.json",
+    "samples/README.md"
   ]
 }
