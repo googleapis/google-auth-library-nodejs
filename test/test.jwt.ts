@@ -19,7 +19,7 @@ import * as jws from 'jws';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {GoogleAuth, JWT} from '../src';
+import {GoogleAuth, JWT, DefaultScopesKey} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
 
@@ -812,7 +812,7 @@ describe('jwt', () => {
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
         key: fs.readFileSync(PEM_PATH, 'utf8'),
-        defaultScopes: ['http://bar', 'http://foo'],
+        [DefaultScopesKey]: ['http://bar', 'http://foo'],
         subject: 'bar@subjectaccount.com',
       });
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
@@ -829,7 +829,7 @@ describe('jwt', () => {
         email: 'foo@serviceaccount.com',
         key: keys.private,
         subject: 'ignored@subjectaccount.com',
-        defaultScopes: ['foo', 'bar'],
+        [DefaultScopesKey]: ['foo', 'bar'],
         additionalClaims: {target_audience: 'beepboop'},
       });
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
