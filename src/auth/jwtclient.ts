@@ -28,7 +28,7 @@ import {
 // Default scopes are provided by GAPIC libraries to indicate that it
 // is safe to use a self-signed JWT. We hide this option behind a symbol,
 // to discourage users from setting this field:
-export const DefaultScopesKey = Symbol('default-scopes-symbol');
+export const kDefaultScopes = Symbol('default-scopes-symbol');
 
 export interface JWTOptions extends RefreshOptions {
   email?: string;
@@ -36,7 +36,7 @@ export interface JWTOptions extends RefreshOptions {
   key?: string;
   keyId?: string;
   scopes?: string | string[];
-  [DefaultScopesKey]?: string | string[];
+  [kDefaultScopes]?: string | string[];
   subject?: string;
   additionalClaims?: {};
 }
@@ -46,7 +46,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   keyFile?: string;
   key?: string;
   keyId?: string;
-  [DefaultScopesKey]?: string | string[];
+  [kDefaultScopes]?: string | string[];
   scopes?: string | string[];
   scope?: string;
   subject?: string;
@@ -97,7 +97,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     this.key = opts.key;
     this.keyId = opts.keyId;
     this.scopes = opts.scopes;
-    this[DefaultScopesKey] = opts[DefaultScopesKey];
+    this[kDefaultScopes] = opts[kDefaultScopes];
     this.subject = opts.subject;
     this.additionalClaims = opts.additionalClaims;
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
@@ -167,7 +167,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     const gtoken = new GoogleToken({
       iss: this.email,
       sub: this.subject,
-      scope: this.scopes || this[DefaultScopesKey],
+      scope: this.scopes || this[kDefaultScopes],
       keyFile: this.keyFile,
       key: this.key,
       additionalClaims: {target_audience: targetAudience},
@@ -256,7 +256,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       this.gtoken = new GoogleToken({
         iss: this.email,
         sub: this.subject,
-        scope: this.scopes || this[DefaultScopesKey],
+        scope: this.scopes || this[kDefaultScopes],
         keyFile: this.keyFile,
         key: this.key,
         additionalClaims: this.additionalClaims,
