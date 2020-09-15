@@ -19,7 +19,7 @@ import * as jws from 'jws';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {GoogleAuth, JWT, kDefaultScopes} from '../src';
+import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
 
@@ -812,9 +812,9 @@ describe('jwt', () => {
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
         key: fs.readFileSync(PEM_PATH, 'utf8'),
-        [kDefaultScopes]: ['http://bar', 'http://foo'],
         subject: 'bar@subjectaccount.com',
       });
+      jwt.defaultScopes = ['http://bar', 'http://foo'];
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
       await jwt.getRequestHeaders('https//beepboop.googleapis.com');
       sandbox.assert.calledOnce(JWTAccess);
@@ -829,9 +829,9 @@ describe('jwt', () => {
         email: 'foo@serviceaccount.com',
         key: keys.private,
         subject: 'ignored@subjectaccount.com',
-        [kDefaultScopes]: ['foo', 'bar'],
         additionalClaims: {target_audience: 'beepboop'},
       });
+      jwt.defaultScopes = ['foo', 'bar'];
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
       const testUri = 'http:/example.com/my_test_service';
       const scope = createGTokenMock({id_token: 'abc123'});

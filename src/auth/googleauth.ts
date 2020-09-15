@@ -27,7 +27,7 @@ import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
-import {JWT, JWTOptions, kDefaultScopes} from './jwtclient';
+import {JWT, JWTOptions} from './jwtclient';
 import {
   Headers,
   OAuth2Client,
@@ -82,12 +82,6 @@ export interface GoogleAuthOptions {
   clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions;
 
   /**
-   * Scopes populated by the client library by default. We differentiate between
-   * these and user defined scopes when deciding whether to use a self-signed JWT.
-   */
-  [kDefaultScopes]?: string | string[];
-
-  /**
    * Required scopes for the desired API request
    */
   scopes?: string | string[];
@@ -125,9 +119,14 @@ export class GoogleAuth {
 
   cachedCredential: JWT | UserRefreshClient | Compute | null = null;
 
+  /**
+   * Scopes populated by the client library by default. We differentiate between
+   * these and user defined scopes when deciding whether to use a self-signed JWT.
+   */
+  defaultScopes?: string | string[];
+
   private keyFilename?: string;
   private scopes?: string | string[];
-  private [kDefaultScopes]?: string | string[];
   private clientOptions?: RefreshOptions;
 
   /**
@@ -140,7 +139,6 @@ export class GoogleAuth {
     this._cachedProjectId = opts.projectId || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
-    this[kDefaultScopes] = opts[kDefaultScopes];
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
   }
@@ -252,7 +250,7 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
-        credential[kDefaultScopes] = this[kDefaultScopes];
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
@@ -291,7 +289,7 @@ export class GoogleAuth {
 
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
-    (options as ComputeOptions).scopes = this.scopes || this[kDefaultScopes];
+    (options as ComputeOptions).scopes = this.scopes || this.defaultScopes;
     this.cachedCredential = new Compute(options);
     projectId = await this.getProjectId();
     return {projectId, credential: this.cachedCredential};
@@ -429,9 +427,9 @@ export class GoogleAuth {
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
     } else {
-      (options as JWTOptions)[kDefaultScopes] = this[kDefaultScopes];
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
     }
     client.fromJSON(json);
     return client;

@@ -25,7 +25,7 @@ export {GoogleAuthOptions, ProjectIdCallback} from './auth/googleauth';
 export {IAMAuth, RequestMetadata} from './auth/iam';
 export {IdTokenClient, IdTokenProvider} from './auth/idtokenclient';
 export {Claims, JWTAccess} from './auth/jwtaccess';
-export {JWT, JWTOptions, kDefaultScopes} from './auth/jwtclient';
+export {JWT, JWTOptions} from './auth/jwtclient';
 export {
   Certificates,
   CodeChallengeMethod,
