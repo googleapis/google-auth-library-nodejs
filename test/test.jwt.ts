@@ -843,7 +843,8 @@ describe('jwt', () => {
     it('returns headers from cache, prior to their expiry time', async () => {
       const sign = sandbox.stub(jws, 'sign').returns('abc123');
       const getExpirationTime = sandbox
-        .stub(jwtaccess.JWTAccess, 'getExpirationTime')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .stub(jwtaccess.JWTAccess as any, 'getExpirationTime')
         .returns(Date.now() / 1000 + 3600); // expire in an hour.
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
@@ -863,7 +864,8 @@ describe('jwt', () => {
     it('creates a new self-signed JWT, if headers are close to expiring', async () => {
       const sign = sandbox.stub(jws, 'sign').returns('abc123');
       const getExpirationTime = sandbox
-        .stub(jwtaccess.JWTAccess, 'getExpirationTime')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .stub(jwtaccess.JWTAccess as any, 'getExpirationTime')
         .returns(Date.now() / 1000 + 5); // expire in 5 seconds.
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',

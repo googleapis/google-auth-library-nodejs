@@ -129,7 +129,7 @@ export class JWTAccess {
    * @param iat The issued at time for the JWT.
    * @returns An expiration time for the JWT.
    */
-  static getExpirationTime(iat: number): number {
+  private static getExpirationTime(iat: number): number {
     const exp = iat + 3600; // 3600 seconds = 1 hour
     return exp;
   }
