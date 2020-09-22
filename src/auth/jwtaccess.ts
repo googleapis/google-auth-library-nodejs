@@ -27,13 +27,13 @@ const DEFAULT_HEADER: jws.Header = {
 export interface Claims {
   [index: string]: string;
 }
-const EXPIRATION_DELTA = 15000; // If token is expiring with 15s, create a new token.
 
 export class JWTAccess {
   email?: string | null;
   key?: string | null;
   keyId?: string | null;
   projectId?: string;
+  eagerRefreshThresholdMillis: number;
 
   private cache = new LRU<string, {expiration: number; headers: Headers}>({
     max: 500,
@@ -53,11 +53,14 @@ export class JWTAccess {
   constructor(
     email?: string | null,
     key?: string | null,
-    keyId?: string | null
+    keyId?: string | null,
+    eagerRefreshThresholdMillis?: number
   ) {
     this.email = email;
     this.key = key;
     this.keyId = keyId;
+    this.eagerRefreshThresholdMillis =
+      eagerRefreshThresholdMillis ?? 5 * 60 * 1000;
   }
 
   /**
@@ -73,7 +76,10 @@ export class JWTAccess {
     // EXPIRY_DELTA ms of them expiring:
     const cachedToken = this.cache.get(url);
     const now = Date.now();
-    if (cachedToken && cachedToken.expiration - now > EXPIRATION_DELTA) {
+    if (
+      cachedToken &&
+      cachedToken.expiration - now > this.eagerRefreshThresholdMillis
+    ) {
       return cachedToken.headers;
     }
     const iat = Math.floor(Date.now() / 1000);

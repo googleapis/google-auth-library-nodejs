@@ -138,7 +138,12 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
         if (!this.access) {
-          this.access = new JWTAccess(this.email, this.key, this.keyId);
+          this.access = new JWTAccess(
+            this.email,
+            this.key,
+            this.keyId,
+            this.eagerRefreshThresholdMillis
+          );
         }
         const headers = await this.access.getRequestHeaders(
           url,
