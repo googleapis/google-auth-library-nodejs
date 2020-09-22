@@ -119,6 +119,12 @@ export class GoogleAuth {
 
   cachedCredential: JWT | UserRefreshClient | Compute | null = null;
 
+  /**
+   * Scopes populated by the client library by default. We differentiate between
+   * these and user defined scopes when deciding whether to use a self-signed JWT.
+   */
+  defaultScopes?: string | string[];
+
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
@@ -244,6 +250,7 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
@@ -257,6 +264,7 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
@@ -282,7 +290,7 @@ export class GoogleAuth {
 
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
-    (options as ComputeOptions).scopes = this.scopes;
+    (options as ComputeOptions).scopes = this.scopes || this.defaultScopes;
     this.cachedCredential = new Compute(options);
     projectId = await this.getProjectId();
     return {projectId, credential: this.cachedCredential};
@@ -422,6 +430,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
     }
     client.fromJSON(json);
     return client;
@@ -446,6 +455,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
     }
     client.fromJSON(json);
     // cache both raw data used to instantiate client and client itself.
