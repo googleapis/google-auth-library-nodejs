@@ -264,6 +264,7 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       }
       this.cachedCredential = credential;
@@ -454,6 +455,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
     }
     client.fromJSON(json);
     // cache both raw data used to instantiate client and client itself.
