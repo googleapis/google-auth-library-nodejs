@@ -879,5 +879,16 @@ describe('jwt', () => {
       sandbox.assert.calledTwice(getExpirationTime);
       sandbox.assert.calledTwice(sign);
     });
+
+    it('returns no headers when no scopes or audiences are provided', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      const headers = await jwt.getRequestHeaders();
+      assert.deepStrictEqual(headers, {});
+    });
   });
 });

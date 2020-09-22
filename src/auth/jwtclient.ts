@@ -151,8 +151,12 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         );
         return {headers: this.addSharedMetadataHeaders(headers)};
       }
-    } else {
+    } else if (this.hasAnyScopes() || this.apiKey) {
       return super.getRequestMetadataAsync(url);
+    } else {
+      // If no audience, apiKey, or scopes are provided, we should not attempt
+      // to populate any headers:
+      return {headers: {}};
     }
   }
 
@@ -186,12 +190,16 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     if (!this.scopes) {
       return false;
     }
-    // For arrays, check the array length.
-    if (this.scopes instanceof Array) {
-      return this.scopes.length > 0;
-    }
-    // For others, convert to a string and check the length.
-    return String(this.scopes).length > 0;
+    return this.scopes.length > 0;
+  }
+
+  /**
+   * Are there any default or user scopes defined.
+   */
+  private hasAnyScopes() {
+    if (this.scopes && this.scopes.length > 0) return true;
+    if (this.defaultScopes && this.defaultScopes.length > 0) return true;
+    return false;
   }
 
   /**
