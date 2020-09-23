@@ -1,11 +1,40 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import * as fs from 'fs';
 import {assert} from 'chai';
 import {describe, it} from 'mocha';
-import {createCrypto} from '../src/crypto/crypto';
+import {createCrypto, fromArrayBufferToHex} from '../src/crypto/crypto';
 import {NodeCrypto} from '../src/crypto/node/crypto';
 
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+
+/**
+ * Converts a Node.js Buffer to an ArrayBuffer.
+ * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
+ * @param buffer The Buffer input to covert.
+ * @return The ArrayBuffer representation of the input.
+ */
+function toArrayBuffer(buffer: Buffer): ArrayBuffer {
+  const arrayBuffer = new ArrayBuffer(buffer.length);
+  const arrayBufferView = new Uint8Array(arrayBuffer);
+  for (let i = 0; i < buffer.length; i++) {
+    arrayBufferView[i] = buffer[i];
+  }
+  return arrayBuffer;
+}
 
 describe('crypto', () => {
   const crypto = createCrypto();
@@ -79,5 +108,55 @@ describe('crypto', () => {
     const loadedModules = Object.keys(require('module')._cache);
     const hits = loadedModules.filter(x => x.includes('fast-text-encoding'));
     assert.strictEqual(hits.length, 0);
+  });
+
+  it('should calculate SHA256 digest in hex encoding', async () => {
+    const input = 'I can calculate SHA256';
+    const expectedHexDigest =
+      '73d08486d8bfd4fb4bc12dd8903604ddbde5ad95b6efa567bd723ce81a881122';
+
+    const calculatedHexDigest = await crypto.sha256DigestHex(input);
+    assert.strictEqual(calculatedHexDigest, expectedHexDigest);
+  });
+
+  describe('should compute the HMAC-SHA256 hash of a message', () => {
+    it('using string key', async () => {
+      const message = 'The quick brown fox jumps over the lazy dog';
+      const key = 'key';
+      const expectedHexHash =
+        'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
+      const extectedHash = new Uint8Array(
+        (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
+          parseInt(byte, 16)
+        )
+      );
+
+      const calculatedHash = await crypto.signWithHmacSha256(key, message);
+      assert.deepStrictEqual(calculatedHash, extectedHash.buffer);
+    });
+
+    it('using an ArrayBuffer key', async () => {
+      const message = 'The quick brown fox jumps over the lazy dog';
+      const key = toArrayBuffer(Buffer.from('key'));
+      const expectedHexHash =
+        'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
+      const extectedHash = new Uint8Array(
+        (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
+          parseInt(byte, 16)
+        )
+      );
+
+      const calculatedHash = await crypto.signWithHmacSha256(key, message);
+      assert.deepStrictEqual(calculatedHash, extectedHash.buffer);
+    });
+  });
+
+  it('should expose a method to convert an ArrayBuffer to hex', () => {
+    const arrayBuffer = new Uint8Array([4, 8, 0, 12, 16, 0])
+      .buffer as ArrayBuffer;
+    const expectedHexEncoding = '0408000c1000';
+
+    const calculatedHexEncoding = fromArrayBufferToHex(arrayBuffer);
+    assert.strictEqual(calculatedHexEncoding, expectedHexEncoding);
   });
 });
