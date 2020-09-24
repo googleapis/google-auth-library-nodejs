@@ -212,7 +212,7 @@ export class GoogleAuth {
    *   client library) that need to be set on the current Auth client.
    */
   private getAnyScopes(): string | string[] | undefined {
-    return this.scopes || this.defaultScopes
+    return this.scopes || this.defaultScopes;
   }
 
   /**
