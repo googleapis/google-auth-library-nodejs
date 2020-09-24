@@ -24,6 +24,12 @@ import {RefreshOptions} from './oauth2client';
 
 const readFile = promisify(fs.readFile);
 
+type SubjectTokenFormatType = 'json' | 'text';
+
+interface SubjectTokenJsonResponse {
+  [key: string]: string;
+}
+
 /**
  * Url-sourced/file-sourced credentials json interface.
  * This is used for K8s and Azure workloads.
@@ -36,6 +42,10 @@ export interface IdentityPoolClientOptions
     headers?: {
       [key: string]: string;
     };
+    format?: {
+      type: SubjectTokenFormatType;
+      subject_token_field_name?: string;
+    };
   };
 }
 
@@ -47,6 +57,8 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
   private readonly file?: string;
   private readonly url?: string;
   private readonly headers?: {[key: string]: string};
+  private readonly formatType: SubjectTokenFormatType;
+  private readonly formatSubjectTokenFieldName?: string;
 
   /**
    * Instantiate an IdentityPoolClient instance using the provided JSON
@@ -70,6 +82,18 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     if (!this.file && !this.url) {
       throw new Error('No valid Identity Pool "credential_source" provided');
     }
+    // Text is the default format type.
+    this.formatType = options.credential_source.format?.type || 'text';
+    this.formatSubjectTokenFieldName =
+      options.credential_source.format?.subject_token_field_name;
+    if (this.formatType !== 'json' && this.formatType !== 'text') {
+      throw new Error(`Invalid credential_source format "${this.formatType}"`);
+    }
+    if (this.formatType === 'json' && !this.formatSubjectTokenFieldName) {
+      throw new Error(
+        'Missing subject_token_field_name for JSON credential_source format'
+      );
+    }
   }
 
   /**
@@ -84,9 +108,18 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    */
   async retrieveSubjectToken(): Promise<string> {
     if (this.file) {
-      return await this.getTokenFromFile(this.file!);
+      return await this.getTokenFromFile(
+        this.file!,
+        this.formatType,
+        this.formatSubjectTokenFieldName
+      );
     } else {
-      return await this.getTokenFromUrl(this.url!, this.headers);
+      return await this.getTokenFromUrl(
+        this.url!,
+        this.formatType,
+        this.formatSubjectTokenFieldName,
+        this.headers
+      );
     }
   }
 
@@ -94,9 +127,17 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * Looks up the external subject token in the file path provided and
    * resolves with that token.
    * @param file The file path where the external credential is located.
+   * @param formatType The token file or URL response type (JSON or text).
+   * @param formatSubjectTokenFieldName For JSON response types, this is the
+   *   subject_token field name. For Azure, this is access_token. For text
+   *   response types, this is ignored.
    * @return A promise that resolves with the external subject token.
    */
-  private getTokenFromFile(filePath: string): Promise<string> {
+  private async getTokenFromFile(
+    filePath: string,
+    formatType: SubjectTokenFormatType,
+    formatSubjectTokenFieldName?: string
+  ): Promise<string> {
     // Make sure there is a file at the path. lstatSync will throw if there is
     // nothing there.
     try {
@@ -112,7 +153,20 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       throw err;
     }
 
-    return readFile(filePath, {encoding: 'utf8'});
+    let subjectToken: string | undefined;
+    const rawText = await readFile(filePath, {encoding: 'utf8'});
+    if (formatType === 'text') {
+      subjectToken = rawText;
+    } else if (formatType === 'json' && formatSubjectTokenFieldName) {
+      const json = JSON.parse(rawText) as SubjectTokenJsonResponse;
+      subjectToken = json[formatSubjectTokenFieldName];
+    }
+    if (!subjectToken) {
+      throw new Error(
+        'Unable to parse the subject_token from the credential_source file'
+      );
+    }
+    return subjectToken;
   }
 
   /**
@@ -120,21 +174,41 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * external subject token.
    * @param url The URL to call to retrieve the subject token. This is typically
    *   a local metadata server.
+   * @param formatType The token file or URL response type (JSON or text).
+   * @param formatSubjectTokenFieldName For JSON response types, this is the
+   *   subject_token field name. For Azure, this is access_token. For text
+   *   response types, this is ignored.
    * @param headers The optional additional headers to send with the request to
    *   the metadata server url.
    * @return A promise that resolves with the external subject token.
    */
   private async getTokenFromUrl(
     url: string,
+    formatType: SubjectTokenFormatType,
+    formatSubjectTokenFieldName?: string,
     headers?: {[key: string]: string}
   ): Promise<string> {
     const opts: GaxiosOptions = {
       url,
       method: 'GET',
       headers,
-      responseType: 'text',
+      responseType: formatType,
     };
-    const response = await this.transporter.request<string>(opts);
-    return response.data;
+    let subjectToken: string | undefined;
+    if (formatType === 'text') {
+      const response = await this.transporter.request<string>(opts);
+      subjectToken = response.data;
+    } else if (formatType === 'json' && formatSubjectTokenFieldName) {
+      const response = await this.transporter.request<SubjectTokenJsonResponse>(
+        opts
+      );
+      subjectToken = response.data[formatSubjectTokenFieldName];
+    }
+    if (!subjectToken) {
+      throw new Error(
+        'Unable to parse the subject_token from the credential_source URL'
+      );
+    }
+    return subjectToken;
   }
 }

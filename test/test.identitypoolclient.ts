@@ -63,6 +63,25 @@ describe('IdentityPoolClient', () => {
     },
     fileSourcedOptions
   );
+  const jsonFileSourcedOptions: IdentityPoolClientOptions = {
+    type: 'external_account',
+    audience,
+    subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+    token_url: getTokenUrl(),
+    credential_source: {
+      file: './test/fixtures/external-subject-token.json',
+      format: {
+        type: 'json',
+        subject_token_field_name: 'access_token',
+      },
+    },
+  };
+  const jsonFileSourcedOptionsWithSA = Object.assign(
+    {
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
+    },
+    jsonFileSourcedOptions
+  );
   const fileSourcedOptionsNotFound = {
     type: 'external_account',
     audience,
@@ -94,6 +113,26 @@ describe('IdentityPoolClient', () => {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
     urlSourcedOptions
+  );
+  const jsonRespUrlSourcedOptions: IdentityPoolClientOptions = {
+    type: 'external_account',
+    audience,
+    subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+    token_url: getTokenUrl(),
+    credential_source: {
+      url: `${metadataBaseUrl}${metadataPath}`,
+      headers: metadataHeaders,
+      format: {
+        type: 'json',
+        subject_token_field_name: 'access_token',
+      },
+    },
+  };
+  const jsonRespUrlSourcedOptionsWithSA = Object.assign(
+    {
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
+    },
+    jsonRespUrlSourcedOptions
   );
   const stsSuccessfulResponse: StsSuccessfulResponse = {
     access_token: 'ACCESS_TOKEN',
@@ -128,6 +167,50 @@ describe('IdentityPoolClient', () => {
       }, expectedError);
     });
 
+    it('should throw on invalid credential_source.format.type', () => {
+      const expectedError = new Error('Invalid credential_source format "xml"');
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        token_url: getTokenUrl(),
+        credential_source: {
+          file: './test/fixtures/external-subject-token.txt',
+          format: {
+            type: 'xml',
+          },
+        },
+      };
+
+      assert.throws(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new IdentityPoolClient(invalidOptions as any);
+      }, expectedError);
+    });
+
+    it('should throw on required credential_source.format.subject_token_field_name', () => {
+      const expectedError = new Error(
+        'Missing subject_token_field_name for JSON credential_source format'
+      );
+      const invalidOptions: IdentityPoolClientOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        token_url: getTokenUrl(),
+        credential_source: {
+          file: './test/fixtures/external-subject-token.txt',
+          format: {
+            // json formats require the key where the subject_token is located.
+            type: 'json',
+          },
+        },
+      };
+
+      assert.throws(() => {
+        return new IdentityPoolClient(invalidOptions);
+      }, expectedError);
+    });
+
     it('should not throw when valid file-sourced options are provided', () => {
       assert.doesNotThrow(() => {
         return new IdentityPoolClient(fileSourcedOptions);
@@ -153,11 +236,40 @@ describe('IdentityPoolClient', () => {
 
   describe('for file-sourced subject tokens', () => {
     describe('retrieveSubjectToken()', () => {
-      it('should resolve when the file is found', async () => {
+      it('should resolve when the text file is found', async () => {
         const client = new IdentityPoolClient(fileSourcedOptions);
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, fileSubjectToken);
+      });
+
+      it('should resolve when the json file is found', async () => {
+        const client = new IdentityPoolClient(jsonFileSourcedOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, fileSubjectToken);
+      });
+
+      it('should reject when the json subject_token_field_name is not found', async () => {
+        const expectedError = new Error(
+          'Unable to parse the subject_token from the credential_source file'
+        );
+        const invalidOptions: IdentityPoolClientOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          token_url: getTokenUrl(),
+          credential_source: {
+            file: './test/fixtures/external-subject-token.json',
+            format: {
+              type: 'json',
+              subject_token_field_name: 'non-existent',
+            },
+          },
+        };
+        const client = new IdentityPoolClient(invalidOptions);
+
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should fail when the file is not found', async () => {
@@ -195,7 +307,7 @@ describe('IdentityPoolClient', () => {
     });
 
     describe('getAccessToken()', () => {
-      it('should resolve on retrieveSubjectToken success', async () => {
+      it('should resolve on retrieveSubjectToken success for text format', async () => {
         const scope = mockStsTokenExchange([
           {
             statusCode: 200,
@@ -225,7 +337,7 @@ describe('IdentityPoolClient', () => {
         scope.done();
       });
 
-      it('should handle service account access token', async () => {
+      it('should handle service account access token for text format', async () => {
         const now = new Date().getTime();
         const saSuccessResponse = {
           accessToken: 'SA_ACCESS_TOKEN',
@@ -271,6 +383,82 @@ describe('IdentityPoolClient', () => {
         scopes.forEach(scope => scope.done());
       });
 
+      it('should resolve on retrieveSubjectToken success for json format', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              // Subject token loaded from file should be used.
+              subject_token: fileSubjectToken,
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]);
+
+        const client = new IdentityPoolClient(jsonFileSourcedOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should handle service account access token for json format', async () => {
+        const now = new Date().getTime();
+        const saSuccessResponse = {
+          accessToken: 'SA_ACCESS_TOKEN',
+          expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
+        };
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                // Subject token loaded from file should be used.
+                subject_token: fileSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ]),
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
+
+        const client = new IdentityPoolClient(jsonFileSourcedOptionsWithSA);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
       it('should reject with retrieveSubjectToken error', async () => {
         const invalidFile = fileSourcedOptionsNotFound.credential_source.file;
         const client = new IdentityPoolClient(fileSourcedOptionsNotFound);
@@ -287,7 +475,7 @@ describe('IdentityPoolClient', () => {
 
   describe('for url-sourced subject tokens', () => {
     describe('retrieveSubjectToken()', () => {
-      it('should resolve on success', async () => {
+      it('should resolve on text response success', async () => {
         const externalSubjectToken = 'SUBJECT_TOKEN_1';
         const scope = nock(metadataBaseUrl)
           .get(metadataPath, undefined, {
@@ -299,6 +487,57 @@ describe('IdentityPoolClient', () => {
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, externalSubjectToken);
+        scope.done();
+      });
+
+      it('should resolve on json response success', async () => {
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const jsonResponse = {
+          access_token: externalSubjectToken,
+        };
+        const scope = nock(metadataBaseUrl)
+          .get(metadataPath, undefined, {
+            reqheaders: metadataHeaders,
+          })
+          .reply(200, jsonResponse);
+
+        const client = new IdentityPoolClient(jsonRespUrlSourcedOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, externalSubjectToken);
+        scope.done();
+      });
+
+      it('should reject when the json subject_token_field_name is not found', async () => {
+        const expectedError = new Error(
+          'Unable to parse the subject_token from the credential_source URL'
+        );
+        const invalidOptions: IdentityPoolClientOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          token_url: getTokenUrl(),
+          credential_source: {
+            url: `${metadataBaseUrl}${metadataPath}`,
+            headers: metadataHeaders,
+            format: {
+              type: 'json',
+              subject_token_field_name: 'non-existent',
+            },
+          },
+        };
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const jsonResponse = {
+          access_token: externalSubjectToken,
+        };
+        const scope = nock(metadataBaseUrl)
+          .get(metadataPath, undefined, {
+            reqheaders: metadataHeaders,
+          })
+          .reply(200, jsonResponse);
+        const client = new IdentityPoolClient(invalidOptions);
+
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
         scope.done();
       });
 
@@ -337,7 +576,7 @@ describe('IdentityPoolClient', () => {
     });
 
     describe('getAccessToken()', () => {
-      it('should resolve on retrieveSubjectToken success', async () => {
+      it('should resolve on retrieveSubjectToken success for text format', async () => {
         const externalSubjectToken = 'SUBJECT_TOKEN_1';
         const scopes: nock.Scope[] = [];
         scopes.push(
@@ -378,7 +617,7 @@ describe('IdentityPoolClient', () => {
         scopes.forEach(scope => scope.done());
       });
 
-      it('should handle service account access token', async () => {
+      it('should handle service account access token for text format', async () => {
         const now = new Date().getTime();
         const saSuccessResponse = {
           accessToken: 'SA_ACCESS_TOKEN',
@@ -419,6 +658,105 @@ describe('IdentityPoolClient', () => {
         );
 
         const client = new IdentityPoolClient(urlSourcedOptionsWithSA);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should resolve on retrieveSubjectToken success for json format', async () => {
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const jsonResponse = {
+          access_token: externalSubjectToken,
+        };
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                // Subject token retrieved from url should be used.
+                subject_token: externalSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          nock(metadataBaseUrl)
+            .get(metadataPath, undefined, {
+              reqheaders: metadataHeaders,
+            })
+            .reply(200, jsonResponse)
+        );
+
+        const client = new IdentityPoolClient(jsonRespUrlSourcedOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should handle service account access token for json format', async () => {
+        const now = new Date().getTime();
+        const saSuccessResponse = {
+          accessToken: 'SA_ACCESS_TOKEN',
+          expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
+        };
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const jsonResponse = {
+          access_token: externalSubjectToken,
+        };
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl)
+            .get(metadataPath, undefined, {
+              reqheaders: metadataHeaders,
+            })
+            .reply(200, jsonResponse),
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                // Subject token retrieved from url should be used.
+                subject_token: externalSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ]),
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
+
+        const client = new IdentityPoolClient(jsonRespUrlSourcedOptionsWithSA);
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
