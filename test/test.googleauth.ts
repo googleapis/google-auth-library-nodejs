@@ -1576,6 +1576,8 @@ describe('googleauth', () => {
         eagerRefreshThresholdMillis: 5000,
         forceRefreshOnFailure: true,
       };
+      const defaultScopes = ['http://examples.com/is/a/default/scope'];
+      const userScopes = ['http://examples.com/is/a/scope'];
 
       /**
        * @return A copy of the external account JSON auth object for testing.
@@ -1595,11 +1597,13 @@ describe('googleauth', () => {
        * optional ones for retrieving the project ID via cloud resource
        * manager.
        * @param mockProjectIdRetrieval Whether to mock project ID retrieval.
+       * @param expectedScopes The list of expected scopes.
        * @return The list of nock.Scope corresponding to the mocked HTTP
        *   requests.
        */
       function mockGetAccessTokenAndProjectId(
-        mockProjectIdRetrieval = true
+        mockProjectIdRetrieval = true,
+        expectedScopes = ['https://www.googleapis.com/auth/cloud-platform']
       ): nock.Scope[] {
         const scopes = [
           mockStsTokenExchange([
@@ -1609,7 +1613,7 @@ describe('googleauth', () => {
               request: {
                 grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
                 audience: externalAccountJSON.audience,
-                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                scope: expectedScopes.join(' '),
                 requested_token_type:
                   'urn:ietf:params:oauth:token-type:access_token',
                 subject_token: fileSubjectToken,
@@ -1669,6 +1673,31 @@ describe('googleauth', () => {
           const result = auth.fromJSON(json);
 
           assertExternalAccountClientInitialized(result, json, {});
+        });
+
+        it('should honor defaultScopes when no user scopes are available', () => {
+          const json = createExternalAccountJSON();
+          auth.defaultScopes = defaultScopes;
+          const result = auth.fromJSON(json);
+
+          assertExternalAccountClientInitialized(result, json, {});
+          assert.strictEqual(
+            (result as BaseExternalAccountClient).scopes,
+            defaultScopes
+          );
+        });
+
+        it('should prefer user scopes over defaultScopes', () => {
+          const json = createExternalAccountJSON();
+          const auth = new GoogleAuth({scopes: userScopes});
+          auth.defaultScopes = defaultScopes;
+          const result = auth.fromJSON(json);
+
+          assertExternalAccountClientInitialized(result, json, {});
+          assert.strictEqual(
+            (result as BaseExternalAccountClient).scopes,
+            userScopes
+          );
         });
 
         it('should create client with custom RefreshOptions', () => {
@@ -1741,6 +1770,58 @@ describe('googleauth', () => {
           scopes.forEach(s => s.done());
         });
 
+        it('should use defaultScopes for environment variable ADC', async () => {
+          const scopes = mockGetAccessTokenAndProjectId(true, defaultScopes);
+          // Environment variable is set up to point to
+          // external-account-cred.json
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-cred.json'
+          );
+
+          const auth = new GoogleAuth();
+          auth.defaultScopes = defaultScopes;
+          const res = await auth.getApplicationDefault();
+          const client = res.credential;
+
+          assertExternalAccountClientInitialized(
+            client,
+            createExternalAccountJSON(),
+            {}
+          );
+          assert.strictEqual(
+            (client as BaseExternalAccountClient).scopes,
+            defaultScopes
+          );
+          scopes.forEach(s => s.done());
+        });
+
+        it('should prefer user scopes over defaultScopes for environment variable ADC', async () => {
+          const scopes = mockGetAccessTokenAndProjectId(true, userScopes);
+          // Environment variable is set up to point to
+          // external-account-cred.json
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-cred.json'
+          );
+
+          const auth = new GoogleAuth({scopes: userScopes});
+          auth.defaultScopes = defaultScopes;
+          const res = await auth.getApplicationDefault();
+          const client = res.credential;
+
+          assertExternalAccountClientInitialized(
+            client,
+            createExternalAccountJSON(),
+            {}
+          );
+          assert.strictEqual(
+            (client as BaseExternalAccountClient).scopes,
+            userScopes
+          );
+          scopes.forEach(s => s.done());
+        });
+
         it('should use well-known file when it is available and env const is not set', async () => {
           // Set up the creds.
           // * Environment variable is not set.
@@ -1757,6 +1838,54 @@ describe('googleauth', () => {
             {}
           );
           assert.deepEqual(client.projectId, projectId);
+          scopes.forEach(s => s.done());
+        });
+
+        it('should use defaultScopes for well-known file ADC', async () => {
+          // Set up the creds.
+          // * Environment variable is not set.
+          // * Well-known file is set up to point to external-account-cred.json
+          mockLinuxWellKnownFile('./test/fixtures/external-account-cred.json');
+          const scopes = mockGetAccessTokenAndProjectId(true, defaultScopes);
+
+          const auth = new GoogleAuth();
+          auth.defaultScopes = defaultScopes;
+          const res = await auth.getApplicationDefault();
+          const client = res.credential;
+
+          assertExternalAccountClientInitialized(
+            client,
+            createExternalAccountJSON(),
+            {}
+          );
+          assert.strictEqual(
+            (client as BaseExternalAccountClient).scopes,
+            defaultScopes
+          );
+          scopes.forEach(s => s.done());
+        });
+
+        it('should prefer user scopes over defaultScopes for well-known file ADC', async () => {
+          // Set up the creds.
+          // * Environment variable is not set.
+          // * Well-known file is set up to point to external-account-cred.json
+          mockLinuxWellKnownFile('./test/fixtures/external-account-cred.json');
+          const scopes = mockGetAccessTokenAndProjectId(true, userScopes);
+
+          const auth = new GoogleAuth({scopes: userScopes});
+          auth.defaultScopes = defaultScopes;
+          const res = await auth.getApplicationDefault();
+          const client = res.credential;
+
+          assertExternalAccountClientInitialized(
+            client,
+            createExternalAccountJSON(),
+            {}
+          );
+          assert.strictEqual(
+            (client as BaseExternalAccountClient).scopes,
+            userScopes
+          );
           scopes.forEach(s => s.done());
         });
       });
@@ -1947,6 +2076,27 @@ describe('googleauth', () => {
             {}
           );
           scopes.forEach(s => s.done());
+        });
+
+        it('should allow use defaultScopes when no scopes are available', async () => {
+          const keyFilename = './test/fixtures/external-account-cred.json';
+          const auth = new GoogleAuth({keyFilename});
+          // Set defaultScopes on Auth instance. This should be set on the
+          // underlying client.
+          auth.defaultScopes = defaultScopes;
+          const client = (await auth.getClient()) as BaseExternalAccountClient;
+
+          assert.strictEqual(client.scopes, defaultScopes);
+        });
+
+        it('should prefer user scopes over defaultScopes', async () => {
+          const keyFilename = './test/fixtures/external-account-cred.json';
+          const auth = new GoogleAuth({scopes: userScopes, keyFilename});
+          // Set defaultScopes on Auth instance. User scopes should be used.
+          auth.defaultScopes = defaultScopes;
+          const client = (await auth.getClient()) as BaseExternalAccountClient;
+
+          assert.strictEqual(client.scopes, userScopes);
         });
 
         it('should allow passing scopes to get a client', async () => {

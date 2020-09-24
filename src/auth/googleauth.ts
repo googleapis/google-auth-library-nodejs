@@ -126,6 +126,12 @@ export class GoogleAuth {
 
   cachedCredential: JSONClient | Compute | null = null;
 
+  /**
+   * Scopes populated by the client library by default. We differentiate between
+   * these and user defined scopes when deciding whether to use a self-signed JWT.
+   */
+  defaultScopes?: string | string[];
+
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
@@ -202,6 +208,14 @@ export class GoogleAuth {
   }
 
   /**
+   * @returns Any scopes (user-specified or default scopes specified by the
+   *   client library) that need to be set on the current Auth client.
+   */
+  private getAnyScopes(): string | string[] | undefined {
+    return this.scopes || this.defaultScopes;
+  }
+
+  /**
    * Obtains the default service-level credentials for the application.
    * @param callback Optional callback.
    * @returns Promise that resolves with the ADCResponse (if no callback was
@@ -251,11 +265,11 @@ export class GoogleAuth {
       options
     );
     if (credential) {
-      if (
-        credential instanceof JWT ||
-        credential instanceof BaseExternalAccountClient
-      ) {
+      if (credential instanceof JWT) {
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
+      } else if (credential instanceof BaseExternalAccountClient) {
+        credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
       projectId = await this.getProjectId();
@@ -267,11 +281,11 @@ export class GoogleAuth {
       options
     );
     if (credential) {
-      if (
-        credential instanceof JWT ||
-        credential instanceof BaseExternalAccountClient
-      ) {
+      if (credential instanceof JWT) {
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
+      } else if (credential instanceof BaseExternalAccountClient) {
+        credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
       projectId = await this.getProjectId();
@@ -296,7 +310,7 @@ export class GoogleAuth {
 
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
-    (options as ComputeOptions).scopes = this.scopes;
+    (options as ComputeOptions).scopes = this.getAnyScopes();
     this.cachedCredential = new Compute(options);
     projectId = await this.getProjectId();
     return {projectId, credential: this.cachedCredential};
@@ -439,10 +453,11 @@ export class GoogleAuth {
         json as ExternalAccountClientOptions,
         options
       )!;
-      client.scopes = this.scopes;
+      client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }
     return client;
@@ -470,10 +485,11 @@ export class GoogleAuth {
         json as ExternalAccountClientOptions,
         options
       )!;
-      client.scopes = this.scopes;
+      client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }
     // cache both raw data used to instantiate client and client itself.

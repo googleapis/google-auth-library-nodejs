@@ -82,9 +82,7 @@ describe('transporters', () => {
       url: '',
     };
     let configuredOpts = transporter.configure(opts);
-    console.info(configuredOpts);
     configuredOpts = transporter.configure(opts);
-    console.info(configuredOpts);
     assert(
       /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(
         configuredOpts.headers!['x-goog-api-client']
