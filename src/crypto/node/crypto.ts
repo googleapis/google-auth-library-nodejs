@@ -14,32 +14,100 @@
 
 import * as crypto from 'crypto';
 import {Crypto} from '../crypto';
+import * as base64js from 'base64-js';
+
+interface WebCryptoInterface {
+  subtle: {
+    digest: Function;
+    importKey: Function;
+    verify: Function;
+    sign: Function;
+  };
+  getRandomValues: Function;
+}
+
+const webcrypto = (crypto as any).webcrypto as WebCryptoInterface;
 
 export class NodeCrypto implements Crypto {
   async sha256DigestBase64(str: string): Promise<string> {
-    return crypto.createHash('sha256').update(str).digest('base64');
+    const inputBuffer = new TextEncoder().encode(str);
+
+    // Result is ArrayBuffer as well.
+    const outputBuffer = await webcrypto.subtle.digest('SHA-256', inputBuffer);
+
+    return base64js.fromByteArray(new Uint8Array(outputBuffer));
   }
 
   randomBytesBase64(count: number): string {
-    return crypto.randomBytes(count).toString('base64');
+    const array = new Uint8Array(count);
+    webcrypto.getRandomValues(array);
+    return base64js.fromByteArray(array);
+  }
+
+  private static padBase64(base64: string): string {
+    // base64js requires padding, so let's add some '='
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    return base64;
   }
 
   async verify(
     pubkey: string,
-    data: string | Buffer,
+    data: string,
     signature: string
   ): Promise<boolean> {
-    const verifier = crypto.createVerify('sha256');
-    verifier.update(data);
-    verifier.end();
-    return verifier.verify(pubkey, signature, 'base64');
+    const algo = {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: {name: 'SHA-256'},
+    };
+
+    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    const dataArray = new TextEncoder().encode(data);
+    const signatureArray = base64js.toByteArray(
+      NodeCrypto.padBase64(signature)
+    );
+    const ko = (crypto as any).createPublicKey(pubkey, 'pem', 'pkcs1');
+    const cryptoKey = await webcrypto.subtle.importKey(
+      'node.keyObject',
+      ko,
+      algo,
+      true,
+      ['verify']
+    );
+    // SubtleCrypto's verify method is async so we must make
+    // this method async as well.
+    const result = await webcrypto.subtle.verify(
+      algo,
+      cryptoKey,
+      signatureArray,
+      dataArray
+    );
+    return result;
   }
 
   async sign(privateKey: string, data: string | Buffer): Promise<string> {
-    const signer = crypto.createSign('RSA-SHA256');
-    signer.update(data);
-    signer.end();
-    return signer.sign(privateKey, 'base64');
+    const algo = {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: {name: 'SHA-256'},
+    };
+    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    const dataArray = new TextEncoder().encode(
+      Buffer.from(data).toString('utf8')
+    );
+    const ko = (crypto as any).createPrivateKey(privateKey, 'pem', 'pkcs1');
+    const cryptoKey = await webcrypto.subtle.importKey(
+      'node.keyObject',
+      ko,
+      algo,
+      true,
+      ['sign']
+    );
+
+    // SubtleCrypto's sign method is async so we must make
+    // this method async as well.
+    const result = await webcrypto.subtle.sign(algo, cryptoKey, dataArray);
+    return base64js.fromByteArray(new Uint8Array(result));
   }
 
   decodeBase64StringUtf8(base64: string): string {
