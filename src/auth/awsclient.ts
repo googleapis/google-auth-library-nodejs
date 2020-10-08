@@ -199,6 +199,9 @@ export class AwsClient extends BaseExternalAccountClient {
    * @return A promise that resolves with the current AWS region.
    */
   private async getAwsRegion(): Promise<string> {
+    if (process.env['AWS_REGION']) {
+      return process.env['AWS_REGION'];
+    }
     const opts: GaxiosOptions = {
       url: this.regionUrl,
       method: 'GET',

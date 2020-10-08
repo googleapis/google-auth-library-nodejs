@@ -504,16 +504,19 @@ describe('AwsClient', () => {
     let envAwsAccessKeyId: string | undefined;
     let envAwsSecretAccessKey: string | undefined;
     let envAwsSessionToken: string | undefined;
+    let envAwsRegion: string | undefined;
 
     beforeEach(() => {
       // Store external state.
       envAwsAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
       envAwsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
       envAwsSessionToken = process.env.AWS_SESSION_TOKEN;
+      envAwsAccessKeyId = process.env.AWS_REGION;
       // Reset environment variables.
       delete process.env.AWS_ACCESS_KEY_ID;
       delete process.env.AWS_SECRET_ACCESS_KEY;
       delete process.env.AWS_SESSION_TOKEN;
+      delete process.env.AWS_REGION;
     });
 
     afterEach(() => {
@@ -532,6 +535,11 @@ describe('AwsClient', () => {
         process.env.AWS_SESSION_TOKEN = envAwsSessionToken;
       } else {
         delete process.env.AWS_SESSION_TOKEN;
+      }
+      if (envAwsRegion) {
+        process.env.AWS_REGION = envAwsRegion;
+      } else {
+        delete process.env.AWS_REGION;
       }
     });
 
@@ -582,6 +590,17 @@ describe('AwsClient', () => {
           code: '500',
         });
         scope.done();
+      });
+
+      it('should resolve when AWS region is set as environment variable', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_REGION = awsRegion;
+
+        const client = new AwsClient(awsOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
       });
     });
 
