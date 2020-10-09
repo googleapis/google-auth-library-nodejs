@@ -55,15 +55,37 @@ export const CLOUD_RESOURCE_MANAGER =
 
 /**
  * Base external account credentials json interface.
+ * https://cloud.google.com/iam/docs/reference/sts/rest/v1beta/TopLevel/token
  */
 export interface BaseExternalAccountClientOptions {
+  /**
+   * Required `external_account`
+   */
   type: string;
+  /**
+   * The full resource name of the identity provider. For example,
+   * `//iam.googleapis.com/projects/<project-number>/workloadIdentityPools/<pool-id>/providers/<provider-id>`.
+   */
   audience: string;
+  /**
+   * What kind of token is being exchanged for a google access token.
+   * `urn:ietf:params:oauth:token-type:accessToken` for OIDC based providers or
+   * `urn:ietf:params:aws:token-type:aws4_request` for AWS
+   */
   subject_token_type: string;
+  /**
+   * When specified, use this URl to get an accessToken to impersonate a service account.
+   * For example, `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/<service-account-email>:generateAccessToken`
+   */
   service_account_impersonation_url?: string;
+  /**
+   * URL where the credentials can be exchanged for a Google OAuth 2.0 access token.
+   * For example, `https://sts.googleapis.com/v1beta/token`
+   */
   token_url: string;
-  token_info_url?: string;
+  /** Optional client-id for invoking `token_url` */
   client_id?: string;
+  /** Optional client-secret for invoking `token_url` */
   client_secret?: string;
   quota_project_id?: string;
 }

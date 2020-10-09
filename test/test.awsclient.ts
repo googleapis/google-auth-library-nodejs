@@ -16,7 +16,11 @@ import * as assert from 'assert';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import {AwsClient} from '../src/auth/awsclient';
+import {
+  AwsClient,
+  AwsClientOptions,
+  AwsClientCredentialSource,
+} from '../src/auth/awsclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {
@@ -46,15 +50,10 @@ describe('AwsClient', () => {
   const awsRole = 'gcp-aws-role';
   const audience = getAudience();
   const metadataBaseUrl = 'http://169.254.169.254';
-  const awsCredentialSource = {
+  const awsCredentialSource: AwsClientCredentialSource = {
     environment_id: 'aws1',
-    region_url: `${metadataBaseUrl}/latest/meta-data/placement/availability-zone`,
-    url: `${metadataBaseUrl}/latest/meta-data/iam/security-credentials`,
-    regional_cred_verification_url:
-      'https://sts.{region}.amazonaws.com?' +
-      'Action=GetCallerIdentity&Version=2011-06-15',
   };
-  const awsOptions = {
+  const awsOptions: AwsClientOptions = {
     type: 'external_account',
     audience,
     subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
@@ -119,6 +118,50 @@ describe('AwsClient', () => {
       ],
     })
   );
+  // Signature retrieved from "custom URL" test in test.awsclient.ts.
+  const expectedCustomUrlRequest = {
+    url:
+      'https://sts.us-east-2.aws.com?Action=GetCallerIdentity&Version=2099-01-01',
+    method: 'POST',
+    headers: {
+      Authorization:
+        `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
+        `${dateStamp}/${awsRegion}/sts/aws4_request, SignedHeaders=host;` +
+        'x-amz-date;x-amz-security-token, Signature=' +
+        'fdaeb686060c6878a95bbc36e92a151385babb7e226a8b5ca5e3822b1113d2ba',
+      host: 'sts.us-east-2.aws.com',
+      'x-amz-date': amzDate,
+      'x-amz-security-token': token,
+    },
+  };
+  const expectedCustomUrlToken = encodeURIComponent(
+    JSON.stringify({
+      url: expectedCustomUrlRequest.url,
+      method: expectedCustomUrlRequest.method,
+      headers: [
+        {
+          key: 'x-goog-cloud-target-resource',
+          value: awsOptions.audience,
+        },
+        {
+          key: 'x-amz-date',
+          value: expectedCustomUrlRequest.headers['x-amz-date'],
+        },
+        {
+          key: 'Authorization',
+          value: expectedCustomUrlRequest.headers.Authorization,
+        },
+        {
+          key: 'host',
+          value: expectedCustomUrlRequest.headers.host,
+        },
+        {
+          key: 'x-amz-security-token',
+          value: expectedCustomUrlRequest.headers['x-amz-security-token'],
+        },
+      ],
+    })
+  );
   // Signature retrieved from "signed request when AWS credentials have no
   // token" test in test.awsclient.ts.
   const expectedSignedRequestNoToken = {
@@ -176,31 +219,24 @@ describe('AwsClient', () => {
   });
 
   describe('Constructor', () => {
-    const requiredCredentialSourceFields = [
-      'environment_id',
-      'region_url',
-      'regional_cred_verification_url',
-    ];
-    requiredCredentialSourceFields.forEach(required => {
-      it(`should throw when credential_source is missing ${required}`, () => {
-        const expectedError = new Error(
-          'No valid AWS "credential_source" provided'
-        );
-        const invalidCredentialSource = Object.assign({}, awsCredentialSource);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (invalidCredentialSource as any)[required];
-        const invalidOptions = {
-          type: 'external_account',
-          audience,
-          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-          token_url: getTokenUrl(),
-          credential_source: invalidCredentialSource,
-        };
+    it('should throw when an environment ID is not provided', () => {
+      const expectedError = new Error(
+        'No valid AWS "credential_source" provided'
+      );
+      const invalidCredentialSource = Object.assign({}, awsCredentialSource);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (invalidCredentialSource as any).environment_id;
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        token_url: getTokenUrl(),
+        credential_source: invalidCredentialSource,
+      };
 
-        assert.throws(() => {
-          return new AwsClient(invalidOptions);
-        }, expectedError);
-      });
+      assert.throws(() => {
+        return new AwsClient(invalidOptions);
+      }, expectedError);
     });
 
     it('should throw when an unsupported environment ID is provided', () => {
@@ -358,30 +394,29 @@ describe('AwsClient', () => {
         scope.done();
       });
 
-      it('should reject when "credential_source.url" is missing', async () => {
-        const expectedError = new Error(
-          'Unable to determine AWS role name due to missing ' +
-            '"options.credential_source.url"'
-        );
-        const missingUrlCredentialSource = Object.assign(
-          {},
-          awsCredentialSource
-        );
-        delete missingUrlCredentialSource.url;
-        const invalidOptions = {
-          type: 'external_account',
-          audience,
-          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-          token_url: getTokenUrl(),
-          credential_source: missingUrlCredentialSource,
-        };
-        const scope = nock(metadataBaseUrl)
-          .get('/latest/meta-data/placement/availability-zone')
-          .reply(200, `${awsRegion}b`);
+      it('should use custom credential urls when supplied', async () => {
+        const customMetadataBaseUrl = 'http://127.0.0.1';
+        const scope = nock(customMetadataBaseUrl)
+          .get('/availability-zone')
+          .reply(200, `${awsRegion}b`)
+          .get('/security-credentials')
+          .reply(200, awsRole)
+          .get(`/security-credentials/${awsRole}`)
+          .reply(200, awsSecurityCredentials);
 
-        const client = new AwsClient(invalidOptions);
+        const client = new AwsClient({
+          ...awsOptions,
+          credential_source: {
+            ...awsOptions.credential_source,
+            region_url: `${customMetadataBaseUrl}/availability-zone`,
+            url: `${customMetadataBaseUrl}/security-credentials`,
+            regional_cred_verification_url:
+              'https://sts.{region}.aws.com?Action=GetCallerIdentity&Version=2099-01-01',
+          },
+        });
+        const subjectToken = await client.retrieveSubjectToken();
 
-        await assert.rejects(client.retrieveSubjectToken(), expectedError);
+        assert.deepEqual(subjectToken, expectedCustomUrlToken);
         scope.done();
       });
     });

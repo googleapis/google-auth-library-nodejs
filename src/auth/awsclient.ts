@@ -21,16 +21,39 @@ import {
 } from './baseexternalclient';
 import {RefreshOptions} from './oauth2client';
 
+const DEFAULT_REGION_URL =
+  'http://169.254.169.254/latest/meta-data/placement/availability-zone';
+const DEFAULT_CREDENTIALS_URL =
+  'http://169.254.169.254/latest/meta-data/iam/security-credentials';
+const DEFAULT_CRED_VERIFICATION_URL =
+  'https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15';
+
+export interface AwsClientCredentialSource {
+  /** indicator that these credentials are intended for an AwsClient, should be set to `aws1` */
+  environment_id: string;
+  /**
+   * URL where to request the current AWS region if it is not set as an environment variable.
+   * Defaults to `http://169.254.169.254/latest/meta-data/placement/availability-zone`
+   */
+  region_url?: string;
+  /**
+   * URL where to request the current AWS credentials if these are not set as environment variables.
+   * Defaults to `http://169.254.169.254/latest/meta-data/iam/security-credentials`
+   */
+  url?: string;
+  /**
+   * URL to AWS STS GetCallerIdentity.
+   * Defaults to `https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15` where `{region}`
+   * is replaced with the actual region
+   */
+  regional_cred_verification_url?: string;
+}
+
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
  */
 export interface AwsClientOptions extends BaseExternalAccountClientOptions {
-  credential_source: {
-    environment_id: string;
-    region_url: string;
-    url: string;
-    regional_cred_verification_url: string;
-  };
+  credential_source: AwsClientCredentialSource;
 }
 
 /**
@@ -72,18 +95,21 @@ export class AwsClient extends BaseExternalAccountClient {
   constructor(options: AwsClientOptions, additionalOptions?: RefreshOptions) {
     super(options, additionalOptions);
     this.environmentId = options.credential_source.environment_id;
-    this.regionUrl = options.credential_source.region_url;
+    this.regionUrl = options.credential_source.region_url || DEFAULT_REGION_URL;
     // This is only required if AWS security credentials are not available in
     // environment variables.
-    this.securityCredentialsUrl = options.credential_source.url;
+    this.securityCredentialsUrl =
+      options.credential_source.url || DEFAULT_CREDENTIALS_URL;
     this.regionalCredVerificationUrl =
-      options.credential_source.regional_cred_verification_url;
+      options.credential_source.regional_cred_verification_url ||
+      DEFAULT_CRED_VERIFICATION_URL;
     const envIdComponents = this.environmentId?.match(/^(aws)([\d]+)$/) || [];
     const envId = envIdComponents[1];
     const envVersion = envIdComponents[2];
     if (
       envId !== 'aws' ||
       !this.regionUrl ||
+      !this.securityCredentialsUrl ||
       !this.regionalCredVerificationUrl
     ) {
       throw new Error('No valid AWS "credential_source" provided');
@@ -218,12 +244,6 @@ export class AwsClient extends BaseExternalAccountClient {
    *   AWS VM. This is needed for calling the security-credentials endpoint.
    */
   private async getAwsRoleName(): Promise<string> {
-    if (!this.securityCredentialsUrl) {
-      throw new Error(
-        'Unable to determine AWS role name due to missing ' +
-          '"options.credential_source.url"'
-      );
-    }
     const opts: GaxiosOptions = {
       url: this.securityCredentialsUrl,
       method: 'GET',
