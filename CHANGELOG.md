@@ -4,6 +4,20 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.1.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.0...v6.1.1) (2020-10-06)
+
+
+### Bug Fixes
+
+* **deps:** upgrade gtoken ([#1064](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1064)) ([9116f24](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9116f247486d6376feca505bbfa42a91d5e579e2))
+
+## [6.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.8...v6.1.0) (2020-09-22)
+
+
+### Features
+
+* default self-signed JWTs ([#1054](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1054)) ([b4d139d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/b4d139d9ee27f886ca8cc5478615c052700fff48))
+
 ### [6.0.8](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.7...v6.0.8) (2020-08-13)
 
 

@@ -33,8 +33,12 @@ export class JWTAccess {
   key?: string | null;
   keyId?: string | null;
   projectId?: string;
+  eagerRefreshThresholdMillis: number;
 
-  private cache = new LRU<string, Headers>({max: 500, maxAge: 60 * 60 * 1000});
+  private cache = new LRU<string, {expiration: number; headers: Headers}>({
+    max: 500,
+    maxAge: 60 * 60 * 1000,
+  });
 
   /**
    * JWTAccess service account credentials.
@@ -49,11 +53,14 @@ export class JWTAccess {
   constructor(
     email?: string | null,
     key?: string | null,
-    keyId?: string | null
+    keyId?: string | null,
+    eagerRefreshThresholdMillis?: number
   ) {
     this.email = email;
     this.key = key;
     this.keyId = keyId;
+    this.eagerRefreshThresholdMillis =
+      eagerRefreshThresholdMillis ?? 5 * 60 * 1000;
   }
 
   /**
@@ -65,12 +72,18 @@ export class JWTAccess {
    * @returns An object that includes the authorization header.
    */
   getRequestHeaders(url: string, additionalClaims?: Claims): Headers {
+    // Return cached authorization headers, unless we are within
+    // eagerRefreshThresholdMillis ms of them expiring:
     const cachedToken = this.cache.get(url);
-    if (cachedToken) {
-      return cachedToken;
+    const now = Date.now();
+    if (
+      cachedToken &&
+      cachedToken.expiration - now > this.eagerRefreshThresholdMillis
+    ) {
+      return cachedToken.headers;
     }
-    const iat = Math.floor(new Date().getTime() / 1000);
-    const exp = iat + 3600; // 3600 seconds = 1 hour
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = JWTAccess.getExpirationTime(iat);
 
     // The payload used for signed JWT headers has:
     // iss == sub == <client email>
@@ -103,8 +116,22 @@ export class JWTAccess {
     // Sign the jwt and add it to the cache
     const signedJWT = jws.sign({header, payload, secret: this.key});
     const headers = {Authorization: `Bearer ${signedJWT}`};
-    this.cache.set(url, headers);
+    this.cache.set(url, {
+      expiration: exp * 1000,
+      headers,
+    });
     return headers;
+  }
+
+  /**
+   * Returns an expiration time for the JWT token.
+   *
+   * @param iat The issued at time for the JWT.
+   * @returns An expiration time for the JWT.
+   */
+  private static getExpirationTime(iat: number): number {
+    const exp = iat + 3600; // 3600 seconds = 1 hour
+    return exp;
   }
 
   /**
