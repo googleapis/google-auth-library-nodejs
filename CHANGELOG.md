@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.1.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.1...v6.1.2) (2020-10-19)
+
+
+### Bug Fixes
+
+* update gcp-metadata to catch a json-bigint security fix ([#1078](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1078)) ([125fe09](https://www.github.com/googleapis/google-auth-library-nodejs/commit/125fe0924a2206ebb0c83ece9947524e7b135803))
+
 ### [6.1.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.0...v6.1.1) (2020-10-06)
 
 
