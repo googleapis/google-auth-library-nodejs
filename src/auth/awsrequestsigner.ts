@@ -46,6 +46,31 @@ interface AwsSecurityCredentials {
   token?: string;
 }
 
+/**
+ * Interface defining the parameters needed to compute the AWS
+ * authentication header map.
+ */
+interface GenerateAuthHeaderMapOptions {
+  // The crypto instance used to facilitate cryptographic operations.
+  crypto: Crypto;
+  // The AWS service URL hostname.
+  host: string;
+  // The AWS service URL path name.
+  canonicalUri: string;
+  // The AWS service URL query string.
+  canonicalQuerystring: string;
+  // The HTTP method used to call this API.
+  method: HttpMethod;
+  // The AWS region.
+  region: string;
+  // The AWS security credentials.
+  securityCredentials: AwsSecurityCredentials;
+  // The optional request payload if available.
+  requestPayload?: string;
+  // The optional additional headers needed for the requested AWS API.
+  additionalAmzHeaders?: Headers;
+}
+
 /** AWS Signature Version 4 signing algorithm identifier.  */
 const AWS_ALGORITHM = 'AWS4-HMAC-SHA256';
 /**
@@ -102,17 +127,17 @@ export class AwsRequestSigner {
     const additionalAmzHeaders = amzOptions.headers;
     const awsSecurityCredentials = await this.getCredentials();
     const uri = new URL(url);
-    const headerMap = await generateAuthenticationHeaderMap(
-      this.crypto,
-      uri.host,
-      uri.pathname,
-      uri.search.substr(1),
+    const headerMap = await generateAuthenticationHeaderMap({
+      crypto: this.crypto,
+      host: uri.host,
+      canonicalUri: uri.pathname,
+      canonicalQuerystring: uri.search.substr(1),
       method,
-      this.region,
-      awsSecurityCredentials,
+      region: this.region,
+      securityCredentials: awsSecurityCredentials,
       requestPayload,
-      additionalAmzHeaders
-    );
+      additionalAmzHeaders,
+    });
     // Append additional optional headers, eg. X-Amz-Target, Content-Type, etc.
     const headers: {[key: string]: string} = Object.assign(
       // Add x-amz-date if available.
@@ -191,34 +216,18 @@ async function getSigningKey(
  * Generates the authentication header map needed for generating the AWS
  * Signature Version 4 signed request.
  *
- * @param crypto The crypto instance used to facilitate cryptographic
- *   operations.
- * @param host The AWS service URL hostname.
- * @param canonicalUri The AWS service URL path name.
- * @param canonicalQuerystring The AWS service URL query string.
- * @param method The HTTP method used to call this API.
- * @param region The AWS region.
- * @param securityCredentials The AWS security credentials.
- * @param requestPayload The optional request payload if available.
- * @param additionalAmzHeaders The optional additional headers needed for the
- *   requested AWS API.
+ * @param option The options needed to compute the authentication header map.
  * @return The AWS authentication header map which constitutes of the following
  *   components: amz-date, authorization header and canonical query string.
  */
 async function generateAuthenticationHeaderMap(
-  crypto: Crypto,
-  host: string,
-  canonicalUri: string,
-  canonicalQuerystring: string,
-  method: HttpMethod,
-  region: string,
-  securityCredentials: AwsSecurityCredentials,
-  requestPayload = '',
-  additionalAmzHeaders: Headers = {}
+  options: GenerateAuthHeaderMapOptions
 ): Promise<AwsAuthHeaderMap> {
+  const additionalAmzHeaders = options.additionalAmzHeaders || {};
+  const requestPayload = options.requestPayload || '';
   // iam.amazonaws.com host => iam service.
   // sts.us-east-2.amazonaws.com => sts service.
-  const serviceName = host.split('.')[0];
+  const serviceName = options.host.split('.')[0];
   const now = new Date();
   // Format: '%Y%m%dT%H%M%SZ'.
   const amzDate = now
@@ -235,14 +244,14 @@ async function generateAuthenticationHeaderMap(
       additionalAmzHeaders[key];
   });
   // Add AWS token if available.
-  if (securityCredentials.token) {
+  if (options.securityCredentials.token) {
     reformattedAdditionalAmzHeaders['x-amz-security-token'] =
-      securityCredentials.token;
+      options.securityCredentials.token;
   }
   // Header keys need to be sorted alphabetically.
   const amzHeaders = Object.assign(
     {
-      host,
+      host: options.host,
     },
     // Previously the date was not fixed with x-amz- and could be provided manually.
     // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-header-value-trim.req
@@ -256,34 +265,34 @@ async function generateAuthenticationHeaderMap(
   });
   const signedHeaders = signedHeadersList.join(';');
 
-  const payloadHash = await crypto.sha256DigestHex(requestPayload);
+  const payloadHash = await options.crypto.sha256DigestHex(requestPayload);
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
   const canonicalRequest =
-    `${method}\n` +
-    `${canonicalUri}\n` +
-    `${canonicalQuerystring}\n` +
+    `${options.method}\n` +
+    `${options.canonicalUri}\n` +
+    `${options.canonicalQuerystring}\n` +
     `${canonicalHeaders}\n` +
     `${signedHeaders}\n` +
     `${payloadHash}`;
-  const credentialScope = `${dateStamp}/${region}/${serviceName}/${AWS_REQUEST_TYPE}`;
+  const credentialScope = `${dateStamp}/${options.region}/${serviceName}/${AWS_REQUEST_TYPE}`;
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
   const stringToSign =
     `${AWS_ALGORITHM}\n` +
     `${amzDate}\n` +
     `${credentialScope}\n` +
-    (await crypto.sha256DigestHex(canonicalRequest));
+    (await options.crypto.sha256DigestHex(canonicalRequest));
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
   const signingKey = await getSigningKey(
-    crypto,
-    securityCredentials.secretAccessKey,
+    options.crypto,
+    options.securityCredentials.secretAccessKey,
     dateStamp,
-    region,
+    options.region,
     serviceName
   );
-  const signature = await sign(crypto, signingKey, stringToSign);
+  const signature = await sign(options.crypto, signingKey, stringToSign);
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
   const authorizationHeader =
-    `${AWS_ALGORITHM} Credential=${securityCredentials.accessKeyId}/` +
+    `${AWS_ALGORITHM} Credential=${options.securityCredentials.accessKeyId}/` +
     `${credentialScope}, SignedHeaders=${signedHeaders}, ` +
     `Signature=${fromArrayBufferToHex(signature)}`;
 
@@ -291,6 +300,6 @@ async function generateAuthenticationHeaderMap(
     // Do not return x-amz-date if date is available.
     amzDate: reformattedAdditionalAmzHeaders.date ? undefined : amzDate,
     authorizationHeader,
-    canonicalQuerystring,
+    canonicalQuerystring: options.canonicalQuerystring,
   };
 }
