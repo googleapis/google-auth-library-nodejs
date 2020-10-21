@@ -27,8 +27,13 @@ import {RefreshOptions} from './oauth2client';
 export interface AwsClientOptions extends BaseExternalAccountClientOptions {
   credential_source: {
     environment_id: string;
-    region_url: string;
-    url: string;
+    // Region can also be determine from the AWS_REGION environment variable.
+    region_url?: string;
+    // The url field is used to determine the AWS security credentials.
+    // This is optional since these credentials can be retrieved from the
+    // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN
+    // environment variables.
+    url?: string;
     regional_cred_verification_url: string;
   };
 }
@@ -53,8 +58,8 @@ interface AwsSecurityCredentials {
  */
 export class AwsClient extends BaseExternalAccountClient {
   private readonly environmentId: string;
-  private readonly regionUrl: string;
-  private readonly securityCredentialsUrl: string;
+  private readonly regionUrl?: string;
+  private readonly securityCredentialsUrl?: string;
   private readonly regionalCredVerificationUrl: string;
   private awsRequestSigner: AwsRequestSigner | null;
   private region: string;
@@ -72,6 +77,8 @@ export class AwsClient extends BaseExternalAccountClient {
   constructor(options: AwsClientOptions, additionalOptions?: RefreshOptions) {
     super(options, additionalOptions);
     this.environmentId = options.credential_source.environment_id;
+    // This is only required if the AWS region is not available in the
+    // AWS_REGION environment variable
     this.regionUrl = options.credential_source.region_url;
     // This is only required if AWS security credentials are not available in
     // environment variables.
@@ -81,11 +88,7 @@ export class AwsClient extends BaseExternalAccountClient {
     const envIdComponents = this.environmentId?.match(/^(aws)([\d]+)$/) || [];
     const envId = envIdComponents[1];
     const envVersion = envIdComponents[2];
-    if (
-      envId !== 'aws' ||
-      !this.regionUrl ||
-      !this.regionalCredVerificationUrl
-    ) {
+    if (envId !== 'aws' || !this.regionalCredVerificationUrl) {
       throw new Error('No valid AWS "credential_source" provided');
     } else if (parseInt(envVersion, 10) !== 1) {
       throw new Error(
@@ -201,6 +204,12 @@ export class AwsClient extends BaseExternalAccountClient {
   private async getAwsRegion(): Promise<string> {
     if (process.env['AWS_REGION']) {
       return process.env['AWS_REGION'];
+    }
+    if (!this.regionUrl) {
+      throw new Error(
+        'Unable to determine AWS region due to missing ' +
+          '"options.credential_source.region_url"'
+      );
     }
     const opts: GaxiosOptions = {
       url: this.regionUrl,

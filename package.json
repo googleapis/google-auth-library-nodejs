@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "6.1.0",
+  "version": "6.1.2",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
@@ -22,8 +22,8 @@
     "ecdsa-sig-formatter": "^1.0.11",
     "fast-text-encoding": "^1.0.0",
     "gaxios": "^3.0.0",
-    "gcp-metadata": "^4.1.0",
-    "gtoken": "^5.0.0",
+    "gcp-metadata": "^4.2.0",
+    "gtoken": "^5.0.4",
     "jws": "^4.0.0",
     "lru-cache": "^6.0.0"
   },
@@ -67,7 +67,7 @@
     "ts-loader": "^8.0.0",
     "typescript": "^3.8.3",
     "webpack": "^4.20.2",
-    "webpack-cli": "^3.1.1",
+    "webpack-cli": "^4.0.0",
     "@microsoft/api-documenter": "^7.8.10",
     "@microsoft/api-extractor": "^7.8.10"
   },
