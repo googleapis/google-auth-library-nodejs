@@ -26,7 +26,7 @@ if (typeof process === 'undefined' && typeof TextEncoder === 'undefined') {
   require('fast-text-encoding');
 }
 
-import {Crypto, JwkCertificate} from '../crypto';
+import {Crypto, JwkCertificate, fromArrayBufferToHex} from '../crypto';
 
 export class BrowserCrypto implements Crypto {
   constructor() {
@@ -139,5 +139,64 @@ export class BrowserCrypto implements Crypto {
     const uint8array = new TextEncoder().encode(text);
     const result = base64js.fromByteArray(uint8array);
     return result;
+  }
+
+  /**
+   * Computes the SHA-256 hash of the provided string.
+   * @param str The plain text string to hash.
+   * @return A promise that resolves with the SHA-256 hash of the provided
+   *   string in hexadecimal encoding.
+   */
+  async sha256DigestHex(str: string): Promise<string> {
+    // SubtleCrypto digest() method is async, so we must make
+    // this method async as well.
+
+    // To calculate SHA256 digest using SubtleCrypto, we first
+    // need to convert an input string to an ArrayBuffer:
+    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    const inputBuffer = new TextEncoder().encode(str);
+
+    // Result is ArrayBuffer as well.
+    const outputBuffer = await window.crypto.subtle.digest(
+      'SHA-256',
+      inputBuffer
+    );
+
+    return fromArrayBufferToHex(outputBuffer);
+  }
+
+  /**
+   * Computes the HMAC hash of a message using the provided crypto key and the
+   * SHA-256 algorithm.
+   * @param key The secret crypto key in utf-8 or ArrayBuffer format.
+   * @param msg The plain text message.
+   * @return A promise that resolves with the HMAC-SHA256 hash in ArrayBuffer
+   *   format.
+   */
+  async signWithHmacSha256(
+    key: string | ArrayBuffer,
+    msg: string
+  ): Promise<ArrayBuffer> {
+    // Convert key, if provided in ArrayBuffer format, to string.
+    const rawKey =
+      typeof key === 'string'
+        ? key
+        : String.fromCharCode(...new Uint16Array(key));
+
+    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    const enc = new TextEncoder();
+    const cryptoKey = await window.crypto.subtle.importKey(
+      'raw',
+      enc.encode(rawKey),
+      {
+        name: 'HMAC',
+        hash: {
+          name: 'SHA-256',
+        },
+      },
+      false,
+      ['sign']
+    );
+    return window.crypto.subtle.sign('HMAC', cryptoKey, enc.encode(msg));
   }
 }

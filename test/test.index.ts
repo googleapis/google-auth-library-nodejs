@@ -38,5 +38,8 @@ describe('index', () => {
     assert(gal.OAuth2Client);
     assert(gal.UserRefreshClient);
     assert(gal.GoogleAuth);
+    assert(gal.ExternalAccountClient);
+    assert(gal.IdentityPoolClient);
+    assert(gal.AwsClient);
   });
 });
