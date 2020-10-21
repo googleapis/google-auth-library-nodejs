@@ -63,7 +63,7 @@ export class AwsRequestSigner {
   private readonly crypto: Crypto;
 
   /**
-   * Instantiates an AWS API handler used to send authenticated signed
+   * Instantiates an AWS API request signer used to send authenticated signed
    * requests to AWS APIs based on the AWS Signature Version 4 signing process.
    * This also provides a mechanism to generate the signed request without
    * sending it.
@@ -146,6 +146,8 @@ export class AwsRequestSigner {
  * Creates the HMAC-SHA256 hash of the provided message using the
  * provided key.
  *
+ * @param crypto The crypto instance used to facilitate cryptographic
+ *   operations.
  * @param key The HMAC-SHA256 key to use.
  * @param msg The message to hash.
  * @return The computed hash bytes.
@@ -159,10 +161,12 @@ async function sign(
 }
 
 /**
- * Calculates the signature for AWS Signature Version 4.
- * Based on:
+ * Calculates the signing key used to calculate the signature for
+ * AWS Signature Version 4 based on:
  * https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
  *
+ * @param crypto The crypto instance used to facilitate cryptographic
+ *   operations.
  * @param key The AWS secret access key.
  * @param dateStamp The '%Y%m%d' date format.
  * @param region The AWS region.
@@ -187,9 +191,17 @@ async function getSigningKey(
  * Generates the authentication header map needed for generating the AWS
  * Signature Version 4 signed request.
  *
- * @param accessKeyId The AWS access key ID.
- * @param secretAccessKey The AWS secret access kye.
- * @param token The AWS token.
+ * @param crypto The crypto instance used to facilitate cryptographic
+ *   operations.
+ * @param host The AWS service URL hostname.
+ * @param canonicalUri The AWS service URL path name.
+ * @param canonicalQuerystring The AWS service URL query string.
+ * @param method The HTTP method used to call this API.
+ * @param region The AWS region.
+ * @param securityCredentials The AWS security credentials.
+ * @param requestPayload The optional request payload if available.
+ * @param additionalAmzHeaders The optional additional headers needed for the
+ *   requested AWS API.
  * @return The AWS authentication header map which constitutes of the following
  *   components: amz-date, authorization header and canonical query string.
  */

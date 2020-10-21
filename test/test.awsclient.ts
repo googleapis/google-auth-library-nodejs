@@ -178,7 +178,6 @@ describe('AwsClient', () => {
   describe('Constructor', () => {
     const requiredCredentialSourceFields = [
       'environment_id',
-      'region_url',
       'regional_cred_verification_url',
     ];
     requiredCredentialSourceFields.forEach(required => {
@@ -383,6 +382,29 @@ describe('AwsClient', () => {
 
         await assert.rejects(client.retrieveSubjectToken(), expectedError);
         scope.done();
+      });
+
+      it('should reject when "credential_source.region_url" is missing', async () => {
+        const expectedError = new Error(
+          'Unable to determine AWS region due to missing ' +
+            '"options.credential_source.region_url"'
+        );
+        const missingRegionUrlCredentialSource = Object.assign(
+          {},
+          awsCredentialSource
+        );
+        delete missingRegionUrlCredentialSource.region_url;
+        const invalidOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+          token_url: getTokenUrl(),
+          credential_source: missingRegionUrlCredentialSource,
+        };
+
+        const client = new AwsClient(invalidOptions);
+
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
     });
 
@@ -598,6 +620,31 @@ describe('AwsClient', () => {
         process.env.AWS_REGION = awsRegion;
 
         const client = new AwsClient(awsOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+      });
+
+      it('should resolve without optional credentials_source fields', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_REGION = awsRegion;
+        const requiredOnlyCredentialSource = Object.assign(
+          {},
+          awsCredentialSource
+        );
+        // Remove all optional fields.
+        delete requiredOnlyCredentialSource.region_url;
+        delete requiredOnlyCredentialSource.url;
+        const requiredOnlyOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+          token_url: getTokenUrl(),
+          credential_source: requiredOnlyCredentialSource,
+        };
+
+        const client = new AwsClient(requiredOnlyOptions);
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
