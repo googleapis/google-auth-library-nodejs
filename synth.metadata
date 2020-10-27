@@ -4,14 +4,14 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
-        "sha": "2e570c76eaed077d7f7221581e6913294868590f"
+        "sha": "f2678ff5f8f5a0ee33924278b58e0a6e3122cb12"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "901ddd44e9ef7887ee681b9183bbdea99437fdcc"
+        "sha": "89c849ba5013e45e8fb688b138f33c2ec6083dc5"
       }
     }
   ],
@@ -64,9 +64,7 @@
     "CONTRIBUTING.md",
     "LICENSE",
     "api-extractor.json",
-    "package-lock.json.3525877600",
     "renovate.json",
-    "samples/README.md",
-    "samples/package-lock.json.2890922137"
+    "samples/README.md"
   ]
 }
