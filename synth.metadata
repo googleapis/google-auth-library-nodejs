@@ -3,8 +3,8 @@
     {
       "git": {
         "name": ".",
-        "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
-        "sha": "bf37628284d4e45c7ec5bb0063bc0f4a2fd9e048"
+        "remote": "git@github.com:googleapis/google-auth-library-nodejs.git",
+        "sha": "502a3d954bb13dfcf5a22216504e858135382a83"
       }
     },
     {
