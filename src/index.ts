@@ -43,6 +43,15 @@ export {
   UserRefreshClient,
   UserRefreshClientOptions,
 } from './auth/refreshclient';
+export {AwsClient, AwsClientOptions} from './auth/awsclient';
+export {
+  IdentityPoolClient,
+  IdentityPoolClientOptions,
+} from './auth/identitypoolclient';
+export {
+  ExternalAccountClient,
+  ExternalAccountClientOptions,
+} from './auth/externalclient';
 export {DefaultTransporter} from './transporters';
 
 const auth = new GoogleAuth();
