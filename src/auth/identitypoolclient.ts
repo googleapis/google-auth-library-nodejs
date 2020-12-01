@@ -22,7 +22,11 @@ import {
 } from './baseexternalclient';
 import {RefreshOptions} from './oauth2client';
 
-const readFile = promisify(fs.readFile);
+// fs.readfile is undefined in browser karma tests causing
+// `npm run browser-test` to fail as test.oauth2.ts imports this file via
+// src/index.ts.
+// Fallback to void function to avoid promisify throwing a TypeError.
+const readFile = promisify(fs.readFile || (() => {}));
 
 type SubjectTokenFormatType = 'json' | 'text';
 
