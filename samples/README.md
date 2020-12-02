@@ -6,7 +6,7 @@
 
 [![Open in Cloud Shell][shell_img]][shell_link]
 
-
+This is Google's officially supported [node.js](http://nodejs.org/) client library for using OAuth 2.0 authorization and authentication with Google APIs.
 
 ## Table of Contents
 
