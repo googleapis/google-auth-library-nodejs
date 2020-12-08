@@ -23,16 +23,27 @@ module.exports = {
     alias: {
       '../../package.json': path.resolve(__dirname, 'package.json'),
     },
+    fallback: {
+      crypto: false,
+      child_process: false,
+      fs: false,
+      http2: false,
+      buffer: 'browserify',
+      process: false,
+      os: false,
+      querystring: false,
+      path: false,
+      stream: 'stream-browserify',
+      url: false,
+      util: false,
+      zlib: false,
+    },
+ 
   },
   output: {
     library: 'GoogleAuth',
     filename: 'google-auth-library.min.js',
     path: path.resolve(__dirname, 'dist'),
-  },
-  node: {
-    child_process: 'empty',
-    fs: 'empty',
-    crypto: 'empty',
   },
   module: {
     rules: [
