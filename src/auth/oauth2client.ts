@@ -1020,7 +1020,7 @@ export class OAuth2Client extends AuthClient {
         'Content-Type': 'application/x-www-form-urlencoded',
         Authorization: `Bearer ${accessToken}`,
       },
-      url: OAuth2Client.GOOGLE_TOKEN_INFO_URL
+      url: OAuth2Client.GOOGLE_TOKEN_INFO_URL,
     });
     const info = Object.assign(
       {
