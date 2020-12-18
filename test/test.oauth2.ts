@@ -1325,12 +1325,12 @@ describe('oauth2', () => {
       const scope = nock(baseUrl, {
         reqheaders: {
           'content-type': 'application/x-www-form-urlencoded',
-          'authorization': `Bearer ${accessToken}`,
+          authorization: `Bearer ${accessToken}`,
         },
       })
         .post('/tokeninfo', () => true)
         .reply(200, tokenInfo);
-      
+
       const info = await client.getTokenInfo(accessToken);
       scope.done();
       assert.strictEqual(info.aud, tokenInfo.aud);
