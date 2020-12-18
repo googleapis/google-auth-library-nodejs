@@ -1322,18 +1322,13 @@ describe('oauth2', () => {
         expires_in: 1234,
       };
 
-      const scope = nock(baseUrl)
-        .post(
-          '/tokeninfo',
-          qs.stringify({
-            access_token: accessToken,
-          }),
-          {
-            reqheaders: {
-              'content-type': 'application/x-www-form-urlencoded',
-            },
-          }
-        )
+      const scope = nock(baseUrl, {
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded',
+          authorization: `Bearer ${accessToken}`,
+        },
+      })
+        .post('/tokeninfo', () => true)
         .reply(200, tokenInfo);
 
       const info = await client.getTokenInfo(accessToken);

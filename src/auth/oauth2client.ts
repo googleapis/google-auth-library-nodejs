@@ -1018,9 +1018,9 @@ export class OAuth2Client extends AuthClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Bearer ${accessToken}`,
       },
       url: OAuth2Client.GOOGLE_TOKEN_INFO_URL,
-      data: querystring.stringify({access_token: accessToken}),
     });
     const info = Object.assign(
       {
