@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.1.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.3...v6.1.4) (2020-12-22)
+
+
+### Bug Fixes
+
+* move accessToken to headers instead of parameter ([#1108](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1108)) ([67b0cc3](https://www.github.com/googleapis/google-auth-library-nodejs/commit/67b0cc3077860a1583bcf18ce50aeff58bbb5496))
+
 ### [6.1.3](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.2...v6.1.3) (2020-10-22)
 
 
