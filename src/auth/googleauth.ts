@@ -518,9 +518,21 @@ export class GoogleAuth {
         .on('data', chunk => (s += chunk))
         .on('end', () => {
           try {
-            const data = JSON.parse(s);
-            const r = this._cacheClientFromJSON(data, options);
-            return resolve(r);
+            try {
+              const data = JSON.parse(s);
+              const r = this._cacheClientFromJSON(data, options);
+              return resolve(r);
+            } catch (err) {
+              // If we failed parsing this.keyFileName, assume that it
+              // is a PEM or p12 certificate:
+              if (!this.keyFilename) throw err;
+              const client = new JWT({
+                ...this.clientOptions,
+                keyFile: this.keyFilename,
+              });
+              this.cachedCredential = client;
+              return resolve(client);
+            }
           } catch (err) {
             return reject(err);
           }

@@ -111,20 +111,31 @@ describe('jwt', () => {
     });
   });
 
-  it('should accept scope as string', done => {
-    const jwt = new JWT({
+  it('should accept scope as string', async () => {
+    /*const jwt = new JWT({
       email: 'foo@serviceaccount.com',
       keyFile: PEM_PATH,
       scopes: 'http://foo',
       subject: 'bar@subjectaccount.com',
+    });*/
+    const auth = new GoogleAuth({
+      keyFile: PEM_PATH,
+      clientOptions: {
+        scopes: 'http://foo',
+        email: 'foo@serviceaccount.com',
+        subject: 'bar@subjectaccount.com',
+      },
     });
-
+    const jwt: JWT = (await auth.getClient()) as JWT;
     const scope = createGTokenMock({access_token: 'initial-access-token'});
-    jwt.authorize(() => {
+    await jwt.authorize();
+    console.info(jwt.gtoken!.scope);
+    scope.done();
+    /*jwt.authorize(() => {
       scope.done();
       assert.strictEqual('http://foo', jwt.gtoken!.scope);
       done();
-    });
+    });*/
   });
 
   it('can get obtain new access token when scopes are set', done => {
