@@ -118,8 +118,8 @@ describe('jwt', () => {
       scopes: 'http://foo',
       subject: 'bar@subjectaccount.com',
     });
-
     const scope = createGTokenMock({access_token: 'initial-access-token'});
+
     jwt.authorize(() => {
       scope.done();
       assert.strictEqual('http://foo', jwt.gtoken!.scope);
