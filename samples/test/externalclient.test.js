@@ -12,26 +12,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Prerequisites:
 // Make sure to run the setup in samples/scripts/externalclient-setup.js
-// and copy the logged audience string to the AUDIENCE constant in this file
-// before running this test suite. Once that is done, this test can be run
-// indefinitely.
-// The only requirement for this test suite is to set the environment
+// and copy the logged constant strings (AUDIENCE_OIDC, AUDIENCE_AWS and
+// AWS_ROLE_ARN) into this file before running this test suite.
+// Once that is done, this test can be run indefinitely.
+//
+// The only requirement for this test suite to run is to set the environment
 // variable GOOGLE_APPLICATION_CREDENTIALS to point to the same service account
 // keys used in the setup script.
 //
-// This script follows the following logic:
+// This script follows the following logic.
+// 1. OIDC provider (file-sourced and url-sourced credentials):
 // Use the service account keys to generate a Google ID token using the
 // iamcredentials generateIdToken API, using the default STS audience.
 // This will use the service account client ID as the sub field of the token.
-//
 // This OIDC token will be used as the external subject token to be exchanged
 // for a Google access token via GCP STS endpoint and then to impersonate the
 // original service account key. This is abstracted by the GoogleAuth library.
+// 2. AWS provider:
+// Use the service account keys to generate a Google ID token using the
+// iamcredentials generateIdToken API, using the client_id as audience.
+// Exchange the OIDC ID token for AWS security keys using AWS STS
+// AssumeRoleWithWebIdentity API. These values will be set as AWS environment
+// variables to simulate an AWS VM. The Auth library can now read these
+// variables and create a signed request to AWS GetCallerIdentity. This will
+// be used as the external subject token to be exchanged for a Google access
+// token via GCP STS endpoint and then to impersonate the original service
+// account key. This is abstracted by the GoogleAuth library.
 //
+// OIDC provider tests for file-sourced and url-sourced credentials
+// ----------------------------------------------------------------
 // The test suite will run tests for file-sourced and url-sourced credentials.
 // In both cases, the same Google OIDC token is used as the underlying subject
 // token.
+//
+// AWS provider tests for AWS credentials
+// -------------------------------------
+// The test suite will also run tests for AWS credentials. This works as
+// follows. (Note prequisite setup is needed. This is documented in
+// externalclient-setup.js).
+// - iamcredentials:generateIdToken is used to generate a Google ID token using
+//   the service account access token. The service account client_id is used as
+//   audience.
+// - AWS STS AssumeRoleWithWebIdentity API is used to exchange this token for
+//   temporary AWS security credentials for a specified AWS ARN role.
+// - AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN
+//   environment variables are set using these credentials before the test is
+//   run simulating an AWS VM.
+// - The test can now be run.
+//
 // For each test, a sample script is run in a child process with
 // GOOGLE_APPLICATION_CREDENTIALS environment variable pointing to a temporary
 // workload identity pool credentials configuration. A Cloud API is called in
@@ -42,7 +72,7 @@ const {assert} = require('chai');
 const {describe, it, before, afterEach} = require('mocha');
 const fs = require('fs');
 const {promisify} = require('util');
-const {GoogleAuth} = require('google-auth-library');
+const {GoogleAuth, DefaultTransporter} = require('google-auth-library');
 const os = require('os');
 const path = require('path');
 const http = require('http');
@@ -87,6 +117,59 @@ const generateGoogleIdToken = async (auth, aud, clientEmail) => {
 };
 
 /**
+ * Rudimentary value lookup within an XML file by tagName.
+ * @param {string} rawXml The raw XML string.
+ * @param {string} tagName The name of the tag whose value is to be returned.
+ * @return {?string} The value if found, null otherwise.
+ */
+const getXmlValueByTagName = (rawXml, tagName) => {
+  const startIndex = rawXml.indexOf(`<${tagName}>`);
+  const endIndex = rawXml.indexOf(`</${tagName}>`, startIndex);
+  if (startIndex >= 0 && endIndex > startIndex) {
+    return rawXml.substring(startIndex + tagName.length + 2, endIndex);
+  }
+  return null;
+};
+
+/**
+ * Generates a Google OIDC ID token and exchanges it for AWS security credentials
+ * using the AWS STS AssumeRoleWithWebIdentity API.
+ * @param {GoogleAuth} auth The GoogleAuth instance.
+ * @param {string} aud The Google ID token audience.
+ * @param {string} clientEmail The service account client email.
+ * @param {string} awsRoleArn The Amazon Resource Name (ARN) of the role that
+ *   the caller is assuming.
+ * @return {Promise<Object>} A promise that resolves with the generated AWS
+ *   security credentials.
+ */
+const assumeRoleWithWebIdentity = async (
+  auth,
+  aud,
+  clientEmail,
+  awsRoleArn
+) => {
+  // API documented at:
+  // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
+  // Note that a role for web identity or OIDC federation will need to have
+  // been configured:
+  // https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html
+  const oidcToken = await generateGoogleIdToken(auth, aud, clientEmail);
+  const transporter = new DefaultTransporter();
+  const url =
+    'https://sts.amazonaws.com/?Action=AssumeRoleWithWebIdentity' +
+    '&Version=2011-06-15&DurationSeconds=3600&RoleSessionName=nodejs-test' +
+    `&RoleArn=${awsRoleArn}&WebIdentityToken=${oidcToken}`;
+  // The response is in XML format but we will parse it as text.
+  const response = await transporter.request({url, responseType: 'text'});
+  const rawXml = response.data;
+  return {
+    awsAccessKeyId: getXmlValueByTagName(rawXml, 'AccessKeyId'),
+    awsSecretAccessKey: getXmlValueByTagName(rawXml, 'SecretAccessKey'),
+    awsSessionToken: getXmlValueByTagName(rawXml, 'SessionToken'),
+  };
+};
+
+/**
  * Generates a random string of the specified length, optionally using the
  * specified alphabet.
  *
@@ -105,11 +188,20 @@ const generateRandomString = length => {
   return chars.join('');
 };
 
-// The STS audience. Copy from output of
-// samples/scripts/externalclient-setup.js.
-const AUDIENCE =
+//////////////////////////////////////////////////////////////////////////
+// Copy values from the output of samples/scripts/externalclient-setup.js.
+// OIDC provider STS audience.
+const AUDIENCE_OIDC =
   '//iam.googleapis.com/projects/1046198160504/locations/global/' +
-  'workloadIdentityPools/pool-ersg6slz1q/providers/oidc-ersg6slz1q';
+  'workloadIdentityPools/pool-95vux39vzm/providers/oidc-95vux39vzm';
+// AWS provider STS audience.
+const AUDIENCE_AWS =
+  '//iam.googleapis.com/projects/1046198160504/locations/global/' +
+  'workloadIdentityPools/pool-95vux39vzm/providers/aws-95vux39vzm';
+// AWS ARN role used for federating from GCP to AWS via
+// AssumeRoleWithWebIdentity.
+const AWS_ROLE_ARN = 'arn:aws:iam::077071391996:role/ci-nodejs-test';
+//////////////////////////////////////////////////////////////////////////
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
@@ -117,10 +209,10 @@ const exec = promisify(cp.exec);
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 describe('samples for external-account', () => {
-  const aud = AUDIENCE;
   let httpServer;
   let clientEmail;
   let oidcToken;
+  let awsCredentials;
   const port = 8088;
   const suffix = generateRandomString(10);
   const configFilePath = path.join(os.tmpdir(), `config-${suffix}.json`);
@@ -131,11 +223,21 @@ describe('samples for external-account', () => {
 
   before(async () => {
     const keys = JSON.parse(await readFile(keyFile, 'utf8'));
+    const clientId = keys.client_id;
     clientEmail = keys.client_email;
 
     // Generate the Google OIDC token. This will be used as the external
-    // subject token for the following tests.
-    oidcToken = await generateGoogleIdToken(auth, aud, clientEmail);
+    // subject token for the following OIDC file-sourced and url-sourced
+    // credential tests.
+    oidcToken = await generateGoogleIdToken(auth, AUDIENCE_OIDC, clientEmail);
+    // Generate the AWS security keys. These will be used to similate an
+    // AWS VM to test external account AWS credentials.
+    awsCredentials = await assumeRoleWithWebIdentity(
+      auth,
+      clientId,
+      clientEmail,
+      AWS_ROLE_ARN
+    );
   });
 
   afterEach(async () => {
@@ -158,7 +260,7 @@ describe('samples for external-account', () => {
     // retrieved from a file location.
     const config = {
       type: 'external_account',
-      audience: aud,
+      audience: AUDIENCE_OIDC,
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
       token_url: 'https://sts.googleapis.com/v1beta/token',
       service_account_impersonation_url:
@@ -188,7 +290,7 @@ describe('samples for external-account', () => {
     // retrieved from a local server.
     const config = {
       type: 'external_account',
-      audience: aud,
+      audience: AUDIENCE_OIDC,
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
       token_url: 'https://sts.googleapis.com/v1beta/token',
       service_account_impersonation_url:
@@ -241,6 +343,43 @@ describe('samples for external-account', () => {
     // variable pointing to the temporarily created configuration file.
     const output = await execAsync('node adc', {
       env: {
+        GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
+      },
+    });
+    // Confirm expected script output.
+    assert.match(output, /DNS Info:/);
+  });
+
+  it('should acquire ADC for AWS creds', async () => {
+    // Create AWS configuration JSON file.
+    const config = {
+      type: 'external_account',
+      audience: AUDIENCE_AWS,
+      subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+      token_url: 'https://sts.googleapis.com/v1beta/token',
+      service_account_impersonation_url:
+        'https://iamcredentials.googleapis.com/v1/projects/' +
+        `-/serviceAccounts/${clientEmail}:generateAccessToken`,
+      credential_source: {
+        environment_id: 'aws1',
+        regional_cred_verification_url:
+          'https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15',
+      },
+    };
+    await writeFile(configFilePath, JSON.stringify(config));
+
+    // Run sample script with GOOGLE_APPLICATION_CREDENTIALS environment
+    // variable pointing to the temporarily created configuration file.
+    // Populate AWS environment variables to simulate an AWS VM.
+    const output = await execAsync('node adc', {
+      env: {
+        // AWS environment variables: hardcoded region + AWS security
+        // credentials.
+        AWS_REGION: 'us-east-2',
+        AWS_ACCESS_KEY_ID: awsCredentials.awsAccessKeyId,
+        AWS_SECRET_ACCESS_KEY: awsCredentials.awsSecretAccessKey,
+        AWS_SESSION_TOKEN: awsCredentials.awsSessionToken,
+        // GOOGLE_APPLICATION_CREDENTIALS environment variable used for ADC.
         GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
       },
     });
