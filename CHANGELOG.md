@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.1.5](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.4...v6.1.5) (2021-01-22)
+
+
+### Bug Fixes
+
+* support PEM and p12 when using factory ([#1120](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1120)) ([c2ead4c](https://www.github.com/googleapis/google-auth-library-nodejs/commit/c2ead4cc7650f100b883c9296fce628f17085992))
+
 ### [6.1.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.3...v6.1.4) (2020-12-22)
 
 
