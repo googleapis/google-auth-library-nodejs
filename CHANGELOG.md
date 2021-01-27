@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [6.1.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.5...v6.1.6) (2021-01-27)
+
+
+### Bug Fixes
+
+* call addSharedMetadataHeaders even when token has not expired ([#1116](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1116)) ([aad043d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/aad043d20df3f1e44f56c58a21f15000b6fe970d))
+
 ### [6.1.5](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.4...v6.1.5) (2021-01-22)
 
 
