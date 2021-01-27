@@ -275,7 +275,7 @@ describe('samples for external-account', () => {
 
     // Run sample script with GOOGLE_APPLICATION_CREDENTIALS envvar
     // pointing to the temporarily created configuration file.
-    const output = await execAsync('node adc', {
+    const output = await execAsync(`${process.execPath} adc`, {
       env: {
         ...process.env,
         GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
@@ -342,7 +342,7 @@ describe('samples for external-account', () => {
 
     // Run sample script with GOOGLE_APPLICATION_CREDENTIALS environment
     // variable pointing to the temporarily created configuration file.
-    const output = await execAsync('node adc', {
+    const output = await execAsync(`${process.execPath} adc`, {
       env: {
         ...process.env,
         GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
@@ -373,7 +373,7 @@ describe('samples for external-account', () => {
     // Run sample script with GOOGLE_APPLICATION_CREDENTIALS environment
     // variable pointing to the temporarily created configuration file.
     // Populate AWS environment variables to simulate an AWS VM.
-    const output = await execAsync('node adc', {
+    const output = await execAsync(`${process.execPath} adc`, {
       env: {
         ...process.env,
         // AWS environment variables: hardcoded region + AWS security
