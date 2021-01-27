@@ -277,6 +277,7 @@ describe('samples for external-account', () => {
     // pointing to the temporarily created configuration file.
     const output = await execAsync('node adc', {
       env: {
+        ...process.env,
         GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
       },
     });
@@ -343,6 +344,7 @@ describe('samples for external-account', () => {
     // variable pointing to the temporarily created configuration file.
     const output = await execAsync('node adc', {
       env: {
+        ...process.env,
         GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
       },
     });
@@ -373,6 +375,7 @@ describe('samples for external-account', () => {
     // Populate AWS environment variables to simulate an AWS VM.
     const output = await execAsync('node adc', {
       env: {
+        ...process.env,
         // AWS environment variables: hardcoded region + AWS security
         // credentials.
         AWS_REGION: 'us-east-2',
