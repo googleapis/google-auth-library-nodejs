@@ -59,7 +59,7 @@ This library provides an implementation of [Application Default Credentials](htt
 
 They are best suited for cases when the call needs to have the same identity and authorization level for the application independent of the user. This is the recommended approach to authorize calls to Cloud APIs, particularly when you're building an application that uses Google Cloud Platform.
 
-Application Default Credentials also support workload identity federation to access Google Cloud resources from non-Google Cloud platforms including Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC). Workload identity federation is recommended for non-Google Cloud environments as it avoids the need to download, manage and store service account private keys locally. This is documented in detail [below](#workload-identity-federation).
+Application Default Credentials also support workload identity federation to access Google Cloud resources from non-Google Cloud platforms including Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC). Workload identity federation is recommended for non-Google Cloud environments as it avoids the need to download, manage and store service account private keys locally, see: [Workload Identity Federation](#workload-identity-federation).
 
 #### Download your Service Account Credentials JSON file
 
@@ -513,7 +513,7 @@ Where the following variables need to be substituted:
 - `$OIDC_PROVIDER_ID`: The OIDC provider ID.
 - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
 - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
-- `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, eg. `Metadata-Flavor=Google`.
+- `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
 
 You can now [start using the Auth library](#using-external-identities) to call Google Cloud resources from an OIDC provider.
 
