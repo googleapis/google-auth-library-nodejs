@@ -786,7 +786,7 @@ export class OAuth2Client extends AuthClient {
       const headers = {
         Authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
       };
-      return {headers};
+      return {headers: this.addSharedMetadataHeaders(headers)};
     }
 
     if (this.apiKey) {

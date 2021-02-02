@@ -152,4 +152,41 @@ describe('refresh', () => {
     assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
     req.done();
   });
+
+  it('getRequestHeaders should populate x-goog-user-project header if quota_project_id present and token has not expired', async () => {
+    const stream = fs.createReadStream(
+      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+    );
+    const eagerRefreshThresholdMillis = 10;
+    const refresh = new UserRefreshClient({
+      eagerRefreshThresholdMillis,
+    });
+    await refresh.fromStream(stream);
+    refresh.credentials = {
+      access_token: 'woot',
+      refresh_token: 'jwt-placeholder',
+      expiry_date: new Date().getTime() + eagerRefreshThresholdMillis + 1000,
+    };
+    const headers = await refresh.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+  });
+
+  it('getRequestHeaders should populate x-goog-user-project header if quota_project_id present and token has expired', async () => {
+    const req = nock('https://oauth2.googleapis.com')
+      .post('/token')
+      .reply(200, {});
+    const stream = fs.createReadStream(
+      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+    );
+    const refresh = new UserRefreshClient();
+    await refresh.fromStream(stream);
+    refresh.credentials = {
+      access_token: 'woot',
+      refresh_token: 'jwt-placeholder',
+      expiry_date: new Date().getTime() - 1,
+    };
+    const headers = await refresh.getRequestHeaders();
+    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    req.done();
+  });
 });
