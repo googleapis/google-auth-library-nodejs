@@ -17,6 +17,7 @@
     "client library"
   ],
   "dependencies": {
+    "12": "^1.0.2",
     "arrify": "^2.0.0",
     "base64-js": "^1.3.0",
     "ecdsa-sig-formatter": "^1.0.11",
@@ -29,6 +30,8 @@
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.7",
+    "@microsoft/api-documenter": "^7.8.10",
+    "@microsoft/api-extractor": "^7.8.10",
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
     "@types/jws": "^3.1.0",
@@ -67,9 +70,7 @@
     "ts-loader": "^8.0.0",
     "typescript": "^3.8.3",
     "webpack": "^4.20.2",
-    "webpack-cli": "^4.0.0",
-    "@microsoft/api-documenter": "^7.8.10",
-    "@microsoft/api-extractor": "^7.8.10"
+    "webpack-cli": "^4.0.0"
   },
   "files": [
     "build/src",
@@ -84,6 +85,7 @@
     "fix": "gts fix",
     "pretest": "npm run compile",
     "docs": "compodoc src/",
+    "samples-setup": "cd samples/ && npm link ../ && npm run setup && cd ../",
     "samples-test": "cd samples/ && npm link ../ && npm test && cd ../",
     "system-test": "mocha build/system-test --timeout 60000",
     "presystem-test": "npm run compile",
