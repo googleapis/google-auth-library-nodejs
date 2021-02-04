@@ -94,17 +94,16 @@ const readFile = promisify(fs.readFile);
  * @param {number} length The length of the string to generate.
  * @return {string} A random string of the provided length.
  */
-const generateRandomString = length => {
+function generateRandomString(length) {
   const chars = [];
   const allowedChars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  while (length > 0) {
+  for (let i = 0; i < length; i++) {
     chars.push(
       allowedChars.charAt(Math.floor(Math.random() * allowedChars.length))
     );
-    length--;
   }
   return chars.join('');
-};
+}
 
 /**
  * Creates a workload identity pool with an OIDC provider which will accept
