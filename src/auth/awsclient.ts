@@ -27,7 +27,7 @@ import {RefreshOptions} from './oauth2client';
 export interface AwsClientOptions extends BaseExternalAccountClientOptions {
   credential_source: {
     environment_id: string;
-    // Region can also be determine from the AWS_REGION environment variable.
+    // Region can also be determined from the AWS_REGION environment variable.
     region_url?: string;
     // The url field is used to determine the AWS security credentials.
     // This is optional since these credentials can be retrieved from the
@@ -85,14 +85,12 @@ export class AwsClient extends BaseExternalAccountClient {
     this.securityCredentialsUrl = options.credential_source.url;
     this.regionalCredVerificationUrl =
       options.credential_source.regional_cred_verification_url;
-    const envIdComponents = this.environmentId?.match(/^(aws)([\d]+)$/) || [];
-    const envId = envIdComponents[1];
-    const envVersion = envIdComponents[2];
-    if (envId !== 'aws' || !this.regionalCredVerificationUrl) {
+    const match = this.environmentId?.match(/^(aws)(\d+)$/);
+    if (!match || !this.regionalCredVerificationUrl) {
       throw new Error('No valid AWS "credential_source" provided');
-    } else if (parseInt(envVersion, 10) !== 1) {
+    } else if (parseInt(match[2], 10) !== 1) {
       throw new Error(
-        `aws version "${envVersion}" is not supported in the current build.`
+        `aws version "${match[2]}" is not supported in the current build.`
       );
     }
     this.awsRequestSigner = null;

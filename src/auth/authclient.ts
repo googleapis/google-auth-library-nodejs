@@ -50,7 +50,7 @@ export interface CredentialsClient {
 
   /**
    * The main authentication interface. It takes an optional url which when
-   * present is the endpoint> being accessed, and returns a Promise which
+   * present is the endpoint being accessed, and returns a Promise which
    * resolves with authorization header fields.
    *
    * The result has the form:
@@ -101,7 +101,7 @@ export abstract class AuthClient
 
   /**
    * The main authentication interface. It takes an optional url which when
-   * present is the endpoint> being accessed, and returns a Promise which
+   * present is the endpoint being accessed, and returns a Promise which
    * resolves with authorization header fields.
    *
    * The result has the form:
