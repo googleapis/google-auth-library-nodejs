@@ -299,17 +299,18 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     opts: GaxiosOptions,
     retry = false
   ): Promise<GaxiosResponse<T>> {
-    let r2: GaxiosResponse;
+    let response: GaxiosResponse;
     try {
-      const r = await this.getRequestHeaders();
+      const requestHeaders = await this.getRequestHeaders();
       opts.headers = opts.headers || {};
-      if (r && r['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] = r['x-goog-user-project'];
+      if (requestHeaders && requestHeaders['x-goog-user-project']) {
+        opts.headers['x-goog-user-project'] =
+          requestHeaders['x-goog-user-project'];
       }
-      if (r && r.Authorization) {
-        opts.headers.Authorization = r.Authorization;
+      if (requestHeaders && requestHeaders.Authorization) {
+        opts.headers.Authorization = requestHeaders.Authorization;
       }
-      r2 = await this.transporter.request<T>(opts);
+      response = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
       if (res) {
@@ -328,12 +329,12 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           this.forceRefreshOnFailure
         ) {
           await this.refreshAccessTokenAsync();
-          return this.requestAsync<T>(opts, true);
+          return await this.requestAsync<T>(opts, true);
         }
       }
       throw e;
     }
-    return r2;
+    return response;
   }
 
   /**
