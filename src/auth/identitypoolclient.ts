@@ -27,6 +27,8 @@ import {RefreshOptions} from './oauth2client';
 // src/index.ts.
 // Fallback to void function to avoid promisify throwing a TypeError.
 const readFile = promisify(fs.readFile ?? (() => {}));
+const realpath = promisify(fs.realpath ?? (() => {}));
+const lstat = promisify(fs.lstat ?? (() => {}));
 
 type SubjectTokenFormatType = 'json' | 'text';
 
@@ -117,14 +119,13 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         this.formatType,
         this.formatSubjectTokenFieldName
       );
-    } else {
-      return await this.getTokenFromUrl(
-        this.url!,
-        this.formatType,
-        this.formatSubjectTokenFieldName,
-        this.headers
-      );
     }
+    return await this.getTokenFromUrl(
+      this.url!,
+      this.formatType,
+      this.formatSubjectTokenFieldName,
+      this.headers
+    );
   }
 
   /**
@@ -147,9 +148,9 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     try {
       // Resolve path to actual file in case of symlink. Expect a thrown error
       // if not resolvable.
-      filePath = fs.realpathSync(filePath);
+      filePath = await realpath(filePath);
 
-      if (!fs.lstatSync(filePath).isFile()) {
+      if (!(await lstat(filePath)).isFile()) {
         throw new Error();
       }
     } catch (err) {

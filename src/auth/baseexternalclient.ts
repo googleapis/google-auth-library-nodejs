@@ -414,12 +414,11 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private getProjectNumber(audience: string): string | null {
     // STS audience pattern:
     // //iam.googleapis.com/projects/$PROJECT_NUMBER/locations/...
-    const components = audience.split('/');
-    const projectIndex = components.indexOf('projects');
-    if (projectIndex !== -1 && projectIndex !== components.length - 1) {
-      return components[projectIndex + 1] || null;
+    const match = audience.match(/\/projects\/([^/]+)/);
+    if (!match) {
+      return null;
     }
-    return null;
+    return match[1];
   }
 
   /**

@@ -667,15 +667,15 @@ export class GoogleAuth {
    * Gets the project ID from external account client if available.
    */
   private async getExternalAccountClientProjectId(): Promise<string | null> {
-    if (this.jsonContent && this.jsonContent.type === EXTERNAL_ACCOUNT_TYPE) {
-      const creds = await this.getClient();
-      try {
-        return await (creds as BaseExternalAccountClient).getProjectId();
-      } catch (e) {
-        return null;
-      }
+    if (!this.jsonContent || this.jsonContent.type !== EXTERNAL_ACCOUNT_TYPE) {
+      return null;
     }
-    return null;
+    const creds = await this.getClient();
+    try {
+      return await (creds as BaseExternalAccountClient).getProjectId();
+    } catch (e) {
+      return null;
+    }
   }
 
   /**
