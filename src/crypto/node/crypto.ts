@@ -49,4 +49,54 @@ export class NodeCrypto implements Crypto {
   encodeBase64StringUtf8(text: string): string {
     return Buffer.from(text, 'utf-8').toString('base64');
   }
+
+  /**
+   * Computes the SHA-256 hash of the provided string.
+   * @param str The plain text string to hash.
+   * @return A promise that resolves with the SHA-256 hash of the provided
+   *   string in hexadecimal encoding.
+   */
+  async sha256DigestHex(str: string): Promise<string> {
+    return crypto.createHash('sha256').update(str).digest('hex');
+  }
+
+  /**
+   * Computes the HMAC hash of a message using the provided crypto key and the
+   * SHA-256 algorithm.
+   * @param key The secret crypto key in utf-8 or ArrayBuffer format.
+   * @param msg The plain text message.
+   * @return A promise that resolves with the HMAC-SHA256 hash in ArrayBuffer
+   *   format.
+   */
+  async signWithHmacSha256(
+    key: string | ArrayBuffer,
+    msg: string
+  ): Promise<ArrayBuffer> {
+    const cryptoKey = typeof key === 'string' ? key : toBuffer(key);
+    return toArrayBuffer(
+      crypto.createHmac('sha256', cryptoKey).update(msg).digest()
+    );
+  }
+}
+
+/**
+ * Converts a Node.js Buffer to an ArrayBuffer.
+ * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
+ * @param buffer The Buffer input to covert.
+ * @return The ArrayBuffer representation of the input.
+ */
+function toArrayBuffer(buffer: Buffer): ArrayBuffer {
+  return buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength
+  );
+}
+
+/**
+ * Converts an ArrayBuffer to a Node.js Buffer.
+ * @param arrayBuffer The ArrayBuffer input to covert.
+ * @return The Buffer representation of the input.
+ */
+function toBuffer(arrayBuffer: ArrayBuffer): Buffer {
+  return Buffer.from(arrayBuffer);
 }

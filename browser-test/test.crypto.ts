@@ -14,7 +14,7 @@
 
 import * as base64js from 'base64-js';
 import {assert} from 'chai';
-import {createCrypto} from '../src/crypto/crypto';
+import {createCrypto, fromArrayBufferToHex} from '../src/crypto/crypto';
 import {BrowserCrypto} from '../src/crypto/browser/crypto';
 import {privateKey, publicKey} from './fixtures/keys';
 import {describe, it} from 'mocha';
@@ -98,5 +98,57 @@ describe('Browser crypto tests', () => {
     const base64String = 'dGVzdCBzdHJpbmc=';
     const encodedString = crypto.encodeBase64StringUtf8(originalString);
     assert.strictEqual(encodedString, base64String);
+  });
+
+  it('should calculate SHA256 digest in hex encoding', async () => {
+    const input = 'I can calculate SHA256';
+    const expectedHexDigest =
+      '73d08486d8bfd4fb4bc12dd8903604ddbde5ad95b6efa567bd723ce81a881122';
+
+    const calculatedHexDigest = await crypto.sha256DigestHex(input);
+    assert.strictEqual(calculatedHexDigest, expectedHexDigest);
+  });
+
+  describe('should compute the HMAC-SHA256 hash of a message', () => {
+    it('using a string key', async () => {
+      const message = 'The quick brown fox jumps over the lazy dog';
+      const key = 'key';
+      const expectedHexHash =
+        'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
+      const expectedHash = new Uint8Array(
+        (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
+          parseInt(byte, 16)
+        )
+      );
+
+      const calculatedHash = await crypto.signWithHmacSha256(key, message);
+      assert.deepStrictEqual(calculatedHash, expectedHash.buffer);
+    });
+
+    it('using an ArrayBuffer key', async () => {
+      const message = 'The quick brown fox jumps over the lazy dog';
+      // String "key" ArrayBuffer representation.
+      const key = new Uint8Array([107, 0, 101, 0, 121, 0])
+        .buffer as ArrayBuffer;
+      const expectedHexHash =
+        'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
+      const expectedHash = new Uint8Array(
+        (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
+          parseInt(byte, 16)
+        )
+      );
+
+      const calculatedHash = await crypto.signWithHmacSha256(key, message);
+      assert.deepStrictEqual(calculatedHash, expectedHash.buffer);
+    });
+  });
+
+  it('should expose a method to convert an ArrayBuffer to hex', () => {
+    const arrayBuffer = new Uint8Array([4, 8, 0, 12, 16, 0])
+      .buffer as ArrayBuffer;
+    const expectedHexEncoding = '0408000c1000';
+
+    const calculatedHexEncoding = fromArrayBufferToHex(arrayBuffer);
+    assert.strictEqual(calculatedHexEncoding, expectedHexEncoding);
   });
 });
