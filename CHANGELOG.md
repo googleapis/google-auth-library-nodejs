@@ -4,6 +4,33 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.6...v7.0.0) (2021-02-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* integrates external_accounts with `GoogleAuth` and ADC (#1052)
+* workload identity federation support (#1131)
+
+### Features
+
+* adds service account impersonation to `ExternalAccountClient` ([#1041](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1041)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* adds text/json credential_source support to IdentityPoolClients ([#1059](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1059)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* defines `ExternalAccountClient` used to instantiate external account clients ([#1050](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1050)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* defines `IdentityPoolClient` used for K8s and Azure workloads ([#1042](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1042)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* defines ExternalAccountClient abstract class for external_account credentials ([#1030](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1030)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* get AWS region from environment variable ([#1067](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1067)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* implements AWS signature version 4 for signing requests ([#1047](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1047)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* implements the OAuth token exchange spec based on rfc8693 ([#1026](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1026)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* integrates external_accounts with `GoogleAuth` and ADC ([#1052](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1052)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* workload identity federation support ([#1131](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1131)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v6 ([#1129](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1129)) ([5240fb0](https://www.github.com/googleapis/google-auth-library-nodejs/commit/5240fb0e7ba5503d562659a0d1d7c952bc44ce0e))
+* **deps:** update dependency puppeteer to v7 ([#1134](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1134)) ([02d0d73](https://www.github.com/googleapis/google-auth-library-nodejs/commit/02d0d73a5f0d2fc7de9b13b160e4e7074652f9d0))
+
 ### [6.1.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.5...v6.1.6) (2021-01-27)
 
 
