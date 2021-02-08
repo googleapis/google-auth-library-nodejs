@@ -20,7 +20,7 @@ const {GoogleAuth} = require('google-auth-library');
 
 /**
  * This sample demonstrates passing a `credentials` object directly into the
- * `getClient` method.  This is useful if you're storing the fields requiretd
+ * `getClient` method.  This is useful if you're storing the fields required
  * in environment variables.  The original `client_email` and `private_key`
  * values are obtained from a service account credential file.
  */
