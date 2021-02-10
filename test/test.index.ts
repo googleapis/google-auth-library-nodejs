@@ -41,5 +41,6 @@ describe('index', () => {
     assert(gal.ExternalAccountClient);
     assert(gal.IdentityPoolClient);
     assert(gal.AwsClient);
+    assert(gal.BaseExternalAccountClient);
   });
 });
