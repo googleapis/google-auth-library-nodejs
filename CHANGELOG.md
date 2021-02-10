@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.0.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.1...v7.0.2) (2021-02-10)
+
+
+### Bug Fixes
+
+* expose `BaseExternalAccountClient` and `BaseExternalAccountClientOptions` ([#1142](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1142)) ([1d62c04](https://www.github.com/googleapis/google-auth-library-nodejs/commit/1d62c04dfa117b6a81e8c78385dc72792369cf21))
+
 ### [7.0.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.0...v7.0.1) (2021-02-09)
 
 
