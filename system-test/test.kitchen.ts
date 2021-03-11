@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it, before, after} from 'mocha';
+//import {describe, it, before, after} from 'mocha';
 import * as execa from 'execa';
 import * as fs from 'fs';
 import * as mv from 'mv';
