@@ -14,7 +14,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-//import {describe, it, before, after} from 'mocha';
+import {describe, it, before, after} from 'mocha';
 import * as execa from 'execa';
 import * as fs from 'fs';
 import * as mv from 'mv';
