@@ -27,7 +27,8 @@ import {RefreshOptions} from './oauth2client';
 export interface AwsClientOptions extends BaseExternalAccountClientOptions {
   credential_source: {
     environment_id: string;
-    // Region can also be determined from the AWS_REGION environment variable.
+    // Region can also be determined from the AWS_REGION or AWS_DEFAULT_REGION
+    // environment variables.
     region_url?: string;
     // The url field is used to determine the AWS security credentials.
     // This is optional since these credentials can be retrieved from the
@@ -78,7 +79,7 @@ export class AwsClient extends BaseExternalAccountClient {
     super(options, additionalOptions);
     this.environmentId = options.credential_source.environment_id;
     // This is only required if the AWS region is not available in the
-    // AWS_REGION environment variable
+    // AWS_REGION or AWS_DEFAULT_REGION environment variables.
     this.regionUrl = options.credential_source.region_url;
     // This is only required if AWS security credentials are not available in
     // environment variables.
@@ -200,8 +201,10 @@ export class AwsClient extends BaseExternalAccountClient {
    * @return A promise that resolves with the current AWS region.
    */
   private async getAwsRegion(): Promise<string> {
-    if (process.env['AWS_REGION']) {
-      return process.env['AWS_REGION'];
+    // Priority order for region determination:
+    // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
+    if (process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']) {
+      return (process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'])!;
     }
     if (!this.regionUrl) {
       throw new Error(

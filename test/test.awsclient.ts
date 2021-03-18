@@ -527,18 +527,21 @@ describe('AwsClient', () => {
     let envAwsSecretAccessKey: string | undefined;
     let envAwsSessionToken: string | undefined;
     let envAwsRegion: string | undefined;
+    let envAwsDefaultRegion: string | undefined;
 
     beforeEach(() => {
       // Store external state.
       envAwsAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
       envAwsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
       envAwsSessionToken = process.env.AWS_SESSION_TOKEN;
-      envAwsAccessKeyId = process.env.AWS_REGION;
+      envAwsRegion = process.env.AWS_REGION;
+      envAwsDefaultRegion = process.env.AWS_DEFAULT_REGION;
       // Reset environment variables.
       delete process.env.AWS_ACCESS_KEY_ID;
       delete process.env.AWS_SECRET_ACCESS_KEY;
       delete process.env.AWS_SESSION_TOKEN;
       delete process.env.AWS_REGION;
+      delete process.env.AWS_DEFAULT_REGION;
     });
 
     afterEach(() => {
@@ -562,6 +565,11 @@ describe('AwsClient', () => {
         process.env.AWS_REGION = envAwsRegion;
       } else {
         delete process.env.AWS_REGION;
+      }
+      if (envAwsDefaultRegion) {
+        process.env.AWS_DEFAULT_REGION = envAwsDefaultRegion;
+      } else {
+        delete process.env.AWS_DEFAULT_REGION;
       }
     });
 
@@ -614,10 +622,33 @@ describe('AwsClient', () => {
         scope.done();
       });
 
-      it('should resolve when AWS region is set as environment variable', async () => {
+      it('should resolve when AWS_REGION is set as environment variable', async () => {
         process.env.AWS_ACCESS_KEY_ID = accessKeyId;
         process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
         process.env.AWS_REGION = awsRegion;
+
+        const client = new AwsClient(awsOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+      });
+
+      it('should resolve when AWS_DEFAULT_REGION is set as environment variable', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_DEFAULT_REGION = awsRegion;
+
+        const client = new AwsClient(awsOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+      });
+
+      it('should prioritize AWS_REGION over AWS_DEFAULT_REGION environment variable', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_REGION = awsRegion;
+        process.env.AWS_DEFAULT_REGION = 'fail-if-used';
 
         const client = new AwsClient(awsOptions);
         const subjectToken = await client.retrieveSubjectToken();
