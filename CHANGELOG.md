@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.0.3](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.2...v7.0.3) (2021-03-23)
+
+
+### Bug Fixes
+
+* support AWS_DEFAULT_REGION for determining AWS region ([#1149](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1149)) ([9ae2d30](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9ae2d30c15c9bce3cae70ccbe6e227c096005695))
+
 ### [7.0.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.1...v7.0.2) (2021-02-10)
 
 
