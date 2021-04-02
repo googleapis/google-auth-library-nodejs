@@ -671,11 +671,18 @@ export class GoogleAuth {
       return null;
     }
     const creds = await this.getClient();
-    try {
-      return await (creds as BaseExternalAccountClient).getProjectId();
-    } catch (e) {
-      return null;
-    }
+    // Do not suppress the underlying error, as the error could contain helpful
+    // information for debugging and fixing. This is especially true for
+    // external account creds as in order to get the project ID, the following
+    // operations have to succeed:
+    // 1. Valid credentials file should be supplied.
+    // 2. Ability to retrieve access tokens from STS token exchange API.
+    // 3. Ability to exchange for service account impersonated credentials (if
+    //    enabled).
+    // 4. Ability to get project info using the access token from step 2 or 3.
+    // Without surfacing the error, it is harder for developers to determine
+    // which step went wrong.
+    return await (creds as BaseExternalAccountClient).getProjectId();
   }
 
   /**
