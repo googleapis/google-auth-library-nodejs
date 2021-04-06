@@ -1968,7 +1968,7 @@ describe('googleauth', () => {
 
           await assert.rejects(
             auth.getProjectId(),
-            /Unable to detect a Project Id in the current environment/
+            /The caller does not have permission/
           );
           scopes.forEach(s => s.done());
         });
@@ -1980,7 +1980,7 @@ describe('googleauth', () => {
 
           await assert.rejects(
             auth.getProjectId(),
-            /Unable to detect a Project Id in the current environment/
+            /The file at invalid does not exist, or it is not a file/
           );
         });
 
