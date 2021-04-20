@@ -4,7 +4,7 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
-        "sha": "43a68bccbef3a9a128704ef78cf425853d2903e9"
+        "sha": "4f9ad7871bd498f74989649af56a25e0ce7d13ac"
       }
     },
     {
