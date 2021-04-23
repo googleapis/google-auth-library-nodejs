@@ -141,11 +141,11 @@ export class DefaultTransporter {
         err.message = body.error.errors
           .map((err2: Error) => err2.message)
           .join('\n');
-        err.code = body.error.code;
+        err.code = body.error.code.toString();
         err.errors = body.error.errors;
       } else {
         err.message = body.error.message;
-        err.code = body.error.code || res.status;
+        err.code = body.error.code.toString() || res.status.toString();
       }
     } else if (res && res.status >= 400) {
       // Consider all 4xx and 5xx responses errors.
