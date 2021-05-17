@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "setup": "node scripts/externalclient-setup.js",
-    "test": "mocha test/externalclient.test.js --timeout 60000"
+    "test": "mocha --timeout 60000"
   },
   "engines": {
     "node": ">=10"
