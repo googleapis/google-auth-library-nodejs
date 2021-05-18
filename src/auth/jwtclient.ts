@@ -124,9 +124,11 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     if (!this.apiKey && !this.hasUserScopes() && url) {
       if (
         this.additionalClaims &&
-        (this.additionalClaims as {
-          target_audience: string;
-        }).target_audience
+        (
+          this.additionalClaims as {
+            target_audience: string;
+          }
+        ).target_audience
       ) {
         const {tokens} = await this.refreshToken();
         return {

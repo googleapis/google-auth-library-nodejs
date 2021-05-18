@@ -86,7 +86,8 @@ export declare interface AuthClient {
 
 export abstract class AuthClient
   extends EventEmitter
-  implements CredentialsClient {
+  implements CredentialsClient
+{
   protected quotaProjectId?: string;
   transporter = new DefaultTransporter();
   credentials: Credentials = {};

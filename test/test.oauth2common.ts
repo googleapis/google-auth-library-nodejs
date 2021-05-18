@@ -104,7 +104,9 @@ describe('OAuthClientAuthHandler', () => {
     };
     const actualOptions = Object.assign({}, originalOptions);
     const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization = `Basic ${expectedBase64EncodedCred}`;
+    (
+      expectedOptions.headers as Headers
+    ).Authorization = `Basic ${expectedBase64EncodedCred}`;
 
     handler.testApplyClientAuthenticationOptions(actualOptions);
     assert.deepStrictEqual(expectedOptions, actualOptions);
@@ -125,7 +127,9 @@ describe('OAuthClientAuthHandler', () => {
     };
     const actualOptions = Object.assign({}, originalOptions);
     const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization = `Basic ${expectedBase64EncodedCredNoSecret}`;
+    (
+      expectedOptions.headers as Headers
+    ).Authorization = `Basic ${expectedBase64EncodedCredNoSecret}`;
 
     handler.testApplyClientAuthenticationOptions(actualOptions);
     assert.deepStrictEqual(expectedOptions, actualOptions);
@@ -142,7 +146,9 @@ describe('OAuthClientAuthHandler', () => {
     };
     const actualOptions = Object.assign({}, originalOptions);
     const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization = `Basic ${expectedBase64EncodedCred}`;
+    (
+      expectedOptions.headers as Headers
+    ).Authorization = `Basic ${expectedBase64EncodedCred}`;
 
     handler.testApplyClientAuthenticationOptions(actualOptions);
     assert.deepStrictEqual(expectedOptions, actualOptions);
@@ -343,7 +349,9 @@ describe('OAuthClientAuthHandler', () => {
     };
     const actualOptions = Object.assign({}, originalOptions);
     const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization = `Bearer ${bearerToken}`;
+    (
+      expectedOptions.headers as Headers
+    ).Authorization = `Bearer ${bearerToken}`;
 
     handler.testApplyClientAuthenticationOptions(actualOptions, bearerToken);
     assert.deepStrictEqual(expectedOptions, actualOptions);
@@ -366,7 +374,9 @@ describe('OAuthClientAuthHandler', () => {
     const actualOptions = Object.assign({}, originalOptions);
     // Expected options should have bearer token in header.
     const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization = `Bearer ${bearerToken}`;
+    (
+      expectedOptions.headers as Headers
+    ).Authorization = `Bearer ${bearerToken}`;
 
     handler.testApplyClientAuthenticationOptions(actualOptions, bearerToken);
     assert.deepStrictEqual(expectedOptions, actualOptions);
@@ -389,7 +399,9 @@ describe('OAuthClientAuthHandler', () => {
     const actualOptions = Object.assign({}, originalOptions);
     // Expected options should have bearer token in header.
     const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization = `Bearer ${bearerToken}`;
+    (
+      expectedOptions.headers as Headers
+    ).Authorization = `Bearer ${bearerToken}`;
 
     handler.testApplyClientAuthenticationOptions(actualOptions, bearerToken);
     assert.deepStrictEqual(expectedOptions, actualOptions);

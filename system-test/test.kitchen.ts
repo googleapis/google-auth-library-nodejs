@@ -22,7 +22,7 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import {promisify} from 'util';
 
-const mvp = (promisify(mv) as {}) as (...args: string[]) => Promise<void>;
+const mvp = promisify(mv) as {} as (...args: string[]) => Promise<void>;
 const ncpp = promisify(ncp);
 const keep = !!process.env.GALN_KEEP_TEMPDIRS;
 const stagingDir = tmp.dirSync({keep, unsafeCleanup: true});
