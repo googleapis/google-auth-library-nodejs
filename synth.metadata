@@ -4,14 +4,14 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/google-auth-library-nodejs.git",
-        "sha": "241063a8c7d583df53ae616347edc532aec02165"
+        "sha": "7870f64c900aa5323d21a60de3d22616717ff215"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "b891fb474173f810051a7fdb0d66915e0a9bc82f"
+        "sha": "7332178a11ddddc91188dc0f25bca1ccadcaa6c6"
       }
     }
   ]
