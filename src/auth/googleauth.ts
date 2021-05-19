@@ -261,9 +261,8 @@ export class GoogleAuth {
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
-    credential = await this._tryGetApplicationCredentialsFromEnvironmentVariable(
-      options
-    );
+    credential =
+      await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
     if (credential) {
       if (credential instanceof JWT) {
         credential.defaultScopes = this.defaultScopes;
@@ -609,8 +608,8 @@ export class GoogleAuth {
       exec('gcloud config config-helper --format json', (err, stdout) => {
         if (!err && stdout) {
           try {
-            const projectId = JSON.parse(stdout).configuration.properties.core
-              .project;
+            const projectId =
+              JSON.parse(stdout).configuration.properties.core.project;
             resolve(projectId);
             return;
           } catch (e) {
