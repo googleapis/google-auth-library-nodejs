@@ -19,6 +19,7 @@ export enum GCPEnv {
   KUBERNETES_ENGINE = 'KUBERNETES_ENGINE',
   CLOUD_FUNCTIONS = 'CLOUD_FUNCTIONS',
   COMPUTE_ENGINE = 'COMPUTE_ENGINE',
+  CLOUD_RUN = 'CLOUD_RUN',
   NONE = 'NONE',
 }
 
@@ -45,6 +46,8 @@ async function getEnvMemoized(): Promise<GCPEnv> {
   } else if (await isComputeEngine()) {
     if (await isKubernetesEngine()) {
       env = GCPEnv.KUBERNETES_ENGINE;
+    } else if (isCloudRun()) {
+      env = GCPEnv.CLOUD_RUN;
     } else {
       env = GCPEnv.COMPUTE_ENGINE;
     }
@@ -60,6 +63,15 @@ function isAppEngine() {
 
 function isCloudFunction() {
   return !!(process.env.FUNCTION_NAME || process.env.FUNCTION_TARGET);
+}
+
+/**
+ * This check only verifies that the environment is running knative.
+ * This must be run *after* checking for Kubernetes, otherwise it will
+ * return a false positive.
+ */
+function isCloudRun() {
+  return !!process.env.K_CONFIGURATION;
 }
 
 async function isKubernetesEngine() {
