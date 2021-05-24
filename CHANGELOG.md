@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.4...v7.1.0) (2021-05-21)
+
+
+### Features
+
+* add `gcf-owl-bot[bot]` to `ignoreAuthors` ([#1174](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1174)) ([f377adc](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f377adc01ca16687bb905aa14f6c62a23e90aaa9))
+* add detection for Cloud Run ([#1177](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1177)) ([4512363](https://www.github.com/googleapis/google-auth-library-nodejs/commit/4512363cf712dff5f178af0e7022c258775dfec7))
+
 ### [7.0.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.3...v7.0.4) (2021-04-06)
 
 
