@@ -445,9 +445,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       },
       responseType: 'json',
     };
-    const response = await this.transporter.request<IamGenerateAccessTokenResponse>(
-      opts
-    );
+    const response =
+      await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
     const successResponse = response.data;
     return {
       access_token: successResponse.accessToken,

@@ -629,14 +629,16 @@ describe('googleauth', () => {
     it('tryGetApplicationCredentialsFromEnvironmentVariable should return null when env const is not set', async () => {
       // Set up a mock to return a null path string.
       mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
-      const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const client =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.strictEqual(client, null);
     });
 
     it('tryGetApplicationCredentialsFromEnvironmentVariable should return null when env const is empty string', async () => {
       // Set up a mock to return an empty path string.
       mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
-      const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const client =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.strictEqual(client, null);
     });
 
@@ -657,7 +659,8 @@ describe('googleauth', () => {
         'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json'
       );
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       const jwt = result as JWT;
       assert.strictEqual(privateJSON.private_key, jwt.key);
       assert.strictEqual(privateJSON.client_email, jwt.email);
@@ -672,9 +675,10 @@ describe('googleauth', () => {
         'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json'
       );
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
-        {eagerRefreshThresholdMillis: 60 * 60 * 1000}
-      );
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable({
+          eagerRefreshThresholdMillis: 60 * 60 * 1000,
+        });
       const jwt = result as JWT;
       assert.strictEqual(privateJSON.private_key, jwt.key);
       assert.strictEqual(privateJSON.client_email, jwt.email);
@@ -687,14 +691,16 @@ describe('googleauth', () => {
     it('_tryGetApplicationCredentialsFromWellKnownFile should build the correct directory for Windows', async () => {
       mockWindows();
       mockWindowsWellKnownFile();
-      const result = (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
+      const result =
+        (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
       assert.ok(result);
       assert.strictEqual(result.email, private2JSON.client_email);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should build the correct directory for non-Windows', async () => {
       mockLinuxWellKnownFile();
-      const client = (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
+      const client =
+        (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
       assert.strictEqual(client.email, private2JSON.client_email);
     });
 
@@ -702,25 +708,29 @@ describe('googleauth', () => {
       mockWindows();
       mockEnvVar('APPDATA');
       mockWindowsWellKnownFile();
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should fail on non-Windows when HOME is not defined', async () => {
       mockEnvVar('HOME');
       mockLinuxWellKnownFile();
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should fail on Windows when file does not exist', async () => {
       mockWindows();
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should fail on non-Windows when file does not exist', async () => {
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
@@ -846,7 +856,7 @@ describe('googleauth', () => {
         configuration: {properties: {core: {project: STUB_PROJECT}}},
       });
 
-      ((child_process.exec as unknown) as sinon.SinonStub).restore();
+      (child_process.exec as unknown as sinon.SinonStub).restore();
       const stub = sandbox
         .stub(child_process, 'exec')
         .callsArgWith(1, null, stdout, null);
@@ -858,7 +868,7 @@ describe('googleauth', () => {
     it('getProjectId should use GCE when well-known file and env const are not set', async () => {
       const scope = createGetProjectIdNock(STUB_PROJECT);
       const projectId = await auth.getProjectId();
-      const stub = (child_process.exec as unknown) as sinon.SinonStub;
+      const stub = child_process.exec as unknown as sinon.SinonStub;
       stub.restore();
       assert(stub.calledOnce);
       assert.strictEqual(projectId, STUB_PROJECT);
@@ -1150,7 +1160,8 @@ describe('googleauth', () => {
         'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json'
       );
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert(result);
       const jwt = result as JWT;
       const body = await auth.getCredentials();
@@ -1169,7 +1180,8 @@ describe('googleauth', () => {
       const spy = sinon.spy(auth, 'getClient');
       const body = await auth.getCredentials();
 
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       if (!(result instanceof JWT)) {
         throw new assert.AssertionError({
           message: 'Credentials are not a JWT object',
@@ -1198,7 +1210,8 @@ describe('googleauth', () => {
 
     it('getCredentials should return error when env const is not set', async () => {
       // Set up a mock to return a null path string
-      const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const client =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.strictEqual(null, client);
       await assert.rejects(auth.getCredentials());
     });
@@ -1900,9 +1913,10 @@ describe('googleauth', () => {
 
       describe('getApplicationCredentialsFromFilePath()', () => {
         it('should correctly read the file and create a valid client', async () => {
-          const actualClient = await auth._getApplicationCredentialsFromFilePath(
-            './test/fixtures/external-account-cred.json'
-          );
+          const actualClient =
+            await auth._getApplicationCredentialsFromFilePath(
+              './test/fixtures/external-account-cred.json'
+            );
 
           assertExternalAccountClientInitialized(
             actualClient,
@@ -2002,9 +2016,10 @@ describe('googleauth', () => {
           'GOOGLE_APPLICATION_CREDENTIALS',
           './test/fixtures/external-account-cred.json'
         );
-        const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
-          refreshOptions
-        );
+        const result =
+          await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
+            refreshOptions
+          );
 
         assert(result);
         assertExternalAccountClientInitialized(
@@ -2017,9 +2032,10 @@ describe('googleauth', () => {
       it('tryGetApplicationCredentialsFromWellKnownFile() should resolve', async () => {
         // Set up a mock to return path to a valid credentials file.
         mockLinuxWellKnownFile('./test/fixtures/external-account-cred.json');
-        const result = await auth._tryGetApplicationCredentialsFromWellKnownFile(
-          refreshOptions
-        );
+        const result =
+          await auth._tryGetApplicationCredentialsFromWellKnownFile(
+            refreshOptions
+          );
 
         assert(result);
         assertExternalAccountClientInitialized(
