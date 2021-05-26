@@ -143,13 +143,16 @@ async function main(config) {
   const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
-  const authClient = await auth.getClient();
-  google.options({auth: authClient});
+  google.options({auth});
 
   // Create the workload identity pool.
   response = await iam.projects.locations.workloadIdentityPools.create({
     parent: `projects/${projectId}/locations/global`,
     workloadIdentityPoolId: poolId,
+    requestBody: {
+      displayName: 'Test workload identity pool',
+      description: 'Test workload identity pool for Node.js',
+    },
   });
 
   // Populate the audience field. This will be used by the tests, specifically
@@ -200,44 +203,40 @@ async function main(config) {
     requestBody: {
       policy: {
         bindings,
-      } 
+      },
     },
   });
 
   // Create an OIDC provider. This will use the accounts.google.com issuer URL.
   // This will use the STS audience as the OIDC token audience.
-  await iam.projects.locations.workloadIdentityPools.providers.create(
-    {
-      parent: `projects/${projectId}/locations/global/workloadIdentityPools/${poolId}`,
-      workloadIdentityPoolProviderId: oidcProviderId,
-      requestBody: {
-        displayName: 'Test OIDC provider',
-        description: 'Test OIDC provider for Node.js',
-        attributeMapping: {
-          'google.subject': 'assertion.sub',
-        },
-        oidc: {
-          issuerUri: 'https://accounts.google.com',
-          allowedAudiences: [oidcAudience],
-        },
-      }
-    }
-  );
+  await iam.projects.locations.workloadIdentityPools.providers.create({
+    parent: `projects/${projectId}/locations/global/workloadIdentityPools/${poolId}`,
+    workloadIdentityPoolProviderId: oidcProviderId,
+    requestBody: {
+      displayName: 'Test OIDC provider',
+      description: 'Test OIDC provider for Node.js',
+      attributeMapping: {
+        'google.subject': 'assertion.sub',
+      },
+      oidc: {
+        issuerUri: 'https://accounts.google.com',
+        allowedAudiences: [oidcAudience],
+      },
+    },
+  });
 
   // Create an AWS provider.
-  await iam.projects.locations.workloadIdentityPools.providers.create(
-    {
-      parent: `projects/${projectId}/locations/global/workloadIdentityPools/${poolId}`,
-      workloadIdentityPoolProviderId: awsProviderId,
-      requestBody: {
-        displayName: 'Test AWS provider',
-        description: 'Test AWS provider for Node.js',
-        aws: {
-          accountId: config.awsAccountId,
-        },
-      }
-    }
-  );
+  await iam.projects.locations.workloadIdentityPools.providers.create({
+    parent: `projects/${projectId}/locations/global/workloadIdentityPools/${poolId}`,
+    workloadIdentityPoolProviderId: awsProviderId,
+    requestBody: {
+      displayName: 'Test AWS provider',
+      description: 'Test AWS provider for Node.js',
+      aws: {
+        accountId: config.awsAccountId,
+      },
+    },
+  });
 
   return {
     oidcAudience,
