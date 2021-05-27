@@ -51,6 +51,26 @@ export interface Crypto {
   ): Promise<string>;
   decodeBase64StringUtf8(base64: string): string;
   encodeBase64StringUtf8(text: string): string;
+  /**
+   * Computes the SHA-256 hash of the provided string.
+   * @param str The plain text string to hash.
+   * @return A promise that resolves with the SHA-256 hash of the provided
+   *   string in hexadecimal encoding.
+   */
+  sha256DigestHex(str: string): Promise<string>;
+
+  /**
+   * Computes the HMAC hash of a message using the provided crypto key and the
+   * SHA-256 algorithm.
+   * @param key The secret crypto key in utf-8 or ArrayBuffer format.
+   * @param msg The plain text message.
+   * @return A promise that resolves with the HMAC-SHA256 hash in ArrayBuffer
+   *   format.
+   */
+  signWithHmacSha256(
+    key: string | ArrayBuffer,
+    msg: string
+  ): Promise<ArrayBuffer>;
 }
 
 export function createCrypto(): Crypto {
@@ -66,4 +86,20 @@ export function hasBrowserCrypto() {
     typeof window.crypto !== 'undefined' &&
     typeof window.crypto.subtle !== 'undefined'
   );
+}
+
+/**
+ * Converts an ArrayBuffer to a hexadecimal string.
+ * @param arrayBuffer The ArrayBuffer to convert to hexadecimal string.
+ * @return The hexadecimal encoding of the ArrayBuffer.
+ */
+export function fromArrayBufferToHex(arrayBuffer: ArrayBuffer): string {
+  // Convert buffer to byte array.
+  const byteArray = Array.from(new Uint8Array(arrayBuffer));
+  // Convert bytes to hex string.
+  return byteArray
+    .map(byte => {
+      return byte.toString(16).padStart(2, '0');
+    })
+    .join('');
 }

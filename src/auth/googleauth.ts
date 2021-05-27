@@ -21,22 +21,31 @@ import * as path from 'path';
 import * as stream from 'stream';
 
 import {createCrypto} from '../crypto/crypto';
-import * as messages from '../messages';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, JWTInput} from './credentials';
-import {IdTokenClient, IdTokenProvider} from './idtokenclient';
+import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {
-  Headers,
-  OAuth2Client,
-  OAuth2ClientOptions,
-  RefreshOptions,
-} from './oauth2client';
+import {Headers, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
 import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
 import {Impersonated, ImpersonatedOptions} from './impersonated';
+import {
+  ExternalAccountClient,
+  ExternalAccountClientOptions,
+} from './externalclient';
+import {
+  EXTERNAL_ACCOUNT_TYPE,
+  BaseExternalAccountClient,
+} from './baseexternalclient';
+import {AuthClient} from './authclient';
+
+/**
+ * Defines all types of explicit clients that are determined via ADC JSON
+ * config file.
+ */
+export type JSONClient = JWT | UserRefreshClient | BaseExternalAccountClient;
 
 export interface ProjectIdCallback {
   (err?: Error | null, projectId?: string | null): void;
@@ -50,15 +59,11 @@ export interface CredentialCallback {
 interface DeprecatedGetClientOptions {}
 
 export interface ADCCallback {
-  (
-    err: Error | null,
-    credential?: OAuth2Client,
-    projectId?: string | null
-  ): void;
+  (err: Error | null, credential?: AuthClient, projectId?: string | null): void;
 }
 
 export interface ADCResponse {
-  credential: OAuth2Client;
+  credential: AuthClient;
   projectId: string | null;
 }
 
@@ -74,9 +79,10 @@ export interface GoogleAuthOptions {
   keyFile?: string;
 
   /**
-   * Object containing client_email and private_key properties
+   * Object containing client_email and private_key properties, or the
+   * external account client options.
    */
-  credentials?: CredentialBody;
+  credentials?: CredentialBody | ExternalAccountClientOptions;
 
   /**
    * Options object passed to the constructor of the client
@@ -121,7 +127,9 @@ export class GoogleAuth {
   private _cachedProjectId?: string | null;
 
   // To save the contents of the JSON credential file
-  jsonContent: JWTInput | null = null;
+  jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
+
+  cachedCredential: JSONClient | Compute | null = null;
 
   cachedCredential:
     | JWT
@@ -129,7 +137,11 @@ export class GoogleAuth {
     | Compute
     | Impersonated
     | null = null;
-
+  /**
+   * Scopes populated by the client library by default. We differentiate between
+   * these and user defined scopes when deciding whether to use a self-signed JWT.
+   */
+  defaultScopes?: string | string[];
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
@@ -185,7 +197,8 @@ export class GoogleAuth {
               this.getProductionProjectId() ||
               (await this.getFileProjectId()) ||
               (await this.getDefaultServiceProjectId()) ||
-              (await this.getGCEProjectId());
+              (await this.getGCEProjectId()) ||
+              (await this.getExternalAccountClientProjectId());
             this._cachedProjectId = projectId;
             if (!projectId) {
               throw new Error(
@@ -202,6 +215,14 @@ export class GoogleAuth {
       );
     }
     return this._getDefaultProjectIdPromise;
+  }
+
+  /**
+   * @returns Any scopes (user-specified or default scopes specified by the
+   *   client library) that need to be set on the current Auth client.
+   */
+  private getAnyScopes(): string | string[] | undefined {
+    return this.scopes || this.defaultScopes;
   }
 
   /**
@@ -240,22 +261,24 @@ export class GoogleAuth {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
       return {
-        credential: this.cachedCredential as JWT | UserRefreshClient,
+        credential: this.cachedCredential as JSONClient,
         projectId: await this.getProjectIdAsync(),
       };
     }
 
-    let credential: JWT | UserRefreshClient | null;
+    let credential: JSONClient | null;
     let projectId: string | null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
-    credential = await this._tryGetApplicationCredentialsFromEnvironmentVariable(
-      options
-    );
+    credential =
+      await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
     if (credential) {
       if (credential instanceof JWT) {
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
+      } else if (credential instanceof BaseExternalAccountClient) {
+        credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
       projectId = await this.getProjectId();
@@ -268,7 +291,10 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
+        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
+      } else if (credential instanceof BaseExternalAccountClient) {
+        credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
       projectId = await this.getProjectId();
@@ -293,7 +319,7 @@ export class GoogleAuth {
 
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
-    (options as ComputeOptions).scopes = this.scopes;
+    (options as ComputeOptions).scopes = this.getAnyScopes();
     this.cachedCredential = new Compute(options);
     projectId = await this.getProjectId();
     return {projectId, credential: this.cachedCredential};
@@ -318,7 +344,7 @@ export class GoogleAuth {
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable(
     options?: RefreshOptions
-  ): Promise<JWT | UserRefreshClient | null> {
+  ): Promise<JSONClient | null> {
     const credentialsPath =
       process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
       process.env['google_application_credentials'];
@@ -343,7 +369,7 @@ export class GoogleAuth {
    */
   async _tryGetApplicationCredentialsFromWellKnownFile(
     options?: RefreshOptions
-  ): Promise<JWT | UserRefreshClient | null> {
+  ): Promise<JSONClient | null> {
     // First, figure out the location of the file, depending upon the OS type.
     let location = null;
     if (this._isWindows()) {
@@ -388,7 +414,7 @@ export class GoogleAuth {
   async _getApplicationCredentialsFromFilePath(
     filePath: string,
     options: RefreshOptions = {}
-  ): Promise<JWT | UserRefreshClient> {
+  ): Promise<JSONClient> {
     // Make sure the path looks like a string.
     if (!filePath || filePath.length === 0) {
       throw new Error('The file path is invalid.');
@@ -420,8 +446,8 @@ export class GoogleAuth {
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
-  fromJSON(json: JWTInput, options?: RefreshOptions): JWT | UserRefreshClient {
-    let client: UserRefreshClient | JWT;
+  fromJSON(json: JWTInput, options?: RefreshOptions): JSONClient {
+    let client: JSONClient;
     if (!json) {
       throw new Error(
         'Must pass in a JSON object containing the Google auth settings.'
@@ -430,11 +456,19 @@ export class GoogleAuth {
     options = options || {};
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
+      client.fromJSON(json);
+    } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
+      client = ExternalAccountClient.fromJSON(
+        json as ExternalAccountClientOptions,
+        options
+      )!;
+      client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
+      client.fromJSON(json);
     }
-    client.fromJSON(json);
     return client;
   }
 
@@ -448,17 +482,25 @@ export class GoogleAuth {
   private _cacheClientFromJSON(
     json: JWTInput,
     options?: RefreshOptions
-  ): JWT | UserRefreshClient {
-    let client: UserRefreshClient | JWT;
+  ): JSONClient {
+    let client: JSONClient;
     // create either a UserRefreshClient or JWT client.
     options = options || {};
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
+      client.fromJSON(json);
+    } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
+      client = ExternalAccountClient.fromJSON(
+        json as ExternalAccountClientOptions,
+        options
+      )!;
+      client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultScopes = this.defaultScopes;
+      client.fromJSON(json);
     }
-    client.fromJSON(json);
     // cache both raw data used to instantiate client and client itself.
     this.jsonContent = json;
     this.cachedCredential = client;
@@ -470,12 +512,12 @@ export class GoogleAuth {
    * @param inputStream The input stream.
    * @param callback Optional callback.
    */
-  fromStream(inputStream: stream.Readable): Promise<JWT | UserRefreshClient>;
+  fromStream(inputStream: stream.Readable): Promise<JSONClient>;
   fromStream(inputStream: stream.Readable, callback: CredentialCallback): void;
   fromStream(
     inputStream: stream.Readable,
     options: RefreshOptions
-  ): Promise<JWT | UserRefreshClient>;
+  ): Promise<JSONClient>;
   fromStream(
     inputStream: stream.Readable,
     options: RefreshOptions,
@@ -485,7 +527,7 @@ export class GoogleAuth {
     inputStream: stream.Readable,
     optionsOrCallback: RefreshOptions | CredentialCallback = {},
     callback?: CredentialCallback
-  ): Promise<JWT | UserRefreshClient> | void {
+  ): Promise<JSONClient> | void {
     let options: RefreshOptions = {};
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;
@@ -505,7 +547,7 @@ export class GoogleAuth {
   private fromStreamAsync(
     inputStream: stream.Readable,
     options?: RefreshOptions
-  ): Promise<JWT | UserRefreshClient> {
+  ): Promise<JSONClient> {
     return new Promise((resolve, reject) => {
       if (!inputStream) {
         throw new Error(
@@ -519,9 +561,21 @@ export class GoogleAuth {
         .on('data', chunk => (s += chunk))
         .on('end', () => {
           try {
-            const data = JSON.parse(s);
-            const r = this._cacheClientFromJSON(data, options);
-            return resolve(r);
+            try {
+              const data = JSON.parse(s);
+              const r = this._cacheClientFromJSON(data, options);
+              return resolve(r);
+            } catch (err) {
+              // If we failed parsing this.keyFileName, assume that it
+              // is a PEM or p12 certificate:
+              if (!this.keyFilename) throw err;
+              const client = new JWT({
+                ...this.clientOptions,
+                keyFile: this.keyFilename,
+              });
+              this.cachedCredential = client;
+              return resolve(client);
+            }
           } catch (err) {
             return reject(err);
           }
@@ -561,22 +615,19 @@ export class GoogleAuth {
    */
   private async getDefaultServiceProjectId(): Promise<string | null> {
     return new Promise<string | null>(resolve => {
-      exec(
-        'gcloud config config-helper --format json',
-        (err, stdout, stderr) => {
-          if (!err && stdout) {
-            try {
-              const projectId = JSON.parse(stdout).configuration.properties.core
-                .project;
-              resolve(projectId);
-              return;
-            } catch (e) {
-              // ignore errors
-            }
+      exec('gcloud config config-helper --format json', (err, stdout) => {
+        if (!err && stdout) {
+          try {
+            const projectId =
+              JSON.parse(stdout).configuration.properties.core.project;
+            resolve(projectId);
+            return;
+          } catch (e) {
+            // ignore errors
           }
-          resolve(null);
         }
-      );
+        resolve(null);
+      });
     });
   }
 
@@ -622,6 +673,28 @@ export class GoogleAuth {
   }
 
   /**
+   * Gets the project ID from external account client if available.
+   */
+  private async getExternalAccountClientProjectId(): Promise<string | null> {
+    if (!this.jsonContent || this.jsonContent.type !== EXTERNAL_ACCOUNT_TYPE) {
+      return null;
+    }
+    const creds = await this.getClient();
+    // Do not suppress the underlying error, as the error could contain helpful
+    // information for debugging and fixing. This is especially true for
+    // external account creds as in order to get the project ID, the following
+    // operations have to succeed:
+    // 1. Valid credentials file should be supplied.
+    // 2. Ability to retrieve access tokens from STS token exchange API.
+    // 3. Ability to exchange for service account impersonated credentials (if
+    //    enabled).
+    // 4. Ability to get project info using the access token from step 2 or 3.
+    // Without surfacing the error, it is harder for developers to determine
+    // which step went wrong.
+    return await (creds as BaseExternalAccountClient).getProjectId();
+  }
+
+  /**
    * Gets the Compute Engine project ID if it can be inferred.
    */
   private async getGCEProjectId() {
@@ -663,8 +736,8 @@ export class GoogleAuth {
 
     if (this.jsonContent) {
       const credential: CredentialBody = {
-        client_email: this.jsonContent.client_email,
-        private_key: this.jsonContent.private_key,
+        client_email: (this.jsonContent as JWTInput).client_email,
+        private_key: (this.jsonContent as JWTInput).private_key,
       };
       return credential;
     }
@@ -770,7 +843,7 @@ export class GoogleAuth {
    * HTTP request using the given options.
    * @param opts Axios request options for the HTTP request.
    */
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async request<T = any>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
     const client = await this.getClient();
     return client.request<T>(opts);

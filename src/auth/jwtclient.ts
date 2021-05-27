@@ -15,7 +15,6 @@
 import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
 
-import * as messages from '../messages';
 import {CredentialBody, Credentials, JWTInput} from './credentials';
 import {IdTokenProvider} from './idtokenclient';
 import {JWTAccess} from './jwtaccess';
@@ -41,6 +40,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   keyFile?: string;
   key?: string;
   keyId?: string;
+  defaultScopes?: string | string[];
   scopes?: string | string[];
   scope?: string;
   subject?: string;
@@ -121,12 +121,14 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    if (!this.apiKey && !this.hasScopes() && url) {
+    if (!this.apiKey && !this.hasUserScopes() && url) {
       if (
         this.additionalClaims &&
-        (this.additionalClaims as {
-          target_audience: string;
-        }).target_audience
+        (
+          this.additionalClaims as {
+            target_audience: string;
+          }
+        ).target_audience
       ) {
         const {tokens} = await this.refreshToken();
         return {
@@ -138,7 +140,12 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
         // credentials.
         if (!this.access) {
-          this.access = new JWTAccess(this.email, this.key, this.keyId);
+          this.access = new JWTAccess(
+            this.email,
+            this.key,
+            this.keyId,
+            this.eagerRefreshThresholdMillis
+          );
         }
         const headers = await this.access.getRequestHeaders(
           url,
@@ -146,8 +153,12 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         );
         return {headers: this.addSharedMetadataHeaders(headers)};
       }
-    } else {
+    } else if (this.hasAnyScopes() || this.apiKey) {
       return super.getRequestMetadataAsync(url);
+    } else {
+      // If no audience, apiKey, or scopes are provided, we should not attempt
+      // to populate any headers:
+      return {headers: {}};
     }
   }
 
@@ -160,7 +171,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     const gtoken = new GoogleToken({
       iss: this.email,
       sub: this.subject,
-      scope: this.scopes,
+      scope: this.scopes || this.defaultScopes,
       keyFile: this.keyFile,
       key: this.key,
       additionalClaims: {target_audience: targetAudience},
@@ -177,16 +188,20 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   /**
    * Determine if there are currently scopes available.
    */
-  private hasScopes() {
+  private hasUserScopes() {
     if (!this.scopes) {
       return false;
     }
-    // For arrays, check the array length.
-    if (this.scopes instanceof Array) {
-      return this.scopes.length > 0;
-    }
-    // For others, convert to a string and check the length.
-    return String(this.scopes).length > 0;
+    return this.scopes.length > 0;
+  }
+
+  /**
+   * Are there any default or user scopes defined.
+   */
+  private hasAnyScopes() {
+    if (this.scopes && this.scopes.length > 0) return true;
+    if (this.defaultScopes && this.defaultScopes.length > 0) return true;
+    return false;
   }
 
   /**
@@ -224,6 +239,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    * @private
    */
   protected async refreshTokenNoCache(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
@@ -248,7 +264,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       this.gtoken = new GoogleToken({
         iss: this.email,
         sub: this.subject,
-        scope: this.scopes,
+        scope: this.scopes || this.defaultScopes,
         keyFile: this.keyFile,
         key: this.key,
         additionalClaims: this.additionalClaims,
@@ -300,7 +316,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     callback?: (err?: Error | null) => void
   ): void | Promise<void> {
     if (callback) {
-      this.fromStreamAsync(inputStream).then(r => callback(), callback);
+      this.fromStreamAsync(inputStream).then(() => callback(), callback);
     } else {
       return this.fromStreamAsync(inputStream);
     }

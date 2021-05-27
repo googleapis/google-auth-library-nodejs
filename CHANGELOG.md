@@ -4,6 +4,180 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.4...v7.1.0) (2021-05-21)
+
+
+### Features
+
+* add `gcf-owl-bot[bot]` to `ignoreAuthors` ([#1174](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1174)) ([f377adc](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f377adc01ca16687bb905aa14f6c62a23e90aaa9))
+* add detection for Cloud Run ([#1177](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1177)) ([4512363](https://www.github.com/googleapis/google-auth-library-nodejs/commit/4512363cf712dff5f178af0e7022c258775dfec7))
+
+### [7.0.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.3...v7.0.4) (2021-04-06)
+
+
+### Bug Fixes
+
+* do not suppress external project ID determination errors ([#1153](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1153)) ([6c1c91d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/6c1c91dac6c31d762b03774a385d780a824fce97))
+
+### [7.0.3](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.2...v7.0.3) (2021-03-23)
+
+
+### Bug Fixes
+
+* support AWS_DEFAULT_REGION for determining AWS region ([#1149](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1149)) ([9ae2d30](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9ae2d30c15c9bce3cae70ccbe6e227c096005695))
+
+### [7.0.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.1...v7.0.2) (2021-02-10)
+
+
+### Bug Fixes
+
+* expose `BaseExternalAccountClient` and `BaseExternalAccountClientOptions` ([#1142](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1142)) ([1d62c04](https://www.github.com/googleapis/google-auth-library-nodejs/commit/1d62c04dfa117b6a81e8c78385dc72792369cf21))
+
+### [7.0.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.0...v7.0.1) (2021-02-09)
+
+
+### Bug Fixes
+
+* **deps:** update dependency google-auth-library to v7 ([#1140](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1140)) ([9c717f7](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9c717f70ca155b24edd5511b6038679db25b85b7))
+
+## [7.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.6...v7.0.0) (2021-02-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* integrates external_accounts with `GoogleAuth` and ADC (#1052)
+* workload identity federation support (#1131)
+
+### Features
+
+* adds service account impersonation to `ExternalAccountClient` ([#1041](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1041)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* adds text/json credential_source support to IdentityPoolClients ([#1059](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1059)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* defines `ExternalAccountClient` used to instantiate external account clients ([#1050](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1050)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* defines `IdentityPoolClient` used for K8s and Azure workloads ([#1042](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1042)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* defines ExternalAccountClient abstract class for external_account credentials ([#1030](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1030)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* get AWS region from environment variable ([#1067](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1067)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* implements AWS signature version 4 for signing requests ([#1047](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1047)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* implements the OAuth token exchange spec based on rfc8693 ([#1026](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1026)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* integrates external_accounts with `GoogleAuth` and ADC ([#1052](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1052)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+* workload identity federation support ([#1131](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1131)) ([997f124](https://www.github.com/googleapis/google-auth-library-nodejs/commit/997f124a5c02dfa44879a759bf701a9fa4c3ba90))
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v6 ([#1129](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1129)) ([5240fb0](https://www.github.com/googleapis/google-auth-library-nodejs/commit/5240fb0e7ba5503d562659a0d1d7c952bc44ce0e))
+* **deps:** update dependency puppeteer to v7 ([#1134](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1134)) ([02d0d73](https://www.github.com/googleapis/google-auth-library-nodejs/commit/02d0d73a5f0d2fc7de9b13b160e4e7074652f9d0))
+
+### [6.1.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.5...v6.1.6) (2021-01-27)
+
+
+### Bug Fixes
+
+* call addSharedMetadataHeaders even when token has not expired ([#1116](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1116)) ([aad043d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/aad043d20df3f1e44f56c58a21f15000b6fe970d))
+
+### [6.1.5](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.4...v6.1.5) (2021-01-22)
+
+
+### Bug Fixes
+
+* support PEM and p12 when using factory ([#1120](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1120)) ([c2ead4c](https://www.github.com/googleapis/google-auth-library-nodejs/commit/c2ead4cc7650f100b883c9296fce628f17085992))
+
+### [6.1.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.3...v6.1.4) (2020-12-22)
+
+
+### Bug Fixes
+
+* move accessToken to headers instead of parameter ([#1108](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1108)) ([67b0cc3](https://www.github.com/googleapis/google-auth-library-nodejs/commit/67b0cc3077860a1583bcf18ce50aeff58bbb5496))
+
+### [6.1.3](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.2...v6.1.3) (2020-10-22)
+
+
+### Bug Fixes
+
+* **deps:** update dependency gaxios to v4 ([#1086](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1086)) ([f2678ff](https://www.github.com/googleapis/google-auth-library-nodejs/commit/f2678ff5f8f5a0ee33924278b58e0a6e3122cb12))
+
+### [6.1.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.1...v6.1.2) (2020-10-19)
+
+
+### Bug Fixes
+
+* update gcp-metadata to catch a json-bigint security fix ([#1078](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1078)) ([125fe09](https://www.github.com/googleapis/google-auth-library-nodejs/commit/125fe0924a2206ebb0c83ece9947524e7b135803))
+
+### [6.1.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.1.0...v6.1.1) (2020-10-06)
+
+
+### Bug Fixes
+
+* **deps:** upgrade gtoken ([#1064](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1064)) ([9116f24](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9116f247486d6376feca505bbfa42a91d5e579e2))
+
+## [6.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.8...v6.1.0) (2020-09-22)
+
+
+### Features
+
+* default self-signed JWTs ([#1054](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1054)) ([b4d139d](https://www.github.com/googleapis/google-auth-library-nodejs/commit/b4d139d9ee27f886ca8cc5478615c052700fff48))
+
+### [6.0.8](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.7...v6.0.8) (2020-08-13)
+
+
+### Bug Fixes
+
+* **deps:** roll back dependency google-auth-library to ^6.0.6 ([#1033](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1033)) ([eb54ee9](https://www.github.com/googleapis/google-auth-library-nodejs/commit/eb54ee9369d9e5a01d164ccf7f826858d44827fd))
+
+### [6.0.7](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.6...v6.0.7) (2020-08-11)
+
+
+### Bug Fixes
+
+* migrate token info API to not pass token in query string ([#991](https://www.github.com/googleapis/google-auth-library-nodejs/issues/991)) ([a7e5701](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a7e5701a8394d79fe93d28794467747a23cf9ff4))
+
+### [6.0.6](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.5...v6.0.6) (2020-07-30)
+
+
+### Bug Fixes
+
+* **types:** include scope in credentials type ([#1007](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1007)) ([a2b7d23](https://www.github.com/googleapis/google-auth-library-nodejs/commit/a2b7d23caa5bf253c7c0756396f1b58216182089))
+
+### [6.0.5](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.4...v6.0.5) (2020-07-13)
+
+
+### Bug Fixes
+
+* **deps:** update dependency lru-cache to v6 ([#995](https://www.github.com/googleapis/google-auth-library-nodejs/issues/995)) ([3c07566](https://www.github.com/googleapis/google-auth-library-nodejs/commit/3c07566f0384611227030e9b381fc6e6707e526b))
+
+### [6.0.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.3...v6.0.4) (2020-07-09)
+
+
+### Bug Fixes
+
+* typeo in nodejs .gitattribute ([#993](https://www.github.com/googleapis/google-auth-library-nodejs/issues/993)) ([ad12ceb](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ad12ceb3309b7db7394fe1fe1d5e7b2e4901141d))
+
+### [6.0.3](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.2...v6.0.3) (2020-07-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v5 ([#986](https://www.github.com/googleapis/google-auth-library-nodejs/issues/986)) ([7cfe6f2](https://www.github.com/googleapis/google-auth-library-nodejs/commit/7cfe6f200b9c04fe4805d1b1e3a2e03a9668e551))
+
+### [6.0.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.1...v6.0.2) (2020-06-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v4 ([#976](https://www.github.com/googleapis/google-auth-library-nodejs/issues/976)) ([9ddfb9b](https://www.github.com/googleapis/google-auth-library-nodejs/commit/9ddfb9befedd10d6c82cbf799c1afea9ba10d444))
+* **tsc:** audience property is not mandatory on verifyIdToken ([#972](https://www.github.com/googleapis/google-auth-library-nodejs/issues/972)) ([17a7e24](https://www.github.com/googleapis/google-auth-library-nodejs/commit/17a7e247cdb798ddf3173cf44ab762665cbce0a1))
+* **types:** add locale property to idtoken ([#974](https://www.github.com/googleapis/google-auth-library-nodejs/issues/974)) ([ebf9bed](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ebf9beda30f251da6adb9ec0bf943019ea0171c5)), closes [#973](https://www.github.com/googleapis/google-auth-library-nodejs/issues/973)
+
+### [6.0.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v6.0.0...v6.0.1) (2020-05-21)
+
+
+### Bug Fixes
+
+* **deps:** update dependency google-auth-library to v6 ([#930](https://www.github.com/googleapis/google-auth-library-nodejs/issues/930)) ([81fdabe](https://www.github.com/googleapis/google-auth-library-nodejs/commit/81fdabe6fb7f0b8c5114c0d835680a28def822e2))
+* apache license URL ([#468](https://www.github.com/googleapis/google-auth-library-nodejs/issues/468)) ([#936](https://www.github.com/googleapis/google-auth-library-nodejs/issues/936)) ([53831cf](https://www.github.com/googleapis/google-auth-library-nodejs/commit/53831cf72f6669d13692c5665fef5062dc8f6c1a))
+* **deps:** update dependency puppeteer to v3 ([#944](https://www.github.com/googleapis/google-auth-library-nodejs/issues/944)) ([4d6fba0](https://www.github.com/googleapis/google-auth-library-nodejs/commit/4d6fba034cb0e70092656e9aff1ba419fdfca880))
+* fixing tsc error caused by @types/node update ([#965](https://www.github.com/googleapis/google-auth-library-nodejs/issues/965)) ([b94edb0](https://www.github.com/googleapis/google-auth-library-nodejs/commit/b94edb0716572593e4e9cb8a9b9bbfa567f71625))
+* gcp-metadata now warns rather than throwing ([#956](https://www.github.com/googleapis/google-auth-library-nodejs/issues/956)) ([89e16c2](https://www.github.com/googleapis/google-auth-library-nodejs/commit/89e16c2401101d086a8f9d05b8f0771b5c74157c))
+
 ## [6.0.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v5.10.1...v6.0.0) (2020-03-26)
 
 

@@ -65,17 +65,16 @@ describe('samples', () => {
   });
 
   it('should fetch ID token for Cloud Run', async () => {
-    // process.env.CLOUD_RUN_URL should be a cloud run container, protected with
-    // IAP, running gcr.io/cloudrun/hello:
+    // process.env.CLOUD_RUN_URL should be a cloud run service running
+    // gcr.io/cloudrun/hello:
     const url =
       process.env.CLOUD_RUN_URL || 'https://hello-rftcw63abq-uc.a.run.app';
-    const output = execSync(`node idtokens-cloudrun ${url}`);
+    const output = execSync(`node idtokens-serverless ${url}`);
     assert.match(output, /What's next?/);
   });
 
   it('should fetch ID token for IAP', async () => {
-    // process.env.CLOUD_RUN_URL should be a cloud run container, protected with
-    // IAP, running gcr.io/cloudrun/hello:
+    // process.env.IAP_URL should be an App Engine app, protected with IAP:
     const url =
       process.env.IAP_URL || 'https://nodejs-docs-samples-iap.appspot.com';
     const targetAudience =
