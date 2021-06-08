@@ -198,7 +198,9 @@ export class StsCredentials extends OAuthClientAuthHandler {
       url: this.tokenExchangeEndpoint,
       method: 'POST',
       headers,
-      data: querystring.stringify(values),
+      data: querystring.stringify(
+        values as unknown as querystring.ParsedUrlQueryInput
+      ),
       responseType: 'json',
     };
     // Apply OAuth client authentication.

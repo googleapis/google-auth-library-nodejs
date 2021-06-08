@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "7.1.0",
+  "version": "7.1.1",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
@@ -38,7 +38,7 @@
     "@types/mocha": "^8.0.0",
     "@types/mv": "^2.1.0",
     "@types/ncp": "^2.0.1",
-    "@types/node": "^10.5.1",
+    "@types/node": "^14.0.0",
     "@types/sinon": "^10.0.0",
     "@types/tmp": "^0.2.0",
     "assert-rejects": "^1.0.0",
@@ -63,7 +63,7 @@
     "ncp": "^2.0.0",
     "nock": "^13.0.0",
     "null-loader": "^4.0.0",
-    "puppeteer": "^8.0.0",
+    "puppeteer": "^10.0.0",
     "sinon": "^11.0.0",
     "tmp": "^0.2.0",
     "ts-loader": "^8.0.0",
