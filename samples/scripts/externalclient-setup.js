@@ -84,10 +84,9 @@
 const fs = require('fs');
 const {promisify} = require('util');
 const {GoogleAuth} = require('google-auth-library');
-const {google} = require('googleapis');
+const Iam = require('@googleapis/iam');
 
 const readFile = promisify(fs.readFile);
-const iam = google.iam('v1');
 
 /**
  * Generates a random string of the specified length, optionally using the
@@ -143,7 +142,10 @@ async function main(config) {
   const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
-  google.options({auth});
+  const iam = await Iam.iam({
+    version: 'v1',
+    auth,
+  });
 
   // Create the workload identity pool.
   response = await iam.projects.locations.workloadIdentityPools.create({
