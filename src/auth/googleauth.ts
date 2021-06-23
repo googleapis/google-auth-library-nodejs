@@ -97,6 +97,11 @@ export interface GoogleAuthOptions {
    * Your project ID.
    */
   projectId?: string;
+
+  /**
+   * Use JWT Access always.
+   */
+  useJWTAccessAlways?: boolean;
 }
 
 export const CLOUD_SDK_CLIENT_ID =
@@ -111,6 +116,7 @@ export class GoogleAuth {
    * @private
    */
   private checkIsGCE?: boolean = undefined;
+  useJWTAccessAlways: boolean;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
@@ -148,6 +154,7 @@ export class GoogleAuth {
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
+    this.useJWTAccessAlways = opts.useJWTAccessAlways || false;
   }
 
   /**
@@ -455,6 +462,7 @@ export class GoogleAuth {
       client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
+      (options as JWTOptions).useJWTAccessAlways = this.useJWTAccessAlways;
       client = new JWT(options);
       client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);

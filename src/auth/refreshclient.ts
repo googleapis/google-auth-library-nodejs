@@ -20,6 +20,7 @@ export interface UserRefreshClientOptions extends RefreshOptions {
   clientId?: string;
   clientSecret?: string;
   refreshToken?: string;
+  useJWTAccessAlways?: boolean;
 }
 
 export class UserRefreshClient extends OAuth2Client {
