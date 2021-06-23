@@ -78,8 +78,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     key?: string,
     scopes?: string | string[],
     subject?: string,
-    keyId?: string,
-    useJWTAccessAlways?: boolean
+    keyId?: string
   ) {
     const opts =
       optionsOrEmail && typeof optionsOrEmail === 'object'
@@ -137,23 +136,29 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       }
       if (
         this.additionalClaims &&
-        (this.additionalClaims as {
-          target_audience: string;
-        }).target_audience &&
+        (
+          this.additionalClaims as {
+            target_audience: string;
+          }
+        ).target_audience &&
         this.hasAnyScopes
       ) {
         headers = await this.access.getRequestHeaders(
-          (this.additionalClaims as {
-            target_audience: string;
-          }).target_audience,
+          (
+            this.additionalClaims as {
+              target_audience: string;
+            }
+          ).target_audience,
           this.additionalClaims
         );
       } else {
         headers = await this.access.getRequestHeaders(
           url ||
-            (this.additionalClaims as {
-              target_audience: string;
-            }).target_audience,
+            (
+              this.additionalClaims as {
+                target_audience: string;
+              }
+            ).target_audience,
           this.additionalClaims
         );
       }
@@ -162,9 +167,11 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       if (!this.apiKey && !this.hasUserScopes() && url) {
         if (
           this.additionalClaims &&
-          (this.additionalClaims as {
-            target_audience: string;
-          }).target_audience
+          (
+            this.additionalClaims as {
+              target_audience: string;
+            }
+          ).target_audience
         ) {
           const {tokens} = await this.refreshToken();
           return {
