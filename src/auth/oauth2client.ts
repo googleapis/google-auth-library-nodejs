@@ -158,8 +158,8 @@ export interface TokenInfo {
 interface TokenInfoRequest {
   aud: string;
   user_id?: string;
-  scope: string;
-  expires_in: number;
+  scope?: string;
+  expires_in?: number;
   azp?: string;
   sub?: string;
   exp?: number;
@@ -533,7 +533,11 @@ export class OAuth2Client extends AuthClient {
       opts.scope = opts.scope.join(' ');
     }
     const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
-    return rootUrl + '?' + querystring.stringify(opts);
+    return (
+      rootUrl +
+      '?' +
+      querystring.stringify(opts as querystring.ParsedUrlQueryInput)
+    );
   }
 
   generateCodeVerifier(): void {
@@ -1024,8 +1028,8 @@ export class OAuth2Client extends AuthClient {
     });
     const info = Object.assign(
       {
-        expiry_date: new Date().getTime() + data.expires_in * 1000,
-        scopes: data.scope.split(' '),
+        expiry_date: new Date().getTime() + data.expires_in! * 1000,
+        scopes: data.scope!.split(' '),
       },
       data
     );

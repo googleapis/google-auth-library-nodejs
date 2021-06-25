@@ -4,6 +4,20 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.1.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.1.1...v7.1.2) (2021-06-10)
+
+
+### Bug Fixes
+
+* use iam client library to setup test ([#1173](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1173)) ([74ac5db](https://www.github.com/googleapis/google-auth-library-nodejs/commit/74ac5db59f9eff8fa4f3bdb6acc0647a1a4f491f))
+
+### [7.1.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.1.0...v7.1.1) (2021-06-02)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v10 ([#1182](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1182)) ([003e3ee](https://www.github.com/googleapis/google-auth-library-nodejs/commit/003e3ee5d8aeb749c07a4a4db2b75a5882988cc3))
+
 ## [7.1.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.0.4...v7.1.0) (2021-05-21)
 
 
