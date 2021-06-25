@@ -34,6 +34,7 @@ export interface JWTOptions extends RefreshOptions {
   scopes?: string | string[];
   subject?: string;
   additionalClaims?: {};
+  defaultServicePath?: string;
 }
 
 export class JWT extends OAuth2Client implements IdTokenProvider {
@@ -49,6 +50,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   additionalClaims?: {};
   private access?: JWTAccess;
   useJWTAccessAlways: boolean;
+  defaultServicePath?: string;
 
   /**
    * JWT service account credentials.
@@ -70,7 +72,8 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     scopes?: string | string[],
     subject?: string,
     keyId?: string,
-    useJWTAccessAlways?: boolean
+    useJWTAccessAlways?: boolean,
+    defaultServicePath?: string
   );
   constructor(
     optionsOrEmail?: string | JWTOptions,
@@ -96,6 +99,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     this.subject = opts.subject;
     this.additionalClaims = opts.additionalClaims;
     this.useJWTAccessAlways = opts.useJWTAccessAlways || false;
+    this.defaultServicePath = opts.defaultServicePath;
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
   }
 
@@ -125,7 +129,6 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     url?: string | null
   ): Promise<RequestMetadataResponse> {
     if (this.useJWTAccessAlways) {
-      let headers;
       if (!this.access) {
         this.access = new JWTAccess(
           this.email,
@@ -134,34 +137,13 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
           this.eagerRefreshThresholdMillis
         );
       }
-      if (
-        this.additionalClaims &&
-        (
-          this.additionalClaims as {
-            target_audience: string;
-          }
-        ).target_audience &&
-        this.hasAnyScopes
-      ) {
-        headers = await this.access.getRequestHeaders(
-          (
-            this.additionalClaims as {
-              target_audience: string;
-            }
-          ).target_audience,
-          this.additionalClaims
-        );
-      } else {
-        headers = await this.access.getRequestHeaders(
-          url ||
-            (
-              this.additionalClaims as {
-                target_audience: string;
-              }
-            ).target_audience,
-          this.additionalClaims
-        );
-      }
+
+      const audience = 'https://' + this.defaultServicePath + '/';
+      const headers = await this.access.getRequestHeaders(
+        audience,
+        this.additionalClaims,
+        this.scopes
+      );
       return {headers: this.addSharedMetadataHeaders(headers)};
     } else {
       if (!this.apiKey && !this.hasUserScopes() && url) {

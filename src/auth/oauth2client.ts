@@ -405,6 +405,7 @@ export interface RefreshOptions {
   // on the expiry_date.
   // Defaults to false.
   forceRefreshOnFailure?: boolean;
+  useJWTAccessAlways?: boolean;
 }
 
 export class OAuth2Client extends AuthClient {

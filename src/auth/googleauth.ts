@@ -97,11 +97,6 @@ export interface GoogleAuthOptions {
    * Your project ID.
    */
   projectId?: string;
-
-  /**
-   * Use JWT Access always.
-   */
-  useJWTAccessAlways?: boolean;
 }
 
 export const CLOUD_SDK_CLIENT_ID =
@@ -116,7 +111,8 @@ export class GoogleAuth {
    * @private
    */
   private checkIsGCE?: boolean = undefined;
-  useJWTAccessAlways: boolean;
+  useJWTAccessAlways?: boolean;
+  defaultServicePath: string | undefined;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
@@ -154,7 +150,6 @@ export class GoogleAuth {
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
-    this.useJWTAccessAlways = opts.useJWTAccessAlways || false;
   }
 
   /**
@@ -462,8 +457,10 @@ export class GoogleAuth {
       client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
-      (options as JWTOptions).useJWTAccessAlways = this.useJWTAccessAlways;
+      (options as JWTOptions).useJWTAccessAlways =
+        options.useJWTAccessAlways || false;
       client = new JWT(options);
+      client.defaultServicePath = this.defaultServicePath;
       client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }
@@ -495,7 +492,10 @@ export class GoogleAuth {
       client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
+      (options as JWTOptions).useJWTAccessAlways =
+        options.useJWTAccessAlways || false;
       client = new JWT(options);
+      client.defaultServicePath = this.defaultServicePath;
       client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }
@@ -567,10 +567,13 @@ export class GoogleAuth {
               // If we failed parsing this.keyFileName, assume that it
               // is a PEM or p12 certificate:
               if (!this.keyFilename) throw err;
+              (options as JWTOptions).useJWTAccessAlways =
+                options?.useJWTAccessAlways || false;
               const client = new JWT({
                 ...this.clientOptions,
                 keyFile: this.keyFilename,
               });
+              client.defaultServicePath = this.defaultServicePath;
               this.cachedCredential = client;
               return resolve(client);
             }
@@ -589,7 +592,10 @@ export class GoogleAuth {
    */
   fromAPIKey(apiKey: string, options?: RefreshOptions): JWT {
     options = options || {};
+    (options as JWTOptions).useJWTAccessAlways =
+      options.useJWTAccessAlways || false;
     const client = new JWT(options);
+    client.defaultServicePath = this.defaultServicePath;
     client.fromAPIKey(apiKey);
     return client;
   }
