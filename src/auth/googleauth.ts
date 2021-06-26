@@ -457,10 +457,9 @@ export class GoogleAuth {
       client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
-      (options as JWTOptions).useJWTAccessAlways =
-        options.useJWTAccessAlways || false;
       client = new JWT(options);
       client.defaultServicePath = this.defaultServicePath;
+      client.useJWTAccessAlways = this.useJWTAccessAlways || false;
       client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }
@@ -492,10 +491,9 @@ export class GoogleAuth {
       client.scopes = this.getAnyScopes();
     } else {
       (options as JWTOptions).scopes = this.scopes;
-      (options as JWTOptions).useJWTAccessAlways =
-        options.useJWTAccessAlways || false;
       client = new JWT(options);
       client.defaultServicePath = this.defaultServicePath;
+      client.useJWTAccessAlways = this.useJWTAccessAlways || false;
       client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }
@@ -567,13 +565,12 @@ export class GoogleAuth {
               // If we failed parsing this.keyFileName, assume that it
               // is a PEM or p12 certificate:
               if (!this.keyFilename) throw err;
-              (options as JWTOptions).useJWTAccessAlways =
-                options?.useJWTAccessAlways || false;
               const client = new JWT({
                 ...this.clientOptions,
                 keyFile: this.keyFilename,
               });
               client.defaultServicePath = this.defaultServicePath;
+              client.useJWTAccessAlways = this.useJWTAccessAlways || false;
               this.cachedCredential = client;
               return resolve(client);
             }
@@ -592,10 +589,9 @@ export class GoogleAuth {
    */
   fromAPIKey(apiKey: string, options?: RefreshOptions): JWT {
     options = options || {};
-    (options as JWTOptions).useJWTAccessAlways =
-      options.useJWTAccessAlways || false;
     const client = new JWT(options);
     client.defaultServicePath = this.defaultServicePath;
+    client.useJWTAccessAlways = this.useJWTAccessAlways || false;
     client.fromAPIKey(apiKey);
     return client;
   }
