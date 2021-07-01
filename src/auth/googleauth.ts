@@ -112,7 +112,7 @@ export class GoogleAuth {
    */
   private checkIsGCE?: boolean = undefined;
   useJWTAccessAlways?: boolean;
-  defaultServicePath: string | undefined;
+  defaultServicePath?: string;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
@@ -459,7 +459,7 @@ export class GoogleAuth {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
       client.defaultServicePath = this.defaultServicePath;
-      client.useJWTAccessAlways = this.useJWTAccessAlways || false;
+      client.useJWTAccessAlways = this.useJWTAccessAlways;
       client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }

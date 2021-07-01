@@ -27,6 +27,7 @@ export class UserRefreshClient extends OAuth2Client {
   // In a future gts release, the _propertyName rule will be lifted.
   // This is also a hard one because `this.refreshToken` is a function.
   _refreshToken?: string | null;
+  useJWTAccessAlways?: boolean;
 
   /**
    * User Refresh Token credentials.

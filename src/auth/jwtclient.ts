@@ -49,7 +49,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   gtoken?: GoogleToken;
   additionalClaims?: {};
   private access?: JWTAccess;
-  useJWTAccessAlways: boolean;
+  useJWTAccessAlways?: boolean;
   defaultServicePath?: string;
 
   /**
@@ -71,9 +71,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     key?: string,
     scopes?: string | string[],
     subject?: string,
-    keyId?: string,
-    useJWTAccessAlways?: boolean,
-    defaultServicePath?: string
+    keyId?: string
   );
   constructor(
     optionsOrEmail?: string | JWTOptions,
@@ -138,7 +136,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         );
       }
 
-      const audience = 'https://' + this.defaultServicePath + '/';
+      const audience = `https://${this.defaultServicePath}/`;
       const headers = await this.access.getRequestHeaders(
         audience,
         this.additionalClaims,
