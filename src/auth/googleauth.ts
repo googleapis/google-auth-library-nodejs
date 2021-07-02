@@ -111,6 +111,8 @@ export class GoogleAuth {
    * @private
    */
   private checkIsGCE?: boolean = undefined;
+  useJWTAccessAlways?: boolean;
+  defaultServicePath?: string;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
@@ -456,6 +458,8 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+      client.defaultServicePath = this.defaultServicePath;
+      client.useJWTAccessAlways = this.useJWTAccessAlways;
       client.defaultScopes = this.defaultScopes;
       client.fromJSON(json);
     }
@@ -489,6 +493,8 @@ export class GoogleAuth {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
       client.defaultScopes = this.defaultScopes;
+      client.defaultServicePath = this.defaultServicePath;
+      client.useJWTAccessAlways = this.useJWTAccessAlways;
       client.fromJSON(json);
     }
     // cache both raw data used to instantiate client and client itself.
@@ -564,6 +570,8 @@ export class GoogleAuth {
                 keyFile: this.keyFilename,
               });
               this.cachedCredential = client;
+              client.defaultServicePath = this.defaultServicePath;
+              client.useJWTAccessAlways = this.useJWTAccessAlways;
               return resolve(client);
             }
           } catch (err) {
@@ -583,6 +591,8 @@ export class GoogleAuth {
     options = options || {};
     const client = new JWT(options);
     client.fromAPIKey(apiKey);
+    client.defaultServicePath = this.defaultServicePath;
+    client.useJWTAccessAlways = this.useJWTAccessAlways;
     return client;
   }
 
