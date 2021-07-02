@@ -26,7 +26,6 @@ import {
 } from './oauth2client';
 
 export interface JWTOptions extends RefreshOptions {
-  useJWTAccessAlways?: boolean;
   email?: string;
   keyFile?: string;
   key?: string;
@@ -34,7 +33,6 @@ export interface JWTOptions extends RefreshOptions {
   scopes?: string | string[];
   subject?: string;
   additionalClaims?: {};
-  defaultServicePath?: string;
 }
 
 export class JWT extends OAuth2Client implements IdTokenProvider {
@@ -96,8 +94,6 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     this.scopes = opts.scopes;
     this.subject = opts.subject;
     this.additionalClaims = opts.additionalClaims;
-    this.useJWTAccessAlways = opts.useJWTAccessAlways || false;
-    this.defaultServicePath = opts.defaultServicePath;
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
   }
 
