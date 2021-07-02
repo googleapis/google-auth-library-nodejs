@@ -126,7 +126,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
-  defaultScopes?: string | string[];
 
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
