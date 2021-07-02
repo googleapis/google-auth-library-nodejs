@@ -129,7 +129,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   public useJWTAccessAlways?: boolean;
   public defaultServicePath?: string;
 
-
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
