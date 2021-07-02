@@ -421,12 +421,6 @@ describe('googleauth', () => {
       assert.strictEqual(result.defaultServicePath, 'a/b/c');
     });
 
-    it('fromAPIKey should set useJWTAccessAlways', () => {
-      auth.useJWTAccessAlways = true;
-      const client = auth.fromAPIKey(API_KEY);
-      assert.ok(client.useJWTAccessAlways);
-    });
-
     it('fromJSON should create JWT with null subject', () => {
       const json = createJwtJSON();
       const result = auth.fromJSON(json);

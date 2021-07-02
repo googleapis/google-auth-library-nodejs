@@ -29,7 +29,8 @@ export class UserRefreshClient extends OAuth2Client {
   _refreshToken?: string | null;
   public useJWTAccessAlways?: boolean;
   public defaultServicePath?: string;
-
+  defaultScopes?: string | string[];
+  
   /**
    * User Refresh Token credentials.
    *

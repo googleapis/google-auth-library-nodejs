@@ -152,6 +152,12 @@ export class GoogleAuth {
     this.clientOptions = opts.clientOptions;
   }
 
+  setDefaultJWTValues(client: JSONClient) {
+    client.defaultServicePath = this.defaultServicePath;
+    client.useJWTAccessAlways = this.useJWTAccessAlways;
+    client.defaultScopes = this.defaultScopes;
+  }
+
   /**
    * Obtains the default project ID for the application.
    * @param callback Optional callback
@@ -458,9 +464,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-      client.defaultServicePath = this.defaultServicePath;
-      client.useJWTAccessAlways = this.useJWTAccessAlways;
-      client.defaultScopes = this.defaultScopes;
+      this.setDefaultJWTValues(client);
       client.fromJSON(json);
     }
     return client;
@@ -492,9 +496,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-      client.defaultScopes = this.defaultScopes;
-      client.defaultServicePath = this.defaultServicePath;
-      client.useJWTAccessAlways = this.useJWTAccessAlways;
+      this.setDefaultJWTValues(client);
       client.fromJSON(json);
     }
     // cache both raw data used to instantiate client and client itself.
@@ -570,8 +572,7 @@ export class GoogleAuth {
                 keyFile: this.keyFilename,
               });
               this.cachedCredential = client;
-              client.defaultServicePath = this.defaultServicePath;
-              client.useJWTAccessAlways = this.useJWTAccessAlways;
+              this.setDefaultJWTValues(client);
               return resolve(client);
             }
           } catch (err) {
@@ -591,8 +592,6 @@ export class GoogleAuth {
     options = options || {};
     const client = new JWT(options);
     client.fromAPIKey(apiKey);
-    client.defaultServicePath = this.defaultServicePath;
-    client.useJWTAccessAlways = this.useJWTAccessAlways;
     return client;
   }
 

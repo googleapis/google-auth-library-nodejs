@@ -128,6 +128,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   public readonly forceRefreshOnFailure: boolean;
   public useJWTAccessAlways?: boolean;
   public defaultServicePath?: string;
+  defaultScopes?: string | string[];
 
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
