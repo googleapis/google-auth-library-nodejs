@@ -152,7 +152,10 @@ export class GoogleAuth {
     this.clientOptions = opts.clientOptions;
   }
 
-  setDefaultJWTValues(client: JWT) {
+  // GAPIC client libraries should always use self-signed JWTs. The following
+  // variables are set on the JWT client in order to indicate the type of library,
+  // and sign the JWT with the correct audience and scopes (if not supplied).
+  setGapicJWTValues(client: JWT) {
     client.defaultServicePath = this.defaultServicePath;
     client.useJWTAccessAlways = this.useJWTAccessAlways;
     client.defaultScopes = this.defaultScopes;
@@ -273,7 +276,6 @@ export class GoogleAuth {
       await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
@@ -289,7 +291,6 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
@@ -464,7 +465,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-      this.setDefaultJWTValues(client);
+      this.setGapicJWTValues(client);
       client.fromJSON(json);
     }
     return client;
@@ -496,7 +497,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-      this.setDefaultJWTValues(client);
+      this.setGapicJWTValues(client);
       client.fromJSON(json);
     }
     // cache both raw data used to instantiate client and client itself.
@@ -572,7 +573,7 @@ export class GoogleAuth {
                 keyFile: this.keyFilename,
               });
               this.cachedCredential = client;
-              this.setDefaultJWTValues(client);
+              this.setGapicJWTValues(client);
               return resolve(client);
             }
           } catch (err) {

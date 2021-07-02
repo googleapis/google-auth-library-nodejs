@@ -28,7 +28,7 @@ export class UserRefreshClient extends OAuth2Client {
   // This is also a hard one because `this.refreshToken` is a function.
   _refreshToken?: string | null;
   defaultScopes?: string | string[];
-  
+
   /**
    * User Refresh Token credentials.
    *

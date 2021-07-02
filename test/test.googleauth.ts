@@ -418,7 +418,8 @@ describe('googleauth', () => {
       auth.defaultServicePath = 'a/b/c';
       const json = createJwtJSON();
       const result = auth.fromJSON(json);
-      assert.strictEqual((result as JWT).defaultServicePath, 'a/b/c');    });
+      assert.strictEqual((result as JWT).defaultServicePath, 'a/b/c');
+    });
 
     it('fromJSON should create JWT with null subject', () => {
       const json = createJwtJSON();
