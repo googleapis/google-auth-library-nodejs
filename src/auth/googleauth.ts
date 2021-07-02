@@ -152,7 +152,7 @@ export class GoogleAuth {
     this.clientOptions = opts.clientOptions;
   }
 
-  setDefaultJWTValues(client: JSONClient) {
+  setDefaultJWTValues(client: JWT) {
     client.defaultServicePath = this.defaultServicePath;
     client.useJWTAccessAlways = this.useJWTAccessAlways;
     client.defaultScopes = this.defaultScopes;

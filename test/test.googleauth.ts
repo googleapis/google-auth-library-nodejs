@@ -411,15 +411,14 @@ describe('googleauth', () => {
       auth.useJWTAccessAlways = true;
       const json = createJwtJSON();
       const result = auth.fromJSON(json);
-      assert.ok(result.useJWTAccessAlways);
+      assert.ok((result as JWT).useJWTAccessAlways);
     });
 
     it('fromJSON should set default service path with private key', () => {
       auth.defaultServicePath = 'a/b/c';
       const json = createJwtJSON();
       const result = auth.fromJSON(json);
-      assert.strictEqual(result.defaultServicePath, 'a/b/c');
-    });
+      assert.strictEqual((result as JWT).defaultServicePath, 'a/b/c');    });
 
     it('fromJSON should create JWT with null subject', () => {
       const json = createJwtJSON();
