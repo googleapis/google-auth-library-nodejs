@@ -116,6 +116,8 @@ export class GoogleAuth {
    * @private
    */
   private checkIsGCE?: boolean = undefined;
+  useJWTAccessAlways?: boolean;
+  defaultServicePath?: string;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
@@ -158,6 +160,15 @@ export class GoogleAuth {
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
+  }
+
+  // GAPIC client libraries should always use self-signed JWTs. The following
+  // variables are set on the JWT client in order to indicate the type of library,
+  // and sign the JWT with the correct audience and scopes (if not supplied).
+  setGapicJWTValues(client: JWT) {
+    client.defaultServicePath = this.defaultServicePath;
+    client.useJWTAccessAlways = this.useJWTAccessAlways;
+    client.defaultScopes = this.defaultScopes;
   }
 
   /**
@@ -275,7 +286,6 @@ export class GoogleAuth {
       await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
@@ -291,7 +301,6 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
@@ -466,7 +475,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-      client.defaultScopes = this.defaultScopes;
+      this.setGapicJWTValues(client);
       client.fromJSON(json);
     }
     return client;
@@ -498,7 +507,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-      client.defaultScopes = this.defaultScopes;
+      this.setGapicJWTValues(client);
       client.fromJSON(json);
     }
     // cache both raw data used to instantiate client and client itself.
@@ -574,6 +583,7 @@ export class GoogleAuth {
                 keyFile: this.keyFilename,
               });
               this.cachedCredential = client;
+              this.setGapicJWTValues(client);
               return resolve(client);
             }
           } catch (err) {
