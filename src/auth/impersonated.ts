@@ -71,7 +71,7 @@ export class Impersonated extends OAuth2Client {
    * @param targetScopes scopes to request during the authorization grant.
    * @param lifetime number of seconds the delegated credential should be
    * valid for (up to 3600).
-   * @param endpoint api endpoint override. 
+   * @param endpoint api endpoint override.
    */
   constructor(options: ImpersonatedOptions = {}) {
     super(options);
@@ -94,66 +94,49 @@ export class Impersonated extends OAuth2Client {
   protected async refreshToken(
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
-    const iat = Math.floor(new Date().getTime() / 1000);
-
+    const iat = Date.now();
     if (this.credentials.expiry_date) {
       if (this.credentials.expiry_date <= iat) {
-        const token = await this.sourceClient
-          .getAccessToken()
-          .then(res => {
-            const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
-            const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
-
-            const body = {
-              delegates: this.delegates,
-              scope: this.targetScopes,
-              lifetime: this.lifetime + 's',
-            };
-
-            return this.sourceClient
-              .request({
-                url: u,
-                data: body,
-                method: 'POST',
-              })
-              .then(resp => {
-                const tokenResponse = resp.data as TokenResponse;
-                return {
-                  accessToken: tokenResponse.accessToken,
-                  expireTime: Date.parse(tokenResponse.expireTime) / 1000,
-                  resp: resp,
-                };
-              })
-              .catch(error => {
-                if (error.response.status === 403) {
-                  if (
-                    error.response.data.error.message ===
-                    'The caller does not have permission'
-                  ) {
-                    throw new Error(
-                      'Error: Unable to impersonate: sourceCredential lacks IAM Token Creator role on targetCredential'
-                    );
-                  }
-                  if (
-                    error.response.data.error.message ===
-                    'Request had insufficient authentication scopes.'
-                  ) {
-                    throw new Error(
-                      'Error: Unable to impersonate: sourceCredential lacks cloud-platform or IAM scope'
-                    );
-                  }
-                }
-                throw new Error('Error: Unable to impersonate: ' + error);
-              });
-          })
-          .catch(error => {
-            throw new Error(
-              'Error: Unable to refresh sourceCredential: ' + error
-            );
+        try {
+          await this.sourceClient.getAccessToken();
+          const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
+          const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
+          const body = {
+            delegates: this.delegates,
+            scope: this.targetScopes,
+            lifetime: this.lifetime + 's',
+          };
+          const res = await this.sourceClient.request({
+            url: u,
+            data: body,
+            method: 'POST',
           });
-
-        this.credentials.access_token = token.accessToken;
-        this.credentials.expiry_date = token.expireTime;
+          const tokenResponse = res.data as TokenResponse;
+          this.credentials.access_token = tokenResponse.accessToken;
+          this.credentials.expiry_date =
+            Date.parse(tokenResponse.expireTime) / 1000;
+          return {
+            tokens: this.credentials,
+            res,
+          };
+        } catch (error) {
+          if (error.status === 403) {
+            if (error.message === 'The caller does not have permission') {
+              throw new Error(
+                'Error: Unable to impersonate: sourceCredential lacks IAM Token Creator role on targetCredential'
+              );
+            }
+            if (
+              error.message ===
+              'Request had insufficient authentication scopes.'
+            ) {
+              throw new Error(
+                'Error: Unable to impersonate: sourceCredential lacks cloud-platform or IAM scope'
+              );
+            }
+          }
+          throw new Error('Error: Unable to impersonate: ' + error);
+        }
       }
       return {tokens: this.credentials, res: null};
     }
@@ -164,31 +147,25 @@ export class Impersonated extends OAuth2Client {
     opts: GaxiosOptions,
     retry = false
   ): GaxiosPromise<T> {
-    return super.requestAsync<T>(opts, retry).catch(e => {
-      const res = (e as GaxiosError).response;
-      if (res && res.status) {
-        let helpfulMessage = null;
-        if (res.status === 403) {
-          helpfulMessage =
-            'A Forbidden error was returned while attempting access the target Resource as ' +
-            'the Impersonated Account.';
-        } else if (res.status === 404) {
-          helpfulMessage = 'Target Resource was not found.';
-        }
-        if (helpfulMessage) {
-          if (e && e.message && !retry) {
-            helpfulMessage += ' ' + e.message;
-          }
-          if (e) {
-            e.message = helpfulMessage;
-          } else {
-            e = new Error(helpfulMessage);
-            (e as NodeJS.ErrnoException).code = res.status.toString();
-          }
-        }
+    try {
+      return super.requestAsync<T>(opts, retry);
+    } catch (err) {
+      let helpfulMessage = null;
+      if (err.status === 403) {
+        helpfulMessage =
+          'A Forbidden error was returned while attempting access the target Resource as ' +
+          'the Impersonated Account.';
+      } else if (err.status === 404) {
+        helpfulMessage = 'Target Resource was not found.';
       }
-      throw e;
-    });
+      if (helpfulMessage) {
+        if (!retry) {
+          helpfulMessage += ' ' + err.message;
+        }
+        err.message = helpfulMessage;
+      }
+      throw err;
+    }
   }
 
   /**

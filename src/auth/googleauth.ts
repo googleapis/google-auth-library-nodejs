@@ -45,14 +45,18 @@ import {AuthClient} from './authclient';
  * Defines all types of explicit clients that are determined via ADC JSON
  * config file.
  */
-export type JSONClient = JWT | UserRefreshClient | BaseExternalAccountClient;
+export type JSONClient =
+  | JWT
+  | UserRefreshClient
+  | BaseExternalAccountClient
+  | Impersonated;
 
 export interface ProjectIdCallback {
   (err?: Error | null, projectId?: string | null): void;
 }
 
 export interface CredentialCallback {
-  (err: Error | null, result?: UserRefreshClient | JWT | Impersonated): void;
+  (err: Error | null, result?: JSONClient): void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -131,14 +135,8 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
 
-  cachedCredential: JSONClient | Compute | null = null;
+  cachedCredential: JSONClient | Impersonated | Compute | null = null;
 
-  cachedCredential:
-    | JWT
-    | UserRefreshClient
-    | Compute
-    | Impersonated
-    | null = null;
   /**
    * Scopes populated by the client library by default. We differentiate between
    * these and user defined scopes when deciding whether to use a self-signed JWT.
