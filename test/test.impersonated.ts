@@ -32,17 +32,40 @@ function createGTokenMock(body: CredentialRequest) {
     .reply(200, body);
 }
 
+interface ImpersonatedCredentialRequest {
+  delegates: string[];
+  scope: string[];
+  lifetime: string;
+}
+
 describe('impersonated', () => {
   afterEach(() => {
     nock.cleanAll();
   });
-  it('should request impersonated credentials on first request');
-  it.only('should refresh if access token has expired', async () => {
+  it('should request impersonated credentials on first request', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
     const scopes = [
       nock(url).get('/').reply(200),
       createGTokenMock({
         access_token: 'abc123',
       }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+          (body: ImpersonatedCredentialRequest) => {
+            assert.strictEqual(body.lifetime, '30s');
+            assert.deepStrictEqual(body.delegates, []);
+            assert.deepStrictEqual(body.scope, [
+              'https://www.googleapis.com/auth/cloud-platform',
+            ]);
+            return true;
+          }
+        )
+        .reply(200, {
+          accessToken: 'qwerty345',
+          expiryDate: tomorrow.toISOString(),
+        }),
     ];
     const jwt = new JWT(
       'foo@serviceaccount.com',
@@ -51,7 +74,6 @@ describe('impersonated', () => {
       ['http://bar', 'http://foo'],
       'bar@subjectaccount.com'
     );
-    await jwt.authorize();
     const impersonated = new Impersonated({
       sourceClient: jwt,
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
@@ -62,11 +84,95 @@ describe('impersonated', () => {
     impersonated.credentials.access_token = 'initial-access-token';
     impersonated.credentials.expiry_date = Date.now() - 10000;
     await impersonated.request({url});
-    assert.strictEqual(impersonated.credentials.access_token, 'abc123');
+    assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
     scopes.forEach(s => s.done());
   });
-  it(
-    'should throw appropriate exception when 403 occurs refreshing impersonated credentials'
-  );
-  it('should throw appropriate exception when 403 occurs during request');
+  it('should refresh impersonated credentails once they expire');
+  it('throws meaningful error when context available', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const scopes = [
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken'
+        )
+        .reply(404, {
+          error: {
+            code: 404,
+            message: 'Requested entity was not found.',
+            status: 'NOT_FOUND',
+          },
+        }),
+    ];
+    const jwt = new JWT(
+      'foo@serviceaccount.com',
+      PEM_PATH,
+      undefined,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com'
+    );
+    const impersonated = new Impersonated({
+      sourceClient: jwt,
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    impersonated.credentials.access_token = 'initial-access-token';
+    impersonated.credentials.expiry_date = Date.now() - 10000;
+    let err: null | Error = null;
+    try {
+      await impersonated.request({url});
+    } catch (_err) {
+      err = _err;
+    } finally {
+      assert(err);
+      assert.strictEqual(err.message.includes('NOT_FOUND'), true);
+    }
+    scopes.forEach(s => s.done());
+  });
+  it('handles errors without context', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const scopes = [
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken'
+        )
+        .reply(500),
+    ];
+    const jwt = new JWT(
+      'foo@serviceaccount.com',
+      PEM_PATH,
+      undefined,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com'
+    );
+    const impersonated = new Impersonated({
+      sourceClient: jwt,
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    impersonated.credentials.access_token = 'initial-access-token';
+    impersonated.credentials.expiry_date = Date.now() - 10000;
+    let err: null | Error = null;
+    try {
+      await impersonated.request({url});
+    } catch (_err) {
+      err = _err;
+    } finally {
+      assert(err);
+      assert.strictEqual(err.message.includes('unable to impersonate'), true);
+    }
+    scopes.forEach(s => s.done());
+  });
+  it('should return request headers');
 });

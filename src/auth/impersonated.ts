@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {GaxiosOptions, GaxiosPromise} from 'gaxios';
 import {
   GetTokenResponse,
   Headers,
@@ -94,78 +94,47 @@ export class Impersonated extends OAuth2Client {
   protected async refreshToken(
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
-    const iat = Date.now();
-    if (this.credentials.expiry_date) {
-      if (this.credentials.expiry_date <= iat) {
-        try {
-          await this.sourceClient.getAccessToken();
-          const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
-          const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
-          const body = {
-            delegates: this.delegates,
-            scope: this.targetScopes,
-            lifetime: this.lifetime + 's',
-          };
-          const res = await this.sourceClient.request({
-            url: u,
-            data: body,
-            method: 'POST',
-          });
-          const tokenResponse = res.data as TokenResponse;
-          this.credentials.access_token = tokenResponse.accessToken;
-          this.credentials.expiry_date =
-            Date.parse(tokenResponse.expireTime) / 1000;
-          return {
-            tokens: this.credentials,
-            res,
-          };
-        } catch (error) {
-          if (error.status === 403) {
-            if (error.message === 'The caller does not have permission') {
-              throw new Error(
-                'Error: Unable to impersonate: sourceCredential lacks IAM Token Creator role on targetCredential'
-              );
-            }
-            if (
-              error.message ===
-              'Request had insufficient authentication scopes.'
-            ) {
-              throw new Error(
-                'Error: Unable to impersonate: sourceCredential lacks cloud-platform or IAM scope'
-              );
-            }
-          }
-          throw new Error('Error: Unable to impersonate: ' + error);
+    if (this.isTokenExpiring()) {
+      try {
+        await this.sourceClient.getAccessToken();
+        const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
+        const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
+        const body = {
+          delegates: this.delegates,
+          scope: this.targetScopes,
+          lifetime: this.lifetime + 's',
+        };
+        const res = await this.sourceClient.request({
+          url: u,
+          data: body,
+          method: 'POST',
+        });
+        const tokenResponse = res.data as TokenResponse;
+        this.credentials.access_token = tokenResponse.accessToken;
+        this.credentials.expiry_date =
+          Date.parse(tokenResponse.expireTime) / 1000;
+        return {
+          tokens: this.credentials,
+          res,
+        };
+      } catch (error) {
+        const status = error?.response?.data?.error?.status;
+        const message = error?.response?.data?.error?.message;
+        if (status && message) {
+          throw new Error(`${status}: unable to impersonate: ${message}`);
+        } else {
+          throw new Error(`unable to impersonate: ${error}`);
         }
       }
-      return {tokens: this.credentials, res: null};
     }
-    throw new Error('Error: Root credentials.expiry_date not set ');
+    return {tokens: this.credentials, res: null};
   }
 
   protected requestAsync<T>(
     opts: GaxiosOptions,
     retry = false
   ): GaxiosPromise<T> {
-    try {
-      return super.requestAsync<T>(opts, retry);
-    } catch (err) {
-      let helpfulMessage = null;
-      if (err.status === 403) {
-        helpfulMessage =
-          'A Forbidden error was returned while attempting access the target Resource as ' +
-          'the Impersonated Account.';
-      } else if (err.status === 404) {
-        helpfulMessage = 'Target Resource was not found.';
-      }
-      if (helpfulMessage) {
-        if (!retry) {
-          helpfulMessage += ' ' + err.message;
-        }
-        err.message = helpfulMessage;
-      }
-      throw err;
-    }
+    return super.requestAsync<T>(opts, retry);
   }
 
   /**
