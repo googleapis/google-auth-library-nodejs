@@ -53,7 +53,7 @@ This library provides a variety of ways to authenticate to your Google services.
 - [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users. Especially useful for server->server or server->API communication.
 - [Google Compute](#compute) - Directly use a service account on Google Cloud Platform. Useful for server->server or server->API communication.
 - [Workload Identity Federation](#workload-identity-federation) - Use workload identity federation to access Google Cloud resources from Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC).
-- [Impersonated Credentials Client](#impersonated-credentials-client) access protected resources on behalf of another service account.
+- [Impersonated Credentials Client](#impersonated-credentials-client) - access protected resources on behalf of another service account.
 
 ## Application Default Credentials
 This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started)for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
@@ -655,7 +655,7 @@ A complete example can be found in [`samples/verifyIdToken-iap.js`](https://gith
 
 ## Impersonated Credentials Client
 
-Google Cloud Impersonated credentials used for [Creating short-lived service account credentials](https://cloud.google.com/iam/docs/creating-short-lived-service-account-credentials)
+Google Cloud Impersonated credentials used for [Creating short-lived service account credentials](https://cloud.google.com/iam/docs/creating-short-lived-service-account-credentials).
 
 Provides authentication for applications where local credentials impersonates a remote service account using [IAM Credentials API](https://cloud.google.com/iam/docs/reference/credentials/rest).
 
@@ -676,7 +676,7 @@ async function main() {
   const auth = new GoogleAuth();
   const client = await auth.getClient();
 
-  // Impersonate new credentials
+  // Impersonate new credentials:
   let targetClient = new Impersonated({
     sourceClient: client,
     targetPrincipal: "impersonated-account@projectID.iam.gserviceaccount.com",
@@ -721,6 +721,7 @@ async function main() {
 
 main();
 ```
+
 
 ## Samples
 
