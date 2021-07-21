@@ -87,7 +87,6 @@ describe('impersonated', () => {
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
     scopes.forEach(s => s.done());
   });
-  it('should refresh impersonated credentails once they expire');
   it('throws meaningful error when context available', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -174,5 +173,48 @@ describe('impersonated', () => {
     }
     scopes.forEach(s => s.done());
   });
-  it('should return request headers');
+  it('should populate request headers', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const scopes = [
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+          (body: ImpersonatedCredentialRequest) => {
+            assert.strictEqual(body.lifetime, '30s');
+            assert.deepStrictEqual(body.delegates, []);
+            assert.deepStrictEqual(body.scope, [
+              'https://www.googleapis.com/auth/cloud-platform',
+            ]);
+            return true;
+          }
+        )
+        .reply(200, {
+          accessToken: 'qwerty345',
+          expiryDate: tomorrow.toISOString(),
+        }),
+    ];
+    const jwt = new JWT(
+      'foo@serviceaccount.com',
+      PEM_PATH,
+      undefined,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com'
+    );
+    const impersonated = new Impersonated({
+      sourceClient: jwt,
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    impersonated.credentials.access_token = 'initial-access-token';
+    impersonated.credentials.expiry_date = Date.now() - 10000;
+    const headers = await impersonated.getRequestHeaders();
+    assert.strictEqual(headers['Authorization'], 'Bearer qwerty345');
+    scopes.forEach(s => s.done());
+  });
 });
