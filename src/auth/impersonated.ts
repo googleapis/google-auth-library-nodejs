@@ -14,21 +14,32 @@
  * limitations under the License.
  */
 
-import {GaxiosOptions, GaxiosPromise} from 'gaxios';
-import {
-  GetTokenResponse,
-  Headers,
-  OAuth2Client,
-  RefreshOptions,
-  RequestMetadataResponse,
-} from './oauth2client';
+import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
 export interface ImpersonatedOptions extends RefreshOptions {
+  /**
+   * Client used to perform exchange for impersonated client.
+   */
   sourceClient?: OAuth2Client;
+  /**
+   * The service account to impersonate.
+   */
   targetPrincipal?: string;
+  /**
+   * Scopes to request during the authorization grant.
+   */
   targetScopes?: string[];
+  /**
+   * The chained list of delegates required to grant the final access_token.
+   */
   delegates?: string[];
+  /**
+   * Number of seconds the delegated credential should be valid.
+   */
   lifetime?: number | 3600;
+  /**
+   * API endpoint to fetch token from.
+   */
   endpoint?: string;
 }
 
