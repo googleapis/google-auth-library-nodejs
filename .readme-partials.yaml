@@ -648,7 +648,7 @@ body: |-
     const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
     const resp = targetClient.request({ url });
     for (const bucket of resp.data.items) {
-      console.log(resp.data.items.bucket.name);
+      console.log(bucket.name);
     }
 
     // Use impersonated credentials with google-cloud client library
