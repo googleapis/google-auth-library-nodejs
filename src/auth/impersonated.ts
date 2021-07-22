@@ -70,7 +70,9 @@ export class Impersonated extends OAuth2Client {
    * If left unset, sourceCredential must have that role on targetPrincipal.
    * @param targetScopes scopes to request during the authorization grant.
    * @param lifetime number of seconds the delegated credential should be
-   * valid for (up to 3600).
+   * valid for up to 3600 seconds by default, or 43,200 seconds using by
+   * extending the token's lifetime, see:
+   * https://cloud.google.com/iam/docs/creating-short-lived-service-account-credentials#sa-credentials-oauth
    * @param endpoint api endpoint override.
    */
   constructor(options: ImpersonatedOptions = {}) {
