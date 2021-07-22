@@ -81,10 +81,111 @@ describe('impersonated', () => {
       delegates: [],
       targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
     });
-    impersonated.credentials.access_token = 'initial-access-token';
-    impersonated.credentials.expiry_date = Date.now() - 10000;
     await impersonated.request({url});
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
+    scopes.forEach(s => s.done());
+  });
+  it('should not request impersonated credentials on second request', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const scopes = [
+      nock(url).get('/').reply(200),
+      nock(url).get('/').reply(200),
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+          (body: ImpersonatedCredentialRequest) => {
+            assert.strictEqual(body.lifetime, '30s');
+            assert.deepStrictEqual(body.delegates, []);
+            assert.deepStrictEqual(body.scope, [
+              'https://www.googleapis.com/auth/cloud-platform',
+            ]);
+            return true;
+          }
+        )
+        .reply(200, {
+          accessToken: 'qwerty345',
+          expiryDate: tomorrow.toISOString(),
+        }),
+    ];
+    const jwt = new JWT(
+      'foo@serviceaccount.com',
+      PEM_PATH,
+      undefined,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com'
+    );
+    const impersonated = new Impersonated({
+      sourceClient: jwt,
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    await impersonated.request({url});
+    await impersonated.request({url});
+    assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
+    scopes.forEach(s => s.done());
+  });
+  it('should request impersonated credentials once new credentials expire', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const scopes = [
+      nock(url).get('/').reply(200),
+      nock(url).get('/').reply(200),
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      createGTokenMock({
+        access_token: 'abc456',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+          () => {
+            return true;
+          }
+        )
+        .reply(200, {
+          accessToken: 'qwerty345',
+          expiryDate: tomorrow.toISOString(),
+        }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+          () => {
+            return true;
+          }
+        )
+        .reply(200, {
+          accessToken: 'qwerty456',
+          expiryDate: tomorrow.toISOString(),
+        }),
+    ];
+    const jwt = new JWT(
+      'foo@serviceaccount.com',
+      PEM_PATH,
+      undefined,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com'
+    );
+    const impersonated = new Impersonated({
+      sourceClient: jwt,
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    await impersonated.request({url});
+    // Force both the wrapped and impersonated client to appear to have
+    // expired:
+    jwt.credentials.expiry_date = Date.now();
+    impersonated.credentials.expiry_date = Date.now();
+    await impersonated.request({url});
+    assert.strictEqual(impersonated.credentials.access_token, 'qwerty456');
     scopes.forEach(s => s.done());
   });
   it('throws meaningful error when context available', async () => {
@@ -122,15 +223,7 @@ describe('impersonated', () => {
     });
     impersonated.credentials.access_token = 'initial-access-token';
     impersonated.credentials.expiry_date = Date.now() - 10000;
-    let err: null | Error = null;
-    try {
-      await impersonated.request({url});
-    } catch (_err) {
-      err = _err;
-    } finally {
-      assert(err);
-      assert.strictEqual(err.message.includes('NOT_FOUND'), true);
-    }
+    await assert.rejects(impersonated.request({url}), /NOT_FOUND/);
     scopes.forEach(s => s.done());
   });
   it('handles errors without context', async () => {
@@ -162,15 +255,7 @@ describe('impersonated', () => {
     });
     impersonated.credentials.access_token = 'initial-access-token';
     impersonated.credentials.expiry_date = Date.now() - 10000;
-    let err: null | Error = null;
-    try {
-      await impersonated.request({url});
-    } catch (_err) {
-      err = _err;
-    } finally {
-      assert(err);
-      assert.strictEqual(err.message.includes('unable to impersonate'), true);
-    }
+    await assert.rejects(impersonated.request({url}), /unable to impersonate/);
     scopes.forEach(s => s.done());
   });
   it('should populate request headers', async () => {

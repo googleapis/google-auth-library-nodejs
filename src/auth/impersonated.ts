@@ -29,7 +29,7 @@ export interface ImpersonatedOptions extends RefreshOptions {
   targetScopes?: string[];
   delegates?: string[];
   lifetime?: number | 3600;
-  endpoint?: string | 'https://iamcredentials.googleapis.com';
+  endpoint?: string;
 }
 
 export interface TokenResponse {
@@ -81,12 +81,12 @@ export class Impersonated extends OAuth2Client {
       expiry_date: 1,
       refresh_token: 'impersonated-placeholder',
     };
-    this.sourceClient = options.sourceClient || new OAuth2Client();
-    this.targetPrincipal = options.targetPrincipal || '';
-    this.delegates = options.delegates || [];
-    this.targetScopes = options.targetScopes || [];
-    this.lifetime = options.lifetime || 3600;
-    this.endpoint = options.endpoint || 'https://iamcredentials.googleapis.com';
+    this.sourceClient = options.sourceClient ?? new OAuth2Client();
+    this.targetPrincipal = options.targetPrincipal ?? '';
+    this.delegates = options.delegates ?? [];
+    this.targetScopes = options.targetScopes ?? [];
+    this.lifetime = options.lifetime ?? 3600;
+    this.endpoint = options.endpoint ?? 'https://iamcredentials.googleapis.com';
   }
 
   /**
@@ -96,70 +96,38 @@ export class Impersonated extends OAuth2Client {
   protected async refreshToken(
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
-    if (this.isTokenExpiring()) {
-      try {
-        await this.sourceClient.getAccessToken();
-        const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
-        const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
-        const body = {
-          delegates: this.delegates,
-          scope: this.targetScopes,
-          lifetime: this.lifetime + 's',
-        };
-        const res = await this.sourceClient.request({
-          url: u,
-          data: body,
-          method: 'POST',
-        });
-        const tokenResponse = res.data as TokenResponse;
-        this.credentials.access_token = tokenResponse.accessToken;
-        this.credentials.expiry_date =
-          Date.parse(tokenResponse.expireTime) / 1000;
-        return {
-          tokens: this.credentials,
-          res,
-        };
-      } catch (error) {
-        const status = error?.response?.data?.error?.status;
-        const message = error?.response?.data?.error?.message;
-        if (status && message) {
-          throw new Error(`${status}: unable to impersonate: ${message}`);
-        } else {
-          throw new Error(`unable to impersonate: ${error}`);
-        }
+    try {
+      await this.sourceClient.getAccessToken();
+      const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
+      const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
+      const body = {
+        delegates: this.delegates,
+        scope: this.targetScopes,
+        lifetime: this.lifetime + 's',
+      };
+      const res = await this.sourceClient.request<TokenResponse>({
+        url: u,
+        data: body,
+        method: 'POST',
+      });
+      const tokenResponse = res.data;
+      this.credentials.access_token = tokenResponse.accessToken;
+      this.credentials.expiry_date =
+        Date.parse(tokenResponse.expireTime) / 1000;
+      return {
+        tokens: this.credentials,
+        res,
+      };
+    } catch (error) {
+      const status = error?.response?.data?.error?.status;
+      const message = error?.response?.data?.error?.message;
+      if (status && message) {
+        error.message = `${status}: unable to impersonate: ${message}`;
+        throw error;
+      } else {
+        error.message = `unable to impersonate: ${error}`;
+        throw error;
       }
     }
-    return {tokens: this.credentials, res: null};
-  }
-
-  protected requestAsync<T>(
-    opts: GaxiosOptions,
-    retry = false
-  ): GaxiosPromise<T> {
-    return super.requestAsync<T>(opts, retry);
-  }
-
-  /**
-   * Get a non-expired access token, after refreshing if necessary.
-   *
-   * @param url The URI being authorized.
-   * @returns An object that includes the authorization header.
-   */
-  async getRequestHeaders(): Promise<Headers> {
-    const res = await this.getRequestMetadataAsync();
-    return res.headers;
-  }
-
-  protected async getRequestMetadataAsync(
-    url?: string | null
-  ): Promise<RequestMetadataResponse> {
-    if (this.isTokenExpiring()) {
-      await this.getAccessToken();
-    }
-
-    const headers = {
-      Authorization: 'Bearer ' + this.credentials.access_token,
-    };
-    return {headers};
   }
 }
