@@ -687,17 +687,13 @@ async function main() {
 
   // Get impersonated credentials:
   const authHeaders = await targetClient.getRequestHeaders();
-  // Do something with `authHeaders["Authorization"]`.
+  // Do something with `authHeaders.Authorization`.
 
   // Use impersonated credentials:
-  try {
-    const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
-    const resp = targetClient.request({ url });
-    for (var k in resp.data.items) {
-      console.log(`${resp.data.items[k]['name']}`);
-    }
-  } catch (err) {
-    console.error('Unable to list buckets: ' + error);
+  const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
+  const resp = targetClient.request({ url });
+  for (const bucket of resp.data.items) {
+    console.log(bucket.name);
   }
 
   // Use impersonated credentials with google-cloud client library
