@@ -37,7 +37,7 @@ function main(
     if (!targetAudience) {
       // Use the request URL hostname as the target audience for requests.
       const {URL} = require('url');
-      targetAudience = new URL(url).origin;
+      targetAudience = new URL(url);
     }
     console.info(`request ${url} with target audience ${targetAudience}`);
     const client = await auth.getIdTokenClient(targetAudience);
