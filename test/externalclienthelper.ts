@@ -51,7 +51,6 @@ const poolId = 'POOL_ID';
 const providerId = 'PROVIDER_ID';
 const baseUrl = 'https://sts.googleapis.com';
 const path = '/v1/token';
-const betaPath = '/v1beta/token';
 const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
@@ -69,26 +68,6 @@ export function mockStsTokenExchange(
     );
     scope
       .post(path, qs.stringify(nockMockStsToken.request), {
-        reqheaders: headers,
-      })
-      .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
-  });
-  return scope;
-}
-
-export function mockStsBetaTokenExchange(
-  nockParams: NockMockStsToken[]
-): nock.Scope {
-  const scope = nock(baseUrl);
-  nockParams.forEach(nockMockStsToken => {
-    const headers = Object.assign(
-      {
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      nockMockStsToken.additionalHeaders || {}
-    );
-    scope
-      .post(betaPath, qs.stringify(nockMockStsToken.request), {
         reqheaders: headers,
       })
       .reply(nockMockStsToken.statusCode, nockMockStsToken.response);

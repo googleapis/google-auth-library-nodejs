@@ -34,7 +34,12 @@ const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
  */
 const STS_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 /** The STS access token exchange end point. */
-const STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1beta/token';
+const STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
+
+/**
+ * Credential Access Boundary Rules upper bound number.
+ */
+export const MAX_BOUNDARY_LIMIT = 10;
 
 /**
  * Offset to take into account network delays and server clock skews.
@@ -49,9 +54,17 @@ interface CredentialsWithResponse extends Credentials {
 }
 
 /**
+ * Internal interface for tracking and returning Downscoped access token
+ * expiration time.
+ */
+interface DownscopedAccessTokenResponse extends GetAccessTokenResponse {
+  expirationTime?: number | null;
+}
+
+/**
  * Defines an upper bound of permissions available for a GCP credential.
  */
-interface CredentialAccessBoundary {
+export interface CredentialAccessBoundary {
   accessBoundary: {
     accessBoundaryRules: AccessBoundaryRule[];
   };
@@ -74,35 +87,44 @@ interface AvailabilityCondition {
   description?: string;
 }
 
+/**
+ * Downscoped with Credential Access Boundary Client.
+ * This is used to instantiate AuthClients for exchanging downscoped access
+ * tokens using GCP access token fetched from source credentials such as service
+ * account, user account or external account.
+ * The process of exchanging GCP access token for downscoped token is based
+ * on STS token endpoint.
+ */
 export class DownscopedClient extends AuthClient {
-  /**
-   * OAuth scopes for the GCP access token to use. When not provided,
-   * the default https://www.googleapis.com/auth/cloud-platform is
-   * used.
-   */
   private cachedDownscopedAccessToken: CredentialsWithResponse | null;
   private readonly stsCredential: sts.StsCredentials;
-  public readonly authClient: AuthClient;
-  public readonly credentialAccessBoundary: CredentialAccessBoundary;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
 
   constructor(
-    private client: AuthClient,
-    private cab: CredentialAccessBoundary,
+    private authClient: AuthClient,
+    private credentialAccessBoundary: CredentialAccessBoundary,
     additionalOptions?: RefreshOptions
   ) {
     super();
 
-    // Check a number of 1-10 access boundary rules are defined within credential access boundary.
-    if (cab.accessBoundary.accessBoundaryRules.length === 0) {
+    // Check 1-10 Access Boundary Rules are defined within Credential Access Boundary.
+    if (
+      credentialAccessBoundary.accessBoundary.accessBoundaryRules.length === 0
+    ) {
       throw new Error('At least one access boundary rule needs to be defined.');
-    } else if (cab.accessBoundary.accessBoundaryRules.length > 10) {
-      throw new Error('Access boundary rule exceeds limit, max 10 allowed.');
+    } else if (
+      credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
+      MAX_BOUNDARY_LIMIT
+    ) {
+      throw new Error(
+        `Access boundary rule exceeds limit, max ${MAX_BOUNDARY_LIMIT} allowed.`
+      );
     }
 
-    // Check at least one permission should be defined in each access boundary rule.
-    for (const rule of cab.accessBoundary.accessBoundaryRules) {
+    // Check at least one permission should be defined in each Access Boundary Rule.
+    for (const rule of credentialAccessBoundary.accessBoundary
+      .accessBoundaryRules) {
       if (rule.availablePermissions.length === 0) {
         throw new Error(
           'At least one permission should be defined in access boundary rules.'
@@ -111,10 +133,7 @@ export class DownscopedClient extends AuthClient {
     }
 
     this.stsCredential = new sts.StsCredentials(STS_ACCESS_TOKEN_URL);
-    // Default OAuth scope. This could be overridden via public property.
     this.cachedDownscopedAccessToken = null;
-    this.credentialAccessBoundary = cab;
-    this.authClient = client;
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
@@ -129,39 +148,41 @@ export class DownscopedClient extends AuthClient {
 
   /**
    * Provides a mechanism to inject Downscoped access tokens directly.
-   * When the provided credential expires, a new credential, using the
-   * external account options are retrieved.
-   * Notice DownscopedClient is the broker class mainly used for generate
-   * downscoped access tokens, it is unlikely we call this function in real
-   * use case.
-   * We implement to make this a helper function for testing all cases in getAccessToken().
+   * The expiry_date field is required for other clients dealing with
+   * token expiration checking and refreshing.
    * @param credentials The Credentials object to set on the current client.
    */
   setCredentials(credentials: Credentials) {
+    if (!credentials.expiry_date) {
+      throw new Error(
+        'Credentials expiry date field has to be set up in downscopedClient.'
+      );
+    }
     super.setCredentials(credentials);
     this.cachedDownscopedAccessToken = credentials;
   }
 
-  async getAccessToken(): Promise<GetAccessTokenResponse> {
+  async getAccessToken(): Promise<DownscopedAccessTokenResponse> {
     // If the cached access token is unavailable or expired, force refresh.
-    // The Downscoped access token will be returned in GetAccessTokenResponse format.
-    // If cached access token is unavailable or expired, force refresh.
+    // The Downscoped access token will be returned in DownscopedAccessTokenRespons
+    // format.
     if (
       !this.cachedDownscopedAccessToken ||
       this.isExpired(this.cachedDownscopedAccessToken)
     ) {
       await this.refreshAccessTokenAsync();
     }
-    // Return Downscoped access token in GetAccessTokenResponse format.
+    // Return Downscoped access token in DownscopedAccessTokenResponse format.
     return {
       token: this.cachedDownscopedAccessToken!.access_token,
+      expirationTime: this.cachedDownscopedAccessToken!.expiry_date,
       res: this.cachedDownscopedAccessToken!.res,
     };
   }
 
   /**
    * The main authentication interface. It takes an optional url which when
-   * present is the endpoint> being accessed, and returns a Promise which
+   * present is the endpoint being accessed, and returns a Promise which
    * resolves with authorization header fields.
    *
    * The result has the form:
@@ -178,7 +199,7 @@ export class DownscopedClient extends AuthClient {
    * @param opts Request options.
    * @param callback callback.
    * @return A promise that resolves with the HTTP response when no callback
-   * is provided.
+   *   is provided.
    */
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
   request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
@@ -192,13 +213,14 @@ export class DownscopedClient extends AuthClient {
   /**
    * Forces token refresh, even if unexpired tokens are currently cached.
    * GCP access tokens are retrieved from authclient object/source credential.
-   * Thenm GCP access tokens are exchanged for downscoped access tokens via the
+   * Then GCP access tokens are exchanged for downscoped access tokens via the
    * token exchange endpoint.
    * @return A promise that resolves with the fresh downscoped access token.
    */
   protected async refreshAccessTokenAsync(): Promise<CredentialsWithResponse> {
     // Retrieve GCP access token from source credential.
-    const subjectToken = await (await this.authClient.getAccessToken()).token;
+    const subjectToken = (await this.authClient.getAccessToken()).token;
+
     // Construct the STS credentials options.
     const stsCredentialsOptions: sts.StsCredentialsOptions = {
       grantType: STS_GRANT_TYPE,
@@ -207,7 +229,7 @@ export class DownscopedClient extends AuthClient {
       subjectTokenType: STS_SUBJECT_TOKEN_TYPE,
     };
 
-    // Exchange the source access token for a Downscoped access token.
+    // Exchange the GCP access token for a Downscoped access token.
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       undefined,
