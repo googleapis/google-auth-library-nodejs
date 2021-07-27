@@ -64,7 +64,7 @@ describe('impersonated', () => {
         )
         .reply(200, {
           accessToken: 'qwerty345',
-          expiryDate: tomorrow.toISOString(),
+          expireTime: tomorrow.toISOString(),
         }),
     ];
     const jwt = new JWT(
@@ -83,6 +83,10 @@ describe('impersonated', () => {
     });
     await impersonated.request({url});
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
+    assert.strictEqual(
+      impersonated.credentials.expiry_date,
+      tomorrow.getTime()
+    );
     scopes.forEach(s => s.done());
   });
   it('should not request impersonated credentials on second request', async () => {
@@ -108,7 +112,7 @@ describe('impersonated', () => {
         )
         .reply(200, {
           accessToken: 'qwerty345',
-          expiryDate: tomorrow.toISOString(),
+          expireTime: tomorrow.toISOString(),
         }),
     ];
     const jwt = new JWT(
@@ -128,6 +132,10 @@ describe('impersonated', () => {
     await impersonated.request({url});
     await impersonated.request({url});
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
+    assert.strictEqual(
+      impersonated.credentials.expiry_date,
+      tomorrow.getTime()
+    );
     scopes.forEach(s => s.done());
   });
   it('should request impersonated credentials once new credentials expire', async () => {
@@ -151,7 +159,7 @@ describe('impersonated', () => {
         )
         .reply(200, {
           accessToken: 'qwerty345',
-          expiryDate: tomorrow.toISOString(),
+          expireTime: tomorrow.toISOString(),
         }),
       nock('https://iamcredentials.googleapis.com')
         .post(
@@ -162,7 +170,7 @@ describe('impersonated', () => {
         )
         .reply(200, {
           accessToken: 'qwerty456',
-          expiryDate: tomorrow.toISOString(),
+          expireTime: tomorrow.toISOString(),
         }),
     ];
     const jwt = new JWT(
@@ -186,6 +194,10 @@ describe('impersonated', () => {
     impersonated.credentials.expiry_date = Date.now();
     await impersonated.request({url});
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty456');
+    assert.strictEqual(
+      impersonated.credentials.expiry_date,
+      tomorrow.getTime()
+    );
     scopes.forEach(s => s.done());
   });
   it('throws meaningful error when context available', async () => {
@@ -258,6 +270,29 @@ describe('impersonated', () => {
     await assert.rejects(impersonated.request({url}), /unable to impersonate/);
     scopes.forEach(s => s.done());
   });
+  it('handles error authenticating sourceClient', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const scopes = [
+      nock('https://www.googleapis.com').post('/oauth2/v4/token').reply(401),
+    ];
+    const jwt = new JWT(
+      'foo@serviceaccount.com',
+      PEM_PATH,
+      undefined,
+      ['http://bar', 'http://foo'],
+      'bar@subjectaccount.com'
+    );
+    const impersonated = new Impersonated({
+      sourceClient: jwt,
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    await assert.rejects(impersonated.request({url}), /unable to impersonate/);
+    scopes.forEach(s => s.done());
+  });
   it('should populate request headers', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -279,7 +314,7 @@ describe('impersonated', () => {
         )
         .reply(200, {
           accessToken: 'qwerty345',
-          expiryDate: tomorrow.toISOString(),
+          expireTime: tomorrow.toISOString(),
         }),
     ];
     const jwt = new JWT(
@@ -300,6 +335,10 @@ describe('impersonated', () => {
     impersonated.credentials.expiry_date = Date.now() - 10000;
     const headers = await impersonated.getRequestHeaders();
     assert.strictEqual(headers['Authorization'], 'Bearer qwerty345');
+    assert.strictEqual(
+      impersonated.credentials.expiry_date,
+      tomorrow.getTime()
+    );
     scopes.forEach(s => s.done());
   });
 });
