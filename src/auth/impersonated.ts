@@ -123,8 +123,7 @@ export class Impersonated extends OAuth2Client {
       });
       const tokenResponse = res.data;
       this.credentials.access_token = tokenResponse.accessToken;
-      this.credentials.expiry_date =
-        Date.parse(tokenResponse.expireTime) / 1000;
+      this.credentials.expiry_date = Date.parse(tokenResponse.expireTime);
       return {
         tokens: this.credentials,
         res,
