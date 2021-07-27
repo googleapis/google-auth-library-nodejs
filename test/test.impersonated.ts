@@ -42,6 +42,7 @@ describe('impersonated', () => {
   afterEach(() => {
     nock.cleanAll();
   });
+
   it('should request impersonated credentials on first request', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -89,6 +90,7 @@ describe('impersonated', () => {
     );
     scopes.forEach(s => s.done());
   });
+
   it('should not request impersonated credentials on second request', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -138,6 +140,7 @@ describe('impersonated', () => {
     );
     scopes.forEach(s => s.done());
   });
+
   it('should request impersonated credentials once new credentials expire', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -200,6 +203,7 @@ describe('impersonated', () => {
     );
     scopes.forEach(s => s.done());
   });
+
   it('throws meaningful error when context available', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -238,6 +242,7 @@ describe('impersonated', () => {
     await assert.rejects(impersonated.request({url}), /NOT_FOUND/);
     scopes.forEach(s => s.done());
   });
+
   it('handles errors without context', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -270,6 +275,7 @@ describe('impersonated', () => {
     await assert.rejects(impersonated.request({url}), /unable to impersonate/);
     scopes.forEach(s => s.done());
   });
+
   it('handles error authenticating sourceClient', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -293,6 +299,7 @@ describe('impersonated', () => {
     await assert.rejects(impersonated.request({url}), /unable to impersonate/);
     scopes.forEach(s => s.done());
   });
+
   it('should populate request headers', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);

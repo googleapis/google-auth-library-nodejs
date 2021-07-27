@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
  */
 
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+import {AuthClient} from './authclient';
 
 export interface ImpersonatedOptions extends RefreshOptions {
   /**
    * Client used to perform exchange for impersonated client.
    */
-  sourceClient?: OAuth2Client;
+  sourceClient?: AuthClient;
   /**
    * The service account to impersonate.
    */
@@ -49,7 +50,7 @@ export interface TokenResponse {
 }
 
 export class Impersonated extends OAuth2Client {
-  private sourceClient: OAuth2Client;
+  private sourceClient: AuthClient;
   private targetPrincipal: string;
   private targetScopes: string[];
   private delegates: string[];
@@ -67,24 +68,27 @@ export class Impersonated extends OAuth2Client {
    * Also, the target service account must grant the orginating principal
    * the "Service Account Token Creator" IAM role.
    *
-   * @param credentials the service account email address.
-   * @param sourceClient the source credential used as to acquire the
-   * impersonated credentials
-   * @param targetPrincipal the service account to impersonate.
-   * @param delegates the chained list of delegates required to grant the
-   *  final access_token. If set, the sequence of identities must have
-   * "Service Account Token Creator" capability granted to the preceding
-   * identity. For example, if set to [serviceAccountB, serviceAccountC],
-   * the sourceCredential must have the Token Creator role on serviceAccountB.
-   * serviceAccountB must have the Token Creator on serviceAccountC.
-   * Finally, C must have Token Creator on target_principal.
+   * @param {object} options - The configuration object.
+   * @param {object} [options.credentials] the service account email address.
+   * @param {object} [options.sourceClient] the source credential used as to
+   * acquire the impersonated credentials.
+   * @param {string} [options.targetPrincipal] the service account to
+   * impersonate.
+   * @param {string[]} [options.delegates] the chained list of delegates
+   * required to grant the final access_token. If set, the sequence of
+   * identities must have "Service Account Token Creator" capability granted to
+   * the preceding identity. For example, if set to [serviceAccountB,
+   * serviceAccountC], the sourceCredential must have the Token Creator role on
+   * serviceAccountB. serviceAccountB must have the Token Creator on
+   * serviceAccountC. Finally, C must have Token Creator on target_principal.
    * If left unset, sourceCredential must have that role on targetPrincipal.
-   * @param targetScopes scopes to request during the authorization grant.
-   * @param lifetime number of seconds the delegated credential should be
-   * valid for up to 3600 seconds by default, or 43,200 seconds by
-   * extending the token's lifetime, see:
+   * @param {string[]} [options.targetScopes] scopes to request during the
+   * authorization grant.
+   * @param {number} [options.lifetime] number of seconds the delegated
+   * credential should be valid for up to 3600 seconds by default, or 43,200
+   * seconds by extending the token's lifetime, see:
    * https://cloud.google.com/iam/docs/creating-short-lived-service-account-credentials#sa-credentials-oauth
-   * @param endpoint api endpoint override.
+   * @param {string} [options.endpoint] api endpoint override.
    */
   constructor(options: ImpersonatedOptions = {}) {
     super(options);
