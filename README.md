@@ -660,7 +660,10 @@ Google Cloud Impersonated credentials used for [Creating short-lived service acc
 Provides authentication for applications where local credentials impersonates a remote service account using [IAM Credentials API](https://cloud.google.com/iam/docs/reference/credentials/rest).
 
 An Impersonated Credentials Client is instantiated with a `sourceClient`. This
-should be an auth client with the "Service Account Token Creator" role (`roles/iam.serviceAccountTokenCreator`). `sourceClient` is used by the Impersonated
+client should use credentials that have the "Service Account Token Creator" role (`roles/iam.serviceAccountTokenCreator`),
+and should authenticate with the `https://www.googleapis.com/auth/cloud-platform`, or `https://www.googleapis.com/auth/iam` scopes.
+
+`sourceClient` is used by the Impersonated
 Credentials Client to impersonate a target service account with a specified
 set of scopes.
 
@@ -679,25 +682,21 @@ async function main() {
   // Impersonate new credentials:
   let targetClient = new Impersonated({
     sourceClient: client,
-    targetPrincipal: "impersonated-account@projectID.iam.gserviceaccount.com",
+    targetPrincipal: 'impersonated-account@projectID.iam.gserviceaccount.com',
     lifetime: 30,
     delegates: [],
-    targetScopes: ["https://www.googleapis.com/auth/cloud-platform"]
+    targetScopes: ['https://www.googleapis.com/auth/cloud-platform']
   });
 
   // Get impersonated credentials:
   const authHeaders = await targetClient.getRequestHeaders();
-  // Do something with `authHeaders["Authorization"]`.
+  // Do something with `authHeaders.Authorization`.
 
   // Use impersonated credentials:
-  try {
-    const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
-    const resp = targetClient.request({ url });
-    for (var k in resp.data.items) {
-      console.log(`${resp.data.items[k]['name']}`);
-    }
-  } catch (err) {
-    console.error('Unable to list buckets: ' + error);
+  const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
+  const resp = await targetClient.request({ url });
+  for (const bucket of resp.data.items) {
+    console.log(bucket.name);
   }
 
   // Use impersonated credentials with google-cloud client library
