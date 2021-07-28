@@ -22,7 +22,7 @@ import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   DownscopedClient,
   CredentialAccessBoundary,
-  MAX_BOUNDARY_LIMIT,
+  MAX_ACCESS_BOUNDARY_RULES_COUNT,
 } from '../src/auth/downscopedclient';
 import {AuthClient} from '../src/auth/authclient';
 import {mockStsTokenExchange} from './externalclienthelper';
@@ -129,7 +129,8 @@ describe('DownscopedClient', () => {
 
     it('should throw when number of access boundary rules is exceeded', () => {
       const expectedError = new Error(
-        `Access boundary rule exceeds limit, max ${MAX_BOUNDARY_LIMIT} allowed.`
+        'The provided access boundary has more than ' +
+          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
       );
       const cabWithExceedingAccessBoundaryRules: CredentialAccessBoundary = {
         accessBoundary: {
@@ -143,7 +144,7 @@ describe('DownscopedClient', () => {
           expression: testAvailabilityConditionExpression,
         },
       };
-      for (let num = 0; num <= MAX_BOUNDARY_LIMIT; num++) {
+      for (let num = 0; num <= MAX_ACCESS_BOUNDARY_RULES_COUNT; num++) {
         cabWithExceedingAccessBoundaryRules.accessBoundary.accessBoundaryRules.push(
           testAccessBoundaryRule
         );
@@ -297,12 +298,13 @@ describe('DownscopedClient', () => {
   });
 
   describe('setCredential()', () => {
-    it('should throw error if no expire time is set in credential.', async () => {
+    it('should throw error if no expire time is set in credential', async () => {
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
       };
       const expectedError = new Error(
-        'Credentials expiry date field has to be set up in downscopedClient.'
+        'The access token expiry_date field is missing in the provided ' +
+          'credentials.'
       );
       const downscopedClient = new DownscopedClient(
         client,
@@ -313,7 +315,7 @@ describe('DownscopedClient', () => {
       }, expectedError);
     });
 
-    it('should not throw error if expire time is set in credential.', async () => {
+    it('should not throw error if expire time is set in credential', async () => {
       const now = new Date().getTime();
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
@@ -326,12 +328,19 @@ describe('DownscopedClient', () => {
       assert.doesNotThrow(() => {
         downscopedClient.setCredentials(credentials);
       });
+      const tokenResponse = await downscopedClient.getAccessToken();
+      assert.deepStrictEqual(tokenResponse.token, credentials.access_token);
+      assert.deepStrictEqual(
+        tokenResponse.expirationTime,
+        credentials.expiry_date
+      );
     });
   });
 
   describe('getAccessToken()', () => {
     it('should return current unexpired cached DownscopedClient access token', async () => {
       const now = new Date().getTime();
+      clock = sinon.useFakeTimers(now);
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
         expiry_date: now + ONE_HOUR_IN_SECS * 1000,
@@ -354,6 +363,17 @@ describe('DownscopedClient', () => {
       assert.deepStrictEqual(
         tokenResponse.expirationTime,
         downscopedClient.credentials.expiry_date
+      );
+
+      clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
+      const cachedTokenResponse = await downscopedClient.getAccessToken();
+      assert.deepStrictEqual(
+        cachedTokenResponse.token,
+        credentials.access_token
+      );
+      assert.deepStrictEqual(
+        cachedTokenResponse.expirationTime,
+        credentials.expiry_date
       );
     });
 
@@ -511,7 +531,7 @@ describe('DownscopedClient', () => {
       scope.done();
     });
 
-    it('should throw error when getting subject token', async () => {
+    it('should throw when the source AuthClient rejects on token request', async () => {
       const expectedError = new Error('Cannot get subject token.');
       client.throwError = true;
       const downscopedClient = new DownscopedClient(

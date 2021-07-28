@@ -37,9 +37,10 @@ const STS_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 const STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
 
 /**
- * Credential Access Boundary Rules upper bound number.
+ * The maximum number of access boundary rules a Credential Access Boundary
+ * can contain.
  */
-export const MAX_BOUNDARY_LIMIT = 10;
+export const MAX_ACCESS_BOUNDARY_RULES_COUNT = 10;
 
 /**
  * Offset to take into account network delays and server clock skews.
@@ -54,8 +55,8 @@ interface CredentialsWithResponse extends Credentials {
 }
 
 /**
- * Internal interface for tracking and returning Downscoped access token
- * expiration time.
+ * Internal interface for tracking and returning the Downscoped access token
+ * expiration time in epoch time (seconds).
  */
 interface DownscopedAccessTokenResponse extends GetAccessTokenResponse {
   expirationTime?: number | null;
@@ -88,12 +89,14 @@ interface AvailabilityCondition {
 }
 
 /**
- * Downscoped with Credential Access Boundary Client.
- * This is used to instantiate AuthClients for exchanging downscoped access
- * tokens using GCP access token fetched from source credentials such as service
- * account, user account or external account.
- * The process of exchanging GCP access token for downscoped token is based
- * on STS token endpoint.
+ * Defines a set of Google credentials that are downscoped from an existing set
+ * of Google OAuth2 credentials. This is useful to restrict the Identity and
+ * Access Management (IAM) permissions that a short-lived credential can use.
+ * The common pattern of usage is to have a token broker with elevated access
+ * generate these downscoped credentials from higher access source credentials
+ * and pass the downscoped short-lived access tokens to a token consumer via
+ * some secure authenticated channel for limited access to Google Cloud Storage
+ * resources.
  */
 export class DownscopedClient extends AuthClient {
   private cachedDownscopedAccessToken: CredentialsWithResponse | null;
@@ -101,28 +104,50 @@ export class DownscopedClient extends AuthClient {
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
 
+  /**
+   * Instantiates a downscoped client object using the provided source
+   * AuthClient and credential access boundary rules.
+   * To downscope permissions of a source AuthClient, a Credential Access
+   * Boundary that specifies which resources the new credential can access, as
+   * well as an upper bound on the permissions that are available on each
+   * resource, has to be defined. A downscoped client can then be instantiated
+   * using the source AuthClient and the Credential Access Boundary.
+   * @param authClient The source AuthClient to be downscoped based on the
+   *   provided Credential Access Boundary rules.
+   * @param credentialAccessBoundary The Credential Access Boundary which
+   *   contains a list of access boundary rules. Each rule contains information
+   *   on the resource that the rule applies to, the upper bound of the
+   *   permissions that are available on that resource and an optional
+   *   condition to further restrict permissions.
+   * @param additionalOptions Optional additional behavior customization
+   *   options. These currently customize expiration threshold time and
+   *   whether to retry on 401/403 API request errors.
+   */
   constructor(
-    private authClient: AuthClient,
-    private credentialAccessBoundary: CredentialAccessBoundary,
+    private readonly authClient: AuthClient,
+    private readonly credentialAccessBoundary: CredentialAccessBoundary,
     additionalOptions?: RefreshOptions
   ) {
     super();
-
-    // Check 1-10 Access Boundary Rules are defined within Credential Access Boundary.
+    // Check 1-10 Access Boundary Rules are defined within Credential Access
+    // Boundary.
     if (
       credentialAccessBoundary.accessBoundary.accessBoundaryRules.length === 0
     ) {
-      throw new Error('At least one access boundary rule needs to be defined.');
+      throw new Error(
+        'At least one access boundary rule needs to be defined.');
     } else if (
       credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
-      MAX_BOUNDARY_LIMIT
+      MAX_ACCESS_BOUNDARY_RULES_COUNT
     ) {
       throw new Error(
-        `Access boundary rule exceeds limit, max ${MAX_BOUNDARY_LIMIT} allowed.`
+        'The provided access boundary has more than ' +
+          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
       );
     }
 
-    // Check at least one permission should be defined in each Access Boundary Rule.
+    // Check at least one permission should be defined in each Access Boundary
+    // Rule.
     for (const rule of credentialAccessBoundary.accessBoundary
       .accessBoundaryRules) {
       if (rule.availablePermissions.length === 0) {
@@ -148,14 +173,15 @@ export class DownscopedClient extends AuthClient {
 
   /**
    * Provides a mechanism to inject Downscoped access tokens directly.
-   * The expiry_date field is required for other clients dealing with
-   * token expiration checking and refreshing.
+   * The expiry_date field is required to facilitate determination of the token
+   * expiration which would make it easier for the token consumer to handle.
    * @param credentials The Credentials object to set on the current client.
    */
   setCredentials(credentials: Credentials) {
     if (!credentials.expiry_date) {
       throw new Error(
-        'Credentials expiry date field has to be set up in downscopedClient.'
+        'The access token expiry_date field is missing in the provided ' +
+          'credentials.'
       );
     }
     super.setCredentials(credentials);
@@ -164,8 +190,8 @@ export class DownscopedClient extends AuthClient {
 
   async getAccessToken(): Promise<DownscopedAccessTokenResponse> {
     // If the cached access token is unavailable or expired, force refresh.
-    // The Downscoped access token will be returned in DownscopedAccessTokenRespons
-    // format.
+    // The Downscoped access token will be returned in
+    // DownscopedAccessTokenResponse format.
     if (
       !this.cachedDownscopedAccessToken ||
       this.isExpired(this.cachedDownscopedAccessToken)
@@ -229,7 +255,8 @@ export class DownscopedClient extends AuthClient {
       subjectTokenType: STS_SUBJECT_TOKEN_TYPE,
     };
 
-    // Exchange the GCP access token for a Downscoped access token.
+    // Exchange the source AuthClient access token for a Downscoped access
+    // token.
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       undefined,
