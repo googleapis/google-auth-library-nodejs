@@ -134,8 +134,7 @@ export class DownscopedClient extends AuthClient {
     if (
       credentialAccessBoundary.accessBoundary.accessBoundaryRules.length === 0
     ) {
-      throw new Error(
-        'At least one access boundary rule needs to be defined.');
+      throw new Error('At least one access boundary rule needs to be defined.');
     } else if (
       credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
       MAX_ACCESS_BOUNDARY_RULES_COUNT
