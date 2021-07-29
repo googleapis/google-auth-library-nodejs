@@ -13,17 +13,50 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it, before, after, beforeEach, afterEach} from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
+import {GaxiosOptions, GaxiosPromise} from 'gaxios';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {DownscopedClient} from '../src/auth/downscopedclient';
+import {
+  DownscopedClient,
+  CredentialAccessBoundary,
+  MAX_ACCESS_BOUNDARY_RULES_COUNT,
+} from '../src/auth/downscopedclient';
 import {AuthClient} from '../src/auth/authclient';
-import {mockStsBetaTokenExchange} from './externalclienthelper';
-import {GoogleAuth} from '../src';
+import {mockStsTokenExchange} from './externalclienthelper';
+import {
+  OAuthErrorResponse,
+  getErrorFromOAuthErrorResponse,
+} from '../src/auth/oauth2common';
+import {GetAccessTokenResponse, Headers} from '../src/auth/oauth2client';
 
 nock.disableNetConnect();
+
+/** A dummy class used as source credential for testing. */
+class TestAuthClient extends AuthClient {
+  public throwError = false;
+  private counter = 0;
+
+  async getAccessToken(): Promise<GetAccessTokenResponse> {
+    if (!this.throwError) {
+      // Increment subject_token counter each time this is called.
+      return {
+        token: `subject_token_${this.counter++}`,
+      };
+    }
+    throw new Error('Cannot get subject token.');
+  }
+
+  async getRequestHeaders(url?: string): Promise<Headers> {
+    throw new Error('Not implemented.');
+  }
+
+  request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
+    throw new Error('Not implemented.');
+  }
+}
 
 interface SampleResponse {
   foo: string;
@@ -32,12 +65,7 @@ interface SampleResponse {
 
 describe('DownscopedClient', () => {
   let clock: sinon.SinonFakeTimers;
-
-  const auth = new GoogleAuth({
-    keyFilename: './test/fixtures/private.json',
-    scopes: 'https://www.googleapis.com/auth/cloud-platform',
-  });
-  let client: AuthClient;
+  let client: TestAuthClient;
 
   const ONE_HOUR_IN_SECS = 3600;
   const testAvailableResource =
@@ -67,7 +95,6 @@ describe('DownscopedClient', () => {
     issued_token_type: 'urn:ietf:params:oauth:token-type:access_token',
     token_type: 'Bearer',
     expires_in: ONE_HOUR_IN_SECS,
-    scope: 'scope1 scope2',
   };
   /**
    * Offset to take into account network delays and server clock skews.
@@ -75,7 +102,7 @@ describe('DownscopedClient', () => {
   const EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
 
   beforeEach(async () => {
-    client = await auth.getClient();
+    client = new TestAuthClient();
   });
 
   afterEach(() => {
@@ -100,13 +127,14 @@ describe('DownscopedClient', () => {
       }, expectedError);
     });
 
-    it('should throw on exceed number of access boundary rules', () => {
+    it('should throw when number of access boundary rules is exceeded', () => {
       const expectedError = new Error(
-        'Access boundary rule exceeds limit, max 10 allowed.'
+        'The provided access boundary has more than ' +
+          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
       );
-      const cabWithExceedingAccessBoundaryRules = {
+      const cabWithExceedingAccessBoundaryRules: CredentialAccessBoundary = {
         accessBoundary: {
-          accessBoundaryRules: [] as any,
+          accessBoundaryRules: [],
         },
       };
       const testAccessBoundaryRule = {
@@ -116,7 +144,7 @@ describe('DownscopedClient', () => {
           expression: testAvailabilityConditionExpression,
         },
       };
-      for (let num = 0; num <= 10; num++) {
+      for (let num = 0; num <= MAX_ACCESS_BOUNDARY_RULES_COUNT; num++) {
         cabWithExceedingAccessBoundaryRules.accessBoundary.accessBoundaryRules.push(
           testAccessBoundaryRule
         );
@@ -269,24 +297,50 @@ describe('DownscopedClient', () => {
     });
   });
 
-  describe('getAccessToken()', () => {
-    let sandbox: sinon.SinonSandbox;
-    before(() => {
-      const expectedAccessTokenResponse = {
-        token: 'subject_token',
+  describe('setCredential()', () => {
+    it('should throw error if no expire time is set in credential', async () => {
+      const credentials = {
+        access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
       };
-      sandbox = sinon.createSandbox();
-      sandbox
-        .stub(client, 'getAccessToken')
-        .resolves(expectedAccessTokenResponse);
+      const expectedError = new Error(
+        'The access token expiry_date field is missing in the provided ' +
+          'credentials.'
+      );
+      const downscopedClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary
+      );
+      assert.throws(() => {
+        downscopedClient.setCredentials(credentials);
+      }, expectedError);
     });
 
-    after(() => {
-      sandbox.restore();
+    it('should not throw error if expire time is set in credential', async () => {
+      const now = new Date().getTime();
+      const credentials = {
+        access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
+        expiry_date: now + ONE_HOUR_IN_SECS * 1000,
+      };
+      const downscopedClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary
+      );
+      assert.doesNotThrow(() => {
+        downscopedClient.setCredentials(credentials);
+      });
+      const tokenResponse = await downscopedClient.getAccessToken();
+      assert.deepStrictEqual(tokenResponse.token, credentials.access_token);
+      assert.deepStrictEqual(
+        tokenResponse.expirationTime,
+        credentials.expiry_date
+      );
     });
+  });
 
+  describe('getAccessToken()', () => {
     it('should return current unexpired cached DownscopedClient access token', async () => {
       const now = new Date().getTime();
+      clock = sinon.useFakeTimers(now);
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
         expiry_date: now + ONE_HOUR_IN_SECS * 1000,
@@ -298,6 +352,29 @@ describe('DownscopedClient', () => {
       downscopedClient.setCredentials(credentials);
       const tokenResponse = await downscopedClient.getAccessToken();
       assert.deepStrictEqual(tokenResponse.token, credentials.access_token);
+      assert.deepStrictEqual(
+        tokenResponse.expirationTime,
+        credentials.expiry_date
+      );
+      assert.deepStrictEqual(
+        tokenResponse.token,
+        downscopedClient.credentials.access_token
+      );
+      assert.deepStrictEqual(
+        tokenResponse.expirationTime,
+        downscopedClient.credentials.expiry_date
+      );
+
+      clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
+      const cachedTokenResponse = await downscopedClient.getAccessToken();
+      assert.deepStrictEqual(
+        cachedTokenResponse.token,
+        credentials.access_token
+      );
+      assert.deepStrictEqual(
+        cachedTokenResponse.expirationTime,
+        credentials.expiry_date
+      );
     });
 
     it('should refresh a new DownscopedClient access when cached one gets expired', async () => {
@@ -307,7 +384,7 @@ describe('DownscopedClient', () => {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
         expiry_date: now + ONE_HOUR_IN_SECS * 1000,
       };
-      const scope = mockStsBetaTokenExchange([
+      const scope = mockStsTokenExchange([
         {
           statusCode: 200,
           response: stsSuccessfulResponse,
@@ -315,11 +392,9 @@ describe('DownscopedClient', () => {
             grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
             requested_token_type:
               'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token',
+            subject_token: 'subject_token_0',
             subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-            options:
-              testClientAccessBoundary &&
-              JSON.stringify(testClientAccessBoundary),
+            options: JSON.stringify(testClientAccessBoundary),
           },
         },
       ]);
@@ -336,16 +411,31 @@ describe('DownscopedClient', () => {
 
       clock.tick(1);
       const refreshedTokenResponse = await downscopedClient.getAccessToken();
-
+      const expectedExpirationTime =
+        credentials.expiry_date +
+        stsSuccessfulResponse.expires_in * 1000 -
+        EXPIRATION_TIME_OFFSET;
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
         stsSuccessfulResponse.access_token
       );
+      assert.deepStrictEqual(
+        refreshedTokenResponse.expirationTime,
+        expectedExpirationTime
+      );
+      assert.deepStrictEqual(
+        refreshedTokenResponse.token,
+        downscopedClient.credentials.access_token
+      );
+      assert.deepStrictEqual(
+        refreshedTokenResponse.expirationTime,
+        downscopedClient.credentials.expiry_date
+      );
       scope.done();
     });
 
-    it('should return new DownscopedClient access token when there is no cached downscoped access token', async () => {
-      const scope = mockStsBetaTokenExchange([
+    it('should return new access token when no cached token is available', async () => {
+      const scope = mockStsTokenExchange([
         {
           statusCode: 200,
           response: stsSuccessfulResponse,
@@ -353,11 +443,62 @@ describe('DownscopedClient', () => {
             grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
             requested_token_type:
               'urn:ietf:params:oauth:token-type:access_token',
-            subject_token: 'subject_token',
+            subject_token: 'subject_token_0',
             subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-            options:
-              testClientAccessBoundary &&
-              JSON.stringify(testClientAccessBoundary),
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+      ]);
+      const downscopedClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary
+      );
+      assert.deepStrictEqual(downscopedClient.credentials, {});
+      const tokenResponse = await downscopedClient.getAccessToken();
+      assert.deepStrictEqual(
+        tokenResponse.token,
+        stsSuccessfulResponse.access_token
+      );
+      assert.deepStrictEqual(
+        tokenResponse.token,
+        downscopedClient.credentials.access_token
+      );
+      assert.deepStrictEqual(
+        tokenResponse.expirationTime,
+        downscopedClient.credentials.expiry_date
+      );
+      scope.done();
+    });
+
+    it('should handle underlying token exchange errors', async () => {
+      const errorResponse: OAuthErrorResponse = {
+        error: 'invalid_request',
+        error_description: 'Invalid subject token',
+        error_uri: 'https://tools.ietf.org/html/rfc6749#section-5.2',
+      };
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 400,
+          response: errorResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_1',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
           },
         },
       ]);
@@ -366,13 +507,38 @@ describe('DownscopedClient', () => {
         client,
         testClientAccessBoundary
       );
-      const tokenResponse = await downscopedClient.getAccessToken();
-
+      assert.deepStrictEqual(downscopedClient.credentials, {});
+      await assert.rejects(
+        downscopedClient.getAccessToken(),
+        getErrorFromOAuthErrorResponse(errorResponse)
+      );
+      assert.deepStrictEqual(downscopedClient.credentials, {});
+      // Next try should succeed.
+      const actualResponse = await downscopedClient.getAccessToken();
+      delete actualResponse.res;
       assert.deepStrictEqual(
-        tokenResponse.token,
+        actualResponse.token,
         stsSuccessfulResponse.access_token
       );
+      assert.deepStrictEqual(
+        actualResponse.token,
+        downscopedClient.credentials.access_token
+      );
+      assert.deepStrictEqual(
+        actualResponse.expirationTime,
+        downscopedClient.credentials.expiry_date
+      );
       scope.done();
+    });
+
+    it('should throw when the source AuthClient rejects on token request', async () => {
+      const expectedError = new Error('Cannot get subject token.');
+      client.throwError = true;
+      const downscopedClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary
+      );
+      await assert.rejects(downscopedClient.getAccessToken(), expectedError);
     });
   });
 
