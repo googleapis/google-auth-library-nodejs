@@ -411,17 +411,11 @@ describe('DownscopedClient', () => {
 
       clock.tick(1);
       const refreshedTokenResponse = await downscopedClient.getAccessToken();
-<<<<<<< HEAD
-      const stsSuccessfulResponseExpireIn = stsSuccessfulResponse.expires_in as number;
-      const expectedExpirationTime =
-        credentials.expiry_date +
-        stsSuccessfulResponseExpireIn * 1000 -
-=======
+
       const responseExpireIn = stsSuccessfulResponse.expires_in as number;
       const expectedExpirationTime =
         credentials.expiry_date +
         responseExpireIn * 1000 -
->>>>>>> 93d8152 (Adds support for STS response not returning expires_in field.)
         EXPIRATION_TIME_OFFSET;
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
@@ -566,9 +560,12 @@ describe('DownscopedClient', () => {
           },
         },
       ]);
-      
+
       client.setCredentials(credentials);
-      assert.strictEqual(client.credentials.expiry_date, credentials.expiry_date);
+      assert.strictEqual(
+        client.credentials.expiry_date,
+        credentials.expiry_date
+      );
       const downscopedClient = new DownscopedClient(
         client,
         testClientAccessBoundary
@@ -624,10 +621,7 @@ describe('DownscopedClient', () => {
         tokenResponse.token,
         stsSuccessfulResponseWithoutExpireInField.access_token
       );
-      assert.deepStrictEqual(
-        tokenResponse.expirationTime,
-        null
-      );
+      assert.deepStrictEqual(tokenResponse.expirationTime, null);
       scope.done();
     });
 
