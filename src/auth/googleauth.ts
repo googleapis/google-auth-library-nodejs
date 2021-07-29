@@ -473,13 +473,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-<<<<<<< HEAD
-      client.defaultServicePath = this.defaultServicePath;
-      client.useJWTAccessAlways = this.useJWTAccessAlways;
-      client.defaultScopes = this.defaultScopes;
-=======
       this.setGapicJWTValues(client);
->>>>>>> master
       client.fromJSON(json);
     }
     return client;
@@ -511,13 +505,7 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-<<<<<<< HEAD
-      client.defaultServicePath = this.defaultServicePath;
-      client.useJWTAccessAlways = this.useJWTAccessAlways || false;
-      client.defaultScopes = this.defaultScopes;
-=======
       this.setGapicJWTValues(client);
->>>>>>> master
       client.fromJSON(json);
     }
     // cache both raw data used to instantiate client and client itself.
