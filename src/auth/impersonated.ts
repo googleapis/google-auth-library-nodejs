@@ -69,7 +69,6 @@ export class Impersonated extends OAuth2Client {
    * the "Service Account Token Creator" IAM role.
    *
    * @param {object} options - The configuration object.
-   * @param {object} [options.credentials] the service account email address.
    * @param {object} [options.sourceClient] the source credential used as to
    * acquire the impersonated credentials.
    * @param {string} [options.targetPrincipal] the service account to
