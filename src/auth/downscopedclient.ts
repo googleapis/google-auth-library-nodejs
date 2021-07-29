@@ -262,6 +262,13 @@ export class DownscopedClient extends AuthClient {
       this.credentialAccessBoundary
     );
 
+    /**
+     * The STS endpoint will only return the expiration time for the downscoped
+     * access token if the original access token represents a service account.
+     * The downscoped token's expiration time will always match the source
+     * credential expiration. When no expires_in is returned, we can copy the
+     * source credential's expiration time.
+     */
     const sourceCredExpireDate =
       this.authClient.credentials?.expiry_date || null;
     const expiryDate = stsResponse.expires_in
