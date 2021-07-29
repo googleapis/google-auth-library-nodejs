@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.4.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.3.0...v7.4.0) (2021-07-29)
+
+
+### Features
+
+* **impersonated:** add impersonated credentials auth ([#1207](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1207)) ([ab1cd31](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ab1cd31e07d45424f614e0401d1068df2fbd914c))
+
 ## [7.3.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.2.0...v7.3.0) (2021-07-02)
 
 
