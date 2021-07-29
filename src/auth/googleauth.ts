@@ -30,6 +30,7 @@ import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
 import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
+import {Impersonated, ImpersonatedOptions} from './impersonated';
 import {
   ExternalAccountClient,
   ExternalAccountClientOptions,
@@ -44,7 +45,11 @@ import {AuthClient} from './authclient';
  * Defines all types of explicit clients that are determined via ADC JSON
  * config file.
  */
-export type JSONClient = JWT | UserRefreshClient | BaseExternalAccountClient;
+export type JSONClient =
+  | JWT
+  | UserRefreshClient
+  | BaseExternalAccountClient
+  | Impersonated;
 
 export interface ProjectIdCallback {
   (err?: Error | null, projectId?: string | null): void;
@@ -86,7 +91,11 @@ export interface GoogleAuthOptions {
   /**
    * Options object passed to the constructor of the client
    */
-  clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions;
+  clientOptions?:
+    | JWTOptions
+    | OAuth2ClientOptions
+    | UserRefreshClientOptions
+    | ImpersonatedOptions;
 
   /**
    * Required scopes for the desired API request
@@ -126,14 +135,13 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
 
-  cachedCredential: JSONClient | Compute | null = null;
+  cachedCredential: JSONClient | Impersonated | Compute | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
    * these and user defined scopes when deciding whether to use a self-signed JWT.
    */
   defaultScopes?: string | string[];
-
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
@@ -150,6 +158,15 @@ export class GoogleAuth {
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
+  }
+
+  // GAPIC client libraries should always use self-signed JWTs. The following
+  // variables are set on the JWT client in order to indicate the type of library,
+  // and sign the JWT with the correct audience and scopes (if not supplied).
+  setGapicJWTValues(client: JWT) {
+    client.defaultServicePath = this.defaultServicePath;
+    client.useJWTAccessAlways = this.useJWTAccessAlways;
+    client.defaultScopes = this.defaultScopes;
   }
 
   /**
@@ -267,7 +284,6 @@ export class GoogleAuth {
       await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
@@ -283,7 +299,6 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
@@ -458,9 +473,13 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+<<<<<<< HEAD
       client.defaultServicePath = this.defaultServicePath;
       client.useJWTAccessAlways = this.useJWTAccessAlways;
       client.defaultScopes = this.defaultScopes;
+=======
+      this.setGapicJWTValues(client);
+>>>>>>> master
       client.fromJSON(json);
     }
     return client;
@@ -492,9 +511,13 @@ export class GoogleAuth {
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
+<<<<<<< HEAD
       client.defaultServicePath = this.defaultServicePath;
       client.useJWTAccessAlways = this.useJWTAccessAlways || false;
       client.defaultScopes = this.defaultScopes;
+=======
+      this.setGapicJWTValues(client);
+>>>>>>> master
       client.fromJSON(json);
     }
     // cache both raw data used to instantiate client and client itself.
@@ -572,6 +595,7 @@ export class GoogleAuth {
               client.defaultServicePath = this.defaultServicePath;
               client.useJWTAccessAlways = this.useJWTAccessAlways || false;
               this.cachedCredential = client;
+              this.setGapicJWTValues(client);
               return resolve(client);
             }
           } catch (err) {

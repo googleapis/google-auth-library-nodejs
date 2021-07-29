@@ -4,6 +4,27 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.4.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.4.0...v7.4.1) (2021-07-29)
+
+
+### Bug Fixes
+
+* **downscoped-client:** bug fixes for downscoped client implementation. ([#1219](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1219)) ([4fbe67e](https://www.github.com/googleapis/google-auth-library-nodejs/commit/4fbe67e08bce3f31193d3bb7b93c4cc1251e66a2))
+
+## [7.4.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.3.0...v7.4.0) (2021-07-29)
+
+
+### Features
+
+* **impersonated:** add impersonated credentials auth ([#1207](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1207)) ([ab1cd31](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ab1cd31e07d45424f614e0401d1068df2fbd914c))
+
+## [7.3.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.2.0...v7.3.0) (2021-07-02)
+
+
+### Features
+
+* add useJWTAccessAlways and defaultServicePath variable ([#1204](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1204)) ([79e100e](https://www.github.com/googleapis/google-auth-library-nodejs/commit/79e100e9ddc64f34e34d0e91c8188f1818e33a1c))
+
 ## [7.2.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.1.2...v7.2.0) (2021-06-30)
 
 

@@ -23,12 +23,14 @@ function main(
   targetAudience = null
 ) {
   // [START google_auth_idtoken_serverless]
+  // [START cloudrun_service_to_service_auth]
   // [START run_service_to_service_auth]
   // [START functions_bearer_token]
   /**
    * TODO(developer): Uncomment these variables before running the sample.
    */
   // const url = 'https://TARGET_URL';
+  // let targetAudience = null;
   const {GoogleAuth} = require('google-auth-library');
   const auth = new GoogleAuth();
 
@@ -36,7 +38,7 @@ function main(
     if (!targetAudience) {
       // Use the request URL hostname as the target audience for requests.
       const {URL} = require('url');
-      targetAudience = new URL(url).origin;
+      targetAudience = new URL(url);
     }
     console.info(`request ${url} with target audience ${targetAudience}`);
     const client = await auth.getIdTokenClient(targetAudience);
@@ -50,6 +52,7 @@ function main(
   });
   // [END functions_bearer_token]
   // [END run_service_to_service_auth]
+  // [END cloudrun_service_to_service_auth]
   // [END google_auth_idtoken_serverless]
 }
 

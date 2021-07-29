@@ -22,11 +22,11 @@ export {
 } from './auth/credentials';
 export {GCPEnv} from './auth/envDetect';
 export {GoogleAuthOptions, ProjectIdCallback} from './auth/googleauth';
-export {DownscopedClient} from './auth/downscopedclient';
 export {IAMAuth, RequestMetadata} from './auth/iam';
 export {IdTokenClient, IdTokenProvider} from './auth/idtokenclient';
 export {Claims, JWTAccess} from './auth/jwtaccess';
 export {JWT, JWTOptions} from './auth/jwtclient';
+export {Impersonated, ImpersonatedOptions} from './auth/impersonated';
 export {
   Certificates,
   CodeChallengeMethod,
