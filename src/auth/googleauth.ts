@@ -580,8 +580,6 @@ export class GoogleAuth {
                 ...this.clientOptions,
                 keyFile: this.keyFilename,
               });
-              client.defaultServicePath = this.defaultServicePath;
-              client.useJWTAccessAlways = this.useJWTAccessAlways || false;
               this.cachedCredential = client;
               this.setGapicJWTValues(client);
               return resolve(client);
@@ -602,8 +600,6 @@ export class GoogleAuth {
   fromAPIKey(apiKey: string, options?: RefreshOptions): JWT {
     options = options || {};
     const client = new JWT(options);
-    client.defaultServicePath = this.defaultServicePath;
-    client.useJWTAccessAlways = this.useJWTAccessAlways || false;
     client.fromAPIKey(apiKey);
     return client;
   }
