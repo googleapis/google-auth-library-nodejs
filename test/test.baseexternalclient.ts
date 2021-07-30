@@ -333,6 +333,40 @@ describe('BaseExternalAccountClient', () => {
         scope.done();
       });
 
+      it('should return credential with no expiry date if STS response does not return one', async () => {
+        const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+        delete stsSuccessfulResponse2.expires_in;
+
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse2,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithCreds
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse2.access_token,
+        });
+        scope.done();
+      });
+
       it('should handle underlying token exchange errors', async () => {
         const errorResponse: OAuthErrorResponse = {
           error: 'invalid_request',

@@ -412,10 +412,10 @@ describe('DownscopedClient', () => {
       clock.tick(1);
       const refreshedTokenResponse = await downscopedClient.getAccessToken();
 
-      const responseExpireIn = stsSuccessfulResponse.expires_in as number;
+      const responseExpiresIn = stsSuccessfulResponse.expires_in as number;
       const expectedExpirationTime =
         credentials.expiry_date +
-        responseExpireIn * 1000 -
+        responseExpiresIn * 1000 -
         EXPIRATION_TIME_OFFSET;
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
