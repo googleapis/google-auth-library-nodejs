@@ -335,6 +335,7 @@ describe('BaseExternalAccountClient', () => {
 
       it('should return credential with no expiry date if STS response does not return one', async () => {
         const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+        const emittedEvents: Credentials[] = [];
         delete stsSuccessfulResponse2.expires_in;
 
         const scope = mockStsTokenExchange([
@@ -356,7 +357,22 @@ describe('BaseExternalAccountClient', () => {
         const client = new TestExternalAccountClient(
           externalAccountOptionsWithCreds
         );
+        // Listen to tokens events. On every event, push to list of
+        // emittedEvents.
+        client.on('tokens', tokens => {
+          emittedEvents.push(tokens);
+        });
         const actualResponse = await client.getAccessToken();
+
+        // tokens event should be triggered once with expected event.
+        assert.strictEqual(emittedEvents.length, 1);
+        assert.deepStrictEqual(emittedEvents[0], {
+          refresh_token: null,
+          expiry_date: undefined,
+          access_token: stsSuccessfulResponse.access_token,
+          token_type: 'Bearer',
+          id_token: null,
+        });
 
         // Confirm raw GaxiosResponse appended to response.
         assertGaxiosResponsePresent(actualResponse);
@@ -364,6 +380,11 @@ describe('BaseExternalAccountClient', () => {
         assert.deepStrictEqual(actualResponse, {
           token: stsSuccessfulResponse2.access_token,
         });
+        assert.deepStrictEqual(client.credentials.expiry_date, undefined);
+        assert.deepStrictEqual(
+          client.credentials.access_token,
+          stsSuccessfulResponse2.access_token
+        );
         scope.done();
       });
 
