@@ -377,11 +377,17 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       this.cachedAccessToken = await this.getImpersonatedAccessToken(
         stsResponse.access_token
       );
-    } else {
+    } else if (stsResponse.expires_in) {
       // Save response in cached access token.
       this.cachedAccessToken = {
         access_token: stsResponse.access_token,
         expiry_date: new Date().getTime() + stsResponse.expires_in * 1000,
+        res: stsResponse.res,
+      };
+    } else {
+      // Save response in cached access token.
+      this.cachedAccessToken = {
+        access_token: stsResponse.access_token,
         res: stsResponse.res,
       };
     }

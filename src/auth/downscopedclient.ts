@@ -262,10 +262,22 @@ export class DownscopedClient extends AuthClient {
       this.credentialAccessBoundary
     );
 
+    /**
+     * The STS endpoint will only return the expiration time for the downscoped
+     * access token if the original access token represents a service account.
+     * The downscoped token's expiration time will always match the source
+     * credential expiration. When no expires_in is returned, we can copy the
+     * source credential's expiration time.
+     */
+    const sourceCredExpireDate =
+      this.authClient.credentials?.expiry_date || null;
+    const expiryDate = stsResponse.expires_in
+      ? new Date().getTime() + stsResponse.expires_in * 1000
+      : sourceCredExpireDate;
     // Save response in cached access token.
     this.cachedDownscopedAccessToken = {
       access_token: stsResponse.access_token,
-      expiry_date: new Date().getTime() + stsResponse.expires_in * 1000,
+      expiry_date: expiryDate,
       res: stsResponse.res,
     };
 
