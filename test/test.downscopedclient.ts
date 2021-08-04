@@ -18,6 +18,7 @@ import * as nock from 'nock';
 import * as sinon from 'sinon';
 
 import {GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   DownscopedClient,
@@ -49,7 +50,7 @@ class TestAuthClient extends AuthClient {
     throw new Error('Cannot get subject token.');
   }
 
-  set expirationTime(expirationTime: number) {
+  set expirationTime(expirationTime: number | undefined | null) {
     this.credentials.expiry_date = expirationTime;
   }
 
@@ -384,6 +385,7 @@ describe('DownscopedClient', () => {
     it('should refresh a new DownscopedClient access when cached one gets expired', async () => {
       const now = new Date().getTime();
       clock = sinon.useFakeTimers(now);
+      const emittedEvents: Credentials[] = [];
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
         expiry_date: now + ONE_HOUR_IN_SECS * 1000,
@@ -407,10 +409,19 @@ describe('DownscopedClient', () => {
         client,
         testClientAccessBoundary
       );
+      // Listen to tokens events. On every event, push to list of
+      // emittedEvents.
+      downscopedClient.on('tokens', tokens => {
+        emittedEvents.push(tokens);
+      });
       downscopedClient.setCredentials(credentials);
 
       clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
       const tokenResponse = await downscopedClient.getAccessToken();
+
+      // No new event should be triggered since the cached access token is
+      // returned.
+      assert.strictEqual(emittedEvents.length, 0);
       assert.deepStrictEqual(tokenResponse.token, credentials.access_token);
 
       clock.tick(1);
@@ -421,6 +432,17 @@ describe('DownscopedClient', () => {
         credentials.expiry_date +
         responseExpiresIn * 1000 -
         EXPIRATION_TIME_OFFSET;
+
+      // tokens event should be triggered once with expected event.
+      assert.strictEqual(emittedEvents.length, 1);
+      assert.deepStrictEqual(emittedEvents[0], {
+        refresh_token: null,
+        expiry_date: expectedExpirationTime,
+        access_token: stsSuccessfulResponse.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
+
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
         stsSuccessfulResponse.access_token
@@ -555,6 +577,7 @@ describe('DownscopedClient', () => {
         {},
         stsSuccessfulResponse
       );
+      const emittedEvents: Credentials[] = [];
       delete stsSuccessfulResponseWithoutExpireInField.expires_in;
       const scope = mockStsTokenExchange([
         {
@@ -576,8 +599,23 @@ describe('DownscopedClient', () => {
         client,
         testClientAccessBoundary
       );
+      // Listen to tokens events. On every event, push to list of
+      // emittedEvents.
+      downscopedClient.on('tokens', tokens => {
+        emittedEvents.push(tokens);
+      });
 
       const tokenResponse = await downscopedClient.getAccessToken();
+
+      // tokens event should be triggered once with expected event.
+      assert.strictEqual(emittedEvents.length, 1);
+      assert.deepStrictEqual(emittedEvents[0], {
+        refresh_token: null,
+        expiry_date: expireDate,
+        access_token: stsSuccessfulResponseWithoutExpireInField.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
       assert.deepStrictEqual(tokenResponse.expirationTime, expireDate);
       assert.deepStrictEqual(
         tokenResponse.token,
@@ -596,6 +634,7 @@ describe('DownscopedClient', () => {
         {},
         stsSuccessfulResponse
       );
+      const emittedEvents: Credentials[] = [];
       delete stsSuccessfulResponseWithoutExpireInField.expires_in;
       const scope = mockStsTokenExchange([
         {
@@ -616,8 +655,23 @@ describe('DownscopedClient', () => {
         client,
         testClientAccessBoundary
       );
+      // Listen to tokens events. On every event, push to list of
+      // emittedEvents.
+      downscopedClient.on('tokens', tokens => {
+        emittedEvents.push(tokens);
+      });
 
       const tokenResponse = await downscopedClient.getAccessToken();
+
+      // tokens event should be triggered once with expected event.
+      assert.strictEqual(emittedEvents.length, 1);
+      assert.deepStrictEqual(emittedEvents[0], {
+        refresh_token: null,
+        expiry_date: null,
+        access_token: stsSuccessfulResponseWithoutExpireInField.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
       assert.deepStrictEqual(
         tokenResponse.token,
         stsSuccessfulResponseWithoutExpireInField.access_token
