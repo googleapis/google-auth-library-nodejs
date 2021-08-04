@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.5.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.4.1...v7.5.0) (2021-08-04)
+
+
+### Features
+
+* Adds support for STS response not returning expires_in field. ([#1216](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1216)) ([24bb456](https://www.github.com/googleapis/google-auth-library-nodejs/commit/24bb4568820c2692b1b3ff29835a38fdb3f28c9e))
+
 ### [7.4.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.4.0...v7.4.1) (2021-07-29)
 
 
