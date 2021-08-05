@@ -177,6 +177,19 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.projectNumber = this.getProjectNumber(this.audience);
   }
 
+  /** The service account email to be impersonated, if available. */
+  getServiceAccountEmail(): string | null {
+    if (this.serviceAccountImpersonationUrl) {
+      // Parse email from URL. The formal looks as follows:
+      // https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/name@project-id.iam.gserviceaccount.com:generateAccessToken
+      const matches = this.serviceAccountImpersonationUrl.match(
+        /serviceAccounts\/([^:]+):generateAccessToken$/
+      );
+      return (matches && matches[1]) || null;
+    }
+    return null;
+  }
+
   /**
    * Provides a mechanism to inject GCP access tokens directly.
    * When the provided credential expires, a new credential, using the
