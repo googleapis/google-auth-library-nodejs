@@ -298,9 +298,13 @@ export interface GenerateAuthUrlOpts {
   code_challenge?: string;
 }
 
-export interface DownscopedAccessTokenResponse {
+export interface AccessTokenResponse {
   access_token: string | null;
   expiry_date: number | null;
+}
+
+export interface GetRefreshHandlerCallack {
+  (): Promise<AccessTokenResponse>;
 }
 
 export interface GetTokenCallback {
@@ -431,6 +435,8 @@ export class OAuth2Client extends AuthClient {
   eagerRefreshThresholdMillis: number;
 
   forceRefreshOnFailure: boolean;
+
+  refreshHandlerCallback?: GetRefreshHandlerCallack;
 
   /**
    * Handles OAuth2 flow for Google APIs.
@@ -754,10 +760,12 @@ export class OAuth2Client extends AuthClient {
       !this.credentials.access_token || this.isTokenExpiring();
     if (shouldRefresh) {
       if (!this.credentials.refresh_token) {
-        const downscopedCreds = await this.refreshHandler();
-        if (downscopedCreds) {
-          this.setCredentials(downscopedCreds);
-          return {token: this.credentials.access_token};
+        if (this.refreshHandlerCallback && this.credentials.access_token) {
+          const refreshedAccessToken = await this.refreshHandler();
+          if (refreshedAccessToken && refreshedAccessToken.access_token) {
+            this.setCredentials(refreshedAccessToken);
+            return {token: this.credentials.access_token};
+          }
         } else {
           throw new Error('No refresh token is set.');
         }
@@ -792,7 +800,12 @@ export class OAuth2Client extends AuthClient {
     url?: string | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
-    if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
+    if (
+      !thisCreds.access_token &&
+      !thisCreds.refresh_token &&
+      !this.apiKey &&
+      !this.refreshHandlerCallback
+    ) {
       throw new Error('No access, refresh token or API key is set.');
     }
 
@@ -804,13 +817,16 @@ export class OAuth2Client extends AuthClient {
       return {headers: this.addSharedMetadataHeaders(headers)};
     }
 
-    const downscopedCreds = await this.refreshHandler();
-    if (downscopedCreds) {
-      this.setCredentials(downscopedCreds);
-      const headers = {
-        Authorization: 'Bearer ' + this.credentials.access_token,
-      };
-      return {headers: this.addSharedMetadataHeaders(headers)};
+    // If refreshHandlerCallback exists, refresh
+    if (this.refreshHandlerCallback) {
+      const refreshedAccessToken = await this.refreshHandler();
+      if (refreshedAccessToken && refreshedAccessToken.access_token) {
+        this.setCredentials(refreshedAccessToken);
+        const headers = {
+          Authorization: 'Bearer ' + this.credentials.access_token,
+        };
+        return {headers: this.addSharedMetadataHeaders(headers)};
+      }
     }
 
     if (this.apiKey) {
@@ -954,7 +970,7 @@ export class OAuth2Client extends AuthClient {
       const res = (e as GaxiosError).response;
       if (res) {
         const statusCode = res.status;
-        // Retry the request for metadata if the following criterias are true:
+        // Retry the request for metadata if the following criteria are true:
         // - We haven't already retried.  It only makes sense to retry once.
         // - The response was a 401 or a 403
         // - The request didn't send a readableStream
@@ -965,7 +981,7 @@ export class OAuth2Client extends AuthClient {
         //   fails on the first try because it's expired. Some developers may
         //   choose to enable forceRefreshOnFailure to mitigate time-related
         //   errors.
-        // Or the following criterias are true:
+        // Or the following criteria are true:
         // - We haven't already retried.  It only makes sense to retry once.
         // - The response was a 401 or a 403
         // - The request didn't send a readableStream
@@ -985,7 +1001,7 @@ export class OAuth2Client extends AuthClient {
           this.credentials.access_token &&
           !this.credentials.refresh_token &&
           (!this.credentials.expiry_date || this.forceRefreshOnFailure);
-        const downscopedCreds = await this.refreshHandler();
+        // const downscopedCreds = await this.refreshHandler();
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
@@ -996,9 +1012,12 @@ export class OAuth2Client extends AuthClient {
           isAuthErr &&
           !isReadableStream &&
           mayRequireRefreshWithNoRefreshToken &&
-          downscopedCreds
+          this.refreshHandler
         ) {
-          this.setCredentials(downscopedCreds);
+          const refreshedAccessToken = await this.refreshHandler();
+          if (refreshedAccessToken && refreshedAccessToken.access_token) {
+            this.setCredentials(refreshedAccessToken);
+          }
           return this.requestAsync<T>(opts, true);
         }
       }
@@ -1362,11 +1381,16 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * Returns a Promise that resolves with DownscopedAccessTokenResponse
-   * type if refreshHandler() is defined.
-   * If there is no refresh handler callback set up, Promise resolves void.
+   * Returns a Promise that resolves with AccessTokenResponse type if
+   * refreshHandlerCallBack is defined.
+   * If it is undefined, nothing returned.
    */
-  async refreshHandler(): Promise<DownscopedAccessTokenResponse | void> {}
+  async refreshHandler(): Promise<AccessTokenResponse | void> {
+    if (this.refreshHandlerCallback) {
+      return this.refreshHandlerCallback();
+    }
+    return;
+  }
 
   /**
    * Returns true if a token is expired or will expire within

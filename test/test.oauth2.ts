@@ -25,7 +25,7 @@ import * as sinon from 'sinon';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
-import {DownscopedAccessTokenResponse} from '../src/auth/oauth2client';
+import {AccessTokenResponse} from '../src/auth/oauth2client';
 
 nock.disableNetConnect();
 
@@ -1157,26 +1157,26 @@ describe('oauth2', () => {
           .reply(code, {
             error: {code, message: 'Invalid Credentials'},
           });
-        const expectedDownscopedCred = {
+        const expectedRefreshedAccessToken = {
           access_token: 'access_token',
           expiry_date: 123456789,
         };
-        client.refreshHandler = async () => {
-          return expectedDownscopedCred;
+        client.refreshHandlerCallback = async () => {
+          return expectedRefreshedAccessToken;
         };
         client.setCredentials({
           access_token: 'initial-access-token',
           expiry_date: new Date().getTime() - 1000,
         });
-        await client.request({url: 'http://example.com'}, () => {
+        client.request({url: 'http://example.com'}, () => {
           scope.done();
           assert.strictEqual(
             client.credentials.access_token,
-            expectedDownscopedCred.access_token
+            expectedRefreshedAccessToken.access_token
           );
           assert.strictEqual(
             client.credentials.expiry_date,
-            expectedDownscopedCred.expiry_date
+            expectedRefreshedAccessToken.expiry_date
           );
         });
       });
@@ -1370,12 +1370,12 @@ describe('oauth2', () => {
     });
 
     it('should refresh request header when refreshHandler is available', async () => {
-      const expectedDownscopedCred = {
+      const expectedRefreshedAccessToken = {
         access_token: 'access_token',
         expiry_date: 123456789,
       };
-      client.refreshHandler = async () => {
-        return expectedDownscopedCred;
+      client.refreshHandlerCallback = async () => {
+        return expectedRefreshedAccessToken;
       };
       client.setCredentials({
         access_token: 'initial-access-token',
@@ -1402,41 +1402,41 @@ describe('oauth2', () => {
     });
 
     it('should call refreshHandler and set credential if providing refresh handler callback', async () => {
-      const expectedDownscopedCred = {
+      const expectedRefreshedAccessToken = {
         access_token: 'access_token',
         expiry_date: 123456789,
       };
-      client.refreshHandler = async () => {
-        return expectedDownscopedCred;
+      client.refreshHandlerCallback = async () => {
+        return expectedRefreshedAccessToken;
       };
-      const downscopedCred =
-        (await client.refreshHandler()) as DownscopedAccessTokenResponse;
+      const refreshedAccessToken =
+        (await client.refreshHandler()) as AccessTokenResponse;
       assert.strictEqual(
-        downscopedCred.access_token,
-        expectedDownscopedCred.access_token
+        refreshedAccessToken.access_token,
+        expectedRefreshedAccessToken.access_token
       );
       assert.strictEqual(
-        downscopedCred.expiry_date,
-        expectedDownscopedCred.expiry_date
+        refreshedAccessToken.expiry_date,
+        expectedRefreshedAccessToken.expiry_date
       );
     });
 
     it('should refresh credential when refreshHandler is available in getAccessToken()', async () => {
-      const expectedDownscopedCred = {
+      const expectedRefreshedAccessToken = {
         access_token: 'access_token',
         expiry_date: 123456789,
       };
-      client.refreshHandler = async () => {
-        return expectedDownscopedCred;
+      client.refreshHandlerCallback = async () => {
+        return expectedRefreshedAccessToken;
       };
       client.setCredentials({
         access_token: 'initial-access-token',
         expiry_date: new Date().getTime() - 1000,
       });
-      const downscopedCred = await client.getAccessToken();
+      const refreshedAccessToken = await client.getAccessToken();
       assert.strictEqual(
-        downscopedCred.token,
-        expectedDownscopedCred.access_token
+        refreshedAccessToken.token,
+        expectedRefreshedAccessToken.access_token
       );
     });
   });
