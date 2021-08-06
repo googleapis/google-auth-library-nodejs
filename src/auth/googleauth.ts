@@ -40,6 +40,7 @@ import {
   BaseExternalAccountClient,
 } from './baseexternalclient';
 import {AuthClient} from './authclient';
+import {SingleTokenClient} from './singletokenclient';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -47,6 +48,7 @@ import {AuthClient} from './authclient';
  */
 export type JSONClient =
   | JWT
+  | SingleTokenClient
   | UserRefreshClient
   | BaseExternalAccountClient
   | Impersonated;
@@ -106,6 +108,11 @@ export interface GoogleAuthOptions {
    * Your project ID.
    */
   projectId?: string;
+
+  /**
+   * Access Token.
+   */
+   token?: string;
 }
 
 export const CLOUD_SDK_CLIENT_ID =
@@ -134,6 +141,9 @@ export class GoogleAuth {
 
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
+
+  // To save the access token
+  accessToken: string | null = null;
 
   cachedCredential: JSONClient | Impersonated | Compute | null = null;
 
@@ -742,6 +752,13 @@ export class GoogleAuth {
   private async getCredentialsAsync(): Promise<CredentialBody> {
     await this.getClient();
 
+    if (this.accessToken) {
+      const credential: CredentialBody = {};
+      if (this.cachedCredential) {
+        credential.credentials = {access_token: this.cachedCredential.credentials.access_token};
+      }
+      return credential;
+    }
     if (this.jsonContent) {
       const credential: CredentialBody = {
         client_email: (this.jsonContent as JWTInput).client_email,
@@ -782,7 +799,9 @@ export class GoogleAuth {
       );
     }
     if (!this.cachedCredential) {
-      if (this.jsonContent) {
+      if (this.accessToken) {
+        this.cachedCredential = new SingleTokenClient(this.accessToken);
+      } else if (this.jsonContent) {
         this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
       } else if (this.keyFilename) {
         const filePath = path.resolve(this.keyFilename);

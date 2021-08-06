@@ -81,4 +81,5 @@ export interface JWTInput {
 export interface CredentialBody {
   client_email?: string;
   private_key?: string;
+  credentials?: Credentials;
 }
