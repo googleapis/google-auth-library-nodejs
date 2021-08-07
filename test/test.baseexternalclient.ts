@@ -135,6 +135,110 @@ describe('BaseExternalAccountClient', () => {
       }, expectedError);
     });
 
+    it('should throw on invalid token urls', () => {
+      const invalidTokenUrls = [
+        'http://sts.googleapis.com',
+        'https://sts.google.com',
+        'https://sts.googleapis.net',
+        'https://sts..googleapis.com',
+        'https://-sts.googleapis.com',
+        'https://evilsts.googleapis.com',
+      ];
+      const invalidOptions = Object.assign({}, externalAccountOptions);
+      try {
+        for (const invalidTokenUrl of invalidTokenUrls) {
+          invalidOptions.token_url = invalidTokenUrl;
+          const expectedError = new Error(
+            `"${invalidTokenUrl}" is not a valid token url.`
+          );
+          assert.throws(() => {
+            return new TestExternalAccountClient(invalidOptions);
+          }, expectedError);
+        }
+      } catch (error) {
+        throw new Error(
+          `"${invalidOptions.token_url}" is invalid token url but not detected.`
+        );
+      }
+    });
+
+    it('should not throw on valid token urls', () => {
+      const validTokenUrls = [
+        'https://sts.googleapis.com',
+        'https://sts.google.googleapis.com',
+        'https://sts.googleapis.com/domain',
+        'https://exmaple.sts.googleapis.com',
+        'https://example-sts.googleapis.com',
+      ];
+      const validOptions = Object.assign({}, externalAccountOptions);
+      try {
+        for (const validTokenUrl of validTokenUrls) {
+          validOptions.token_url = validTokenUrl;
+          assert.doesNotThrow(() => {
+            return new TestExternalAccountClient(validOptions);
+          });
+        }
+      } catch (e) {
+        throw new Error(`"${validOptions.token_url}" is valid token url.`);
+      }
+    });
+
+    it('should throw on invalid service account impersonation url', () => {
+      const invalidServiceAccountImpersonationUrls = [
+        'http://iamcredentials.googleapis.com',
+        'https://iamcredentials.google.com',
+        'https://iamcredentials.googleapis.net',
+        'https://iamcredentials..googleapis.com',
+        'https://-iamcredentials.googleapis.com',
+        'https://eviliamcredentials.googleapis.com',
+        'https://evil.eviliamcredentials.googleapis.com',
+      ];
+      const invalidOptions = Object.assign({}, externalAccountOptionsWithSA);
+      try {
+        for (const invalidServiceAccountImpersonationUrl of invalidServiceAccountImpersonationUrls) {
+          invalidOptions.service_account_impersonation_url =
+            invalidServiceAccountImpersonationUrl;
+          const expectedError = new Error(
+            `"${invalidServiceAccountImpersonationUrl}" is ` +
+              'not a valid service account impersonation url.'
+          );
+          assert.throws(() => {
+            return new TestExternalAccountClient(invalidOptions);
+          }, expectedError);
+        }
+      } catch (error) {
+        throw new Error(
+          `"${invalidOptions.service_account_impersonation_url}" is invalid ` +
+            'service account impersonation url but not detected.'
+        );
+      }
+    });
+
+    it('should not throw on valid service account impersonation url', () => {
+      const validServiceAccountImpersonationUrls = [
+        'https://iamcredentials.googleapis.com',
+        'https://iamcredentials.google.googleapis.com',
+        'https://iamcredentials.googleapis.com/domain',
+        'https://example.iamcredentials.googleapis.com',
+        'https://example-iamcredentials.googleapis.com',
+      ];
+      const validOptions = Object.assign({}, externalAccountOptionsWithSA);
+      try {
+        for (const validServiceAccountImpersonationUrl of validServiceAccountImpersonationUrls) {
+          validOptions.service_account_impersonation_url =
+            validServiceAccountImpersonationUrl;
+          assert.doesNotThrow(() => {
+            return new TestExternalAccountClient(validOptions);
+          });
+        }
+      } catch (e) {
+        throw new Error(
+          `"${validOptions.service_account_impersonation_url}" is valid ` +
+            'service account impersonation url.'
+        );
+      }
+    });
+
     it('should not throw on valid options', () => {
       assert.doesNotThrow(() => {
         return new TestExternalAccountClient(externalAccountOptions);
