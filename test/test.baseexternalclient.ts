@@ -22,6 +22,7 @@ import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   EXPIRATION_TIME_OFFSET,
   BaseExternalAccountClient,
+  BaseExternalAccountClientOptions,
 } from '../src/auth/baseexternalclient';
 import {
   OAuthErrorResponse,
@@ -187,6 +188,47 @@ describe('BaseExternalAccountClient', () => {
 
         assert(client.projectNumber === null);
       });
+    });
+  });
+
+  describe('getServiceAccountEmail()', () => {
+    it('should return the service account email when impersonation is used', () => {
+      const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
+      const saBaseUrl = 'https://iamcredentials.googleapis.com';
+      const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
+      const options: BaseExternalAccountClientOptions = Object.assign(
+        {},
+        externalAccountOptions
+      );
+      options.service_account_impersonation_url = `${saBaseUrl}${saPath}`;
+      const client = new TestExternalAccountClient(options);
+
+      assert.strictEqual(client.getServiceAccountEmail(), saEmail);
+    });
+
+    it('should return null when impersonation is not used', () => {
+      const options: BaseExternalAccountClientOptions = Object.assign(
+        {},
+        externalAccountOptions
+      );
+      delete options.service_account_impersonation_url;
+      const client = new TestExternalAccountClient(options);
+
+      assert(client.getServiceAccountEmail() === null);
+    });
+
+    it('should return null when impersonation url is malformed', () => {
+      const saBaseUrl = 'https://iamcredentials.googleapis.com';
+      // Malformed path (missing the service account email).
+      const saPath = '/v1/projects/-/serviceAccounts/:generateAccessToken';
+      const options: BaseExternalAccountClientOptions = Object.assign(
+        {},
+        externalAccountOptions
+      );
+      options.service_account_impersonation_url = `${saBaseUrl}${saPath}`;
+      const client = new TestExternalAccountClient(options);
+
+      assert(client.getServiceAccountEmail() === null);
     });
   });
 
