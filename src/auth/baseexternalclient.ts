@@ -182,10 +182,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     if (this.serviceAccountImpersonationUrl) {
       // Parse email from URL. The formal looks as follows:
       // https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/name@project-id.iam.gserviceaccount.com:generateAccessToken
-      const matches = this.serviceAccountImpersonationUrl.match(
-        /serviceAccounts\/([^:]+):generateAccessToken$/
-      );
-      return (matches && matches[1]) || null;
+      const re = /serviceAccounts\/(?<email>[^:]+):generateAccessToken$/;
+      const result = re.exec(this.serviceAccountImpersonationUrl);
+      return result?.groups?.email || null;
     }
     return null;
   }
