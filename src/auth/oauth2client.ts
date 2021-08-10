@@ -28,6 +28,7 @@ import {BodyResponseCallback} from '../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
+import {getErrorFromOAuthErrorResponse} from './oauth2common';
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
@@ -299,8 +300,8 @@ export interface GenerateAuthUrlOpts {
 }
 
 export interface AccessTokenResponse {
-  access_token: string | null;
-  expiry_date: number | null;
+  access_token: string;
+  expiry_date: number;
 }
 
 export interface GetRefreshHandlerCallack {
@@ -1001,7 +1002,6 @@ export class OAuth2Client extends AuthClient {
           this.credentials.access_token &&
           !this.credentials.refresh_token &&
           (!this.credentials.expiry_date || this.forceRefreshOnFailure);
-        // const downscopedCreds = await this.refreshHandler();
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
@@ -1387,7 +1387,11 @@ export class OAuth2Client extends AuthClient {
    */
   async refreshHandler(): Promise<AccessTokenResponse | void> {
     if (this.refreshHandlerCallback) {
-      return this.refreshHandlerCallback();
+      const accessTokenResponse = await this.refreshHandlerCallback();
+      if (!accessTokenResponse.access_token) {
+        throw new Error('There is no access token being returned');
+      }
+      return accessTokenResponse;
     }
     return;
   }
