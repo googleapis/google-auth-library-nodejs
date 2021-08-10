@@ -1401,6 +1401,20 @@ describe('oauth2', () => {
       );
     });
 
+    it('should throw error is refreshHandler does not return token', async () => {
+      const expectedRefreshedAccessToken = {
+        access_token: '',
+        expiry_date: 123456789,
+      };
+      client.refreshHandlerCallback = async () => {
+        return expectedRefreshedAccessToken;
+      };
+      await assert.rejects(
+        client.refreshHandler(),
+        'There is no access token being returned.'
+      );
+    });
+
     it('should call refreshHandler and set credential if providing refresh handler callback', async () => {
       const expectedRefreshedAccessToken = {
         access_token: 'access_token',
