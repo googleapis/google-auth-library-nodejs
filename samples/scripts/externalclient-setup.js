@@ -29,7 +29,8 @@
 //    identity pools).
 // 2. Security Admin (needed to get and set IAM policies).
 // 3. Service Account Token Creator (needed to generate Google ID tokens and
-//    access tokens).
+//    access tokens). This is also needed to call the IAMCredentials signBlob
+//    API.
 //
 // The following APIs need to be enabled on the project:
 // 1. Identity and Access Management (IAM) API.
