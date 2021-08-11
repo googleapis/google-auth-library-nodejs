@@ -37,6 +37,9 @@ const STS_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:token-exchange';
 const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 /** The default OAuth scope to request when none is provided. */
 const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
+/** The google apis domain pattern. */
+const GOOGLE_APIS_DOMAIN_PATTERN = '\\.googleapis\\.com$';
+
 /**
  * Offset to take into account network delays and server clock skews.
  */
@@ -165,6 +168,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
     if (
+      typeof options.service_account_impersonation_url !== 'undefined' &&
       !this.validateGoogleAPIsUrl(
         'iamcredentials',
         options.service_account_impersonation_url
@@ -506,26 +510,33 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   /**
    * Checks whether Google APIs URL is valid.
-   * @param prefix The prefix of url.
+   * @param apiName The apiName of url.
    * @param url The url from external account options object.
-   * @return True if it is null or can match to one of the valid token urls.
-   *   Otherwise, returns false.
+   * @return Whether the URL is valid or not.
    */
-  private validateGoogleAPIsUrl(prefix: string, url?: string): boolean {
-    if (typeof url === 'undefined') {
-      return true;
+  private validateGoogleAPIsUrl(apiName: string, url: string): boolean {
+    const parsedUrl = new URL(url);
+    const urlDomain = parsedUrl.hostname;
+
+    // Check the protocol is https.
+    if (parsedUrl.protocol !== 'https:') {
+      return false;
     }
-    const matchUrlPatterns: string[] = [];
-    matchUrlPatterns.push(
-      'https://[^\\.]+\\.' + prefix + '\\.googleapis\\.com'
-    );
-    matchUrlPatterns.push('https://' + prefix + '\\.googleapis\\.com');
-    matchUrlPatterns.push(
-      'https://' + prefix + '\\.[^\\.]+\\.googleapis\\.com'
-    );
-    matchUrlPatterns.push('https://[^\\.]+-' + prefix + '\\.googleapis\\.com');
-    for (const matchUrlPattern of matchUrlPatterns) {
-      if (url.match(matchUrlPattern)) {
+
+    const googleAPIsDomainPatterns: RegExp[] = [
+      new RegExp(
+        '^[^\\.\\s\\/\\\\]+\\.' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
+      ),
+      new RegExp('^' + apiName + GOOGLE_APIS_DOMAIN_PATTERN),
+      new RegExp(
+        '^' + apiName + '\\.[^\\.\\s\\/\\\\]+' + GOOGLE_APIS_DOMAIN_PATTERN
+      ),
+      new RegExp(
+        '^[^\\.\\s\\/\\\\]+\\-' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
+      ),
+    ];
+    for (const googleAPIsDomainPattern of googleAPIsDomainPatterns) {
+      if (urlDomain.match(googleAPIsDomainPattern)) {
         return true;
       }
     }

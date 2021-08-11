@@ -140,6 +140,7 @@ describe('BaseExternalAccountClient', () => {
         'http://sts.googleapis.com',
         'https://sts.google.com',
         'https://sts.googleapis.net',
+        'https://sts.googleapis.com.evil.com',
         'https://sts..googleapis.com',
         'https://-sts.googleapis.com',
         'https://evilsts.googleapis.com',
@@ -165,6 +166,7 @@ describe('BaseExternalAccountClient', () => {
     it('should not throw on valid token urls', () => {
       const validTokenUrls = [
         'https://sts.googleapis.com',
+        'https://sts.us-west-1.googleapis.com',
         'https://sts.google.googleapis.com',
         'https://sts.googleapis.com/domain',
         'https://exmaple.sts.googleapis.com',
@@ -188,6 +190,7 @@ describe('BaseExternalAccountClient', () => {
         'http://iamcredentials.googleapis.com',
         'https://iamcredentials.google.com',
         'https://iamcredentials.googleapis.net',
+        'https://iamcredentials.googleapis.com.evil.com',
         'https://iamcredentials..googleapis.com',
         'https://-iamcredentials.googleapis.com',
         'https://eviliamcredentials.googleapis.com',
@@ -217,6 +220,7 @@ describe('BaseExternalAccountClient', () => {
     it('should not throw on valid service account impersonation url', () => {
       const validServiceAccountImpersonationUrls = [
         'https://iamcredentials.googleapis.com',
+        'https://iamcredentials.us-west-1.googleapis.com',
         'https://iamcredentials.google.googleapis.com',
         'https://iamcredentials.googleapis.com/domain',
         'https://example.iamcredentials.googleapis.com',
