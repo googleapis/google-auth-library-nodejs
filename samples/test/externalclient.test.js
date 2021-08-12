@@ -262,7 +262,7 @@ describe('samples for external-account', () => {
       type: 'external_account',
       audience: AUDIENCE_OIDC,
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-      token_url: 'https://sts.googleapis.com/v1beta/token',
+      token_url: 'https://sts.googleapis.com/v1/token',
       service_account_impersonation_url:
         'https://iamcredentials.googleapis.com/v1/projects/' +
         `-/serviceAccounts/${clientEmail}:generateAccessToken`,
@@ -285,6 +285,38 @@ describe('samples for external-account', () => {
     assert.match(output, /DNS Info:/);
   });
 
+  it('should sign the blobs with IAM credentials API', async () => {
+    // Create file-sourced configuration JSON file.
+    // The created OIDC token will be used as the subject token and will be
+    // retrieved from a file location.
+    const config = {
+      type: 'external_account',
+      audience: AUDIENCE_OIDC,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      token_url: 'https://sts.googleapis.com/v1/token',
+      service_account_impersonation_url:
+        'https://iamcredentials.googleapis.com/v1/projects/' +
+        `-/serviceAccounts/${clientEmail}:generateAccessToken`,
+      credential_source: {
+        file: oidcTokenFilePath,
+      },
+    };
+    await writeFile(oidcTokenFilePath, oidcToken);
+    await writeFile(configFilePath, JSON.stringify(config));
+
+    // Run sample script with GOOGLE_APPLICATION_CREDENTIALS envvar
+    // pointing to the temporarily created configuration file.
+    // This script will use signBlob to sign some data using
+    // service account impersonated workload identity pool credentials.
+    const output = await execAsync(`${process.execPath} signBlob`, {
+      env: {
+        ...process.env,
+        GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
+      },
+    });
+    assert.ok(output.length > 0);
+  });
+
   it('should acquire ADC for url-sourced creds', async () => {
     // Create url-sourced configuration JSON file.
     // The created OIDC token will be used as the subject token and will be
@@ -293,7 +325,7 @@ describe('samples for external-account', () => {
       type: 'external_account',
       audience: AUDIENCE_OIDC,
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-      token_url: 'https://sts.googleapis.com/v1beta/token',
+      token_url: 'https://sts.googleapis.com/v1/token',
       service_account_impersonation_url:
         'https://iamcredentials.googleapis.com/v1/projects/' +
         `-/serviceAccounts/${clientEmail}:generateAccessToken`,
@@ -358,7 +390,7 @@ describe('samples for external-account', () => {
       type: 'external_account',
       audience: AUDIENCE_AWS,
       subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-      token_url: 'https://sts.googleapis.com/v1beta/token',
+      token_url: 'https://sts.googleapis.com/v1/token',
       service_account_impersonation_url:
         'https://iamcredentials.googleapis.com/v1/projects/' +
         `-/serviceAccounts/${clientEmail}:generateAccessToken`,
