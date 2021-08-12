@@ -39,6 +39,8 @@ const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 /** The google apis domain pattern. */
 const GOOGLE_APIS_DOMAIN_PATTERN = '\\.googleapis\\.com$';
+/** */
+const STAR_PATTERN = '[^\\.\\s\\/\\\\]';
 
 /**
  * Offset to take into account network delays and server clock skews.
@@ -511,13 +513,19 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   /**
    * Checks whether Google APIs URL is valid.
    * @param apiName The apiName of url.
-   * @param url The url from external account options object.
+   * @param url The Google API URL to validate.
    * @return Whether the URL is valid or not.
    */
   private validateGoogleAPIsUrl(apiName: string, url: string): boolean {
-    const parsedUrl = new URL(url);
-    const urlDomain = parsedUrl.hostname;
+    let parsedUrl;
+    // Return false if error is thrown during parsing URL.
+    try {
+      parsedUrl = new URL(url);
+    } catch (e) {
+      return false;
+    }
 
+    const urlDomain = parsedUrl.hostname;
     // Check the protocol is https.
     if (parsedUrl.protocol !== 'https:') {
       return false;
@@ -525,14 +533,14 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     const googleAPIsDomainPatterns: RegExp[] = [
       new RegExp(
-        '^[^\\.\\s\\/\\\\]+\\.' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
+        '^' + STAR_PATTERN + '+\\.' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
       ),
       new RegExp('^' + apiName + GOOGLE_APIS_DOMAIN_PATTERN),
       new RegExp(
-        '^' + apiName + '\\.[^\\.\\s\\/\\\\]+' + GOOGLE_APIS_DOMAIN_PATTERN
+        '^' + apiName + '\\.' + STAR_PATTERN + '+' + GOOGLE_APIS_DOMAIN_PATTERN
       ),
       new RegExp(
-        '^[^\\.\\s\\/\\\\]+\\-' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
+        '^' + STAR_PATTERN + '+\\-' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
       ),
     ];
     for (const googleAPIsDomainPattern of googleAPIsDomainPatterns) {

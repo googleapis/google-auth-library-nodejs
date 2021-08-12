@@ -138,12 +138,20 @@ describe('BaseExternalAccountClient', () => {
     it('should throw on invalid token urls', () => {
       const invalidTokenUrls = [
         'http://sts.googleapis.com',
+        'https://',
         'https://sts.google.com',
         'https://sts.googleapis.net',
+        'https://sts.googleapis.comevil.com',
         'https://sts.googleapis.com.evil.com',
+        'https://sts.googleapis.com.evil.com/path/to/example',
         'https://sts..googleapis.com',
         'https://-sts.googleapis.com',
         'https://evilsts.googleapis.com',
+        'https://us.east.1.sts.googleapis.com',
+        'https://us east 1.sts.googleapis.com',
+        'https://us-east- 1.sts.googleapis.com',
+        'https://us/.east/.1.sts.googleapis.com',
+        'https://us.ea\\st.1.sts.googleapis.com',
       ];
       const invalidOptions = Object.assign({}, externalAccountOptions);
       try {
@@ -168,33 +176,39 @@ describe('BaseExternalAccountClient', () => {
         'https://sts.googleapis.com',
         'https://sts.us-west-1.googleapis.com',
         'https://sts.google.googleapis.com',
-        'https://sts.googleapis.com/domain',
+        'https://sts.googleapis.com/path/to/example',
+        'https://us-west-1.sts.googleapis.com',
+        'https://us-west-1-sts.googleapis.com',
         'https://exmaple.sts.googleapis.com',
         'https://example-sts.googleapis.com',
       ];
       const validOptions = Object.assign({}, externalAccountOptions);
-      try {
-        for (const validTokenUrl of validTokenUrls) {
-          validOptions.token_url = validTokenUrl;
-          assert.doesNotThrow(() => {
-            return new TestExternalAccountClient(validOptions);
-          });
-        }
-      } catch (e) {
-        throw new Error(`"${validOptions.token_url}" is valid token url.`);
+      for (const validTokenUrl of validTokenUrls) {
+        validOptions.token_url = validTokenUrl;
+        assert.doesNotThrow(() => {
+          return new TestExternalAccountClient(validOptions);
+        });
       }
     });
 
     it('should throw on invalid service account impersonation url', () => {
       const invalidServiceAccountImpersonationUrls = [
         'http://iamcredentials.googleapis.com',
+        'https://',
         'https://iamcredentials.google.com',
         'https://iamcredentials.googleapis.net',
+        'https://iamcredentials.googleapis.comevil.com',
         'https://iamcredentials.googleapis.com.evil.com',
+        'https://iamcredentials.googleapis.com.evil.com/path/to/example',
         'https://iamcredentials..googleapis.com',
         'https://-iamcredentials.googleapis.com',
         'https://eviliamcredentials.googleapis.com',
         'https://evil.eviliamcredentials.googleapis.com',
+        'https://us.east.1.iamcredentials.googleapis.com',
+        'https://us east 1.iamcredentials.googleapis.com',
+        'https://us-east- 1.iamcredentials.googleapis.com',
+        'https://us/.east/.1.iamcredentials.googleapis.com',
+        'https://us.ea\\st.1.iamcredentials.googleapis.com',
       ];
       const invalidOptions = Object.assign({}, externalAccountOptionsWithSA);
       try {
@@ -222,24 +236,19 @@ describe('BaseExternalAccountClient', () => {
         'https://iamcredentials.googleapis.com',
         'https://iamcredentials.us-west-1.googleapis.com',
         'https://iamcredentials.google.googleapis.com',
-        'https://iamcredentials.googleapis.com/domain',
+        'https://iamcredentials.googleapis.com/path/to/example',
+        'https://us-west-1.iamcredentials.googleapis.com',
+        'https://us-west-1-iamcredentials.googleapis.com',
         'https://example.iamcredentials.googleapis.com',
         'https://example-iamcredentials.googleapis.com',
       ];
       const validOptions = Object.assign({}, externalAccountOptionsWithSA);
-      try {
-        for (const validServiceAccountImpersonationUrl of validServiceAccountImpersonationUrls) {
-          validOptions.service_account_impersonation_url =
-            validServiceAccountImpersonationUrl;
-          assert.doesNotThrow(() => {
-            return new TestExternalAccountClient(validOptions);
-          });
-        }
-      } catch (e) {
-        throw new Error(
-          `"${validOptions.service_account_impersonation_url}" is valid ` +
-            'service account impersonation url.'
-        );
+      for (const validServiceAccountImpersonationUrl of validServiceAccountImpersonationUrls) {
+        validOptions.service_account_impersonation_url =
+          validServiceAccountImpersonationUrl;
+        assert.doesNotThrow(() => {
+          return new TestExternalAccountClient(validOptions);
+        });
       }
     });
 
