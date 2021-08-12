@@ -58,7 +58,7 @@ export {
   BaseExternalAccountClientOptions,
 } from './auth/baseexternalclient';
 export {
-  CredentialAccessBoundary, 
+  CredentialAccessBoundary,
   DownscopedClient,
 } from './auth/downscopedclient';
 export {DefaultTransporter} from './transporters';
