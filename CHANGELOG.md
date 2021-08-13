@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.6.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.0...v7.6.1) (2021-08-13)
+
+
+### Bug Fixes
+
+* use updated variable name for self-signed JWTs ([#1233](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1233)) ([ef41fe5](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ef41fe59b423125c607e3ad20896a35f12f5365b))
+
 ## [7.6.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.5.0...v7.6.0) (2021-08-10)
 
 
