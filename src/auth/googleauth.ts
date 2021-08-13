@@ -120,7 +120,7 @@ export class GoogleAuth {
    * @private
    */
   private checkIsGCE?: boolean = undefined;
-  useJWTAccessAlways?: boolean;
+  useJWTAccessWithScope?: boolean;
   defaultServicePath?: string;
 
   // Note:  this properly is only public to satisify unit tests.
@@ -165,7 +165,7 @@ export class GoogleAuth {
   // and sign the JWT with the correct audience and scopes (if not supplied).
   setGapicJWTValues(client: JWT) {
     client.defaultServicePath = this.defaultServicePath;
-    client.useJWTAccessAlways = this.useJWTAccessAlways;
+    client.useJWTAccessWithScope = this.useJWTAccessWithScope;
     client.defaultScopes = this.defaultScopes;
   }
 

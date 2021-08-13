@@ -46,7 +46,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   subject?: string;
   gtoken?: GoogleToken;
   additionalClaims?: {};
-  useJWTAccessAlways?: boolean;
+  useJWTAccessWithScope?: boolean;
   defaultServicePath?: string;
   private access?: JWTAccess;
 
@@ -122,7 +122,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    if (this.useJWTAccessAlways) {
+    if (this.useJWTAccessWithScope) {
       if (!this.access) {
         this.access = new JWTAccess(
           this.email,
