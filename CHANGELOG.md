@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.6.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.5.0...v7.6.0) (2021-08-10)
+
+
+### Features
+
+* add GoogleAuth.sign() support to external account client ([#1227](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1227)) ([1ca3b73](https://www.github.com/googleapis/google-auth-library-nodejs/commit/1ca3b733427d951ed624e1129fca510d84d5d0fe))
+
 ## [7.5.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.4.1...v7.5.0) (2021-08-04)
 
 
