@@ -4,6 +4,20 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.6.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.0...v7.6.1) (2021-08-13)
+
+
+### Bug Fixes
+
+* use updated variable name for self-signed JWTs ([#1233](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1233)) ([ef41fe5](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ef41fe59b423125c607e3ad20896a35f12f5365b))
+
+## [7.6.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.5.0...v7.6.0) (2021-08-10)
+
+
+### Features
+
+* add GoogleAuth.sign() support to external account client ([#1227](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1227)) ([1ca3b73](https://www.github.com/googleapis/google-auth-library-nodejs/commit/1ca3b733427d951ed624e1129fca510d84d5d0fe))
+
 ## [7.5.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.4.1...v7.5.0) (2021-08-04)
 
 
@@ -30,7 +44,7 @@
 
 ### Features
 
-* add useJWTAccessAlways and defaultServicePath variable ([#1204](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1204)) ([79e100e](https://www.github.com/googleapis/google-auth-library-nodejs/commit/79e100e9ddc64f34e34d0e91c8188f1818e33a1c))
+* add useJWTAccessWithScope and defaultServicePath variable ([#1204](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1204)) ([79e100e](https://www.github.com/googleapis/google-auth-library-nodejs/commit/79e100e9ddc64f34e34d0e91c8188f1818e33a1c))
 
 ## [7.2.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.1.2...v7.2.0) (2021-06-30)
 

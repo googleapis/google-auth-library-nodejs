@@ -46,7 +46,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   subject?: string;
   gtoken?: GoogleToken;
   additionalClaims?: {};
-  useJWTAccessAlways?: boolean;
+  useJWTAccessWithScope?: boolean;
   defaultServicePath?: string;
   private access?: JWTAccess;
 
