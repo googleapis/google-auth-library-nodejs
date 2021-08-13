@@ -37,7 +37,7 @@
 
 ### Features
 
-* add useJWTAccessAlways and defaultServicePath variable ([#1204](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1204)) ([79e100e](https://www.github.com/googleapis/google-auth-library-nodejs/commit/79e100e9ddc64f34e34d0e91c8188f1818e33a1c))
+* add useJWTAccessWithScope and defaultServicePath variable ([#1204](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1204)) ([79e100e](https://www.github.com/googleapis/google-auth-library-nodejs/commit/79e100e9ddc64f34e34d0e91c8188f1818e33a1c))
 
 ## [7.2.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.1.2...v7.2.0) (2021-06-30)
 
