@@ -40,7 +40,7 @@ const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 /** The google apis domain pattern. */
 const GOOGLE_APIS_DOMAIN_PATTERN = '\\.googleapis\\.com$';
 /** The variable portion pattern in a Google APIs domain. */
-const STAR_PATTERN = '[^\\.\\s\\/\\\\]+';
+const VARIABLE_PORTION_PATTERN = '[^\\.\\s\\/\\\\]+';
 
 /**
  * Offset to take into account network delays and server clock skews.
@@ -545,14 +545,26 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     const googleAPIsDomainPatterns: RegExp[] = [
       new RegExp(
-        '^' + STAR_PATTERN + '\\.' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
+        '^' +
+          VARIABLE_PORTION_PATTERN +
+          '\\.' +
+          apiName +
+          GOOGLE_APIS_DOMAIN_PATTERN
       ),
       new RegExp('^' + apiName + GOOGLE_APIS_DOMAIN_PATTERN),
       new RegExp(
-        '^' + apiName + '\\.' + STAR_PATTERN + GOOGLE_APIS_DOMAIN_PATTERN
+        '^' +
+          apiName +
+          '\\.' +
+          VARIABLE_PORTION_PATTERN +
+          GOOGLE_APIS_DOMAIN_PATTERN
       ),
       new RegExp(
-        '^' + STAR_PATTERN + '\\-' + apiName + GOOGLE_APIS_DOMAIN_PATTERN
+        '^' +
+          VARIABLE_PORTION_PATTERN +
+          '\\-' +
+          apiName +
+          GOOGLE_APIS_DOMAIN_PATTERN
       ),
     ];
     for (const googleAPIsDomainPattern of googleAPIsDomainPatterns) {
