@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.6.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.1...v7.6.2) (2021-08-17)
+
+
+### Bug Fixes
+
+* validate token_url and service_account_impersonation_url ([#1229](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1229)) ([0360bb7](https://www.github.com/googleapis/google-auth-library-nodejs/commit/0360bb722aaa082c36c1e1919bf5df27efbe15b3))
+
 ### [7.6.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.0...v7.6.1) (2021-08-13)
 
 
