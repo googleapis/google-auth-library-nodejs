@@ -37,6 +37,11 @@ const STS_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:token-exchange';
 const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 /** The default OAuth scope to request when none is provided. */
 const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
+/** The google apis domain pattern. */
+const GOOGLE_APIS_DOMAIN_PATTERN = '\\.googleapis\\.com$';
+/** The variable portion pattern in a Google APIs domain. */
+const VARIABLE_PORTION_PATTERN = '[^\\.\\s\\/\\\\]+';
+
 /**
  * Offset to take into account network delays and server clock skews.
  */
@@ -154,6 +159,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           clientSecret: options.client_secret,
         } as ClientAuthentication)
       : undefined;
+    if (!this.validateGoogleAPIsUrl('sts', options.token_url)) {
+      throw new Error(`"${options.token_url}" is not a valid token url.`);
+    }
     this.stsCredential = new sts.StsCredentials(options.token_url, clientAuth);
     // Default OAuth scope. This could be overridden via public property.
     this.scopes = [DEFAULT_OAUTH_SCOPE];
@@ -161,6 +169,18 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.audience = options.audience;
     this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
+    if (
+      typeof options.service_account_impersonation_url !== 'undefined' &&
+      !this.validateGoogleAPIsUrl(
+        'iamcredentials',
+        options.service_account_impersonation_url
+      )
+    ) {
+      throw new Error(
+        `"${options.service_account_impersonation_url}" is ` +
+          'not a valid service account impersonation url.'
+      );
+    }
     this.serviceAccountImpersonationUrl =
       options.service_account_impersonation_url;
     // As threshold could be zero,
@@ -500,5 +520,58 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     } else {
       return this.scopes;
     }
+  }
+
+  /**
+   * Checks whether Google APIs URL is valid.
+   * @param apiName The apiName of url.
+   * @param url The Google API URL to validate.
+   * @return Whether the URL is valid or not.
+   */
+  private validateGoogleAPIsUrl(apiName: string, url: string): boolean {
+    let parsedUrl;
+    // Return false if error is thrown during parsing URL.
+    try {
+      parsedUrl = new URL(url);
+    } catch (e) {
+      return false;
+    }
+
+    const urlDomain = parsedUrl.hostname;
+    // Check the protocol is https.
+    if (parsedUrl.protocol !== 'https:') {
+      return false;
+    }
+
+    const googleAPIsDomainPatterns: RegExp[] = [
+      new RegExp(
+        '^' +
+          VARIABLE_PORTION_PATTERN +
+          '\\.' +
+          apiName +
+          GOOGLE_APIS_DOMAIN_PATTERN
+      ),
+      new RegExp('^' + apiName + GOOGLE_APIS_DOMAIN_PATTERN),
+      new RegExp(
+        '^' +
+          apiName +
+          '\\.' +
+          VARIABLE_PORTION_PATTERN +
+          GOOGLE_APIS_DOMAIN_PATTERN
+      ),
+      new RegExp(
+        '^' +
+          VARIABLE_PORTION_PATTERN +
+          '\\-' +
+          apiName +
+          GOOGLE_APIS_DOMAIN_PATTERN
+      ),
+    ];
+    for (const googleAPIsDomainPattern of googleAPIsDomainPatterns) {
+      if (urlDomain.match(googleAPIsDomainPattern)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
