@@ -25,7 +25,6 @@ import * as sinon from 'sinon';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
-import {AccessTokenResponse} from '../src/auth/oauth2client';
 
 nock.disableNetConnect();
 
