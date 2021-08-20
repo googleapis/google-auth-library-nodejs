@@ -25,7 +25,6 @@ import * as sinon from 'sinon';
 
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
-import {AccessTokenResponse} from '../src/auth/oauth2client';
 
 nock.disableNetConnect();
 
@@ -894,7 +893,7 @@ describe('oauth2', () => {
       client.request({}, (err, result) => {
         assert.strictEqual(
           err!.message,
-          'No access, refresh token or API key is set.'
+          'No access, refresh token or API key or refresh handler callback is set.'
         );
         assert.strictEqual(result, undefined);
         done();
@@ -1151,7 +1150,7 @@ describe('oauth2', () => {
         });
       });
 
-      it('should call refreshHandler and set credential if token expires in request()', async () => {
+      it('should call refreshHandler in request() on token expiration and no refresh token available', async () => {
         const scope = nock('http://example.com')
           .get('/access')
           .reply(code, {
@@ -1159,16 +1158,20 @@ describe('oauth2', () => {
           });
         const expectedRefreshedAccessToken = {
           access_token: 'access_token',
-          expiry_date: 123456789,
+          expiry_date: new Date().getTime() + 3600 * 1000,
         };
-        client.refreshHandlerCallback = async () => {
+        const expectedMetadata = {
+          Authorization: 'Bearer access_token',
+        };
+        client.refreshHandler = async () => {
           return expectedRefreshedAccessToken;
         };
         client.setCredentials({
           access_token: 'initial-access-token',
           expiry_date: new Date().getTime() - 1000,
         });
-        client.request({url: 'http://example.com'}, () => {
+
+        client.request({url: 'http://example.com/access'}, () => {
           scope.done();
           assert.strictEqual(
             client.credentials.access_token,
@@ -1179,6 +1182,12 @@ describe('oauth2', () => {
             expectedRefreshedAccessToken.expiry_date
           );
         });
+
+        // Check authorization header has been added.
+        const requestMetaData = await client.getRequestHeaders(
+          'http://example.com/access'
+        );
+        assert.deepStrictEqual(requestMetaData, expectedMetadata);
       });
     });
 
@@ -1369,12 +1378,12 @@ describe('oauth2', () => {
       assert.deepStrictEqual(info.scopes, tokenInfo.scope.split(' '));
     });
 
-    it('should refresh request header when refreshHandler is available', async () => {
+    it('should call refreshHandler in getRequestHeaders() on token expiration and refreshHandler is available', async () => {
       const expectedRefreshedAccessToken = {
         access_token: 'access_token',
-        expiry_date: 123456789,
+        expiry_date: new Date().getTime() + 3600 * 1000,
       };
-      client.refreshHandlerCallback = async () => {
+      client.refreshHandler = async () => {
         return expectedRefreshedAccessToken;
       };
       client.setCredentials({
@@ -1384,73 +1393,79 @@ describe('oauth2', () => {
       const expectedMetadata = {
         Authorization: 'Bearer access_token',
       };
+
       const requestMetaData = await client.getRequestHeaders(
         'http://example.com'
       );
+
       assert.deepStrictEqual(requestMetaData, expectedMetadata);
     });
 
-    it('should throw if tries to refresh but no refresh token is available', async () => {
+    it('should return authorization header on current access token if it has not expired', async () => {
+      client.setCredentials({
+        access_token: 'initial-access-token',
+        expiry_date: new Date().getTime() + 3600 * 1000,
+      });
+      const expectedMetadata = {
+        Authorization: 'Bearer initial-access-token',
+      };
+
+      const requestMetaData = await client.getRequestHeaders(
+        'http://example.com'
+      );
+
+      assert.deepStrictEqual(requestMetaData, expectedMetadata);
+    });
+
+    it('should throw if tries to refresh but no refreshHandler callback or refresh token is available', async () => {
       client.setCredentials({
         access_token: 'initial-access-token',
         expiry_date: new Date().getTime() - 1000,
       });
+
       await assert.rejects(
         client.getRequestHeaders('http://example.com'),
         /No refresh token is set./
       );
     });
 
-    it('should throw error is refreshHandler does not return token', async () => {
-      const expectedRefreshedAccessToken = {
-        access_token: '',
-        expiry_date: 123456789,
-      };
-      client.refreshHandlerCallback = async () => {
-        return expectedRefreshedAccessToken;
-      };
-      await assert.rejects(
-        client.refreshHandler(),
-        'There is no access token being returned.'
-      );
-    });
-
-    it('should call refreshHandler and set credential if providing refresh handler callback', async () => {
+    it('should call refreshHandler in getAccessToken() on expiration and no refresh token available', async () => {
       const expectedRefreshedAccessToken = {
         access_token: 'access_token',
-        expiry_date: 123456789,
+        expiry_date: new Date().getTime() + 3600 * 1000,
       };
-      client.refreshHandlerCallback = async () => {
-        return expectedRefreshedAccessToken;
-      };
-      const refreshedAccessToken =
-        (await client.refreshHandler()) as AccessTokenResponse;
-      assert.strictEqual(
-        refreshedAccessToken.access_token,
-        expectedRefreshedAccessToken.access_token
-      );
-      assert.strictEqual(
-        refreshedAccessToken.expiry_date,
-        expectedRefreshedAccessToken.expiry_date
-      );
-    });
-
-    it('should refresh credential when refreshHandler is available in getAccessToken()', async () => {
-      const expectedRefreshedAccessToken = {
-        access_token: 'access_token',
-        expiry_date: 123456789,
-      };
-      client.refreshHandlerCallback = async () => {
+      client.refreshHandler = async () => {
         return expectedRefreshedAccessToken;
       };
       client.setCredentials({
         access_token: 'initial-access-token',
         expiry_date: new Date().getTime() - 1000,
       });
+
       const refreshedAccessToken = await client.getAccessToken();
+
       assert.strictEqual(
         refreshedAccessToken.token,
         expectedRefreshedAccessToken.access_token
+      );
+    });
+
+    it('should throw error if refreshHandler callback response is missing an access token', async () => {
+      const expectedRefreshedAccessToken = {
+        access_token: '',
+        expiry_date: new Date().getTime() + 3600 * 1000,
+      };
+      client.refreshHandler = async () => {
+        return expectedRefreshedAccessToken;
+      };
+      client.setCredentials({
+        access_token: 'initial-access-token',
+        expiry_date: new Date().getTime() - 1000,
+      });
+
+      await assert.rejects(
+        client.getAccessToken(),
+        /No access token is returned by the refreshHandler callback./
       );
     });
   });

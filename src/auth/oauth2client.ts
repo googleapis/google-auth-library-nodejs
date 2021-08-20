@@ -28,7 +28,6 @@ import {BodyResponseCallback} from '../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
-import {getErrorFromOAuthErrorResponse} from './oauth2common';
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
@@ -304,7 +303,7 @@ export interface AccessTokenResponse {
   expiry_date: number;
 }
 
-export interface GetRefreshHandlerCallack {
+export interface GetRefreshHandlerCallback {
   (): Promise<AccessTokenResponse>;
 }
 
@@ -437,7 +436,7 @@ export class OAuth2Client extends AuthClient {
 
   forceRefreshOnFailure: boolean;
 
-  refreshHandlerCallback?: GetRefreshHandlerCallack;
+  refreshHandler?: GetRefreshHandlerCallback;
 
   /**
    * Handles OAuth2 flow for Google APIs.
@@ -761,14 +760,17 @@ export class OAuth2Client extends AuthClient {
       !this.credentials.access_token || this.isTokenExpiring();
     if (shouldRefresh) {
       if (!this.credentials.refresh_token) {
-        if (this.refreshHandlerCallback && this.credentials.access_token) {
-          const refreshedAccessToken = await this.refreshHandler();
-          if (refreshedAccessToken && refreshedAccessToken.access_token) {
+        if (this.refreshHandler) {
+          const refreshedAccessToken =
+            await this.processAndValidateRefreshHandler();
+          if (refreshedAccessToken?.access_token) {
             this.setCredentials(refreshedAccessToken);
             return {token: this.credentials.access_token};
           }
         } else {
-          throw new Error('No refresh token is set.');
+          throw new Error(
+            'No refresh token or refresh handler callback is set.'
+          );
         }
       }
 
@@ -805,9 +807,11 @@ export class OAuth2Client extends AuthClient {
       !thisCreds.access_token &&
       !thisCreds.refresh_token &&
       !this.apiKey &&
-      !this.refreshHandlerCallback
+      !this.refreshHandler
     ) {
-      throw new Error('No access, refresh token or API key is set.');
+      throw new Error(
+        'No access, refresh token or API key or refresh handler callback is set.'
+      );
     }
 
     if (thisCreds.access_token && !this.isTokenExpiring()) {
@@ -818,10 +822,11 @@ export class OAuth2Client extends AuthClient {
       return {headers: this.addSharedMetadataHeaders(headers)};
     }
 
-    // If refreshHandlerCallback exists, refresh
-    if (this.refreshHandlerCallback) {
-      const refreshedAccessToken = await this.refreshHandler();
-      if (refreshedAccessToken && refreshedAccessToken.access_token) {
+    // If refreshHandler exists, call processAndValidateRefreshHandler().
+    if (this.refreshHandler) {
+      const refreshedAccessToken =
+        await this.processAndValidateRefreshHandler();
+      if (refreshedAccessToken?.access_token) {
         this.setCredentials(refreshedAccessToken);
         const headers = {
           Authorization: 'Bearer ' + this.credentials.access_token,
@@ -1001,7 +1006,8 @@ export class OAuth2Client extends AuthClient {
           this.credentials &&
           this.credentials.access_token &&
           !this.credentials.refresh_token &&
-          (!this.credentials.expiry_date || this.forceRefreshOnFailure);
+          (!this.credentials.expiry_date || this.forceRefreshOnFailure) &&
+          this.refreshHandler;
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
@@ -1011,11 +1017,11 @@ export class OAuth2Client extends AuthClient {
           !retry &&
           isAuthErr &&
           !isReadableStream &&
-          mayRequireRefreshWithNoRefreshToken &&
-          this.refreshHandler
+          mayRequireRefreshWithNoRefreshToken
         ) {
-          const refreshedAccessToken = await this.refreshHandler();
-          if (refreshedAccessToken && refreshedAccessToken.access_token) {
+          const refreshedAccessToken =
+            await this.processAndValidateRefreshHandler();
+          if (refreshedAccessToken?.access_token) {
             this.setCredentials(refreshedAccessToken);
           }
           return this.requestAsync<T>(opts, true);
@@ -1381,15 +1387,19 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * Returns a Promise that resolves with AccessTokenResponse type if
-   * refreshHandlerCallBack is defined.
-   * If it is undefined, nothing returned.
+   * Returns a promise that resolves with AccessTokenResponse type if
+   * refreshHandler is defined.
+   * If not, nothing is returned.
    */
-  async refreshHandler(): Promise<AccessTokenResponse | void> {
-    if (this.refreshHandlerCallback) {
-      const accessTokenResponse = await this.refreshHandlerCallback();
+  private async processAndValidateRefreshHandler(): Promise<
+    AccessTokenResponse | undefined
+  > {
+    if (this.refreshHandler) {
+      const accessTokenResponse = await this.refreshHandler();
       if (!accessTokenResponse.access_token) {
-        throw new Error('There is no access token being returned');
+        throw new Error(
+          'No access token is returned by the refreshHandler callback.'
+        );
       }
       return accessTokenResponse;
     }
