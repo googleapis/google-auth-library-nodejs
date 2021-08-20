@@ -28,6 +28,7 @@ import {BodyResponseCallback} from '../transporters';
 import {AuthClient} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
+import {getErrorFromOAuthErrorResponse} from './oauth2common';
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
