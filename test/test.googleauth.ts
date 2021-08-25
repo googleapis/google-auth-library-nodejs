@@ -1054,6 +1054,24 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.scope);
     });
 
+    it('getApplicationDefault should use API key if provided via env var', async () => {
+      mockEnvVar('GOOGLE_API_KEY', API_KEY);
+      mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+      const auth = new GoogleAuth();
+      const res = await auth.getApplicationDefault();
+      const headers = await res.credential.getRequestHeaders();
+      assert.strictEqual(headers['X-Goog-Api-Key'], API_KEY);
+      assert.strictEqual(res.projectId, STUB_PROJECT);
+    });
+
+    it('getApplicationDefault should use API key if provided via options', async () => {
+      const auth = new GoogleAuth({apiKey: API_KEY});
+      const res = await auth.getApplicationDefault();
+      const headers = await res.credential.getRequestHeaders();
+      assert.strictEqual(headers['X-Goog-Api-Key'], API_KEY);
+      assert.strictEqual(res.projectId, null);
+    });
+
     it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockIsGCE();
