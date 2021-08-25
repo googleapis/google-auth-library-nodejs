@@ -810,7 +810,7 @@ export class OAuth2Client extends AuthClient {
       !this.refreshHandler
     ) {
       throw new Error(
-        'No access, refresh token or API key or refresh handler callback is set.'
+        'No access, refresh token, API key or refresh handler callback is set.'
       );
     }
 
