@@ -154,9 +154,9 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         // We do not want to sign with default scopes if url is set,
         const scopes = this.defaultServicePath ? undefined : this.defaultScopes;
         const headers = await this.access.getRequestHeaders(
-          this.defaultServicePath ? `https://${this.defaultServicePath}/` : url,
+          `https://${this.defaultServicePath}/` ?? url,
           this.additionalClaims,
-          this.hasUserScopes() ? this.scopes : scopes
+          this.hasUserScopes() ? this.scopes : scopes,
         );
 
         return {headers: this.addSharedMetadataHeaders(headers)};

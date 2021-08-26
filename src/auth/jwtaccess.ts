@@ -72,22 +72,21 @@ export class JWTAccess {
    * @returns An object that includes the authorization header.
    */
   getRequestHeaders(
-    url?: string,
+    url: string,
     additionalClaims?: Claims,
     scopes?: string | string[]
   ): Headers {
     // Return cached authorization headers, unless we are within
     // eagerRefreshThresholdMillis ms of them expiring:
-    if (url) {
-      const cachedToken = this.cache.get(url);
-      const now = Date.now();
-      if (
-        cachedToken &&
-        cachedToken.expiration - now > this.eagerRefreshThresholdMillis
-      ) {
-        return cachedToken.headers;
-      }
+    const cachedToken = this.cache.get(url);
+    const now = Date.now();
+    if (
+      cachedToken &&
+      cachedToken.expiration - now > this.eagerRefreshThresholdMillis
+    ) {
+      return cachedToken.headers;
     }
+
     const iat = Math.floor(Date.now() / 1000);
     const exp = JWTAccess.getExpirationTime(iat);
 
@@ -99,6 +98,7 @@ export class JWTAccess {
 
     // If scopes are specified, sign with scopes
     if (scopes) {
+      console.log('are we in scope?');
       defaultClaims = {
         iss: this.email,
         sub: this.email,
@@ -107,6 +107,7 @@ export class JWTAccess {
         iat,
       };
     } else {
+      console.log('i guess we are in url')
       // If either scopes are not specified, or if audience is something unique,
       // just use default service endpoint.
       defaultClaims = {
