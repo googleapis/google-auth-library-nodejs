@@ -122,7 +122,9 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    const useSelfSignedJWT = (!this.apiKey && !this.hasUserScopes() && url) || (this.useJWTAccessWithScope && this.hasAnyScopes() && !this.apiKey);
+    const useSelfSignedJWT =
+      (!this.apiKey && !this.hasUserScopes() && url) ||
+      (this.useJWTAccessWithScope && this.hasAnyScopes() && !this.apiKey);
     if (useSelfSignedJWT) {
       if (
         this.additionalClaims &&
@@ -158,7 +160,6 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
           this.additionalClaims,
           this.hasUserScopes() ? this.scopes : scopes
         );
-
 
         return {headers: this.addSharedMetadataHeaders(headers)};
       }

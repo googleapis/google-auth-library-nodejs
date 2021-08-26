@@ -805,7 +805,7 @@ describe('jwt', () => {
       sandbox.assert.calledOnce(stubJWTAccess);
     });
 
-    it('uses scopes if user supplied scopes first', async () => {
+    it('uses scopes if user supplied scopes', async () => {
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: sinon.stub().returns({}),
       });
