@@ -790,7 +790,7 @@ describe('jwt', () => {
       sandbox.restore();
     });
 
-    it('uses self signed JWT when useJWTAccessWithScope is set', async () => {
+    it('uses self signed JWT with URL if no scopes are set', async () => {
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: sinon.stub().returns({}),
       });
@@ -805,24 +805,7 @@ describe('jwt', () => {
       sandbox.assert.calledOnce(stubJWTAccess);
     });
 
-    it('always passes default endpoint for useJWTAccessWithScope', async () => {
-      const stubJWTAccess = sandbox.spy(
-        jwtaccess.JWTAccess.prototype,
-        'getRequestHeaders'
-      );
-      const jwt = new JWT({
-        email: 'foo@serviceaccount.com',
-        key: fs.readFileSync(PEM_PATH, 'utf8'),
-        scopes: [],
-        subject: 'bar@subjectaccount.com',
-      });
-      jwt.useJWTAccessWithScope = true;
-      jwt.defaultServicePath = 'a/b/c';
-      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
-      sandbox.assert.calledWith(stubJWTAccess, 'https://a/b/c/');
-    });
-
-    it('uses self signed JWT when no scopes are provided', async () => {
+    it('uses scopes if user supplied scopes first', async () => {
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: sinon.stub().returns({}),
       });
@@ -832,12 +815,13 @@ describe('jwt', () => {
         scopes: [],
         subject: 'bar@subjectaccount.com',
       });
-      jwt.credentials = {refresh_token: 'jwt-placeholder'};
-      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      jwt.useJWTAccessWithScope = true;
+      jwt.scopes = ['scope1', 'scope2'];
+      await jwt.getRequestHeaders();
       sandbox.assert.calledOnce(stubJWTAccess);
     });
 
-    it('uses self signed JWT when default scopes are provided', async () => {
+    it('uses self signed JWT when default scopes are provided and nothing else is provided', async () => {
       const JWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: sinon.stub().returns({}),
       });
@@ -846,9 +830,10 @@ describe('jwt', () => {
         key: fs.readFileSync(PEM_PATH, 'utf8'),
         subject: 'bar@subjectaccount.com',
       });
+      jwt.useJWTAccessWithScope = true;
       jwt.defaultScopes = ['http://bar', 'http://foo'];
       jwt.credentials = {refresh_token: 'jwt-placeholder'};
-      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      await jwt.getRequestHeaders();
       sandbox.assert.calledOnce(JWTAccess);
     });
 
