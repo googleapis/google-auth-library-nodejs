@@ -72,19 +72,21 @@ export class JWTAccess {
    * @returns An object that includes the authorization header.
    */
   getRequestHeaders(
-    url: string,
+    url?: string,
     additionalClaims?: Claims,
     scopes?: string | string[]
   ): Headers {
     // Return cached authorization headers, unless we are within
     // eagerRefreshThresholdMillis ms of them expiring:
-    const cachedToken = this.cache.get(url);
-    const now = Date.now();
-    if (
-      cachedToken &&
-      cachedToken.expiration - now > this.eagerRefreshThresholdMillis
-    ) {
-      return cachedToken.headers;
+    if (url) {
+      const cachedToken = this.cache.get(url);
+      const now = Date.now();
+      if (
+        cachedToken &&
+        cachedToken.expiration - now > this.eagerRefreshThresholdMillis
+      ) {
+        return cachedToken.headers;
+      }
     }
     const iat = Math.floor(Date.now() / 1000);
     const exp = JWTAccess.getExpirationTime(iat);
