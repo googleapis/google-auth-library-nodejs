@@ -44,8 +44,11 @@ import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
 import {Compute} from '../src/auth/computeclient';
 import {
+  getServiceAccountImpersonationUrl,
   mockCloudResourceManager,
+  mockGenerateAccessToken,
   mockStsTokenExchange,
+  saEmail,
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
@@ -1610,6 +1613,11 @@ describe('googleauth', () => {
         expires_in: 3600,
         scope: 'scope1 scope2',
       };
+      const now = new Date().getTime();
+      const saSuccessResponse = {
+        accessToken: 'SA_ACCESS_TOKEN',
+        expireTime: new Date(now + 3600 * 1000).toISOString(),
+      };
       const fileSubjectToken = fs.readFileSync(
         externalAccountJSON.credential_source.file,
         'utf-8'
@@ -1654,13 +1662,19 @@ describe('googleauth', () => {
        * manager.
        * @param mockProjectIdRetrieval Whether to mock project ID retrieval.
        * @param expectedScopes The list of expected scopes.
+       * @param mockServiceAccountImpersonation Whether to mock IAMCredentials
+       *   GenerateAccessToken.
        * @return The list of nock.Scope corresponding to the mocked HTTP
        *   requests.
        */
       function mockGetAccessTokenAndProjectId(
         mockProjectIdRetrieval = true,
-        expectedScopes = ['https://www.googleapis.com/auth/cloud-platform']
+        expectedScopes = ['https://www.googleapis.com/auth/cloud-platform'],
+        mockServiceAccountImpersonation = false
       ): nock.Scope[] {
+        const stsScopes = mockServiceAccountImpersonation
+          ? 'https://www.googleapis.com/auth/cloud-platform'
+          : expectedScopes.join(' ');
         const scopes = [
           mockStsTokenExchange([
             {
@@ -1669,7 +1683,7 @@ describe('googleauth', () => {
               request: {
                 grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
                 audience: externalAccountJSON.audience,
-                scope: expectedScopes.join(' '),
+                scope: stsScopes,
                 requested_token_type:
                   'urn:ietf:params:oauth:token-type:access_token',
                 subject_token: fileSubjectToken,
@@ -1678,6 +1692,18 @@ describe('googleauth', () => {
             },
           ]),
         ];
+        if (mockServiceAccountImpersonation) {
+          scopes.push(
+            mockGenerateAccessToken([
+              {
+                statusCode: 200,
+                response: saSuccessResponse,
+                token: stsSuccessfulResponse.access_token,
+                scopes: expectedScopes,
+              },
+            ])
+          );
+        }
 
         if (mockProjectIdRetrieval) {
           scopes.push(
@@ -2177,6 +2203,59 @@ describe('googleauth', () => {
         });
       });
 
+      describe('sign()', () => {
+        it('should reject when no impersonation is used', async () => {
+          const scopes = mockGetAccessTokenAndProjectId();
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountJSON(),
+          });
+
+          await assert.rejects(
+            auth.sign('abc123'),
+            /Cannot sign data without `client_email`/
+          );
+          scopes.forEach(s => s.done());
+        });
+
+        it('should use IAMCredentials endpoint when impersonation is used', async () => {
+          const scopes = mockGetAccessTokenAndProjectId(
+            false,
+            ['https://www.googleapis.com/auth/cloud-platform'],
+            true
+          );
+          const email = saEmail;
+          const configWithImpersonation = createExternalAccountJSON();
+          configWithImpersonation.service_account_impersonation_url =
+            getServiceAccountImpersonationUrl();
+          const iamUri = 'https://iamcredentials.googleapis.com';
+          const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
+          const signedBlob = 'erutangis';
+          const data = 'abc123';
+          scopes.push(
+            nock(iamUri)
+              .post(
+                iamPath,
+                {
+                  payload: Buffer.from(data, 'utf-8').toString('base64'),
+                },
+                {
+                  reqheaders: {
+                    Authorization: `Bearer ${saSuccessResponse.accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              )
+              .reply(200, {signedBlob})
+          );
+          const auth = new GoogleAuth({credentials: configWithImpersonation});
+
+          const value = await auth.sign(data);
+
+          scopes.forEach(x => x.done());
+          assert.strictEqual(value, signedBlob);
+        });
+      });
+
       it('getIdTokenClient() should reject', async () => {
         const auth = new GoogleAuth({credentials: createExternalAccountJSON()});
 
@@ -2184,17 +2263,6 @@ describe('googleauth', () => {
           auth.getIdTokenClient('a-target-audience'),
           /Cannot fetch ID token in this environment/
         );
-      });
-
-      it('sign() should reject', async () => {
-        const scopes = mockGetAccessTokenAndProjectId();
-        const auth = new GoogleAuth({credentials: createExternalAccountJSON()});
-
-        await assert.rejects(
-          auth.sign('abc123'),
-          /Cannot sign data without `client_email`/
-        );
-        scopes.forEach(s => s.done());
       });
 
       it('getAccessToken() should get an access token', async () => {

@@ -20,7 +20,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as stream from 'stream';
 
-import {createCrypto} from '../crypto/crypto';
+import {Crypto, createCrypto} from '../crypto/crypto';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
@@ -877,6 +877,23 @@ export class GoogleAuth {
       return sign;
     }
 
+    // signBlob requires a service account email and the underlying
+    // access token to have iam.serviceAccounts.signBlob permission
+    // on the specified resource name.
+    // The "Service Account Token Creator" role should cover this.
+    // As a result external account credentials can support this
+    // operation when service account impersonation is enabled.
+    if (
+      client instanceof BaseExternalAccountClient &&
+      client.getServiceAccountEmail()
+    ) {
+      return this.signBlob(
+        crypto,
+        client.getServiceAccountEmail() as string,
+        data
+      );
+    }
+
     const projectId = await this.getProjectId();
     if (!projectId) {
       throw new Error('Cannot sign data without a project ID.');
@@ -887,7 +904,17 @@ export class GoogleAuth {
       throw new Error('Cannot sign data without `client_email`.');
     }
 
-    const url = `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${creds.client_email}:signBlob`;
+    return this.signBlob(crypto, creds.client_email, data);
+  }
+
+  private async signBlob(
+    crypto: Crypto,
+    emailOrUniqueId: string,
+    data: string
+  ): Promise<string> {
+    const url =
+      'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/' +
+      `${emailOrUniqueId}:signBlob`;
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
       url,

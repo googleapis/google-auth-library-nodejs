@@ -51,7 +51,7 @@ const poolId = 'POOL_ID';
 const providerId = 'PROVIDER_ID';
 const baseUrl = 'https://sts.googleapis.com';
 const path = '/v1/token';
-const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
+export const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 

@@ -18,6 +18,7 @@ import * as nock from 'nock';
 import * as sinon from 'sinon';
 
 import {GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   DownscopedClient,
@@ -47,6 +48,10 @@ class TestAuthClient extends AuthClient {
       };
     }
     throw new Error('Cannot get subject token.');
+  }
+
+  set expirationTime(expirationTime: number | undefined | null) {
+    this.credentials.expiry_date = expirationTime;
   }
 
   async getRequestHeaders(url?: string): Promise<Headers> {
@@ -380,6 +385,7 @@ describe('DownscopedClient', () => {
     it('should refresh a new DownscopedClient access when cached one gets expired', async () => {
       const now = new Date().getTime();
       clock = sinon.useFakeTimers(now);
+      const emittedEvents: Credentials[] = [];
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
         expiry_date: now + ONE_HOUR_IN_SECS * 1000,
@@ -403,18 +409,40 @@ describe('DownscopedClient', () => {
         client,
         testClientAccessBoundary
       );
+      // Listen to tokens events. On every event, push to list of
+      // emittedEvents.
+      downscopedClient.on('tokens', tokens => {
+        emittedEvents.push(tokens);
+      });
       downscopedClient.setCredentials(credentials);
 
       clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
       const tokenResponse = await downscopedClient.getAccessToken();
+
+      // No new event should be triggered since the cached access token is
+      // returned.
+      assert.strictEqual(emittedEvents.length, 0);
       assert.deepStrictEqual(tokenResponse.token, credentials.access_token);
 
       clock.tick(1);
       const refreshedTokenResponse = await downscopedClient.getAccessToken();
+
+      const responseExpiresIn = stsSuccessfulResponse.expires_in as number;
       const expectedExpirationTime =
         credentials.expiry_date +
-        stsSuccessfulResponse.expires_in * 1000 -
+        responseExpiresIn * 1000 -
         EXPIRATION_TIME_OFFSET;
+
+      // tokens event should be triggered once with expected event.
+      assert.strictEqual(emittedEvents.length, 1);
+      assert.deepStrictEqual(emittedEvents[0], {
+        refresh_token: null,
+        expiry_date: expectedExpirationTime,
+        access_token: stsSuccessfulResponse.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
+
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
         stsSuccessfulResponse.access_token
@@ -534,11 +562,123 @@ describe('DownscopedClient', () => {
     it('should throw when the source AuthClient rejects on token request', async () => {
       const expectedError = new Error('Cannot get subject token.');
       client.throwError = true;
+
       const downscopedClient = new DownscopedClient(
         client,
         testClientAccessBoundary
       );
       await assert.rejects(downscopedClient.getAccessToken(), expectedError);
+    });
+
+    it('should copy source cred expiry time if STS response does not return expiry time', async () => {
+      const now = new Date().getTime();
+      const expireDate = now + ONE_HOUR_IN_SECS * 1000;
+      const stsSuccessfulResponseWithoutExpireInField = Object.assign(
+        {},
+        stsSuccessfulResponse
+      );
+      const emittedEvents: Credentials[] = [];
+      delete stsSuccessfulResponseWithoutExpireInField.expires_in;
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponseWithoutExpireInField,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+      ]);
+
+      client.expirationTime = expireDate;
+      const downscopedClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary
+      );
+      // Listen to tokens events. On every event, push to list of
+      // emittedEvents.
+      downscopedClient.on('tokens', tokens => {
+        emittedEvents.push(tokens);
+      });
+
+      const tokenResponse = await downscopedClient.getAccessToken();
+
+      // tokens event should be triggered once with expected event.
+      assert.strictEqual(emittedEvents.length, 1);
+      assert.deepStrictEqual(emittedEvents[0], {
+        refresh_token: null,
+        expiry_date: expireDate,
+        access_token: stsSuccessfulResponseWithoutExpireInField.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
+      assert.deepStrictEqual(tokenResponse.expirationTime, expireDate);
+      assert.deepStrictEqual(
+        tokenResponse.token,
+        stsSuccessfulResponseWithoutExpireInField.access_token
+      );
+      assert.strictEqual(downscopedClient.credentials.expiry_date, expireDate);
+      assert.strictEqual(
+        downscopedClient.credentials.access_token,
+        stsSuccessfulResponseWithoutExpireInField.access_token
+      );
+      scope.done();
+    });
+
+    it('should have no expiry date if source cred has no expiry time and STS response does not return one', async () => {
+      const stsSuccessfulResponseWithoutExpireInField = Object.assign(
+        {},
+        stsSuccessfulResponse
+      );
+      const emittedEvents: Credentials[] = [];
+      delete stsSuccessfulResponseWithoutExpireInField.expires_in;
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponseWithoutExpireInField,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+      ]);
+
+      const downscopedClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary
+      );
+      // Listen to tokens events. On every event, push to list of
+      // emittedEvents.
+      downscopedClient.on('tokens', tokens => {
+        emittedEvents.push(tokens);
+      });
+
+      const tokenResponse = await downscopedClient.getAccessToken();
+
+      // tokens event should be triggered once with expected event.
+      assert.strictEqual(emittedEvents.length, 1);
+      assert.deepStrictEqual(emittedEvents[0], {
+        refresh_token: null,
+        expiry_date: null,
+        access_token: stsSuccessfulResponseWithoutExpireInField.access_token,
+        token_type: 'Bearer',
+        id_token: null,
+      });
+      assert.deepStrictEqual(
+        tokenResponse.token,
+        stsSuccessfulResponseWithoutExpireInField.access_token
+      );
+      assert.deepStrictEqual(tokenResponse.expirationTime, null);
+      assert.deepStrictEqual(downscopedClient.credentials.expiry_date, null);
+      scope.done();
     });
   });
 
