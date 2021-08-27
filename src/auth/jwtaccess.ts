@@ -114,8 +114,6 @@ export class JWTAccess {
         iat,
       };
     } else {
-      // If either scopes are not specified, or if audience is something unique,
-      // just use default service endpoint.
       defaultClaims = {
         iss: this.email,
         sub: this.email,
