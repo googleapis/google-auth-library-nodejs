@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.7.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.2...v7.7.0) (2021-08-27)
+
+
+### Features
+
+* add refreshHandler callback to OAuth 2.0 client to handle token refresh ([#1213](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1213)) ([2fcab77](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2fcab77a1fae85489829f22ec95cc66b0b284342))
+
 ### [7.6.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.1...v7.6.2) (2021-08-17)
 
 
