@@ -63,6 +63,13 @@ export class JWTAccess {
       eagerRefreshThresholdMillis ?? 5 * 60 * 1000;
   }
 
+  getCachedKey(url?: string, scopes?: string | string[]): string {
+    if (!url) {
+      throw Error('No url or scopes provided');
+    }
+    return url;
+  }
+
   /**
    * Get a non-expired access token, after refreshing if necessary.
    *
@@ -72,13 +79,14 @@ export class JWTAccess {
    * @returns An object that includes the authorization header.
    */
   getRequestHeaders(
-    url: string,
+    url?: string,
     additionalClaims?: Claims,
     scopes?: string | string[]
   ): Headers {
     // Return cached authorization headers, unless we are within
     // eagerRefreshThresholdMillis ms of them expiring:
-    const cachedToken = this.cache.get(url);
+    const key = this.getCachedKey(url, scopes);
+    const cachedToken = this.cache.get(key);
     const now = Date.now();
     if (
       cachedToken &&
@@ -98,7 +106,6 @@ export class JWTAccess {
 
     // If scopes are specified, sign with scopes
     if (scopes) {
-      console.log('are we in scope?');
       defaultClaims = {
         iss: this.email,
         sub: this.email,
@@ -107,7 +114,6 @@ export class JWTAccess {
         iat,
       };
     } else {
-      console.log('i guess we are in url')
       // If either scopes are not specified, or if audience is something unique,
       // just use default service endpoint.
       defaultClaims = {
@@ -139,7 +145,7 @@ export class JWTAccess {
     // Sign the jwt and add it to the cache
     const signedJWT = jws.sign({header, payload, secret: this.key});
     const headers = {Authorization: `Bearer ${signedJWT}`};
-    this.cache.set(url, {
+    this.cache.set(key, {
       expiration: exp * 1000,
       headers,
     });
