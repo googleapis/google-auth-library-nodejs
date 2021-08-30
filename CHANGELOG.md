@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.8.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.7.0...v7.8.0) (2021-08-30)
+
+
+### Features
+
+* use self-signed JWTs if alwaysUseJWTAccessWithScope is true ([#1196](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1196)) ([ad3f652](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ad3f652e8e859d8d8a69dfe9df01d001862fe0ae))
+
 ## [7.7.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.2...v7.7.0) (2021-08-27)
 
 
