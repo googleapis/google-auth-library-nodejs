@@ -197,7 +197,6 @@ describe('jwt', () => {
       subject: 'ignored@subjectaccount.com',
     });
     jwt.credentials = {refresh_token: 'jwt-placeholder'};
-
     const testUri = 'http:/example.com/my_test_service';
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
@@ -240,12 +239,14 @@ describe('jwt', () => {
     });
     jwt.credentials = {refresh_token: 'jwt-placeholder'};
 
+    jwt.defaultServicePath = 'example.com';
     const testUri = 'http:/example.com/my_test_service';
+    const testDefault = 'https://example.com/';
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
     const payload = decoded.payload;
-    assert.strictEqual(testUri, payload.aud);
+    assert.strictEqual(testDefault, payload.aud);
     assert.strictEqual(someClaim, payload.someClaim);
   });
 
@@ -790,9 +791,33 @@ describe('jwt', () => {
       sandbox.restore();
     });
 
-    it('uses self signed JWT when no scopes are provided', async () => {
+    it('returns empty headers if: user scope = false, default scope = false, audience = falsy, useJWTACcessWithScope = false', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      const headers = await jwt.getRequestHeaders();
+      assert.deepStrictEqual(headers, {});
+    });
+
+    it('returns empty headers if: user scope = false, default scope = false, audience = falsy, useJWTACcessWithScope = truthy', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      const headers = await jwt.getRequestHeaders();
+      assert.deepStrictEqual(headers, {});
+    });
+
+    it('signs JWT with audience if: user scope = false, default scope = false, audience = truthy, useJWTAccessWithScope = false', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
-        getRequestHeaders: sinon.stub().returns({}),
+        getRequestHeaders: stubGetRequestHeaders,
       });
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
@@ -800,24 +825,193 @@ describe('jwt', () => {
         scopes: [],
         subject: 'bar@subjectaccount.com',
       });
-      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      jwt.useJWTAccessWithScope = false;
       await jwt.getRequestHeaders('https//beepboop.googleapis.com');
       sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        undefined
+      );
     });
 
-    it('uses self signed JWT when default scopes are provided', async () => {
-      const JWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
-        getRequestHeaders: sinon.stub().returns({}),
+    it('signs JWT with audience if: user scope = false, default scope = true, audience = truthy, useJWTAccessWithScope = false', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
       });
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
         key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
         subject: 'bar@subjectaccount.com',
       });
-      jwt.defaultScopes = ['http://bar', 'http://foo'];
-      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      jwt.defaultScopes = ['scope1', 'scope2'];
       await jwt.getRequestHeaders('https//beepboop.googleapis.com');
-      sandbox.assert.calledOnce(JWTAccess);
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        undefined
+      );
+    });
+
+    it('signs JWT with audience if: user scope = false, default scope = no, audience = truthy, useJWTAccessWithScope = truthy', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        undefined
+      );
+    });
+
+    it('signs JWT with audience if: user scope = false, default scope = yes, audience = truthy, useJWTAccessWithScope = truthy', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      jwt.defaultScopes = ['scope1, scope2'];
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        undefined
+      );
+    });
+
+    it('signs JWT with audience if: user scope = true, default scope = false, audience = falsy, useJWTAccessWithScope = true', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        ['scope1', 'scope2']
+      );
+    });
+
+    it('signs JWT with audience if: user scope = false, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      await jwt.getRequestHeaders();
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(stubGetRequestHeaders, undefined, undefined, [
+        'scope1',
+        'scope2',
+      ]);
+    });
+
+    it('signs JWT with audience if: user scope = true, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        ['scope1', 'scope2']
+      );
+    });
+
+    it('signs JWT with audience if: user scope = true, default scope = false, audience = truthy, useJWTAccessWithScope = true', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        ['scope1', 'scope2']
+      );
+    });
+
+    it('signs JWT with audience if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
+      sandbox.assert.calledOnce(stubJWTAccess);
+      sandbox.assert.calledWith(
+        stubGetRequestHeaders,
+        'https//beepboop.googleapis.com',
+        undefined,
+        ['scope1', 'scope2']
+      );
     });
 
     it('does not use self signed JWT if target_audience provided', async () => {
@@ -881,16 +1075,119 @@ describe('jwt', () => {
       sandbox.assert.calledTwice(getExpirationTime);
       sandbox.assert.calledTwice(sign);
     });
+  });
 
-    it('returns no headers when no scopes or audiences are provided', async () => {
+  describe('oauth2 credentials', () => {
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('calls oauth2api if: user scope = false, default scope = true, audience = falsy, useJWTAccessWithScope = false', async () => {
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
-        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        keyFile: PEM_PATH,
         scopes: [],
         subject: 'bar@subjectaccount.com',
       });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      jwt.useJWTAccessWithScope = false;
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      const wantedToken = 'abc123';
+      const want = `Bearer ${wantedToken}`;
+      const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders();
-      assert.deepStrictEqual(headers, {});
+      scope.done();
+      assert.strictEqual(
+        want,
+        headers.Authorization,
+        `the authorization header was wrong: ${headers.Authorization}`
+      );
+    });
+
+    it('calls oauth2api if: user scope = true, default scope = false, audience = falsy, useJWTAccessWithScope = false', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      const wantedToken = 'abc123';
+      const want = `Bearer ${wantedToken}`;
+      const scope = createGTokenMock({access_token: wantedToken});
+      const headers = await jwt.getRequestHeaders();
+      scope.done();
+      assert.strictEqual(
+        want,
+        headers.Authorization,
+        `the authorization header was wrong: ${headers.Authorization}`
+      );
+    });
+
+    it('calls oauth2api if: user scope = true, default scope = true, audience = falsy, useJWTAccessWithScope = false', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      jwt.useJWTAccessWithScope = false;
+      const wantedToken = 'abc123';
+      const want = `Bearer ${wantedToken}`;
+      const scope = createGTokenMock({access_token: wantedToken});
+      const headers = await jwt.getRequestHeaders();
+      scope.done();
+      assert.strictEqual(
+        want,
+        headers.Authorization,
+        `the authorization header was wrong: ${headers.Authorization}`
+      );
+    });
+
+    it('calls oauth2api if: user scope = true, default scope = false, audience = truthy, useJWTAccessWithScope = false', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      const wantedToken = 'abc123';
+      const testUri = 'http:/example.com/my_test_service';
+      const want = `Bearer ${wantedToken}`;
+      const scope = createGTokenMock({access_token: wantedToken});
+      const headers = await jwt.getRequestHeaders(testUri);
+      scope.done();
+      assert.strictEqual(
+        want,
+        headers.Authorization,
+        `the authorization header was wrong: ${headers.Authorization}`
+      );
+    });
+
+    it('calls oauth2api if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = false', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      jwt.useJWTAccessWithScope = false;
+      const wantedToken = 'abc123';
+      const testUri = 'http:/example.com/my_test_service';
+      const want = `Bearer ${wantedToken}`;
+      const scope = createGTokenMock({access_token: wantedToken});
+      const headers = await jwt.getRequestHeaders(testUri);
+      scope.done();
+      assert.strictEqual(
+        want,
+        headers.Authorization,
+        `the authorization header was wrong: ${headers.Authorization}`
+      );
     });
   });
 });
