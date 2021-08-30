@@ -63,11 +63,26 @@ export class JWTAccess {
       eagerRefreshThresholdMillis ?? 5 * 60 * 1000;
   }
 
+  /**
+   * Ensures that we're caching a key appropriately, giving precedence to scopes vs. url
+   *
+   * @param url The URI being authorized.
+   * @param scopes The scope or scopes being authorized
+   * @returns A string that returns the cached key.
+   */
   getCachedKey(url?: string, scopes?: string | string[]): string {
-    if (!url) {
-      throw Error('No url or scopes provided');
+    let cacheKey = url;
+    if (scopes && Array.isArray(scopes) && scopes.length) {
+      cacheKey = url ? `${url}_${scopes.join('_')}` : `${scopes.join('_')}`;
+    } else if (typeof scopes === 'string') {
+      cacheKey = url ? `${url}_${scopes}` : scopes;
     }
-    return url;
+
+    if (!cacheKey) {
+      throw Error('Scopes or url must be provided');
+    }
+
+    return cacheKey;
   }
 
   /**

@@ -183,4 +183,34 @@ describe('jwtaccess', () => {
     assert.strictEqual(json.private_key, client.key);
     assert.strictEqual(json.client_email, client.email);
   });
+
+  it('should cache a key with scopes if url & scopes are passed', async () => {
+    const client = new JWTAccess(email, keys.private);
+    const testUri = 'http:/example.com/my_test_service';
+    const scopes = 'scope1';
+    const cacheKey = client.getCachedKey(testUri, scopes);
+    assert.strictEqual(cacheKey, `${testUri}_${scopes}`);
+  });
+
+  it('should cache a key with scopes if url & an array of scopes are passed', async () => {
+    const client = new JWTAccess(email, keys.private);
+    const testUri = 'http:/example.com/my_test_service';
+    const scopes = ['scope1', 'scope2'];
+    const cacheKey = client.getCachedKey(testUri, scopes);
+    assert.strictEqual(cacheKey, `${testUri}_${scopes.join('_')}`);
+  });
+
+  it('should cache a key with a URL if nothing else is passed into cacheKey', async () => {
+    const client = new JWTAccess(email, keys.private);
+    const testUri = 'http:/example.com/my_test_service';
+    const cacheKey = client.getCachedKey(testUri);
+    assert.strictEqual(cacheKey, testUri);
+  });
+
+  it('should throw an error when caching a key if nothing is passed', async () => {
+    const client = new JWTAccess(email, keys.private);
+    assert.throws(() => {
+      client.getCachedKey();
+    }, /Scopes or url must be provided/);
+  });
 });
