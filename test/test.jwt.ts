@@ -197,9 +197,7 @@ describe('jwt', () => {
       subject: 'ignored@subjectaccount.com',
     });
     jwt.credentials = {refresh_token: 'jwt-placeholder'};
-    jwt.defaultServicePath = 'example.com';
     const testUri = 'http:/example.com/my_test_service';
-    const testDefault = 'https://example.com/';
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
@@ -207,7 +205,7 @@ describe('jwt', () => {
     const payload = decoded.payload;
     assert.strictEqual(email, payload.iss);
     assert.strictEqual(email, payload.sub);
-    assert.strictEqual(testDefault, payload.aud);
+    assert.strictEqual(testUri, payload.aud);
   });
 
   it('gets a jwt header access token with key id', async () => {
