@@ -22,7 +22,6 @@ import * as sinon from 'sinon';
 import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
-import {stub} from 'sinon';
 
 describe('jwt', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
