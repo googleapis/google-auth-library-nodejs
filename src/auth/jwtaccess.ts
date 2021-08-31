@@ -64,6 +64,28 @@ export class JWTAccess {
   }
 
   /**
+   * Ensures that we're caching a key appropriately, giving precedence to scopes vs. url
+   *
+   * @param url The URI being authorized.
+   * @param scopes The scope or scopes being authorized
+   * @returns A string that returns the cached key.
+   */
+  getCachedKey(url?: string, scopes?: string | string[]): string {
+    let cacheKey = url;
+    if (scopes && Array.isArray(scopes) && scopes.length) {
+      cacheKey = url ? `${url}_${scopes.join('_')}` : `${scopes.join('_')}`;
+    } else if (typeof scopes === 'string') {
+      cacheKey = url ? `${url}_${scopes}` : scopes;
+    }
+
+    if (!cacheKey) {
+      throw Error('Scopes or url must be provided');
+    }
+
+    return cacheKey;
+  }
+
+  /**
    * Get a non-expired access token, after refreshing if necessary.
    *
    * @param url The URI being authorized.
@@ -71,10 +93,15 @@ export class JWTAccess {
    * include in the payload.
    * @returns An object that includes the authorization header.
    */
-  getRequestHeaders(url: string, additionalClaims?: Claims): Headers {
+  getRequestHeaders(
+    url?: string,
+    additionalClaims?: Claims,
+    scopes?: string | string[]
+  ): Headers {
     // Return cached authorization headers, unless we are within
     // eagerRefreshThresholdMillis ms of them expiring:
-    const cachedToken = this.cache.get(url);
+    const key = this.getCachedKey(url, scopes);
+    const cachedToken = this.cache.get(key);
     const now = Date.now();
     if (
       cachedToken &&
@@ -82,19 +109,34 @@ export class JWTAccess {
     ) {
       return cachedToken.headers;
     }
+
     const iat = Math.floor(Date.now() / 1000);
     const exp = JWTAccess.getExpirationTime(iat);
 
-    // The payload used for signed JWT headers has:
-    // iss == sub == <client email>
-    // aud == <the authorization uri>
-    const defaultClaims = {
-      iss: this.email,
-      sub: this.email,
-      aud: url,
-      exp,
-      iat,
-    };
+    let defaultClaims;
+    // Turn scopes into space-separated string
+    if (Array.isArray(scopes)) {
+      scopes = scopes.join(' ');
+    }
+
+    // If scopes are specified, sign with scopes
+    if (scopes) {
+      defaultClaims = {
+        iss: this.email,
+        sub: this.email,
+        scope: scopes,
+        exp,
+        iat,
+      };
+    } else {
+      defaultClaims = {
+        iss: this.email,
+        sub: this.email,
+        aud: url,
+        exp,
+        iat,
+      };
+    }
 
     // if additionalClaims are provided, ensure they do not collide with
     // other required claims.
@@ -116,7 +158,7 @@ export class JWTAccess {
     // Sign the jwt and add it to the cache
     const signedJWT = jws.sign({header, payload, secret: this.key});
     const headers = {Authorization: `Bearer ${signedJWT}`};
-    this.cache.set(url, {
+    this.cache.set(key, {
       expiration: exp * 1000,
       headers,
     });
