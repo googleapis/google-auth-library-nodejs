@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.9.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.8.0...v7.9.0) (2021-09-02)
+
+
+### Features
+
+* wire up implementation of DownscopedClient. ([#1232](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1232)) ([baa1318](https://www.github.com/googleapis/google-auth-library-nodejs/commit/baa13185836bb299b769c034bfb7d37231eea8d1))
+
 ## [7.8.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.7.0...v7.8.0) (2021-08-30)
 
 
