@@ -6,7 +6,7 @@
 
 [![release level](https://img.shields.io/badge/release%20level-general%20availability%20%28GA%29-brightgreen.svg?style=flat)](https://cloud.google.com/terms/launch-stages)
 [![npm version](https://img.shields.io/npm/v/google-auth-library.svg)](https://www.npmjs.org/package/google-auth-library)
-[![codecov](https://img.shields.io/codecov/c/github/googleapis/google-auth-library-nodejs/master.svg?style=flat)](https://codecov.io/gh/googleapis/google-auth-library-nodejs)
+[![codecov](https://img.shields.io/codecov/c/github/googleapis/google-auth-library-nodejs/main.svg?style=flat)](https://codecov.io/gh/googleapis/google-auth-library-nodejs)
 
 
 
@@ -15,7 +15,7 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
 
 
 A comprehensive list of changes in each version may be found in
-[the CHANGELOG](https://github.com/googleapis/google-auth-library-nodejs/blob/master/CHANGELOG.md).
+[the CHANGELOG](https://github.com/googleapis/google-auth-library-nodejs/blob/main/CHANGELOG.md).
 
 * [Google Auth Library Node.js Client API Reference][client-docs]
 * [Google Auth Library Documentation][product-docs]
@@ -724,24 +724,24 @@ main();
 
 ## Samples
 
-Samples are in the [`samples/`](https://github.com/googleapis/google-auth-library-nodejs/tree/master/samples) directory. Each sample's `README.md` has instructions for running its sample.
+Samples are in the [`samples/`](https://github.com/googleapis/google-auth-library-nodejs/tree/main/samples) directory. Each sample's `README.md` has instructions for running its sample.
 
 | Sample                      | Source Code                       | Try it |
 | --------------------------- | --------------------------------- | ------ |
-| Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
-| Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
-| Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/credentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md) |
-| Headers | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/headers.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md) |
-| ID Tokens for Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md) |
-| ID Tokens for Serverless | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md) |
-| Jwt | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/jwt.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/jwt.js,samples/README.md) |
-| Keepalive | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/keepalive.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keepalive.js,samples/README.md) |
-| Keyfile | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/keyfile.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keyfile.js,samples/README.md) |
-| Oauth2-code Verifier | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2-codeVerifier.js,samples/README.md) |
-| Oauth2 | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2.js,samples/README.md) |
-| Sign Blob | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/signBlob.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md) |
-| Verifying ID Tokens from Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md) |
-| Verify Id Token | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken.js,samples/README.md) |
+| Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
+| Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
+| Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md) |
+| Headers | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/headers.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md) |
+| ID Tokens for Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md) |
+| ID Tokens for Serverless | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-serverless.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md) |
+| Jwt | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/jwt.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/jwt.js,samples/README.md) |
+| Keepalive | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keepalive.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keepalive.js,samples/README.md) |
+| Keyfile | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keyfile.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keyfile.js,samples/README.md) |
+| Oauth2-code Verifier | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2-codeVerifier.js,samples/README.md) |
+| Oauth2 | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2.js,samples/README.md) |
+| Sign Blob | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlob.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md) |
+| Verifying ID Tokens from Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md) |
+| Verify Id Token | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken.js,samples/README.md) |
 
 
 
@@ -790,7 +790,7 @@ More Information: [Google Cloud Platform Launch Stages][launch_stages]
 
 ## Contributing
 
-Contributions welcome! See the [Contributing Guide](https://github.com/googleapis/google-auth-library-nodejs/blob/master/CONTRIBUTING.md).
+Contributions welcome! See the [Contributing Guide](https://github.com/googleapis/google-auth-library-nodejs/blob/main/CONTRIBUTING.md).
 
 Please note that this `README.md`, the `samples/README.md`,
 and a variety of configuration files in this repository (including `.nycrc` and `tsconfig.json`)
@@ -802,7 +802,7 @@ to its templates in
 
 Apache Version 2.0
 
-See [LICENSE](https://github.com/googleapis/google-auth-library-nodejs/blob/master/LICENSE)
+See [LICENSE](https://github.com/googleapis/google-auth-library-nodejs/blob/main/LICENSE)
 
 [client-docs]: https://cloud.google.com/nodejs/docs/reference/google-auth-library/latest
 [product-docs]: https://cloud.google.com/docs/authentication/

@@ -44,7 +44,7 @@ Before running the samples, make sure you've followed the steps outlined in
 
 ### Adc
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/adc.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md)
 
@@ -61,7 +61,7 @@ __Usage:__
 
 ### Compute
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/compute.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md)
 
@@ -78,7 +78,7 @@ __Usage:__
 
 ### Credentials
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/credentials.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md)
 
@@ -95,7 +95,7 @@ __Usage:__
 
 ### Headers
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/headers.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/headers.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md)
 
@@ -114,7 +114,7 @@ __Usage:__
 
 Requests an IAP-protected resource with an ID Token.
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-iap.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-iap.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md)
 
@@ -133,7 +133,7 @@ __Usage:__
 
 Requests a Cloud Run or Cloud Functions URL with an ID Token.
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/idtokens-serverless.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-serverless.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md)
 
@@ -150,7 +150,7 @@ __Usage:__
 
 ### Jwt
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/jwt.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/jwt.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/jwt.js,samples/README.md)
 
@@ -167,7 +167,7 @@ __Usage:__
 
 ### Keepalive
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/keepalive.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keepalive.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keepalive.js,samples/README.md)
 
@@ -184,7 +184,7 @@ __Usage:__
 
 ### Keyfile
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/keyfile.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keyfile.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keyfile.js,samples/README.md)
 
@@ -201,7 +201,7 @@ __Usage:__
 
 ### Oauth2-code Verifier
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2-codeVerifier.js,samples/README.md)
 
@@ -218,7 +218,7 @@ __Usage:__
 
 ### Oauth2
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2.js,samples/README.md)
 
@@ -235,7 +235,7 @@ __Usage:__
 
 ### Sign Blob
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/signBlob.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlob.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md)
 
@@ -254,7 +254,7 @@ __Usage:__
 
 Verifying the signed token from the header of an IAP-protected resource.
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken-iap.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken-iap.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md)
 
@@ -271,7 +271,7 @@ __Usage:__
 
 ### Verify Id Token
 
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/verifyIdToken.js).
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken.js).
 
 [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken.js,samples/README.md)
 
