@@ -17,7 +17,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
 import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
@@ -264,6 +264,31 @@ describe('DownscopedClient', () => {
         return new DownscopedClient(
           client,
           cabWithOnlyAvailabilityConditionExpression
+        );
+      });
+    });
+
+    it('should not throw with an optional quota_project_id', () => {
+      const quotaProjectId = 'quota_project_id';
+      const cabWithOneAccessBoundaryRule = {
+        accessBoundary: {
+          accessBoundaryRules: [
+            {
+              availableResource: testAvailableResource,
+              availablePermissions: [testAvailablePermission1],
+              availabilityCondition: {
+                expression: testAvailabilityConditionExpression,
+              },
+            },
+          ],
+        },
+      };
+      assert.doesNotThrow(() => {
+        return new DownscopedClient(
+          client,
+          cabWithOneAccessBoundaryRule,
+          undefined,
+          quotaProjectId
         );
       });
     });
@@ -683,30 +708,562 @@ describe('DownscopedClient', () => {
   });
 
   describe('getRequestHeader()', () => {
-    it('should return unimplemented error when calling getRequestHeader()', async () => {
-      const expectedError = new Error('Not implemented.');
+    it('should inject the authorization headers', async () => {
+      const expectedHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      };
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+      ]);
+
       const cabClient = new DownscopedClient(client, testClientAccessBoundary);
-      await assert.rejects(cabClient.getRequestHeaders(), expectedError);
+      const actualHeaders = await cabClient.getRequestHeaders();
+
+      assert.deepStrictEqual(actualHeaders, expectedHeaders);
+      scope.done();
+    });
+
+    it('should inject the authorization and metadata headers', async () => {
+      const quotaProjectId = 'QUOTA_PROJECT_ID';
+      const expectedHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        'x-goog-user-project': quotaProjectId,
+      };
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+      ]);
+
+      const cabClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary,
+        undefined,
+        quotaProjectId
+      );
+      const actualHeaders = await cabClient.getRequestHeaders();
+
+      assert.deepStrictEqual(expectedHeaders, actualHeaders);
+      scope.done();
+    });
+
+    it('should reject when error occurs during token retrieval', async () => {
+      const errorResponse: OAuthErrorResponse = {
+        error: 'invalid_request',
+        error_description: 'Invalid subject token',
+        error_uri: 'https://tools.ietf.org/html/rfc6749#section-5.2',
+      };
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 400,
+          response: errorResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+      ]);
+
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      await assert.rejects(
+        cabClient.getRequestHeaders(),
+        getErrorFromOAuthErrorResponse(errorResponse)
+      );
+      scope.done();
     });
   });
 
   describe('request()', () => {
-    it('should return unimplemented error when request with opts', () => {
-      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+    it('should process HTTP request with authorization header', async () => {
+      const quotaProjectId = 'QUOTA_PROJECT_ID';
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        'x-goog-user-project': quotaProjectId,
+      };
       const exampleRequest = {
         key1: 'value1',
         key2: 'value2',
       };
-      const expectedError = new Error('Not implemented.');
+      const exampleResponse: SampleResponse = {
+        foo: 'a',
+        bar: 1,
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(200, Object.assign({}, exampleResponse)),
+      ];
 
-      assert.throws(() => {
-        return cabClient.request<SampleResponse>({
+      const cabClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary,
+        undefined,
+        quotaProjectId
+      );
+      const actualResponse = await cabClient.request<SampleResponse>({
+        url: 'https://example.com/api',
+        method: 'POST',
+        headers: exampleHeaders,
+        data: exampleRequest,
+        responseType: 'json',
+      });
+
+      assert.deepStrictEqual(actualResponse.data, exampleResponse);
+      scopes.forEach(scope => scope.done());
+    });
+
+    it('should process headerless HTTP request', async () => {
+      const quotaProjectId = 'QUOTA_PROJECT_ID';
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        'x-goog-user-project': quotaProjectId,
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleResponse: SampleResponse = {
+        foo: 'a',
+        bar: 1,
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, authHeaders),
+          })
+          .reply(200, Object.assign({}, exampleResponse)),
+      ];
+
+      const cabClient = new DownscopedClient(
+        client,
+        testClientAccessBoundary,
+        undefined,
+        quotaProjectId
+      );
+      // Send request with no headers.
+      const actualResponse = await cabClient.request<SampleResponse>({
+        url: 'https://example.com/api',
+        method: 'POST',
+        data: exampleRequest,
+        responseType: 'json',
+      });
+
+      assert.deepStrictEqual(actualResponse.data, exampleResponse);
+      scopes.forEach(scope => scope.done());
+    });
+
+    it('should reject when error occurs during token retrieval', async () => {
+      const errorResponse: OAuthErrorResponse = {
+        error: 'invalid_request',
+        error_description: 'Invalid subject token',
+        error_uri: 'https://tools.ietf.org/html/rfc6749#section-5.2',
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 400,
+          response: errorResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            options: JSON.stringify(testClientAccessBoundary),
+          },
+        },
+      ]);
+
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      await assert.rejects(
+        cabClient.request<SampleResponse>({
           url: 'https://example.com/api',
           method: 'POST',
           data: exampleRequest,
           responseType: 'json',
-        });
-      }, expectedError);
+        }),
+        getErrorFromOAuthErrorResponse(errorResponse)
+      );
+      scope.done();
+    });
+
+    it('should trigger callback on success when provided', done => {
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleResponse: SampleResponse = {
+        foo: 'a',
+        bar: 1,
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(200, Object.assign({}, exampleResponse)),
+      ];
+
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.request<SampleResponse>(
+        {
+          url: 'https://example.com/api',
+          method: 'POST',
+          headers: exampleHeaders,
+          data: exampleRequest,
+          responseType: 'json',
+        },
+        (err, result) => {
+          assert.strictEqual(err, null);
+          assert.deepStrictEqual(result?.data, exampleResponse);
+          scopes.forEach(scope => scope.done());
+          done();
+        }
+      );
+    });
+
+    it('should trigger callback on error when provided', done => {
+      const errorMessage = 'Bad Request';
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(400, errorMessage),
+      ];
+
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.request<SampleResponse>(
+        {
+          url: 'https://example.com/api',
+          method: 'POST',
+          headers: exampleHeaders,
+          data: exampleRequest,
+          responseType: 'json',
+        },
+        (err, result) => {
+          assert.strictEqual(err!.message, errorMessage);
+          assert.deepStrictEqual(result, (err as GaxiosError)!.response);
+          scopes.forEach(scope => scope.done());
+          done();
+        }
+      );
+    });
+
+    it('should retry on 401 on forceRefreshOnFailure=true', async () => {
+      const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+      stsSuccessfulResponse2.access_token = 'DOWNSCOPED_CLIENT_ACCESS_TOKEN_1';
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      };
+      const authHeaders2 = {
+        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleResponse: SampleResponse = {
+        foo: 'a',
+        bar: 1,
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse2,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_1',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(401)
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
+          })
+          .reply(200, Object.assign({}, exampleResponse)),
+      ];
+
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary, {
+        forceRefreshOnFailure: true,
+      });
+      const actualResponse = await cabClient.request<SampleResponse>({
+        url: 'https://example.com/api',
+        method: 'POST',
+        headers: exampleHeaders,
+        data: exampleRequest,
+        responseType: 'json',
+      });
+
+      assert.deepStrictEqual(actualResponse.data, exampleResponse);
+      scopes.forEach(scope => scope.done());
+    });
+
+    it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(401),
+      ];
+
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary, {
+        forceRefreshOnFailure: false,
+      });
+      await assert.rejects(
+        cabClient.request<SampleResponse>({
+          url: 'https://example.com/api',
+          method: 'POST',
+          headers: exampleHeaders,
+          data: exampleRequest,
+          responseType: 'json',
+        }),
+        {
+          code: '401',
+        }
+      );
+
+      scopes.forEach(scope => scope.done());
+    });
+
+    it('should not retry more than once', async () => {
+      const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
+      stsSuccessfulResponse2.access_token = 'DOWNSCOPED_CLIENT_ACCESS_TOKEN_1';
+      const authHeaders = {
+        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      };
+      const authHeaders2 = {
+        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+      };
+      const exampleRequest = {
+        key1: 'value1',
+        key2: 'value2',
+      };
+      const exampleHeaders = {
+        custom: 'some-header-value',
+        other: 'other-header-value',
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse2,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_1',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ]),
+        nock('https://example.com')
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+          })
+          .reply(403)
+          .post('/api', exampleRequest, {
+            reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
+          })
+          .reply(403),
+      ];
+
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary, {
+        forceRefreshOnFailure: true,
+      });
+      await assert.rejects(
+        cabClient.request<SampleResponse>({
+          url: 'https://example.com/api',
+          method: 'POST',
+          headers: exampleHeaders,
+          data: exampleRequest,
+          responseType: 'json',
+        }),
+        {
+          code: '403',
+        }
+      );
+      scopes.forEach(scope => scope.done());
     });
   });
 });

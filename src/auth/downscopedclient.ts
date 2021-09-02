@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
+import {
+  GaxiosError,
+  GaxiosOptions,
+  GaxiosPromise,
+  GaxiosResponse,
+} from 'gaxios';
+import * as stream from 'stream';
 
 import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
@@ -122,11 +128,14 @@ export class DownscopedClient extends AuthClient {
    * @param additionalOptions Optional additional behavior customization
    *   options. These currently customize expiration threshold time and
    *   whether to retry on 401/403 API request errors.
+   * @param quotaProjectId Optional quota project id for setting up in the
+   *   x-goog-user-project header.
    */
   constructor(
     private readonly authClient: AuthClient,
     private readonly credentialAccessBoundary: CredentialAccessBoundary,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: RefreshOptions,
+    quotaProjectId?: string
   ) {
     super();
     // Check 1-10 Access Boundary Rules are defined within Credential Access
@@ -168,6 +177,7 @@ export class DownscopedClient extends AuthClient {
         .eagerRefreshThresholdMillis as number;
     }
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
+    this.quotaProjectId = quotaProjectId;
   }
 
   /**
@@ -214,7 +224,11 @@ export class DownscopedClient extends AuthClient {
    * { Authorization: 'Bearer <access_token_value>' }
    */
   async getRequestHeaders(): Promise<Headers> {
-    throw new Error('Not implemented.');
+    const accessTokenResponse = await this.getAccessToken();
+    const headers: Headers = {
+      Authorization: `Bearer ${accessTokenResponse.token}`,
+    };
+    return this.addSharedMetadataHeaders(headers);
   }
 
   /**
@@ -232,7 +246,65 @@ export class DownscopedClient extends AuthClient {
     opts: GaxiosOptions,
     callback?: BodyResponseCallback<T>
   ): GaxiosPromise<T> | void {
-    throw new Error('Not implemented.');
+    if (callback) {
+      this.requestAsync<T>(opts).then(
+        r => callback(null, r),
+        e => {
+          return callback(e, e.response);
+        }
+      );
+    } else {
+      return this.requestAsync<T>(opts);
+    }
+  }
+
+  /**
+   * Authenticates the provided HTTP request, processes it and resolves with the
+   * returned response.
+   * @param opts The HTTP request options.
+   * @param retry Whether the current attempt is a retry after a failed attempt.
+   * @return A promise that resolves with the successful response.
+   */
+  protected async requestAsync<T>(
+    opts: GaxiosOptions,
+    retry = false
+  ): Promise<GaxiosResponse<T>> {
+    let response: GaxiosResponse;
+    try {
+      const requestHeaders = await this.getRequestHeaders();
+      opts.headers = opts.headers || {};
+      if (requestHeaders && requestHeaders['x-goog-user-project']) {
+        opts.headers['x-goog-user-project'] =
+          requestHeaders['x-goog-user-project'];
+      }
+      if (requestHeaders && requestHeaders.Authorization) {
+        opts.headers.Authorization = requestHeaders.Authorization;
+      }
+      response = await this.transporter.request<T>(opts);
+    } catch (e) {
+      const res = (e as GaxiosError).response;
+      if (res) {
+        const statusCode = res.status;
+        // Retry the request for metadata if the following criteria are true:
+        // - We haven't already retried.  It only makes sense to retry once.
+        // - The response was a 401 or a 403
+        // - The request didn't send a readableStream
+        // - forceRefreshOnFailure is true
+        const isReadableStream = res.config.data instanceof stream.Readable;
+        const isAuthErr = statusCode === 401 || statusCode === 403;
+        if (
+          !retry &&
+          isAuthErr &&
+          !isReadableStream &&
+          this.forceRefreshOnFailure
+        ) {
+          await this.refreshAccessTokenAsync();
+          return await this.requestAsync<T>(opts, true);
+        }
+      }
+      throw e;
+    }
+    return response;
   }
 
   /**

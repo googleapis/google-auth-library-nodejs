@@ -57,6 +57,10 @@ export {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './auth/baseexternalclient';
+export {
+  CredentialAccessBoundary,
+  DownscopedClient,
+} from './auth/downscopedclient';
 export {DefaultTransporter} from './transporters';
 
 const auth = new GoogleAuth();
