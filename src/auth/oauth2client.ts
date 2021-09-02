@@ -31,7 +31,7 @@ import {LoginTicket, TokenPayload} from './loginticket';
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
- * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
+ * https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js
  */
 export interface CodeVerifierResults {
   /**
@@ -565,7 +565,7 @@ export class OAuth2Client extends AuthClient {
    * code_challenge_method.
    *
    * For a full example see:
-   * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
+   * https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js
    */
   async generateCodeVerifierAsync(): Promise<CodeVerifierResults> {
     // base64 encoding uses 6 bits per character, and we want to generate128
