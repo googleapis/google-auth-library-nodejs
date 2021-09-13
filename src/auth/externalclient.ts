@@ -30,6 +30,10 @@ import {
 } from './identitypoolclient';
 import {AwsClient, AwsClientOptions} from './awsclient';
 
+/** The workforce audience pattern. */
+const WORKFORCE_AUDIENCE_PATTERN =
+  '//iam.googleapis.com/projects/.+/locations/.+/workforcePools/.+/providers/.+';
+
 export type ExternalAccountClientOptions =
   | IdentityPoolClientOptions
   | AwsClientOptions;
@@ -52,6 +56,8 @@ export class ExternalAccountClient {
    * This static method will instantiate the
    * corresponding type of external account credential depending on the
    * underlying credential source.
+   * If workforce pool user project is provided but the audience is not a
+   * workforce audience, throw an error.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
    * @param additionalOptions Optional additional behavior customization
@@ -64,6 +70,18 @@ export class ExternalAccountClient {
     options: ExternalAccountClientOptions,
     additionalOptions?: RefreshOptions
   ): BaseExternalAccountClient | null {
+    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
+    if (
+      options &&
+      options.workforce_pool_user_project &&
+      options.audience &&
+      !options.audience.match(workforceAudiencePattern)
+    ) {
+      throw new Error(
+        'The workforce_pool_user_project parameter should only be provided ' +
+          'for a Workforce Pool configuration.'
+      );
+    }
     if (options && options.type === EXTERNAL_ACCOUNT_TYPE) {
       if ((options as AwsClientOptions).credential_source?.environment_id) {
         return new AwsClient(options as AwsClientOptions, additionalOptions);

@@ -16,6 +16,7 @@ import * as assert from 'assert';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
+import {createCrypto} from '../src/crypto/crypto';
 import {AwsClient} from '../src/auth/awsclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
@@ -45,6 +46,7 @@ describe('AwsClient', () => {
   const token = awsSecurityCredentials.Token;
   const awsRole = 'gcp-aws-role';
   const audience = getAudience();
+  const crypto = createCrypto();
   const metadataBaseUrl = 'http://169.254.169.254';
   const awsCredentialSource = {
     environment_id: 'aws1',
@@ -67,6 +69,24 @@ describe('AwsClient', () => {
     },
     awsOptions
   );
+  const awsOptionsWithWorkforceUserProject = Object.assign(
+    {
+      workforce_pool_user_project: 'work_force_pool_user_project',
+    },
+    awsOptions
+  );
+  awsOptionsWithWorkforceUserProject.audience =
+    '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/aws';
+  const awsOptionsWithClientAuthAndWorkforceUserProject = Object.assign(
+    {
+      client_id: 'CLIENT_ID',
+      client_secret: 'SECRET',
+    },
+    awsOptionsWithWorkforceUserProject
+  );
+  const basicAuthCreds =
+    `${awsOptionsWithClientAuthAndWorkforceUserProject.client_id}:` +
+    `${awsOptionsWithClientAuthAndWorkforceUserProject.client_secret}`;
   const stsSuccessfulResponse: StsSuccessfulResponse = {
     access_token: 'ACCESS_TOKEN',
     issued_token_type: 'urn:ietf:params:oauth:token-type:access_token',
@@ -99,6 +119,34 @@ describe('AwsClient', () => {
         {
           key: 'x-goog-cloud-target-resource',
           value: awsOptions.audience,
+        },
+        {
+          key: 'x-amz-date',
+          value: expectedSignedRequest.headers['x-amz-date'],
+        },
+        {
+          key: 'Authorization',
+          value: expectedSignedRequest.headers.Authorization,
+        },
+        {
+          key: 'host',
+          value: expectedSignedRequest.headers.host,
+        },
+        {
+          key: 'x-amz-security-token',
+          value: expectedSignedRequest.headers['x-amz-security-token'],
+        },
+      ],
+    })
+  );
+  const expectedWorkforceSubjectToken = encodeURIComponent(
+    JSON.stringify({
+      url: expectedSignedRequest.url,
+      method: expectedSignedRequest.method,
+      headers: [
+        {
+          key: 'x-goog-cloud-target-resource',
+          value: awsOptionsWithWorkforceUserProject.audience,
         },
         {
           key: 'x-amz-date',
@@ -440,6 +488,103 @@ describe('AwsClient', () => {
         );
 
         const client = new AwsClient(awsOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should resolve with the expected response on workforce configs with client auth', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/aws',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: expectedWorkforceSubjectToken,
+                subject_token_type:
+                  'urn:ietf:params:aws:token-type:aws4_request',
+              },
+              additionalHeaders: {
+                Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                  basicAuthCreds
+                )}`,
+              },
+            },
+          ])
+        );
+        scopes.push(
+          nock(metadataBaseUrl)
+            .get('/latest/meta-data/placement/availability-zone')
+            .reply(200, `${awsRegion}b`)
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const client = new AwsClient(
+          awsOptionsWithClientAuthAndWorkforceUserProject
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should resolve with the expected response on workforce configs without client auth', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/aws',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: expectedWorkforceSubjectToken,
+                subject_token_type:
+                  'urn:ietf:params:aws:token-type:aws4_request',
+                options: JSON.stringify({
+                  user_project:
+                    awsOptionsWithWorkforceUserProject.workforce_pool_user_project,
+                }),
+              },
+            },
+          ])
+        );
+        scopes.push(
+          nock(metadataBaseUrl)
+            .get('/latest/meta-data/placement/availability-zone')
+            .reply(200, `${awsRegion}b`)
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const client = new AwsClient(awsOptionsWithWorkforceUserProject);
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.

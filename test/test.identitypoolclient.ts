@@ -16,7 +16,7 @@ import * as assert from 'assert';
 import {describe, it} from 'mocha';
 import * as fs from 'fs';
 import * as nock from 'nock';
-
+import {createCrypto} from '../src/crypto/crypto';
 import {
   IdentityPoolClient,
   IdentityPoolClientOptions,
@@ -48,6 +48,7 @@ describe('IdentityPoolClient', () => {
     'utf-8'
   );
   const audience = getAudience();
+  const crypto = createCrypto();
   const fileSourcedOptions = {
     type: 'external_account',
     audience,
@@ -63,6 +64,26 @@ describe('IdentityPoolClient', () => {
     },
     fileSourcedOptions
   );
+  const fileSourcedOptionsWithWorkforceUserProject = Object.assign(
+    {
+      workforce_pool_user_project: 'work_force_pool_user_project',
+    },
+    fileSourcedOptions
+  );
+  fileSourcedOptionsWithWorkforceUserProject.audience =
+    '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc';
+  fileSourcedOptionsWithWorkforceUserProject.subject_token_type =
+    'urn:ietf:params:oauth:token-type:id_token';
+  const fileSourcedOptionsWithClientAuthAndWorkforceUserProject = Object.assign(
+    {
+      client_id: 'CLIENT_ID',
+      client_secret: 'SECRET',
+    },
+    fileSourcedOptionsWithWorkforceUserProject
+  );
+  const basicAuthCreds =
+    `${fileSourcedOptionsWithClientAuthAndWorkforceUserProject.client_id}:` +
+    `${fileSourcedOptionsWithClientAuthAndWorkforceUserProject.client_secret}`;
   const jsonFileSourcedOptions: IdentityPoolClientOptions = {
     type: 'external_account',
     audience,
@@ -326,6 +347,81 @@ describe('IdentityPoolClient', () => {
         ]);
 
         const client = new IdentityPoolClient(fileSourcedOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should resolve with the expected response on workforce configs with client auth', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              // Subject token loaded from file should be used.
+              subject_token: fileSubjectToken,
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+            },
+            additionalHeaders: {
+              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                basicAuthCreds
+              )}`,
+            },
+          },
+        ]);
+
+        const client = new IdentityPoolClient(
+          fileSourcedOptionsWithClientAuthAndWorkforceUserProject
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should resolve with the expected response on workforce configs without client auth', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              // Subject token loaded from file should be used.
+              subject_token: fileSubjectToken,
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+              options: JSON.stringify({
+                user_project:
+                  fileSourcedOptionsWithWorkforceUserProject.workforce_pool_user_project,
+              }),
+            },
+          },
+        ]);
+
+        const client = new IdentityPoolClient(
+          fileSourcedOptionsWithWorkforceUserProject
+        );
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.

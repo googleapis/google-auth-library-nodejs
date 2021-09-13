@@ -82,6 +82,25 @@ describe('BaseExternalAccountClient', () => {
     client_id: 'CLIENT_ID',
     client_secret: 'SECRET',
   };
+  const externalAccountOptionsWorkforceUserProject = Object.assign(
+    {
+      workforce_pool_user_project: 'work_force_pool_user_project',
+    },
+    externalAccountOptions
+  );
+  externalAccountOptionsWorkforceUserProject.audience =
+    '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider';
+  externalAccountOptionsWorkforceUserProject.subject_token_type =
+    'urn:ietf:params:oauth:token-type:id_token';
+
+  const externalAccountOptionsWithClientAuthAndWorkforceUserProject =
+    Object.assign(
+      {
+        client_id: 'CLIENT_ID',
+        client_secret: 'SECRET',
+      },
+      externalAccountOptionsWorkforceUserProject
+    );
   const basicAuthCreds =
     `${externalAccountOptionsWithCreds.client_id}:` +
     `${externalAccountOptionsWithCreds.client_secret}`;
@@ -473,6 +492,80 @@ describe('BaseExternalAccountClient', () => {
         ]);
 
         const client = new TestExternalAccountClient(externalAccountOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should resolve with the expected response on workforce configs with client auth', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+            },
+            additionalHeaders: {
+              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                basicAuthCreds
+              )}`,
+            },
+          },
+        ]);
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithClientAuthAndWorkforceUserProject
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should resolve with the expected response on workforce configs without client auth', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+              options: JSON.stringify({
+                user_project:
+                  externalAccountOptionsWorkforceUserProject.workforce_pool_user_project,
+              }),
+            },
+          },
+        ]);
+
+        // assert.deepStrictEqual({}, externalAccountOptionsWithoutClientAuth);
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWorkforceUserProject
+        );
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.

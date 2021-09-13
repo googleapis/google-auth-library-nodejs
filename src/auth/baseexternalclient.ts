@@ -71,6 +71,7 @@ export interface BaseExternalAccountClientOptions {
   client_id?: string;
   client_secret?: string;
   quota_project_id?: string;
+  workforce_pool_user_project?: string;
 }
 
 /**
@@ -127,6 +128,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
+  private readonly clientAuth: ClientAuthentication | undefined;
+  private readonly workforcePoolUserProject: string | undefined;
   public projectId: string | null;
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
@@ -152,7 +155,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           `received "${options.type}"`
       );
     }
-    const clientAuth = options.client_id
+    this.clientAuth = options.client_id
       ? ({
           confidentialClientType: 'basic',
           clientId: options.client_id,
@@ -162,13 +165,17 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     if (!this.validateGoogleAPIsUrl('sts', options.token_url)) {
       throw new Error(`"${options.token_url}" is not a valid token url.`);
     }
-    this.stsCredential = new sts.StsCredentials(options.token_url, clientAuth);
+    this.stsCredential = new sts.StsCredentials(
+      options.token_url,
+      this.clientAuth
+    );
     // Default OAuth scope. This could be overridden via public property.
     this.scopes = [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
     this.audience = options.audience;
     this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
+    this.workforcePoolUserProject = options.workforce_pool_user_project;
     if (
       typeof options.service_account_impersonation_url !== 'undefined' &&
       !this.validateGoogleAPIsUrl(
@@ -401,9 +408,21 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     };
 
     // Exchange the external credentials for a GCP access token.
-    const stsResponse = await this.stsCredential.exchangeToken(
-      stsCredentialsOptions
-    );
+    let stsResponse;
+    // If there is work force pool user project but no client defined,
+    // pass user project config for STS token exchange.
+    // Otherwise, only pass stsCredentialsOptions for token exchange.
+    if (!this.clientAuth && this.workforcePoolUserProject) {
+      stsResponse = await this.stsCredential.exchangeToken(
+        stsCredentialsOptions,
+        undefined,
+        {user_project: this.workforcePoolUserProject}
+      );
+    } else {
+      stsResponse = await this.stsCredential.exchangeToken(
+        stsCredentialsOptions
+      );
+    }
 
     if (this.serviceAccountImpersonationUrl) {
       this.cachedAccessToken = await this.getImpersonatedAccessToken(
