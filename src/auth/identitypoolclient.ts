@@ -36,6 +36,10 @@ interface SubjectTokenJsonResponse {
   [key: string]: string;
 }
 
+/** The workforce audience pattern. */
+const WORKFORCE_AUDIENCE_PATTERN =
+  '//iam.googleapis.com/projects/.+/locations/.+/workforcePools/.+/providers/.+';
+
 /**
  * Url-sourced/file-sourced credentials json interface.
  * This is used for K8s and Azure workloads.
@@ -70,7 +74,8 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * Instantiate an IdentityPoolClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * An error is thrown if the credential is not a valid file-sourced or
-   * url-sourced credential.
+   * url-sourced credential or a workforce pool user project is provided
+   * with a non workforce audience.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
    * @param additionalOptions Optional additional behavior customization
@@ -98,6 +103,18 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     if (this.formatType === 'json' && !this.formatSubjectTokenFieldName) {
       throw new Error(
         'Missing subject_token_field_name for JSON credential_source format'
+      );
+    }
+    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
+    if (
+      options &&
+      options.workforce_pool_user_project &&
+      options.audience &&
+      !options.audience.match(workforceAudiencePattern)
+    ) {
+      throw new Error(
+        'The workforce_pool_user_project parameter should only be provided ' +
+          'for a Workforce Pool configuration.'
       );
     }
   }

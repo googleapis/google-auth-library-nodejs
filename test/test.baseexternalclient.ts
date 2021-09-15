@@ -555,7 +555,7 @@ describe('BaseExternalAccountClient', () => {
               subject_token: 'subject_token_0',
               subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
               options: JSON.stringify({
-                user_project:
+                userProject:
                   externalAccountOptionsWorkforceUserProject.workforce_pool_user_project,
               }),
             },

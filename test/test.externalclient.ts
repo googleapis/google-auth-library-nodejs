@@ -79,28 +79,15 @@ describe('ExternalAccountClient', () => {
 
     const invalidWorkforceIdentityPoolClientAudiences = [
       '//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcepools//providers/oidc',
       '//iam.googleapis.com/projects/123/locations/global/workforcepools/pool/providers/oidc',
+      '//iam.googleapis.com/projects/123/locations/global/workforcePools//providers/oidc',
       '//iam.googleapis.com/projects/123/locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/projects/locations/global/workforcePools/providers/azure',
-      '//iam.googleapis.com/projects//locations/global/workforcePools/providers/azure',
+      '//iam.googleapis.com/projects/locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com/projects//locations/global/workforcePools/providers/oidc',
       '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers',
       '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers/',
-      '//iam.googleapis.com/projects/123/locations//workforcepools/pool/providers/azure',
-      '//iam.googleapis.com/projects/123/locations/workforcepools/pool/providers/azure',
-    ];
-
-    const invalidWorkforceAwsClientAudiences = [
-      '//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/aws',
-      '//iam.googleapis.com/projects/123/locations/global/workforcepools//providers/aws',
-      '//iam.googleapis.com/projects/123/locations/global/workforcepools/pool/providers/aws',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/providers/aws',
-      '//iam.googleapis.com/projects/locations/global/workforcePools/providers/aws',
-      '//iam.googleapis.com/projects//locations/global/workforcePools/providers/aws',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers/',
-      '//iam.googleapis.com/projects/123/locations//workforcepools/pool/providers/aws',
-      '//iam.googleapis.com/projects/123/locations/workforcepools/pool/providers/aws',
+      '//iam.googleapis.com/projects/123/locations//workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/projects/123/locations/workforcePools/pool/providers/oidc',
     ];
 
     it('should return IdentityPoolClient on IdentityPoolClientOptions', () => {
@@ -147,7 +134,6 @@ describe('ExternalAccountClient', () => {
         '//iam.googleapis.com/projects/123/locations/global/workforcePools/workforcePools/providers/provider',
         '//iam.googleapis.com/projects/workforcePool/locations/global/workforcePools/pool/providers/provider',
         '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/workloadPools/providers/oidc',
-        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/workloadPools/providers/azure',
       ];
       const workforceFileSourcedOptions = Object.assign(
         {},
@@ -171,28 +157,6 @@ describe('ExternalAccountClient', () => {
       }
     });
 
-    it('should return AwsClient with expected workforce configs', () => {
-      const validWorkforceAwsClientAudiences = [
-        '//iam.googleapis.com/projects/123/locations/global/workforcePools/workforcePools/providers/provider',
-        '//iam.googleapis.com/projects/workforcePool/locations/global/workforcePools/pool/providers/provider',
-        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/workloadPools/providers/aws',
-      ];
-      const workforceAwsOptions = Object.assign({}, awsOptions as any);
-      workforceAwsOptions.workforce_pool_user_project =
-        'work_force_pool_user_project';
-      workforceAwsOptions.subject_token_type =
-        'urn:ietf:params:oauth:token-type:aws4_request';
-      for (const validWorkforceAwsClientAudience of validWorkforceAwsClientAudiences) {
-        workforceAwsOptions.audience = validWorkforceAwsClientAudience;
-        const expectedClient = new AwsClient(workforceAwsOptions);
-
-        assert.deepStrictEqual(
-          ExternalAccountClient.fromJSON(workforceAwsOptions),
-          expectedClient
-        );
-      }
-    });
-
     invalidWorkforceIdentityPoolClientAudiences.forEach(
       invalidWorkforceIdentityPoolClientAudience => {
         const workforceIdentityPoolClientInvalidOptions = Object.assign(
@@ -210,29 +174,6 @@ describe('ExternalAccountClient', () => {
           assert.throws(() => {
             return ExternalAccountClient.fromJSON(
               workforceIdentityPoolClientInvalidOptions
-            );
-          });
-        });
-      }
-    );
-
-    invalidWorkforceAwsClientAudiences.forEach(
-      invalidWorkforceAwsClientAudience => {
-        const workforceAwsClientInvalidOptions = Object.assign(
-          {},
-          awsOptions as any
-        );
-        workforceAwsClientInvalidOptions.workforce_pool_user_project =
-          'work_force_pool_user_project';
-        workforceAwsClientInvalidOptions.subject_token_type =
-          'urn:ietf:params:aws:token-type:aws4_request';
-        it(`should throw given audience ${invalidWorkforceAwsClientAudience} with user project defined in AwsClientOptions`, () => {
-          workforceAwsClientInvalidOptions.audience =
-            invalidWorkforceAwsClientAudience;
-
-          assert.throws(() => {
-            return ExternalAccountClient.fromJSON(
-              workforceAwsClientInvalidOptions
             );
           });
         });

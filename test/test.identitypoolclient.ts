@@ -168,6 +168,27 @@ describe('IdentityPoolClient', () => {
   });
 
   describe('Constructor', () => {
+    const invalidWorkforceIdentityPoolClientAudiences = [
+      '//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/oidc',
+      '//iam.googleapis.com/projects/123/locations/global/workforcepools/pool/providers/oidc',
+      '//iam.googleapis.com/projects/123/locations/global/workforcePools//providers/oidc',
+      '//iam.googleapis.com/projects/123/locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com/projects/locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com/projects//locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers',
+      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers/',
+      '//iam.googleapis.com/projects/123/locations//workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/projects/123/locations/workforcePools/pool/providers/oidc',
+    ];
+    const invalidWorkforceIdentityPoolFileSourceOptions = Object.assign(
+      {},
+      fileSourcedOptionsWithWorkforceUserProject
+    );
+    const expectedWorkforcePoolUserProjectError = new Error(
+      'The workforce_pool_user_project parameter should only be provided ' +
+        'for a Workforce Pool configuration.'
+    );
+
     it('should throw when invalid options are provided', () => {
       const expectedError = new Error(
         'No valid Identity Pool "credential_source" provided'
@@ -232,6 +253,21 @@ describe('IdentityPoolClient', () => {
       }, expectedError);
     });
 
+    invalidWorkforceIdentityPoolClientAudiences.forEach(
+      invalidWorkforceIdentityPoolClientAudience => {
+        it(`should throw given audience ${invalidWorkforceIdentityPoolClientAudience} with user project defined in IdentityPoolClientOptions`, () => {
+          invalidWorkforceIdentityPoolFileSourceOptions.audience =
+            invalidWorkforceIdentityPoolClientAudience;
+
+          assert.throws(() => {
+            return new IdentityPoolClient(
+              invalidWorkforceIdentityPoolFileSourceOptions
+            );
+          }, expectedWorkforcePoolUserProjectError);
+        });
+      }
+    );
+
     it('should not throw when valid file-sourced options are provided', () => {
       assert.doesNotThrow(() => {
         return new IdentityPoolClient(fileSourcedOptions);
@@ -252,6 +288,28 @@ describe('IdentityPoolClient', () => {
       assert.doesNotThrow(() => {
         return new IdentityPoolClient(urlSourcedOptionsNoHeaders);
       });
+    });
+
+    it('should not throw on expected workforce configs', () => {
+      const validWorkforceIdentityPoolClientAudiences = [
+        '//iam.googleapis.com/projects/123/locations/global/workforcePools/workforcePools/providers/provider',
+        '//iam.googleapis.com/projects/workforcePool/locations/global/workforcePools/pool/providers/provider',
+        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/workloadPools/providers/oidc',
+      ];
+      const validWorkforceIdentityPoolFileSourceOptions = Object.assign(
+        {},
+        fileSourcedOptionsWithWorkforceUserProject
+      );
+      for (const validWorkforceIdentityPoolClientAudience of validWorkforceIdentityPoolClientAudiences) {
+        validWorkforceIdentityPoolFileSourceOptions.audience =
+          validWorkforceIdentityPoolClientAudience;
+
+        assert.doesNotThrow(() => {
+          return new IdentityPoolClient(
+            validWorkforceIdentityPoolFileSourceOptions
+          );
+        });
+      }
     });
   });
 
@@ -412,7 +470,7 @@ describe('IdentityPoolClient', () => {
               subject_token: fileSubjectToken,
               subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
               options: JSON.stringify({
-                user_project:
+                userProject:
                   fileSourcedOptionsWithWorkforceUserProject.workforce_pool_user_project,
               }),
             },
