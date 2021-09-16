@@ -105,17 +105,14 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         'Missing subject_token_field_name for JSON credential_source format'
       );
     }
-    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
-    if (
-      options &&
-      options.workforce_pool_user_project &&
-      options.audience &&
-      !options.audience.match(workforceAudiencePattern)
-    ) {
-      throw new Error(
-        'The workforce_pool_user_project parameter should only be provided ' +
-          'for a Workforce Pool configuration.'
-      );
+    if (options && options.workforce_pool_user_project && options.audience) {
+      const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
+      if (!options.audience.match(workforceAudiencePattern)) {
+        throw new Error(
+          'The workforce_pool_user_project parameter should only be provided ' +
+            'for a Workforce Pool configuration.'
+        );
+      }
     }
   }
 

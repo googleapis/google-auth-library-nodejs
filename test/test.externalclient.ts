@@ -129,7 +129,7 @@ describe('ExternalAccountClient', () => {
       );
     });
 
-    it('should return IdentityPoolClient with expected workforce configs', () => {
+    it('should return an IdentityPoolClient with a workforce config', () => {
       const validWorkforceIdentityPoolClientAudiences = [
         '//iam.googleapis.com/projects/123/locations/global/workforcePools/workforcePools/providers/provider',
         '//iam.googleapis.com/projects/workforcePool/locations/global/workforcePools/pool/providers/provider',
@@ -137,12 +137,12 @@ describe('ExternalAccountClient', () => {
       ];
       const workforceFileSourcedOptions = Object.assign(
         {},
-        fileSourcedOptions as any
+        fileSourcedOptions,
+        {
+          workforce_pool_user_project: 'workforce_pool_user_project',
+          subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+        }
       );
-      workforceFileSourcedOptions.workforce_pool_user_project =
-        'work_force_pool_user_project';
-      workforceFileSourcedOptions.subject_token_type =
-        'urn:ietf:params:oauth:token-type:id_token';
       for (const validWorkforceIdentityPoolClientAudience of validWorkforceIdentityPoolClientAudiences) {
         workforceFileSourcedOptions.audience =
           validWorkforceIdentityPoolClientAudience;
@@ -161,13 +161,13 @@ describe('ExternalAccountClient', () => {
       invalidWorkforceIdentityPoolClientAudience => {
         const workforceIdentityPoolClientInvalidOptions = Object.assign(
           {},
-          fileSourcedOptions as any
+          fileSourcedOptions,
+          {
+            workforce_pool_user_project: 'workforce_pool_user_project',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+          }
         );
-        workforceIdentityPoolClientInvalidOptions.workforce_pool_user_project =
-          'work_force_pool_user_project';
-        workforceIdentityPoolClientInvalidOptions.subject_token_type =
-          'urn:ietf:params:oauth:token-type:id_token';
-        it(`should throw given audience ${invalidWorkforceIdentityPoolClientAudience} with user project defined in IdentityPoolClientOptions`, () => {
+        it(`should throw an error when an invalid workforce audience ${invalidWorkforceIdentityPoolClientAudience} is provided with a workforce user project`, () => {
           workforceIdentityPoolClientInvalidOptions.audience =
             invalidWorkforceIdentityPoolClientAudience;
 

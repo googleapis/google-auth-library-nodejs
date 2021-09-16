@@ -83,16 +83,15 @@ describe('BaseExternalAccountClient', () => {
     client_secret: 'SECRET',
   };
   const externalAccountOptionsWorkforceUserProject = Object.assign(
+    {},
+    externalAccountOptions,
     {
-      workforce_pool_user_project: 'work_force_pool_user_project',
-    },
-    externalAccountOptions
+      workforce_pool_user_project: 'workforce_pool_user_project',
+      audience:
+        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider',
+      subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+    }
   );
-  externalAccountOptionsWorkforceUserProject.audience =
-    '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider';
-  externalAccountOptionsWorkforceUserProject.subject_token_type =
-    'urn:ietf:params:oauth:token-type:id_token';
-
   const externalAccountOptionsWithClientAuthAndWorkforceUserProject =
     Object.assign(
       {
@@ -503,7 +502,7 @@ describe('BaseExternalAccountClient', () => {
         scope.done();
       });
 
-      it('should resolve with the expected response on workforce configs with client auth', async () => {
+      it('should use client auth over passing the workforce user project when both are provided', async () => {
         const scope = mockStsTokenExchange([
           {
             statusCode: 200,
@@ -540,7 +539,7 @@ describe('BaseExternalAccountClient', () => {
         scope.done();
       });
 
-      it('should resolve with the expected response on workforce configs without client auth', async () => {
+      it('should pass the workforce user project on workforce configs when client auth is not provided ', async () => {
         const scope = mockStsTokenExchange([
           {
             statusCode: 200,
@@ -562,7 +561,6 @@ describe('BaseExternalAccountClient', () => {
           },
         ]);
 
-        // assert.deepStrictEqual({}, externalAccountOptionsWithoutClientAuth);
         const client = new TestExternalAccountClient(
           externalAccountOptionsWorkforceUserProject
         );

@@ -65,15 +65,15 @@ describe('IdentityPoolClient', () => {
     fileSourcedOptions
   );
   const fileSourcedOptionsWithWorkforceUserProject = Object.assign(
+    {},
+    fileSourcedOptions,
     {
-      workforce_pool_user_project: 'work_force_pool_user_project',
-    },
-    fileSourcedOptions
+      workforce_pool_user_project: 'workforce_pool_user_project',
+      audience:
+        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc',
+      subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+    }
   );
-  fileSourcedOptionsWithWorkforceUserProject.audience =
-    '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc';
-  fileSourcedOptionsWithWorkforceUserProject.subject_token_type =
-    'urn:ietf:params:oauth:token-type:id_token';
   const fileSourcedOptionsWithClientAuthAndWorkforceUserProject = Object.assign(
     {
       client_id: 'CLIENT_ID',

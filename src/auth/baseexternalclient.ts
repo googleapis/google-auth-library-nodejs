@@ -409,9 +409,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     // Exchange the external credentials for a GCP access token.
     let stsResponse;
-    // If there is workforce pool user project but no client auth defined,
-    // pass user project as one additional parameter for STS token exchange.
-    // Otherwise, only pass stsCredentialsOptions for STS token exchange.
+    // Client auth is prioritized over passing the workforcePoolUserProject
+    // parameter for STS token exchange.
     if (!this.clientAuth && this.workforcePoolUserProject) {
       stsResponse = await this.stsCredential.exchangeToken(
         stsCredentialsOptions,
