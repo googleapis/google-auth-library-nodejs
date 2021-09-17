@@ -290,7 +290,7 @@ describe('IdentityPoolClient', () => {
       });
     });
 
-    it('should not throw on expected workforce configs', () => {
+    it('should not throw on valid workforce configs', () => {
       const validWorkforceIdentityPoolClientAudiences = [
         '//iam.googleapis.com/projects/123/locations/global/workforcePools/workforcePools/providers/provider',
         '//iam.googleapis.com/projects/workforcePool/locations/global/workforcePools/pool/providers/provider',
