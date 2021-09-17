@@ -105,7 +105,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         'Missing subject_token_field_name for JSON credential_source format'
       );
     }
-    if (options && options.workforce_pool_user_project && options.audience) {
+    if (options.workforce_pool_user_project) {
       const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
       if (!options.audience.match(workforceAudiencePattern)) {
         throw new Error(
