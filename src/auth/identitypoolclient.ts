@@ -38,7 +38,7 @@ interface SubjectTokenJsonResponse {
 
 /** The workforce audience pattern. */
 const WORKFORCE_AUDIENCE_PATTERN =
-  '//iam.googleapis.com/projects/.+/locations/.+/workforcePools/.+/providers/.+';
+  '//iam.googleapis.com/locations/.+/workforcePools/.+/providers/.+';
 
 /**
  * Url-sourced/file-sourced credentials json interface.

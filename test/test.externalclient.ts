@@ -78,16 +78,16 @@ describe('ExternalAccountClient', () => {
     };
 
     const invalidWorkforceIdentityPoolClientAudiences = [
-      '//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcepools/pool/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools//providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/projects/locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/projects//locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers/',
-      '//iam.googleapis.com/projects/123/locations//workforcePools/pool/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workloadIdentityPools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcepools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools//providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com//locations/global/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
+      '//iam.googleapis.com/locations//workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/workforcePools/pool/providers/oidc',
     ];
 
     it('should return IdentityPoolClient on IdentityPoolClientOptions', () => {
@@ -131,9 +131,9 @@ describe('ExternalAccountClient', () => {
 
     it('should return an IdentityPoolClient with a workforce config', () => {
       const validWorkforceIdentityPoolClientAudiences = [
-        '//iam.googleapis.com/projects/123/locations/global/workforcePools/workforcePools/providers/provider',
-        '//iam.googleapis.com/projects/workforcePool/locations/global/workforcePools/pool/providers/provider',
-        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/workloadPools/providers/oidc',
+        '//iam.googleapis.com/locations/global/workforcePools/workforcePools/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/workloadPools/providers/oidc',
       ];
       const workforceFileSourcedOptions = Object.assign(
         {},

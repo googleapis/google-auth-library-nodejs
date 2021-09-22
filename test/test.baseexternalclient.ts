@@ -88,7 +88,7 @@ describe('BaseExternalAccountClient', () => {
     {
       workforce_pool_user_project: 'workforce_pool_user_project',
       audience:
-        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
       subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
     }
   );
@@ -510,7 +510,7 @@ describe('BaseExternalAccountClient', () => {
             request: {
               grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
               audience:
-                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider',
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
               scope: 'https://www.googleapis.com/auth/cloud-platform',
               requested_token_type:
                 'urn:ietf:params:oauth:token-type:access_token',
@@ -547,7 +547,7 @@ describe('BaseExternalAccountClient', () => {
             request: {
               grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
               audience:
-                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/provider',
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
               scope: 'https://www.googleapis.com/auth/cloud-platform',
               requested_token_type:
                 'urn:ietf:params:oauth:token-type:access_token',

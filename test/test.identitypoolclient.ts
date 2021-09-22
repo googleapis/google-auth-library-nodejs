@@ -70,7 +70,7 @@ describe('IdentityPoolClient', () => {
     {
       workforce_pool_user_project: 'workforce_pool_user_project',
       audience:
-        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc',
+        '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
       subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
     }
   );
@@ -169,16 +169,16 @@ describe('IdentityPoolClient', () => {
 
   describe('Constructor', () => {
     const invalidWorkforceIdentityPoolClientAudiences = [
-      '//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcepools/pool/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools//providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/projects/locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/projects//locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers',
-      '//iam.googleapis.com/projects/123/locations/global/workforcePools/pool/providers/',
-      '//iam.googleapis.com/projects/123/locations//workforcePools/pool/providers/oidc',
-      '//iam.googleapis.com/projects/123/locations/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workloadIdentityPools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcepools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools//providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com//locations/global/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
+      '//iam.googleapis.com/locations//workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/workforcePools/pool/providers/oidc',
     ];
     const invalidWorkforceIdentityPoolFileSourceOptions = Object.assign(
       {},
@@ -292,9 +292,9 @@ describe('IdentityPoolClient', () => {
 
     it('should not throw on valid workforce configs', () => {
       const validWorkforceIdentityPoolClientAudiences = [
-        '//iam.googleapis.com/projects/123/locations/global/workforcePools/workforcePools/providers/provider',
-        '//iam.googleapis.com/projects/workforcePool/locations/global/workforcePools/pool/providers/provider',
-        '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/workloadPools/providers/oidc',
+        '//iam.googleapis.com/locations/global/workforcePools/workforcePools/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/workloadPools/providers/oidc',
       ];
       const validWorkforceIdentityPoolFileSourceOptions = Object.assign(
         {},
@@ -424,7 +424,7 @@ describe('IdentityPoolClient', () => {
             request: {
               grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
               audience:
-                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc',
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
               scope: 'https://www.googleapis.com/auth/cloud-platform',
               requested_token_type:
                 'urn:ietf:params:oauth:token-type:access_token',
@@ -462,7 +462,7 @@ describe('IdentityPoolClient', () => {
             request: {
               grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
               audience:
-                '//iam.googleapis.com/projects/projectId/locations/global/workforcePools/pool/providers/oidc',
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
               scope: 'https://www.googleapis.com/auth/cloud-platform',
               requested_token_type:
                 'urn:ietf:params:oauth:token-type:access_token',
