@@ -81,6 +81,12 @@ describe('IdentityPoolClient', () => {
     },
     fileSourcedOptionsWithWorkforceUserProject
   );
+  const fileSourcedOptionsWithWorkforceUserProjectAndSA = Object.assign(
+    {
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
+    },
+    fileSourcedOptionsWithWorkforceUserProject
+  );
   const basicAuthCreds =
     `${fileSourcedOptionsWithClientAuthAndWorkforceUserProject.client_id}:` +
     `${fileSourcedOptionsWithClientAuthAndWorkforceUserProject.client_secret}`;
@@ -173,6 +179,7 @@ describe('IdentityPoolClient', () => {
       '//iam.googleapis.com/locations/global/workforcepools/pool/providers/oidc',
       '//iam.googleapis.com/locations/global/workforcePools//providers/oidc',
       '//iam.googleapis.com/locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com/locations/global/workloadIdentityPools/workforcePools/pool/providers/oidc',
       '//iam.googleapis.com//locations/global/workforcePools/pool/providers/oidc',
       '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/oidc',
       '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
@@ -185,8 +192,8 @@ describe('IdentityPoolClient', () => {
       fileSourcedOptionsWithWorkforceUserProject
     );
     const expectedWorkforcePoolUserProjectError = new Error(
-      'The workforce_pool_user_project parameter should only be provided ' +
-        'for a Workforce Pool configuration.'
+      'workforcePoolUserProject should not be set for non-workforce pool ' +
+        'credentials.'
     );
 
     it('should throw when invalid options are provided', () => {
@@ -290,7 +297,7 @@ describe('IdentityPoolClient', () => {
       });
     });
 
-    it('should not throw on valid workforce configs', () => {
+    it('should not throw on valid workforce audience configs', () => {
       const validWorkforceIdentityPoolClientAudiences = [
         '//iam.googleapis.com/locations/global/workforcePools/workforcePools/providers/provider',
         '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
@@ -489,6 +496,103 @@ describe('IdentityPoolClient', () => {
           token: stsSuccessfulResponse.access_token,
         });
         scope.done();
+      });
+
+      it('should not throw if client auth is provided but workforce user project is not', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: fileSubjectToken,
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+            },
+            additionalHeaders: {
+              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                basicAuthCreds
+              )}`,
+            },
+          },
+        ]);
+        const fileSourcedOptionsWithClientAuth: IdentityPoolClientOptions =
+          Object.assign(
+            {},
+            fileSourcedOptionsWithClientAuthAndWorkforceUserProject
+          );
+        delete fileSourcedOptionsWithClientAuth.workforce_pool_user_project;
+
+        const client = new IdentityPoolClient(
+          fileSourcedOptionsWithClientAuth
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should not throw if workforce user project and service account impersonation provided but client auth is not', async () => {
+        const now = new Date().getTime();
+        const saSuccessResponse = {
+          accessToken: 'SA_ACCESS_TOKEN',
+          expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
+        };
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: fileSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+                options: JSON.stringify({
+                  userProject:
+                    fileSourcedOptionsWithWorkforceUserProjectAndSA.workforce_pool_user_project,
+                }),
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
+
+        const client = new IdentityPoolClient(
+          fileSourcedOptionsWithWorkforceUserProjectAndSA
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
       });
 
       it('should handle service account access token for text format', async () => {

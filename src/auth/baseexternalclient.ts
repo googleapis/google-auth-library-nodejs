@@ -57,6 +57,9 @@ export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
 /** Cloud resource manager URL used to retrieve project information. */
 export const CLOUD_RESOURCE_MANAGER =
   'https://cloudresourcemanager.googleapis.com/v1/projects/';
+/** The workforce audience pattern. */
+const WORKFORCE_AUDIENCE_PATTERN =
+  '//iam.googleapis.com/locations/[^/]+/workforcePools/.+/providers/.+';
 
 /**
  * Base external account credentials json interface.
@@ -128,8 +131,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
-  private readonly clientAuth: ClientAuthentication | undefined;
-  private readonly workforcePoolUserProject: string | undefined;
+  private readonly clientAuth?: ClientAuthentication;
+  private readonly workforcePoolUserProject?: string;
   public projectId: string | null;
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
@@ -176,6 +179,16 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
     this.workforcePoolUserProject = options.workforce_pool_user_project;
+    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
+    if (
+      this.workforcePoolUserProject &&
+      !this.audience.match(workforceAudiencePattern)
+    ) {
+      throw new Error(
+        'workforcePoolUserProject should not be set for non-workforce pool ' +
+          'credentials.'
+      );
+    }
     if (
       typeof options.service_account_impersonation_url !== 'undefined' &&
       !this.validateGoogleAPIsUrl(
@@ -297,8 +310,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   /**
    * @return A promise that resolves with the project ID corresponding to the
-   *   current workload identity pool. When not determinable, this resolves with
-   *   null.
+   *   current workload identity pool or current workforce pool. For workforce
+   *   pool credential, it returns the project ID corresponding to the
+   *   workforcePoolUserProject if client auth not determined. When not
+   *   determinable, this resolves with null.
    *   This is introduced to match the current pattern of using the Auth
    *   library:
    *   const projectId = await auth.getProjectId();
@@ -323,6 +338,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       });
       this.projectId = response.data.projectId;
       return this.projectId;
+    } else if (!this.clientAuth && this.workforcePoolUserProject) {
+      // Return workforcePoolUserProject if client auth is not defined.
+      return this.workforcePoolUserProject;
     }
     return null;
   }
@@ -408,20 +426,17 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     };
 
     // Exchange the external credentials for a GCP access token.
-    let stsResponse;
     // Client auth is prioritized over passing the workforcePoolUserProject
     // parameter for STS token exchange.
-    if (!this.clientAuth && this.workforcePoolUserProject) {
-      stsResponse = await this.stsCredential.exchangeToken(
-        stsCredentialsOptions,
-        undefined,
-        {userProject: this.workforcePoolUserProject}
-      );
-    } else {
-      stsResponse = await this.stsCredential.exchangeToken(
-        stsCredentialsOptions
-      );
-    }
+    const additionalOptions =
+      !this.clientAuth && this.workforcePoolUserProject
+        ? {userProject: this.workforcePoolUserProject}
+        : undefined;
+    const stsResponse = await this.stsCredential.exchangeToken(
+      stsCredentialsOptions,
+      undefined,
+      additionalOptions
+    );
 
     if (this.serviceAccountImpersonationUrl) {
       this.cachedAccessToken = await this.getImpersonatedAccessToken(

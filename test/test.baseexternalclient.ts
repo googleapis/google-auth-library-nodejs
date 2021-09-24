@@ -122,6 +122,12 @@ describe('BaseExternalAccountClient', () => {
     },
     externalAccountOptionsWithCreds
   );
+  const externalAccountOptionsWithWorkforceUserProjectAndSA = Object.assign(
+    {
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
+    },
+    externalAccountOptionsWorkforceUserProject
+  );
   const indeterminableProjectIdAudiences = [
     // Legacy K8s audience format.
     'identitynamespace:1f12345:my_provider',
@@ -263,6 +269,63 @@ describe('BaseExternalAccountClient', () => {
       }
     });
 
+    const invalidWorkforceAudiences = [
+      '//iam.googleapis.com/locations/global/workloadIdentityPools/pool/providers/provider',
+      '//iam.googleapis.com/locations/global/workforcepools/pool/providers/provider',
+      '//iam.googleapis.com/locations/global/workforcePools//providers/provider',
+      '//iam.googleapis.com/locations/global/workforcePools/providers/provider',
+      '//iam.googleapis.com/locations/global/workloadIdentityPools/workforcePools/pool/providers/provider',
+      '//iam.googleapis.com//locations/global/workforcePools/pool/providers/provider',
+      '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/provider',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
+      '//iam.googleapis.com/locations//workforcePools/pool/providers/provider',
+      '//iam.googleapis.com/locations/workforcePools/pool/providers/provider',
+    ];
+    const invalidExternalAccountOptionsWorkforceUserProject = Object.assign(
+      {},
+      externalAccountOptionsWorkforceUserProject
+    );
+    const expectedWorkforcePoolUserProjectError = new Error(
+      'workforcePoolUserProject should not be set for non-workforce pool ' +
+        'credentials.'
+    );
+
+    invalidWorkforceAudiences.forEach(invalidWorkforceAudience => {
+      it(`should throw given audience ${invalidWorkforceAudience} with user project defined in options`, () => {
+        invalidExternalAccountOptionsWorkforceUserProject.audience =
+          invalidWorkforceAudience;
+
+        assert.throws(() => {
+          return new TestExternalAccountClient(
+            invalidExternalAccountOptionsWorkforceUserProject
+          );
+        }, expectedWorkforcePoolUserProjectError);
+      });
+    });
+
+    it('should not throw on valid workforce audience configs', () => {
+      const validWorkforceAudiences = [
+        '//iam.googleapis.com/locations/global/workforcePools/workforcePools/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/workloadPools/providers/oidc',
+      ];
+      const validExternalAccountOptionsWorkforceUserProject = Object.assign(
+        {},
+        externalAccountOptionsWorkforceUserProject
+      );
+      for (const validWorkforceAudience of validWorkforceAudiences) {
+        validExternalAccountOptionsWorkforceUserProject.audience =
+          validWorkforceAudience;
+
+        assert.doesNotThrow(() => {
+          return new TestExternalAccountClient(
+            validExternalAccountOptionsWorkforceUserProject
+          );
+        });
+      }
+    });
+
     it('should not throw on valid options', () => {
       assert.doesNotThrow(() => {
         return new TestExternalAccountClient(externalAccountOptions);
@@ -360,6 +423,31 @@ describe('BaseExternalAccountClient', () => {
   });
 
   describe('getProjectId()', () => {
+    it('should return workforcePoolUserProject if client auth is not defined', async () => {
+      const options = Object.assign(
+        {},
+        externalAccountOptionsWorkforceUserProject
+      );
+      const client = new TestExternalAccountClient(options);
+      const actualProjectId = await client.getProjectId();
+
+      assert.strictEqual(
+        actualProjectId,
+        externalAccountOptionsWorkforceUserProject.workforce_pool_user_project
+      );
+    });
+
+    it('should not return workforcePoolUserProject if client auth is defined', async () => {
+      const options = Object.assign(
+        {},
+        externalAccountOptionsWithClientAuthAndWorkforceUserProject
+      );
+      const client = new TestExternalAccountClient(options);
+      const actualProjectId = await client.getProjectId();
+
+      assert.strictEqual(actualProjectId, null);
+    });
+
     it('should resolve with projectId when determinable', async () => {
       const projectNumber = 'my-proj-number';
       const projectId = 'my-proj-id';
@@ -563,6 +651,49 @@ describe('BaseExternalAccountClient', () => {
 
         const client = new TestExternalAccountClient(
           externalAccountOptionsWorkforceUserProject
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
+
+      it('should not throw if client auth is provided but workforce user project is not', async () => {
+        const scope = mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+            },
+            additionalHeaders: {
+              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                basicAuthCreds
+              )}`,
+            },
+          },
+        ]);
+        const externalAccountOptionsWithClientAuth: BaseExternalAccountClientOptions =
+          Object.assign(
+            {},
+            externalAccountOptionsWithClientAuthAndWorkforceUserProject
+          );
+        delete externalAccountOptionsWithClientAuth.workforce_pool_user_project;
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithClientAuth
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1387,6 +1518,55 @@ describe('BaseExternalAccountClient', () => {
 
         const client = new TestExternalAccountClient(
           externalAccountOptionsWithCredsAndSA
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should not throw if workforce user project is provided but client auth is not', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+                options: JSON.stringify({
+                  userProject:
+                    externalAccountOptionsWithWorkforceUserProjectAndSA.workforce_pool_user_project,
+                }),
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithWorkforceUserProjectAndSA
         );
         const actualResponse = await client.getAccessToken();
 
