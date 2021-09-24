@@ -527,9 +527,7 @@ describe('IdentityPoolClient', () => {
           );
         delete fileSourcedOptionsWithClientAuth.workforce_pool_user_project;
 
-        const client = new IdentityPoolClient(
-          fileSourcedOptionsWithClientAuth
-        );
+        const client = new IdentityPoolClient(fileSourcedOptionsWithClientAuth);
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
