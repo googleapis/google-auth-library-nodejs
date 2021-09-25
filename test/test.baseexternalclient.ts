@@ -278,6 +278,7 @@ describe('BaseExternalAccountClient', () => {
       '//iam.googleapis.com//locations/global/workforcePools/pool/providers/provider',
       '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/provider',
       '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
+      '//iam.googleapis.com/locations/global/workforcePools/workloadIdentityPools/pool/providers/provider',
       '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
       '//iam.googleapis.com/locations//workforcePools/pool/providers/provider',
       '//iam.googleapis.com/locations/workforcePools/pool/providers/provider',
@@ -423,29 +424,119 @@ describe('BaseExternalAccountClient', () => {
   });
 
   describe('getProjectId()', () => {
-    it('should return workforcePoolUserProject if client auth is not defined', async () => {
+    it('should resolve with workforce projectID if no client auth not and workforce user project are defined', async () => {
       const options = Object.assign(
         {},
         externalAccountOptionsWorkforceUserProject
       );
+      const projectNumber = options.workforce_pool_user_project;
+      const projectId = 'my-proj-id';
+      const response = {
+        projectNumber,
+        projectId,
+        lifecycleState: 'ACTIVE',
+        name: 'project-name',
+        createTime: '2018-11-06T04:42:54.109Z',
+        parent: {
+          type: 'folder',
+          id: '12345678901',
+        },
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+              options: JSON.stringify({
+                userProject: options.workforce_pool_user_project,
+              }),
+            },
+          },
+        ]),
+        mockCloudResourceManager(
+          options.workforce_pool_user_project,
+          stsSuccessfulResponse.access_token,
+          200,
+          response
+        ),
+      ];
+
       const client = new TestExternalAccountClient(options);
       const actualProjectId = await client.getProjectId();
 
-      assert.strictEqual(
-        actualProjectId,
-        externalAccountOptionsWorkforceUserProject.workforce_pool_user_project
-      );
+      assert.strictEqual(actualProjectId, projectId);
+      assert.strictEqual(client.projectId, projectId);
+
+      // Next call should return cached result.
+      const cachedProjectId = await client.getProjectId();
+
+      assert.strictEqual(cachedProjectId, projectId);
+      scopes.forEach(scope => scope.done());
     });
 
-    it('should not return workforcePoolUserProject if client auth is defined', async () => {
+    it('should not pass workforce user project if client auth is defined', async () => {
       const options = Object.assign(
         {},
         externalAccountOptionsWithClientAuthAndWorkforceUserProject
       );
+      const projectNumber = options.workforce_pool_user_project;
+      const projectId = 'my-proj-id';
+      const response = {
+        projectNumber,
+        projectId,
+        lifecycleState: 'ACTIVE',
+        name: 'project-name',
+        createTime: '2018-11-06T04:42:54.109Z',
+        parent: {
+          type: 'folder',
+          id: '12345678901',
+        },
+      };
+      const scopes = [
+        mockStsTokenExchange([
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience:
+                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+            },
+          },
+        ]),
+        mockCloudResourceManager(
+          projectNumber,
+          stsSuccessfulResponse.access_token,
+          200,
+          response
+        ),
+      ];
+
       const client = new TestExternalAccountClient(options);
       const actualProjectId = await client.getProjectId();
 
-      assert.strictEqual(actualProjectId, null);
+      assert.strictEqual(actualProjectId, projectId);
+      assert.strictEqual(client.projectId, projectId);
+
+      // Next call should return cached result.
+      const cachedProjectId = await client.getProjectId();
+
+      assert.strictEqual(cachedProjectId, projectId);
+      scopes.forEach(scope => scope.done());
     });
 
     it('should resolve with projectId when determinable', async () => {
@@ -1530,7 +1621,7 @@ describe('BaseExternalAccountClient', () => {
         scopes.forEach(scope => scope.done());
       });
 
-      it('should not throw if workforce user project is provided but client auth is not', async () => {
+      it('should still pass workforce user project when no client auth is used', async () => {
         const scopes: nock.Scope[] = [];
         scopes.push(
           mockStsTokenExchange([

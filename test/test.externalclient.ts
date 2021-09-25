@@ -85,6 +85,7 @@ describe('ExternalAccountClient', () => {
       '//iam.googleapis.com/locations/global/workloadIdentityPools/workforcePools/pool/providers/oidc',
       '//iam.googleapis.com//locations/global/workforcePools/pool/providers/oidc',
       '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/workloadIdentityPools/pool/providers/oidc',
       '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
       '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
       '//iam.googleapis.com/locations//workforcePools/pool/providers/oidc',

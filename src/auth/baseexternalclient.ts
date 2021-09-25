@@ -59,7 +59,7 @@ export const CLOUD_RESOURCE_MANAGER =
   'https://cloudresourcemanager.googleapis.com/v1/projects/';
 /** The workforce audience pattern. */
 const WORKFORCE_AUDIENCE_PATTERN =
-  '//iam.googleapis.com/locations/[^/]+/workforcePools/.+/providers/.+';
+  '//iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 
 /**
  * Base external account credentials json interface.
@@ -310,10 +310,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   /**
    * @return A promise that resolves with the project ID corresponding to the
-   *   current workload identity pool or current workforce pool. For workforce
-   *   pool credential, it returns the project ID corresponding to the
-   *   workforcePoolUserProject if client auth not determined. When not
-   *   determinable, this resolves with null.
+   *   current workload identity pool or current workforce pool if
+   *   determinable. For workforce pool credential, it returns the project ID
+   *   corresponding to the workforcePoolUserProject.
    *   This is introduced to match the current pattern of using the Auth
    *   library:
    *   const projectId = await auth.getProjectId();
@@ -325,22 +324,20 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    *   https://cloud.google.com/resource-manager/reference/rest/v1/projects/get#authorization-scopes
    */
   async getProjectId(): Promise<string | null> {
+    const projectNumber = this.projectNumber || this.workforcePoolUserProject;
     if (this.projectId) {
       // Return previously determined project ID.
       return this.projectId;
-    } else if (this.projectNumber) {
+    } else if (projectNumber) {
       // Preferable not to use request() to avoid retrial policies.
       const headers = await this.getRequestHeaders();
       const response = await this.transporter.request<ProjectInfo>({
         headers,
-        url: `${CLOUD_RESOURCE_MANAGER}${this.projectNumber}`,
+        url: `${CLOUD_RESOURCE_MANAGER}${projectNumber}`,
         responseType: 'json',
       });
       this.projectId = response.data.projectId;
       return this.projectId;
-    } else if (!this.clientAuth && this.workforcePoolUserProject) {
-      // Return workforcePoolUserProject if client auth is not defined.
-      return this.workforcePoolUserProject;
     }
     return null;
   }
