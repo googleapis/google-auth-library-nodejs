@@ -29,7 +29,7 @@ function main(
   /**
    * TODO(developer): Uncomment these variables before running the sample.
    */
-  // const url = 'https://TARGET_URL';
+  // const url = 'https://<YOUR_TARGET_URL>';
   // let targetAudience = null;
   const {GoogleAuth} = require('google-auth-library');
   const auth = new GoogleAuth();
