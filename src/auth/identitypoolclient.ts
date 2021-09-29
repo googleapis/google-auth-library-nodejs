@@ -70,7 +70,8 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * Instantiate an IdentityPoolClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * An error is thrown if the credential is not a valid file-sourced or
-   * url-sourced credential.
+   * url-sourced credential or a workforce pool user project is provided
+   * with a non workforce audience.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
    * @param additionalOptions Optional additional behavior customization

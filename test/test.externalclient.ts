@@ -77,6 +77,21 @@ describe('ExternalAccountClient', () => {
       forceRefreshOnFailure: true,
     };
 
+    const invalidWorkforceIdentityPoolClientAudiences = [
+      '//iam.googleapis.com/locations/global/workloadIdentityPools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcepools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools//providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/providers/oidc',
+      '//iam.googleapis.com/locations/global/workloadIdentityPools/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com//locations/global/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/workloadIdentityPools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
+      '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
+      '//iam.googleapis.com/locations//workforcePools/pool/providers/oidc',
+      '//iam.googleapis.com/locations/workforcePools/pool/providers/oidc',
+    ];
+
     it('should return IdentityPoolClient on IdentityPoolClientOptions', () => {
       const expectedClient = new IdentityPoolClient(fileSourcedOptions);
 
@@ -115,6 +130,57 @@ describe('ExternalAccountClient', () => {
         expectedClient
       );
     });
+
+    it('should return an IdentityPoolClient with a workforce config', () => {
+      const validWorkforceIdentityPoolClientAudiences = [
+        '//iam.googleapis.com/locations/global/workforcePools/workforcePools/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+        '//iam.googleapis.com/locations/global/workforcePools/workloadPools/providers/oidc',
+      ];
+      const workforceFileSourcedOptions = Object.assign(
+        {},
+        fileSourcedOptions,
+        {
+          workforce_pool_user_project: 'workforce_pool_user_project',
+          subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+        }
+      );
+      for (const validWorkforceIdentityPoolClientAudience of validWorkforceIdentityPoolClientAudiences) {
+        workforceFileSourcedOptions.audience =
+          validWorkforceIdentityPoolClientAudience;
+        const expectedClient = new IdentityPoolClient(
+          workforceFileSourcedOptions
+        );
+
+        assert.deepStrictEqual(
+          ExternalAccountClient.fromJSON(workforceFileSourcedOptions),
+          expectedClient
+        );
+      }
+    });
+
+    invalidWorkforceIdentityPoolClientAudiences.forEach(
+      invalidWorkforceIdentityPoolClientAudience => {
+        const workforceIdentityPoolClientInvalidOptions = Object.assign(
+          {},
+          fileSourcedOptions,
+          {
+            workforce_pool_user_project: 'workforce_pool_user_project',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+          }
+        );
+        it(`should throw an error when an invalid workforce audience ${invalidWorkforceIdentityPoolClientAudience} is provided with a workforce user project`, () => {
+          workforceIdentityPoolClientInvalidOptions.audience =
+            invalidWorkforceIdentityPoolClientAudience;
+
+          assert.throws(() => {
+            return ExternalAccountClient.fromJSON(
+              workforceIdentityPoolClientInvalidOptions
+            );
+          });
+        });
+      }
+    );
 
     it('should return null when given non-ExternalAccountClientOptions', () => {
       assert(
