@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.10.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.0...v7.10.1) (2021-10-14)
+
+
+### Bug Fixes
+
+* **security:** explicitly update keypair dependency ([94401a6](https://www.github.com/googleapis/google-auth-library-nodejs/commit/94401a6b73eeaf370aeaf9cbf92f23f4fc7bde9b))
+
 ## [7.10.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.9.2...v7.10.0) (2021-09-28)
 
 
