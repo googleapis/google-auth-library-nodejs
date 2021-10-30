@@ -90,9 +90,9 @@ async function main() {
 
   const storage = new Storage(storageOptions);
   const downloadFile = await storage
-      .bucket(bucketName)
-      .file(objectName)
-      .download();
+    .bucket(bucketName)
+    .file(objectName)
+    .download();
   console.log(downloadFile.toString('utf8'));
 }
 
