@@ -4,6 +4,27 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.10.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.0...v7.10.1) (2021-10-14)
+
+
+### Bug Fixes
+
+* **security:** explicitly update keypair dependency ([94401a6](https://www.github.com/googleapis/google-auth-library-nodejs/commit/94401a6b73eeaf370aeaf9cbf92f23f4fc7bde9b))
+
+## [7.10.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.9.2...v7.10.0) (2021-09-28)
+
+
+### Features
+
+* add workforce config support. ([#1251](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1251)) ([fe29e38](https://www.github.com/googleapis/google-auth-library-nodejs/commit/fe29e384820f1c97ca62478c55813aad3f8ecbea))
+
+### [7.9.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.9.1...v7.9.2) (2021-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/iam to v2 ([#1253](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1253)) ([59b8243](https://www.github.com/googleapis/google-auth-library-nodejs/commit/59b82436d6b9b68b6ae0e0e81d4b797d964acae2))
+
 ### [7.9.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.9.0...v7.9.1) (2021-09-02)
 
 

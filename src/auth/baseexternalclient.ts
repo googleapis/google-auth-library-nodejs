@@ -57,6 +57,9 @@ export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
 /** Cloud resource manager URL used to retrieve project information. */
 export const CLOUD_RESOURCE_MANAGER =
   'https://cloudresourcemanager.googleapis.com/v1/projects/';
+/** The workforce audience pattern. */
+const WORKFORCE_AUDIENCE_PATTERN =
+  '//iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 
 /**
  * Base external account credentials json interface.
@@ -71,6 +74,7 @@ export interface BaseExternalAccountClientOptions {
   client_id?: string;
   client_secret?: string;
   quota_project_id?: string;
+  workforce_pool_user_project?: string;
 }
 
 /**
@@ -127,6 +131,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
+  private readonly clientAuth?: ClientAuthentication;
+  private readonly workforcePoolUserProject?: string;
   public projectId: string | null;
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
@@ -152,7 +158,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           `received "${options.type}"`
       );
     }
-    const clientAuth = options.client_id
+    this.clientAuth = options.client_id
       ? ({
           confidentialClientType: 'basic',
           clientId: options.client_id,
@@ -162,13 +168,27 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     if (!this.validateGoogleAPIsUrl('sts', options.token_url)) {
       throw new Error(`"${options.token_url}" is not a valid token url.`);
     }
-    this.stsCredential = new sts.StsCredentials(options.token_url, clientAuth);
+    this.stsCredential = new sts.StsCredentials(
+      options.token_url,
+      this.clientAuth
+    );
     // Default OAuth scope. This could be overridden via public property.
     this.scopes = [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
     this.audience = options.audience;
     this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
+    this.workforcePoolUserProject = options.workforce_pool_user_project;
+    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
+    if (
+      this.workforcePoolUserProject &&
+      !this.audience.match(workforceAudiencePattern)
+    ) {
+      throw new Error(
+        'workforcePoolUserProject should not be set for non-workforce pool ' +
+          'credentials.'
+      );
+    }
     if (
       typeof options.service_account_impersonation_url !== 'undefined' &&
       !this.validateGoogleAPIsUrl(
@@ -290,8 +310,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   /**
    * @return A promise that resolves with the project ID corresponding to the
-   *   current workload identity pool. When not determinable, this resolves with
-   *   null.
+   *   current workload identity pool or current workforce pool if
+   *   determinable. For workforce pool credential, it returns the project ID
+   *   corresponding to the workforcePoolUserProject.
    *   This is introduced to match the current pattern of using the Auth
    *   library:
    *   const projectId = await auth.getProjectId();
@@ -303,15 +324,16 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    *   https://cloud.google.com/resource-manager/reference/rest/v1/projects/get#authorization-scopes
    */
   async getProjectId(): Promise<string | null> {
+    const projectNumber = this.projectNumber || this.workforcePoolUserProject;
     if (this.projectId) {
       // Return previously determined project ID.
       return this.projectId;
-    } else if (this.projectNumber) {
+    } else if (projectNumber) {
       // Preferable not to use request() to avoid retrial policies.
       const headers = await this.getRequestHeaders();
       const response = await this.transporter.request<ProjectInfo>({
         headers,
-        url: `${CLOUD_RESOURCE_MANAGER}${this.projectNumber}`,
+        url: `${CLOUD_RESOURCE_MANAGER}${projectNumber}`,
         responseType: 'json',
       });
       this.projectId = response.data.projectId;
@@ -401,8 +423,16 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     };
 
     // Exchange the external credentials for a GCP access token.
+    // Client auth is prioritized over passing the workforcePoolUserProject
+    // parameter for STS token exchange.
+    const additionalOptions =
+      !this.clientAuth && this.workforcePoolUserProject
+        ? {userProject: this.workforcePoolUserProject}
+        : undefined;
     const stsResponse = await this.stsCredential.exchangeToken(
-      stsCredentialsOptions
+      stsCredentialsOptions,
+      undefined,
+      additionalOptions
     );
 
     if (this.serviceAccountImpersonationUrl) {
