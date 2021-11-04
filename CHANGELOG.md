@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.10.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.1...v7.10.2) (2021-11-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v11 ([#1312](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1312)) ([b3ba9ac](https://www.github.com/googleapis/google-auth-library-nodejs/commit/b3ba9ac834de86022a78ac540995fa35857d6670))
+
 ### [7.10.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.0...v7.10.1) (2021-10-14)
 
 
