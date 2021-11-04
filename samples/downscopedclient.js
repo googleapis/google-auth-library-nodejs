@@ -32,18 +32,28 @@ const bucketName = 'your-gcs-bucket-name';
 const objectName = 'your-gcs-object-name';
 
 /**
- * This example shows creating a downscopedClient, and using that client to
- * define oauth2Client refresh access token logic. Then the oauth2Client is
- * used to define a cloud storage object and call GCS APIs.
+ * The following sample demonstrates how to initialize a DownscopedClient using
+ * a credential access boundary and a client obtained via ADC. The
+ * DownscopedClient is used to create downscoped tokens which can be consumed
+ * via the OAuth2Client. A refresh handler is used to obtain new downscoped
+ * tokens seamlessly when they expire. Then the oauth2Client is used to define
+ * a cloud storage object and call GCS APIs to access specified object and
+ * print the contents.
  */
 async function main() {
-  // Define CAB object.
+  // Defines a credential access boundary that grants full control over objects
+  // in the specified bucket.
   const cab = {
     accessBoundary: {
       accessBoundaryRules: [
         {
           availableResource: `//storage.googleapis.com/projects/_/buckets/${bucketName}`,
-          availablePermissions: ['inRole:roles/storage.objectAdmin'],
+          availablePermissions: ['inRole:roles/storage.objectViewer'],
+          availabilityCondition: {
+            expression:
+              "resource.name.startsWith('projects/_/buckets/" +
+              `${bucketName}/objects/${objectName}')`,
+          },
         },
       ],
     },
@@ -54,11 +64,12 @@ async function main() {
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const projectId = await googleAuth.getProjectId();
-  // Obtain an authenticated client.
+  // Obtain an authenticated client via ADC.
   const client = await googleAuth.getClient();
   // Use the client to generate a DownscopedClient.
   const cabClient = new DownscopedClient(client, cab);
-  // Define refreshHandler of oauth2Client using cabClient to refresh tokens.
+  // Define a refreshHandler that will be used to refresh the downscoped token
+  // when it expires.
   oauth2Client.refreshHandler = async () => {
     const refreshedAccessToken = await cabClient.getAccessToken();
     return {

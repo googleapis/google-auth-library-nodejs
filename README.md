@@ -726,11 +726,10 @@ main();
 
 ## Downscoped Client
 
-[Downscoping with Credential Access Boundaries](https://cloud.google.com/iam/docs/downscoping-short-lived-credentials) enables setting up a distinct set of permissions through downscoping with Credential Access Boundary which is an easier and more
-manageable approach for developers to have Identity and Access Management (IAM) permissions on a short-lived credential compared with creating a bunch of service accounts with different roles. Another reason to use downscoped credentials is to ensure tokens in flight always have the least privileges, e.g. Principle of Least Privilege.
+[Downscoping with Credential Access Boundaries](https://cloud.google.com/iam/docs/downscoping-short-lived-credentials) is used to restrict the Identity and Access Management (IAM) permissions that a short-lived credential can use.
 
 The `DownscopedClient` class can be used to produce a downscoped access token from a 
-`CredentialAccessBoundary` and a source credential. The Credential Access Boundary specifies which resources the newly created credential can access, as well as an upper bound on the permissions that are available on each resource.
+`CredentialAccessBoundary` and a source credential. The Credential Access Boundary specifies which resources the newly created credential can access, as well as an upper bound on the permissions that are available on each resource. Using downscoped credentials ensures tokens in flight always have the least privileges, e.g. Principle of Least Privilege.
 
 Notice: 
 Only Cloud Storage supports Credential Access Boundaries for now.

@@ -40,7 +40,7 @@ const {describe, it} = require('mocha');
 const bucketName = 'cab-int-bucket-brd3qlsuok';
 const objectName1 = 'cab-first-"brd3qlsuok.txt';
 const objectName2 = 'cab-second-"brd3qlsuok.txt';
-const CONTENT1 = 'first';
+const CONTENT = 'first';
 
 describe('samples for downscoping with cab', () => {
   const googleAuth = new GoogleAuth({
@@ -68,16 +68,10 @@ describe('samples for downscoping with cab', () => {
     },
   };
 
-  it('should only download file for object with cab permission', async () => {
+  it('should only have access to the object specified in the cab rule', async () => {
     const projectId = await googleAuth.getProjectId();
     const errorMessage =
       'does not have storage.objects.get access to the Google Cloud Storage object.';
-
-    // Obtain an authenticated client via ADC.
-    const client = await googleAuth.getClient();
-
-    // Use the client to create a DownscopedClient.
-    const cabClient = new DownscopedClient(client, cab);
 
     // Create the OAuth credentials (the consumer).
     const oauth2Client = new OAuth2Client();
@@ -87,6 +81,14 @@ describe('samples for downscoping with cab', () => {
     // demand every time a token is expired, without any additional code
     // changes.
     oauth2Client.refreshHandler = async () => {
+      // Obtain an authenticated client via ADC.
+      const client = await googleAuth.getClient();
+
+      // Create a DownscopedClient with the credential access boundary defined
+      // above. This client will only be able to access the file contents of
+      // the specified object.
+      const cabClient = new DownscopedClient(client, cab);
+
       // The common pattern of usage is to have a token broker pass the
       // downscoped short-lived access tokens to a token consumer via some
       // secure authenticated channel. For illustration purposes, we are
@@ -126,7 +128,7 @@ describe('samples for downscoping with cab', () => {
       .bucket(bucketName)
       .file(objectName1)
       .download();
-    assert.strictEqual(downloadFile.toString('utf8').includes(CONTENT1), true);
+    assert.strictEqual(downloadFile.toString('utf8').includes(CONTENT), true);
 
     // Test object2 download fails due to no access.
     try {

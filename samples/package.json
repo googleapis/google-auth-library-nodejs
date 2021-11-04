@@ -5,7 +5,7 @@
     "*.js"
   ],
   "scripts": {
-    "setup": "node scripts/externalclient-setup.js",
+    "setup": "node scripts/*.js",
     "test": "mocha --timeout 60000"
   },
   "engines": {
