@@ -22,6 +22,12 @@ function main(
   url = 'https://service-1234-uc.a.run.app',
   targetAudience = null
 ) {
+  if (!targetAudience) {
+    // Use the target service's hostname as the target audience for requests.
+    // (For example: https://my-cloud-run-service.run.app)
+    const {URL} = require('url');
+    targetAudience = new URL(url).origin;
+  }
   // [START google_auth_idtoken_serverless]
   // [START cloudrun_service_to_service_auth]
   // [START run_service_to_service_auth]
@@ -38,12 +44,6 @@ function main(
   const auth = new GoogleAuth();
 
   async function request() {
-    if (!targetAudience) {
-      // Use the target service's hostname as the target audience for requests.
-      // (For example: https://my-cloud-run-service.run.app)
-      const {URL} = require('url');
-      targetAudience = new URL(url).origin;
-    }
     console.info(`request ${url} with target audience ${targetAudience}`);
     const client = await auth.getIdTokenClient(targetAudience);
     const res = await client.request({url});
