@@ -731,8 +731,7 @@ main();
 The `DownscopedClient` class can be used to produce a downscoped access token from a 
 `CredentialAccessBoundary` and a source credential. The Credential Access Boundary specifies which resources the newly created credential can access, as well as an upper bound on the permissions that are available on each resource. Using downscoped credentials ensures tokens in flight always have the least privileges, e.g. Principle of Least Privilege.
 
-Notice: 
-Only Cloud Storage supports Credential Access Boundaries for now.
+> Notice: Only Cloud Storage supports Credential Access Boundaries for now.
 
 ### Sample Usage
 There are two entities needed to generate and use credentials generated from
