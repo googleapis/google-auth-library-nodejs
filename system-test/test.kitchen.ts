@@ -50,7 +50,7 @@ describe('pack and install', () => {
   it('should be able to use the d.ts', async function () {
     // npm, once in a blue moon, fails during pack process. If this happens,
     // we should be safe to retry.
-    //this.retries(3);
+    this.retries(3);
     this.timeout(40000);
     await packAndInstall();
   });
