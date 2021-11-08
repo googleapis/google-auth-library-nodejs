@@ -122,7 +122,11 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    if (!this.apiKey && !this.hasUserScopes() && url) {
+    url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
+    const useSelfSignedJWT =
+      (!this.hasUserScopes() && url) ||
+      (this.useJWTAccessWithScope && this.hasAnyScopes());
+    if (!this.apiKey && useSelfSignedJWT) {
       if (
         this.additionalClaims &&
         (
@@ -148,10 +152,22 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
             this.eagerRefreshThresholdMillis
           );
         }
+
+        let scopes: string | string[] | undefined;
+        if (this.hasUserScopes()) {
+          scopes = this.scopes;
+        } else if (!url) {
+          scopes = this.defaultScopes;
+        }
+
         const headers = await this.access.getRequestHeaders(
-          url,
-          this.additionalClaims
+          url ?? undefined,
+          this.additionalClaims,
+          // Scopes take precedent over audience for signing,
+          // so we only provide them if useJWTAccessWithScope is on
+          this.useJWTAccessWithScope ? scopes : undefined
         );
+
         return {headers: this.addSharedMetadataHeaders(headers)};
       }
     } else if (this.hasAnyScopes() || this.apiKey) {

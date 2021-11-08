@@ -4,6 +4,62 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.10.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.1...v7.10.2) (2021-11-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v11 ([#1312](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1312)) ([b3ba9ac](https://www.github.com/googleapis/google-auth-library-nodejs/commit/b3ba9ac834de86022a78ac540995fa35857d6670))
+
+### [7.10.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.0...v7.10.1) (2021-10-14)
+
+
+### Bug Fixes
+
+* **security:** explicitly update keypair dependency ([94401a6](https://www.github.com/googleapis/google-auth-library-nodejs/commit/94401a6b73eeaf370aeaf9cbf92f23f4fc7bde9b))
+
+## [7.10.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.9.2...v7.10.0) (2021-09-28)
+
+
+### Features
+
+* add workforce config support. ([#1251](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1251)) ([fe29e38](https://www.github.com/googleapis/google-auth-library-nodejs/commit/fe29e384820f1c97ca62478c55813aad3f8ecbea))
+
+### [7.9.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.9.1...v7.9.2) (2021-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/iam to v2 ([#1253](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1253)) ([59b8243](https://www.github.com/googleapis/google-auth-library-nodejs/commit/59b82436d6b9b68b6ae0e0e81d4b797d964acae2))
+
+### [7.9.1](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.9.0...v7.9.1) (2021-09-02)
+
+
+### Bug Fixes
+
+* **build:** switch to main branch ([#1249](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1249)) ([2c72de4](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2c72de4ef7c07ddb4586094faf117715ab50143e))
+
+## [7.9.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.8.0...v7.9.0) (2021-09-02)
+
+
+### Features
+
+* wire up implementation of DownscopedClient. ([#1232](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1232)) ([baa1318](https://www.github.com/googleapis/google-auth-library-nodejs/commit/baa13185836bb299b769c034bfb7d37231eea8d1))
+
+## [7.8.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.7.0...v7.8.0) (2021-08-30)
+
+
+### Features
+
+* use self-signed JWTs if alwaysUseJWTAccessWithScope is true ([#1196](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1196)) ([ad3f652](https://www.github.com/googleapis/google-auth-library-nodejs/commit/ad3f652e8e859d8d8a69dfe9df01d001862fe0ae))
+
+## [7.7.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.2...v7.7.0) (2021-08-27)
+
+
+### Features
+
+* add refreshHandler callback to OAuth 2.0 client to handle token refresh ([#1213](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1213)) ([2fcab77](https://www.github.com/googleapis/google-auth-library-nodejs/commit/2fcab77a1fae85489829f22ec95cc66b0b284342))
+
 ### [7.6.2](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.6.1...v7.6.2) (2021-08-17)
 
 

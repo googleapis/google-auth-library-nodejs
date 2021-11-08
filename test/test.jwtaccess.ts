@@ -56,6 +56,22 @@ describe('jwtaccess', () => {
     assert.strictEqual(testUri, payload.aud);
   });
 
+  it('getRequestHeaders should sign with scopes if user supplied scopes', () => {
+    const client = new JWTAccess(email, keys.private);
+    const headers = client.getRequestHeaders(testUri, undefined, 'myfakescope');
+    const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    const payload = decoded.payload;
+    assert.strictEqual('myfakescope', payload.scope);
+  });
+
+  it('getRequestHeaders should sign with default if user did not supply scopes', () => {
+    const client = new JWTAccess(email, keys.private);
+    const headers = client.getRequestHeaders(testUri);
+    const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    const payload = decoded.payload;
+    assert.strictEqual(testUri, payload.aud);
+  });
+
   it('getRequestHeaders should set key id in header when available', () => {
     const client = new JWTAccess(email, keys.private, '101');
     const headers = client.getRequestHeaders(testUri);
@@ -166,5 +182,35 @@ describe('jwtaccess', () => {
     // Ensure that the correct bits were pulled from the stream.
     assert.strictEqual(json.private_key, client.key);
     assert.strictEqual(json.client_email, client.email);
+  });
+
+  it('should cache a key with scopes if url & scopes are passed', async () => {
+    const client = new JWTAccess(email, keys.private);
+    const testUri = 'http:/example.com/my_test_service';
+    const scopes = 'scope1';
+    const cacheKey = client.getCachedKey(testUri, scopes);
+    assert.strictEqual(cacheKey, `${testUri}_${scopes}`);
+  });
+
+  it('should cache a key with scopes if url & an array of scopes are passed', async () => {
+    const client = new JWTAccess(email, keys.private);
+    const testUri = 'http:/example.com/my_test_service';
+    const scopes = ['scope1', 'scope2'];
+    const cacheKey = client.getCachedKey(testUri, scopes);
+    assert.strictEqual(cacheKey, `${testUri}_${scopes.join('_')}`);
+  });
+
+  it('should cache a key with a URL if nothing else is passed into cacheKey', async () => {
+    const client = new JWTAccess(email, keys.private);
+    const testUri = 'http:/example.com/my_test_service';
+    const cacheKey = client.getCachedKey(testUri);
+    assert.strictEqual(cacheKey, testUri);
+  });
+
+  it('should throw an error when caching a key if nothing is passed', async () => {
+    const client = new JWTAccess(email, keys.private);
+    assert.throws(() => {
+      client.getCachedKey();
+    }, /Scopes or url must be provided/);
   });
 });

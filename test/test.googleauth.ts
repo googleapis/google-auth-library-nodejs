@@ -405,6 +405,20 @@ describe('googleauth', () => {
       assert.strictEqual(json.private_key, (result as JWT).key);
     });
 
+    it('fromJSON should set useJWTAccessWithScope with private key', () => {
+      auth.useJWTAccessWithScope = true;
+      const json = createJwtJSON();
+      const result = auth.fromJSON(json);
+      assert.ok((result as JWT).useJWTAccessWithScope);
+    });
+
+    it('fromJSON should set default service path with private key', () => {
+      auth.defaultServicePath = 'a/b/c';
+      const json = createJwtJSON();
+      const result = auth.fromJSON(json);
+      assert.strictEqual((result as JWT).defaultServicePath, 'a/b/c');
+    });
+
     it('fromJSON should create JWT with null scopes', () => {
       const json = createJwtJSON();
       const result = auth.fromJSON(json);
