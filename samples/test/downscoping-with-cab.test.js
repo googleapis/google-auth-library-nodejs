@@ -132,7 +132,7 @@ describe('samples for downscoping with cab', () => {
 
     // Test object2 download fails due to no access.
     try {
-      storage.bucket(bucketName).file(objectName2);
+      await storage.bucket(bucketName).file(objectName2).download();
       throw new Error('should only have access to the object 2');
     } catch (e) {
       assert.strictEqual(e.message.includes(errorMessage), true);
