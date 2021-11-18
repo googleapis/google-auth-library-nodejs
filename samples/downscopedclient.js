@@ -41,8 +41,8 @@ const objectName = 'your-gcs-object-name';
  * print the contents.
  */
 async function main() {
-  // Defines a credential access boundary that grants full control over objects
-  // in the specified bucket.
+  // Defines a credential access boundary that grants objectViewer access in
+  // the specified bucket.
   const cab = {
     accessBoundary: {
       accessBoundaryRules: [

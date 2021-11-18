@@ -37,9 +37,9 @@ const {Storage} = require('@google-cloud/storage');
 const {assert} = require('chai');
 const {describe, it} = require('mocha');
 
-const bucketName = 'cab-int-bucket-brd3qlsuok';
-const objectName1 = 'cab-first-"brd3qlsuok.txt';
-const objectName2 = 'cab-second-"brd3qlsuok.txt';
+const bucketName = 'cab-int-bucket-uoabnydvnn';
+const objectName1 = 'cab-first-"uoabnydvnn.txt';
+const objectName2 = 'cab-second-"uoabnydvnn.txt';
 const CONTENT = 'first';
 
 describe('samples for downscoping with cab', () => {
@@ -132,7 +132,8 @@ describe('samples for downscoping with cab', () => {
 
     // Test object2 download fails due to no access.
     try {
-      await storage.bucket(bucketName).file(objectName2).download();
+      storage.bucket(bucketName).file(objectName2);
+      throw new Error('should only have access to the object 2');
     } catch (e) {
       assert.strictEqual(e.message.includes(errorMessage), true);
     }
