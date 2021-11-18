@@ -37,9 +37,9 @@ const {Storage} = require('@google-cloud/storage');
 const {assert} = require('chai');
 const {describe, it} = require('mocha');
 
-const bucketName = 'cab-int-bucket-uoabnydvnn';
-const objectName1 = 'cab-first-"uoabnydvnn.txt';
-const objectName2 = 'cab-second-"uoabnydvnn.txt';
+const bucketName = 'cab-int-bucket-brd3qlsuok';
+const objectName1 = 'cab-first-"brd3qlsuok.txt';
+const objectName2 = 'cab-second-"brd3qlsuok.txt';
 const CONTENT = 'first';
 
 describe('samples for downscoping with cab', () => {
