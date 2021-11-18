@@ -15,7 +15,7 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
   * [Adc](#adc)
   * [Compute](#compute)
   * [Credentials](#credentials)
-  * [DownscopedClient](#downscopedclient)
+  * [Downscopedclient](#downscopedclient)
   * [Headers](#headers)
   * [ID Tokens for Identity-Aware Proxy (IAP)](#id-tokens-for-identity-aware-proxy-iap)
   * [ID Tokens for Serverless](#id-tokens-for-serverless)
@@ -94,7 +94,7 @@ __Usage:__
 
 
 
-### DownscopedClient
+### Downscopedclient
 
 View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/downscopedclient.js).
 
