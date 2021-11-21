@@ -16,7 +16,7 @@ import * as assert from 'assert';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import {AwsClient} from '../src/auth/awsclient';
+import {AwsCredentialsClient} from '../src/auth/awscredentialsclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {
@@ -32,18 +32,43 @@ nock.disableNetConnect();
 
 const ONE_HOUR_IN_SECS = 3600;
 
-describe('AwsClient', () => {
+describe('AwsCredentialsClient', () => {
   let clock: sinon.SinonFakeTimers;
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials-fake.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const awsSecurityCredentials2 = require('../../test/fixtures/aws-security-credentials-fake-2.json');
   const referenceDate = new Date('2020-08-11T06:55:22.345Z');
   const amzDate = '20200811T065522Z';
+  const amzDate2 = '20200811T075522Z';
   const dateStamp = '20200811';
+  const dateStamp2 = '20200811';
   const awsRegion = 'us-east-2';
   const accessKeyId = awsSecurityCredentials.AccessKeyId;
   const secretAccessKey = awsSecurityCredentials.SecretAccessKey;
   const token = awsSecurityCredentials.Token;
-  const awsRole = 'gcp-aws-role';
+  const token2 = awsSecurityCredentials2.Token;
+  const awsPermanentCredentials = {
+    accessKeyId,
+    secretAccessKey,
+  };
+  const awsCredentials = {
+    accessKeyId,
+    secretAccessKey,
+    sessionToken: token,
+    expiration: new Date('2020-08-12T07:35:49Z'),
+  };
+  const awsCredentials2 = {
+    accessKeyId,
+    secretAccessKey,
+    sessionToken: token2,
+    expiration: new Date('2020-08-12T08:35:49Z'),
+  };
+  const awsCredentialsProvider = async () => {
+    if (clock.now > referenceDate.getTime()) return awsCredentials2;
+    return awsCredentials;
+  };
+
   const audience = getAudience();
   const metadataBaseUrl = 'http://169.254.169.254';
   const awsCredentialSource = {
@@ -74,7 +99,7 @@ describe('AwsClient', () => {
     expires_in: ONE_HOUR_IN_SECS,
     scope: 'scope1 scope2',
   };
-  // Signature retrieved from "signed POST request" test in test.awsclient.ts.
+  // Signature retrieved from "signed POST request" test in test.awscredentialsclient.ts.
   const expectedSignedRequest = {
     url:
       'https://sts.us-east-2.amazonaws.com' +
@@ -89,6 +114,22 @@ describe('AwsClient', () => {
       host: 'sts.us-east-2.amazonaws.com',
       'x-amz-date': amzDate,
       'x-amz-security-token': token,
+    },
+  };
+  const expectedSignedRequest2 = {
+    url:
+      'https://sts.us-east-2.amazonaws.com' +
+      '?Action=GetCallerIdentity&Version=2011-06-15',
+    method: 'POST',
+    headers: {
+      Authorization:
+        `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
+        `${dateStamp2}/${awsRegion}/sts/aws4_request, SignedHeaders=host;` +
+        'x-amz-date;x-amz-security-token, Signature=' +
+        'd7fb077ef560ff39fa13182a9cd243c5604f527535e91ab0efcbbf08094d0a71',
+      host: 'sts.us-east-2.amazonaws.com',
+      'x-amz-date': amzDate2,
+      'x-amz-security-token': token2,
     },
   };
   const expectedSubjectToken = encodeURIComponent(
@@ -119,8 +160,36 @@ describe('AwsClient', () => {
       ],
     })
   );
+  const expectedSubjectToken2 = encodeURIComponent(
+    JSON.stringify({
+      url: expectedSignedRequest2.url,
+      method: expectedSignedRequest2.method,
+      headers: [
+        {
+          key: 'x-goog-cloud-target-resource',
+          value: awsOptions.audience,
+        },
+        {
+          key: 'x-amz-date',
+          value: expectedSignedRequest2.headers['x-amz-date'],
+        },
+        {
+          key: 'Authorization',
+          value: expectedSignedRequest2.headers.Authorization,
+        },
+        {
+          key: 'host',
+          value: expectedSignedRequest2.headers.host,
+        },
+        {
+          key: 'x-amz-security-token',
+          value: expectedSignedRequest2.headers['x-amz-security-token'],
+        },
+      ],
+    })
+  );
   // Signature retrieved from "signed request when AWS credentials have no
-  // token" test in test.awsclient.ts.
+  // token" test in test.awscredentialsclient.ts.
   const expectedSignedRequestNoToken = {
     url:
       'https://sts.us-east-2.amazonaws.com' +
@@ -172,7 +241,7 @@ describe('AwsClient', () => {
   });
 
   it('should be a subclass of ExternalAccountClient', () => {
-    assert(AwsClient.prototype instanceof BaseExternalAccountClient);
+    assert(AwsCredentialsClient.prototype instanceof BaseExternalAccountClient);
   });
 
   describe('Constructor', () => {
@@ -197,7 +266,7 @@ describe('AwsClient', () => {
         };
 
         assert.throws(() => {
-          return new AwsClient(invalidOptions);
+          return new AwsCredentialsClient(awsCredentials, invalidOptions);
         }, expectedError);
       });
     });
@@ -217,7 +286,7 @@ describe('AwsClient', () => {
       };
 
       assert.throws(() => {
-        return new AwsClient(invalidOptions);
+        return new AwsCredentialsClient(awsCredentials, invalidOptions);
       }, expectedError);
     });
 
@@ -236,13 +305,13 @@ describe('AwsClient', () => {
       };
 
       assert.throws(() => {
-        return new AwsClient(invalidOptions);
+        return new AwsCredentialsClient(awsCredentials, invalidOptions);
       }, expectedError);
     });
 
     it('should not throw when valid AWS options are provided', () => {
       assert.doesNotThrow(() => {
-        return new AwsClient(awsOptions);
+        return new AwsCredentialsClient(awsCredentials, awsOptions);
       });
     });
   });
@@ -252,13 +321,9 @@ describe('AwsClient', () => {
       it('should resolve on success', async () => {
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
-          .reply(200, `${awsRegion}b`)
-          .get('/latest/meta-data/iam/security-credentials')
-          .reply(200, awsRole)
-          .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-          .reply(200, awsSecurityCredentials);
+          .reply(200, `${awsRegion}b`);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(awsCredentials, awsOptions);
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
@@ -266,46 +331,35 @@ describe('AwsClient', () => {
       });
 
       it('should resolve on success with permanent creds', async () => {
-        const permanentAwsSecurityCredentials = Object.assign(
-          {},
-          awsSecurityCredentials
-        );
-        delete permanentAwsSecurityCredentials.Token;
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
-          .reply(200, `${awsRegion}b`)
-          .get('/latest/meta-data/iam/security-credentials')
-          .reply(200, awsRole)
-          .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-          .reply(200, permanentAwsSecurityCredentials);
+          .reply(200, `${awsRegion}b`);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
         scope.done();
       });
 
-      it('should re-calculate role name on successive calls', async () => {
-        const otherRole = 'some-other-role';
+      it('should re-calculate if AWS credentials is expired', async () => {
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
-          .reply(200, `${awsRegion}b`)
-          .get('/latest/meta-data/iam/security-credentials')
-          .reply(200, awsRole)
-          .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-          .reply(200, awsSecurityCredentials)
-          .get('/latest/meta-data/iam/security-credentials')
-          .reply(200, otherRole)
-          .get(`/latest/meta-data/iam/security-credentials/${otherRole}`)
-          .reply(200, awsSecurityCredentials);
+          .reply(200, `${awsRegion}b`);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsCredentialsProvider,
+          awsOptions
+        );
         const subjectToken = await client.retrieveSubjectToken();
+        clock.tick(ONE_HOUR_IN_SECS * 1000);
         const subjectToken2 = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
-        assert.deepEqual(subjectToken2, expectedSubjectToken);
+        assert.deepEqual(subjectToken2, expectedSubjectToken2);
         scope.done();
       });
 
@@ -315,26 +369,10 @@ describe('AwsClient', () => {
           .get('/latest/meta-data/placement/availability-zone')
           .reply(500);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(awsCredentials, awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
           code: '500',
-        });
-        scope.done();
-      });
-
-      it('should reject when AWS role name is not determined', async () => {
-        // Simulate error during region retrieval.
-        const scope = nock(metadataBaseUrl)
-          .get('/latest/meta-data/placement/availability-zone')
-          .reply(200, `${awsRegion}b`)
-          .get('/latest/meta-data/iam/security-credentials')
-          .reply(403);
-
-        const client = new AwsClient(awsOptions);
-
-        await assert.rejects(client.retrieveSubjectToken(), {
-          code: '403',
         });
         scope.done();
       });
@@ -343,31 +381,26 @@ describe('AwsClient', () => {
         // Simulate error during security credentials retrieval.
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
-          .reply(200, `${awsRegion}b`)
-          .get('/latest/meta-data/iam/security-credentials')
-          .reply(200, awsRole)
-          .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-          .reply(408);
+          .reply(200, `${awsRegion}b`);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          () => Promise.reject(new Error('no cred found')),
+          awsOptions
+        );
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          code: '408',
+          message: 'no cred found',
         });
         scope.done();
       });
 
-      it('should reject when "credential_source.url" is missing', async () => {
-        const expectedError = new Error(
-          'Unable to determine AWS role name due to missing ' +
-            '"options.credential_source.url"'
-        );
+      it('should resolve when "credential_source.url" is missing', async () => {
         const missingUrlCredentialSource = Object.assign(
           {},
           awsCredentialSource
         );
         delete missingUrlCredentialSource.url;
-        const invalidOptions = {
+        const options = {
           type: 'external_account',
           audience,
           subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
@@ -378,9 +411,14 @@ describe('AwsClient', () => {
           .get('/latest/meta-data/placement/availability-zone')
           .reply(200, `${awsRegion}b`);
 
-        const client = new AwsClient(invalidOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          options
+        );
 
-        await assert.rejects(client.retrieveSubjectToken(), expectedError);
+        const subjectToken = await client.retrieveSubjectToken();
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+
         scope.done();
       });
 
@@ -402,7 +440,7 @@ describe('AwsClient', () => {
           credential_source: missingRegionUrlCredentialSource,
         };
 
-        const client = new AwsClient(invalidOptions);
+        const client = new AwsCredentialsClient(awsCredentials, invalidOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
@@ -433,13 +471,9 @@ describe('AwsClient', () => {
           nock(metadataBaseUrl)
             .get('/latest/meta-data/placement/availability-zone')
             .reply(200, `${awsRegion}b`)
-            .get('/latest/meta-data/iam/security-credentials')
-            .reply(200, awsRole)
-            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-            .reply(200, awsSecurityCredentials)
         );
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(awsCredentials, awsOptions);
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
@@ -462,11 +496,7 @@ describe('AwsClient', () => {
         scopes.push(
           nock(metadataBaseUrl)
             .get('/latest/meta-data/placement/availability-zone')
-            .reply(200, `${awsRegion}b`)
-            .get('/latest/meta-data/iam/security-credentials')
-            .reply(200, awsRole)
-            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-            .reply(200, awsSecurityCredentials),
+            .reply(200, `${awsRegion}b`),
           mockStsTokenExchange([
             {
               statusCode: 200,
@@ -493,7 +523,10 @@ describe('AwsClient', () => {
           ])
         );
 
-        const client = new AwsClient(awsOptionsWithSA);
+        const client = new AwsCredentialsClient(
+          awsCredentials,
+          awsOptionsWithSA
+        );
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
@@ -504,63 +537,24 @@ describe('AwsClient', () => {
         });
         scopes.forEach(scope => scope.done());
       });
-
-      it('should reject on retrieveSubjectToken error', async () => {
-        const scope = nock(metadataBaseUrl)
-          .get('/latest/meta-data/placement/availability-zone')
-          .reply(200, `${awsRegion}b`)
-          .get('/latest/meta-data/iam/security-credentials')
-          .reply(500);
-
-        const client = new AwsClient(awsOptions);
-
-        await assert.rejects(client.getAccessToken(), {
-          code: '500',
-        });
-        scope.done();
-      });
     });
   });
 
   describe('for environment variables retrieved tokens', () => {
-    let envAwsAccessKeyId: string | undefined;
-    let envAwsSecretAccessKey: string | undefined;
-    let envAwsSessionToken: string | undefined;
     let envAwsRegion: string | undefined;
     let envAwsDefaultRegion: string | undefined;
 
     beforeEach(() => {
       // Store external state.
-      envAwsAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
-      envAwsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-      envAwsSessionToken = process.env.AWS_SESSION_TOKEN;
       envAwsRegion = process.env.AWS_REGION;
       envAwsDefaultRegion = process.env.AWS_DEFAULT_REGION;
       // Reset environment variables.
-      delete process.env.AWS_ACCESS_KEY_ID;
-      delete process.env.AWS_SECRET_ACCESS_KEY;
-      delete process.env.AWS_SESSION_TOKEN;
       delete process.env.AWS_REGION;
       delete process.env.AWS_DEFAULT_REGION;
     });
 
     afterEach(() => {
       // Restore environment variables.
-      if (envAwsAccessKeyId) {
-        process.env.AWS_ACCESS_KEY_ID = envAwsAccessKeyId;
-      } else {
-        delete process.env.AWS_ACCESS_KEY_ID;
-      }
-      if (envAwsSecretAccessKey) {
-        process.env.AWS_SECRET_ACCESS_KEY = envAwsSecretAccessKey;
-      } else {
-        delete process.env.AWS_SECRET_ACCESS_KEY;
-      }
-      if (envAwsSessionToken) {
-        process.env.AWS_SESSION_TOKEN = envAwsSessionToken;
-      } else {
-        delete process.env.AWS_SESSION_TOKEN;
-      }
       if (envAwsRegion) {
         process.env.AWS_REGION = envAwsRegion;
       } else {
@@ -575,14 +569,14 @@ describe('AwsClient', () => {
 
     describe('retrieveSubjectToken()', () => {
       it('should resolve on success for permanent creds', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
-
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
           .reply(200, `${awsRegion}b`);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
@@ -590,15 +584,11 @@ describe('AwsClient', () => {
       });
 
       it('should resolve on success for temporary creds', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
-        process.env.AWS_SESSION_TOKEN = token;
-
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
           .reply(200, `${awsRegion}b`);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(awsCredentials, awsOptions);
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
@@ -606,15 +596,15 @@ describe('AwsClient', () => {
       });
 
       it('should reject when AWS region is not determined', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
-
         // Simulate error during region retrieval.
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
           .reply(500);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
 
         await assert.rejects(client.retrieveSubjectToken(), {
           code: '500',
@@ -622,43 +612,71 @@ describe('AwsClient', () => {
         scope.done();
       });
 
+      it('should resolve when awsCredentials.region is set as option argument', async () => {
+        process.env.AWS_REGION = 'fail-if-used';
+
+        const missingRegionUrlCredentialSource = Object.assign(
+          {},
+          awsCredentialSource
+        );
+        delete missingRegionUrlCredentialSource.region_url;
+        const options = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+          token_url: getTokenUrl(),
+          credential_source: missingRegionUrlCredentialSource,
+        };
+
+        const client = new AwsCredentialsClient(awsPermanentCredentials, {
+          ...options,
+          awsCredentialsOptions: {
+            region: awsRegion,
+          },
+        });
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+      });
+
       it('should resolve when AWS_REGION is set as environment variable', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
         process.env.AWS_REGION = awsRegion;
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
       });
 
       it('should resolve when AWS_DEFAULT_REGION is set as environment variable', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
         process.env.AWS_DEFAULT_REGION = awsRegion;
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
       });
 
       it('should prioritize AWS_REGION over AWS_DEFAULT_REGION environment variable', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
         process.env.AWS_REGION = awsRegion;
         process.env.AWS_DEFAULT_REGION = 'fail-if-used';
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
       });
 
       it('should resolve without optional credential_source fields', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
         process.env.AWS_REGION = awsRegion;
         const requiredOnlyCredentialSource = Object.assign(
           {},
@@ -675,7 +693,10 @@ describe('AwsClient', () => {
           credential_source: requiredOnlyCredentialSource,
         };
 
-        const client = new AwsClient(requiredOnlyOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          requiredOnlyOptions
+        );
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
@@ -708,10 +729,11 @@ describe('AwsClient', () => {
             .get('/latest/meta-data/placement/availability-zone')
             .reply(200, `${awsRegion}b`)
         );
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
@@ -724,14 +746,14 @@ describe('AwsClient', () => {
       });
 
       it('should reject on retrieveSubjectToken error', async () => {
-        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
-        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
-
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
           .reply(500);
 
-        const client = new AwsClient(awsOptions);
+        const client = new AwsCredentialsClient(
+          awsPermanentCredentials,
+          awsOptions
+        );
 
         await assert.rejects(client.getAccessToken(), {
           code: '500',

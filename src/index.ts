@@ -44,6 +44,12 @@ export {
   UserRefreshClient,
   UserRefreshClientOptions,
 } from './auth/refreshclient';
+export {
+  AwsCredentials,
+  AwsCredentialsProvider,
+  AwsCredentialsClient,
+  AwsCredentialsClientOptions,
+} from './auth/awscredentialsclient';
 export {AwsClient, AwsClientOptions} from './auth/awsclient';
 export {
   IdentityPoolClient,
