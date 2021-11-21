@@ -109,13 +109,14 @@ export class AwsCredentialsClient extends BaseExternalAccountClient {
     if (!this.region) {
       this.region = await this.getAwsRegion();
     }
-    if (
-      !this.awsRequestSigner ||
-      !this.cachedAwsCreds ||
-      this.isAwsCredExpired(this.cachedAwsCreds)
-    ) {
+    if (!this.awsRequestSigner) {
       this.awsRequestSigner = new AwsRequestSigner(async () => {
-        this.cachedAwsCreds = await this.getAwsSecurityCredentials();
+        if (
+          !this.cachedAwsCreds ||
+          this.isAwsCredExpired(this.cachedAwsCreds)
+        ) {
+          this.cachedAwsCreds = await this.getAwsSecurityCredentials();
+        }
         return {
           accessKeyId: this.cachedAwsCreds.accessKeyId,
           secretAccessKey: this.cachedAwsCreds.secretAccessKey,

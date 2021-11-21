@@ -56,15 +56,17 @@ describe('AwsCredentialsClient', () => {
     accessKeyId,
     secretAccessKey,
     sessionToken: token,
-    expiration: new Date('2020-08-12T07:35:49Z'),
+    expiration: new Date('2020-08-11T07:35:49Z'),
   };
   const awsCredentials2 = {
     accessKeyId,
     secretAccessKey,
     sessionToken: token2,
-    expiration: new Date('2020-08-12T08:35:49Z'),
+    expiration: new Date('2020-08-11T08:35:49Z'),
   };
+  let callCount = 0;
   const awsCredentialsProvider = async () => {
+    callCount += 1;
     if (clock.now > referenceDate.getTime()) return awsCredentials2;
     return awsCredentials;
   };
@@ -231,6 +233,7 @@ describe('AwsCredentialsClient', () => {
   );
 
   beforeEach(() => {
+    callCount = 0;
     clock = sinon.useFakeTimers(referenceDate);
   });
 
@@ -345,6 +348,24 @@ describe('AwsCredentialsClient', () => {
         scope.done();
       });
 
+      it('should not re-calculate if AWS credentials is yet expired', async () => {
+        const scope = nock(metadataBaseUrl)
+          .get('/latest/meta-data/placement/availability-zone')
+          .reply(200, `${awsRegion}b`);
+
+        const client = new AwsCredentialsClient(
+          awsCredentialsProvider,
+          awsOptions
+        );
+        const subjectToken = await client.retrieveSubjectToken();
+        const subjectToken2 = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        assert.deepEqual(subjectToken2, expectedSubjectToken);
+        assert.equal(callCount, 1);
+        scope.done();
+      });
+
       it('should re-calculate if AWS credentials is expired', async () => {
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
@@ -360,6 +381,7 @@ describe('AwsCredentialsClient', () => {
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
         assert.deepEqual(subjectToken2, expectedSubjectToken2);
+        assert.equal(callCount, 2);
         scope.done();
       });
 
