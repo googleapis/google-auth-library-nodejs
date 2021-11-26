@@ -639,7 +639,7 @@ export class OAuth2Client extends AuthClient {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
     }
-    this.emit('tokens', tokens);
+    await this.emit('tokens', tokens);
     return {tokens, res};
   }
 
@@ -702,7 +702,7 @@ export class OAuth2Client extends AuthClient {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
     }
-    this.emit('tokens', tokens);
+    await this.emit('tokens', tokens);
     return {tokens, res};
   }
 
