@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.11.0](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.4...v7.11.0) (2021-12-15)
+
+
+### Features
+
+* adds README, samples and integration tests for downscoping with CAB ([#1311](https://www.github.com/googleapis/google-auth-library-nodejs/issues/1311)) ([4549116](https://www.github.com/googleapis/google-auth-library-nodejs/commit/454911637eca6a1272a729b2b2dfcf690c53fe29))
+
 ### [7.10.4](https://www.github.com/googleapis/google-auth-library-nodejs/compare/v7.10.3...v7.10.4) (2021-12-13)
 
 
