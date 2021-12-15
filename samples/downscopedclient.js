@@ -33,10 +33,9 @@ const {Storage} = require('@google-cloud/storage');
  * a cloud storage object and call GCS APIs to access specified object and
  * print the contents.
  */
-async function main(
-  bucketName = 'cab-int-bucket-z2zsauf4sj',
-  objectName = 'cab-first-z2zsauf4sj.txt'
-) {
+async function main() {
+  const bucketName = process.env.BUCKET_NAME;
+  const objectName = process.env.OBJECT_NAME;
   // Defines a credential access boundary that grants objectViewer access in
   // the specified bucket.
   const cab = {

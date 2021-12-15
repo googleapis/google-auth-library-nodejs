@@ -28,7 +28,10 @@ const {describe, it} = require('mocha');
 const {promisify} = require('util');
 
 const exec = promisify(cp.exec);
+// Copy values from the output of samples/scripts/downscoping-with-cab-setup.js.
+// GCS bucket name.
 const bucketName = 'cab-int-bucket-z2zsauf4sj';
+// GCS object name.
 const objectName = 'cab-first-z2zsauf4sj.txt';
 
 /**
@@ -47,9 +50,15 @@ const execAsync = async (cmd, opts) => {
 
 describe('samples for downscoping with cab', () => {
   it('should have access to the object specified in the cab rule', async () => {
-    const output = await execAsync(
-      `${process.execPath} downscopedclient ${bucketName} ${objectName}`
-    );
+    const output = await execAsync(`${process.execPath} downscopedclient`, {
+      env: {
+        ...process.env,
+        // GCS bucket name environment variable.
+        BUCKET_NAME: bucketName,
+        // GCS object name environment variable.
+        OBJECT_NAME: objectName,
+      },
+    });
     // Confirm expected script output.
     assert.match(output, /first/);
   });
