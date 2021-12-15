@@ -54,7 +54,7 @@ async function main(
       ],
     },
   };
-  
+
   const oauth2Client = new OAuth2Client();
   const googleAuth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
