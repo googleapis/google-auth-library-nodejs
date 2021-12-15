@@ -24,13 +24,6 @@ const {
 } = require('google-auth-library');
 const {Storage} = require('@google-cloud/storage');
 
-// TODO(developer): Replace these variables before running the sample.
-// Make sure the bucket and object exists in your project.
-// The Cloud Storage bucket name.
-const bucketName = 'your-gcs-bucket-name';
-// The Cloud Storage object name that resides in the specified bucket.
-const objectName = 'your-gcs-object-name';
-
 /**
  * The following sample demonstrates how to initialize a DownscopedClient using
  * a credential access boundary and a client obtained via ADC. The
@@ -40,7 +33,10 @@ const objectName = 'your-gcs-object-name';
  * a cloud storage object and call GCS APIs to access specified object and
  * print the contents.
  */
-async function main() {
+async function main(
+  bucketName = 'cab-int-bucket-z2zsauf4sj',
+  objectName = 'cab-first-z2zsauf4sj.txt'
+) {
   // Defines a credential access boundary that grants objectViewer access in
   // the specified bucket.
   const cab = {
@@ -58,7 +54,7 @@ async function main() {
       ],
     },
   };
-
+  
   const oauth2Client = new OAuth2Client();
   const googleAuth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',

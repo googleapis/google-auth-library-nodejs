@@ -43,8 +43,7 @@ const fs = require('fs');
 const {promisify} = require('util');
 
 const readFile = promisify(fs.readFile);
-const CONTENT1 = 'first';
-const CONTENT2 = 'second';
+const CONTENT = 'first';
 
 /**
  * Generates a random string of the specified length, optionally using the
@@ -73,22 +72,19 @@ async function main() {
 
   const suffix = generateRandomString(10);
   const bucketName = `cab-int-bucket-${suffix}`;
-  const objectName1 = `cab-first-"${suffix}.txt`;
-  const objectName2 = `cab-second-"${suffix}.txt`;
+  const objectName = `cab-first-${suffix}.txt`;
   const projectId = keys.project_id;
   const storage = new Storage(projectId);
 
   try {
     await storage.createBucket(bucketName);
-    await storage.bucket(bucketName).file(objectName1).save(CONTENT1);
-    await storage.bucket(bucketName).file(objectName2).save(CONTENT2);
+    await storage.bucket(bucketName).file(objectName).save(CONTENT);
   } catch (error) {
     console.log(error.message);
   }
 
   console.log('bucket name: ' + bucketName);
-  console.log('object1 name: ' + objectName1);
-  console.log('object2 name: ' + objectName2);
+  console.log('object name: ' + objectName);
 }
 
 main().catch(console.error);
