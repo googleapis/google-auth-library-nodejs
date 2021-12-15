@@ -54,6 +54,7 @@ This library provides a variety of ways to authenticate to your Google services.
 - [Google Compute](#compute) - Directly use a service account on Google Cloud Platform. Useful for server->server or server->API communication.
 - [Workload Identity Federation](#workload-identity-federation) - Use workload identity federation to access Google Cloud resources from Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC).
 - [Impersonated Credentials Client](#impersonated-credentials-client) - access protected resources on behalf of another service account.
+- [Downscoped Client](#downscoped-client) - Use Downscoped Client with Credential Access Boundary to generate a short-lived credential with downscoped, restricted IAM permissions that can use for Cloud Storage.
 
 ## Application Default Credentials
 This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started)for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
@@ -721,6 +722,119 @@ async function main() {
 main();
 ```
 
+## Downscoped Client
+
+[Downscoping with Credential Access Boundaries](https://cloud.google.com/iam/docs/downscoping-short-lived-credentials) is used to restrict the Identity and Access Management (IAM) permissions that a short-lived credential can use.
+
+The `DownscopedClient` class can be used to produce a downscoped access token from a 
+`CredentialAccessBoundary` and a source credential. The Credential Access Boundary specifies which resources the newly created credential can access, as well as an upper bound on the permissions that are available on each resource. Using downscoped credentials ensures tokens in flight always have the least privileges, e.g. Principle of Least Privilege.
+
+> Notice: Only Cloud Storage supports Credential Access Boundaries for now.
+
+### Sample Usage
+There are two entities needed to generate and use credentials generated from
+Downscoped Client with Credential Access Boundaries. 
+
+- Token broker: This is the entity with elevated permissions. This entity has the permissions needed to generate downscoped tokens. The common pattern of usage is to have a token broker with elevated access generate these downscoped credentials from higher access source credentials and pass the downscoped short-lived access tokens to a token consumer via some secure authenticated channel for limited access to Google Cloud Storage resources.
+
+``` js
+const {GoogleAuth, DownscopedClient} = require('google-auth-library');
+// Define CAB rules which will restrict the downscoped token to have readonly
+// access to objects starting with "customer-a" in bucket "bucket_name".
+const cabRules = {
+  accessBoundary: {
+    accessBoundaryRules: [
+      {
+        availableResource: `//storage.googleapis.com/projects/_/buckets/bucket_name`,
+        availablePermissions: ['inRole:roles/storage.objectViewer'],
+        availabilityCondition: {
+          expression:
+            `resource.name.startsWith('projects/_/buckets/` +
+            `bucket_name/objects/customer-a)`
+        }
+      },
+    ],
+  },
+};
+
+// This will use ADC to get the credentials used for the downscoped client.
+const googleAuth = new GoogleAuth({
+  scopes: ['https://www.googleapis.com/auth/cloud-platform']
+});
+
+// Obtain an authenticated client via ADC.
+const client = await googleAuth.getClient();
+
+// Use the client to create a DownscopedClient.
+const cabClient = new DownscopedClient(client, cab);
+
+// Refresh the tokens.
+const refreshedAccessToken = await cabClient.getAccessToken();
+
+// This will need to be passed to the token consumer.
+access_token = refreshedAccessToken.token;
+expiry_date = refreshedAccessToken.expirationTime;
+```
+
+A token broker can be set up on a server in a private network. Various workloads 
+(token consumers) in the same network will send authenticated requests to that broker for downscoped tokens to access or modify specific google cloud storage buckets.
+
+The broker will instantiate downscoped credentials instances that can be used to generate short lived downscoped access tokens which will be passed to the token consumer. 
+
+- Token consumer: This is the consumer of the downscoped tokens. This entity does not have the direct ability to generate access tokens and instead relies on the token broker to provide it with downscoped tokens to run operations on GCS buckets. It is assumed that the downscoped token consumer may have its own mechanism to authenticate itself with the token broker.
+
+``` js
+const {OAuth2Client} = require('google-auth-library');
+const {Storage} = require('@google-cloud/storage');
+
+// Create the OAuth credentials (the consumer).
+const oauth2Client = new OAuth2Client();
+// We are defining a refresh handler instead of a one-time access
+// token/expiry pair.
+// This will allow the consumer to obtain new downscoped tokens on
+// demand every time a token is expired, without any additional code
+// changes.
+oauth2Client.refreshHandler = async () => {
+  // The common pattern of usage is to have a token broker pass the
+  // downscoped short-lived access tokens to a token consumer via some
+  // secure authenticated channel.
+  const refreshedAccessToken = await cabClient.getAccessToken();
+  return {
+    access_token: refreshedAccessToken.token,
+    expiry_date: refreshedAccessToken.expirationTime,
+  }
+};
+
+// Use the consumer client to define storageOptions and create a GCS object.
+const storageOptions = {
+  projectId: 'my_project_id',
+  authClient: {
+    sign: () => Promise.reject('unsupported'),
+    getCredentials: () => Promise.reject(),
+    request: (opts, callback) => {
+      return oauth2Client.request(opts, callback);
+    },
+    authorizeRequest: async (opts) => {
+      opts = opts || {};
+      const url = opts.url || opts.uri;
+      const headers = await oauth2Client.getRequestHeaders(url);
+      opts.headers = Object.assign(opts.headers || {}, headers);
+      return opts;
+    },
+  },
+};
+
+const storage = new Storage(storageOptions);
+
+const downloadFile = await storage
+    .bucket('bucket_name')
+    .file('customer-a-data.txt')
+    .download();
+console.log(downloadFile.toString('utf8'));
+
+main().catch(console.error);
+```
+
 
 ## Samples
 
@@ -731,6 +845,7 @@ Samples are in the [`samples/`](https://github.com/googleapis/google-auth-librar
 | Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
 | Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
 | Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md) |
+| Downscopedclient | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/downscopedclient.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/downscopedclient.js,samples/README.md) |
 | Headers | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/headers.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md) |
 | ID Tokens for Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md) |
 | ID Tokens for Serverless | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-serverless.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md) |

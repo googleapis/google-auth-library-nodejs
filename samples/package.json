@@ -5,7 +5,7 @@
     "*.js"
   ],
   "scripts": {
-    "setup": "node scripts/externalclient-setup.js",
+    "setup": "node scripts/*.js",
     "test": "mocha --timeout 60000"
   },
   "engines": {
@@ -13,6 +13,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@google-cloud/storage": "^5.15.4",
     "@googleapis/iam": "^2.0.0",
     "google-auth-library": "^7.10.4",
     "node-fetch": "^2.3.0",
