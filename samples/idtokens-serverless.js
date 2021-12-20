@@ -38,7 +38,8 @@ function main(
   // Example: https://my-cloud-run-service.run.app/books/delete/12345
   // const url = 'https://TARGET_HOSTNAME/TARGET_URL';
 
-  // Example: https://my-cloud-run-service.run.app/
+  // Example (Cloud Run): https://my-cloud-run-service.run.app/
+  // Example (Cloud Functions): https://project-region-projectid.cloudfunctions.net/myFunction
   // const targetAudience = 'https://TARGET_HOSTNAME/';
   const {GoogleAuth} = require('google-auth-library');
   const auth = new GoogleAuth();
