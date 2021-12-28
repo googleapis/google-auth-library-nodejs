@@ -9,5 +9,5 @@
   "distribution_name": "google-auth-library",
   "codeowner_team": "@googleapis/nodejs-auth",
   "api_shortname": "google-auth-library",
-  "library_type": ""
+  "library_type": "AUTH"
 }
