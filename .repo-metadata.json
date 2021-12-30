@@ -3,9 +3,10 @@
   "name_pretty": "Google Auth Library",
   "product_documentation": "https://cloud.google.com/docs/authentication/",
   "client_documentation": "https://cloud.google.com/nodejs/docs/reference/google-auth-library/latest",
-  "release_level": "ga",
+  "release_level": "stable",
   "language": "nodejs",
   "repo": "googleapis/google-auth-library-nodejs",
   "distribution_name": "google-auth-library",
-  "codeowner_team": "@googleapis/nodejs-auth"
+  "codeowner_team": "@googleapis/nodejs-auth",
+  "library_type": "AUTH"
 }
