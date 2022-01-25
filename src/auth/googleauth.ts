@@ -83,6 +83,11 @@ export interface GoogleAuthOptions {
   keyFile?: string;
 
   /**
+   * Google API key value.
+   */
+  apiKey?: string;
+
+  /**
    * Object containing client_email and private_key properties, or the
    * external account client options.
    */
@@ -145,6 +150,7 @@ export class GoogleAuth {
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
+  private apiKey?: string;
 
   /**
    * Export DefaultTransporter as a static property of the class.
@@ -158,6 +164,7 @@ export class GoogleAuth {
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
+    this.apiKey = opts.apiKey;
   }
 
   // GAPIC client libraries should always use self-signed JWTs. The following
@@ -277,6 +284,32 @@ export class GoogleAuth {
 
     let credential: JSONClient | null;
     let projectId: string | null;
+
+    // Check the existence of GOOGLE API key.
+    if (!this.apiKey) {
+      if (
+        process.env['GOOGLE_API_KEY'] &&
+        process.env['GOOGLE_APPLICATION_CREDENTIALS']
+      ) {
+        throw new Error(
+          'GOOGLE_API_KEY and GOOGLE_APPLICATION_CREDENTIALS environment variables are mutually exclusive'
+        );
+      }
+      this.apiKey = process.env['GOOGLE_API_KEY'];
+    }
+    if (this.apiKey) {
+      credential = this.fromAPIKey(this.apiKey);
+      this.cachedCredential = credential;
+
+      try {
+        projectId = await this.getProjectId();
+        return {credential, projectId};
+      } catch (error) {
+        projectId = null;
+        return {credential, projectId};
+      }
+    }
+
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
