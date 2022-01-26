@@ -48,6 +48,7 @@ npm install google-auth-library
 ## Ways to authenticate
 This library provides a variety of ways to authenticate to your Google services.
 - [Application Default Credentials](#choosing-the-correct-credential-type-automatically) - Use Application Default Credentials when you use a single identity for all users in your application. Especially useful for applications running on Google Cloud. Application Default Credentials also support workload identity federation to access Google Cloud resources from non-Google Cloud platforms.
+- [API key](#api-key) - An [API key](https://cloud.google.com/docs/authentication/api-keys) is a simple encrypted string that identifies an application without any principal. They are useful for accessing public data anonymously, and are used to associate API requests with your project for quota and billing.
 - [OAuth 2](#oauth2) - Use OAuth2 when you need to perform actions on behalf of the end user.
 - [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users. Especially useful for server->server or server->API communication.
 - [Google Compute](#compute) - Directly use a service account on Google Cloud Platform. Useful for server->server or server->API communication.
@@ -99,6 +100,35 @@ async function main() {
   const projectId = await auth.getProjectId();
   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
+  console.log(res.data);
+}
+
+main().catch(console.error);
+```
+
+## API key
+[API key](https://cloud.google.com/docs/authentication/api-keys) are useful for accessing public data anonymously, and are used to associate API requests with your project for quota and billing. You can follow the instructions on [this page](https://cloud.google.com/docs/authentication/api-keys) to create an API key.
+
+There are two methods to provide the API key: either provide it using the `apiKey` option to [`GoogleAuth`](https://github.com/googleapis/google-auth-library-nodejs/blob/main/src/auth/googleauth.ts#L154) constructor,
+or set the `GOOGLE_API_KEY` environment variable to the API key value. The following example demonstrates how to use API key with the Google Cloud Language API. 
+
+```js
+const {GoogleAuth} = require('google-auth-library');
+
+async function main() {
+  // There are two ways to provide API key. 
+  // One way is using the `apiKey` option as shown below
+  const auth = new GoogleAuth({
+    apiKey: 'fill in the API key'
+  });
+  // The second way is setting the `GOOGLE_API_KEY` environment variable
+  // to the API key value.
+  // const auth = new GoogleAuth();
+
+  const client = await auth.getClient();
+  const url = `https://language.googleapis.com/v1/documents:analyzeSentiment`;
+  const body = "{'document':{'type':'PLAIN_TEXT','content':'hello world'},'encodingType':'UTF8'}";
+  const res = await client.request({ 'url':url, 'method':'POST', 'body':body });
   console.log(res.data);
 }
 
