@@ -300,8 +300,14 @@ export class GoogleAuth {
     if (this.apiKey) {
       credential = this.fromAPIKey(this.apiKey);
       this.cachedCredential = credential;
-      projectId = await this.getProjectId();
-      return {credential, projectId};
+      // Project ID is not needed when using API key, so we just return it on a best effort basis.
+      try {
+        projectId = await this.getProjectId();
+        return {credential, projectId};
+      } catch (error) {
+        projectId = null;
+        return {credential, projectId};
+      }
     }
 
     // Check for the existence of a local environment variable pointing to the
