@@ -133,7 +133,7 @@ export abstract class AuthClient
    * that overrides getRequestMetadataAsync(), which is a shared helper for
    * setting request information in both gRPC and HTTP API calls.
    *
-   * @param headers objedcdt to append additional headers to.
+   * @param headers object to append additional headers to.
    */
   protected addSharedMetadataHeaders(headers: Headers): Headers {
     // quota_project_id, stored in application_default_credentials.json, is set in
