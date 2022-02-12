@@ -4,7 +4,7 @@
     "https://codecov.io/gh/googleapis/",
     "www.googleapis.com",
     "img.shields.io",
-    "http://169.254.169.254/latest/api/token\""
+    "http://169.254.169.254/latest/api/token%22"
   ],
   "silent": true,
   "concurrency": 10
