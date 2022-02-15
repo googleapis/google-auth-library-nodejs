@@ -266,11 +266,11 @@ describe('AwsClient', () => {
         scope.done();
       });
 
-      it('should resolve on success with aws session token', async () => {
+      it('should resolve on success with imdsv2 session token', async () => {
         const scopes: nock.Scope[] = [];
         scopes.push(
           nock(metadataBaseUrl, {
-            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '21600'},
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
           })
             .put('/latest/api/token')
             .reply(200, awsSessionToken)
@@ -289,7 +289,7 @@ describe('AwsClient', () => {
         );
 
         const credentialSourceWithSessionTokenUrl = Object.assign(
-          {aws_session_token_url: `${metadataBaseUrl}/latest/api/token`},
+          {imdsv2_session_token_url: `${metadataBaseUrl}/latest/api/token`},
           awsCredentialSource
         );
         const awsOptionsWithSessionTokenUrl = {
