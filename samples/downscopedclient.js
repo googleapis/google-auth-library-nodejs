@@ -59,7 +59,7 @@ async function main() {
   });
   const projectId = await googleAuth.getProjectId();
   // Obtain an authenticated client via ADC.
-  const client = googleAuth.getClient();
+  const client = await googleAuth.getClient();
   // Use the client to generate a DownscopedClient.
   const cabClient = new DownscopedClient(client, cab);
 
