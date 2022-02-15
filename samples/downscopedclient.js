@@ -56,6 +56,7 @@ async function main() {
 
   const oauth2Client = new OAuth2Client();
   const googleAuth = new GoogleAuth({
+    auth: oauth2Client,
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const projectId = await googleAuth.getProjectId();
@@ -75,24 +76,7 @@ async function main() {
 
   const storageOptions = {
     projectId,
-    authClient: {
-      getCredentials: async () => {
-        Promise.reject();
-      },
-      request: opts => {
-        return oauth2Client.request(opts);
-      },
-      sign: () => {
-        Promise.reject('unsupported');
-      },
-      authorizeRequest: async opts => {
-        opts = opts || {};
-        const url = opts.url || opts.uri;
-        const headers = await oauth2Client.getRequestHeaders(url);
-        opts.headers = Object.assign(opts.headers || {}, headers);
-        return opts;
-      },
-    },
+    authClient: googleAuth,
   };
 
   const storage = new Storage(storageOptions);

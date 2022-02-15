@@ -285,6 +285,35 @@ describe('googleauth', () => {
       return sandbox.stub(process, 'env').value(envVars);
     }
 
+    it('should accept and use an `AuthClient`', async () => {
+      const customRequestHeaders = {
+        'my-unique': 'header',
+      };
+
+      // Using a custom `AuthClient` to ensure any `AuthClient` would work
+      class MyAuthClient extends AuthClient {
+        async getAccessToken() {
+          return {token: '', res: undefined};
+        }
+
+        async getRequestHeaders() {
+          return {...customRequestHeaders};
+        }
+
+        request = OAuth2Client.prototype.request.bind(this);
+      }
+
+      const authClient = new MyAuthClient();
+
+      const auth = new GoogleAuth({
+        auth: authClient,
+      });
+
+      assert.equal(auth.cachedCredential, authClient);
+      assert.equal(await auth.getClient(), authClient);
+      assert.deepEqual(await auth.getRequestHeaders(''), customRequestHeaders);
+    });
+
     it('fromJSON should support the instantiated named export', () => {
       const result = auth.fromJSON(createJwtJSON());
       assert(result);
