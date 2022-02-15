@@ -61,7 +61,7 @@ describe('samples for downscoping with cab', () => {
     });
 
     // Confirm expected script output.
-    assert.match('Successfully retrieved file');
+    assert.match(output, 'Successfully retrieved file');
     assert.match(output, /first/);
   });
 });
