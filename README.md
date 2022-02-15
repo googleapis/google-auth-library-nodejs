@@ -483,7 +483,7 @@ Where the following variables need to be substituted:
 - `$POOL_ID`: The workload identity pool ID.
 - `$OIDC_PROVIDER_ID`: The OIDC provider ID.
 - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
-- `$PATH_TO_OIDC_ID_TOKEN`: The file path where the OIDC token will be retrieved from. 
+- `$PATH_TO_OIDC_ID_TOKEN`: The file path where the OIDC token will be retrieved from.
 
 This will generate the configuration file in the specified output file.
 
@@ -700,7 +700,7 @@ async function main() {
   }
 
   // Use impersonated credentials with google-cloud client library
-  // Note: this works only with certain cloud client libraries utilizing gRPC 
+  // Note: this works only with certain cloud client libraries utilizing gRPC
   //    e.g., SecretManager, KMS, AIPlatform
   // will not currently work with libraries using REST, e.g., Storage, Compute
   const smClient = new SecretManagerServiceClient({
@@ -725,14 +725,14 @@ main();
 
 [Downscoping with Credential Access Boundaries](https://cloud.google.com/iam/docs/downscoping-short-lived-credentials) is used to restrict the Identity and Access Management (IAM) permissions that a short-lived credential can use.
 
-The `DownscopedClient` class can be used to produce a downscoped access token from a 
+The `DownscopedClient` class can be used to produce a downscoped access token from a
 `CredentialAccessBoundary` and a source credential. The Credential Access Boundary specifies which resources the newly created credential can access, as well as an upper bound on the permissions that are available on each resource. Using downscoped credentials ensures tokens in flight always have the least privileges, e.g. Principle of Least Privilege.
 
 > Notice: Only Cloud Storage supports Credential Access Boundaries for now.
 
 ### Sample Usage
 There are two entities needed to generate and use credentials generated from
-Downscoped Client with Credential Access Boundaries. 
+Downscoped Client with Credential Access Boundaries.
 
 - Token broker: This is the entity with elevated permissions. This entity has the permissions needed to generate downscoped tokens. The common pattern of usage is to have a token broker with elevated access generate these downscoped credentials from higher access source credentials and pass the downscoped short-lived access tokens to a token consumer via some secure authenticated channel for limited access to Google Cloud Storage resources.
 
@@ -775,10 +775,10 @@ access_token = refreshedAccessToken.token;
 expiry_date = refreshedAccessToken.expirationTime;
 ```
 
-A token broker can be set up on a server in a private network. Various workloads 
+A token broker can be set up on a server in a private network. Various workloads
 (token consumers) in the same network will send authenticated requests to that broker for downscoped tokens to access or modify specific google cloud storage buckets.
 
-The broker will instantiate downscoped credentials instances that can be used to generate short lived downscoped access tokens which will be passed to the token consumer. 
+The broker will instantiate downscoped credentials instances that can be used to generate short lived downscoped access tokens which will be passed to the token consumer.
 
 - Token consumer: This is the consumer of the downscoped tokens. This entity does not have the direct ability to generate access tokens and instead relies on the token broker to provide it with downscoped tokens to run operations on GCS buckets. It is assumed that the downscoped token consumer may have its own mechanism to authenticate itself with the token broker.
 
@@ -807,20 +807,7 @@ oauth2Client.refreshHandler = async () => {
 // Use the consumer client to define storageOptions and create a GCS object.
 const storageOptions = {
   projectId: 'my_project_id',
-  authClient: {
-    sign: () => Promise.reject('unsupported'),
-    getCredentials: () => Promise.reject(),
-    request: (opts, callback) => {
-      return oauth2Client.request(opts, callback);
-    },
-    authorizeRequest: async (opts) => {
-      opts = opts || {};
-      const url = opts.url || opts.uri;
-      const headers = await oauth2Client.getRequestHeaders(url);
-      opts.headers = Object.assign(opts.headers || {}, headers);
-      return opts;
-    },
-  },
+  authClient: oauth2Client,
 };
 
 const storage = new Storage(storageOptions);
