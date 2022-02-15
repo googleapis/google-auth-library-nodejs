@@ -30,9 +30,9 @@ const {promisify} = require('util');
 const exec = promisify(cp.exec);
 // Copy values from the output of samples/scripts/downscoping-with-cab-setup.js.
 // GCS bucket name.
-const bucketName = 'cab-int-bucket-z2zsauf4sj';
+const bucketName = 'cab-int-bucket-brd3qlsuok';
 // GCS object name.
-const objectName = 'cab-first-z2zsauf4sj.txt';
+const objectName = 'cab-first-"brd3qlsuok.txt';
 
 /**
  * Runs the provided command using asynchronous child_process.exec.
