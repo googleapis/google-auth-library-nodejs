@@ -54,16 +54,17 @@ async function main() {
     },
   };
 
-  const oauth2Client = new OAuth2Client();
   const googleAuth = new GoogleAuth({
-    auth: oauth2Client,
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const projectId = await googleAuth.getProjectId();
   // Obtain an authenticated client via ADC.
-  const client = await googleAuth.getClient();
+  const client = googleAuth.getClient();
   // Use the client to generate a DownscopedClient.
   const cabClient = new DownscopedClient(client, cab);
+
+  // OAuth 2.0 Client
+  const oauth2Client = new OAuth2Client();
   // Define a refreshHandler that will be used to refresh the downscoped token
   // when it expires.
   oauth2Client.refreshHandler = async () => {
@@ -76,7 +77,7 @@ async function main() {
 
   const storageOptions = {
     projectId,
-    authClient: googleAuth,
+    authClient: new GoogleAuth({auth: oauth2Client}),
   };
 
   const storage = new Storage(storageOptions);
@@ -84,6 +85,7 @@ async function main() {
     .bucket(bucketName)
     .file(objectName)
     .download();
+  console.log('Successfully retrieved file. Contents:');
   console.log(downloadFile.toString('utf8'));
 }
 
