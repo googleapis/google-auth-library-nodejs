@@ -71,11 +71,11 @@ export interface ADCResponse {
   projectId: string | null;
 }
 
-export interface GoogleAuthOptions {
+export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   /**
    * An `AuthClient` to use
    */
-  auth?: AuthClient;
+  authClient?: T;
   /**
    * Path to a .json, .pem, or .p12 key file
    */
@@ -115,7 +115,7 @@ export interface GoogleAuthOptions {
 export const CLOUD_SDK_CLIENT_ID =
   '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
-export class GoogleAuth {
+export class GoogleAuth<T extends AuthClient = JSONClient> {
   transporter?: Transporter;
 
   /**
@@ -139,8 +139,7 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
 
-  cachedCredential: JSONClient | Impersonated | Compute | AuthClient | null =
-    null;
+  cachedCredential: JSONClient | Impersonated | Compute | T | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
@@ -156,11 +155,11 @@ export class GoogleAuth {
    */
   static DefaultTransporter = DefaultTransporter;
 
-  constructor(opts?: GoogleAuthOptions) {
+  constructor(opts?: GoogleAuthOptions<T>) {
     opts = opts || {};
 
     this._cachedProjectId = opts.projectId || null;
-    this.cachedCredential = opts.auth || null;
+    this.cachedCredential = opts.authClient || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;

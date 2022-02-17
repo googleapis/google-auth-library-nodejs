@@ -64,10 +64,10 @@ async function main() {
   const cabClient = new DownscopedClient(client, cab);
 
   // OAuth 2.0 Client
-  const oauth2Client = new OAuth2Client();
+  const authClient = new OAuth2Client();
   // Define a refreshHandler that will be used to refresh the downscoped token
   // when it expires.
-  oauth2Client.refreshHandler = async () => {
+  authClient.refreshHandler = async () => {
     const refreshedAccessToken = await cabClient.getAccessToken();
     return {
       access_token: refreshedAccessToken.token,
@@ -77,7 +77,7 @@ async function main() {
 
   const storageOptions = {
     projectId,
-    authClient: new GoogleAuth({auth: oauth2Client}),
+    authClient: new GoogleAuth({authClient}),
   };
 
   const storage = new Storage(storageOptions);
