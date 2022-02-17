@@ -73,10 +73,6 @@ export interface ADCResponse {
 
 export interface GoogleAuthOptions {
   /**
-   * An `AuthClient` to use
-   */
-  auth?: AuthClient;
-  /**
    * Path to a .json, .pem, or .p12 key file
    */
   keyFilename?: string;
@@ -139,8 +135,7 @@ export class GoogleAuth {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
 
-  cachedCredential: JSONClient | Impersonated | Compute | AuthClient | null =
-    null;
+  cachedCredential: JSONClient | Impersonated | Compute | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
@@ -158,9 +153,7 @@ export class GoogleAuth {
 
   constructor(opts?: GoogleAuthOptions) {
     opts = opts || {};
-
     this._cachedProjectId = opts.projectId || null;
-    this.cachedCredential = opts.auth || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
@@ -277,7 +270,7 @@ export class GoogleAuth {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
       return {
-        credential: this.cachedCredential,
+        credential: this.cachedCredential as JSONClient,
         projectId: await this.getProjectIdAsync(),
       };
     }
@@ -320,10 +313,7 @@ export class GoogleAuth {
     try {
       isGCE = await this._checkIsGCE();
     } catch (e) {
-      if (e instanceof Error) {
-        e.message = `Unexpected error determining execution environment: ${e.message}`;
-      }
-
+      e.message = `Unexpected error determining execution environment: ${e.message}`;
       throw e;
     }
 
@@ -374,10 +364,7 @@ export class GoogleAuth {
         options
       );
     } catch (e) {
-      if (e instanceof Error) {
-        e.message = `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${e.message}`;
-      }
-
+      e.message = `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${e.message}`;
       throw e;
     }
   }
@@ -451,10 +438,7 @@ export class GoogleAuth {
         throw new Error();
       }
     } catch (err) {
-      if (err instanceof Error) {
-        err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
-      }
-
+      err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
       throw err;
     }
 
@@ -527,7 +511,7 @@ export class GoogleAuth {
     // cache both raw data used to instantiate client and client itself.
     this.jsonContent = json;
     this.cachedCredential = client;
-    return client;
+    return this.cachedCredential;
   }
 
   /**

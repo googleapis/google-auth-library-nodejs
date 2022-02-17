@@ -54,6 +54,7 @@ async function main() {
     },
   };
 
+  const oauth2Client = new OAuth2Client();
   const googleAuth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
@@ -62,9 +63,6 @@ async function main() {
   const client = await googleAuth.getClient();
   // Use the client to generate a DownscopedClient.
   const cabClient = new DownscopedClient(client, cab);
-
-  // OAuth 2.0 Client
-  const oauth2Client = new OAuth2Client();
   // Define a refreshHandler that will be used to refresh the downscoped token
   // when it expires.
   oauth2Client.refreshHandler = async () => {
@@ -77,7 +75,24 @@ async function main() {
 
   const storageOptions = {
     projectId,
-    authClient: new GoogleAuth({auth: oauth2Client}),
+    authClient: {
+      getCredentials: async () => {
+        Promise.reject();
+      },
+      request: opts => {
+        return oauth2Client.request(opts);
+      },
+      sign: () => {
+        Promise.reject('unsupported');
+      },
+      authorizeRequest: async opts => {
+        opts = opts || {};
+        const url = opts.url || opts.uri;
+        const headers = await oauth2Client.getRequestHeaders(url);
+        opts.headers = Object.assign(opts.headers || {}, headers);
+        return opts;
+      },
+    },
   };
 
   const storage = new Storage(storageOptions);
@@ -85,7 +100,6 @@ async function main() {
     .bucket(bucketName)
     .file(objectName)
     .download();
-  console.log('Successfully retrieved file. Contents:');
   console.log(downloadFile.toString('utf8'));
 }
 
