@@ -75,7 +75,7 @@ export interface GoogleAuthOptions {
   /**
    * An `AuthClient` to use
    */
-  auth?: AuthClient;
+  authClient?: AuthClient;
   /**
    * Path to a .json, .pem, or .p12 key file
    */
@@ -160,7 +160,7 @@ export class GoogleAuth {
     opts = opts || {};
 
     this._cachedProjectId = opts.projectId || null;
-    this.cachedCredential = opts.auth || null;
+    this.cachedCredential = opts.authClient || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;

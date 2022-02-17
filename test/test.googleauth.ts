@@ -305,9 +305,7 @@ describe('googleauth', () => {
 
       const authClient = new MyAuthClient();
 
-      const auth = new GoogleAuth({
-        auth: authClient,
-      });
+      const auth = new GoogleAuth({authClient});
 
       assert.equal(auth.cachedCredential, authClient);
       assert.equal(await auth.getClient(), authClient);
