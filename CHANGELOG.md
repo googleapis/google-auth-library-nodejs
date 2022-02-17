@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.13.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.12.0...v7.13.0) (2022-02-17)
+
+
+### Features
+
+* Support instantiating `GoogleAuth` with an `AuthClient` ([#1364](https://github.com/googleapis/google-auth-library-nodejs/issues/1364)) ([8839b5b](https://github.com/googleapis/google-auth-library-nodejs/commit/8839b5b12531ae4966b38795ed818ad138eb326a))
+
 ## [7.12.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.11.0...v7.12.0) (2022-02-09)
 
 
