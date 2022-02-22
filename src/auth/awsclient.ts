@@ -19,7 +19,7 @@ import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
-import {RefreshOptions} from './oauth2client';
+import {RefreshOptions, Headers} from './oauth2client';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
@@ -36,6 +36,12 @@ export interface AwsClientOptions extends BaseExternalAccountClientOptions {
     // environment variables.
     url?: string;
     regional_cred_verification_url: string;
+    // The imdsv2 session token url is used to fetch session token from AWS
+    // which is later sent through headers for metadata requests. If the
+    // field is missing, then session token won't be fetched and sent with
+    // the metadata requests.
+    // The session token is required for IMDSv2 but optional for IMDSv1
+    imdsv2_session_token_url?: string;
   };
 }
 
@@ -62,6 +68,7 @@ export class AwsClient extends BaseExternalAccountClient {
   private readonly regionUrl?: string;
   private readonly securityCredentialsUrl?: string;
   private readonly regionalCredVerificationUrl: string;
+  private readonly imdsV2SessionTokenUrl?: string;
   private awsRequestSigner: AwsRequestSigner | null;
   private region: string;
 
@@ -86,6 +93,8 @@ export class AwsClient extends BaseExternalAccountClient {
     this.securityCredentialsUrl = options.credential_source.url;
     this.regionalCredVerificationUrl =
       options.credential_source.regional_cred_verification_url;
+    this.imdsV2SessionTokenUrl =
+      options.credential_source.imdsv2_session_token_url;
     const match = this.environmentId?.match(/^(aws)(\d+)$/);
     if (!match || !this.regionalCredVerificationUrl) {
       throw new Error('No valid AWS "credential_source" provided');
@@ -106,22 +115,32 @@ export class AwsClient extends BaseExternalAccountClient {
    * this uses a serialized AWS signed request to the STS GetCallerIdentity
    * endpoint.
    * The logic is summarized as:
-   * 1. Retrieve AWS region from availability-zone.
-   * 2a. Check AWS credentials in environment variables. If not found, get
+   * 1. If imdsv2_session_token_url is provided in the credential source, then
+   *    fetch the aws session token and include it in the headers of the
+   *    metadata requests. This is a requirement for IDMSv2 but optional
+   *    for IDMSv1.
+   * 2. Retrieve AWS region from availability-zone.
+   * 3a. Check AWS credentials in environment variables. If not found, get
    *     from security-credentials endpoint.
-   * 2b. Get AWS credentials from security-credentials endpoint. In order
+   * 3b. Get AWS credentials from security-credentials endpoint. In order
    *     to retrieve this, the AWS role needs to be determined by calling
    *     security-credentials endpoint without any argument. Then the
    *     credentials can be retrieved via: security-credentials/role_name
-   * 3. Generate the signed request to AWS STS GetCallerIdentity action.
-   * 4. Inject x-goog-cloud-target-resource into header and serialize the
+   * 4. Generate the signed request to AWS STS GetCallerIdentity action.
+   * 5. Inject x-goog-cloud-target-resource into header and serialize the
    *    signed request. This will be the subject-token to pass to GCP STS.
    * @return A promise that resolves with the external subject token.
    */
   async retrieveSubjectToken(): Promise<string> {
     // Initialize AWS request signer if not already initialized.
     if (!this.awsRequestSigner) {
-      this.region = await this.getAwsRegion();
+      const metadataHeaders: Headers = {};
+      if (this.imdsV2SessionTokenUrl) {
+        metadataHeaders['x-aws-ec2-metadata-token'] =
+          await this.getImdsV2SessionToken();
+      }
+
+      this.region = await this.getAwsRegion(metadataHeaders);
       this.awsRequestSigner = new AwsRequestSigner(async () => {
         // Check environment variables for permanent credentials first.
         // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
@@ -137,12 +156,15 @@ export class AwsClient extends BaseExternalAccountClient {
           };
         }
         // Since the role on a VM can change, we don't need to cache it.
-        const roleName = await this.getAwsRoleName();
+        const roleName = await this.getAwsRoleName(metadataHeaders);
         // Temporary credentials typically last for several hours.
         // Expiration is returned in response.
         // Consider future optimization of this logic to cache AWS tokens
         // until their natural expiration.
-        const awsCreds = await this.getAwsSecurityCredentials(roleName);
+        const awsCreds = await this.getAwsSecurityCredentials(
+          roleName,
+          metadataHeaders
+        );
         return {
           accessKeyId: awsCreds.AccessKeyId,
           secretAccessKey: awsCreds.SecretAccessKey,
@@ -198,9 +220,24 @@ export class AwsClient extends BaseExternalAccountClient {
   }
 
   /**
+   * @return A promise that resolves with the IMDSv2 Session Token.
+   */
+  private async getImdsV2SessionToken(): Promise<string> {
+    const opts: GaxiosOptions = {
+      url: this.imdsV2SessionTokenUrl,
+      method: 'PUT',
+      responseType: 'text',
+      headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+    };
+    const response = await this.transporter.request<string>(opts);
+    return response.data;
+  }
+
+  /**
+   * @param headers The headers to be used in the metadata request.
    * @return A promise that resolves with the current AWS region.
    */
-  private async getAwsRegion(): Promise<string> {
+  private async getAwsRegion(headers: Headers): Promise<string> {
     // Priority order for region determination:
     // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
     if (process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']) {
@@ -216,6 +253,7 @@ export class AwsClient extends BaseExternalAccountClient {
       url: this.regionUrl,
       method: 'GET',
       responseType: 'text',
+      headers: headers,
     };
     const response = await this.transporter.request<string>(opts);
     // Remove last character. For example, if us-east-2b is returned,
@@ -224,10 +262,11 @@ export class AwsClient extends BaseExternalAccountClient {
   }
 
   /**
+   * @param headers The headers to be used in the metadata request.
    * @return A promise that resolves with the assigned role to the current
    *   AWS VM. This is needed for calling the security-credentials endpoint.
    */
-  private async getAwsRoleName(): Promise<string> {
+  private async getAwsRoleName(headers: Headers): Promise<string> {
     if (!this.securityCredentialsUrl) {
       throw new Error(
         'Unable to determine AWS role name due to missing ' +
@@ -238,6 +277,7 @@ export class AwsClient extends BaseExternalAccountClient {
       url: this.securityCredentialsUrl,
       method: 'GET',
       responseType: 'text',
+      headers: headers,
     };
     const response = await this.transporter.request<string>(opts);
     return response.data;
@@ -247,15 +287,18 @@ export class AwsClient extends BaseExternalAccountClient {
    * Retrieves the temporary AWS credentials by calling the security-credentials
    * endpoint as specified in the `credential_source` object.
    * @param roleName The role attached to the current VM.
+   * @param headers The headers to be used in the metadata request.
    * @return A promise that resolves with the temporary AWS credentials
    *   needed for creating the GetCallerIdentity signed request.
    */
   private async getAwsSecurityCredentials(
-    roleName: string
+    roleName: string,
+    headers: Headers
   ): Promise<AwsSecurityCredentials> {
     const response = await this.transporter.request<AwsSecurityCredentials>({
       url: `${this.securityCredentialsUrl}/${roleName}`,
       responseType: 'json',
+      headers: headers,
     });
     return response.data;
   }

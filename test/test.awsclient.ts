@@ -44,6 +44,7 @@ describe('AwsClient', () => {
   const secretAccessKey = awsSecurityCredentials.SecretAccessKey;
   const token = awsSecurityCredentials.Token;
   const awsRole = 'gcp-aws-role';
+  const awsSessionToken = 'sessiontoken';
   const audience = getAudience();
   const metadataBaseUrl = 'http://169.254.169.254';
   const awsCredentialSource = {
@@ -263,6 +264,47 @@ describe('AwsClient', () => {
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
         scope.done();
+      });
+
+      it('should resolve on success with imdsv2 session token', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/placement/availability-zone')
+            .reply(200, `${awsRegion}b`)
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const credentialSourceWithSessionTokenUrl = Object.assign(
+          {imdsv2_session_token_url: `${metadataBaseUrl}/latest/api/token`},
+          awsCredentialSource
+        );
+        const awsOptionsWithSessionTokenUrl = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+          token_url: getTokenUrl(),
+          credential_source: credentialSourceWithSessionTokenUrl,
+        };
+
+        const client = new AwsClient(awsOptionsWithSessionTokenUrl);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scopes.forEach(scope => scope.done());
       });
 
       it('should resolve on success with permanent creds', async () => {
