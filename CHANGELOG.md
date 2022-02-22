@@ -4,6 +4,18 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [7.14.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.13.0...v7.14.0) (2022-02-22)
+
+
+### Features
+
+* Add AWS Session Token to Metadata Requests ([#1363](https://github.com/googleapis/google-auth-library-nodejs/issues/1363)) ([9ea3e98](https://github.com/googleapis/google-auth-library-nodejs/commit/9ea3e98582e8a69dedef89952ae08d64c49f48ef))
+
+
+### Bug Fixes
+
+* Rename `auth` to `authClient` & Use Generics for `AuthClient` ([#1371](https://github.com/googleapis/google-auth-library-nodejs/issues/1371)) ([8373000](https://github.com/googleapis/google-auth-library-nodejs/commit/8373000b2240cb694e9492f849e5cc7e13c89b1a))
+
 ## [7.13.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.12.0...v7.13.0) (2022-02-17)
 
 
