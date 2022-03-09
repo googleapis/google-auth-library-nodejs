@@ -28,9 +28,7 @@ function main(
     const {URL} = require('url');
     targetAudience = new URL(url).origin;
   }
-  // [START google_auth_idtoken_serverless]
   // [START cloudrun_service_to_service_auth]
-  // [START run_service_to_service_auth]
   // [START functions_bearer_token]
   /**
    * TODO(developer): Uncomment these variables before running the sample.
@@ -38,9 +36,13 @@ function main(
   // Example: https://my-cloud-run-service.run.app/books/delete/12345
   // const url = 'https://TARGET_HOSTNAME/TARGET_URL';
 
+  // [END functions_bearer_token]
   // Example (Cloud Run): https://my-cloud-run-service.run.app/
+  // [START functions_bearer_token]
+  // [END cloudrun_service_to_service_auth]
   // Example (Cloud Functions): https://project-region-projectid.cloudfunctions.net/myFunction
-  // const targetAudience = 'https://TARGET_HOSTNAME/';
+  // [START cloudrun_service_to_service_auth]
+  // const targetAudience = 'https://TARGET_AUDIENCE/';
   const {GoogleAuth} = require('google-auth-library');
   const auth = new GoogleAuth();
 
@@ -56,9 +58,7 @@ function main(
     process.exitCode = 1;
   });
   // [END functions_bearer_token]
-  // [END run_service_to_service_auth]
   // [END cloudrun_service_to_service_auth]
-  // [END google_auth_idtoken_serverless]
 }
 
 const args = process.argv.slice(2);
