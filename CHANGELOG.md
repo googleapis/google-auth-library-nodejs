@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+### [7.14.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.14.0...v7.14.1) (2022-03-09)
+
+
+### Bug Fixes
+
+* **serverless:** clean up ID token example ([#1380](https://github.com/googleapis/google-auth-library-nodejs/issues/1380)) ([db27f1b](https://github.com/googleapis/google-auth-library-nodejs/commit/db27f1bc31efaa9df28da2e0a1229ee3ebea0751))
+
 ## [7.14.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.13.0...v7.14.0) (2022-02-22)
 
 
