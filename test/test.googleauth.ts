@@ -1496,14 +1496,6 @@ describe('googleauth', () => {
       );
     });
 
-    it('should throw if options are passed to getClient()', async () => {
-      const auth = new GoogleAuth();
-      await assert.rejects(
-        auth.getClient({hello: 'world'}),
-        /Passing options to getClient is forbidden in v5.0.0/
-      );
-    });
-
     it('getRequestHeaders populates x-goog-user-project with quota_project if present', async () => {
       const tokenReq = mockApplicationDefaultCredentials(
         './test/fixtures/config-with-quota'

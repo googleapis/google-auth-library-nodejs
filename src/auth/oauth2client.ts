@@ -709,7 +709,6 @@ export class OAuth2Client extends AuthClient {
   /**
    * Retrieves the access token using refresh token
    *
-   * @deprecated use getRequestHeaders instead.
    * @param callback callback
    */
   refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
