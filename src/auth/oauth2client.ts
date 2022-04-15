@@ -1155,7 +1155,10 @@ export class OAuth2Client extends AuthClient {
     try {
       res = await this.transporter.request({url});
     } catch (e) {
-      e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      }
+
       throw e;
     }
 
@@ -1220,7 +1223,10 @@ export class OAuth2Client extends AuthClient {
     try {
       res = await this.transporter.request({url});
     } catch (e) {
-      e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      }
+
       throw e;
     }
 
@@ -1271,7 +1277,10 @@ export class OAuth2Client extends AuthClient {
     try {
       envelope = JSON.parse(crypto.decodeBase64StringUtf8(segments[0]));
     } catch (err) {
-      err.message = `Can't parse token envelope: ${segments[0]}': ${err.message}`;
+      if (err instanceof Error) {
+        err.message = `Can't parse token envelope: ${segments[0]}': ${err.message}`;
+      }
+
       throw err;
     }
 
@@ -1282,7 +1291,9 @@ export class OAuth2Client extends AuthClient {
     try {
       payload = JSON.parse(crypto.decodeBase64StringUtf8(segments[1]));
     } catch (err) {
-      err.message = `Can't parse token payload '${segments[0]}`;
+      if (err instanceof Error) {
+        err.message = `Can't parse token payload '${segments[0]}`;
+      }
       throw err;
     }
 

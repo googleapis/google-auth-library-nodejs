@@ -633,7 +633,7 @@ describe('jwt', () => {
 
   it('should error on missing client_id', () => {
     const json = createRefreshJSON();
-    delete json.client_id;
+    delete (json as Partial<typeof json>).client_id;
     const jwt = new JWT();
     assert.throws(() => {
       jwt.fromJSON(json);
@@ -642,7 +642,7 @@ describe('jwt', () => {
 
   it('should error on missing client_secret', () => {
     const json = createRefreshJSON();
-    delete json.client_secret;
+    delete (json as Partial<typeof json>).client_secret;
     const jwt = new JWT();
     assert.throws(() => {
       jwt.fromJSON(json);
@@ -651,7 +651,7 @@ describe('jwt', () => {
 
   it('should error on missing refresh_token', () => {
     const json = createRefreshJSON();
-    delete json.refresh_token;
+    delete (json as Partial<typeof json>).refresh_token;
     const jwt = new JWT();
     assert.throws(() => {
       jwt.fromJSON(json);

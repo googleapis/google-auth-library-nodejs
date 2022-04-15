@@ -155,7 +155,10 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         throw new Error();
       }
     } catch (err) {
-      err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
+      if (err instanceof Error) {
+        err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
+      }
+
       throw err;
     }
 

@@ -406,7 +406,7 @@ describe('googleauth', () => {
 
     it('fromJSON should error on missing client_email', () => {
       const json = createJwtJSON();
-      delete json.client_email;
+      delete (json as Partial<typeof json>).client_email;
       assert.throws(() => {
         auth.fromJSON(json);
       });
@@ -414,7 +414,7 @@ describe('googleauth', () => {
 
     it('fromJSON should error on missing private_key', () => {
       const json = createJwtJSON();
-      delete json.private_key;
+      delete (json as Partial<typeof json>).private_key;
       assert.throws(() => {
         auth.fromJSON(json);
       });
@@ -1600,6 +1600,7 @@ describe('googleauth', () => {
       try {
         await auth.getIdTokenClient('a-target-audience');
       } catch (e) {
+        assert(e instanceof Error);
         assert(
           e.message.startsWith('Cannot fetch ID token in this environment')
         );

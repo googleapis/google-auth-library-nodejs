@@ -128,7 +128,7 @@ describe('jwtaccess', () => {
 
   it('fromJson should error on missing client_email', () => {
     const j = Object.assign({}, json);
-    delete j.client_email;
+    delete (j as Partial<typeof j>).client_email;
     assert.throws(() => {
       client.fromJSON(j);
     });
@@ -136,7 +136,7 @@ describe('jwtaccess', () => {
 
   it('fromJson should error on missing private_key', () => {
     const j = Object.assign({}, json);
-    delete j.private_key;
+    delete (j as Partial<typeof j>).private_key;
     assert.throws(() => {
       client.fromJSON(j);
     });

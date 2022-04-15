@@ -55,7 +55,7 @@ describe('refresh', () => {
 
   it('fromJSON should error on missing client_id', () => {
     const json = createJSON();
-    delete json.client_id;
+    delete (json as Partial<typeof json>).client_id;
     const refresh = new UserRefreshClient();
     assert.throws(() => {
       refresh.fromJSON(json);
@@ -64,7 +64,7 @@ describe('refresh', () => {
 
   it('fromJSON should error on missing client_secret', () => {
     const json = createJSON();
-    delete json.client_secret;
+    delete (json as Partial<typeof json>).client_secret;
     const refresh = new UserRefreshClient();
     assert.throws(() => {
       refresh.fromJSON(json);
@@ -73,7 +73,7 @@ describe('refresh', () => {
 
   it('fromJSON should error on missing refresh_token', () => {
     const json = createJSON();
-    delete json.refresh_token;
+    delete (json as Partial<typeof json>).refresh_token;
     const refresh = new UserRefreshClient();
     assert.throws(() => {
       refresh.fromJSON(json);

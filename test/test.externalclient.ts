@@ -191,7 +191,8 @@ describe('ExternalAccountClient', () => {
 
     it('should throw when given invalid ExternalAccountClient', () => {
       const invalidOptions = Object.assign({}, fileSourcedOptions);
-      delete invalidOptions.credential_source;
+      delete (invalidOptions as Partial<typeof fileSourcedOptions>)
+        .credential_source;
 
       assert.throws(() => {
         return ExternalAccountClient.fromJSON(invalidOptions);

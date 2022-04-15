@@ -73,8 +73,11 @@ export class Compute extends OAuth2Client {
       }
       data = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
-      e.message = `Could not refresh access token: ${e.message}`;
-      this.wrapError(e);
+      if (e instanceof GaxiosError) {
+        e.message = `Could not refresh access token: ${e.message}`;
+        this.wrapError(e);
+      }
+
       throw e;
     }
     const tokens = data as Credentials;
@@ -101,7 +104,10 @@ export class Compute extends OAuth2Client {
       };
       idToken = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
-      e.message = `Could not fetch ID token: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Could not fetch ID token: ${e.message}`;
+      }
+
       throw e;
     }
 

@@ -16,6 +16,7 @@
 
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 import {AuthClient} from './authclient';
+import {GaxiosError} from 'gaxios';
 
 export interface ImpersonatedOptions extends RefreshOptions {
   /**
@@ -132,8 +133,16 @@ export class Impersonated extends OAuth2Client {
         res,
       };
     } catch (error) {
-      const status = error?.response?.data?.error?.status;
-      const message = error?.response?.data?.error?.message;
+      if (!(error instanceof Error)) throw error;
+
+      let status = 0;
+      let message = '';
+
+      if (error instanceof GaxiosError) {
+        status = error?.response?.data?.error?.status;
+        message = error?.response?.data?.error?.message;
+      }
+
       if (status && message) {
         error.message = `${status}: unable to impersonate: ${message}`;
         throw error;

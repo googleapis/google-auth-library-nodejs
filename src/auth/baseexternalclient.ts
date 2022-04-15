@@ -247,7 +247,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * the type of external credential used.
    * @return A promise that resolves with the external subject token.
    */
-  abstract async retrieveSubjectToken(): Promise<string>;
+  abstract retrieveSubjectToken(): Promise<string>;
 
   /**
    * @return A promise that resolves with the current GCP access token

@@ -104,7 +104,7 @@ export class DefaultTransporter {
       validate(opts);
     } catch (e) {
       if (callback) {
-        return callback(e);
+        return callback(e as Error);
       } else {
         throw e;
       }

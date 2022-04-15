@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions, GaxiosResponse} from 'gaxios';
+import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
 
 import {DefaultTransporter} from '../transporters';
@@ -216,7 +216,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
       return stsSuccessfulResponse;
     } catch (error) {
       // Translate error to OAuthError.
-      if (error.response) {
+      if (error instanceof GaxiosError && error.response) {
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.

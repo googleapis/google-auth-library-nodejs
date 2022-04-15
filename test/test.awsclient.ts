@@ -408,7 +408,9 @@ describe('AwsClient', () => {
           {},
           awsCredentialSource
         );
-        delete missingUrlCredentialSource.url;
+        delete (
+          missingUrlCredentialSource as Partial<typeof awsCredentialSource>
+        ).url;
         const invalidOptions = {
           type: 'external_account',
           audience,
@@ -435,7 +437,11 @@ describe('AwsClient', () => {
           {},
           awsCredentialSource
         );
-        delete missingRegionUrlCredentialSource.region_url;
+        delete (
+          missingRegionUrlCredentialSource as Partial<
+            typeof awsCredentialSource
+          >
+        ).region_url;
         const invalidOptions = {
           type: 'external_account',
           audience,
@@ -707,8 +713,12 @@ describe('AwsClient', () => {
           awsCredentialSource
         );
         // Remove all optional fields.
-        delete requiredOnlyCredentialSource.region_url;
-        delete requiredOnlyCredentialSource.url;
+        delete (
+          requiredOnlyCredentialSource as Partial<typeof awsCredentialSource>
+        ).region_url;
+        delete (
+          requiredOnlyCredentialSource as Partial<typeof awsCredentialSource>
+        ).url;
         const requiredOnlyOptions = {
           type: 'external_account',
           audience,
