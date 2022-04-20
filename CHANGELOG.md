@@ -4,6 +4,23 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [8.0.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.14.1...v8.0.0) (2022-04-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* Set Node v12 to minimum supported version & Upgrade TypeScript (#1392)
+* remove deprecated DeprecatedGetClientOptions (#1393)
+
+### Code Refactoring
+
+* remove deprecated DeprecatedGetClientOptions ([#1393](https://github.com/googleapis/google-auth-library-nodejs/issues/1393)) ([9c02941](https://github.com/googleapis/google-auth-library-nodejs/commit/9c02941e52514f8e3b07fedb01439fc313046063))
+
+
+### Build System
+
+* Set Node v12 to minimum supported version & Upgrade TypeScript ([#1392](https://github.com/googleapis/google-auth-library-nodejs/issues/1392)) ([b7bcedb](https://github.com/googleapis/google-auth-library-nodejs/commit/b7bcedb9e4ec24217a861016f3378460af7598c7))
+
 ### [7.14.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v7.14.0...v7.14.1) (2022-03-09)
 
 
