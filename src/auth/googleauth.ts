@@ -756,11 +756,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private async getCredentialsAsync(): Promise<CredentialBody> {
     const client = await this.getClient();
 
-    if (
-      client instanceof BaseExternalAccountClient &&
-      client.getServiceAccountEmail()
-    ) {
-      return {client_email: client.getServiceAccountEmail() as string};
+    if (client instanceof BaseExternalAccountClient) {
+      const serviceAccountEmail = client.getServiceAccountEmail();
+      if (serviceAccountEmail) {
+        return {client_email: serviceAccountEmail};
+      }
     }
 
     if (this.jsonContent) {

@@ -2341,16 +2341,18 @@ describe('googleauth', () => {
         scopes.forEach(s => s.done());
       });
 
-      it('getCredentials() should return the service account email for external accounts', async () => {
-        // Set up a mock to return path to a valid credentials file.
-        const email = saEmail;
-        const configWithImpersonation = createExternalAccountJSON();
-        configWithImpersonation.service_account_impersonation_url =
-          getServiceAccountImpersonationUrl();
-        const auth = new GoogleAuth({credentials: configWithImpersonation});
-        const body = await auth.getCredentials();
-        assert.notStrictEqual(null, body);
-        assert.strictEqual(email, body.client_email);
+      describe('getCredentials()', () => {
+        it('getCredentials() should return the service account email for external accounts', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          const email = saEmail;
+          const configWithImpersonation = createExternalAccountJSON();
+          configWithImpersonation.service_account_impersonation_url =
+            getServiceAccountImpersonationUrl();
+          const auth = new GoogleAuth({credentials: configWithImpersonation});
+          const body = await auth.getCredentials();
+          assert.notStrictEqual(null, body);
+          assert.strictEqual(email, body.client_email);
+        });
       });
     });
   });
