@@ -731,8 +731,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * The callback function handles a credential object that contains the
    * client_email and private_key (if exists).
    * getCredentials first checks if the client is using an external account and
-   * uses the service account email in place of client_email
-   * if that doesn't exist, it checks for these values from the user JSON.
+   * uses the service account email in place of client_email.
+   * If that doesn't exist, it checks for these values from the user JSON.
    * If the user JSON doesn't exist, and the environment is on GCE, it gets the
    * client_email from the cloud metadata server.
    * @param callback Callback that handles the credential object that contains
