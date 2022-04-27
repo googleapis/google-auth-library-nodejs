@@ -730,8 +730,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   /**
    * The callback function handles a credential object that contains the
    * client_email and private_key (if exists).
-   * getCredentials checks for these values from the user JSON at first.
-   * If it doesn't exist, and the environment is on GCE, it gets the
+   * getCredentials first checks if the client is using an external account and
+   * uses the service account email in place of client_email.
+   * If that doesn't exist, it checks for these values from the user JSON.
+   * If the user JSON doesn't exist, and the environment is on GCE, it gets the
    * client_email from the cloud metadata server.
    * @param callback Callback that handles the credential object that contains
    * a client_email and optional private key, or the error.
@@ -752,7 +754,14 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async getCredentialsAsync(): Promise<CredentialBody> {
-    await this.getClient();
+    const client = await this.getClient();
+
+    if (client instanceof BaseExternalAccountClient) {
+      const serviceAccountEmail = client.getServiceAccountEmail();
+      if (serviceAccountEmail) {
+        return {client_email: serviceAccountEmail};
+      }
+    }
 
     if (this.jsonContent) {
       const credential: CredentialBody = {
@@ -882,23 +891,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (client instanceof JWT && client.key) {
       const sign = await crypto.sign(client.key, data);
       return sign;
-    }
-
-    // signBlob requires a service account email and the underlying
-    // access token to have iam.serviceAccounts.signBlob permission
-    // on the specified resource name.
-    // The "Service Account Token Creator" role should cover this.
-    // As a result external account credentials can support this
-    // operation when service account impersonation is enabled.
-    if (
-      client instanceof BaseExternalAccountClient &&
-      client.getServiceAccountEmail()
-    ) {
-      return this.signBlob(
-        crypto,
-        client.getServiceAccountEmail() as string,
-        data
-      );
     }
 
     const projectId = await this.getProjectId();

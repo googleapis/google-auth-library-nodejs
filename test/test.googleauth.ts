@@ -2239,7 +2239,7 @@ describe('googleauth', () => {
 
         it('should use IAMCredentials endpoint when impersonation is used', async () => {
           const scopes = mockGetAccessTokenAndProjectId(
-            false,
+            true,
             ['https://www.googleapis.com/auth/cloud-platform'],
             true
           );
@@ -2339,6 +2339,20 @@ describe('googleauth', () => {
 
         assert.deepStrictEqual(res.data, data);
         scopes.forEach(s => s.done());
+      });
+
+      describe('getCredentials()', () => {
+        it('getCredentials() should return the service account email for external accounts', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          const email = saEmail;
+          const configWithImpersonation = createExternalAccountJSON();
+          configWithImpersonation.service_account_impersonation_url =
+            getServiceAccountImpersonationUrl();
+          const auth = new GoogleAuth({credentials: configWithImpersonation});
+          const body = await auth.getCredentials();
+          assert.notStrictEqual(null, body);
+          assert.strictEqual(email, body.client_email);
+        });
       });
     });
   });
