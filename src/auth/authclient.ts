@@ -15,7 +15,7 @@
 import {EventEmitter} from 'events';
 import {GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
-import {DefaultTransporter} from '../transporters';
+import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
 import {Headers} from './oauth2client';
 
@@ -89,7 +89,7 @@ export abstract class AuthClient
   implements CredentialsClient
 {
   protected quotaProjectId?: string;
-  transporter = new DefaultTransporter();
+  transporter: Transporter = new DefaultTransporter();
   credentials: Credentials = {};
   projectId?: string | null;
   eagerRefreshThresholdMillis = 5 * 60 * 1000;
