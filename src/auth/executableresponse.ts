@@ -17,8 +17,8 @@ const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
 const OIDC_SUBJECT_TOKEN_TYPE2 = 'urn:ietf:params:oauth:token-type:jwt';
 
 /**
- * Interface defining JSON format of response from 3rd party executable used by
- * pluggable auth client.
+ * Interface defining the JSON formatted response of a 3rd party executable
+ * used by the pluggable auth client.
  */
 export interface ExecutableResponseJson {
   /**
