@@ -105,7 +105,7 @@ export class ExecutableResponse {
       this.expirationTime = responseJson.expiration_time;
       this.tokenType = responseJson.token_type;
 
-      // Validate that token type and subject token value.
+      // Validate token type and subject token value.
       if (this.tokenType === SAML_SUBJECT_TOKEN_TYPE) {
         if (!responseJson.saml_response) {
           throw Error(
