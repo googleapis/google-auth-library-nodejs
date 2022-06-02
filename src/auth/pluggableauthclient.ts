@@ -123,7 +123,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     if (!this.command) {
       throw new Error('No valid Pluggable Auth "credential_source" provided.');
     }
-    //Check if the provided timeout exists and if it is valid.
+    // Check if the provided timeout exists and if it is valid.
     if (options.credential_source.timeout_millis === undefined) {
       this.timeoutMillis = DEFAULT_EXECUTABLE_TIMEOUT_MILLIS;
     } else {
@@ -169,18 +169,18 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     }
 
     let executableResponse: ExecutableResponse | undefined;
-    // Try to get cached executable response from output file
+    // Try to get cached executable response from output file.
     if (this.outputFile) {
       executableResponse = await this.retrieveCachedResponse();
     }
 
-    // If no response from output file, call the executable
+    // If no response from output file, call the executable.
     if (!executableResponse) {
-      // Set up environment map with required values for the executable
+      // Set up environment map with required values for the executable.
       const envMap = new Map();
       envMap.set('GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE', this.audience);
       envMap.set('GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE', this.subjectTokenType);
-      // Set to 0 for workloadIdentityFederation
+      // Always set to 0 because interactive mode is not supported.
       envMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
       const serviceAccountEmail = this.getServiceAccountEmail();
       if (serviceAccountEmail) {

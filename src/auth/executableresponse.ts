@@ -17,12 +17,12 @@ const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
 const OIDC_SUBJECT_TOKEN_TYPE2 = 'urn:ietf:params:oauth:token-type:jwt';
 
 /**
- * Interface defining JSON format of response from 3rd party executable run by
+ * Interface defining JSON format of response from 3rd party executable used by
  * pluggable auth client.
  */
 export interface ExecutableResponseJson {
   /**
-   * Version of the response, only version 1 currently supported.
+   * The version of the JSON response. Only version 1 is currently supported.
    * Always required.
    */
   version: number;
@@ -61,8 +61,7 @@ export interface ExecutableResponseJson {
 }
 
 /**
- * Class defining a response from a 3rd party executable run by the pluggable
- * auth client.
+ * Defines the response of a 3rd party executable run by the pluggable auth client.
  */
 export class ExecutableResponse {
   readonly version: number;
@@ -91,7 +90,7 @@ export class ExecutableResponse {
     this.version = responseJson.version;
     this.success = responseJson.success;
 
-    // Check that fields required when response is successful exist.
+    // Validate required fields for a successful response.
     if (this.success) {
       if (!responseJson.expiration_time) {
         throw Error(
@@ -106,8 +105,7 @@ export class ExecutableResponse {
       this.expirationTime = responseJson.expiration_time;
       this.tokenType = responseJson.token_type;
 
-      // Check that type specific fields exist based on token_type provided and
-      // set subjectToken.
+      // Validate that token type and subject token value.
       if (this.tokenType === SAML_SUBJECT_TOKEN_TYPE) {
         if (!responseJson.saml_response) {
           throw Error(
@@ -133,7 +131,7 @@ export class ExecutableResponse {
         );
       }
     } else {
-      // Check that fields required for unsuccessful response exist.
+      // Both code and message must be provided for unsuccessful responses.
       if (!responseJson.code || !responseJson.message) {
         throw Error(
           "Executable response must contain a 'code' and 'message' field when unsuccessful."
@@ -145,7 +143,7 @@ export class ExecutableResponse {
   }
 
   /**
-   * @return a boolean representing if the response has a valid token. Returns
+   * @return A boolean representing if the response has a valid token. Returns
    * true when the response was successful and the token is not expired.
    */
   isValid(): boolean {
@@ -153,7 +151,7 @@ export class ExecutableResponse {
   }
 
   /**
-   * @return a boolean representing if the response is expired. Returns true if
+   * @return A boolean representing if the response is expired. Returns true if
    * the expiration_time field was not provided or if the provided time has
    * passed.
    */
