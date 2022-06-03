@@ -105,7 +105,19 @@ export class ExecutableResponse {
       this.expirationTime = responseJson.expiration_time;
       this.tokenType = responseJson.token_type;
 
-      // Validate token type and subject token value.
+      // Validate token type field.
+      if (
+        this.tokenType !== SAML_SUBJECT_TOKEN_TYPE &&
+        this.tokenType !== OIDC_SUBJECT_TOKEN_TYPE1 &&
+        this.tokenType !== OIDC_SUBJECT_TOKEN_TYPE2
+      ) {
+        throw new Error(
+          "Executable response must contain a 'token_type' field when successful " +
+            `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
+        );
+      }
+
+      // Validate subject token.
       if (this.tokenType === SAML_SUBJECT_TOKEN_TYPE) {
         if (!responseJson.saml_response) {
           throw Error(
@@ -124,11 +136,6 @@ export class ExecutableResponse {
           );
         }
         this.subjectToken = responseJson.id_token;
-      } else {
-        throw Error(
-          "Executable response must contain a 'token_type' field when successful " +
-            `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
-        );
       }
     } else {
       // Both code and message must be provided for unsuccessful responses.
