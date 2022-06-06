@@ -64,12 +64,36 @@ export interface ExecutableResponseJson {
  * Defines the response of a 3rd party executable run by the pluggable auth client.
  */
 export class ExecutableResponse {
+  /**
+   * The version of the Executable response. Only version 1 is currently supported.
+   */
   readonly version: number;
+  /**
+   * Whether the executable ran successfully.
+   */
   readonly success: boolean;
+  /**
+   * Epoch time for expiration of the token in seconds.
+   */
   readonly expirationTime?: number;
+  /**
+   * Type of subject token in the response, currently supported values are:
+   * urn:ietf:params:oauth:token-type:saml2
+   * urn:ietf:params:oauth:token-type:id_token
+   * urn:ietf:params:oauth:token-type:jwt
+   */
   readonly tokenType?: string;
+  /**
+   * Error code from executable.
+   */
   readonly errorCode?: string;
+  /**
+   * Error message from executable.
+   */
   readonly errorMessage?: string;
+  /**
+   * Subject token from executable, format depends on tokenType.
+   */
   readonly subjectToken?: string;
 
   /**
