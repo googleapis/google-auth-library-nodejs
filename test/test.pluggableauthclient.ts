@@ -46,6 +46,7 @@ describe('PluggableAuthClient', () => {
         {},
         pluggableAuthCredentialSource
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (invalidCredentialSource as any)['command'];
       const invalidOptions = {
         type: 'external_account',

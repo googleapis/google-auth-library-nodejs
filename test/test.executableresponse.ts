@@ -14,7 +14,16 @@
 
 import * as assert from 'assert';
 import {describe, it} from 'mocha';
-import {ExecutableResponse} from '../src/auth/executableresponse';
+import {
+  ExecutableResponse,
+  InvalidSubjectTokenError,
+  InvalidTokenTypeFieldError,
+  InvalidCodeFieldError,
+  InvalidExpirationTimeFieldError,
+  InvalidMessageFieldError,
+  InvalidSuccessFieldError,
+  InvalidVersionFieldError,
+} from '../src/auth/executableresponse';
 import * as sinon from 'sinon';
 
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
@@ -40,7 +49,7 @@ describe('ExecutableResponse', () => {
       const responseJson = {
         success: 'true',
       };
-      const expectedError = new Error(
+      const expectedError = new InvalidVersionFieldError(
         "Executable response must contain a 'version' field."
       );
 
@@ -55,7 +64,7 @@ describe('ExecutableResponse', () => {
       const responseJson = {
         version: 1,
       };
-      const expectedError = new Error(
+      const expectedError = new InvalidSuccessFieldError(
         "Executable response must contain a 'success' field."
       );
 
@@ -72,7 +81,7 @@ describe('ExecutableResponse', () => {
         version: 1,
         token_type: OIDC_SUBJECT_TOKEN_TYPE1,
       };
-      const expectedError = new Error(
+      const expectedError = new InvalidExpirationTimeFieldError(
         "Executable response must contain an 'expiration_time' field when successful."
       );
 
@@ -87,8 +96,9 @@ describe('ExecutableResponse', () => {
         version: 1,
         expiration_time: 123456,
       };
-      const expectedError = new Error(
-        "Executable response must contain a 'token_type' field when successful."
+      const expectedError = new InvalidTokenTypeFieldError(
+        "Executable response must contain a 'token_type' field when successful " +
+          `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
       );
 
       assert.throws(() => {
@@ -103,8 +113,9 @@ describe('ExecutableResponse', () => {
         expiration_time: 123456,
         token_type: 'invalidExample',
       };
-      const expectedError = new Error(
-        "Executable response must contain a 'token_type' field when successful and it must be one of urn:ietf:params:oauth:token-type:id_token, urn:ietf:params:oauth:token-type:jwt, or urn:ietf:params:oauth:token-type:saml2."
+      const expectedError = new InvalidTokenTypeFieldError(
+        "Executable response must contain a 'token_type' field when successful " +
+          `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
       );
 
       assert.throws(() => {
@@ -120,7 +131,7 @@ describe('ExecutableResponse', () => {
         token_type: OIDC_SUBJECT_TOKEN_TYPE1,
         saml_response: 'response',
       };
-      const expectedError = new Error(
+      const expectedError = new InvalidSubjectTokenError(
         "Executable response must contain a 'id_token' field when token_type=urn:ietf:params:oauth:token-type:id_token or urn:ietf:params:oauth:token-type:jwt."
       );
 
@@ -137,7 +148,7 @@ describe('ExecutableResponse', () => {
         token_type: SAML_SUBJECT_TOKEN_TYPE,
         id_token: 'response',
       };
-      const expectedError = new Error(
+      const expectedError = new InvalidSubjectTokenError(
         "Executable response must contain a 'saml_response' field when token_type=urn:ietf:params:oauth:token-type:saml2."
       );
 
@@ -152,8 +163,8 @@ describe('ExecutableResponse', () => {
         version: 1,
         message: 'error message',
       };
-      const expectedError = new Error(
-        "Executable response must contain a 'code' and 'message' field when unsuccessful."
+      const expectedError = new InvalidCodeFieldError(
+        "Executable response must contain a 'code' field when unsuccessful."
       );
 
       assert.throws(() => {
@@ -167,8 +178,8 @@ describe('ExecutableResponse', () => {
         version: 1,
         code: '1',
       };
-      const expectedError = new Error(
-        "Executable response must contain a 'code' and 'message' field when unsuccessful."
+      const expectedError = new InvalidMessageFieldError(
+        "Executable response must contain a 'message' field when unsuccessful."
       );
 
       assert.throws(() => {

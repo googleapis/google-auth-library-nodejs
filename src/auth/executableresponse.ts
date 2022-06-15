@@ -31,31 +31,31 @@ export interface ExecutableResponseJson {
    */
   success: boolean;
   /**
-   * Epoch time for expiration of the token in seconds, required for successful
-   * responses.
+   * The epoch time for expiration of the token in seconds, required for
+   * successful responses.
    */
   expiration_time?: number;
   /**
-   * Type of subject token in the response, currently supported values are:
+   * The type of subject token in the response, currently supported values are:
    * urn:ietf:params:oauth:token-type:saml2
    * urn:ietf:params:oauth:token-type:id_token
    * urn:ietf:params:oauth:token-type:jwt
    */
   token_type?: string;
   /**
-   * Error code from executable, required when unsuccessful.
+   * The error code from the executable, required when unsuccessful.
    */
   code?: string;
   /**
-   * Error message from executable, required when unsuccessful.
+   * The error message from the executable, required when unsuccessful.
    */
   message?: string;
   /**
-   * ID token to be used as a subject token when token_type is id_token or jwt.
+   * The ID token to be used as a subject token when token_type is id_token or jwt.
    */
   id_token?: string;
   /**
-   * Response to be used as a subject token when token_type is saml2.
+   * The response to be used as a subject token when token_type is saml2.
    */
   saml_response?: string;
 }
@@ -73,26 +73,26 @@ export class ExecutableResponse {
    */
   readonly success: boolean;
   /**
-   * Epoch time for expiration of the token in seconds.
+   * The epoch time for expiration of the token in seconds.
    */
   readonly expirationTime?: number;
   /**
-   * Type of subject token in the response, currently supported values are:
+   * The type of subject token in the response, currently supported values are:
    * urn:ietf:params:oauth:token-type:saml2
    * urn:ietf:params:oauth:token-type:id_token
    * urn:ietf:params:oauth:token-type:jwt
    */
   readonly tokenType?: string;
   /**
-   * Error code from executable.
+   * The error code from the executable.
    */
   readonly errorCode?: string;
   /**
-   * Error message from executable.
+   * The error message from the executable.
    */
   readonly errorMessage?: string;
   /**
-   * Subject token from executable, format depends on tokenType.
+   * The subject token from the executable, format depends on tokenType.
    */
   readonly subjectToken?: string;
 
@@ -103,12 +103,16 @@ export class ExecutableResponse {
    * run of the executable or a cached output file.
    */
   constructor(responseJson: ExecutableResponseJson) {
-    // Check that always required fields exist in the json response.
+    // Check that the required fields exist in the json response.
     if (!responseJson.version) {
-      throw Error("Executable response must contain a 'version' field.");
+      throw new InvalidVersionFieldError(
+        "Executable response must contain a 'version' field."
+      );
     }
     if (responseJson.success === undefined) {
-      throw Error("Executable response must contain a 'success' field.");
+      throw new InvalidSuccessFieldError(
+        "Executable response must contain a 'success' field."
+      );
     }
 
     this.version = responseJson.version;
@@ -117,13 +121,8 @@ export class ExecutableResponse {
     // Validate required fields for a successful response.
     if (this.success) {
       if (!responseJson.expiration_time) {
-        throw Error(
+        throw new InvalidExpirationTimeFieldError(
           "Executable response must contain an 'expiration_time' field when successful."
-        );
-      }
-      if (!responseJson.token_type) {
-        throw Error(
-          "Executable response must contain a 'token_type' field when successful."
         );
       }
       this.expirationTime = responseJson.expiration_time;
@@ -135,7 +134,7 @@ export class ExecutableResponse {
         this.tokenType !== OIDC_SUBJECT_TOKEN_TYPE1 &&
         this.tokenType !== OIDC_SUBJECT_TOKEN_TYPE2
       ) {
-        throw new Error(
+        throw new InvalidTokenTypeFieldError(
           "Executable response must contain a 'token_type' field when successful " +
             `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
         );
@@ -144,17 +143,14 @@ export class ExecutableResponse {
       // Validate subject token.
       if (this.tokenType === SAML_SUBJECT_TOKEN_TYPE) {
         if (!responseJson.saml_response) {
-          throw Error(
+          throw new InvalidSubjectTokenError(
             `Executable response must contain a 'saml_response' field when token_type=${SAML_SUBJECT_TOKEN_TYPE}.`
           );
         }
         this.subjectToken = responseJson.saml_response;
-      } else if (
-        this.tokenType === OIDC_SUBJECT_TOKEN_TYPE1 ||
-        this.tokenType === OIDC_SUBJECT_TOKEN_TYPE2
-      ) {
+      } else {
         if (!responseJson.id_token) {
-          throw Error(
+          throw new InvalidSubjectTokenError(
             "Executable response must contain a 'id_token' field when " +
               `token_type=${OIDC_SUBJECT_TOKEN_TYPE1} or ${OIDC_SUBJECT_TOKEN_TYPE2}.`
           );
@@ -163,9 +159,14 @@ export class ExecutableResponse {
       }
     } else {
       // Both code and message must be provided for unsuccessful responses.
-      if (!responseJson.code || !responseJson.message) {
-        throw Error(
-          "Executable response must contain a 'code' and 'message' field when unsuccessful."
+      if (!responseJson.code) {
+        throw new InvalidCodeFieldError(
+          "Executable response must contain a 'code' field when unsuccessful."
+        );
+      }
+      if (!responseJson.message) {
+        throw new InvalidMessageFieldError(
+          "Executable response must contain a 'message' field when unsuccessful."
         );
       }
       this.errorCode = responseJson.code;
@@ -183,7 +184,7 @@ export class ExecutableResponse {
 
   /**
    * @return A boolean representing if the response is expired. Returns true if
-   * the expiration_time field was not provided or if the provided time has
+   * the expiration_time field was not provided or if the provided timeout has
    * passed.
    */
   isExpired(): boolean {
@@ -191,5 +192,93 @@ export class ExecutableResponse {
       !this.expirationTime ||
       this.expirationTime < Math.round(Date.now() / 1000)
     );
+  }
+}
+
+/**
+ * An error thrown by the ExecutableResponse class.
+ */
+export class ExecutableResponseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ExecutableResponseError';
+    Object.setPrototypeOf(this, ExecutableResponseError.prototype);
+  }
+}
+
+/**
+ * An error thrown when the 'version' field in an executable response is missing or invalid.
+ */
+export class InvalidVersionFieldError extends ExecutableResponseError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidVersionFieldError';
+    Object.setPrototypeOf(this, InvalidVersionFieldError.prototype);
+  }
+}
+
+/**
+ * An error thrown when the 'success' field in an executable response is missing or invalid.
+ */
+export class InvalidSuccessFieldError extends ExecutableResponseError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidSuccessFieldError';
+    Object.setPrototypeOf(this, InvalidSuccessFieldError.prototype);
+  }
+}
+
+/**
+ * An error thrown when the 'expiration_time' field in an executable response is missing or invalid.
+ */
+export class InvalidExpirationTimeFieldError extends ExecutableResponseError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidExpirationTimeFieldError';
+    Object.setPrototypeOf(this, InvalidExpirationTimeFieldError.prototype);
+  }
+}
+
+/**
+ * An error thrown when the 'token_type' field in an executable response is missing or invalid.
+ */
+export class InvalidTokenTypeFieldError extends ExecutableResponseError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidTokenTypeFieldError';
+    Object.setPrototypeOf(this, InvalidTokenTypeFieldError.prototype);
+  }
+}
+
+/**
+ * An error thrown when the 'code' field in an executable response is missing or invalid.
+ */
+export class InvalidCodeFieldError extends ExecutableResponseError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidCodeFieldError';
+    Object.setPrototypeOf(this, InvalidTokenTypeFieldError.prototype);
+  }
+}
+
+/**
+ * An error thrown when the 'message' field in an executable response is missing or invalid.
+ */
+export class InvalidMessageFieldError extends ExecutableResponseError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidMessageFieldError';
+    Object.setPrototypeOf(this, InvalidTokenTypeFieldError.prototype);
+  }
+}
+
+/**
+ * An error thrown when the subject token in an executable response is missing or invalid.
+ */
+export class InvalidSubjectTokenError extends ExecutableResponseError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidSubjectTokenError';
+    Object.setPrototypeOf(this, InvalidSubjectTokenError.prototype);
   }
 }
