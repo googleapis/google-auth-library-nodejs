@@ -24,13 +24,13 @@ import {Crypto, createCrypto} from '../crypto/crypto';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
-import {CredentialBody, JWTInput} from './credentials';
+import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
 import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
-import {Impersonated, ImpersonatedOptions} from './impersonated';
+import {Impersonated, ImpersonatedOptions, IMPERSONATED_ACCOUNT_TYPE} from './impersonated';
 import {
   ExternalAccountClient,
   ExternalAccountClientOptions,
@@ -459,13 +459,52 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     return this.fromStream(readStream, options);
   }
 
+
+/**
+   * Create a credentials instance using the given input options.
+   * @param json The input object.
+   * @returns JWT or UserRefresh Client with data
+   */
+ fromImpersinatedADC(json: ImpersonatedJWTInput, options?: RefreshOptions): JSONClient {
+      if(json.source_credentials == undefined || json.service_account_impersonation_url == undefined  ){
+        throw new Error(`The file....`);
+      }
+
+      // create source Client
+      let source_client = new UserRefreshClient(
+        json.source_credentials.client_id, 
+        json.source_credentials.client_secret, 
+        json.source_credentials.refresh_token
+      );
+
+      // extreact service account from service_account_impersonation_url
+      // TODO: handle scope for gcloud auth application-default login --impersonate-service-account=1036986016814-compute@developer.gserviceaccount.com--scopes='https://www.googleapis.com/auth/drive'
+      let impersonation_url = json.service_account_impersonation_url
+      let start_index = impersonation_url.indexOf("/")
+      let end_index = impersonation_url.indexOf(":generateAccessToken")
+      if( start_index == -1 || end_index == -1 || start_index > end_index){
+        throw new Error(`Cannot extract target principal from ${impersonation_url}`);
+      }
+     
+      let target_principal = impersonation_url.substring(start_index + 1, end_index)
+
+      return new Impersonated({
+          delegates: json.delegates,
+          sourceClient: source_client,
+          targetPrincipal: target_principal,
+          targetScopes: this.getAnyScopes()
+        })
+
+ }
+
+
   /**
    * Create a credentials instance using the given input options.
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
-  fromJSON(json: JWTInput, options?: RefreshOptions): JSONClient {
+  fromJSON(json: JWTInput | ImpersonatedJWTInput, options?: RefreshOptions): JSONClient {
     let client: JSONClient;
     if (!json) {
       throw new Error(
@@ -476,6 +515,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
+    } 
+    //TODO add impersonat accyount type case
+    // as like https://github.com/googleapis/google-auth-library-python/blob/94fb5e27ef57b9ffb2fa58386bc0cb382ddafec2/google/auth/_default.py#L161
+    else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
+      client = this.fromImpersinatedADC(
+        json as ImpersonatedJWTInput 
+      );
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
       client = ExternalAccountClient.fromJSON(
         json as ExternalAccountClientOptions,
@@ -508,6 +554,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
+    } 
+     //TODO add impersonat accyount type case
+    // as like https://github.com/googleapis/google-auth-library-python/blob/94fb5e27ef57b9ffb2fa58386bc0cb382ddafec2/google/auth/_default.py#L161
+    else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
+      client = this.fromImpersinatedADC(
+        json as ImpersonatedJWTInput 
+      );
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
       client = ExternalAccountClient.fromJSON(
         json as ExternalAccountClientOptions,
