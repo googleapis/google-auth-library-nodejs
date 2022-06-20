@@ -39,6 +39,7 @@ import {
   OAuth2Client,
   ExternalAccountClientOptions,
   RefreshOptions,
+  Impersonated,
 } from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
@@ -2181,6 +2182,22 @@ describe('googleauth', () => {
             {}
           );
           scopes.forEach(s => s.done());
+        });
+
+        it('should initialize from impersonated ADC', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/impersonated_application_default_credentials.json'
+          );
+
+          // Set up a mock to explicity return the Project ID, as needed for impersonated ADC
+          mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+
+          const auth = new GoogleAuth();
+          const client = await auth.getClient();
+
+          assert(client instanceof Impersonated);
         });
 
         it('should allow use defaultScopes when no scopes are available', async () => {

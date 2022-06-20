@@ -464,19 +464,33 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   /**
-   * Create a credentials instance using the given input options.
-   * @param json The input object.
+   * Create a credentials instance using a given impersonated input options.
+   * @param json The impersonated input object.
    * @returns JWT or UserRefresh Client with data
    */
-  fromImpersonatedADC(json: ImpersonatedJWTInput): JSONClient {
-    if (
-      json.source_credentials === undefined ||
-      json.service_account_impersonation_url === undefined
-    ) {
-      throw new Error('The file....');
+  fromImpersonatedJSON(json: ImpersonatedJWTInput): Impersonated {
+    if (!json) {
+      throw new Error(
+        'Must pass in a JSON object containing an  impersonated refresh token'
+      );
+    }
+    if (json.type !== IMPERSONATED_ACCOUNT_TYPE) {
+      throw new Error(
+        `The incoming JSON object does not have the "${IMPERSONATED_ACCOUNT_TYPE}" type`
+      );
+    }
+    if (!json.source_credentials) {
+      throw new Error(
+        'The incoming JSON object does not contain a source_credentials field'
+      );
+    }
+    if (!json.service_account_impersonation_url) {
+      throw new Error(
+        'The incoming JSON object does not contain a service_account_impersonation_url field'
+      );
     }
 
-    // Create source client
+    // Create source client for impersonation
     const source_client = new UserRefreshClient(
       json.source_credentials.client_id,
       json.source_credentials.client_secret,
@@ -484,9 +498,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     );
 
     // Extreact service account from service_account_impersonation_url
-    // TODO: handle scope for gcloud auth application-default login --impersonate-service-account=1036986016814-compute@developer.gserviceaccount.com--scopes='https://www.googleapis.com/auth/drive'
     const impersonation_url = json.service_account_impersonation_url;
-    const start_index = impersonation_url.indexOf('/');
+    const start_index = impersonation_url.lastIndexOf('/');
     const end_index = impersonation_url.indexOf(':generateAccessToken');
     if (start_index === -1 || end_index === -1 || start_index > end_index) {
       throw new Error(
@@ -499,12 +512,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       end_index
     );
 
-    return new Impersonated({
-      delegates: json.delegates,
+    const client = new Impersonated({
+      delegates: json.delegates ?? [],
       sourceClient: source_client,
       targetPrincipal: target_principal,
       targetScopes: this.getAnyScopes(),
     });
+    return client;
   }
 
   /**
@@ -528,7 +542,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
     } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
-      client = this.fromImpersonatedADC(json as ImpersonatedJWTInput);
+      client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
       client = ExternalAccountClient.fromJSON(
         json as ExternalAccountClientOptions,
@@ -562,7 +576,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
     } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
-      client = this.fromImpersonatedADC(json as ImpersonatedJWTInput);
+      client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
       client = ExternalAccountClient.fromJSON(
         json as ExternalAccountClientOptions,
