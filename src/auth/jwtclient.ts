@@ -192,6 +192,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       keyFile: this.keyFile,
       key: this.key,
       additionalClaims: {target_audience: targetAudience},
+      transporter: this.transporter,
     });
     await gtoken.getToken({
       forceRefresh: true,
@@ -285,6 +286,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         keyFile: this.keyFile,
         key: this.key,
         additionalClaims: this.additionalClaims,
+        transporter: this.transporter,
       });
     }
     return this.gtoken;
