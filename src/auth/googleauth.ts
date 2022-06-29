@@ -491,31 +491,27 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     // Create source client for impersonation
-    const source_client = new UserRefreshClient(
+    const sourceClient = new UserRefreshClient(
       json.source_credentials.client_id,
       json.source_credentials.client_secret,
       json.source_credentials.refresh_token
     );
 
     // Extreact service account from service_account_impersonation_url
-    const impersonation_url = json.service_account_impersonation_url;
-    const start_index = impersonation_url.lastIndexOf('/');
-    const end_index = impersonation_url.indexOf(':generateAccessToken');
-    if (start_index === -1 || end_index === -1 || start_index > end_index) {
-      throw new Error(
-        `Cannot extract target principal from ${impersonation_url}`
+    const targetPrincipal = /(?<target>[^/]+):generateAccessToken$/.exec(
+      json.service_account_impersonation_url
+    )?.groups?.target;
+
+    if (!targetPrincipal) {
+      throw new RangeError(
+        `Cannot extract target principal from ${json.service_account_impersonation_url}`
       );
     }
 
-    const target_principal = impersonation_url.substring(
-      start_index + 1,
-      end_index
-    );
-
     const client = new Impersonated({
       delegates: json.delegates ?? [],
-      sourceClient: source_client,
-      targetPrincipal: target_principal,
+      sourceClient: sourceClient,
+      targetPrincipal: targetPrincipal,
       targetScopes: this.getAnyScopes(),
     });
     return client;

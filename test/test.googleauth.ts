@@ -2198,6 +2198,28 @@ describe('googleauth', () => {
           const client = await auth.getClient();
 
           assert(client instanceof Impersonated);
+
+          // Check if targetPrincipal gets extracted and used correctly
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+
+          const scopes = [
+            nock('https://oauth2.googleapis.com').post('/token').reply(200, {
+              access_token: 'abc123',
+            }),
+            nock('https://iamcredentials.googleapis.com')
+              .post(
+                '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken'
+              )
+              .reply(200, {
+                accessToken: 'qwerty345',
+                expireTime: tomorrow.toISOString(),
+              }),
+          ];
+
+          await client.refreshAccessToken();
+          scopes.forEach(s => s.done());
+          assert.strictEqual(client.credentials.access_token, 'qwerty345');
         });
 
         it('should allow use defaultScopes when no scopes are available', async () => {
