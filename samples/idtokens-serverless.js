@@ -35,7 +35,7 @@ function main(
    */
   // [END functions_bearer_token]
   // [END cloudrun_service_to_service_auth]
-  
+
   // [START cloudrun_service_to_service_auth]
   // Example: https://my-cloud-run-service.run.app/books/delete/12345
   // const url = 'https://TARGET_HOSTNAME/TARGET_URL';
