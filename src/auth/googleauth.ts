@@ -508,11 +508,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       );
     }
 
+    const targetScopes = this.getAnyScopes() ?? [];
+
     const client = new Impersonated({
       delegates: json.delegates ?? [],
       sourceClient: sourceClient,
       targetPrincipal: targetPrincipal,
-      targetScopes: this.getAnyScopes(),
+      targetScopes: Array.isArray(targetScopes) ? targetScopes : [targetScopes],
     });
     return client;
   }

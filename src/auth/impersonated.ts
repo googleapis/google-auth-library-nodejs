@@ -30,7 +30,7 @@ export interface ImpersonatedOptions extends RefreshOptions {
   /**
    * Scopes to request during the authorization grant.
    */
-  targetScopes?: string | string[];
+  targetScopes?: string[];
   /**
    * The chained list of delegates required to grant the final access_token.
    */
@@ -55,7 +55,7 @@ export interface TokenResponse {
 export class Impersonated extends OAuth2Client {
   private sourceClient: AuthClient;
   private targetPrincipal: string;
-  private targetScopes: string | string[];
+  private targetScopes: string[];
   private delegates: string[];
   private lifetime: number;
   private endpoint: string;
@@ -84,7 +84,7 @@ export class Impersonated extends OAuth2Client {
    * serviceAccountB. serviceAccountB must have the Token Creator on
    * serviceAccountC. Finally, C must have Token Creator on target_principal.
    * If left unset, sourceCredential must have that role on targetPrincipal.
-   * @param {string | string[]} [options.targetScopes] scopes to request during the
+   * @param {string[]} [options.targetScopes] scopes to request during the
    * authorization grant.
    * @param {number} [options.lifetime] number of seconds the delegated
    * credential should be valid for up to 3600 seconds by default, or 43,200
