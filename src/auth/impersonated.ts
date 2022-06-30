@@ -45,6 +45,8 @@ export interface ImpersonatedOptions extends RefreshOptions {
   endpoint?: string;
 }
 
+export const IMPERSONATED_ACCOUNT_TYPE = 'impersonated_service_account';
+
 export interface TokenResponse {
   accessToken: string;
   expireTime: string;
