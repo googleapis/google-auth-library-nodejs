@@ -56,17 +56,11 @@ This library provides a variety of ways to authenticate to your Google services.
 - [Downscoped Client](#downscoped-client) - Use Downscoped Client with Credential Access Boundary to generate a short-lived credential with downscoped, restricted IAM permissions that can use for Cloud Storage.
 
 ## Application Default Credentials
-This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
+This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started)for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
 
 They are best suited for cases when the call needs to have the same identity and authorization level for the application independent of the user. This is the recommended approach to authorize calls to Cloud APIs, particularly when you're building an application that uses Google Cloud Platform.
 
 Application Default Credentials also support workload identity federation to access Google Cloud resources from non-Google Cloud platforms including Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC). Workload identity federation is recommended for non-Google Cloud environments as it avoids the need to download, manage and store service account private keys locally, see: [Workload Identity Federation](#workload-identity-federation).
-
-[Impersonated](https://cloud.google.com/sdk/gcloud/reference#--impersonate-service-account) Application Default Credentials can also be used and are handled natively by the library. An impersonated service account credentials JSON file can be created with the following command   
-
-```
-$ gcloud auth application-default login --impersonate-service-account=SERVICE_ACCOUNT_TO_IMPERSONATE
-```
 
 #### Download your Service Account Credentials JSON file
 
