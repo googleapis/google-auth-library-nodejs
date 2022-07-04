@@ -4,6 +4,20 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [8.1.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.0.3...v8.1.0) (2022-06-30)
+
+
+### Features
+
+* handle impersonated ADC ([#1425](https://github.com/googleapis/google-auth-library-nodejs/issues/1425)) ([835be89](https://github.com/googleapis/google-auth-library-nodejs/commit/835be89687c2dff19f34e8b55645d3d611339e14))
+
+## [8.0.3](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.0.2...v8.0.3) (2022-06-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/iam to v3 ([#1421](https://github.com/googleapis/google-auth-library-nodejs/issues/1421)) ([0dc8857](https://github.com/googleapis/google-auth-library-nodejs/commit/0dc88572958520ddd4834aa982d41b98851895d9))
+
 ### [8.0.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.0.1...v8.0.2) (2022-04-27)
 
 

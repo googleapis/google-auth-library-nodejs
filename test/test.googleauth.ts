@@ -39,6 +39,7 @@ import {
   OAuth2Client,
   ExternalAccountClientOptions,
   RefreshOptions,
+  Impersonated,
 } from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
@@ -2181,6 +2182,44 @@ describe('googleauth', () => {
             {}
           );
           scopes.forEach(s => s.done());
+        });
+
+        it('should initialize from impersonated ADC', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/impersonated_application_default_credentials.json'
+          );
+
+          // Set up a mock to explicity return the Project ID, as needed for impersonated ADC
+          mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+
+          const auth = new GoogleAuth();
+          const client = await auth.getClient();
+
+          assert(client instanceof Impersonated);
+
+          // Check if targetPrincipal gets extracted and used correctly
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+
+          const scopes = [
+            nock('https://oauth2.googleapis.com').post('/token').reply(200, {
+              access_token: 'abc123',
+            }),
+            nock('https://iamcredentials.googleapis.com')
+              .post(
+                '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken'
+              )
+              .reply(200, {
+                accessToken: 'qwerty345',
+                expireTime: tomorrow.toISOString(),
+              }),
+          ];
+
+          await client.refreshAccessToken();
+          scopes.forEach(s => s.done());
+          assert.strictEqual(client.credentials.access_token, 'qwerty345');
         });
 
         it('should allow use defaultScopes when no scopes are available', async () => {

@@ -17,7 +17,7 @@
 import * as assert from 'assert';
 import * as nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
-import {Impersonated, JWT} from '../src';
+import {Impersonated, JWT, UserRefreshClient} from '../src';
 import {CredentialRequest} from '../src/auth/credentials';
 
 const PEM_PATH = './test/fixtures/private.pem';
@@ -197,6 +197,53 @@ describe('impersonated', () => {
     impersonated.credentials.expiry_date = Date.now();
     await impersonated.request({url});
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty456');
+    assert.strictEqual(
+      impersonated.credentials.expiry_date,
+      tomorrow.getTime()
+    );
+    scopes.forEach(s => s.done());
+  });
+
+  it('handles authenticating with UserRefreshClient as sourceClient', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const scopes = [
+      nock(url).get('/').reply(200),
+      nock('https://oauth2.googleapis.com').post('/token').reply(200, {
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+          (body: ImpersonatedCredentialRequest) => {
+            assert.strictEqual(body.lifetime, '30s');
+            assert.deepStrictEqual(body.delegates, []);
+            assert.deepStrictEqual(body.scope, [
+              'https://www.googleapis.com/auth/cloud-platform',
+            ]);
+            return true;
+          }
+        )
+        .reply(200, {
+          accessToken: 'qwerty345',
+          expireTime: tomorrow.toISOString(),
+        }),
+    ];
+
+    const source_client = new UserRefreshClient(
+      'CLIENT_ID',
+      'CLIENT_SECRET',
+      'REFRESH_TOKEN'
+    );
+    const impersonated = new Impersonated({
+      sourceClient: source_client,
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    await impersonated.request({url});
+    assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
       tomorrow.getTime()
