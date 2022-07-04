@@ -78,6 +78,13 @@ export interface JWTInput {
   quota_project_id?: string;
 }
 
+export interface ImpersonatedJWTInput {
+  type?: string;
+  source_credentials?: JWTInput;
+  service_account_impersonation_url?: string;
+  delegates?: string[];
+}
+
 export interface CredentialBody {
   client_email?: string;
   private_key?: string;

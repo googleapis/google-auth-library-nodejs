@@ -24,13 +24,17 @@ import {Crypto, createCrypto} from '../crypto/crypto';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
-import {CredentialBody, JWTInput} from './credentials';
+import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
 import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
-import {Impersonated, ImpersonatedOptions} from './impersonated';
+import {
+  Impersonated,
+  ImpersonatedOptions,
+  IMPERSONATED_ACCOUNT_TYPE,
+} from './impersonated';
 import {
   ExternalAccountClient,
   ExternalAccountClientOptions,
@@ -460,12 +464,71 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   /**
+   * Create a credentials instance using a given impersonated input options.
+   * @param json The impersonated input object.
+   * @returns JWT or UserRefresh Client with data
+   */
+  fromImpersonatedJSON(json: ImpersonatedJWTInput): Impersonated {
+    if (!json) {
+      throw new Error(
+        'Must pass in a JSON object containing an  impersonated refresh token'
+      );
+    }
+    if (json.type !== IMPERSONATED_ACCOUNT_TYPE) {
+      throw new Error(
+        `The incoming JSON object does not have the "${IMPERSONATED_ACCOUNT_TYPE}" type`
+      );
+    }
+    if (!json.source_credentials) {
+      throw new Error(
+        'The incoming JSON object does not contain a source_credentials field'
+      );
+    }
+    if (!json.service_account_impersonation_url) {
+      throw new Error(
+        'The incoming JSON object does not contain a service_account_impersonation_url field'
+      );
+    }
+
+    // Create source client for impersonation
+    const sourceClient = new UserRefreshClient(
+      json.source_credentials.client_id,
+      json.source_credentials.client_secret,
+      json.source_credentials.refresh_token
+    );
+
+    // Extreact service account from service_account_impersonation_url
+    const targetPrincipal = /(?<target>[^/]+):generateAccessToken$/.exec(
+      json.service_account_impersonation_url
+    )?.groups?.target;
+
+    if (!targetPrincipal) {
+      throw new RangeError(
+        `Cannot extract target principal from ${json.service_account_impersonation_url}`
+      );
+    }
+
+    const targetScopes = this.getAnyScopes() ?? [];
+
+    const client = new Impersonated({
+      delegates: json.delegates ?? [],
+      sourceClient: sourceClient,
+      targetPrincipal: targetPrincipal,
+      targetScopes: Array.isArray(targetScopes) ? targetScopes : [targetScopes],
+    });
+    return client;
+  }
+
+  /**
    * Create a credentials instance using the given input options.
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
-  fromJSON(json: JWTInput, options?: RefreshOptions): JSONClient {
+  fromJSON(
+    json: JWTInput | ImpersonatedJWTInput,
+    options?: RefreshOptions
+  ): JSONClient {
     let client: JSONClient;
     if (!json) {
       throw new Error(
@@ -476,6 +539,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
+    } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
+      client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
       client = ExternalAccountClient.fromJSON(
         json as ExternalAccountClientOptions,
@@ -508,6 +573,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (json.type === 'authorized_user') {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
+    } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
+      client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
       client = ExternalAccountClient.fromJSON(
         json as ExternalAccountClientOptions,
