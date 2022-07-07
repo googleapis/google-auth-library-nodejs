@@ -54,7 +54,7 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^5.0.0",
     "keypair": "^1.0.4",
-    "linkinator": "^3.0.3",
+    "linkinator": "^4.0.0",
     "mocha": "^9.2.2",
     "mv": "^2.1.1",
     "ncp": "^2.0.0",
