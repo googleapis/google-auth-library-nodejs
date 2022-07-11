@@ -17,7 +17,8 @@ import {
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
 import {RefreshOptions} from './oauth2client';
-import {ExecutableResponse} from './executableresponse';
+import {ExecutableResponse} from './executable-response';
+import {PluggableAuthHandler} from './pluggable-auth-handler';
 
 /**
  * Defines the credential source portion of the configuration for PluggableAuthClient.
@@ -169,6 +170,11 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
   private readonly outputFile?: string;
 
   /**
+   * Executable and output file handler.
+   */
+  private readonly handler: PluggableAuthHandler;
+
+  /**
    * Instantiates a PluggableAuthClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * An error is thrown if the credential is not a valid pluggable auth credential.
@@ -204,6 +210,12 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     }
 
     this.outputFile = options.credential_source.output_file;
+
+    this.handler = new PluggableAuthHandler({
+      command: this.command,
+      timeoutMillis: this.timeoutMillis,
+      outputFile: this.outputFile,
+    });
   }
 
   /**
@@ -235,9 +247,8 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     let executableResponse: ExecutableResponse | undefined;
     // Try to get cached executable response from output file.
     if (this.outputFile) {
-      executableResponse = await this.retrieveCachedResponse();
+      executableResponse = await this.handler.retrieveCachedResponse();
     }
-
     // If no response from output file, call the executable.
     if (!executableResponse) {
       // Set up environment map with required values for the executable.
@@ -246,6 +257,9 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       envMap.set('GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE', this.subjectTokenType);
       // Always set to 0 because interactive mode is not supported.
       envMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
+      if (this.outputFile) {
+        envMap.set('GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE', this.outputFile);
+      }
       const serviceAccountEmail = this.getServiceAccountEmail();
       if (serviceAccountEmail) {
         envMap.set(
@@ -253,7 +267,9 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
           serviceAccountEmail
         );
       }
-      executableResponse = await this.retrieveResponseFromExecutable(envMap);
+      executableResponse = await this.handler.retrieveResponseFromExecutable(
+        envMap
+      );
     }
 
     if (executableResponse) {
@@ -279,39 +295,5 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     } else {
       throw new Error('No valid response returned from executable.');
     }
-  }
-
-  /**
-   * Calls user provided executable to get a 3rd party subject token and
-   * returns the response.
-   * @param envMap a Map of additional Environment Variables required for
-   *   the executable.
-   * @return A promise that resolves with the executable response.
-   */
-  private retrieveResponseFromExecutable(
-    envMap: Map<string, string>
-  ): Promise<ExecutableResponse> {
-    // TODO: Implement running executable and retrieving response.
-    return new Promise(resolve => {
-      const responseJson = {
-        success: false,
-        version: 1,
-        code: '',
-        message: '',
-      };
-      const response = new ExecutableResponse(responseJson);
-      resolve(response);
-    });
-  }
-
-  /**
-   * Checks user provided output file for response from previous run of
-   * executable and return the response if it exists and is valid.
-   */
-  private retrieveCachedResponse(): Promise<ExecutableResponse | undefined> {
-    // TODO: Implement output file reading.
-    return new Promise(resolve => {
-      resolve(undefined);
-    });
   }
 }

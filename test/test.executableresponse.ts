@@ -23,7 +23,7 @@ import {
   InvalidMessageFieldError,
   InvalidSuccessFieldError,
   InvalidVersionFieldError,
-} from '../src/auth/executableresponse';
+} from '../src/auth/executable-response';
 import * as sinon from 'sinon';
 
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';

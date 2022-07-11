@@ -18,7 +18,7 @@ import {AwsClient} from '../src/auth/awsclient';
 import {IdentityPoolClient} from '../src/auth/identitypoolclient';
 import {ExternalAccountClient} from '../src/auth/externalclient';
 import {getAudience, getTokenUrl} from './externalclienthelper';
-import {PluggableAuthClient} from '../src/auth/pluggableauthclient';
+import {PluggableAuthClient} from '../src/auth/pluggable-auth-client';
 
 const serviceAccountKeys = {
   type: 'service_account',

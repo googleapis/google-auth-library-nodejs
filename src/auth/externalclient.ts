@@ -32,7 +32,7 @@ import {AwsClient, AwsClientOptions} from './awsclient';
 import {
   PluggableAuthClient,
   PluggableAuthClientOptions,
-} from './pluggableauthclient';
+} from './pluggable-auth-client';
 
 export type ExternalAccountClientOptions =
   | IdentityPoolClientOptions

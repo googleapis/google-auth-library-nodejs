@@ -13,24 +13,68 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {PluggableAuthClient} from '../src/auth/pluggableauthclient';
+import {
+  ExecutableError,
+  PluggableAuthClient,
+} from '../src/auth/pluggable-auth-client';
 import {BaseExternalAccountClient} from '../src';
-import {getAudience, getTokenUrl} from './externalclienthelper';
+import {
+  getAudience,
+  getServiceAccountImpersonationUrl,
+  getTokenUrl,
+  saEmail,
+} from './externalclienthelper';
 import {beforeEach} from 'mocha';
+import * as sinon from 'sinon';
+import {
+  ExecutableResponse,
+  ExecutableResponseJson,
+} from '../src/auth/executable-response';
+import {PluggableAuthHandler} from '../src/auth/pluggable-auth-handler';
+
+const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
 
 describe('PluggableAuthClient', () => {
   const audience = getAudience();
   const pluggableAuthCredentialSource = {
-    command: './command',
+    command: './command -opt',
     output_file: 'output.txt',
     timeout_millis: 10000,
   };
   const pluggableAuthOptions = {
     type: 'external_account',
     audience,
-    subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+    subject_token_type: SAML_SUBJECT_TOKEN_TYPE,
     token_url: getTokenUrl(),
     credential_source: pluggableAuthCredentialSource,
+  };
+  const pluggableAuthOptionsWithSA = Object.assign(
+    {
+      service_account_impersonation_url: getServiceAccountImpersonationUrl(),
+    },
+    pluggableAuthOptions
+  );
+  const pluggableAuthCredentialSourceNoOutput = {
+    command: './command -opt',
+    timeout_millis: 10000,
+  };
+  const pluggableAuthOptionsNoOutput = {
+    type: 'external_account',
+    audience,
+    subject_token_type: SAML_SUBJECT_TOKEN_TYPE,
+    token_url: getTokenUrl(),
+    credential_source: pluggableAuthCredentialSourceNoOutput,
+  };
+  const pluggableAuthCredentialSourceNoTimeout = {
+    command: './command -opt',
+    output_file: 'output.txt',
+  };
+  const pluggableAuthOptionsNoTimeout = {
+    type: 'external_account',
+    audience,
+    subject_token_type: SAML_SUBJECT_TOKEN_TYPE,
+    token_url: getTokenUrl(),
+    credential_source: pluggableAuthCredentialSourceNoTimeout,
   };
 
   it('should be a subclass of ExternalAccountClient', () => {
@@ -104,16 +148,57 @@ describe('PluggableAuthClient', () => {
         return new PluggableAuthClient(invalidOptions);
       }, expectedError);
     });
+
+    it('should set timeout to default when none is provided', () => {
+      const client = new PluggableAuthClient(pluggableAuthOptionsNoTimeout);
+
+      assert.equal(client['timeoutMillis'], 30000);
+    });
   });
 
   describe('RetrieveSubjectToken', () => {
+    const sandbox = sinon.createSandbox();
+    let clock: sinon.SinonFakeTimers;
+    const referenceTime = Date.now();
+    let responseJson: ExecutableResponseJson;
+    let fileStub: sinon.SinonStub<[], Promise<ExecutableResponse | undefined>>;
+    let executableStub: sinon.SinonStub<
+      [envMap: Map<string, string>],
+      Promise<ExecutableResponse>
+    >;
+
     beforeEach(() => {
       // Set Allow Executables environment variables to 1
-      process.env.GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES = '1';
+      const envVars = Object.assign({}, process.env, {
+        GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: '1',
+      });
+      sandbox.stub(process, 'env').value(envVars);
+      clock = sinon.useFakeTimers({now: referenceTime});
+
+      responseJson = {
+        success: true,
+        version: 1,
+        token_type: SAML_SUBJECT_TOKEN_TYPE,
+        saml_response: 'response',
+        expiration_time: referenceTime / 1000 + 10,
+      } as ExecutableResponseJson;
+
+      fileStub = sandbox.stub(
+        PluggableAuthHandler.prototype,
+        'retrieveCachedResponse'
+      );
+
+      executableStub = sandbox.stub(
+        PluggableAuthHandler.prototype,
+        'retrieveResponseFromExecutable'
+      );
     });
 
     afterEach(() => {
-      delete process.env.GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES;
+      sandbox.restore();
+      if (clock) {
+        clock.restore();
+      }
     });
 
     it('should throw when allow executables environment variables is not 1', async () => {
@@ -125,6 +210,167 @@ describe('PluggableAuthClient', () => {
       const client = new PluggableAuthClient(pluggableAuthOptions);
 
       await assert.rejects(client.retrieveSubjectToken(), expectedError);
+    });
+
+    it('should return error from child process up the stack', async () => {
+      const expectedError = new Error('example error');
+      fileStub.throws(new Error('example error'));
+
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+
+      await assert.rejects(client.retrieveSubjectToken(), expectedError);
+    });
+
+    it('should return executable response when successful', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      assert.equal(await subjectToken, responseJson.saml_response);
+    });
+
+    it('should throw error when version is not supported', async () => {
+      responseJson.version = 99999;
+      const expectedError = new Error(
+        'Version of executable is not currently supported, maximum supported version is 1.'
+      );
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      await assert.rejects(subjectToken, expectedError);
+    });
+
+    it('should throw error when response is expired', async () => {
+      responseJson.expiration_time = referenceTime / 1000 - 10;
+      const expectedError = new Error('Executable response is expired.');
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      await assert.rejects(subjectToken, expectedError);
+    });
+
+    it('should call executable when output file returns undefined', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      await client.retrieveSubjectToken();
+
+      sandbox.assert.calledOnce(fileStub);
+      sandbox.assert.calledOnce(executableStub);
+    });
+
+    it('should return cached file response when successful', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(new ExecutableResponse(responseJson));
+      const subjectToken = client.retrieveSubjectToken();
+
+      assert.equal(await subjectToken, responseJson.saml_response);
+    });
+
+    it('should reject if error returned from output file stream', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      const expectedError = new Error('error');
+      fileStub.rejects(expectedError);
+      const subjectToken = client.retrieveSubjectToken();
+
+      await assert.rejects(subjectToken, expectedError);
+    });
+
+    it('should reject if executable does not return valid response', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      const expectedError = new Error(
+        'No valid response returned from executable.'
+      );
+      fileStub.resolves(undefined);
+      executableStub.resolves(undefined);
+      const subjectToken = client.retrieveSubjectToken();
+
+      await assert.rejects(subjectToken, expectedError);
+    });
+
+    it('should throw error when response is not successful', async () => {
+      responseJson.success = false;
+      responseJson.code = '1';
+      responseJson.message = 'error';
+      const expectedError = new ExecutableError('error', '1');
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      await assert.rejects(subjectToken, expectedError);
+    });
+
+    it('should set envMap correctly when calling executable', async () => {
+      const expectedEnvMap = new Map();
+      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE', audience);
+      expectedEnvMap.set(
+        'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
+        responseJson.token_type
+      );
+      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
+      const client = new PluggableAuthClient(pluggableAuthOptionsNoOutput);
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+      await subjectToken;
+
+      sinon.assert.calledOnceWithExactly(executableStub, expectedEnvMap);
+    });
+
+    it('should set envMap correctly when calling executable without output file', async () => {
+      const expectedEnvMap = new Map();
+      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE', audience);
+      expectedEnvMap.set(
+        'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
+        responseJson.token_type
+      );
+      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
+      expectedEnvMap.set(
+        'GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE',
+        pluggableAuthCredentialSource.output_file
+      );
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+      await subjectToken;
+
+      sinon.assert.calledOnceWithExactly(executableStub, expectedEnvMap);
+    });
+
+    it('should set envMap correctly when calling executable with service account impersonation', async () => {
+      const expectedEnvMap = new Map();
+      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE', audience);
+      expectedEnvMap.set(
+        'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
+        responseJson.token_type
+      );
+      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
+      expectedEnvMap.set(
+        'GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE',
+        pluggableAuthCredentialSource.output_file
+      );
+      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL', saEmail);
+      const client = new PluggableAuthClient(pluggableAuthOptionsWithSA);
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+      await subjectToken;
+
+      sinon.assert.calledOnceWithExactly(executableStub, expectedEnvMap);
     });
   });
 });
