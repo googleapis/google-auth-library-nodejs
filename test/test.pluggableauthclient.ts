@@ -37,9 +37,11 @@ const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
 describe('PluggableAuthClient', () => {
   const audience = getAudience();
   const pluggableAuthCredentialSource = {
-    command: './command -opt',
-    output_file: 'output.txt',
-    timeout_millis: 10000,
+    executable: {
+      command: './command -opt',
+      output_file: 'output.txt',
+      timeout_millis: 10000,
+    },
   };
   const pluggableAuthOptions = {
     type: 'external_account',
@@ -55,8 +57,10 @@ describe('PluggableAuthClient', () => {
     pluggableAuthOptions
   );
   const pluggableAuthCredentialSourceNoOutput = {
-    command: './command -opt',
-    timeout_millis: 10000,
+    executable: {
+      command: './command -opt',
+      timeout_millis: 10000,
+    },
   };
   const pluggableAuthOptionsNoOutput = {
     type: 'external_account',
@@ -66,8 +70,10 @@ describe('PluggableAuthClient', () => {
     credential_source: pluggableAuthCredentialSourceNoOutput,
   };
   const pluggableAuthCredentialSourceNoTimeout = {
-    command: './command -opt',
-    output_file: 'output.txt',
+    executable: {
+      command: './command -opt',
+      output_file: 'output.txt',
+    },
   };
   const pluggableAuthOptionsNoTimeout = {
     type: 'external_account',
@@ -82,16 +88,11 @@ describe('PluggableAuthClient', () => {
   });
 
   describe('Constructor', () => {
-    it('should throw when credential_source is missing command', () => {
+    it('should throw when credential_source is missing executable', () => {
       const expectedError = new Error(
         'No valid Pluggable Auth "credential_source" provided.'
       );
-      const invalidCredentialSource = Object.assign(
-        {},
-        pluggableAuthCredentialSource
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (invalidCredentialSource as any)['command'];
+      const invalidCredentialSource = {};
       const invalidOptions = {
         type: 'external_account',
         audience,
@@ -101,6 +102,33 @@ describe('PluggableAuthClient', () => {
       };
 
       assert.throws(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return new PluggableAuthClient(invalidOptions);
+      }, expectedError);
+    });
+
+    it('should throw when credential_source is missing command', () => {
+      const expectedError = new Error(
+        'No valid Pluggable Auth "credential_source" provided.'
+      );
+      const invalidCredentialSource = {
+        executable: {
+          output_file: 'output.txt',
+          timeout_mills: 10000,
+        },
+      };
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        token_url: getTokenUrl(),
+        credential_source: invalidCredentialSource,
+      };
+
+      assert.throws(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         return new PluggableAuthClient(invalidOptions);
       }, expectedError);
     });
@@ -109,11 +137,13 @@ describe('PluggableAuthClient', () => {
       const expectedError = new Error(
         'Timeout must be between 5000 and 120000 milliseconds.'
       );
-      const invalidCredentialSource = Object.assign(
-        {},
-        pluggableAuthCredentialSource
-      );
-      invalidCredentialSource.timeout_millis = 0;
+      const invalidCredentialSource = {
+        executable: {
+          command: './command',
+          output_file: 'output.txt',
+          timeout_millis: -1,
+        },
+      };
       const invalidOptions = {
         type: 'external_account',
         audience,
@@ -131,11 +161,13 @@ describe('PluggableAuthClient', () => {
       const expectedError = new Error(
         'Timeout must be between 5000 and 120000 milliseconds.'
       );
-      const invalidCredentialSource = Object.assign(
-        {},
-        pluggableAuthCredentialSource
-      );
-      invalidCredentialSource.timeout_millis = 9000000000;
+      const invalidCredentialSource = {
+        executable: {
+          command: './command',
+          output_file: 'output.txt',
+          timeout_millis: 9000000000,
+        },
+      };
       const invalidOptions = {
         type: 'external_account',
         audience,
@@ -338,7 +370,7 @@ describe('PluggableAuthClient', () => {
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
       expectedEnvMap.set(
         'GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE',
-        pluggableAuthCredentialSource.output_file
+        pluggableAuthCredentialSource.executable.output_file
       );
       const client = new PluggableAuthClient(pluggableAuthOptions);
       fileStub.resolves(undefined);
@@ -360,7 +392,7 @@ describe('PluggableAuthClient', () => {
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
       expectedEnvMap.set(
         'GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE',
-        pluggableAuthCredentialSource.output_file
+        pluggableAuthCredentialSource.executable.output_file
       );
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL', saEmail);
       const client = new PluggableAuthClient(pluggableAuthOptionsWithSA);

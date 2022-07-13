@@ -43,20 +43,22 @@ import {PluggableAuthHandler} from './pluggable-auth-handler';
 export interface PluggableAuthClientOptions
   extends BaseExternalAccountClientOptions {
   credential_source: {
-    /**
-     * The command used to retrieve the 3rd party token.
-     */
-    command: string;
-    /**
-     * The timeout for executable to run in milliseconds. If none is provided it
-     * will be set to the default timeout of 30 seconds.
-     */
-    timeout_millis?: number;
-    /**
-     * An optional output file location that will be checked for a cached response
-     * from a previous run of the executable.
-     */
-    output_file?: string;
+    executable: {
+      /**
+       * The command used to retrieve the 3rd party token.
+       */
+      command: string;
+      /**
+       * The timeout for executable to run in milliseconds. If none is provided it
+       * will be set to the default timeout of 30 seconds.
+       */
+      timeout_millis?: number;
+      /**
+       * An optional output file location that will be checked for a cached response
+       * from a previous run of the executable.
+       */
+      output_file?: string;
+    };
   };
 }
 
@@ -189,15 +191,18 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     additionalOptions?: RefreshOptions
   ) {
     super(options, additionalOptions);
-    this.command = options.credential_source.command;
+    if (!options.credential_source.executable) {
+      throw new Error('No valid Pluggable Auth "credential_source" provided.');
+    }
+    this.command = options.credential_source.executable.command;
     if (!this.command) {
       throw new Error('No valid Pluggable Auth "credential_source" provided.');
     }
     // Check if the provided timeout exists and if it is valid.
-    if (options.credential_source.timeout_millis === undefined) {
+    if (options.credential_source.executable.timeout_millis === undefined) {
       this.timeoutMillis = DEFAULT_EXECUTABLE_TIMEOUT_MILLIS;
     } else {
-      this.timeoutMillis = options.credential_source.timeout_millis;
+      this.timeoutMillis = options.credential_source.executable.timeout_millis;
       if (
         this.timeoutMillis < MINIMUM_EXECUTABLE_TIMEOUT_MILLIS ||
         this.timeoutMillis > MAXIMUM_EXECUTABLE_TIMEOUT_MILLIS
@@ -209,7 +214,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       }
     }
 
-    this.outputFile = options.credential_source.output_file;
+    this.outputFile = options.credential_source.executable.output_file;
 
     this.handler = new PluggableAuthHandler({
       command: this.command,
