@@ -19,6 +19,8 @@ import * as fs from 'fs';
 import {
   ExecutableResponse,
   ExecutableResponseJson,
+  InvalidExpirationTimeFieldError,
+  InvalidSuccessFieldError,
 } from '../src/auth/executable-response';
 import {beforeEach} from 'mocha';
 import * as events from 'events';
@@ -34,7 +36,7 @@ const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
 
 describe('PluggableAuthHandler', () => {
   const defaultHandlerOptions = {
-    command: './command -opt',
+    command: './command/path/file.exe -opt',
     outputFile: 'output',
     timeoutMillis: 1000,
   } as PluggableAuthHandlerOptions;
@@ -47,7 +49,7 @@ describe('PluggableAuthHandler', () => {
     });
 
     it('should throw when options is missing command', () => {
-      const expectedError = new Error('No valid command provided.');
+      const expectedError = new Error('No command provided.');
       const invalidOptions = {
         outputFile: 'output.txt',
         timeoutMillis: 1000,
@@ -61,7 +63,7 @@ describe('PluggableAuthHandler', () => {
     });
 
     it('should throw when options is missing timeoutMillis', () => {
-      const expectedError = new Error('No valid timeoutMillis provided.');
+      const expectedError = new Error('No timeoutMillis provided.');
       const invalidOptions = {
         command: './command -opt',
         outputFile: 'output.txt',
@@ -71,6 +73,20 @@ describe('PluggableAuthHandler', () => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         return new PluggableAuthHandler(invalidOptions);
+      }, expectedError);
+    });
+
+    it('should throw when command cannot be parsed', async () => {
+      const expectedError = new Error(
+        'Provided command: " " could not be parsed.'
+      );
+      const invalidHandlerOptions = {
+        command: ' ',
+        timeoutMillis: 10000,
+      } as PluggableAuthHandlerOptions;
+
+      assert.throws(() => {
+        return new PluggableAuthHandler(invalidHandlerOptions);
       }, expectedError);
     });
   });
@@ -89,6 +105,18 @@ describe('PluggableAuthHandler', () => {
       child_process.ChildProcess
     >;
     let defaultResponseJson: ExecutableResponseJson;
+    const expectedEnvMap = new Map();
+    expectedEnvMap.set(
+      'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
+      SAML_SUBJECT_TOKEN_TYPE
+    );
+    expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
+    const expectedOpts = {
+      env: {
+        ...process.env,
+        ...Object.fromEntries(expectedEnvMap),
+      },
+    };
 
     beforeEach(() => {
       // Stub environment variables and set Allow Executables environment variable to 1
@@ -151,18 +179,52 @@ describe('PluggableAuthHandler', () => {
       const components = defaultHandlerOptions.command.split(' ');
       const expectedCommand = components[0];
       const expectedArgs = components.slice(1);
-      const expectedEnvMap = new Map();
-      expectedEnvMap.set(
-        'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
-        SAML_SUBJECT_TOKEN_TYPE
+
+      const response = handler.retrieveResponseFromExecutable(expectedEnvMap);
+      spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
+      spawnEvent.emit('close', 0);
+      await response;
+
+      sandbox.assert.calledOnceWithMatch(
+        spawnStub,
+        expectedCommand,
+        expectedArgs,
+        expectedOpts
       );
-      expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
-      const expectedOpts = {
-        env: {
-          ...process.env,
-          ...Object.fromEntries(expectedEnvMap),
-        },
-      };
+    });
+
+    it('should call executable with correct command with spaces', async () => {
+      const handlerOptions = {
+        command: '"./command with/spaces.exe" -opt arg',
+        outputFile: 'output',
+        timeoutMillis: 1000,
+      } as PluggableAuthHandlerOptions;
+      const handler = new PluggableAuthHandler(handlerOptions);
+      const expectedCommand = './command with/spaces.exe';
+      const expectedArgs = ['-opt', 'arg'];
+
+      const response = handler.retrieveResponseFromExecutable(expectedEnvMap);
+      spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
+      spawnEvent.emit('close', 0);
+      await response;
+
+      sandbox.assert.calledOnceWithMatch(
+        spawnStub,
+        expectedCommand,
+        expectedArgs,
+        expectedOpts
+      );
+    });
+
+    it('should call executable with correct arguments with spaces', async () => {
+      const handlerOptions = {
+        command: './command/with/path.exe -opt "arg with spaces"',
+        outputFile: 'output',
+        timeoutMillis: 1000,
+      } as PluggableAuthHandlerOptions;
+      const handler = new PluggableAuthHandler(handlerOptions);
+      const expectedCommand = './command/with/path.exe';
+      const expectedArgs = ['-opt', 'arg with spaces'];
 
       const response = handler.retrieveResponseFromExecutable(expectedEnvMap);
       spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
@@ -191,7 +253,9 @@ describe('PluggableAuthHandler', () => {
     });
 
     it('should throw error when executable times out', async () => {
-      const expectedError = new Error('Executable failed due to timeout.');
+      const expectedError = new Error(
+        'The executable failed to finish within the timeout specified.'
+      );
       spawnEvent.kill = () => {
         return true;
       };
@@ -204,9 +268,45 @@ describe('PluggableAuthHandler', () => {
 
       await assert.rejects(response, expectedError);
     });
+
+    it('should throw error when non-json text is returned', async () => {
+      const expectedError = new Error(
+        'Executable returned invalid response: Invalid response'
+      );
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+
+      const response = handler.retrieveResponseFromExecutable(
+        new Map<string, string>()
+      );
+      spawnEvent.stdout!.emit('data', 'Invalid response');
+      spawnEvent.emit('close', 0);
+
+      await assert.rejects(response, expectedError);
+    });
+
+    it('should throw ExecutableResponseError', async () => {
+      const expectedError = new InvalidSuccessFieldError(
+        "Executable response must contain a 'success' field."
+      );
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      const invalidResponse = {
+        version: 1,
+        token_type: SAML_SUBJECT_TOKEN_TYPE,
+        saml_response: 'response',
+        expiration_time: referenceTime / 1000 + 10,
+      };
+
+      const response = handler.retrieveResponseFromExecutable(
+        new Map<string, string>()
+      );
+      spawnEvent.stdout!.emit('data', JSON.stringify(invalidResponse));
+      spawnEvent.emit('close', 0);
+
+      await assert.rejects(response, expectedError);
+    });
   });
 
-  describe('RetrieveResponseFromExecutable', () => {
+  describe('retrieveCachedResponse', () => {
     const sandbox = sinon.createSandbox();
     let clock: sinon.SinonFakeTimers;
     const referenceTime = Date.now();
@@ -278,8 +378,11 @@ describe('PluggableAuthHandler', () => {
     });
 
     it('should return undefined if outputFile is undefined', async () => {
-      defaultHandlerOptions.outputFile = undefined;
-      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      const invalidOptions = {
+        command: './command.sh',
+        timeoutMillis: 1000,
+      };
+      const handler = new PluggableAuthHandler(invalidOptions);
       const response = handler.retrieveCachedResponse();
       fileEvent.emit('data', JSON.stringify(defaultResponseJson));
       fileEvent.emit('end', 0);
@@ -296,6 +399,57 @@ describe('PluggableAuthHandler', () => {
       fileEvent.emit('end', 0);
 
       assert.equal(await response, undefined);
+    });
+
+    it('should throw error when non-json text is returned', async () => {
+      const expectedError = new Error(
+        'Output file contained invalid response: Invalid response'
+      );
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+
+      const response = handler.retrieveCachedResponse();
+      fileEvent.emit('data', 'Invalid response');
+      fileEvent.emit('end', 0);
+
+      await assert.rejects(response, expectedError);
+    });
+
+    it('should throw ExecutableResponseError', async () => {
+      const expectedError = new InvalidSuccessFieldError(
+        "Executable response must contain a 'success' field."
+      );
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      const invalidResponse = {
+        version: 1,
+        token_type: SAML_SUBJECT_TOKEN_TYPE,
+        saml_response: 'response',
+        expiration_time: referenceTime / 1000 + 10,
+      };
+
+      const response = handler.retrieveCachedResponse();
+      fileEvent.emit('data', JSON.stringify(invalidResponse));
+      fileEvent.emit('end', 0);
+
+      await assert.rejects(response, expectedError);
+    });
+
+    it('should throw InvalidExpirationTimeError', async () => {
+      const expectedError = new InvalidExpirationTimeFieldError(
+        'Output file response must contain an expiration_time when success=true.'
+      );
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      const invalidResponse = {
+        success: true,
+        version: 1,
+        token_type: SAML_SUBJECT_TOKEN_TYPE,
+        saml_response: 'response',
+      };
+
+      const response = handler.retrieveCachedResponse();
+      fileEvent.emit('data', JSON.stringify(invalidResponse));
+      fileEvent.emit('end', 0);
+
+      await assert.rejects(response, expectedError);
     });
   });
 });

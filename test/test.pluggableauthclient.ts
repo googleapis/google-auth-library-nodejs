@@ -317,18 +317,6 @@ describe('PluggableAuthClient', () => {
       await assert.rejects(subjectToken, expectedError);
     });
 
-    it('should reject if executable does not return valid response', async () => {
-      const client = new PluggableAuthClient(pluggableAuthOptions);
-      const expectedError = new Error(
-        'No valid response returned from executable.'
-      );
-      fileStub.resolves(undefined);
-      executableStub.resolves(undefined);
-      const subjectToken = client.retrieveSubjectToken();
-
-      await assert.rejects(subjectToken, expectedError);
-    });
-
     it('should throw error when response is not successful', async () => {
       responseJson.success = false;
       responseJson.code = '1';

@@ -19,7 +19,6 @@ import {
   InvalidSubjectTokenError,
   InvalidTokenTypeFieldError,
   InvalidCodeFieldError,
-  InvalidExpirationTimeFieldError,
   InvalidMessageFieldError,
   InvalidSuccessFieldError,
   InvalidVersionFieldError,
@@ -71,21 +70,6 @@ describe('ExecutableResponse', () => {
       assert.throws(() => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        return new ExecutableResponse(responseJson);
-      }, expectedError);
-    });
-
-    it('should throw error when expiration_time field is missing and success = true', () => {
-      const responseJson = {
-        success: true,
-        version: 1,
-        token_type: OIDC_SUBJECT_TOKEN_TYPE1,
-      };
-      const expectedError = new InvalidExpirationTimeFieldError(
-        "Executable response must contain an 'expiration_time' field when successful."
-      );
-
-      assert.throws(() => {
         return new ExecutableResponse(responseJson);
       }, expectedError);
     });
@@ -268,17 +252,18 @@ describe('ExecutableResponse', () => {
   });
 
   describe('isExpired', () => {
-    it('should return true if response does not contain expirationTime', () => {
+    it('should return false if response does not contain expirationTime', () => {
       const responseJson = {
-        success: false,
+        success: true,
         version: 1,
-        code: '1',
-        message: 'error message',
+        token_type: SAML_SUBJECT_TOKEN_TYPE,
+        saml_response: 'response',
+        expiration_time: referenceTime / 1000 + 1,
       };
 
       const executableResponse = new ExecutableResponse(responseJson);
 
-      assert.equal(true, executableResponse.isExpired());
+      assert.equal(false, executableResponse.isExpired());
     });
 
     it('should return true if response is expired', () => {

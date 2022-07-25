@@ -15,7 +15,9 @@
 import {ExecutableError} from './pluggable-auth-client';
 import {
   ExecutableResponse,
+  ExecutableResponseError,
   ExecutableResponseJson,
+  InvalidExpirationTimeFieldError,
 } from './executable-response';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
@@ -44,7 +46,7 @@ export interface PluggableAuthHandlerOptions {
  * executables and cached file output for the PluggableAuthClient class.
  */
 export class PluggableAuthHandler {
-  private readonly command: string;
+  private readonly commandComponents: Array<string>;
   private readonly timeoutMillis: number;
   private readonly outputFile?: string;
 
@@ -53,13 +55,15 @@ export class PluggableAuthHandler {
    * PluggableAuthHandlerOptions object.
    */
   constructor(options: PluggableAuthHandlerOptions) {
-    this.command = options.command;
-    if (!this.command) {
-      throw new Error('No valid command provided.');
+    if (!options.command) {
+      throw new Error('No command provided.');
     }
+    this.commandComponents = PluggableAuthHandler.parseCommand(
+      options.command
+    ) as Array<string>;
     this.timeoutMillis = options.timeoutMillis;
     if (!this.timeoutMillis) {
-      throw new Error('No valid timeoutMillis provided.');
+      throw new Error('No timeoutMillis provided.');
     }
     this.outputFile = options.outputFile;
   }
@@ -74,20 +78,22 @@ export class PluggableAuthHandler {
   retrieveResponseFromExecutable(
     envMap: Map<string, string>
   ): Promise<ExecutableResponse> {
-    // Split command into components on ' '.
-    const components = this.command.split(' ');
     return new Promise((resolve, reject) => {
-      // Spawn process to run executable using added environment variables
-      const child = childProcess.spawn(components[0], components.slice(1), {
-        env: {...process.env, ...Object.fromEntries(envMap)},
-      });
+      // Spawn process to run executable using added environment variables.
+      const child = childProcess.spawn(
+        this.commandComponents[0],
+        this.commandComponents.slice(1),
+        {
+          env: {...process.env, ...Object.fromEntries(envMap)},
+        }
+      );
       let output = '';
       let error = '';
       // Append stdout to output as executable runs.
       child.stdout.on('data', (data: string) => {
         output += data;
       });
-      // Append stderr as executable runs
+      // Append stderr as executable runs.
       child.stderr.on('error', (err: string) => {
         error += err;
       });
@@ -95,16 +101,31 @@ export class PluggableAuthHandler {
       // Set up a timeout to end the child process and throw an error.
       const timeout = setTimeout(() => {
         child.kill();
-        reject(new Error('Executable failed due to timeout.'));
+        reject(
+          new Error(
+            'The executable failed to finish within the timeout specified.'
+          )
+        );
       }, this.timeoutMillis);
 
       child.on('close', (code: number) => {
         // Cancel timeout if executable closes before timeout is reached.
         clearTimeout(timeout);
         if (code === 0) {
-          // If executable completed successfully, try to return parsed response
-          const responseJson = JSON.parse(output) as ExecutableResponseJson;
-          resolve(new ExecutableResponse(responseJson));
+          // If the executable completed successfully, try to return the parsed response.
+          try {
+            const responseJson = JSON.parse(output) as ExecutableResponseJson;
+            resolve(new ExecutableResponse(responseJson));
+          } catch (error) {
+            if (error instanceof ExecutableResponseError) {
+              reject(error);
+            }
+            reject(
+              new Error(
+                `The executable returned an invalid response: ${output}`
+              )
+            );
+          }
         } else {
           reject(new ExecutableError(error, code.toString()));
         }
@@ -114,7 +135,7 @@ export class PluggableAuthHandler {
 
   /**
    * Checks user provided output file for response from previous run of
-   * executable and return the response if it exists and is valid.
+   * executable and return the response if it exists, is formatted correctly, and is not expired.
    */
   retrieveCachedResponse(): Promise<ExecutableResponse | undefined> {
     return new Promise((resolve, reject) => {
@@ -137,13 +158,47 @@ export class PluggableAuthHandler {
         })
         .on('data', (chunk: string) => (s += chunk))
         .on('end', () => {
-          const responseJson = JSON.parse(s) as ExecutableResponseJson;
-          const response = new ExecutableResponse(responseJson);
-          if (response.isExpired()) {
-            resolve(undefined);
+          try {
+            const responseJson = JSON.parse(s) as ExecutableResponseJson;
+            const response = new ExecutableResponse(responseJson);
+            if (response.success && !response.expirationTime) {
+              reject(
+                new InvalidExpirationTimeFieldError(
+                  'Output file response must contain an expiration_time when success=true.'
+                )
+              );
+            }
+            if (!response.isValid()) {
+              resolve(undefined);
+            }
+            resolve(new ExecutableResponse(responseJson));
+          } catch (error) {
+            if (error instanceof ExecutableResponseError) {
+              reject(error);
+            }
+            reject(
+              new Error(`The output file contained an invalid response: ${s}`)
+            );
           }
-          resolve(new ExecutableResponse(responseJson));
         });
     });
+  }
+
+  private static parseCommand(command: string): Array<string> {
+    // Split the command into components by splitting on spaces,
+    // unless spaces are contained in quotation marks.
+    const components = command.match(/(?:[^\s"]+|"[^"]*")+/g);
+    if (!components) {
+      throw new Error(`Provided command: "${command}" could not be parsed.`);
+    }
+
+    // Remove quotation marks from the beginning and end of each component if they are present.
+    for (let i = 0; i < components.length; i++) {
+      if (components[i][0] === '"' && components[i].slice(-1) === '"') {
+        components[i] = components[i].slice(1, -1);
+      }
+    }
+
+    return components;
   }
 }

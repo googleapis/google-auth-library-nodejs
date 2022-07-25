@@ -72,7 +72,9 @@ export class ExecutableError extends Error {
   readonly code: string;
 
   constructor(message: string, code: string) {
-    super(message);
+    super(
+      `The executable failed with exit code: ${code} and error message: ${message}.`
+    );
     this.name = 'ExecutableError';
     this.code = code;
     Object.setPrototypeOf(this, ExecutableError.prototype);
@@ -277,28 +279,23 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       );
     }
 
-    if (executableResponse) {
-      // Check that version of response is valid.
-      if (executableResponse.version > MAXIMUM_EXECUTABLE_VERSION) {
-        throw new Error(
-          `Version of executable is not currently supported, maximum supported version is ${MAXIMUM_EXECUTABLE_VERSION}.`
-        );
-      }
-      // Check that response was successful.
-      if (!executableResponse.success) {
-        throw new ExecutableError(
-          executableResponse.errorMessage as string,
-          executableResponse.errorCode as string
-        );
-      }
-      // Check that response is not expired.
-      if (executableResponse.isExpired()) {
-        throw new Error('Executable response is expired.');
-      }
-      // Return subject token from response.
-      return executableResponse.subjectToken as string;
-    } else {
-      throw new Error('No valid response returned from executable.');
+    if (executableResponse.version > MAXIMUM_EXECUTABLE_VERSION) {
+      throw new Error(
+        `Version of executable is not currently supported, maximum supported version is ${MAXIMUM_EXECUTABLE_VERSION}.`
+      );
     }
+    // Check that response was successful.
+    if (!executableResponse.success) {
+      throw new ExecutableError(
+        executableResponse.errorMessage as string,
+        executableResponse.errorCode as string
+      );
+    }
+    // Check that response is not expired.
+    if (executableResponse.isExpired()) {
+      throw new Error('Executable response is expired.');
+    }
+    // Return subject token from response.
+    return executableResponse.subjectToken as string;
   }
 }
