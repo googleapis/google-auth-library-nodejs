@@ -150,16 +150,18 @@ export class PluggableAuthHandler {
       }
 
       const readStream = fs.createReadStream(filePath);
-      let s = '';
+      let responseString = '';
       readStream
         .setEncoding('utf8')
         .on('error', (err: string) => {
           reject(new Error(err));
         })
-        .on('data', (chunk: string) => (s += chunk))
+        .on('data', (chunk: string) => (responseString += chunk))
         .on('end', () => {
           try {
-            const responseJson = JSON.parse(s) as ExecutableResponseJson;
+            const responseJson = JSON.parse(
+              responseString
+            ) as ExecutableResponseJson;
             const response = new ExecutableResponse(responseJson);
             if (response.success && !response.expirationTime) {
               reject(
@@ -177,7 +179,9 @@ export class PluggableAuthHandler {
               reject(error);
             }
             reject(
-              new Error(`The output file contained an invalid response: ${s}`)
+              new Error(
+                `The output file contained an invalid response: ${responseString}`
+              )
             );
           }
         });

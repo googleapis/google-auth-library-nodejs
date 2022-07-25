@@ -271,7 +271,7 @@ describe('PluggableAuthHandler', () => {
 
     it('should throw error when non-json text is returned', async () => {
       const expectedError = new Error(
-        'Executable returned invalid response: Invalid response'
+        'The executable returned an invalid response: Invalid response'
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
@@ -403,7 +403,7 @@ describe('PluggableAuthHandler', () => {
 
     it('should throw error when non-json text is returned', async () => {
       const expectedError = new Error(
-        'Output file contained invalid response: Invalid response'
+        'The output file contained an invalid response: Invalid response'
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
