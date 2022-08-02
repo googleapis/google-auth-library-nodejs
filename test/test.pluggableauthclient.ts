@@ -29,9 +29,11 @@ import * as sinon from 'sinon';
 import {
   ExecutableResponse,
   ExecutableResponseJson,
+  InvalidExpirationTimeFieldError,
 } from '../src/auth/executable-response';
 import {PluggableAuthHandler} from '../src/auth/pluggable-auth-handler';
 
+const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
 
 describe('PluggableAuthClient', () => {
@@ -47,6 +49,13 @@ describe('PluggableAuthClient', () => {
     type: 'external_account',
     audience,
     subject_token_type: SAML_SUBJECT_TOKEN_TYPE,
+    token_url: getTokenUrl(),
+    credential_source: pluggableAuthCredentialSource,
+  };
+  const pluggableAuthOptionsOIDC = {
+    type: 'external_account',
+    audience,
+    subject_token_type: OIDC_SUBJECT_TOKEN_TYPE1,
     token_url: getTokenUrl(),
     credential_source: pluggableAuthCredentialSource,
   };
@@ -253,9 +262,32 @@ describe('PluggableAuthClient', () => {
       await assert.rejects(client.retrieveSubjectToken(), expectedError);
     });
 
-    it('should return executable response when successful', async () => {
+    it('should return executable SAML response when successful', async () => {
       const client = new PluggableAuthClient(pluggableAuthOptions);
       fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      assert.equal(await subjectToken, responseJson.saml_response);
+    });
+
+    it('should return executable OIDC response when successful', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptionsOIDC);
+      responseJson.id_token = 'subject_token';
+      responseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
+      responseJson.saml_response = undefined;
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      assert.equal(await subjectToken, responseJson.id_token);
+    });
+
+    it('should return executable response when successful and no expiration_time', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptionsNoOutput);
+      responseJson.expiration_time = undefined;
       executableStub.resolves(new ExecutableResponse(responseJson));
 
       const subjectToken = client.retrieveSubjectToken();
@@ -300,12 +332,23 @@ describe('PluggableAuthClient', () => {
       sandbox.assert.calledOnce(executableStub);
     });
 
-    it('should return cached file response when successful', async () => {
+    it('should return cached file SAML response when successful', async () => {
       const client = new PluggableAuthClient(pluggableAuthOptions);
       fileStub.resolves(new ExecutableResponse(responseJson));
       const subjectToken = client.retrieveSubjectToken();
 
       assert.equal(await subjectToken, responseJson.saml_response);
+    });
+
+    it('should return cached file OIDC response when successful', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptionsOIDC);
+      responseJson.id_token = 'subject_token';
+      responseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
+      responseJson.saml_response = undefined;
+      fileStub.resolves(new ExecutableResponse(responseJson));
+      const subjectToken = client.retrieveSubjectToken();
+
+      assert.equal(await subjectToken, responseJson.id_token);
     });
 
     it('should reject if error returned from output file stream', async () => {
@@ -324,6 +367,33 @@ describe('PluggableAuthClient', () => {
       const expectedError = new ExecutableError('error', '1');
       const client = new PluggableAuthClient(pluggableAuthOptions);
       fileStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      await assert.rejects(subjectToken, expectedError);
+    });
+
+    it('should throw error when output file response does not contain expiration_time and output file is specified', async () => {
+      responseJson.expiration_time = undefined;
+      const expectedError = new InvalidExpirationTimeFieldError(
+        'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.'
+      );
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      await assert.rejects(subjectToken, expectedError);
+    });
+
+    it('should throw error when executable response does not contain expiration_time and output file is specified', async () => {
+      responseJson.expiration_time = undefined;
+      const expectedError = new InvalidExpirationTimeFieldError(
+        'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.'
+      );
+      const client = new PluggableAuthClient(pluggableAuthOptions);
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
 
       const subjectToken = client.retrieveSubjectToken();
 

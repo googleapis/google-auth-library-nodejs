@@ -182,11 +182,10 @@ export class ExecutableResponse {
    * provided timeout has passed.
    */
   isExpired(): boolean {
-    if (!this.expirationTime) {
-      return false;
-    } else {
-      return this.expirationTime < Math.round(Date.now() / 1000);
-    }
+    return (
+      this.expirationTime !== undefined &&
+      this.expirationTime < Math.round(Date.now() / 1000)
+    );
   }
 }
 

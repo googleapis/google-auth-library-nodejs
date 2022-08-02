@@ -18,8 +18,8 @@ import {ReadStream} from 'fs';
 import * as fs from 'fs';
 import {
   ExecutableResponse,
+  ExecutableResponseError,
   ExecutableResponseJson,
-  InvalidExpirationTimeFieldError,
   InvalidSuccessFieldError,
 } from '../src/auth/executable-response';
 import {beforeEach} from 'mocha';
@@ -32,6 +32,7 @@ import {
 import * as assert from 'assert';
 import {ExecutableError} from '../src/auth/pluggable-auth-client';
 
+const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
 
 describe('PluggableAuthHandler', () => {
@@ -119,11 +120,8 @@ describe('PluggableAuthHandler', () => {
     };
 
     beforeEach(() => {
-      // Stub environment variables and set Allow Executables environment variable to 1
-      const envVars = Object.assign({}, process.env, {
-        GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: '1',
-      });
-      sandbox.stub(process, 'env').value(envVars);
+      // Stub environment variables
+      sandbox.stub(process, 'env').value(process.env);
       clock = sandbox.useFakeTimers({now: referenceTime});
 
       defaultResponseJson = {
@@ -159,9 +157,41 @@ describe('PluggableAuthHandler', () => {
       );
     });
 
-    it('should return executable response when successful', async () => {
+    it('should return SAML executable response when successful', async () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
+      const response = handler.retrieveResponseFromExecutable(
+        new Map<string, string>()
+      );
+      spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
+      spawnEvent.emit('close', 0);
+
+      assert.deepEqual(
+        await response,
+        new ExecutableResponse(defaultResponseJson)
+      );
+    });
+
+    it('should return OIDC executable response when successful', async () => {
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      defaultResponseJson.saml_response = undefined;
+      defaultResponseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
+      defaultResponseJson.id_token = 'subject token';
+      const response = handler.retrieveResponseFromExecutable(
+        new Map<string, string>()
+      );
+      spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
+      spawnEvent.emit('close', 0);
+
+      assert.deepEqual(
+        await response,
+        new ExecutableResponse(defaultResponseJson)
+      );
+    });
+
+    it('should return executable response when successful and no expiration_time', async () => {
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      defaultResponseJson.expiration_time = undefined;
       const response = handler.retrieveResponseFromExecutable(
         new Map<string, string>()
       );
@@ -246,7 +276,7 @@ describe('PluggableAuthHandler', () => {
       const response = handler.retrieveResponseFromExecutable(
         new Map<string, string>()
       );
-      spawnEvent.stderr!.emit('error', 'test error');
+      spawnEvent.stderr!.emit('data', 'test error');
       spawnEvent.emit('close', 1);
 
       await assert.rejects(response, expectedError);
@@ -270,15 +300,15 @@ describe('PluggableAuthHandler', () => {
     });
 
     it('should throw error when non-json text is returned', async () => {
-      const expectedError = new Error(
-        'The executable returned an invalid response: Invalid response'
+      const expectedError = new ExecutableResponseError(
+        'The executable returned an invalid response: THIS_IS_NOT_JSON'
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
       const response = handler.retrieveResponseFromExecutable(
         new Map<string, string>()
       );
-      spawnEvent.stdout!.emit('data', 'Invalid response');
+      spawnEvent.stdout!.emit('data', 'THIS_IS_NOT_JSON');
       spawnEvent.emit('close', 0);
 
       await assert.rejects(response, expectedError);
@@ -311,6 +341,10 @@ describe('PluggableAuthHandler', () => {
     let clock: sinon.SinonFakeTimers;
     const referenceTime = Date.now();
     let fileEvent: ReadStream;
+    let realPathSyncStub: sinon.SinonStub<
+      [path: fs.PathLike, options?: fs.EncodingOption],
+      string | Buffer
+    >;
     let statSyncStub: sinon.SinonStub<
       [path: fs.PathLike, options?: fs.StatSyncOptions | undefined],
       fs.Stats | fs.BigIntStats | undefined
@@ -329,7 +363,7 @@ describe('PluggableAuthHandler', () => {
       } as ExecutableResponseJson;
 
       // Stub fs methods, so we don't have to read a real file.
-      sandbox.stub(fs, 'realpathSync').returnsArg(0);
+      realPathSyncStub = sandbox.stub(fs, 'realpathSync').returnsArg(0);
       const fakeStat = {isFile: () => true} as fs.Stats;
       statSyncStub = sandbox.stub(fs, 'lstatSync').returns(fakeStat);
       fileEvent = new events.EventEmitter() as ReadStream;
@@ -346,7 +380,22 @@ describe('PluggableAuthHandler', () => {
       }
     });
 
-    it('should return cached file response when successful', async () => {
+    it('should return cached file SAML response when successful', async () => {
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      const response = handler.retrieveCachedResponse();
+      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
+      fileEvent.emit('end', 0);
+
+      assert.deepEqual(
+        await response,
+        new ExecutableResponse(defaultResponseJson)
+      );
+    });
+
+    it('should return cached file OIDC response when successful', async () => {
+      defaultResponseJson.saml_response = undefined;
+      defaultResponseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
+      defaultResponseJson.id_token = 'subject token';
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const response = handler.retrieveCachedResponse();
       fileEvent.emit('data', JSON.stringify(defaultResponseJson));
@@ -370,6 +419,16 @@ describe('PluggableAuthHandler', () => {
     it('should return undefined if file response is expired', async () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       defaultResponseJson.expiration_time = referenceTime / 1000 - 10;
+      const response = handler.retrieveCachedResponse();
+      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
+      fileEvent.emit('end', 0);
+
+      assert.equal(await response, undefined);
+    });
+
+    it('should return undefined if path cannot be resolved', async () => {
+      realPathSyncStub.throws(new Error('ENOENT'));
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const response = handler.retrieveCachedResponse();
       fileEvent.emit('data', JSON.stringify(defaultResponseJson));
       fileEvent.emit('end', 0);
@@ -401,14 +460,23 @@ describe('PluggableAuthHandler', () => {
       assert.equal(await response, undefined);
     });
 
+    it('should return undefined if output file is empty', async () => {
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      const response = handler.retrieveCachedResponse();
+      fileEvent.emit('data', '');
+      fileEvent.emit('end', 0);
+
+      assert.equal(await response, undefined);
+    });
+
     it('should throw error when non-json text is returned', async () => {
-      const expectedError = new Error(
-        'The output file contained an invalid response: Invalid response'
+      const expectedError = new ExecutableResponseError(
+        'The output file contained an invalid response: THIS_IS_NOT_JSON'
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', 'Invalid response');
+      fileEvent.emit('data', 'THIS_IS_NOT_JSON');
       fileEvent.emit('end', 0);
 
       await assert.rejects(response, expectedError);
@@ -424,25 +492,6 @@ describe('PluggableAuthHandler', () => {
         token_type: SAML_SUBJECT_TOKEN_TYPE,
         saml_response: 'response',
         expiration_time: referenceTime / 1000 + 10,
-      };
-
-      const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(invalidResponse));
-      fileEvent.emit('end', 0);
-
-      await assert.rejects(response, expectedError);
-    });
-
-    it('should throw InvalidExpirationTimeError', async () => {
-      const expectedError = new InvalidExpirationTimeFieldError(
-        'Output file response must contain an expiration_time when success=true.'
-      );
-      const handler = new PluggableAuthHandler(defaultHandlerOptions);
-      const invalidResponse = {
-        success: true,
-        version: 1,
-        token_type: SAML_SUBJECT_TOKEN_TYPE,
-        saml_response: 'response',
       };
 
       const response = handler.retrieveCachedResponse();

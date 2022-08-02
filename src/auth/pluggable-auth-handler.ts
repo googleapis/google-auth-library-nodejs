@@ -17,7 +17,6 @@ import {
   ExecutableResponse,
   ExecutableResponseError,
   ExecutableResponseJson,
-  InvalidExpirationTimeFieldError,
 } from './executable-response';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
@@ -88,20 +87,22 @@ export class PluggableAuthHandler {
         }
       );
       let output = '';
-      let error = '';
       // Append stdout to output as executable runs.
       child.stdout.on('data', (data: string) => {
         output += data;
       });
       // Append stderr as executable runs.
-      child.stderr.on('error', (err: string) => {
-        error += err;
+      child.stderr.on('data', (err: string) => {
+        output += err;
       });
 
       // Set up a timeout to end the child process and throw an error.
       const timeout = setTimeout(() => {
+        // Kill child process and remove listeners so 'close' event doesn't get
+        // read after child process is killed.
+        child.removeAllListeners();
         child.kill();
-        reject(
+        return reject(
           new Error(
             'The executable failed to finish within the timeout specified.'
           )
@@ -115,19 +116,20 @@ export class PluggableAuthHandler {
           // If the executable completed successfully, try to return the parsed response.
           try {
             const responseJson = JSON.parse(output) as ExecutableResponseJson;
-            resolve(new ExecutableResponse(responseJson));
+            const response = new ExecutableResponse(responseJson);
+            return resolve(response);
           } catch (error) {
             if (error instanceof ExecutableResponseError) {
-              reject(error);
+              return reject(error);
             }
-            reject(
-              new Error(
+            return reject(
+              new ExecutableResponseError(
                 `The executable returned an invalid response: ${output}`
               )
             );
           }
         } else {
-          reject(new ExecutableError(error, code.toString()));
+          return reject(new ExecutableError(output, code.toString()));
         }
       });
     });
@@ -140,13 +142,20 @@ export class PluggableAuthHandler {
   retrieveCachedResponse(): Promise<ExecutableResponse | undefined> {
     return new Promise((resolve, reject) => {
       if (!this.outputFile || this.outputFile.length === 0) {
-        resolve(undefined);
+        return resolve(undefined);
       }
 
-      const filePath = fs.realpathSync(this.outputFile as string);
+      let filePath: fs.PathLike;
+      try {
+        filePath = fs.realpathSync(this.outputFile as string);
+      } catch {
+        // If file path cannot be resolved, return undefined.
+        return resolve(undefined);
+      }
 
       if (!fs.lstatSync(filePath).isFile()) {
-        resolve(undefined);
+        // If path does not lead to file, return undefined.
+        return resolve(undefined);
       }
 
       const readStream = fs.createReadStream(filePath);
@@ -154,32 +163,30 @@ export class PluggableAuthHandler {
       readStream
         .setEncoding('utf8')
         .on('error', (err: string) => {
-          reject(new Error(err));
+          return reject(new Error(err));
         })
         .on('data', (chunk: string) => (responseString += chunk))
         .on('end', () => {
+          if (responseString === '') {
+            return resolve(undefined);
+          }
           try {
             const responseJson = JSON.parse(
               responseString
             ) as ExecutableResponseJson;
             const response = new ExecutableResponse(responseJson);
-            if (response.success && !response.expirationTime) {
-              reject(
-                new InvalidExpirationTimeFieldError(
-                  'Output file response must contain an expiration_time when success=true.'
-                )
-              );
+
+            // Check if response is successful and unexpired.
+            if (response.isValid()) {
+              return resolve(new ExecutableResponse(responseJson));
             }
-            if (!response.isValid()) {
-              resolve(undefined);
-            }
-            resolve(new ExecutableResponse(responseJson));
+            return resolve(undefined);
           } catch (error) {
             if (error instanceof ExecutableResponseError) {
-              reject(error);
+              return reject(error);
             }
-            reject(
-              new Error(
+            return reject(
+              new ExecutableResponseError(
                 `The output file contained an invalid response: ${responseString}`
               )
             );
@@ -188,6 +195,10 @@ export class PluggableAuthHandler {
     });
   }
 
+  /**
+   * Parses given command string into component array, splitting on spaces unless
+   * spaces are between quotation marks.
+   */
   private static parseCommand(command: string): Array<string> {
     // Split the command into components by splitting on spaces,
     // unless spaces are contained in quotation marks.

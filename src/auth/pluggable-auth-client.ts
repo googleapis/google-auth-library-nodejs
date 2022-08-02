@@ -17,7 +17,10 @@ import {
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
 import {RefreshOptions} from './oauth2client';
-import {ExecutableResponse} from './executable-response';
+import {
+  ExecutableResponse,
+  InvalidExpirationTimeFieldError,
+} from './executable-response';
 import {PluggableAuthHandler} from './pluggable-auth-handler';
 
 /**
@@ -149,14 +152,17 @@ const MAXIMUM_EXECUTABLE_VERSION = 1;
  *   "code": "401",
  *   "message": "Error message."
  * }
+ * </pre>
  *
- * The auth libraries will populate certain environment variables that will be accessible by the
+ * <p>The "expiration_time" field in the JSON response is only required for successful
+ * responses when an output file was specified in the credential configuration
+ *
+ * <p>The auth libraries will populate certain environment variables that will be accessible by the
  * executable, such as: GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE, GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE,
  * GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE, GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL, and
  * GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE.
  *
  * <p>Please see this repositories README for a complete executable request/response specification.
- * </pre>
  */
 export class PluggableAuthClient extends BaseExternalAccountClient {
   /**
@@ -290,6 +296,14 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
         executableResponse.errorMessage as string,
         executableResponse.errorCode as string
       );
+    }
+    // Check that response contains expiration time if output file was specified.
+    if (this.outputFile) {
+      if (!executableResponse.expirationTime) {
+        throw new InvalidExpirationTimeFieldError(
+          'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.'
+        );
+      }
     }
     // Check that response is not expired.
     if (executableResponse.isExpired()) {
