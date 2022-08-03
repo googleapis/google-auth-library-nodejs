@@ -217,6 +217,7 @@ describe('samples for external-account', () => {
   const suffix = generateRandomString(10);
   const configFilePath = path.join(os.tmpdir(), `config-${suffix}.json`);
   const oidcTokenFilePath = path.join(os.tmpdir(), `token-${suffix}.txt`);
+  const executableFilePath = path.join(os.tmpdir(), `executable-${suffix}.sh`);
   const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
@@ -247,6 +248,9 @@ describe('samples for external-account', () => {
     }
     if (fs.existsSync(oidcTokenFilePath)) {
       await unlink(oidcTokenFilePath);
+    }
+    if (fs.existsSync(executableFilePath)) {
+      await unlink(executableFilePath);
     }
     // Close any open http servers.
     if (httpServer) {
@@ -414,6 +418,53 @@ describe('samples for external-account', () => {
         AWS_ACCESS_KEY_ID: awsCredentials.awsAccessKeyId,
         AWS_SECRET_ACCESS_KEY: awsCredentials.awsSecretAccessKey,
         AWS_SESSION_TOKEN: awsCredentials.awsSessionToken,
+        // GOOGLE_APPLICATION_CREDENTIALS environment variable used for ADC.
+        GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
+      },
+    });
+    // Confirm expected script output.
+    assert.match(output, /DNS Info:/);
+  });
+
+  it('should acquire ADC for PluggableAuth creds', async () => {
+    // Create Pluggable Auth configuration JSON file.
+    const config = {
+      type: 'external_account',
+      audience: AUDIENCE_OIDC,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      token_url: 'https://sts.googleapis.com/v1/token',
+      service_account_impersonation_url:
+        'https://iamcredentials.googleapis.com/v1/projects/' +
+        `-/serviceAccounts/${clientEmail}:generateAccessToken`,
+      credential_source: {
+        executable: {
+          command: executableFilePath,
+          timeout_millis: 5000,
+        },
+      },
+    };
+    await writeFile(configFilePath, JSON.stringify(config));
+
+    const expirationTime = Date.now() / 1000 + 60;
+    const responseJson = {
+      version: 1,
+      success: true,
+      expiration_time: expirationTime,
+      token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      id_token: oidcToken,
+    };
+    let exeContent = '#!/bin/bash\n';
+    exeContent += 'echo ';
+    exeContent += JSON.stringify(JSON.stringify(responseJson));
+    exeContent += '\n';
+    await writeFile(executableFilePath, exeContent, {mode: 0x766});
+    // Run sample script with GOOGLE_APPLICATION_CREDENTIALS environment
+    // variable pointing to the temporarily created configuration file.
+    const output = await execAsync(`${process.execPath} adc`, {
+      env: {
+        ...process.env,
+        // Set environment variable to allow pluggable auth executable to run.
+        GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: 1,
         // GOOGLE_APPLICATION_CREDENTIALS environment variable used for ADC.
         GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
       },

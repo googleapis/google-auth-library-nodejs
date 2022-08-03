@@ -17,7 +17,11 @@ import {
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
 import {RefreshOptions} from './oauth2client';
-import {ExecutableResponse} from './executableresponse';
+import {
+  ExecutableResponse,
+  InvalidExpirationTimeFieldError,
+} from './executable-response';
+import {PluggableAuthHandler} from './pluggable-auth-handler';
 
 /**
  * Defines the credential source portion of the configuration for PluggableAuthClient.
@@ -42,20 +46,22 @@ import {ExecutableResponse} from './executableresponse';
 export interface PluggableAuthClientOptions
   extends BaseExternalAccountClientOptions {
   credential_source: {
-    /**
-     * The command used to retrieve the 3rd party token.
-     */
-    command: string;
-    /**
-     * The timeout for executable to run in milliseconds. If none is provided it
-     * will be set to the default timeout of 30 seconds.
-     */
-    timeout_millis?: number;
-    /**
-     * An optional output file location that will be checked for a cached response
-     * from a previous run of the executable.
-     */
-    output_file?: string;
+    executable: {
+      /**
+       * The command used to retrieve the 3rd party token.
+       */
+      command: string;
+      /**
+       * The timeout for executable to run in milliseconds. If none is provided it
+       * will be set to the default timeout of 30 seconds.
+       */
+      timeout_millis?: number;
+      /**
+       * An optional output file location that will be checked for a cached response
+       * from a previous run of the executable.
+       */
+      output_file?: string;
+    };
   };
 }
 
@@ -69,7 +75,9 @@ export class ExecutableError extends Error {
   readonly code: string;
 
   constructor(message: string, code: string) {
-    super(message);
+    super(
+      `The executable failed with exit code: ${code} and error message: ${message}.`
+    );
     this.name = 'ExecutableError';
     this.code = code;
     Object.setPrototypeOf(this, ExecutableError.prototype);
@@ -114,9 +122,9 @@ const MAXIMUM_EXECUTABLE_VERSION = 1;
  * <p>Both OIDC and SAML are supported. The executable must adhere to a specific response format
  * defined below.
  *
- * <p>The executable should print out the 3rd party token to STDOUT in JSON format. This is not
- * required when an output_file is specified in the credential source, with the expectation being
- * that the output file will contain the JSON response instead.
+ * <p>The executable must print out the 3rd party token to STDOUT in JSON format. When an
+ * output_file is specified in the credential configuration, the executable must also handle writing the
+ * JSON response to this file.
  *
  * <pre>
  * OIDC response sample:
@@ -144,14 +152,17 @@ const MAXIMUM_EXECUTABLE_VERSION = 1;
  *   "code": "401",
  *   "message": "Error message."
  * }
+ * </pre>
  *
- * The auth libraries will populate certain environment variables that will be accessible by the
+ * <p>The "expiration_time" field in the JSON response is only required for successful
+ * responses when an output file was specified in the credential configuration
+ *
+ * <p>The auth libraries will populate certain environment variables that will be accessible by the
  * executable, such as: GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE, GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE,
  * GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE, GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL, and
  * GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE.
  *
  * <p>Please see this repositories README for a complete executable request/response specification.
- * </pre>
  */
 export class PluggableAuthClient extends BaseExternalAccountClient {
   /**
@@ -169,6 +180,11 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
   private readonly outputFile?: string;
 
   /**
+   * Executable and output file handler.
+   */
+  private readonly handler: PluggableAuthHandler;
+
+  /**
    * Instantiates a PluggableAuthClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * An error is thrown if the credential is not a valid pluggable auth credential.
@@ -183,15 +199,18 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     additionalOptions?: RefreshOptions
   ) {
     super(options, additionalOptions);
-    this.command = options.credential_source.command;
+    if (!options.credential_source.executable) {
+      throw new Error('No valid Pluggable Auth "credential_source" provided.');
+    }
+    this.command = options.credential_source.executable.command;
     if (!this.command) {
       throw new Error('No valid Pluggable Auth "credential_source" provided.');
     }
     // Check if the provided timeout exists and if it is valid.
-    if (options.credential_source.timeout_millis === undefined) {
+    if (options.credential_source.executable.timeout_millis === undefined) {
       this.timeoutMillis = DEFAULT_EXECUTABLE_TIMEOUT_MILLIS;
     } else {
-      this.timeoutMillis = options.credential_source.timeout_millis;
+      this.timeoutMillis = options.credential_source.executable.timeout_millis;
       if (
         this.timeoutMillis < MINIMUM_EXECUTABLE_TIMEOUT_MILLIS ||
         this.timeoutMillis > MAXIMUM_EXECUTABLE_TIMEOUT_MILLIS
@@ -203,7 +222,13 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       }
     }
 
-    this.outputFile = options.credential_source.output_file;
+    this.outputFile = options.credential_source.executable.output_file;
+
+    this.handler = new PluggableAuthHandler({
+      command: this.command,
+      timeoutMillis: this.timeoutMillis,
+      outputFile: this.outputFile,
+    });
   }
 
   /**
@@ -235,9 +260,8 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
     let executableResponse: ExecutableResponse | undefined;
     // Try to get cached executable response from output file.
     if (this.outputFile) {
-      executableResponse = await this.retrieveCachedResponse();
+      executableResponse = await this.handler.retrieveCachedResponse();
     }
-
     // If no response from output file, call the executable.
     if (!executableResponse) {
       // Set up environment map with required values for the executable.
@@ -246,6 +270,9 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       envMap.set('GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE', this.subjectTokenType);
       // Always set to 0 because interactive mode is not supported.
       envMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
+      if (this.outputFile) {
+        envMap.set('GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE', this.outputFile);
+      }
       const serviceAccountEmail = this.getServiceAccountEmail();
       if (serviceAccountEmail) {
         envMap.set(
@@ -253,65 +280,36 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
           serviceAccountEmail
         );
       }
-      executableResponse = await this.retrieveResponseFromExecutable(envMap);
+      executableResponse = await this.handler.retrieveResponseFromExecutable(
+        envMap
+      );
     }
 
-    if (executableResponse) {
-      // Check that version of response is valid.
-      if (executableResponse.version > MAXIMUM_EXECUTABLE_VERSION) {
-        throw new Error(
-          `Version of executable is not currently supported, maximum supported version is ${MAXIMUM_EXECUTABLE_VERSION}.`
-        );
-      }
-      // Check that response was successful.
-      if (!executableResponse.success) {
-        throw new ExecutableError(
-          executableResponse.errorMessage as string,
-          executableResponse.errorCode as string
-        );
-      }
-      // Check that response is not expired.
-      if (executableResponse.isExpired()) {
-        throw new Error('Executable response is expired.');
-      }
-      // Return subject token from response.
-      return executableResponse.subjectToken as string;
-    } else {
-      throw new Error('No valid response returned from executable.');
+    if (executableResponse.version > MAXIMUM_EXECUTABLE_VERSION) {
+      throw new Error(
+        `Version of executable is not currently supported, maximum supported version is ${MAXIMUM_EXECUTABLE_VERSION}.`
+      );
     }
-  }
-
-  /**
-   * Calls user provided executable to get a 3rd party subject token and
-   * returns the response.
-   * @param envMap a Map of additional Environment Variables required for
-   *   the executable.
-   * @return A promise that resolves with the executable response.
-   */
-  private retrieveResponseFromExecutable(
-    envMap: Map<string, string>
-  ): Promise<ExecutableResponse> {
-    // TODO: Implement running executable and retrieving response.
-    return new Promise(resolve => {
-      const responseJson = {
-        success: false,
-        version: 1,
-        code: '',
-        message: '',
-      };
-      const response = new ExecutableResponse(responseJson);
-      resolve(response);
-    });
-  }
-
-  /**
-   * Checks user provided output file for response from previous run of
-   * executable and return the response if it exists and is valid.
-   */
-  private retrieveCachedResponse(): Promise<ExecutableResponse | undefined> {
-    // TODO: Implement output file reading.
-    return new Promise(resolve => {
-      resolve(undefined);
-    });
+    // Check that response was successful.
+    if (!executableResponse.success) {
+      throw new ExecutableError(
+        executableResponse.errorMessage as string,
+        executableResponse.errorCode as string
+      );
+    }
+    // Check that response contains expiration time if output file was specified.
+    if (this.outputFile) {
+      if (!executableResponse.expirationTime) {
+        throw new InvalidExpirationTimeFieldError(
+          'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.'
+        );
+      }
+    }
+    // Check that response is not expired.
+    if (executableResponse.isExpired()) {
+      throw new Error('Executable response is expired.');
+    }
+    // Return subject token from response.
+    return executableResponse.subjectToken as string;
   }
 }

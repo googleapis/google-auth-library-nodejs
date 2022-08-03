@@ -120,11 +120,6 @@ export class ExecutableResponse {
 
     // Validate required fields for a successful response.
     if (this.success) {
-      if (!responseJson.expiration_time) {
-        throw new InvalidExpirationTimeFieldError(
-          "Executable response must contain an 'expiration_time' field when successful."
-        );
-      }
       this.expirationTime = responseJson.expiration_time;
       this.tokenType = responseJson.token_type;
 
@@ -183,13 +178,12 @@ export class ExecutableResponse {
   }
 
   /**
-   * @return A boolean representing if the response is expired. Returns true if
-   * the expiration_time field was not provided or if the provided timeout has
-   * passed.
+   * @return A boolean representing if the response is expired. Returns true if the
+   * provided timeout has passed.
    */
   isExpired(): boolean {
     return (
-      !this.expirationTime ||
+      this.expirationTime !== undefined &&
       this.expirationTime < Math.round(Date.now() / 1000)
     );
   }

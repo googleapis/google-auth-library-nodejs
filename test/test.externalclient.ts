@@ -18,7 +18,7 @@ import {AwsClient} from '../src/auth/awsclient';
 import {IdentityPoolClient} from '../src/auth/identitypoolclient';
 import {ExternalAccountClient} from '../src/auth/externalclient';
 import {getAudience, getTokenUrl} from './externalclienthelper';
-import {PluggableAuthClient} from '../src/auth/pluggableauthclient';
+import {PluggableAuthClient} from '../src/auth/pluggable-auth-client';
 
 const serviceAccountKeys = {
   type: 'service_account',
@@ -64,9 +64,11 @@ const awsOptions = {
 };
 
 const pluggableAuthCredentialSource = {
-  command: 'exampleCommand',
-  timeout_millis: 30000,
-  output_file: 'output.txt',
+  executable: {
+    command: 'exampleCommand',
+    timeout_millis: 30000,
+    output_file: 'output.txt',
+  },
 };
 const pluggableAuthClientOptions = {
   type: 'external_account',
@@ -260,8 +262,8 @@ describe('ExternalAccountClient', () => {
 
     it('should throw when given invalid PluggableAuthClientOptions', () => {
       const invalidOptions = Object.assign({}, pluggableAuthClientOptions);
-      invalidOptions.credential_source.command = 'command';
-      invalidOptions.credential_source.timeout_millis = -1;
+      invalidOptions.credential_source.executable.command = 'command';
+      invalidOptions.credential_source.executable.timeout_millis = -1;
 
       assert.throws(() => {
         return ExternalAccountClient.fromJSON(invalidOptions);

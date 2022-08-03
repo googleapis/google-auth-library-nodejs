@@ -32,7 +32,7 @@ import {AwsClient, AwsClientOptions} from './awsclient';
 import {
   PluggableAuthClient,
   PluggableAuthClientOptions,
-} from './pluggableauthclient';
+} from './pluggable-auth-client';
 
 export type ExternalAccountClientOptions =
   | IdentityPoolClientOptions
@@ -74,7 +74,7 @@ export class ExternalAccountClient {
       if ((options as AwsClientOptions).credential_source?.environment_id) {
         return new AwsClient(options as AwsClientOptions, additionalOptions);
       } else if (
-        (options as PluggableAuthClientOptions).credential_source?.command
+        (options as PluggableAuthClientOptions).credential_source?.executable
       ) {
         return new PluggableAuthClient(
           options as PluggableAuthClientOptions,
