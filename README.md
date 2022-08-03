@@ -520,8 +520,6 @@ Where the following variables need to be substituted:
 - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
 
-You can now [start using the Auth library](#using-external-identities) to call Google Cloud resources from an OIDC provider.
-
 #### Using Executable-sourced credentials with OIDC and SAML
 
 **Executable-sourced credentials**
@@ -637,6 +635,7 @@ The library will populate the following environment variables when the executabl
 * `GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE`: The audience field from the credential configuration. Always present.
 * `GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL`: The service account email. Only present when service account impersonation is used.
 * `GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE`: The output file location from the credential configuration. Only present when specified in the credential configuration.
+* `GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE`: This expected subject token type. Always present.
 
 These environment variables can be used by the executable to avoid hard-coding these values.
 

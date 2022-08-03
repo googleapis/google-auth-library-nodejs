@@ -189,9 +189,27 @@ describe('PluggableAuthHandler', () => {
       );
     });
 
-    it('should return executable response when successful and no expiration_time', async () => {
+    it('should return SAML executable response when successful and no expiration_time', async () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       defaultResponseJson.expiration_time = undefined;
+      const response = handler.retrieveResponseFromExecutable(
+        new Map<string, string>()
+      );
+      spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
+      spawnEvent.emit('close', 0);
+
+      assert.deepEqual(
+        await response,
+        new ExecutableResponse(defaultResponseJson)
+      );
+    });
+
+    it('should return OIDC executable response when successful and no expiration_time', async () => {
+      const handler = new PluggableAuthHandler(defaultHandlerOptions);
+      defaultResponseJson.expiration_time = undefined;
+      defaultResponseJson.saml_response = undefined;
+      defaultResponseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
+      defaultResponseJson.id_token = 'subject token';
       const response = handler.retrieveResponseFromExecutable(
         new Map<string, string>()
       );

@@ -285,7 +285,7 @@ describe('PluggableAuthClient', () => {
       assert.equal(await subjectToken, responseJson.id_token);
     });
 
-    it('should return executable response when successful and no expiration_time', async () => {
+    it('should return SAML executable response when successful and no expiration_time', async () => {
       const client = new PluggableAuthClient(pluggableAuthOptionsNoOutput);
       responseJson.expiration_time = undefined;
       executableStub.resolves(new ExecutableResponse(responseJson));
@@ -293,6 +293,19 @@ describe('PluggableAuthClient', () => {
       const subjectToken = client.retrieveSubjectToken();
 
       assert.equal(await subjectToken, responseJson.saml_response);
+    });
+
+    it('should return OIDC executable response when successful and no expiration_time', async () => {
+      const client = new PluggableAuthClient(pluggableAuthOptionsNoOutput);
+      responseJson.id_token = 'subject_token';
+      responseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
+      responseJson.saml_response = undefined;
+      responseJson.expiration_time = undefined;
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const subjectToken = client.retrieveSubjectToken();
+
+      assert.equal(await subjectToken, responseJson.id_token);
     });
 
     it('should throw error when version is not supported', async () => {
