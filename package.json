@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "8.0.2",
+  "version": "8.1.1",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
@@ -23,7 +23,7 @@
     "fast-text-encoding": "^1.0.0",
     "gaxios": "^5.0.0",
     "gcp-metadata": "^5.0.0",
-    "gtoken": "^5.3.2",
+    "gtoken": "^6.0.0",
     "jws": "^4.0.0",
     "lru-cache": "^6.0.0"
   },
@@ -54,13 +54,13 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^5.0.0",
     "keypair": "^1.0.4",
-    "linkinator": "^3.0.3",
+    "linkinator": "^4.0.0",
     "mocha": "^9.2.2",
     "mv": "^2.1.1",
     "ncp": "^2.0.0",
     "nock": "^13.0.0",
     "null-loader": "^4.0.0",
-    "puppeteer": "^13.0.0",
+    "puppeteer": "^16.0.0",
     "sinon": "^14.0.0",
     "tmp": "^0.2.0",
     "ts-loader": "^8.0.0",
