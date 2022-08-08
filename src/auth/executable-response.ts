@@ -195,84 +195,41 @@ export class ExecutableResponse {
 export class ExecutableResponseError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'ExecutableResponseError';
-    Object.setPrototypeOf(this, ExecutableResponseError.prototype);
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 
 /**
  * An error thrown when the 'version' field in an executable response is missing or invalid.
  */
-export class InvalidVersionFieldError extends ExecutableResponseError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidVersionFieldError';
-    Object.setPrototypeOf(this, InvalidVersionFieldError.prototype);
-  }
-}
+export class InvalidVersionFieldError extends ExecutableResponseError {}
 
 /**
  * An error thrown when the 'success' field in an executable response is missing or invalid.
  */
-export class InvalidSuccessFieldError extends ExecutableResponseError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidSuccessFieldError';
-    Object.setPrototypeOf(this, InvalidSuccessFieldError.prototype);
-  }
-}
+export class InvalidSuccessFieldError extends ExecutableResponseError {}
 
 /**
  * An error thrown when the 'expiration_time' field in an executable response is missing or invalid.
  */
-export class InvalidExpirationTimeFieldError extends ExecutableResponseError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidExpirationTimeFieldError';
-    Object.setPrototypeOf(this, InvalidExpirationTimeFieldError.prototype);
-  }
-}
+export class InvalidExpirationTimeFieldError extends ExecutableResponseError {}
 
 /**
  * An error thrown when the 'token_type' field in an executable response is missing or invalid.
  */
-export class InvalidTokenTypeFieldError extends ExecutableResponseError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidTokenTypeFieldError';
-    Object.setPrototypeOf(this, InvalidTokenTypeFieldError.prototype);
-  }
-}
+export class InvalidTokenTypeFieldError extends ExecutableResponseError {}
 
 /**
  * An error thrown when the 'code' field in an executable response is missing or invalid.
  */
-export class InvalidCodeFieldError extends ExecutableResponseError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidCodeFieldError';
-    Object.setPrototypeOf(this, InvalidTokenTypeFieldError.prototype);
-  }
-}
+export class InvalidCodeFieldError extends ExecutableResponseError {}
 
 /**
  * An error thrown when the 'message' field in an executable response is missing or invalid.
  */
-export class InvalidMessageFieldError extends ExecutableResponseError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidMessageFieldError';
-    Object.setPrototypeOf(this, InvalidTokenTypeFieldError.prototype);
-  }
-}
+export class InvalidMessageFieldError extends ExecutableResponseError {}
 
 /**
  * An error thrown when the subject token in an executable response is missing or invalid.
  */
-export class InvalidSubjectTokenError extends ExecutableResponseError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidSubjectTokenError';
-    Object.setPrototypeOf(this, InvalidSubjectTokenError.prototype);
-  }
-}
+export class InvalidSubjectTokenError extends ExecutableResponseError {}

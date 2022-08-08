@@ -78,9 +78,8 @@ export class ExecutableError extends Error {
     super(
       `The executable failed with exit code: ${code} and error message: ${message}.`
     );
-    this.name = 'ExecutableError';
     this.code = code;
-    Object.setPrototypeOf(this, ExecutableError.prototype);
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 
@@ -257,7 +256,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       );
     }
 
-    let executableResponse: ExecutableResponse | undefined;
+    let executableResponse: ExecutableResponse | undefined = undefined;
     // Try to get cached executable response from output file.
     if (this.outputFile) {
       executableResponse = await this.handler.retrieveCachedResponse();

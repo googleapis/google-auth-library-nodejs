@@ -358,14 +358,16 @@ describe('PluggableAuthHandler', () => {
     const sandbox = sinon.createSandbox();
     let clock: sinon.SinonFakeTimers;
     const referenceTime = Date.now();
-    let fileEvent: ReadStream;
-    let realPathSyncStub: sinon.SinonStub<
-      [path: fs.PathLike, options?: fs.EncodingOption],
-      string | Buffer
+    let realPathStub: sinon.SinonStub<
+      [
+        path: fs.PathLike,
+        options?: fs.ObjectEncodingOptions | BufferEncoding | null | undefined
+      ],
+      Promise<string | Buffer>
     >;
-    let statSyncStub: sinon.SinonStub<
-      [path: fs.PathLike, options?: fs.StatSyncOptions | undefined],
-      fs.Stats | fs.BigIntStats | undefined
+    let statStub: sinon.SinonStub<
+      [path: fs.PathLike, opts?: fs.StatOptions | undefined],
+      Promise<fs.Stats | fs.BigIntStats>
     >;
     let defaultResponseJson: ExecutableResponseJson;
 
@@ -381,14 +383,9 @@ describe('PluggableAuthHandler', () => {
       } as ExecutableResponseJson;
 
       // Stub fs methods, so we don't have to read a real file.
-      realPathSyncStub = sandbox.stub(fs, 'realpathSync').returnsArg(0);
-      const fakeStat = {isFile: () => true} as fs.Stats;
-      statSyncStub = sandbox.stub(fs, 'lstatSync').returns(fakeStat);
-      fileEvent = new events.EventEmitter() as ReadStream;
-      fileEvent.setEncoding = () => {
-        return fileEvent;
-      };
-      sandbox.stub(fs, 'createReadStream').returns(fileEvent);
+      realPathStub = sandbox.stub(fs.promises, 'realpath').returnsArg(0);
+      const fakeStat = Promise.resolve({isFile: () => true} as fs.Stats);
+      statStub = sandbox.stub(fs.promises, 'lstat').returns(fakeStat);
     });
 
     afterEach(() => {
@@ -401,8 +398,9 @@ describe('PluggableAuthHandler', () => {
     it('should return cached file SAML response when successful', async () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
-      fileEvent.emit('end', 0);
+      sandbox
+        .stub(fs.promises, 'readFile')
+        .resolves(JSON.stringify(defaultResponseJson));
 
       assert.deepEqual(
         await response,
@@ -416,8 +414,9 @@ describe('PluggableAuthHandler', () => {
       defaultResponseJson.id_token = 'subject token';
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
-      fileEvent.emit('end', 0);
+      sandbox
+        .stub(fs.promises, 'readFile')
+        .resolves(JSON.stringify(defaultResponseJson));
 
       assert.deepEqual(
         await response,
@@ -429,7 +428,7 @@ describe('PluggableAuthHandler', () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const expectedError = new Error('error');
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('error', 'error');
+      sandbox.stub(fs.promises, 'readFile').rejects(expectedError);
 
       await assert.rejects(response, expectedError);
     });
@@ -438,18 +437,17 @@ describe('PluggableAuthHandler', () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       defaultResponseJson.expiration_time = referenceTime / 1000 - 10;
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
-      fileEvent.emit('end', 0);
+      sandbox
+        .stub(fs.promises, 'readFile')
+        .resolves(JSON.stringify(defaultResponseJson));
 
       assert.equal(await response, undefined);
     });
 
     it('should return undefined if path cannot be resolved', async () => {
-      realPathSyncStub.throws(new Error('ENOENT'));
+      realPathStub.throws(new Error('ENOENT'));
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
-      fileEvent.emit('end', 0);
 
       assert.equal(await response, undefined);
     });
@@ -461,19 +459,18 @@ describe('PluggableAuthHandler', () => {
       };
       const handler = new PluggableAuthHandler(invalidOptions);
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
-      fileEvent.emit('end', 0);
 
       assert.equal(await response, undefined);
     });
 
     it('should return undefined if output file does not exist', async () => {
       const fakeStat = {isFile: () => false} as fs.Stats;
-      statSyncStub.returns(fakeStat);
+      statStub.resolves(fakeStat);
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(defaultResponseJson));
-      fileEvent.emit('end', 0);
+      sandbox
+        .stub(fs.promises, 'readFile')
+        .resolves(JSON.stringify(defaultResponseJson));
 
       assert.equal(await response, undefined);
     });
@@ -481,8 +478,7 @@ describe('PluggableAuthHandler', () => {
     it('should return undefined if output file is empty', async () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', '');
-      fileEvent.emit('end', 0);
+      sandbox.stub(fs.promises, 'readFile').resolves('');
 
       assert.equal(await response, undefined);
     });
@@ -494,8 +490,7 @@ describe('PluggableAuthHandler', () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', 'THIS_IS_NOT_JSON');
-      fileEvent.emit('end', 0);
+      sandbox.stub(fs.promises, 'readFile').resolves('THIS_IS_NOT_JSON');
 
       await assert.rejects(response, expectedError);
     });
@@ -506,15 +501,15 @@ describe('PluggableAuthHandler', () => {
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const invalidResponse = {
-        version: 1,
         token_type: SAML_SUBJECT_TOKEN_TYPE,
         saml_response: 'response',
         expiration_time: referenceTime / 1000 + 10,
       };
 
       const response = handler.retrieveCachedResponse();
-      fileEvent.emit('data', JSON.stringify(invalidResponse));
-      fileEvent.emit('end', 0);
+      sandbox
+        .stub(fs.promises, 'readFile')
+        .resolves(JSON.stringify(invalidResponse));
 
       await assert.rejects(response, expectedError);
     });

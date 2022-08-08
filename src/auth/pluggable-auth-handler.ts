@@ -139,60 +139,49 @@ export class PluggableAuthHandler {
    * Checks user provided output file for response from previous run of
    * executable and return the response if it exists, is formatted correctly, and is not expired.
    */
-  retrieveCachedResponse(): Promise<ExecutableResponse | undefined> {
-    return new Promise((resolve, reject) => {
-      if (!this.outputFile || this.outputFile.length === 0) {
-        return resolve(undefined);
-      }
+  async retrieveCachedResponse(): Promise<ExecutableResponse | undefined> {
+    if (!this.outputFile || this.outputFile.length === 0) {
+      return undefined;
+    }
 
-      let filePath: fs.PathLike;
-      try {
-        filePath = fs.realpathSync(this.outputFile as string);
-      } catch {
-        // If file path cannot be resolved, return undefined.
-        return resolve(undefined);
-      }
+    let filePath: fs.PathLike;
+    try {
+      filePath = await fs.promises.realpath(this.outputFile as string);
+    } catch {
+      // If file path cannot be resolved, return undefined.
+      return undefined;
+    }
 
-      if (!fs.lstatSync(filePath).isFile()) {
-        // If path does not lead to file, return undefined.
-        return resolve(undefined);
-      }
+    if (!(await fs.promises.lstat(filePath)).isFile()) {
+      // If path does not lead to file, return undefined.
+      return undefined;
+    }
 
-      const readStream = fs.createReadStream(filePath);
-      let responseString = '';
-      readStream
-        .setEncoding('utf8')
-        .on('error', (err: string) => {
-          return reject(new Error(err));
-        })
-        .on('data', (chunk: string) => (responseString += chunk))
-        .on('end', () => {
-          if (responseString === '') {
-            return resolve(undefined);
-          }
-          try {
-            const responseJson = JSON.parse(
-              responseString
-            ) as ExecutableResponseJson;
-            const response = new ExecutableResponse(responseJson);
-
-            // Check if response is successful and unexpired.
-            if (response.isValid()) {
-              return resolve(new ExecutableResponse(responseJson));
-            }
-            return resolve(undefined);
-          } catch (error) {
-            if (error instanceof ExecutableResponseError) {
-              return reject(error);
-            }
-            return reject(
-              new ExecutableResponseError(
-                `The output file contained an invalid response: ${responseString}`
-              )
-            );
-          }
-        });
+    const responseString = await fs.promises.readFile(filePath, {
+      encoding: 'utf8',
     });
+
+    if (responseString === '') {
+      return undefined;
+    }
+
+    try {
+      const responseJson = JSON.parse(responseString) as ExecutableResponseJson;
+      const response = new ExecutableResponse(responseJson);
+
+      // Check if response is successful and unexpired.
+      if (response.isValid()) {
+        return new ExecutableResponse(responseJson);
+      }
+      return undefined;
+    } catch (error) {
+      if (error instanceof ExecutableResponseError) {
+        throw error;
+      }
+      throw new ExecutableResponseError(
+        `The output file contained an invalid response: ${responseString}`
+      );
+    }
   }
 
   /**
