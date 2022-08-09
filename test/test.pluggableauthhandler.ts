@@ -501,6 +501,7 @@ describe('PluggableAuthHandler', () => {
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const invalidResponse = {
+        version: 1,
         token_type: SAML_SUBJECT_TOKEN_TYPE,
         saml_response: 'response',
         expiration_time: referenceTime / 1000 + 10,
