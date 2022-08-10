@@ -14,7 +14,6 @@
 
 import * as sinon from 'sinon';
 import * as child_process from 'child_process';
-import {ReadStream} from 'fs';
 import * as fs from 'fs';
 import {
   ExecutableResponse,
