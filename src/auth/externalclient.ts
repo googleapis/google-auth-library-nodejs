@@ -29,10 +29,15 @@ import {
   IdentityPoolClientOptions,
 } from './identitypoolclient';
 import {AwsClient, AwsClientOptions} from './awsclient';
+import {
+  PluggableAuthClient,
+  PluggableAuthClientOptions,
+} from './pluggable-auth-client';
 
 export type ExternalAccountClientOptions =
   | IdentityPoolClientOptions
-  | AwsClientOptions;
+  | AwsClientOptions
+  | PluggableAuthClientOptions;
 
 /**
  * Dummy class with no constructor. Developers are expected to use fromJSON.
@@ -43,7 +48,8 @@ export class ExternalAccountClient {
       'ExternalAccountClients should be initialized via: ' +
         'ExternalAccountClient.fromJSON(), ' +
         'directly via explicit constructors, eg. ' +
-        'new AwsClient(options), new IdentityPoolClient(options) or via ' +
+        'new AwsClient(options), new IdentityPoolClient(options), new' +
+        'PluggableAuthClientOptions, or via ' +
         'new GoogleAuth(options).getClient()'
     );
   }
@@ -67,6 +73,13 @@ export class ExternalAccountClient {
     if (options && options.type === EXTERNAL_ACCOUNT_TYPE) {
       if ((options as AwsClientOptions).credential_source?.environment_id) {
         return new AwsClient(options as AwsClientOptions, additionalOptions);
+      } else if (
+        (options as PluggableAuthClientOptions).credential_source?.executable
+      ) {
+        return new PluggableAuthClient(
+          options as PluggableAuthClientOptions,
+          additionalOptions
+        );
       } else {
         return new IdentityPoolClient(
           options as IdentityPoolClientOptions,
