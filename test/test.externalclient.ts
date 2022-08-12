@@ -18,6 +18,7 @@ import {AwsClient} from '../src/auth/awsclient';
 import {IdentityPoolClient} from '../src/auth/identitypoolclient';
 import {ExternalAccountClient} from '../src/auth/externalclient';
 import {getAudience, getTokenUrl} from './externalclienthelper';
+import {PluggableAuthClient} from '../src/auth/pluggable-auth-client';
 
 const serviceAccountKeys = {
   type: 'service_account',
@@ -60,6 +61,21 @@ const awsOptions = {
   subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
   token_url: getTokenUrl(),
   credential_source: awsCredentialSource,
+};
+
+const pluggableAuthCredentialSource = {
+  executable: {
+    command: 'exampleCommand',
+    timeout_millis: 30000,
+    output_file: 'output.txt',
+  },
+};
+const pluggableAuthClientOptions = {
+  type: 'external_account',
+  audience: getAudience(),
+  subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+  token_url: getTokenUrl(),
+  credential_source: pluggableAuthCredentialSource,
 };
 
 describe('ExternalAccountClient', () => {
@@ -159,6 +175,32 @@ describe('ExternalAccountClient', () => {
       }
     });
 
+    it('should return PluggableAuthClient on PluggableAuthClientOptions', () => {
+      const expectedClient = new PluggableAuthClient(
+        pluggableAuthClientOptions
+      );
+
+      assert.deepStrictEqual(
+        ExternalAccountClient.fromJSON(pluggableAuthClientOptions),
+        expectedClient
+      );
+    });
+
+    it('should return PluggableAuthClient with expected RefreshOptions', () => {
+      const expectedClient = new PluggableAuthClient(
+        pluggableAuthClientOptions,
+        refreshOptions
+      );
+
+      assert.deepStrictEqual(
+        ExternalAccountClient.fromJSON(
+          pluggableAuthClientOptions,
+          refreshOptions
+        ),
+        expectedClient
+      );
+    });
+
     invalidWorkforceIdentityPoolClientAudiences.forEach(
       invalidWorkforceIdentityPoolClientAudience => {
         const workforceIdentityPoolClientInvalidOptions = Object.assign(
@@ -212,6 +254,16 @@ describe('ExternalAccountClient', () => {
     it('should throw when given invalid AwsClientOptions', () => {
       const invalidOptions = Object.assign({}, awsOptions);
       invalidOptions.credential_source.environment_id = 'invalid';
+
+      assert.throws(() => {
+        return ExternalAccountClient.fromJSON(invalidOptions);
+      });
+    });
+
+    it('should throw when given invalid PluggableAuthClientOptions', () => {
+      const invalidOptions = Object.assign({}, pluggableAuthClientOptions);
+      invalidOptions.credential_source.executable.command = 'command';
+      invalidOptions.credential_source.executable.timeout_millis = -1;
 
       assert.throws(() => {
         return ExternalAccountClient.fromJSON(invalidOptions);
