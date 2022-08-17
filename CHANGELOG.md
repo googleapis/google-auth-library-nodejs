@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [8.2.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.1.1...v8.2.0) (2022-08-11)
+
+
+### Features
+
+* adds Pluggable Auth support ([#1437](https://github.com/googleapis/google-auth-library-nodejs/issues/1437)) ([ed7ef7a](https://github.com/googleapis/google-auth-library-nodejs/commit/ed7ef7a5d1fa6bf5d06bdaab278052fd3930fb7f))
+
 ## [8.1.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.1.0...v8.1.1) (2022-07-08)
 
 
