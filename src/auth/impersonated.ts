@@ -16,6 +16,7 @@
 
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 import {AuthClient} from './authclient';
+import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 
 export interface ImpersonatedOptions extends RefreshOptions {
@@ -52,7 +53,12 @@ export interface TokenResponse {
   expireTime: string;
 }
 
-export class Impersonated extends OAuth2Client {
+export interface FetchIdTokenResponse {
+  /** The OpenId Connect ID token. */
+  token: string;
+}
+
+export class Impersonated extends OAuth2Client implements IdTokenProvider {
   private sourceClient: AuthClient;
   private targetPrincipal: string;
   private targetScopes: string[];
@@ -153,5 +159,29 @@ export class Impersonated extends OAuth2Client {
         throw error;
       }
     }
+  }
+
+  /**
+   * Generates an OpenID Connect ID token for a service account.
+   *
+   * @param targetAudience the audience for the fetched ID token.
+   */
+  async fetchIdToken(targetAudience: string): Promise<string> {
+    await this.sourceClient.getAccessToken();
+
+    const name = `projects/-/serviceAccounts/${this.targetPrincipal}`;
+    const u = `${this.endpoint}/v1/${name}:generateIdToken`;
+    const body = {
+      delegates: this.delegates,
+      audience: targetAudience,
+      includeEmail: true,
+    };
+    const res = await this.sourceClient.request<FetchIdTokenResponse>({
+      url: u,
+      data: body,
+      method: 'POST',
+    });
+
+    return res.data.token;
   }
 }
