@@ -53,6 +53,14 @@ export interface TokenResponse {
   expireTime: string;
 }
 
+export interface FetchIdTokenOptions {
+  /**
+   * Include the service account email in the token.
+   * If set to `true`, the token will contain `email` and `email_verified` claims.
+   */
+  includeEmail: boolean;
+}
+
 export interface FetchIdTokenResponse {
   /** The OpenId Connect ID token. */
   token: string;
@@ -164,9 +172,16 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
   /**
    * Generates an OpenID Connect ID token for a service account.
    *
+   * {@link https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/generateIdToken Reference Documentation}
+   *
    * @param targetAudience the audience for the fetched ID token.
+   * @param options the for the request
+   * @return an OpenID Connect ID token
    */
-  async fetchIdToken(targetAudience: string): Promise<string> {
+  async fetchIdToken(
+    targetAudience: string,
+    options?: FetchIdTokenOptions
+  ): Promise<string> {
     await this.sourceClient.getAccessToken();
 
     const name = `projects/-/serviceAccounts/${this.targetPrincipal}`;
@@ -174,7 +189,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     const body = {
       delegates: this.delegates,
       audience: targetAudience,
-      includeEmail: true,
+      includeEmail: options?.includeEmail ?? true,
     };
     const res = await this.sourceClient.request<FetchIdTokenResponse>({
       url: u,

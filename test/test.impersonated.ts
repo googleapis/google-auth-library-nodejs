@@ -366,10 +366,11 @@ describe('impersonated', () => {
     scopes.forEach(s => s.done());
   });
 
-  it('should fetch an OpenID Connect ID token', async () => {
+  it('should fetch an OpenID Connect ID token w/ `includeEmail` by default', async () => {
     const expectedToken = 'OpenID-Connect-ID-token';
     const expectedAudience = 'sample-audience';
     const expectedDeligates = ['deligate-1', 'deligate-2'];
+    const expectedIncludeEmail = true;
 
     const scopes = [
       createGTokenMock({
@@ -384,7 +385,7 @@ describe('impersonated', () => {
             includeEmail: boolean;
           }) => {
             assert.strictEqual(body.audience, expectedAudience);
-            assert.strictEqual(body.includeEmail, true);
+            assert.strictEqual(body.includeEmail, expectedIncludeEmail);
             assert.deepStrictEqual(body.delegates, expectedDeligates);
             return true;
           }
@@ -403,6 +404,52 @@ describe('impersonated', () => {
     });
 
     const token = await impersonated.fetchIdToken(expectedAudience);
+
+    assert.equal(token, expectedToken);
+
+    scopes.forEach(s => s.done());
+  });
+
+  it('should fetch an OpenID Connect ID token with desired options', async () => {
+    const expectedToken = 'OpenID-Connect-ID-token';
+    const expectedAudience = 'sample-audience';
+    const expectedDeligates = ['deligate-1', 'deligate-2'];
+    const expectedIncludeEmail = false;
+
+    const scopes = [
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateIdToken',
+          (body: {
+            delegates: string[];
+            audience: string;
+            includeEmail: boolean;
+          }) => {
+            assert.strictEqual(body.audience, expectedAudience);
+            assert.strictEqual(body.includeEmail, expectedIncludeEmail);
+            assert.deepStrictEqual(body.delegates, expectedDeligates);
+            return true;
+          }
+        )
+        .reply(200, {
+          token: expectedToken,
+        }),
+    ];
+
+    const impersonated = new Impersonated({
+      sourceClient: createSampleJWTClient(),
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: expectedDeligates,
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+
+    const token = await impersonated.fetchIdToken(expectedAudience, {
+      includeEmail: expectedIncludeEmail,
+    });
 
     assert.equal(token, expectedToken);
 
