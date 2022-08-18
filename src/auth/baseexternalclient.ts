@@ -128,7 +128,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   public scopes?: string | string[];
   private cachedAccessToken: CredentialsWithResponse | null;
   protected readonly audience: string;
-  private readonly subjectTokenType: string;
+  protected readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly stsCredential: sts.StsCredentials;
   private readonly clientAuth?: ClientAuthentication;
