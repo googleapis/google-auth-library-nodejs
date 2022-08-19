@@ -203,32 +203,23 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // - Cloud SDK: `gcloud config config-helper --format json`
     // - GCE project ID from metadata server)
     if (!this._getDefaultProjectIdPromise) {
-      // TODO: refactor the below code so that it doesn't mix and match
-      // promises and async/await.
-      this._getDefaultProjectIdPromise = new Promise(
-        // eslint-disable-next-line no-async-promise-executor
-        async (resolve, reject) => {
-          try {
-            const projectId =
-              this.getProductionProjectId() ||
-              (await this.getFileProjectId()) ||
-              (await this.getDefaultServiceProjectId()) ||
-              (await this.getGCEProjectId()) ||
-              (await this.getExternalAccountClientProjectId());
-            this._cachedProjectId = projectId;
-            if (!projectId) {
-              throw new Error(
-                'Unable to detect a Project Id in the current environment. \n' +
-                  'To learn more about authentication and Google APIs, visit: \n' +
-                  'https://cloud.google.com/docs/authentication/getting-started'
-              );
-            }
-            resolve(projectId);
-          } catch (e) {
-            reject(e);
-          }
+      this._getDefaultProjectIdPromise = (async () => {
+        const projectId =
+          this.getProductionProjectId() ||
+          (await this.getFileProjectId()) ||
+          (await this.getDefaultServiceProjectId()) ||
+          (await this.getGCEProjectId()) ||
+          (await this.getExternalAccountClientProjectId());
+        this._cachedProjectId = projectId;
+        if (!projectId) {
+          throw new Error(
+            'Unable to detect a Project Id in the current environment. \n' +
+              'To learn more about authentication and Google APIs, visit: \n' +
+              'https://cloud.google.com/docs/authentication/getting-started'
+          );
         }
-      );
+        return projectId;
+      })();
     }
     return this._getDefaultProjectIdPromise;
   }

@@ -32,6 +32,18 @@ function createGTokenMock(body: CredentialRequest) {
     .reply(200, body);
 }
 
+function createSampleJWTClient() {
+  const jwt = new JWT(
+    'foo@serviceaccount.com',
+    PEM_PATH,
+    undefined,
+    ['http://bar', 'http://foo'],
+    'bar@subjectaccount.com'
+  );
+
+  return jwt;
+}
+
 interface ImpersonatedCredentialRequest {
   delegates: string[];
   scope: string[];
@@ -68,15 +80,9 @@ describe('impersonated', () => {
           expireTime: tomorrow.toISOString(),
         }),
     ];
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+
     const impersonated = new Impersonated({
-      sourceClient: jwt,
+      sourceClient: createSampleJWTClient(),
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
@@ -117,15 +123,9 @@ describe('impersonated', () => {
           expireTime: tomorrow.toISOString(),
         }),
     ];
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+
     const impersonated = new Impersonated({
-      sourceClient: jwt,
+      sourceClient: createSampleJWTClient(),
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
@@ -176,13 +176,7 @@ describe('impersonated', () => {
           expireTime: tomorrow.toISOString(),
         }),
     ];
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+    const jwt = createSampleJWTClient();
     const impersonated = new Impersonated({
       sourceClient: jwt,
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
@@ -270,15 +264,9 @@ describe('impersonated', () => {
           },
         }),
     ];
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+
     const impersonated = new Impersonated({
-      sourceClient: jwt,
+      sourceClient: createSampleJWTClient(),
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
@@ -303,15 +291,9 @@ describe('impersonated', () => {
         )
         .reply(500),
     ];
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+
     const impersonated = new Impersonated({
-      sourceClient: jwt,
+      sourceClient: createSampleJWTClient(),
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
@@ -329,15 +311,9 @@ describe('impersonated', () => {
     const scopes = [
       nock('https://www.googleapis.com').post('/oauth2/v4/token').reply(401),
     ];
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+
     const impersonated = new Impersonated({
-      sourceClient: jwt,
+      sourceClient: createSampleJWTClient(),
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
@@ -371,15 +347,9 @@ describe('impersonated', () => {
           expireTime: tomorrow.toISOString(),
         }),
     ];
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+
     const impersonated = new Impersonated({
-      sourceClient: jwt,
+      sourceClient: createSampleJWTClient(),
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
@@ -393,6 +363,96 @@ describe('impersonated', () => {
       impersonated.credentials.expiry_date,
       tomorrow.getTime()
     );
+    scopes.forEach(s => s.done());
+  });
+
+  it('should fetch an OpenID Connect ID token w/ `includeEmail` by default', async () => {
+    const expectedToken = 'OpenID-Connect-ID-token';
+    const expectedAudience = 'sample-audience';
+    const expectedDeligates = ['deligate-1', 'deligate-2'];
+    const expectedIncludeEmail = true;
+
+    const scopes = [
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateIdToken',
+          (body: {
+            delegates: string[];
+            audience: string;
+            includeEmail: boolean;
+          }) => {
+            assert.strictEqual(body.audience, expectedAudience);
+            assert.strictEqual(body.includeEmail, expectedIncludeEmail);
+            assert.deepStrictEqual(body.delegates, expectedDeligates);
+            return true;
+          }
+        )
+        .reply(200, {
+          token: expectedToken,
+        }),
+    ];
+
+    const impersonated = new Impersonated({
+      sourceClient: createSampleJWTClient(),
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: expectedDeligates,
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+
+    const token = await impersonated.fetchIdToken(expectedAudience);
+
+    assert.equal(token, expectedToken);
+
+    scopes.forEach(s => s.done());
+  });
+
+  it('should fetch an OpenID Connect ID token with desired options', async () => {
+    const expectedToken = 'OpenID-Connect-ID-token';
+    const expectedAudience = 'sample-audience';
+    const expectedDeligates = ['deligate-1', 'deligate-2'];
+    const expectedIncludeEmail = false;
+
+    const scopes = [
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateIdToken',
+          (body: {
+            delegates: string[];
+            audience: string;
+            includeEmail: boolean;
+          }) => {
+            assert.strictEqual(body.audience, expectedAudience);
+            assert.strictEqual(body.includeEmail, expectedIncludeEmail);
+            assert.deepStrictEqual(body.delegates, expectedDeligates);
+            return true;
+          }
+        )
+        .reply(200, {
+          token: expectedToken,
+        }),
+    ];
+
+    const impersonated = new Impersonated({
+      sourceClient: createSampleJWTClient(),
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: expectedDeligates,
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+
+    const token = await impersonated.fetchIdToken(expectedAudience, {
+      includeEmail: expectedIncludeEmail,
+    });
+
+    assert.equal(token, expectedToken);
+
     scopes.forEach(s => s.done());
   });
 });

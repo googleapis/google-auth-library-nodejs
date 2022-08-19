@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [8.3.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.2.0...v8.3.0) (2022-08-19)
+
+
+### Features
+
+* Add `generateIdToken` support for `Impersonated` Clients ([#1439](https://github.com/googleapis/google-auth-library-nodejs/issues/1439)) ([4ace981](https://github.com/googleapis/google-auth-library-nodejs/commit/4ace981ba1d37a9a00201a1c91e1b79c8cdb5cec))
+
 ## [8.2.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.1.1...v8.2.0) (2022-08-11)
 
 
