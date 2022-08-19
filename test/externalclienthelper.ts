@@ -44,8 +44,10 @@ interface NockMockGenerateAccessToken {
   token: string;
   response: IamGenerateAccessTokenResponse | CloudRequestError;
   scopes: string[];
+  lifetime?: number;
 }
 
+const defaultLifetime = 3600;
 const defaultProjectNumber = '123456';
 const poolId = 'POOL_ID';
 const providerId = 'PROVIDER_ID';
@@ -86,6 +88,8 @@ export function mockGenerateAccessToken(
         saPath,
         {
           scope: nockMockGenerateAccessToken.scopes,
+          lifetime:
+            (nockMockGenerateAccessToken.lifetime ?? defaultLifetime) + 's',
         },
         {
           reqheaders: {
