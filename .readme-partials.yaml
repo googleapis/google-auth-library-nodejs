@@ -359,7 +359,7 @@ body: |-
   - `$POOL_ID`: The workload identity pool ID.
   - `$AWS_PROVIDER_ID`: The AWS provider ID.
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
-  
+
   This will generate the configuration file in the specified output file.
 
   If you want to use the AWS IMDSv2 flow, you can add the field below to the credential_source in your AWS ADC configuration file:
@@ -398,7 +398,7 @@ body: |-
   - `$POOL_ID`: The workload identity pool ID.
   - `$AZURE_PROVIDER_ID`: The Azure provider ID.
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
-  
+
   This will generate the configuration file in the specified output file.
 
   You can now [start using the Auth library](#using-external-identities) to call Google Cloud resources from Azure.
@@ -444,7 +444,7 @@ body: |-
   - `$OIDC_PROVIDER_ID`: The OIDC provider ID.
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
   - `$PATH_TO_OIDC_ID_TOKEN`: The file path where the OIDC token will be retrieved from.
-  
+
   This will generate the configuration file in the specified output file.
 
   **URL-sourced credentials**
@@ -475,7 +475,7 @@ body: |-
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
   - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
   - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
-  
+
   #### Using Executable-sourced credentials with OIDC and SAML
   
   **Executable-sourced credentials**
