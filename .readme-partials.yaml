@@ -351,6 +351,8 @@ body: |-
       projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/providers/$AWS_PROVIDER_ID \
       --service-account $SERVICE_ACCOUNT_EMAIL \
       --aws \
+      # Optional argument for specifying the duration of the service account access token.
+      # --service-account-token-lifetime-seconds $TOKEN_LIFETIME \
       --output-file /path/to/generated/config.json
   ```
 
@@ -359,8 +361,11 @@ body: |-
   - `$POOL_ID`: The workload identity pool ID.
   - `$AWS_PROVIDER_ID`: The AWS provider ID.
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
-
+  - `$TOKEN_LIFETIME`: The desired lifetime duration of the service account access token in seconds.
+  
   This will generate the configuration file in the specified output file.
+
+  The `service-account-token-lifetime-seconds` flag is optional. If not provided, this defaults to one hour. If a lifetime greater than one hour is required, the service account must be added as an allowed value in an Organization Policy that enforces the `constraints/iam.allowServiceAccountCredentialLifetimeExtension` constraint.
 
   If you want to use the AWS IMDSv2 flow, you can add the field below to the credential_source in your AWS ADC configuration file:
   "imdsv2_session_token_url": "http://169.254.169.254/latest/api/token"
@@ -390,6 +395,8 @@ body: |-
       projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/providers/$AZURE_PROVIDER_ID \
       --service-account $SERVICE_ACCOUNT_EMAIL \
       --azure \
+      # Optional argument for specifying the duration of the service account access token.
+      # --service-account-token-lifetime-seconds $TOKEN_LIFETIME \
       --output-file /path/to/generated/config.json
   ```
 
@@ -398,8 +405,11 @@ body: |-
   - `$POOL_ID`: The workload identity pool ID.
   - `$AZURE_PROVIDER_ID`: The Azure provider ID.
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
-
+  - `$TOKEN_LIFETIME`: The desired lifetime duration of the service account access token in seconds.
+  
   This will generate the configuration file in the specified output file.
+
+  The `service-account-token-lifetime-seconds` flag is optional. If not provided, this defaults to one hour. If a lifetime greater than one hour is required, the service account must be added as an allowed value in an Organization Policy that enforces the `constraints/iam.allowServiceAccountCredentialLifetimeExtension` constraint.
 
   You can now [start using the Auth library](#using-external-identities) to call Google Cloud resources from Azure.
 
@@ -435,6 +445,8 @@ body: |-
       # Optional argument for the field that contains the OIDC credential.
       # This is required for json.
       # --credential-source-field-name "id_token" \
+      # Optional argument for specifying the duration of the service account access token.
+      # --service-account-token-lifetime-seconds $TOKEN_LIFETIME \
       --output-file /path/to/generated/config.json
   ```
 
@@ -444,8 +456,11 @@ body: |-
   - `$OIDC_PROVIDER_ID`: The OIDC provider ID.
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
   - `$PATH_TO_OIDC_ID_TOKEN`: The file path where the OIDC token will be retrieved from.
-
+  - `$TOKEN_LIFETIME`: The desired lifetime duration of the service account access token in seconds.
+  
   This will generate the configuration file in the specified output file.
+
+  The `service-account-token-lifetime-seconds` flag is optional. If not provided, this defaults to one hour. If a lifetime greater than one hour is required, the service account must be added as an allowed value in an Organization Policy that enforces the `constraints/iam.allowServiceAccountCredentialLifetimeExtension` constraint.
 
   **URL-sourced credentials**
   For URL-sourced credentials, a local server needs to host a GET endpoint to return the OIDC token. The response can be in plain text or JSON.
@@ -465,6 +480,8 @@ body: |-
       # Optional argument for the field that contains the OIDC credential.
       # This is required for json.
       # --credential-source-field-name "id_token" \
+      # Optional argument for specifying the duration of the service account access token.
+      # --service-account-token-lifetime-seconds $TOKEN_LIFETIME \
       --output-file /path/to/generated/config.json
   ```
 
@@ -475,6 +492,9 @@ body: |-
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
   - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
   - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
+  - `$TOKEN_LIFETIME`: The desired lifetime duration of the service account access token in seconds.
+
+  The `service-account-token-lifetime-seconds` flag is optional. If not provided, this defaults to one hour. If a lifetime greater than one hour is required, the service account must be added as an allowed value in an Organization Policy that enforces the `constraints/iam.allowServiceAccountCredentialLifetimeExtension` constraint.
 
   #### Using Executable-sourced credentials with OIDC and SAML
   
@@ -502,6 +522,8 @@ body: |-
       # Optional argument for the absolute path to the executable output file.
       # See below on how this argument impacts the library behaviour.
       # --executable-output-file=$EXECUTABLE_OUTPUT_FILE \
+      # Optional argument for specifying the duration of the service account access token.
+      # --service-account-token-lifetime-seconds $TOKEN_LIFETIME \
       --output-file /path/to/generated/config.json
   ```
   Where the following variables need to be substituted:
@@ -511,6 +533,7 @@ body: |-
   - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
   - `$SUBJECT_TOKEN_TYPE`: The subject token type.
   - `$EXECUTABLE_COMMAND`: The full command to run, including arguments. Must be an absolute path to the program.
+  - `$TOKEN_LIFETIME`: The desired lifetime duration of the service account access token in seconds.
   
   The `--executable-timeout-millis` flag is optional. This is the duration for which
   the auth library will wait for the executable to finish, in milliseconds.
@@ -526,6 +549,8 @@ body: |-
   handle writing to this file - the auth libraries will only attempt to read from
   this location. The format of contents in the file should match the JSON format
   expected by the executable shown below.
+  
+  The `service-account-token-lifetime-seconds` flag is optional. If not provided, this defaults to one hour. If a lifetime greater than one hour is required, the service account must be added as an allowed value in an Organization Policy that enforces the `constraints/iam.allowServiceAccountCredentialLifetimeExtension` constraint.
   
   To retrieve the 3rd party token, the library will call the executable
   using the command specified. The executable's output must adhere to the response format

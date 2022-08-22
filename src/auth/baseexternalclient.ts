@@ -210,7 +210,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.serviceAccountImpersonationUrl =
       options.service_account_impersonation_url;
     this.serviceAccountImpersonationLifetime =
-      options.service_account_impersonation?.token_lifetime_seconds ?? DEFAULT_TOKEN_LIFESPAN;
+      options.service_account_impersonation?.token_lifetime_seconds ??
+      DEFAULT_TOKEN_LIFESPAN;
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
