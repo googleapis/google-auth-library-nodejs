@@ -4,6 +4,18 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [8.4.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.3.0...v8.4.0) (2022-08-23)
+
+
+### Features
+
+* adding configurable token lifespan support ([#1441](https://github.com/googleapis/google-auth-library-nodejs/issues/1441)) ([178e3b8](https://github.com/googleapis/google-auth-library-nodejs/commit/178e3b83104f5a050f09e17d522d36c8feca632c))
+
+
+### Bug Fixes
+
+* **functions:** clarify auth comments ([#1427](https://github.com/googleapis/google-auth-library-nodejs/issues/1427)) ([7e06732](https://github.com/googleapis/google-auth-library-nodejs/commit/7e067327634281bba948c9cc6bc99c7ab860f827))
+
 ## [8.3.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.2.0...v8.3.0) (2022-08-19)
 
 
