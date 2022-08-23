@@ -41,6 +41,8 @@ const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 const GOOGLE_APIS_DOMAIN_PATTERN = '\\.googleapis\\.com$';
 /** The variable portion pattern in a Google APIs domain. */
 const VARIABLE_PORTION_PATTERN = '[^\\.\\s\\/\\\\]+';
+/** Default impersonated token lifespan in seconds.*/
+const DEFAULT_TOKEN_LIFESPAN = 3600;
 
 /**
  * Offset to take into account network delays and server clock skews.
@@ -69,6 +71,9 @@ export interface BaseExternalAccountClientOptions {
   audience: string;
   subject_token_type: string;
   service_account_impersonation_url?: string;
+  service_account_impersonation?: {
+    token_lifetime_seconds?: number;
+  };
   token_url: string;
   token_info_url?: string;
   client_id?: string;
@@ -130,6 +135,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   protected readonly audience: string;
   protected readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
+  private readonly serviceAccountImpersonationLifetime?: number;
   private readonly stsCredential: sts.StsCredentials;
   private readonly clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
@@ -203,6 +209,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
     this.serviceAccountImpersonationUrl =
       options.service_account_impersonation_url;
+    this.serviceAccountImpersonationLifetime =
+      options.service_account_impersonation?.token_lifetime_seconds ??
+      DEFAULT_TOKEN_LIFESPAN;
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
@@ -510,6 +519,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       },
       data: {
         scope: this.getScopesArray(),
+        lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
       responseType: 'json',
     };

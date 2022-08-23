@@ -72,7 +72,11 @@ const {assert} = require('chai');
 const {describe, it, before, afterEach} = require('mocha');
 const fs = require('fs');
 const {promisify} = require('util');
-const {GoogleAuth, DefaultTransporter} = require('google-auth-library');
+const {
+  GoogleAuth,
+  DefaultTransporter,
+  IdentityPoolClient,
+} = require('google-auth-library');
 const os = require('os');
 const path = require('path');
 const http = require('http');
@@ -471,5 +475,37 @@ describe('samples for external-account', () => {
     });
     // Confirm expected script output.
     assert.match(output, /DNS Info:/);
+  });
+
+  it('should acquire access token with service account impersonation options', async () => {
+    // Create file-sourced configuration JSON file.
+    // The created OIDC token will be used as the subject token and will be
+    // retrieved from a file location.
+    const config = {
+      type: 'external_account',
+      audience: AUDIENCE_OIDC,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      token_url: 'https://sts.googleapis.com/v1/token',
+      service_account_impersonation_url:
+        'https://iamcredentials.googleapis.com/v1/projects/' +
+        `-/serviceAccounts/${clientEmail}:generateAccessToken`,
+      service_account_impersonation: {
+        token_lifetime_seconds: 2800,
+      },
+      credential_source: {
+        file: oidcTokenFilePath,
+      },
+    };
+    await writeFile(oidcTokenFilePath, oidcToken);
+    const client = new IdentityPoolClient(config);
+
+    const minExpireTime = new Date().getTime() + (2800 * 1000 - 5 * 1000);
+    const maxExpireTime = new Date().getTime() + (2800 * 1000 + 5 * 1000);
+    const token = await client.getAccessToken();
+    const actualExpireTime = new Date(token.res.data.expireTime).getTime();
+
+    assert.isTrue(
+      minExpireTime <= actualExpireTime && actualExpireTime <= maxExpireTime
+    );
   });
 });
