@@ -1623,6 +1623,60 @@ describe('BaseExternalAccountClient', () => {
         });
         scopes.forEach(scope => scope.done());
       });
+
+      it('should use provided token lifespan', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              lifetime: 2800,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
+
+        const externalAccountOptionsWithSATokenLifespan = Object.assign(
+          {
+            service_account_impersonation: {
+              token_lifetime_seconds: 2800,
+            },
+          },
+          externalAccountOptionsWithSA
+        );
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSATokenLifespan
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
     });
   });
 
