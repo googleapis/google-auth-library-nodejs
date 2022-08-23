@@ -23,7 +23,7 @@
  * @param {string} expectedAudience - The service name for which the id token is requested. Service name refers to the
  *   logical identifier of an API service, such as "iap.googleapis.com".
  */
- function main(idToken, expectedAudience) {
+function main(idToken, expectedAudience) {
   // [START auth_cloud_verify_google_idtoken]
   /**
    * TODO(developer):
