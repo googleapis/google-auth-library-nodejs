@@ -20,10 +20,10 @@
  *
  * @param {string} idToken - The Google ID token to verify.
  *   and use IAM to narrow the permissions: https://cloud.google.com/docs/authentication#authorization_for_services
- * @param {string} targetAudience - The service name for which the id token is requested. Service name refers to the
+ * @param {string} expectedAudience - The service name for which the id token is requested. Service name refers to the
  *   logical identifier of an API service, such as "iap.googleapis.com".
  */
-function main(idToken, targetAudience) {
+ function main(idToken, expectedAudience) {
   // [START auth_cloud_verify_google_idtoken]
   /**
    * TODO(developer):
@@ -40,7 +40,7 @@ function main(idToken, targetAudience) {
 
     const result = await oAuth2Client.verifyIdToken({
       idToken,
-      targetAudience,
+      expectedAudience,
     });
 
     // Verify that the token contains subject and email claims.

@@ -27,15 +27,16 @@ function main(url) {
    */
   // const url = 'http://www.abc.com';
 
-  const {Compute} = require('google-auth-library');
+  const {GoogleAuth} = require('google-auth-library');
 
   async function getIdTokenFromMetadataServer() {
-    const auth = new Compute();
+    const auth = new GoogleAuth();
+    const client = await auth.getClient();
 
     // Get the ID token.
     // Once you've obtained the ID token, use it to make an authenticated call
     // to the target audience.
-    await auth.fetchIdToken(url);
+    await client.fetchIdToken(url);
     console.log('Generated ID token.');
   }
 

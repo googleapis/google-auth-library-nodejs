@@ -44,7 +44,7 @@ describe('auth samples', () => {
     assert.match(output, /Listing instances complete./);
   });
 
-  it.skip('should get id token from metadata server', async () => {
+  it('should get id token from metadata server', async () => {
     const output = execSync(
       'node idTokenFromMetadataServer https://www.google.com'
     );
@@ -67,7 +67,7 @@ describe('auth samples', () => {
     const idToken = await client.fetchIdToken(TARGET_AUDIENCE);
 
     const output = execSync(
-      `node verifyGoogleIdToken ${idToken} ${TARGET_AUDIENCE}`
+      `node verifyGoogleIdToken ${idToken} ${TARGET_AUDIENCE} https://www.googleapis.com/oauth2/v3/certs`
     );
 
     assert.match(output, /ID token verified./);
