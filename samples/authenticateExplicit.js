@@ -15,7 +15,7 @@
 /**
  * Lists storage buckets by authenticating with ADC.
  */
-function main(projectId) {
+function main() {
   // [START auth_cloud_explicit_adc]
   /**
    * TODO(developer):
