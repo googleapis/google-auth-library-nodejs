@@ -21,7 +21,7 @@
  *   and use IAM to narrow the permissions: https://cloud.google.com/docs/authentication#authorization_for_services.
  *   For more information, see: https://developers.google.com/identity/protocols/oauth2/scopes.
  * @param {string} targetAudience - The service name for which the id token is requested. Service name refers to the
- *   logical identifier of an API service, such as "pubsub.googleapis.com".
+ *   logical identifier of an API service, such as "http://www.example.com".
  * @param {string} impersonatedServiceAccount - The name of the privilege-bearing service account for whom
  *  the credential is created.
  */
@@ -30,21 +30,19 @@ function main(scope, targetAudience, impersonatedServiceAccount) {
   /**
    * TODO(developer):
    *  1. Uncomment and replace these variables before running the sample.
-   *  2. Make sure you have the necessary permission to list storage buckets "storage.buckets.list"
    */
   // const scope = 'https://www.googleapis.com/auth/cloud-platform';
-  // const targetAudience = 'iap.googleapis.com';
+  // const targetAudience = 'http://www.example.com';
   // const impersonatedServiceAccount = 'name@project.service.gserviceaccount.com';
 
   const {GoogleAuth, Impersonated} = require('google-auth-library');
 
   async function getIdTokenFromImpersonatedCredentials() {
-    const googleAuth = new GoogleAuth({
-      // For more information on scopes to use,
-      // see: https://developers.google.com/identity/protocols/oauth2/scopes
-      scopes: scope,
-    });
-    const client = await googleAuth.getApplicationDefault();
+    const googleAuth = new GoogleAuth();
+
+    // Construct the GoogleCredentials object which obtains the default configuration from your
+    // working environment.
+    const {credential} = await googleAuth.getApplicationDefault();
 
     // delegates: The chained list of delegates required to grant the final accessToken.
     // For more information, see:
@@ -54,7 +52,7 @@ function main(scope, targetAudience, impersonatedServiceAccount) {
 
     // Create the impersonated credential.
     const impersonatedCredentials = new Impersonated({
-      sourceClient: client.credential,
+      sourceClient: credential,
       delegates,
       targetPrincipal: impersonatedServiceAccount,
       targetScopes: [scope],
@@ -62,7 +60,7 @@ function main(scope, targetAudience, impersonatedServiceAccount) {
     });
 
     // Get the ID token.
-    // Once you've obtained the ID token, use it to make an authenticated call
+    // Once you've obtained the ID token, you can use it to make an authenticated call
     // to the target audience.
     await impersonatedCredentials.fetchIdToken(targetAudience, {
       includeEmail: true,

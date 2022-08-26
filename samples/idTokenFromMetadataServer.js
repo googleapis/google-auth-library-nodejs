@@ -13,9 +13,8 @@
 // limitations under the License.
 
 /**
- * Uses the Google Cloud metadata server in the Cloud Run (or AppEngine or Kubernetes etc.,)
- * environment to create an identity token and add it to the HTTP request as part of an
- * Authorization header.
+ * Uses the Google Cloud metadata server environment to create an identity token
+ * and add it to the HTTP request as part of an Authorization header.
  *
  * @param {string} url - The url or target audience to obtain the ID token for.
  */
@@ -25,16 +24,16 @@ function main(url) {
    * TODO(developer):
    *  1. Uncomment and replace these variables before running the sample.
    */
-  // const url = 'http://www.abc.com';
+  // const url = 'http://www.example.com';
 
   const {GoogleAuth} = require('google-auth-library');
 
   async function getIdTokenFromMetadataServer() {
-    const auth = new GoogleAuth();
-    const client = await auth.getClient();
+    const googleAuth = new GoogleAuth();
+    const client = await googleAuth.getClient();
 
     // Get the ID token.
-    // Once you've obtained the ID token, use it to make an authenticated call
+    // Once you've obtained the ID token, you can use it to make an authenticated call
     // to the target audience.
     await client.fetchIdToken(url);
     console.log('Generated ID token.');

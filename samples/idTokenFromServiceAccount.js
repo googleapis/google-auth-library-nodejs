@@ -14,14 +14,7 @@
 
 /**
  * Obtains the id token by providing the target audience using service account credentials.
- *
- * Using service account keys introduces risk; they are long-lived, and can be used by anyone
- * that obtains the key. Proper rotation and storage reduce this risk but do not eliminate it.
- * For these reasons, you should consider an alternative approach that
- * does not use a service account key. Several alternatives to service account keys
- * are described here:
- * https://cloud.google.com/docs/authentication/external/set-up-adc
- *
+ * 
  * @param {string} jsonCredentialsPath - Path to the service account json credential file.
  *   and use IAM to narrow the permissions: https://cloud.google.com/docs/authentication#authorization_for_services
  * @param {string} targetAudience - The url or target audience to obtain the ID token for.
@@ -33,7 +26,14 @@ function main(targetAudience, jsonCredentialsPath) {
    *  1. Uncomment and replace these variables before running the sample.
    */
   // const jsonCredentialsPath = '/path/example';
-  // const targetAudience = 'http://www.abc.com';
+  // const targetAudience = 'http://www.example.com';
+
+  // Using service account keys introduces risk; they are long-lived, and can be used by anyone
+  // that obtains the key. Proper rotation and storage reduce this risk but do not eliminate it.
+  // For these reasons, you should consider an alternative approach that
+  // does not use a service account key. Several alternatives to service account keys
+  // are described here:
+  // https://cloud.google.com/docs/authentication/external/set-up-adc
 
   const {auth} = require('google-auth-library');
   const jsonConfig = require(jsonCredentialsPath);

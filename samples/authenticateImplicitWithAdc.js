@@ -16,9 +16,8 @@
  * Shows credentials auto-detections in the intercation with GCP libraries
  *
  * @param {string} projectId - Project ID or project number of the Cloud project you want to use.
- * @param {string} zone - Zone of the disk you copy from.
  */
-function main(projectId, zone) {
+function main(projectId) {
   // [START auth_cloud_implicit_adc]
   /**
    * TODO(developer):
@@ -30,25 +29,24 @@ function main(projectId, zone) {
   // const projectId = 'YOUR_PROJECT_ID';
   // const zone = 'us-central1-a';
 
-  const compute = require('@google-cloud/compute');
+  const {Storage} = require('@google-cloud/storage');
 
   async function authenticateImplicitWithAdc() {
-    // This snippet demonstrates how to list instances.
-    // Hence, the client library will look for credentials using ADC.
-    const instancesClient = new compute.InstancesClient();
-
-    const [instanceList] = await instancesClient.list({
-      project: projectId,
-      zone,
+    // This snippet demonstrates how to list buckets.
+    // NOTE: Replace the client created below with the client required for your application.
+    // Note that the credentials are not specified when constructing the client.
+    // The client library finds your credentials using ADC.
+    const storage = new Storage({
+      projectId,
     });
+    const [buckets] = await storage.getBuckets();
+    console.log('Buckets:');
 
-    console.log(`Instances found in zone ${zone}:`);
-
-    for (const instance of instanceList) {
-      console.log(` - ${instance.name} (${instance.machineType})`);
+    for (const bucket of buckets) {
+      console.log(bucket.name);
     }
 
-    console.log('Listing instances complete.');
+    console.log('Listed all storage buckets.');
   }
 
   authenticateImplicitWithAdc();

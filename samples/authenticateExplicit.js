@@ -14,33 +14,37 @@
 
 /**
  * Lists storage buckets by authenticating with ADC.
- *
- * @param {string} projectId - Project ID or project number of the Cloud project you want to use.
  */
 function main(projectId) {
   // [START auth_cloud_explicit_adc]
   /**
    * TODO(developer):
-   *  1. Uncomment and replace these variables before running the sample.
-   *  2. Set up ADC as described in https://cloud.google.com/docs/authentication/external/set-up-adc
-   *  3. Make sure you have the necessary permission to list storage buckets "storage.buckets.list"
+   *  1. Set up ADC as described in https://cloud.google.com/docs/authentication/external/set-up-adc
+   *  2. Make sure you have the necessary permission to list storage buckets "storage.buckets.list"
    */
-  // const projectId = 'YOUR_PROJECT_ID';
 
   const {GoogleAuth} = require('google-auth-library');
   const {Storage} = require('@google-cloud/storage');
 
   async function authenticateExplicit() {
-    const googleAuth = new GoogleAuth({
-      // For more information on scopes to use,
-      // see: https://developers.google.com/identity/protocols/oauth2/scopes
-      scopes: 'https://www.googleapis.com/auth/cloud-platform',
-    });
-    const client = await googleAuth.getApplicationDefault();
+    const googleAuth = new GoogleAuth();
+
+    // Construct the Google credentials object which obtains the default configuration from your
+    // working environment.
+    // googleAuth.getApplicationDefault() will give you ComputeEngineCredentials
+    // if you are on a GCE (or other metadata server supported environments).
+    const {credential, projectId} = await googleAuth.getApplicationDefault();
+    // If you are authenticating to a Cloud API, you can let the library include the default scope,
+    // https://www.googleapis.com/auth/cloud-platform, because IAM is used to provide fine-grained
+    // permissions for Cloud.
+    // If you need to provide a scope, specify it as follows:
+    // const googleAuth = new GoogleAuth({ scopes: scope });
+    // For more information on scopes to use,
+    // see: https://developers.google.com/identity/protocols/oauth2/scopes
 
     const storageOptions = {
       projectId,
-      authClient: client.credential,
+      authClient: credential,
     };
 
     // Construct the Storage client.
