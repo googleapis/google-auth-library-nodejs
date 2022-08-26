@@ -14,7 +14,7 @@
 
 /**
  * Obtains the id token by providing the target audience using service account credentials.
- * 
+ *
  * @param {string} jsonCredentialsPath - Path to the service account json credential file.
  *   and use IAM to narrow the permissions: https://cloud.google.com/docs/authentication#authorization_for_services
  * @param {string} targetAudience - The url or target audience to obtain the ID token for.

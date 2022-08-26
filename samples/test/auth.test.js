@@ -27,7 +27,7 @@ const TARGET_AUDIENCE = 'iap.googleapis.com';
 
 describe('auth samples', () => {
   it.skip('should authenticate explicitly', async () => {
-    const output = execSync(`node authenticateExplicit`);
+    const output = execSync('node authenticateExplicit');
 
     assert.match(output, /Listed all storage buckets./);
   });
