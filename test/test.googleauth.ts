@@ -1459,9 +1459,16 @@ describe('googleauth', () => {
       assert.strictEqual(value, computed);
     });
 
-    it('sign should hit the IAM endpoint if no private_key is available', async () => {
+    it('sign should hit the IAM endpoint if no projectId nor private_key is available', async () => {
       const {auth, scopes} = mockGCE();
-      mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+
+      sinon
+        .stub(
+          auth as unknown as {getProjectIdAsync: () => Promise<string | null>},
+          'getProjectIdAsync'
+        )
+        .resolves();
+
       const email = 'google@auth.library';
       const iamUri = 'https://iamcredentials.googleapis.com';
       const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
@@ -2264,7 +2271,6 @@ describe('googleauth', () => {
 
       describe('sign()', () => {
         it('should reject when no impersonation is used', async () => {
-          const scopes = mockGetAccessTokenAndProjectId();
           const auth = new GoogleAuth({
             credentials: createExternalAccountJSON(),
           });
@@ -2273,12 +2279,11 @@ describe('googleauth', () => {
             auth.sign('abc123'),
             /Cannot sign data without `client_email`/
           );
-          scopes.forEach(s => s.done());
         });
 
         it('should use IAMCredentials endpoint when impersonation is used', async () => {
           const scopes = mockGetAccessTokenAndProjectId(
-            true,
+            false,
             ['https://www.googleapis.com/auth/cloud-platform'],
             true
           );
