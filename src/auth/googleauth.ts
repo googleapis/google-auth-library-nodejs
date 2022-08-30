@@ -134,7 +134,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     return this.checkIsGCE;
   }
 
-  private _getDefaultProjectIdPromise?: Promise<string | null>;
+  private _findProjectIdPromise?: Promise<string | null>;
   private _cachedProjectId?: string | null;
 
   // To save the contents of the JSON credential file
@@ -191,37 +191,47 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
   }
 
+  /**
+   * A private method for finding and caching a projectId.
+   *
+   * Supports environments in order of precedence:
+   * - GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
+   * - GOOGLE_APPLICATION_CREDENTIALS JSON file
+   * - Cloud SDK: `gcloud config config-helper --format json`
+   * - GCE project ID from metadata server
+   *
+   * @returns projectId
+   */
+  async #findAndCacheProjectId(): Promise<string> {
+    let projectId: string | null | undefined = null;
+
+    projectId ||= await this.getProductionProjectId();
+    projectId ||= await this.getFileProjectId();
+    projectId ||= await this.getDefaultServiceProjectId();
+    projectId ||= await this.getGCEProjectId();
+    projectId ||= await this.getExternalAccountClientProjectId();
+
+    if (projectId) {
+      this._cachedProjectId = projectId;
+      return projectId;
+    } else {
+      throw new Error(
+        'Unable to detect a Project Id in the current environment. \n' +
+          'To learn more about authentication and Google APIs, visit: \n' +
+          'https://cloud.google.com/docs/authentication/getting-started'
+      );
+    }
+  }
+
   private getProjectIdAsync(): Promise<string | null> {
     if (this._cachedProjectId) {
       return Promise.resolve(this._cachedProjectId);
     }
 
-    // In implicit case, supports three environments. In order of precedence,
-    // the implicit environments are:
-    // - GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
-    // - GOOGLE_APPLICATION_CREDENTIALS JSON file
-    // - Cloud SDK: `gcloud config config-helper --format json`
-    // - GCE project ID from metadata server)
-    if (!this._getDefaultProjectIdPromise) {
-      this._getDefaultProjectIdPromise = (async () => {
-        const projectId =
-          this.getProductionProjectId() ||
-          (await this.getFileProjectId()) ||
-          (await this.getDefaultServiceProjectId()) ||
-          (await this.getGCEProjectId()) ||
-          (await this.getExternalAccountClientProjectId());
-        this._cachedProjectId = projectId;
-        if (!projectId) {
-          throw new Error(
-            'Unable to detect a Project Id in the current environment. \n' +
-              'To learn more about authentication and Google APIs, visit: \n' +
-              'https://cloud.google.com/docs/authentication/getting-started'
-          );
-        }
-        return projectId;
-      })();
+    if (!this._findProjectIdPromise) {
+      this._findProjectIdPromise = this.#findAndCacheProjectId();
     }
-    return this._getDefaultProjectIdPromise;
+    return this._findProjectIdPromise;
   }
 
   /**
@@ -949,11 +959,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (client instanceof JWT && client.key) {
       const sign = await crypto.sign(client.key, data);
       return sign;
-    }
-
-    const projectId = await this.getProjectId();
-    if (!projectId) {
-      throw new Error('Cannot sign data without a project ID.');
     }
 
     const creds = await this.getCredentials();
