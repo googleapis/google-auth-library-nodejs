@@ -27,7 +27,9 @@ function main() {
   const {Storage} = require('@google-cloud/storage');
 
   async function authenticateExplicit() {
-    const googleAuth = new GoogleAuth();
+    const googleAuth = new GoogleAuth({
+      scopes: 'https://www.googleapis.com/auth/cloud-platform',
+    });
 
     // Construct the Google credentials object which obtains the default configuration from your
     // working environment.
