@@ -116,6 +116,13 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
 export const CLOUD_SDK_CLIENT_ID =
   '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
+const GoogleAuthExceptionMessages = {
+  NO_PROJECT_ID_FOUND:
+    'Unable to detect a Project Id in the current environment. \n' +
+    'To learn more about authentication and Google APIs, visit: \n' +
+    'https://cloud.google.com/docs/authentication/getting-started',
+} as const;
+
 export class GoogleAuth<T extends AuthClient = JSONClient> {
   transporter?: Transporter;
 
@@ -192,6 +199,29 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   /**
+   * A temporary method for internal `getProjectId` usages where `null` is
+   * acceptable. In a future major release, `getProjectId` should return `null`
+   * (as the `Promise<string | null>` base signature describes) and this private
+   * method should be removed.
+   *
+   * @returns Promise that resolves with project id (or `null`)
+   */
+  async #getProjectIdOptional(): Promise<string | null> {
+    try {
+      return await this.getProjectId();
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message === GoogleAuthExceptionMessages.NO_PROJECT_ID_FOUND
+      ) {
+        return null;
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  /*
    * A private method for finding and caching a projectId.
    *
    * Supports environments in order of precedence:
@@ -215,17 +245,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       this._cachedProjectId = projectId;
       return projectId;
     } else {
-      throw new Error(
-        'Unable to detect a Project Id in the current environment. \n' +
-          'To learn more about authentication and Google APIs, visit: \n' +
-          'https://cloud.google.com/docs/authentication/getting-started'
-      );
+      throw new Error(GoogleAuthExceptionMessages.NO_PROJECT_ID_FOUND);
     }
   }
 
-  private getProjectIdAsync(): Promise<string | null> {
+  private async getProjectIdAsync(): Promise<string | null> {
     if (this._cachedProjectId) {
-      return Promise.resolve(this._cachedProjectId);
+      return this._cachedProjectId;
     }
 
     if (!this._findProjectIdPromise) {
@@ -279,7 +305,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (this.cachedCredential) {
       return {
         credential: this.cachedCredential,
-        projectId: await this.getProjectIdAsync(),
+        projectId: await this.#getProjectIdOptional(),
       };
     }
 
@@ -297,7 +323,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
-      projectId = await this.getProjectId();
+      projectId = await this.#getProjectIdOptional();
+
       return {credential, projectId};
     }
 
@@ -312,7 +339,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
-      projectId = await this.getProjectId();
+      projectId = await this.#getProjectIdOptional();
       return {credential, projectId};
     }
 
@@ -339,7 +366,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
     this.cachedCredential = new Compute(options);
-    projectId = await this.getProjectId();
+    projectId = await this.#getProjectIdOptional();
     return {projectId, credential: this.cachedCredential};
   }
 

@@ -1998,6 +1998,29 @@ describe('googleauth', () => {
           );
           scopes.forEach(s => s.done());
         });
+
+        it('should return `null` for `projectId` when on cannot be found', async () => {
+          // Environment variable is set up to point to external-account-cred.json
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-cred.json'
+          );
+
+          const auth = new GoogleAuth();
+
+          sandbox
+            .stub(
+              auth as {} as {
+                getProjectIdAsync: Promise<string | null>;
+              },
+              'getProjectIdAsync'
+            )
+            .resolves(null);
+
+          const res = await auth.getApplicationDefault();
+
+          assert.equal(res.projectId, null);
+        });
       });
 
       describe('getApplicationCredentialsFromFilePath()', () => {
