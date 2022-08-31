@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [8.5.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.4.0...v8.5.0) (2022-08-31)
+
+
+### Features
+
+* Support Not Requiring `projectId` When Not Required ([#1448](https://github.com/googleapis/google-auth-library-nodejs/issues/1448)) ([b37489b](https://github.com/googleapis/google-auth-library-nodejs/commit/b37489b6bc17645d3ea23fbceb2326adb296240b))
+
+
+### Bug Fixes
+
+* add hashes to requirements.txt ([#1544](https://github.com/googleapis/google-auth-library-nodejs/issues/1544)) ([#1449](https://github.com/googleapis/google-auth-library-nodejs/issues/1449)) ([54afa8e](https://github.com/googleapis/google-auth-library-nodejs/commit/54afa8ef184c8a68c9930d67d850b7334c28ecaf))
+* remove `projectId` check for `signBlob` calls ([6c04661](https://github.com/googleapis/google-auth-library-nodejs/commit/6c04661c6950532a8239cb95f0509a9d5368ffcc))
+
 ## [8.4.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.3.0...v8.4.0) (2022-08-23)
 
 
