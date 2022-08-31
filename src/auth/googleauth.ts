@@ -206,7 +206,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    *
    * @returns Promise that resolves with project id (or `null`)
    */
-  async #getProjectIdOptional(): Promise<string | null> {
+  private async getProjectIdOptional(): Promise<string | null> {
     try {
       return await this.getProjectId();
     } catch (e) {
@@ -232,7 +232,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    *
    * @returns projectId
    */
-  async #findAndCacheProjectId(): Promise<string> {
+  private async findAndCacheProjectId(): Promise<string> {
     let projectId: string | null | undefined = null;
 
     projectId ||= await this.getProductionProjectId();
@@ -255,7 +255,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     if (!this._findProjectIdPromise) {
-      this._findProjectIdPromise = this.#findAndCacheProjectId();
+      this._findProjectIdPromise = this.findAndCacheProjectId();
     }
     return this._findProjectIdPromise;
   }
@@ -305,7 +305,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (this.cachedCredential) {
       return {
         credential: this.cachedCredential,
-        projectId: await this.#getProjectIdOptional(),
+        projectId: await this.getProjectIdOptional(),
       };
     }
 
@@ -323,7 +323,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
-      projectId = await this.#getProjectIdOptional();
+      projectId = await this.getProjectIdOptional();
 
       return {credential, projectId};
     }
@@ -339,7 +339,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
       this.cachedCredential = credential;
-      projectId = await this.#getProjectIdOptional();
+      projectId = await this.getProjectIdOptional();
       return {credential, projectId};
     }
 
@@ -366,7 +366,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
     this.cachedCredential = new Compute(options);
-    projectId = await this.#getProjectIdOptional();
+    projectId = await this.getProjectIdOptional();
     return {projectId, credential: this.cachedCredential};
   }
 
