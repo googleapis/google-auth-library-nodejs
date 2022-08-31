@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
 
+## [8.5.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.0...v8.5.1) (2022-08-31)
+
+
+### Bug Fixes
+
+* do not use #private ([#1454](https://github.com/googleapis/google-auth-library-nodejs/issues/1454)) ([6c30274](https://github.com/googleapis/google-auth-library-nodejs/commit/6c302746c9eb4778619dec5f2f5f6e940af8086a))
+
 ## [8.5.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.4.0...v8.5.0) (2022-08-31)
 
 
