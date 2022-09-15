@@ -23,11 +23,10 @@ function main(projectId) {
    * TODO(developer):
    *  1. Uncomment and replace these variables before running the sample.
    *  2. Set up ADC as described in https://cloud.google.com/docs/authentication/external/set-up-adc
-   *  3. Make sure that the user account or service account that you are using
-   *    has the required permissions. For this sample, you must have "compute.instances.list".
+   *  3. Make sure you have the necessary permission to list storage buckets "storage.buckets.list"
+   *    (https://cloud.google.com/storage/docs/access-control/iam-permissions#bucket_permissions)
    */
   // const projectId = 'YOUR_PROJECT_ID';
-  // const zone = 'us-central1-a';
 
   const {Storage} = require('@google-cloud/storage');
 
@@ -43,7 +42,7 @@ function main(projectId) {
     console.log('Buckets:');
 
     for (const bucket of buckets) {
-      console.log(bucket.name);
+      console.log(`- ${bucket.name}`);
     }
 
     console.log('Listed all storage buckets.');

@@ -31,7 +31,6 @@ function main(idToken, expectedAudience) {
    */
   // const idToken = 'id-token';
   // const targetAudience = 'pubsub.googleapis.com';
-  // const jwkUrk = 'https://www.googleapis.com/oauth2/v3/certs';
 
   const {OAuth2Client} = require('google-auth-library');
 

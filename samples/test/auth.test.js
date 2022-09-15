@@ -18,7 +18,7 @@ const {describe, it} = require('mocha');
 const {auth} = require('google-auth-library');
 
 const execSync = (cmd, opts) => {
-  return cp.execSync(cmd, Object.assign({encoding: 'utf-8'}, opts));
+  return cp.execFileSync(cmd, Object.assign({encoding: 'utf-8'}, opts));
 };
 
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
