@@ -2,7 +2,7 @@
 
 [npm history][1]
 
-[1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
+[1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
 ## [8.5.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.0...v8.5.1) (2022-08-31)
 
