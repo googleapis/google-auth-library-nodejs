@@ -540,7 +540,7 @@ export class OAuth2Client extends AuthClient {
     opts.client_id = opts.client_id || this._clientId;
     opts.redirect_uri = opts.redirect_uri || this.redirectUri;
     // Allow scopes to be passed either as array or a string
-    if (opts.scope instanceof Array) {
+    if (Array.isArray(opts.scope)) {
       opts.scope = opts.scope.join(' ');
     }
     const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
@@ -688,13 +688,28 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'refresh_token',
     };
 
-    // request for new token
-    const res = await this.transporter.request<CredentialRequest>({
-      method: 'POST',
-      url,
-      data: querystring.stringify(data),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    });
+    let res: GaxiosResponse<CredentialRequest>;
+
+    try {
+      // request for new token
+      res = await this.transporter.request<CredentialRequest>({
+        method: 'POST',
+        url,
+        data: querystring.stringify(data),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      });
+    } catch (e) {
+      if (
+        e instanceof GaxiosError &&
+        e.message === 'invalid_grant' &&
+        e.response?.data &&
+        /ReAuth/i.test(e.response.data.error_description)
+      ) {
+        e.message = JSON.stringify(e.response.data);
+      }
+
+      throw e;
+    }
 
     const tokens = res.data as Credentials;
     // TODO: de-duplicate this code from a few spots
