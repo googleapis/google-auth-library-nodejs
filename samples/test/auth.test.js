@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const cp = require('child_process');
-const {assert} = require('chai');
-const {describe, it} = require('mocha');
-const {auth} = require('google-auth-library');
+'use strict';
 
-const execSync = (cmd, opts) => {
-  return cp.execFileSync(cmd, Object.assign({encoding: 'utf-8'}, opts));
-};
+const assert = require('assert');
+const cp = require('child_process');
+const {auth} = require('google-auth-library');
+const {describe, it} = require('mocha');
+
+const TARGET_AUDIENCE = 'iap.googleapis.com';
+const ZONE = 'us-central1-a';
 
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-const ZONE = 'us-central1-a';
-const TARGET_AUDIENCE = 'iap.googleapis.com';
+
+const execSync = (command, opts) => {
+  return cp.execSync(command, Object.assign({encoding: 'utf-8'}, opts));
+};
 
 describe('auth samples', () => {
   it('should authenticate explicitly', async () => {
