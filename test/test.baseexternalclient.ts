@@ -181,7 +181,7 @@ describe('BaseExternalAccountClient', () => {
       'https://sts.p.com',
       'http://sts.p.googleapis.com',
       'https://xyz-sts.p.googleapis.com',
-      'https://sts-xyz.123.p.googleapis.com'
+      'https://sts-xyz.123.p.googleapis.com',
     ];
     invalidTokenUrls.forEach(invalidTokenUrl => {
       it(`should throw on invalid token url: ${invalidTokenUrl}`, () => {
