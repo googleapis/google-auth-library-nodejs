@@ -176,6 +176,12 @@ describe('BaseExternalAccountClient', () => {
       'https://us-east- 1.sts.googleapis.com',
       'https://us/.east/.1.sts.googleapis.com',
       'https://us.ea\\st.1.sts.googleapis.com',
+      'https://sts.pgoogleapis.com',
+      'https://p.googleapis.com',
+      'https://sts.p.com',
+      'http://sts.p.googleapis.com',
+      'https://xyz-sts.p.googleapis.com',
+      'https://sts-xyz.123.p.googleapis.com'
     ];
     invalidTokenUrls.forEach(invalidTokenUrl => {
       it(`should throw on invalid token url: ${invalidTokenUrl}`, () => {
@@ -200,6 +206,9 @@ describe('BaseExternalAccountClient', () => {
         'https://us-west-1-sts.googleapis.com',
         'https://exmaple.sts.googleapis.com',
         'https://example-sts.googleapis.com',
+        'https://sts-xyz123.p.googleapis.com',
+        'https://sts-xyz-123.p.googleapis.com',
+        'https://sts-xys123.p.googleapis.com/path/to/example',
       ];
       const validOptions = Object.assign({}, externalAccountOptions);
       for (const validTokenUrl of validTokenUrls) {
@@ -227,6 +236,12 @@ describe('BaseExternalAccountClient', () => {
       'https://us-east- 1.iamcredentials.googleapis.com',
       'https://us/.east/.1.iamcredentials.googleapis.com',
       'https://us.ea\\st.1.iamcredentials.googleapis.com',
+      'https://iamcredentials.pgoogleapis.com',
+      'https://p.googleapis.com',
+      'https://iamcredentials.p.com',
+      'http://iamcredentials.p.googleapis.com',
+      'https://xyz-iamcredentials.p.googleapis.com',
+      'https://iamcredentials-xyz.123.p.googleapis.com',
     ];
     invalidServiceAccountImpersonationUrls.forEach(
       invalidServiceAccountImpersonationUrl => {
@@ -258,6 +273,9 @@ describe('BaseExternalAccountClient', () => {
         'https://us-west-1-iamcredentials.googleapis.com',
         'https://example.iamcredentials.googleapis.com',
         'https://example-iamcredentials.googleapis.com',
+        'https://iamcredentials-xyz123.p.googleapis.com',
+        'https://iamcredentials-xyz-123.p.googleapis.com',
+        'https://iamcredentials-xys123.p.googleapis.com/path/to/example',
       ];
       const validOptions = Object.assign({}, externalAccountOptionsWithSA);
       for (const validServiceAccountImpersonationUrl of validServiceAccountImpersonationUrls) {

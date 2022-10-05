@@ -606,6 +606,14 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           apiName +
           GOOGLE_APIS_DOMAIN_PATTERN
       ),
+      new RegExp(
+        '^' +
+          apiName +
+          '\\-' +
+          VARIABLE_PORTION_PATTERN +
+          '\\.p' +
+          GOOGLE_APIS_DOMAIN_PATTERN
+      ),
     ];
     for (const googleAPIsDomainPattern of googleAPIsDomainPatterns) {
       if (urlDomain.match(googleAPIsDomainPattern)) {
