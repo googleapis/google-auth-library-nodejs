@@ -182,6 +182,9 @@ describe('BaseExternalAccountClient', () => {
       'http://sts.p.googleapis.com',
       'https://xyz-sts.p.googleapis.com',
       'https://sts-xyz.123.p.googleapis.com',
+      'https://sts-xyz.p1.googleapis.com',
+      'https://sts-xyz.p.foo.com',
+      'https://sts-xyz.p.foo.googleapis.com',
     ];
     invalidTokenUrls.forEach(invalidTokenUrl => {
       it(`should throw on invalid token url: ${invalidTokenUrl}`, () => {
@@ -242,6 +245,9 @@ describe('BaseExternalAccountClient', () => {
       'http://iamcredentials.p.googleapis.com',
       'https://xyz-iamcredentials.p.googleapis.com',
       'https://iamcredentials-xyz.123.p.googleapis.com',
+      'https://iamcredentials-xyz.p1.googleapis.com',
+      'https://iamcredentials-xyz.p.foo.com',
+      'https://iamcredentials-xyz.p.foo.googleapis.com',
     ];
     invalidServiceAccountImpersonationUrls.forEach(
       invalidServiceAccountImpersonationUrl => {
