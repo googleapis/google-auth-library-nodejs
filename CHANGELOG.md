@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [8.6.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.2...v8.6.0) (2022-10-06)
+
+
+### Features
+
+* Adding validation for psc endpoints ([#1473](https://github.com/googleapis/google-auth-library-nodejs/issues/1473)) ([4bbd13f](https://github.com/googleapis/google-auth-library-nodejs/commit/4bbd13fbf9081e004209d0ffc336648cff0c529e))
+* **samples:** Auth samples ([#1444](https://github.com/googleapis/google-auth-library-nodejs/issues/1444)) ([137883a](https://github.com/googleapis/google-auth-library-nodejs/commit/137883aff56c9e847abb6445c89a76a27536fe26))
+
 ## [8.5.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.1...v8.5.2) (2022-09-22)
 
 
