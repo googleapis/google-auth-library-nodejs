@@ -151,7 +151,6 @@ export abstract class AuthClient
   /**
    * Gets the quota project id on the credential
    */
-
   getQuotaProjectId() {
     return this.quotaProjectId;
   }
