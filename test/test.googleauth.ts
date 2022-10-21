@@ -127,6 +127,7 @@ describe('googleauth', () => {
         GCLOUD_PROJECT: undefined,
         GOOGLE_APPLICATION_CREDENTIALS: undefined,
         google_application_credentials: undefined,
+        GOOGLE_CLOUD_QUOTA_PROJECT: undefined,
         HOME: path.join('/', 'fake', 'user'),
       });
       sandbox.stub(process, 'env').value(envVars);
@@ -1041,6 +1042,35 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.keyFile);
       assert.strictEqual(undefined, client.subject);
       assert.strictEqual(undefined, client.scope);
+    });
+
+    it('getApplicationDefault should set quota project from environment if available', async () => {
+      mockLinuxWellKnownFile(
+        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', 'quota_from_env');
+      const result = await auth.getApplicationDefault();
+      const client = result.credential as JWT;
+      assert.strictEqual('quota_from_env', client.getQuotaProjectId());
+    });
+
+    it('getApplicationDefault should use quota project id from file if environment variable is empty', async () => {
+      mockLinuxWellKnownFile(
+        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', '');
+      const result = await auth.getApplicationDefault();
+      const client = result.credential as JWT;
+      assert.strictEqual('my-quota-project', client.getQuotaProjectId());
+    });
+
+    it('getApplicationDefault should use quota project id from file if environment variable is not set', async () => {
+      mockLinuxWellKnownFile(
+        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      );
+      const result = await auth.getApplicationDefault();
+      const client = result.credential as JWT;
+      assert.strictEqual('my-quota-project', client.getQuotaProjectId());
     });
 
     it('getApplicationDefault should use GCE when well-known file and env const are not set', async () => {

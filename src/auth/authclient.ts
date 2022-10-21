@@ -147,4 +147,31 @@ export abstract class AuthClient
     }
     return headers;
   }
+
+  /**
+   * Gets the quota project id on the credential
+   */
+
+  getQuotaProjectId() {
+    return this.quotaProjectId;
+  }
+
+  /**
+   * Sets the quota project id on the credential
+   * @param quotaProjectId The quota project id to set
+   */
+  setQuotaProjectId(quotaProjectId?: string): void {
+    this.quotaProjectId = quotaProjectId;
+  }
+
+  /**
+   * Sets the quota project id from the GOOGLE_CLOUD_QUOTA_PROJECT
+   * environment variable on the credential
+   */
+  setQuotaProjectIdFromEnvironment(): void {
+    const quotaProjectIdFromEnv = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
+    if (quotaProjectIdFromEnv && quotaProjectIdFromEnv.length !== 0) {
+      this.setQuotaProjectId(quotaProjectIdFromEnv);
+    }
+  }
 }

@@ -303,6 +303,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
+      this.cachedCredential.setQuotaProjectIdFromEnvironment();
       return {
         credential: this.cachedCredential,
         projectId: await this.getProjectIdOptional(),
@@ -310,7 +311,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     let credential: JSONClient | null;
-    let projectId: string | null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
@@ -322,10 +322,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      this.cachedCredential = credential;
-      projectId = await this.getProjectIdOptional();
 
-      return {credential, projectId};
+      return this.prepareADCResponse(credential);
     }
 
     // Look in the well-known credential file location.
@@ -338,9 +336,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      this.cachedCredential = credential;
-      projectId = await this.getProjectIdOptional();
-      return {credential, projectId};
+      return this.prepareADCResponse(credential);
     }
 
     // Determine if we're running on GCE.
@@ -365,9 +361,17 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
-    this.cachedCredential = new Compute(options);
-    projectId = await this.getProjectIdOptional();
-    return {projectId, credential: this.cachedCredential};
+    return this.prepareADCResponse(new Compute(options));
+  }
+
+  private async prepareADCResponse(
+    credential: JSONClient | Impersonated | Compute | T
+  ): Promise<ADCResponse> {
+    this.cachedCredential = credential;
+    const projectId = await this.getProjectIdOptional();
+    credential.setQuotaProjectIdFromEnvironment();
+
+    return {credential, projectId};
   }
 
   /**
