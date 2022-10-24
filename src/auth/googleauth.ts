@@ -323,7 +323,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
 
-      return this.prepareADCResponse(credential);
+      return await this.prepareADCResponse(credential);
     }
 
     // Look in the well-known credential file location.
@@ -336,7 +336,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      return this.prepareADCResponse(credential);
+      return await this.prepareADCResponse(credential);
     }
 
     // Determine if we're running on GCE.
@@ -361,15 +361,15 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
-    return this.prepareADCResponse(new Compute(options));
+    return await this.prepareADCResponse(new Compute(options));
   }
 
   private async prepareADCResponse(
     credential: JSONClient | Impersonated | Compute | T
   ): Promise<ADCResponse> {
-    this.cachedCredential = credential;
     const projectId = await this.getProjectIdOptional();
     credential.setQuotaProjectIdFromEnvironment();
+    this.cachedCredential = credential;
 
     return {credential, projectId};
   }

@@ -169,7 +169,7 @@ export abstract class AuthClient
    */
   setQuotaProjectIdFromEnvironment(): void {
     const quotaProjectIdFromEnv = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
-    if (quotaProjectIdFromEnv && quotaProjectIdFromEnv.length !== 0) {
+    if (quotaProjectIdFromEnv) {
       this.setQuotaProjectId(quotaProjectIdFromEnv);
     }
   }
