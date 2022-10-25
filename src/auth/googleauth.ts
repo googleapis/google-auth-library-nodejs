@@ -303,11 +303,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
-      this.cachedCredential.setQuotaProjectIdFromEnvironment();
-      return {
-        credential: this.cachedCredential,
-        projectId: await this.getProjectIdOptional(),
-      };
+      return await this.prepareADCResponse(this.cachedCredential);
     }
 
     let credential: JSONClient | null;
