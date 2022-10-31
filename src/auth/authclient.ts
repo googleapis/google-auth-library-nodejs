@@ -88,7 +88,11 @@ export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient
 {
-  protected quotaProjectId?: string;
+  /**
+   * The quota project ID. The quota project can be used by client libraries for the billing purpose.
+   * See {@link https://cloud.google.com/docs/quota| Working with quotas}
+   */
+  quotaProjectId?: string;
   transporter = new DefaultTransporter();
   credentials: Credentials = {};
   projectId?: string | null;
@@ -149,28 +153,13 @@ export abstract class AuthClient
   }
 
   /**
-   * Gets the quota project id on the credential
-   */
-  getQuotaProjectId() {
-    return this.quotaProjectId;
-  }
-
-  /**
-   * Sets the quota project id on the credential
-   * @param quotaProjectId The quota project id to set
-   */
-  setQuotaProjectId(quotaProjectId?: string): void {
-    this.quotaProjectId = quotaProjectId;
-  }
-
-  /**
    * Sets the quota project id from the GOOGLE_CLOUD_QUOTA_PROJECT
    * environment variable on the credential
    */
   setQuotaProjectIdFromEnvironment(): void {
     const quotaProjectIdFromEnv = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
     if (quotaProjectIdFromEnv) {
-      this.setQuotaProjectId(quotaProjectIdFromEnv);
+      this.quotaProjectId = quotaProjectIdFromEnv;
     }
   }
 }

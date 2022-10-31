@@ -1044,6 +1044,16 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.scope);
     });
 
+    it('getApplicationDefault should set quota project from explicit value', async () => {
+      mockLinuxWellKnownFile(
+        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', 'quota_from_env');
+      const result = await auth.getApplicationDefault('explicit_quota');
+      const client = result.credential as JWT;
+      assert.strictEqual('explicit_quota', client.quotaProjectId);
+    });
+
     it('getApplicationDefault should set quota project from environment if available', async () => {
       mockLinuxWellKnownFile(
         './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
@@ -1051,7 +1061,7 @@ describe('googleauth', () => {
       mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', 'quota_from_env');
       const result = await auth.getApplicationDefault();
       const client = result.credential as JWT;
-      assert.strictEqual('quota_from_env', client.getQuotaProjectId());
+      assert.strictEqual('quota_from_env', client.quotaProjectId);
     });
 
     it('getApplicationDefault should use quota project id from file if environment variable is empty', async () => {
@@ -1061,7 +1071,7 @@ describe('googleauth', () => {
       mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', '');
       const result = await auth.getApplicationDefault();
       const client = result.credential as JWT;
-      assert.strictEqual('my-quota-project', client.getQuotaProjectId());
+      assert.strictEqual('my-quota-project', client.quotaProjectId);
     });
 
     it('getApplicationDefault should use quota project id from file if environment variable is not set', async () => {
@@ -1070,7 +1080,7 @@ describe('googleauth', () => {
       );
       const result = await auth.getApplicationDefault();
       const client = result.credential as JWT;
-      assert.strictEqual('my-quota-project', client.getQuotaProjectId());
+      assert.strictEqual('my-quota-project', client.quotaProjectId);
     });
 
     it('getApplicationDefault should use GCE when well-known file and env const are not set', async () => {

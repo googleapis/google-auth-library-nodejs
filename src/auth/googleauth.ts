@@ -275,35 +275,62 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * passed).
    */
   getApplicationDefault(): Promise<ADCResponse>;
+  getApplicationDefault(quotaProjectId: string): Promise<ADCResponse>;
   getApplicationDefault(callback: ADCCallback): void;
+  getApplicationDefault(quotaProjectId: string, callback: ADCCallback): void;
   getApplicationDefault(options: RefreshOptions): Promise<ADCResponse>;
+  getApplicationDefault(
+    quotaProjectId: string,
+    options: RefreshOptions
+  ): Promise<ADCResponse>;
   getApplicationDefault(options: RefreshOptions, callback: ADCCallback): void;
   getApplicationDefault(
+    quotaProjectId: string,
+    options: RefreshOptions,
+    callback: ADCCallback
+  ): void;
+  getApplicationDefault(
+    quotaProjectIdOroptionsOrCallback:
+      | string
+      | ADCCallback
+      | RefreshOptions = {},
     optionsOrCallback: ADCCallback | RefreshOptions = {},
     callback?: ADCCallback
   ): void | Promise<ADCResponse> {
     let options: RefreshOptions | undefined;
+    let quotaProjectId = '';
+    if (typeof quotaProjectIdOroptionsOrCallback === 'string') {
+      quotaProjectId = quotaProjectIdOroptionsOrCallback;
+    } else if (typeof quotaProjectIdOroptionsOrCallback === 'function') {
+      callback = quotaProjectIdOroptionsOrCallback;
+    } else {
+      options = quotaProjectIdOroptionsOrCallback;
+    }
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;
     } else {
       options = optionsOrCallback;
     }
     if (callback) {
-      this.getApplicationDefaultAsync(options).then(
+      this.getApplicationDefaultAsync(options, quotaProjectId).then(
         r => callback!(null, r.credential, r.projectId),
         callback
       );
     } else {
-      return this.getApplicationDefaultAsync(options);
+      return this.getApplicationDefaultAsync(options, quotaProjectId);
     }
   }
 
   private async getApplicationDefaultAsync(
-    options: RefreshOptions = {}
+    options: RefreshOptions = {},
+    quotaProjectId: string
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, just return it.
     if (this.cachedCredential) {
-      return await this.prepareADCResponse(this.cachedCredential);
+      return await this.prepareADCResponse(
+        this.cachedCredential,
+        quotaProjectId
+      );
     }
 
     let credential: JSONClient | null;
@@ -319,7 +346,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
 
-      return await this.prepareADCResponse(credential);
+      return await this.prepareADCResponse(credential, quotaProjectId);
     }
 
     // Look in the well-known credential file location.
@@ -332,7 +359,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      return await this.prepareADCResponse(credential);
+      return await this.prepareADCResponse(credential, quotaProjectId);
     }
 
     // Determine if we're running on GCE.
@@ -357,14 +384,20 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
-    return await this.prepareADCResponse(new Compute(options));
+    return await this.prepareADCResponse(new Compute(options), quotaProjectId);
   }
 
   private async prepareADCResponse(
-    credential: JSONClient | Impersonated | Compute | T
+    credential: JSONClient | Impersonated | Compute | T,
+    quotaProjectId: string
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
-    credential.setQuotaProjectIdFromEnvironment();
+
+    if (quotaProjectId !== '') {
+      credential.quotaProjectId = quotaProjectId;
+    } else {
+      credential.setQuotaProjectIdFromEnvironment();
+    }
     this.cachedCredential = credential;
 
     return {credential, projectId};
@@ -900,7 +933,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         const stream = fs.createReadStream(filePath);
         await this.fromStreamAsync(stream, this.clientOptions);
       } else {
-        await this.getApplicationDefaultAsync(this.clientOptions);
+        await this.getApplicationDefaultAsync(this.clientOptions, '');
       }
     }
     return this.cachedCredential!;
