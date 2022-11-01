@@ -204,9 +204,7 @@ describe('AwsClient', () => {
     });
 
     it('should throw when an unsupported url is provided', () => {
-      const expectedError = new Error(
-        'Invalid host "baddomain.com" for "url"'
-      );
+      const expectedError = new Error('Invalid host "baddomain.com" for "url"');
       const invalidCredentialSource = Object.assign({}, awsCredentialSource);
       invalidCredentialSource.url = 'http://baddomain.com/fake';
       const invalidOptions = {
@@ -228,7 +226,8 @@ describe('AwsClient', () => {
       );
       const invalidCredentialSource = Object.assign(
         {imdsv2_session_token_url: 'http://baddomain.com/fake'},
-        awsCredentialSource);
+        awsCredentialSource
+      );
       const invalidOptions = {
         type: 'external_account',
         audience,
