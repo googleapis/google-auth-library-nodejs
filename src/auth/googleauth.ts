@@ -275,63 +275,42 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * passed).
    */
   getApplicationDefault(): Promise<ADCResponse>;
-  getApplicationDefault(quotaProjectId: string): Promise<ADCResponse>;
   getApplicationDefault(callback: ADCCallback): void;
-  getApplicationDefault(quotaProjectId: string, callback: ADCCallback): void;
   getApplicationDefault(options: RefreshOptions): Promise<ADCResponse>;
-  getApplicationDefault(
-    quotaProjectId: string,
-    options: RefreshOptions
-  ): Promise<ADCResponse>;
   getApplicationDefault(options: RefreshOptions, callback: ADCCallback): void;
   getApplicationDefault(
-    quotaProjectId: string,
-    options: RefreshOptions,
-    callback: ADCCallback
-  ): void;
-  getApplicationDefault(
-    quotaProjectIdOroptionsOrCallback:
-      | string
-      | ADCCallback
-      | RefreshOptions = {},
     optionsOrCallback: ADCCallback | RefreshOptions = {},
     callback?: ADCCallback
   ): void | Promise<ADCResponse> {
     let options: RefreshOptions | undefined;
-    let quotaProjectId = '';
-    if (typeof quotaProjectIdOroptionsOrCallback === 'string') {
-      quotaProjectId = quotaProjectIdOroptionsOrCallback;
-    } else if (typeof quotaProjectIdOroptionsOrCallback === 'function') {
-      callback = quotaProjectIdOroptionsOrCallback;
-    } else {
-      options = quotaProjectIdOroptionsOrCallback;
-    }
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;
     } else {
       options = optionsOrCallback;
     }
     if (callback) {
-      this.getApplicationDefaultAsync(options, quotaProjectId).then(
+      this.getApplicationDefaultAsync(options).then(
         r => callback!(null, r.credential, r.projectId),
         callback
       );
     } else {
-      return this.getApplicationDefaultAsync(options, quotaProjectId);
+      return this.getApplicationDefaultAsync(options);
     }
   }
 
   private async getApplicationDefaultAsync(
-    options: RefreshOptions = {},
-    quotaProjectId: string
+    options: RefreshOptions = {}
   ): Promise<ADCResponse> {
-    // If we've already got a cached credential, just return it.
+    // If we've already got a cached credential, return it.
+    // This will also preserve one's configured quota project, in case they
+    // set one directly on the credential previously.
     if (this.cachedCredential) {
-      return await this.prepareADCResponse(
-        this.cachedCredential,
-        quotaProjectId
-      );
+      return await this.prepareAndCacheADC(this.cachedCredential);
     }
+
+    // Since this is a 'new' ADC to cache we will use the environment variable
+    // if it's available. We prefer this value over the value from ADC.
+    const quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
 
     let credential: JSONClient | null;
     // Check for the existence of a local environment variable pointing to the
@@ -346,7 +325,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
 
-      return await this.prepareADCResponse(credential, quotaProjectId);
+      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
     }
 
     // Look in the well-known credential file location.
@@ -359,7 +338,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      return await this.prepareADCResponse(credential, quotaProjectId);
+      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
     }
 
     // Determine if we're running on GCE.
@@ -384,20 +363,22 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
-    return await this.prepareADCResponse(new Compute(options), quotaProjectId);
+    return await this.prepareAndCacheADC(
+      new Compute(options),
+      quotaProjectIdOverride
+    );
   }
 
-  private async prepareADCResponse(
+  private async prepareAndCacheADC(
     credential: JSONClient | Impersonated | Compute | T,
-    quotaProjectId: string
+    quotaProjectIdOverride?: string
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
 
-    if (quotaProjectId !== '') {
-      credential.quotaProjectId = quotaProjectId;
-    } else {
-      credential.setQuotaProjectIdFromEnvironment();
+    if (quotaProjectIdOverride && quotaProjectIdOverride !== '') {
+      credential.quotaProjectId = quotaProjectIdOverride;
     }
+
     this.cachedCredential = credential;
 
     return {credential, projectId};
@@ -933,7 +914,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         const stream = fs.createReadStream(filePath);
         await this.fromStreamAsync(stream, this.clientOptions);
       } else {
-        await this.getApplicationDefaultAsync(this.clientOptions, '');
+        await this.getApplicationDefaultAsync(this.clientOptions);
       }
     }
     return this.cachedCredential!;

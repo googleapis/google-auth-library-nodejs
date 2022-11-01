@@ -151,15 +151,4 @@ export abstract class AuthClient
     }
     return headers;
   }
-
-  /**
-   * Sets the quota project id from the GOOGLE_CLOUD_QUOTA_PROJECT
-   * environment variable on the credential
-   */
-  setQuotaProjectIdFromEnvironment(): void {
-    const quotaProjectIdFromEnv = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
-    if (quotaProjectIdFromEnv) {
-      this.quotaProjectId = quotaProjectIdFromEnv;
-    }
-  }
 }

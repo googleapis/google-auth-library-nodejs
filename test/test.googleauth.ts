@@ -1044,16 +1044,6 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.scope);
     });
 
-    it('getApplicationDefault should set quota project from explicit value', async () => {
-      mockLinuxWellKnownFile(
-        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
-      );
-      mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', 'quota_from_env');
-      const result = await auth.getApplicationDefault('explicit_quota');
-      const client = result.credential as JWT;
-      assert.strictEqual('explicit_quota', client.quotaProjectId);
-    });
-
     it('getApplicationDefault should set quota project from environment if available', async () => {
       mockLinuxWellKnownFile(
         './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
