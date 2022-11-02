@@ -88,19 +88,14 @@ export class AwsClient extends BaseExternalAccountClient {
     // This is only required if the AWS region is not available in the
     // AWS_REGION or AWS_DEFAULT_REGION environment variables.
     this.regionUrl = options.credential_source.region_url;
-    this.validateMetadataServerUrlIfAny(this.regionUrl, 'region_url');
     // This is only required if AWS security credentials are not available in
     // environment variables.
     this.securityCredentialsUrl = options.credential_source.url;
-    this.validateMetadataServerUrlIfAny(this.securityCredentialsUrl, 'url');
     this.regionalCredVerificationUrl =
       options.credential_source.regional_cred_verification_url;
     this.imdsV2SessionTokenUrl =
       options.credential_source.imdsv2_session_token_url;
-    this.validateMetadataServerUrlIfAny(
-      this.imdsV2SessionTokenUrl,
-      'imdsv2_session_token_url'
-    );
+    this.validateMetadataServerUrls();
     const match = this.environmentId?.match(/^(aws)(\d+)$/);
     if (!match || !this.regionalCredVerificationUrl) {
       throw new Error('No valid AWS "credential_source" provided');
@@ -113,14 +108,23 @@ export class AwsClient extends BaseExternalAccountClient {
     this.region = '';
   }
 
-  validateMetadataServerUrlIfAny(
+  private validateMetadataServerUrls() {
+    this.validateMetadataServerUrlIfAny(this.regionUrl, 'region_url');
+    this.validateMetadataServerUrlIfAny(this.securityCredentialsUrl, 'url');
+    this.validateMetadataServerUrlIfAny(
+      this.imdsV2SessionTokenUrl,
+      'imdsv2_session_token_url'
+    );
+  }
+
+  private validateMetadataServerUrlIfAny(
     urlString: string | undefined,
     nameOfData: string
   ) {
     if (typeof urlString !== 'undefined') {
       const url = new URL(urlString);
 
-      if (url.host !== '169.254.169.254' && url.host !== 'fd00:ec2::254') {
+      if (url.host !== '169.254.169.254' && url.host !== '[fd00:ec2::254]') {
         throw new Error(`Invalid host "${url.host}" for "${nameOfData}"`);
       }
     }
