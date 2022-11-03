@@ -95,6 +95,7 @@ export class AwsClient extends BaseExternalAccountClient {
       options.credential_source.regional_cred_verification_url;
     this.imdsV2SessionTokenUrl =
       options.credential_source.imdsv2_session_token_url;
+    this.validateMetadataServerUrls();
     const match = this.environmentId?.match(/^(aws)(\d+)$/);
     if (!match || !this.regionalCredVerificationUrl) {
       throw new Error('No valid AWS "credential_source" provided');
@@ -105,6 +106,28 @@ export class AwsClient extends BaseExternalAccountClient {
     }
     this.awsRequestSigner = null;
     this.region = '';
+  }
+
+  private validateMetadataServerUrls() {
+    this.validateMetadataServerUrlIfAny(this.regionUrl, 'region_url');
+    this.validateMetadataServerUrlIfAny(this.securityCredentialsUrl, 'url');
+    this.validateMetadataServerUrlIfAny(
+      this.imdsV2SessionTokenUrl,
+      'imdsv2_session_token_url'
+    );
+  }
+
+  private validateMetadataServerUrlIfAny(
+    urlString: string | undefined,
+    nameOfData: string
+  ) {
+    if (urlString !== undefined) {
+      const url = new URL(urlString);
+
+      if (url.host !== '169.254.169.254' && url.host !== '[fd00:ec2::254]') {
+        throw new Error(`Invalid host "${url.host}" for "${nameOfData}"`);
+      }
+    }
   }
 
   /**
