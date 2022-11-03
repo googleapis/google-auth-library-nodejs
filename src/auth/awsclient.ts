@@ -121,7 +121,7 @@ export class AwsClient extends BaseExternalAccountClient {
     urlString: string | undefined,
     nameOfData: string
   ) {
-    if (typeof urlString !== 'undefined') {
+    if (urlString !== undefined) {
       const url = new URL(urlString);
 
       if (url.host !== '169.254.169.254' && url.host !== '[fd00:ec2::254]') {
