@@ -88,7 +88,11 @@ export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient
 {
-  protected quotaProjectId?: string;
+  /**
+   * The quota project ID. The quota project can be used by client libraries for the billing purpose.
+   * See {@link https://cloud.google.com/docs/quota| Working with quotas}
+   */
+  quotaProjectId?: string;
   transporter = new DefaultTransporter();
   credentials: Credentials = {};
   projectId?: string | null;

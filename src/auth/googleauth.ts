@@ -301,16 +301,18 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private async getApplicationDefaultAsync(
     options: RefreshOptions = {}
   ): Promise<ADCResponse> {
-    // If we've already got a cached credential, just return it.
+    // If we've already got a cached credential, return it.
+    // This will also preserve one's configured quota project, in case they
+    // set one directly on the credential previously.
     if (this.cachedCredential) {
-      return {
-        credential: this.cachedCredential,
-        projectId: await this.getProjectIdOptional(),
-      };
+      return await this.prepareAndCacheADC(this.cachedCredential);
     }
 
+    // Since this is a 'new' ADC to cache we will use the environment variable
+    // if it's available. We prefer this value over the value from ADC.
+    const quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
+
     let credential: JSONClient | null;
-    let projectId: string | null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
@@ -322,10 +324,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      this.cachedCredential = credential;
-      projectId = await this.getProjectIdOptional();
 
-      return {credential, projectId};
+      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
     }
 
     // Look in the well-known credential file location.
@@ -338,9 +338,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      this.cachedCredential = credential;
-      projectId = await this.getProjectIdOptional();
-      return {credential, projectId};
+      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
     }
 
     // Determine if we're running on GCE.
@@ -365,9 +363,25 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
-    this.cachedCredential = new Compute(options);
-    projectId = await this.getProjectIdOptional();
-    return {projectId, credential: this.cachedCredential};
+    return await this.prepareAndCacheADC(
+      new Compute(options),
+      quotaProjectIdOverride
+    );
+  }
+
+  private async prepareAndCacheADC(
+    credential: JSONClient | Impersonated | Compute | T,
+    quotaProjectIdOverride?: string
+  ): Promise<ADCResponse> {
+    const projectId = await this.getProjectIdOptional();
+
+    if (quotaProjectIdOverride) {
+      credential.quotaProjectId = quotaProjectIdOverride;
+    }
+
+    this.cachedCredential = credential;
+
+    return {credential, projectId};
   }
 
   /**
