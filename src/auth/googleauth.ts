@@ -375,7 +375,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
 
-    if (quotaProjectIdOverride && quotaProjectIdOverride !== '') {
+    if (quotaProjectIdOverride) {
       credential.quotaProjectId = quotaProjectIdOverride;
     }
 
