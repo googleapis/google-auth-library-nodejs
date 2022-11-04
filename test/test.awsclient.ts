@@ -203,6 +203,63 @@ describe('AwsClient', () => {
       });
     });
 
+    it('should throw when an unsupported url is provided', () => {
+      const expectedError = new Error('Invalid host "baddomain.com" for "url"');
+      const invalidCredentialSource = Object.assign({}, awsCredentialSource);
+      invalidCredentialSource.url = 'http://baddomain.com/fake';
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        token_url: getTokenUrl(),
+        credential_source: invalidCredentialSource,
+      };
+
+      assert.throws(() => {
+        return new AwsClient(invalidOptions);
+      }, expectedError);
+    });
+
+    it('should throw when an unsupported imdsv2_session_token_url is provided', () => {
+      const expectedError = new Error(
+        'Invalid host "baddomain.com" for "imdsv2_session_token_url"'
+      );
+      const invalidCredentialSource = Object.assign(
+        {imdsv2_session_token_url: 'http://baddomain.com/fake'},
+        awsCredentialSource
+      );
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        token_url: getTokenUrl(),
+        credential_source: invalidCredentialSource,
+      };
+
+      assert.throws(() => {
+        return new AwsClient(invalidOptions);
+      }, expectedError);
+    });
+
+    it('should throw when an unsupported region_url is provided', () => {
+      const expectedError = new Error(
+        'Invalid host "baddomain.com" for "region_url"'
+      );
+      const invalidCredentialSource = Object.assign({}, awsCredentialSource);
+      invalidCredentialSource.region_url = 'http://baddomain.com/fake';
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        token_url: getTokenUrl(),
+        credential_source: invalidCredentialSource,
+      };
+
+      assert.throws(() => {
+        return new AwsClient(invalidOptions);
+      }, expectedError);
+    });
+
     it('should throw when an unsupported environment ID is provided', () => {
       const expectedError = new Error(
         'No valid AWS "credential_source" provided'
@@ -260,6 +317,39 @@ describe('AwsClient', () => {
           .reply(200, awsSecurityCredentials);
 
         const client = new AwsClient(awsOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scope.done();
+      });
+
+      it('should resolve on success with ipv6', async () => {
+        const ipv6baseUrl = 'http://[fd00:ec2::254]';
+        const ipv6CredentialSource = {
+          environment_id: 'aws1',
+          region_url: `${ipv6baseUrl}/latest/meta-data/placement/availability-zone`,
+          url: `${ipv6baseUrl}/latest/meta-data/iam/security-credentials`,
+          regional_cred_verification_url:
+            'https://sts.{region}.amazonaws.com?' +
+            'Action=GetCallerIdentity&Version=2011-06-15',
+        };
+        const ipv6Options = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+          token_url: getTokenUrl(),
+          credential_source: ipv6CredentialSource,
+        };
+
+        const scope = nock(ipv6baseUrl)
+          .get('/latest/meta-data/placement/availability-zone')
+          .reply(200, `${awsRegion}b`)
+          .get('/latest/meta-data/iam/security-credentials')
+          .reply(200, awsRole)
+          .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+          .reply(200, awsSecurityCredentials);
+
+        const client = new AwsClient(ipv6Options);
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
