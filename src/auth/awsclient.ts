@@ -72,6 +72,9 @@ export class AwsClient extends BaseExternalAccountClient {
   private awsRequestSigner: AwsRequestSigner | null;
   private region: string;
 
+  static AWS_EC2_METADATA_IPV4_ADDRESS = '169.254.169.254';
+  static AWS_EC2_METADATA_IPV6_ADDRESS = 'fd00:ec2::254';
+
   /**
    * Instantiates an AwsClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -95,7 +98,15 @@ export class AwsClient extends BaseExternalAccountClient {
       options.credential_source.regional_cred_verification_url;
     this.imdsV2SessionTokenUrl =
       options.credential_source.imdsv2_session_token_url;
-    this.validateMetadataServerUrls();
+    this.awsRequestSigner = null;
+    this.region = '';
+
+    // data validators
+    this.validateEnvironmentId();
+    this.validateMetadataServerURLs();
+  }
+
+  private validateEnvironmentId() {
     const match = this.environmentId?.match(/^(aws)(\d+)$/);
     if (!match || !this.regionalCredVerificationUrl) {
       throw new Error('No valid AWS "credential_source" provided');
@@ -104,29 +115,28 @@ export class AwsClient extends BaseExternalAccountClient {
         `aws version "${match[2]}" is not supported in the current build.`
       );
     }
-    this.awsRequestSigner = null;
-    this.region = '';
   }
 
-  private validateMetadataServerUrls() {
-    this.validateMetadataServerUrlIfAny(this.regionUrl, 'region_url');
-    this.validateMetadataServerUrlIfAny(this.securityCredentialsUrl, 'url');
-    this.validateMetadataServerUrlIfAny(
+  private validateMetadataServerURLs() {
+    this.validateMetadataURL(this.regionUrl, 'region_url');
+    this.validateMetadataURL(this.securityCredentialsUrl, 'url');
+    this.validateMetadataURL(
       this.imdsV2SessionTokenUrl,
       'imdsv2_session_token_url'
     );
   }
 
-  private validateMetadataServerUrlIfAny(
-    urlString: string | undefined,
-    nameOfData: string
-  ) {
-    if (urlString !== undefined) {
-      const url = new URL(urlString);
+  private validateMetadataURL(value?: string, prop?: string) {
+    if (!value) return;
+    const url = new URL(value);
 
-      if (url.host !== '169.254.169.254' && url.host !== '[fd00:ec2::254]') {
-        throw new Error(`Invalid host "${url.host}" for "${nameOfData}"`);
-      }
+    if (
+      url.hostname !== AwsClient.AWS_EC2_METADATA_IPV4_ADDRESS &&
+      url.hostname !== `[${AwsClient.AWS_EC2_METADATA_IPV6_ADDRESS}]`
+    ) {
+      throw new RangeError(
+        `Invalid host "${url.hostname}" for "${prop}". Expecting ${AwsClient.AWS_EC2_METADATA_IPV4_ADDRESS} or ${AwsClient.AWS_EC2_METADATA_IPV6_ADDRESS}.`
+      );
     }
   }
 
