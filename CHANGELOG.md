@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [8.7.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.6.0...v8.7.0) (2022-11-08)
+
+
+### Features
+
+* Introduce environment variable for quota project ([#1478](https://github.com/googleapis/google-auth-library-nodejs/issues/1478)) ([8706abc](https://github.com/googleapis/google-auth-library-nodejs/commit/8706abc64bb7d7b4336597589abb011150015a8c))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency puppeteer to v19 ([#1476](https://github.com/googleapis/google-auth-library-nodejs/issues/1476)) ([86b258d](https://github.com/googleapis/google-auth-library-nodejs/commit/86b258da699810ead624419333a1a7f998f1b376))
+* Validate url domain for aws metadata urls ([#1484](https://github.com/googleapis/google-auth-library-nodejs/issues/1484)) ([6dc4e58](https://github.com/googleapis/google-auth-library-nodejs/commit/6dc4e583dfd3aa3030dfbf959ee1c68a259abe2f))
+
 ## [8.6.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.2...v8.6.0) (2022-10-06)
 
 
