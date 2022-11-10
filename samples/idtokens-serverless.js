@@ -49,6 +49,7 @@ function main(
   // Cloud Functions uses your function's url as the `targetAudience` value
   // const targetAudience = 'https://project-region-projectid.cloudfunctions.net/myFunction';
   // For Cloud Functions, endpoint (`url`) and `targetAudience` should be equal
+  // const url = targetAudience;
 
   // [END functions_bearer_token]
 
