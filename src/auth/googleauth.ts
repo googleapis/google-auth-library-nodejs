@@ -59,11 +59,6 @@ export type JSONClient =
   | BaseExternalAccountClient
   | Impersonated;
 
-type KNOWN_JSON_CLIENT_TYPES =
-  | typeof USER_REFRESH_ACCOUNT_TYPE
-  | typeof IMPERSONATED_ACCOUNT_TYPE
-  | typeof EXTERNAL_ACCOUNT_TYPE;
-
 export interface ProjectIdCallback {
   (err?: Error | null, projectId?: string | null): void;
 }
