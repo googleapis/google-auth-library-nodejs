@@ -45,13 +45,12 @@ function main(
   // [END cloudrun_service_to_service_auth]
 
   // [START functions_bearer_token]
-  // For Cloud Functions, `endpoint` and `audience` should be equal.
 
-  // Example: https://project-region-projectid.cloudfunctions.net/myFunction
-  // const url = 'https://TARGET_HOSTNAME/TARGET_URL';
+  // Cloud Functions uses your function's url as the `targetAudience` value
+  // const targetAudience = 'https://project-region-projectid.cloudfunctions.net/myFunction';
+  // For Cloud Functions, endpoint (`url`) and `targetAudience` should be equal
+  // const url = targetAudience;
 
-  // Example (Cloud Functions): https://project-region-projectid.cloudfunctions.net/myFunction
-  // const targetAudience = 'https://TARGET_AUDIENCE/';
   // [END functions_bearer_token]
 
   // [START functions_bearer_token]
