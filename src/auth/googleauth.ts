@@ -88,6 +88,11 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   keyFile?: string;
 
   /**
+   * Google API key value.
+   */
+  apiKey?: string;
+
+  /**
    * Object containing client_email and private_key properties, or the
    * external account client options.
    */
@@ -157,6 +162,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
+  private apiKey?: string;
 
   /**
    * Export DefaultTransporter as a static property of the class.
@@ -172,6 +178,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
+    this.apiKey = opts.apiKey;
   }
 
   // GAPIC client libraries should always use self-signed JWTs. The following
@@ -313,6 +320,14 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     const quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
 
     let credential: JSONClient | null;
+
+    if (this.apiKey) {
+      credential = this.fromAPIKey(this.apiKey);
+      this.cachedCredential = credential;
+      let projectId = await this.getProjectIdOptional();
+      return {credential, projectId};
+    }
+
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.

@@ -48,6 +48,7 @@ npm install google-auth-library
 ## Ways to authenticate
 This library provides a variety of ways to authenticate to your Google services.
 - [Application Default Credentials](#choosing-the-correct-credential-type-automatically) - Use Application Default Credentials when you use a single identity for all users in your application. Especially useful for applications running on Google Cloud. Application Default Credentials also support workload identity federation to access Google Cloud resources from non-Google Cloud platforms.
+- [API key](#api-key) - An [API key](https://cloud.google.com/docs/authentication/api-keys) is a simple encrypted string that identifies an application without any principal. They are useful for accessing public data anonymously, and are used to associate API requests with your project for quota and billing.
 - [OAuth 2](#oauth2) - Use OAuth2 when you need to perform actions on behalf of the end user.
 - [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users. Especially useful for server->server or server->API communication.
 - [Google Compute](#compute) - Directly use a service account on Google Cloud Platform. Useful for server->server or server->API communication.
@@ -100,6 +101,29 @@ async function main() {
   const projectId = await auth.getProjectId();
   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
   const res = await client.request({ url });
+  console.log(res.data);
+}
+
+main().catch(console.error);
+```
+
+## API key
+[API key](https://cloud.google.com/docs/authentication/api-keys) are useful for accessing public data anonymously, and are used to associate API requests with your project for quota and billing. You can follow the instructions on [this page](https://cloud.google.com/docs/authentication/api-keys) to create an API key.
+
+The following example demonstrates how to use API key with the Google Cloud Language API. 
+
+```js
+const {GoogleAuth} = require('google-auth-library');
+
+async function main() {
+  const auth = new GoogleAuth({
+    apiKey: 'fill in the API key'
+  });
+
+  const client = await auth.getClient();
+  const url = `https://language.googleapis.com/v1/documents:analyzeSentiment`;
+  const body = "{'document':{'type':'PLAIN_TEXT','content':'hello world'},'encodingType':'UTF8'}";
+  const res = await client.request({ 'url':url, 'method':'POST', 'body':body });
   console.log(res.data);
 }
 
@@ -1189,6 +1213,7 @@ Samples are in the [`samples/`](https://github.com/googleapis/google-auth-librar
 | Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
 | Authenticate Explicit | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateExplicit.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateExplicit.js,samples/README.md) |
 | Authenticate Implicit With Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md) |
+| Api-key | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/api-key.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/api-key.js,samples/README.md) |
 | Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
 | Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md) |
 | Downscopedclient | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/downscopedclient.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/downscopedclient.js,samples/README.md) |
