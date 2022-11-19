@@ -324,7 +324,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (this.apiKey) {
       credential = this.fromAPIKey(this.apiKey);
       this.cachedCredential = credential;
-      let projectId = await this.getProjectIdOptional();
+      const projectId = await this.getProjectIdOptional();
       return {credential, projectId};
     }
 
