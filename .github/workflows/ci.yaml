@@ -55,6 +55,6 @@ jobs:
           node-version: 14
       - run: npm install
       - run: npm run docs
-      - uses: JustinBeckwith/linkinator-action@v1
+      - uses: JustinBeckwith/linkinator-action@v1.10.3
         with:
           paths: docs/
