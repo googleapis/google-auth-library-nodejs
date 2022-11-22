@@ -12,27 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-'use strict';
-
 /**
- * Import the GoogleAuth library, and create a new GoogleAuth client.
+ * Shows API key usage in GCP libraries
+ *
+ * @param {string} googleApiKey - API key value you want to use.
  */
-const {GoogleAuth} = require('google-auth-library');
+function main(googleApiKey) {
+  // [START auth_cloud_api_key]
+  /**
+   * TODO(developer):
+   *  1. Uncomment and replace these variables before running the sample.
+   *  2. Create an API key as described in https://cloud.google.com/docs/authentication/api-keys
+   */
+  // const googleApiKey = 'YOUR_API_KEY';
 
-/**
- * Acquire a client, and make a request to an API that's enabled by default.
- */
-async function main() {
-  const auth = new GoogleAuth({
-    apiKey: 'fill in the API key',
-  });
+  const language = require('@google-cloud/language');
 
-  const client = await auth.getClient();
-  const url = 'https://language.googleapis.com/v1/documents:analyzeSentiment';
-  const body =
-    "{'document':{'type':'PLAIN_TEXT','content':'hello world'},'encodingType':'UTF8'}";
-  const res = await client.request({url: url, method: 'POST', body: body});
-  console.log(res.data);
+  async function authenticateWithApiKey() {
+    // This snippet demonstrates how to analyze sentiment.
+    const client = new language.LanguageServiceClient({apiKey: googleApiKey});
+
+    const text = 'Hello, World';
+    const document = {type: 'PLAIN_TEXT', content: text};
+    const analyzeSentimentRequest = {document: document, encodingType: 'UTF8'};
+
+    const [response] = await client.analyzeSentiment(analyzeSentimentRequest);
+    const sentiment = response.documentSentiment;
+    console.log(`Text: ${text}`);
+    console.log(`Sentiment score: ${sentiment.score}`);
+    console.log(`Sentiment magnitude: ${sentiment.magnitude}`);
+  }
+
+  authenticateWithApiKey();
+  // [END auth_cloud_api_key]
 }
 
-main().catch(console.error);
+process.on('unhandledRejection', err => {
+  console.error(err.message);
+  process.exitCode = 1;
+});
+
+main(...process.argv.slice(2));
