@@ -346,10 +346,13 @@ export class AwsClient extends BaseExternalAccountClient {
   }
 
   private canRetrieveRegionFromEnvironment(): boolean {
+    // The AWS region can be provided through AWS_REGION or AWS_DEFAULT_REGION.
+    // Only one is required.
     return !!(process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']);
   }
 
   private canRetrieveSecurityCredentialsFromEnvironment(): boolean {
+    // Check if both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are available.
     return !!(
       process.env['AWS_ACCESS_KEY_ID'] && process.env['AWS_SECRET_ACCESS_KEY']
     );
