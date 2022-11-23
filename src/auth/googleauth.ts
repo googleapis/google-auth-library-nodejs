@@ -29,7 +29,11 @@ import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
-import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
+import {
+  UserRefreshClient,
+  UserRefreshClientOptions,
+  USER_REFRESH_ACCOUNT_TYPE,
+} from './refreshclient';
 import {
   Impersonated,
   ImpersonatedOptions,
@@ -569,16 +573,12 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   fromJSON(
     json: JWTInput | ImpersonatedJWTInput,
-    options?: RefreshOptions
+    options: RefreshOptions = {}
   ): JSONClient {
     let client: JSONClient;
-    if (!json) {
-      throw new Error(
-        'Must pass in a JSON object containing the Google auth settings.'
-      );
-    }
+
     options = options || {};
-    if (json.type === 'authorized_user') {
+    if (json.type === USER_REFRESH_ACCOUNT_TYPE) {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
     } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
@@ -609,26 +609,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     json: JWTInput,
     options?: RefreshOptions
   ): JSONClient {
-    let client: JSONClient;
-    // create either a UserRefreshClient or JWT client.
-    options = options || {};
-    if (json.type === 'authorized_user') {
-      client = new UserRefreshClient(options);
-      client.fromJSON(json);
-    } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
-      client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
-    } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
-      client = ExternalAccountClient.fromJSON(
-        json as ExternalAccountClientOptions,
-        options
-      )!;
-      client.scopes = this.getAnyScopes();
-    } else {
-      (options as JWTOptions).scopes = this.scopes;
-      client = new JWT(options);
-      this.setGapicJWTValues(client);
-      client.fromJSON(json);
-    }
+    const client = this.fromJSON(json, options);
+
     // cache both raw data used to instantiate client and client itself.
     this.jsonContent = json;
     this.cachedCredential = client;
