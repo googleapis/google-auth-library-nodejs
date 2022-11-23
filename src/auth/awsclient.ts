@@ -14,7 +14,7 @@
 
 import {GaxiosOptions} from 'gaxios';
 
-import {AwsRequestSigner} from './awsrequestsigner';
+import {AwsRequestSigner, AwsSecurityCredentials} from './awsrequestsigner';
 import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
@@ -48,7 +48,7 @@ export interface AwsClientOptions extends BaseExternalAccountClientOptions {
 /**
  * Interface defining the AWS security-credentials endpoint response.
  */
-interface AwsSecurityCredentials {
+interface AwsSecurityCredentialsResponse {
   Code: string;
   LastUpdated: string;
   Type: string;
@@ -56,15 +56,6 @@ interface AwsSecurityCredentials {
   SecretAccessKey: string;
   Token: string;
   Expiration: string;
-}
-
-/**
- * Interface defining the AWS security-credentials retrieved from environment variables.
- */
-interface AwsSecurityCredentialsFromEnvironment {
-  accessKeyId: string;
-  secretAccessKey: string;
-  token?: string;
 }
 
 /**
@@ -191,8 +182,8 @@ export class AwsClient extends BaseExternalAccountClient {
       this.awsRequestSigner = new AwsRequestSigner(async () => {
         // Check environment variables for permanent credentials first.
         // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
-        if (this.securityCredentialsFromEnvironment) {
-          return this.securityCredentialsFromEnvironment;
+        if (this.securityCredentialsFromEnv) {
+          return this.securityCredentialsFromEnv;
         }
         // Since the role on a VM can change, we don't need to cache it.
         const roleName = await this.getAwsRoleName(metadataHeaders);
@@ -279,8 +270,8 @@ export class AwsClient extends BaseExternalAccountClient {
   private async getAwsRegion(headers: Headers): Promise<string> {
     // Priority order for region determination:
     // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
-    if (this.regionFromEnvironment) {
-      return this.regionFromEnvironment;
+    if (this.regionFromEnv) {
+      return this.regionFromEnv;
     }
     if (!this.regionUrl) {
       throw new Error(
@@ -333,44 +324,40 @@ export class AwsClient extends BaseExternalAccountClient {
   private async getAwsSecurityCredentials(
     roleName: string,
     headers: Headers
-  ): Promise<AwsSecurityCredentials> {
-    const response = await this.transporter.request<AwsSecurityCredentials>({
-      url: `${this.securityCredentialsUrl}/${roleName}`,
-      responseType: 'json',
-      headers: headers,
-    });
+  ): Promise<AwsSecurityCredentialsResponse> {
+    const response =
+      await this.transporter.request<AwsSecurityCredentialsResponse>({
+        url: `${this.securityCredentialsUrl}/${roleName}`,
+        responseType: 'json',
+        headers: headers,
+      });
     return response.data;
   }
 
   private shouldUseMetadataServer(): boolean {
     // The metadata server must be used when either the AWS region or AWS security
     // credentials cannot be retrieved through their defined environment variables.
-    return (
-      !this.regionFromEnvironment || !this.securityCredentialsFromEnvironment
-    );
+    return !this.regionFromEnv || !this.securityCredentialsFromEnv;
   }
 
-  private get regionFromEnvironment(): string | undefined {
+  private get regionFromEnv(): string | undefined {
     // The AWS region can be provided through AWS_REGION or AWS_DEFAULT_REGION.
     // Only one is required.
     return process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'];
   }
 
-  private get securityCredentialsFromEnvironment():
-    | AwsSecurityCredentialsFromEnvironment
-    | undefined {
-    let awsSecurityCredentials;
-    // Check if both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are available.
+  private get securityCredentialsFromEnv(): AwsSecurityCredentials | null {
+    // Both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required.
     if (
       process.env['AWS_ACCESS_KEY_ID'] &&
       process.env['AWS_SECRET_ACCESS_KEY']
     ) {
-      awsSecurityCredentials = {
+      return {
         accessKeyId: process.env['AWS_ACCESS_KEY_ID'],
         secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY'],
         token: process.env['AWS_SESSION_TOKEN'],
       };
     }
-    return awsSecurityCredentials;
+    return null;
   }
 }

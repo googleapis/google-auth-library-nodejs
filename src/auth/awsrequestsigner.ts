@@ -40,7 +40,7 @@ interface AwsAuthHeaderMap {
  * These are either determined from AWS security_credentials endpoint or
  * AWS environment variables.
  */
-interface AwsSecurityCredentials {
+export interface AwsSecurityCredentials {
   accessKeyId: string;
   secretAccessKey: string;
   token?: string;
