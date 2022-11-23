@@ -35,16 +35,18 @@ function main(targetAudience, jsonCredentialsPath) {
   // are described here:
   // https://cloud.google.com/docs/authentication/external/set-up-adc
 
-  const {auth} = require('google-auth-library');
-  const jsonConfig = require(jsonCredentialsPath);
+  const {GoogleAuth} = require('google-auth-library');
+  const credentials = require(jsonCredentialsPath);
 
   async function getIdTokenFromServiceAccount() {
-    const client = auth.fromJSON(jsonConfig);
+    const auth = new GoogleAuth({credentials});
 
-    // Get the ID token.
-    // Once you've obtained the ID token, use it to make an authenticated call
-    // to the target audience.
-    await client.fetchIdToken(targetAudience);
+    // Get an ID token client.
+    // The client can be used to make authenticated requests or you can use the
+    // provider to fetch an id token.
+    const client = await auth.getIdTokenClient(targetAudience);
+    await client.idTokenProvider.fetchIdToken(targetAudience);
+
     console.log('Generated ID token.');
   }
 
