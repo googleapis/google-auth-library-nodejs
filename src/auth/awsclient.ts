@@ -343,7 +343,9 @@ export class AwsClient extends BaseExternalAccountClient {
   private get regionFromEnv(): string | null {
     // The AWS region can be provided through AWS_REGION or AWS_DEFAULT_REGION.
     // Only one is required.
-    return process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'] || null;
+    return (
+      process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'] || null
+    );
   }
 
   private get securityCredentialsFromEnv(): AwsSecurityCredentials | null {
