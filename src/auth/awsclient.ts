@@ -168,7 +168,9 @@ export class AwsClient extends BaseExternalAccountClient {
     // Initialize AWS request signer if not already initialized.
     if (!this.awsRequestSigner) {
       const metadataHeaders: Headers = {};
-      if (this.imdsV2SessionTokenUrl) {
+      // Only retrieve the IMDSv2 session token if both the security credentials and region are
+      // not retrievable through the environment.
+      if (this.shouldUseMetadataServer() && this.imdsV2SessionTokenUrl) {
         metadataHeaders['x-aws-ec2-metadata-token'] =
           await this.getImdsV2SessionToken();
       }
@@ -334,5 +336,22 @@ export class AwsClient extends BaseExternalAccountClient {
       headers: headers,
     });
     return response.data;
+  }
+
+  private shouldUseMetadataServer(): boolean {
+    return (
+      !this.canRetrieveRegionFromEnvironment() ||
+      !this.canRetrieveSecurityCredentialsFromEnvironment()
+    );
+  }
+
+  private canRetrieveRegionFromEnvironment(): boolean {
+    return !!(process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']);
+  }
+
+  private canRetrieveSecurityCredentialsFromEnvironment(): boolean {
+    return !!(
+      process.env['AWS_ACCESS_KEY_ID'] && process.env['AWS_SECRET_ACCESS_KEY']
+    );
   }
 }
