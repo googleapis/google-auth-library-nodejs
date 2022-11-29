@@ -14,7 +14,7 @@
 
 import {GaxiosOptions} from 'gaxios';
 
-import {AwsRequestSigner} from './awsrequestsigner';
+import {AwsRequestSigner, AwsSecurityCredentials} from './awsrequestsigner';
 import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
@@ -48,7 +48,7 @@ export interface AwsClientOptions extends BaseExternalAccountClientOptions {
 /**
  * Interface defining the AWS security-credentials endpoint response.
  */
-interface AwsSecurityCredentials {
+interface AwsSecurityCredentialsResponse {
   Code: string;
   LastUpdated: string;
   Type: string;
@@ -101,7 +101,7 @@ export class AwsClient extends BaseExternalAccountClient {
     this.awsRequestSigner = null;
     this.region = '';
 
-    // data validators
+    // Data validators.
     this.validateEnvironmentId();
     this.validateMetadataServerURLs();
   }
@@ -168,7 +168,12 @@ export class AwsClient extends BaseExternalAccountClient {
     // Initialize AWS request signer if not already initialized.
     if (!this.awsRequestSigner) {
       const metadataHeaders: Headers = {};
-      if (this.imdsV2SessionTokenUrl) {
+      // Only retrieve the IMDSv2 session token if both the security credentials and region are
+      // not retrievable through the environment.
+      // The credential config contains all the URLs by default but clients may be running this
+      // where the metadata server is not available and returning the credentials through the environment.
+      // Removing this check may break them.
+      if (this.shouldUseMetadataServer() && this.imdsV2SessionTokenUrl) {
         metadataHeaders['x-aws-ec2-metadata-token'] =
           await this.getImdsV2SessionToken();
       }
@@ -177,16 +182,8 @@ export class AwsClient extends BaseExternalAccountClient {
       this.awsRequestSigner = new AwsRequestSigner(async () => {
         // Check environment variables for permanent credentials first.
         // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
-        if (
-          process.env['AWS_ACCESS_KEY_ID'] &&
-          process.env['AWS_SECRET_ACCESS_KEY']
-        ) {
-          return {
-            accessKeyId: process.env['AWS_ACCESS_KEY_ID']!,
-            secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY']!,
-            // This is normally not available for permanent credentials.
-            token: process.env['AWS_SESSION_TOKEN'],
-          };
+        if (this.securityCredentialsFromEnv) {
+          return this.securityCredentialsFromEnv;
         }
         // Since the role on a VM can change, we don't need to cache it.
         const roleName = await this.getAwsRoleName(metadataHeaders);
@@ -273,8 +270,8 @@ export class AwsClient extends BaseExternalAccountClient {
   private async getAwsRegion(headers: Headers): Promise<string> {
     // Priority order for region determination:
     // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
-    if (process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']) {
-      return (process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'])!;
+    if (this.regionFromEnv) {
+      return this.regionFromEnv;
     }
     if (!this.regionUrl) {
       throw new Error(
@@ -327,12 +324,42 @@ export class AwsClient extends BaseExternalAccountClient {
   private async getAwsSecurityCredentials(
     roleName: string,
     headers: Headers
-  ): Promise<AwsSecurityCredentials> {
-    const response = await this.transporter.request<AwsSecurityCredentials>({
-      url: `${this.securityCredentialsUrl}/${roleName}`,
-      responseType: 'json',
-      headers: headers,
-    });
+  ): Promise<AwsSecurityCredentialsResponse> {
+    const response =
+      await this.transporter.request<AwsSecurityCredentialsResponse>({
+        url: `${this.securityCredentialsUrl}/${roleName}`,
+        responseType: 'json',
+        headers: headers,
+      });
     return response.data;
+  }
+
+  private shouldUseMetadataServer(): boolean {
+    // The metadata server must be used when either the AWS region or AWS security
+    // credentials cannot be retrieved through their defined environment variables.
+    return !this.regionFromEnv || !this.securityCredentialsFromEnv;
+  }
+
+  private get regionFromEnv(): string | null {
+    // The AWS region can be provided through AWS_REGION or AWS_DEFAULT_REGION.
+    // Only one is required.
+    return (
+      process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'] || null
+    );
+  }
+
+  private get securityCredentialsFromEnv(): AwsSecurityCredentials | null {
+    // Both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required.
+    if (
+      process.env['AWS_ACCESS_KEY_ID'] &&
+      process.env['AWS_SECRET_ACCESS_KEY']
+    ) {
+      return {
+        accessKeyId: process.env['AWS_ACCESS_KEY_ID'],
+        secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY'],
+        token: process.env['AWS_SESSION_TOKEN'],
+      };
+    }
+    return null;
   }
 }
