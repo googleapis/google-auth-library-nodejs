@@ -1007,6 +1007,37 @@ describe('oauth2', () => {
       assert.strictEqual('abc123', client.credentials.access_token);
     });
 
+    it('should have a custom ReAuth error message', async () => {
+      // We have custom handling for make it easier for customers to resolve ReAuth errors
+      const reAuthErrorBody = {
+        error: 'invalid_grant',
+        error_description: 'a ReAuth error',
+        custom: 'property',
+      };
+
+      const scopes = [
+        nock(baseUrl)
+          .post('/token', undefined, {
+            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          })
+          .reply(500, reAuthErrorBody),
+      ];
+      client.credentials = {refresh_token: 'refresh-token-placeholder'};
+
+      try {
+        await client.request({url: 'http://example.com'});
+      } catch (e) {
+        assert(e instanceof GaxiosError);
+        assert(e.message.includes(JSON.stringify(reAuthErrorBody)));
+
+        return;
+      } finally {
+        scopes.forEach(s => s.done());
+      }
+
+      throw new Error("expected an error, but didn't get one");
+    });
+
     it('should refresh if access token is expired', done => {
       client.setCredentials({
         access_token: 'initial-access-token',

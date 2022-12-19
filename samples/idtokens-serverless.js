@@ -33,16 +33,29 @@ function main(
   /**
    * TODO(developer): Uncomment these variables before running the sample.
    */
+  // [END functions_bearer_token]
+  // [END cloudrun_service_to_service_auth]
+
+  // [START cloudrun_service_to_service_auth]
   // Example: https://my-cloud-run-service.run.app/books/delete/12345
   // const url = 'https://TARGET_HOSTNAME/TARGET_URL';
 
-  // [END functions_bearer_token]
   // Example (Cloud Run): https://my-cloud-run-service.run.app/
-  // [START functions_bearer_token]
-  // [END cloudrun_service_to_service_auth]
-  // Example (Cloud Functions): https://project-region-projectid.cloudfunctions.net/myFunction
-  // [START cloudrun_service_to_service_auth]
   // const targetAudience = 'https://TARGET_AUDIENCE/';
+  // [END cloudrun_service_to_service_auth]
+
+  // [START functions_bearer_token]
+
+  // Cloud Functions uses your function's url as the `targetAudience` value
+  // const targetAudience = 'https://project-region-projectid.cloudfunctions.net/myFunction';
+  // For Cloud Functions, endpoint (`url`) and `targetAudience` should be equal
+  // const url = targetAudience;
+
+  // [END functions_bearer_token]
+
+  // [START functions_bearer_token]
+  // [START cloudrun_service_to_service_auth]
+
   const {GoogleAuth} = require('google-auth-library');
   const auth = new GoogleAuth();
 

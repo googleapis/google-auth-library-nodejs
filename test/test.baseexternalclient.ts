@@ -176,6 +176,15 @@ describe('BaseExternalAccountClient', () => {
       'https://us-east- 1.sts.googleapis.com',
       'https://us/.east/.1.sts.googleapis.com',
       'https://us.ea\\st.1.sts.googleapis.com',
+      'https://sts.pgoogleapis.com',
+      'https://p.googleapis.com',
+      'https://sts.p.com',
+      'http://sts.p.googleapis.com',
+      'https://xyz-sts.p.googleapis.com',
+      'https://sts-xyz.123.p.googleapis.com',
+      'https://sts-xyz.p1.googleapis.com',
+      'https://sts-xyz.p.foo.com',
+      'https://sts-xyz.p.foo.googleapis.com',
     ];
     invalidTokenUrls.forEach(invalidTokenUrl => {
       it(`should throw on invalid token url: ${invalidTokenUrl}`, () => {
@@ -200,6 +209,9 @@ describe('BaseExternalAccountClient', () => {
         'https://us-west-1-sts.googleapis.com',
         'https://exmaple.sts.googleapis.com',
         'https://example-sts.googleapis.com',
+        'https://sts-xyz123.p.googleapis.com',
+        'https://sts-xyz-123.p.googleapis.com',
+        'https://sts-xys123.p.googleapis.com/path/to/example',
       ];
       const validOptions = Object.assign({}, externalAccountOptions);
       for (const validTokenUrl of validTokenUrls) {
@@ -227,6 +239,15 @@ describe('BaseExternalAccountClient', () => {
       'https://us-east- 1.iamcredentials.googleapis.com',
       'https://us/.east/.1.iamcredentials.googleapis.com',
       'https://us.ea\\st.1.iamcredentials.googleapis.com',
+      'https://iamcredentials.pgoogleapis.com',
+      'https://p.googleapis.com',
+      'https://iamcredentials.p.com',
+      'http://iamcredentials.p.googleapis.com',
+      'https://xyz-iamcredentials.p.googleapis.com',
+      'https://iamcredentials-xyz.123.p.googleapis.com',
+      'https://iamcredentials-xyz.p1.googleapis.com',
+      'https://iamcredentials-xyz.p.foo.com',
+      'https://iamcredentials-xyz.p.foo.googleapis.com',
     ];
     invalidServiceAccountImpersonationUrls.forEach(
       invalidServiceAccountImpersonationUrl => {
@@ -258,6 +279,9 @@ describe('BaseExternalAccountClient', () => {
         'https://us-west-1-iamcredentials.googleapis.com',
         'https://example.iamcredentials.googleapis.com',
         'https://example-iamcredentials.googleapis.com',
+        'https://iamcredentials-xyz123.p.googleapis.com',
+        'https://iamcredentials-xyz-123.p.googleapis.com',
+        'https://iamcredentials-xys123.p.googleapis.com/path/to/example',
       ];
       const validOptions = Object.assign({}, externalAccountOptionsWithSA);
       for (const validServiceAccountImpersonationUrl of validServiceAccountImpersonationUrls) {
@@ -1612,6 +1636,60 @@ describe('BaseExternalAccountClient', () => {
 
         const client = new TestExternalAccountClient(
           externalAccountOptionsWithWorkforceUserProjectAndSA
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should use provided token lifespan', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+        scopes.push(
+          mockGenerateAccessToken([
+            {
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              lifetime: 2800,
+              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            },
+          ])
+        );
+
+        const externalAccountOptionsWithSATokenLifespan = Object.assign(
+          {
+            service_account_impersonation: {
+              token_lifetime_seconds: 2800,
+            },
+          },
+          externalAccountOptionsWithSA
+        );
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSATokenLifespan
         );
         const actualResponse = await client.getAccessToken();
 
