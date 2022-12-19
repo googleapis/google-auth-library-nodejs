@@ -63,7 +63,7 @@ describe('auth samples', () => {
   });
 
   it('should verify google id token', async () => {
-    const jsonConfig = JSON.parse(fs.readFileSync(jsonCredentialsPath, 'utf8'));
+    const jsonConfig = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
     const client = auth.fromJSON(jsonConfig);
 
     const idToken = await client.fetchIdToken(TARGET_AUDIENCE);
