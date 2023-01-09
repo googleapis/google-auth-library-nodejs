@@ -49,12 +49,5 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 14
-      - run: npm install
-      - run: npm run docs
-      - uses: JustinBeckwith/linkinator-action@v1
-        with:
-          paths: docs/
+      # https://github.com/JustinBeckwith/linkinator-action/issues/148
+      - run: echo "temporarily skipping until linkinator's fixed upstream"
