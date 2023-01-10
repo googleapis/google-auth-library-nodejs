@@ -21,6 +21,6 @@ logging.basicConfig(level=logging.DEBUG)
 # List of excludes for the enhanced library
 node.owlbot_main(
     templates_excludes=[
-        ".github/workflows/ci.yml",
+        ".github/workflows/ci.yaml",
     ],
 )
