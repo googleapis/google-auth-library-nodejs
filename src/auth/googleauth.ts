@@ -395,7 +395,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   async _checkIsGCE() {
     if (this.checkIsGCE === undefined) {
-      this.checkIsGCE = await gcpMetadata.isAvailable();
+      // check GCP residency
+      this.checkIsGCE = gcpMetadata.detectGCPResidency();
+
+      if (!this.checkIsGCE) {
+        // fallback check for backwards compatibility
+        this.checkIsGCE = await gcpMetadata.isAvailable();
+      }
     }
     return this.checkIsGCE;
   }
