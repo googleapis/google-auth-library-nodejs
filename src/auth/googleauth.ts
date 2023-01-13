@@ -390,19 +390,18 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   /**
    * Determines whether the auth layer is running on Google Compute Engine.
+   * Checks for GCP Residency, then fallback to checking if metadata server
+   * is available.
+   *
    * @returns A promise that resolves with the boolean.
    * @api private
    */
   async _checkIsGCE() {
     if (this.checkIsGCE === undefined) {
-      // check GCP residency
-      this.checkIsGCE = gcpMetadata.detectGCPResidency();
-
-      if (!this.checkIsGCE) {
-        // fallback check for backwards compatibility
-        this.checkIsGCE = await gcpMetadata.isAvailable();
-      }
+      this.checkIsGCE =
+        gcpMetadata.detectGCPResidency() || (await gcpMetadata.isAvailable());
     }
+
     return this.checkIsGCE;
   }
 
