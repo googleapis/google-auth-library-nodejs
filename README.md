@@ -932,6 +932,9 @@ async function main() {
 }
 ```
 
+#### Security Considerations
+Note that this library does not perform any validation on the token_url, token_info_url, or service_account_impersonation_url fields of the credential configuration. It is not recommended to use a credential configuration that you did not generate with the gcloud CLI unless you verify that the URL fields point to a googleapis.com domain.
+
 ## Working with ID Tokens
 ### Fetching ID Tokens
 If your application is running on Cloud Run or Cloud Functions, or using Cloud Identity-Aware
