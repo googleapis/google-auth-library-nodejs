@@ -301,8 +301,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * @return A promise that resolves with the refreshed credential.
    */
   protected async refreshAccessTokenAsync(): Promise<CredentialsWithResponse> {
-    // Exchange the source AuthClient access token for a Downscoped access
-    // token.
+    // Refresh the access token using the refresh token.
     const refreshResponse =
       await this.externalAccountAuthorizedUserHandler.refreshToken(
         this.refreshToken
