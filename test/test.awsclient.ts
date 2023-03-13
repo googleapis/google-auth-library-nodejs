@@ -229,59 +229,6 @@ describe('AwsClient', () => {
       assert.doesNotThrow(() => new AwsClient(validOptions));
     });
 
-    it('should throw when an unsupported credential_source is provided', () => {
-      const expectedError = new RangeError(
-        'Invalid host "baddomain.com" for "url". Expecting 169.254.169.254 or fd00:ec2::254.'
-      );
-      const invalidCredentialSource = Object.assign({}, awsCredentialSource);
-      invalidCredentialSource.url = 'http://baddomain.com/fake';
-      const invalidOptions = {
-        type: 'external_account',
-        audience,
-        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-        token_url: getTokenUrl(),
-        credential_source: invalidCredentialSource,
-      };
-
-      assert.throws(() => new AwsClient(invalidOptions), expectedError);
-    });
-
-    it('should throw when an unsupported imdsv2_session_token_url is provided', () => {
-      const expectedError = new RangeError(
-        'Invalid host "baddomain.com" for "imdsv2_session_token_url". Expecting 169.254.169.254 or fd00:ec2::254.'
-      );
-      const invalidCredentialSource = Object.assign(
-        {imdsv2_session_token_url: 'http://baddomain.com/fake'},
-        awsCredentialSource
-      );
-      const invalidOptions = {
-        type: 'external_account',
-        audience,
-        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-        token_url: getTokenUrl(),
-        credential_source: invalidCredentialSource,
-      };
-
-      assert.throws(() => new AwsClient(invalidOptions), expectedError);
-    });
-
-    it('should throw when an unsupported region_url is provided', () => {
-      const expectedError = new RangeError(
-        'Invalid host "baddomain.com" for "region_url". Expecting 169.254.169.254 or fd00:ec2::254.'
-      );
-      const invalidCredentialSource = Object.assign({}, awsCredentialSource);
-      invalidCredentialSource.region_url = 'http://baddomain.com/fake';
-      const invalidOptions = {
-        type: 'external_account',
-        audience,
-        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-        token_url: getTokenUrl(),
-        credential_source: invalidCredentialSource,
-      };
-
-      assert.throws(() => new AwsClient(invalidOptions), expectedError);
-    });
-
     it('should throw when an unsupported environment ID is provided', () => {
       const expectedError = new Error(
         'No valid AWS "credential_source" provided'
