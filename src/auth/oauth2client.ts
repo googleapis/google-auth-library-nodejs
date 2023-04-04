@@ -545,12 +545,10 @@ export class OAuth2Client extends AuthClient {
     opts.response_type = opts.response_type || 'code';
     opts.client_id = opts.client_id || this._clientId;
     opts.redirect_uri = opts.redirect_uri || this.redirectUri;
-
     // Allow scopes to be passed either as array or a string
     if (Array.isArray(opts.scope)) {
       opts.scope = opts.scope.join(' ');
     }
-
     const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
     return (
       rootUrl +
