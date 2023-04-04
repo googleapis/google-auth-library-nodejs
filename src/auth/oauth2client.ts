@@ -301,7 +301,9 @@ export interface GenerateAuthUrlOpts {
    * A way for developers and/or the auth team to provide a set of key value
    * pairs to be added as query parameters to the authorization url.
    */
-  [key: string]: querystring.ParsedUrlQueryInput;
+  [
+    key: string
+  ]: querystring.ParsedUrlQueryInput[keyof querystring.ParsedUrlQueryInput]
 }
 
 export interface AccessTokenResponse {
