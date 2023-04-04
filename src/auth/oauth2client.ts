@@ -531,7 +531,6 @@ export class OAuth2Client extends AuthClient {
     'https://accounts.google.com',
   ];
 
-  // TODO: Add parameters here.
   /**
    * Generates URL for consent page landing.
    * @param opts Options.
@@ -550,17 +549,6 @@ export class OAuth2Client extends AuthClient {
     // Allow scopes to be passed either as array or a string
     if (Array.isArray(opts.scope)) {
       opts.scope = opts.scope.join(' ');
-    }
-    const coreParams = ['response_type', 'client_id', 'redirect_uri', 'scopes'];
-    const allParams = Object.entries(opts);
-    const additionalParams = allParams.filter(
-      ([key, value]) => !coreParams.includes(key)
-    );
-    const keys = Object.keys(additionalParams);
-    const values = Object.values(additionalParams);
-
-    for (let x = 0; x < keys.length; x++) {
-      opts[keys[x]] = values[x];
     }
 
     const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
