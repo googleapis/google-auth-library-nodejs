@@ -296,6 +296,12 @@ export interface GenerateAuthUrlOpts {
    * must be used with the 'code_challenge' parameter described above.
    */
   code_challenge?: string;
+
+  /**
+   * A way for developers and/or the auth team to provide a set of key value
+   * pairs to be added as query parameters to the authorization url.
+   */
+  [key: string]: any;
 }
 
 export interface AccessTokenResponse {
@@ -525,6 +531,7 @@ export class OAuth2Client extends AuthClient {
     'https://accounts.google.com',
   ];
 
+  // TODO: Add parameters here.
   /**
    * Generates URL for consent page landing.
    * @param opts Options.
@@ -539,10 +546,23 @@ export class OAuth2Client extends AuthClient {
     opts.response_type = opts.response_type || 'code';
     opts.client_id = opts.client_id || this._clientId;
     opts.redirect_uri = opts.redirect_uri || this.redirectUri;
+
     // Allow scopes to be passed either as array or a string
     if (Array.isArray(opts.scope)) {
       opts.scope = opts.scope.join(' ');
     }
+    const coreParams = ['response_type', 'client_id', 'redirect_uri', 'scopes'];
+    const allParams = Object.entries(opts);
+    const additionalParams = allParams.filter(
+      ([key, value]) => !coreParams.includes(key)
+    );
+    const keys = Object.keys(additionalParams);
+    const values = Object.values(additionalParams);
+
+    for (let x = 0; x < keys.length; x++) {
+      opts[keys[x]] = values[x];
+    }
+
     const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
     return (
       rootUrl +
