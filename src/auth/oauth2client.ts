@@ -303,7 +303,7 @@ export interface GenerateAuthUrlOpts {
    */
   [
     key: string
-  ]: querystring.ParsedUrlQueryInput[keyof querystring.ParsedUrlQueryInput]
+  ]: querystring.ParsedUrlQueryInput[keyof querystring.ParsedUrlQueryInput];
 }
 
 export interface AccessTokenResponse {
