@@ -296,6 +296,14 @@ export interface GenerateAuthUrlOpts {
    * must be used with the 'code_challenge' parameter described above.
    */
   code_challenge?: string;
+
+  /**
+   * A way for developers and/or the auth team to provide a set of key value
+   * pairs to be added as query parameters to the authorization url.
+   */
+  [
+    key: string
+  ]: querystring.ParsedUrlQueryInput[keyof querystring.ParsedUrlQueryInput];
 }
 
 export interface AccessTokenResponse {
