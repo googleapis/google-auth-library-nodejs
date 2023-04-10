@@ -103,7 +103,6 @@ export class AwsClient extends BaseExternalAccountClient {
 
     // Data validators.
     this.validateEnvironmentId();
-    this.validateMetadataServerURLs();
   }
 
   private validateEnvironmentId() {
@@ -113,29 +112,6 @@ export class AwsClient extends BaseExternalAccountClient {
     } else if (parseInt(match[2], 10) !== 1) {
       throw new Error(
         `aws version "${match[2]}" is not supported in the current build.`
-      );
-    }
-  }
-
-  private validateMetadataServerURLs() {
-    this.validateMetadataURL(this.regionUrl, 'region_url');
-    this.validateMetadataURL(this.securityCredentialsUrl, 'url');
-    this.validateMetadataURL(
-      this.imdsV2SessionTokenUrl,
-      'imdsv2_session_token_url'
-    );
-  }
-
-  private validateMetadataURL(value?: string, prop?: string) {
-    if (!value) return;
-    const url = new URL(value);
-
-    if (
-      url.hostname !== AwsClient.AWS_EC2_METADATA_IPV4_ADDRESS &&
-      url.hostname !== `[${AwsClient.AWS_EC2_METADATA_IPV6_ADDRESS}]`
-    ) {
-      throw new RangeError(
-        `Invalid host "${url.hostname}" for "${prop}". Expecting ${AwsClient.AWS_EC2_METADATA_IPV4_ADDRESS} or ${AwsClient.AWS_EC2_METADATA_IPV6_ADDRESS}.`
       );
     }
   }
