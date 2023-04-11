@@ -2470,8 +2470,7 @@ describe('googleauth', () => {
        *   for testing.
        */
       function createExternalAccountAuthorizedUserJson() {
-        const jsonCopy = Object.assign({}, externalAccountAuthorizedUserJSON);
-        return jsonCopy;
+        return Object.assign({}, externalAccountAuthorizedUserJSON);
       }
 
       describe('fromJSON()', () => {
