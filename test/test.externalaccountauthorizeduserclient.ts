@@ -17,11 +17,7 @@ import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import * as qs from 'querystring';
-import {
-  assertGaxiosResponsePresent,
-  getAudience,
-  mockStsTokenExchange,
-} from './externalclienthelper';
+import {assertGaxiosResponsePresent, getAudience} from './externalclienthelper';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -39,7 +35,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   const BASE_URL = 'https://sts.googleapis.com';
   const REFRESH_PATH = '/v1/oauthtoken';
   const TOKEN_REFRESH_URL = `${BASE_URL}${REFRESH_PATH}`;
-  const TOKEN_INFO_URL = 'https://sts.googleapis.com/v1/introspect';
+  const TOKEN_INFO_URL = `${BASE_URL}/v1/introspect`;
 
   interface TokenRefreshResponse {
     access_token: string;

@@ -60,7 +60,7 @@ interface CredentialsWithResponse extends Credentials {
 }
 
 /**
- * Interface representing the token refresh response from the sts endpoint.
+ * Internal interface representing the token refresh response from the token_url endpoint.
  */
 interface TokenRefreshResponse {
   access_token: string;
@@ -70,7 +70,7 @@ interface TokenRefreshResponse {
 }
 
 /**
- * Handler for token refresh requests sent to the sts endpoint for external
+ * Handler for token refresh requests sent to the token_url endpoint for external
  * authorized user credentials.
  */
 class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
@@ -90,7 +90,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
   }
 
   /**
-   * Requests a new access token from the sts endpoint using the provided
+   * Requests a new access token from the token_url endpoint using the provided
    *   refresh token.
    * @param refreshToken The refresh token to use to generate a new access token.
    * @param additionalHeaders Optional additional headers to pass along the
@@ -110,7 +110,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
-    // Inject additional STS headers if available.
+    // Inject additional headers if available.
     Object.assign(headers, additionalHeaders || {});
 
     const opts: GaxiosOptions = {
@@ -221,7 +221,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     };
   }
 
-  async getRequestHeaders(url?: string): Promise<Headers> {
+  async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
     const headers: Headers = {
       Authorization: `Bearer ${accessTokenResponse.token}`,
