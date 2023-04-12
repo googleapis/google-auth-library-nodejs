@@ -21,6 +21,7 @@ import {assertGaxiosResponsePresent, getAudience} from './externalclienthelper';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
+  ExternalAccountAuthorizedUserClientOptions,
 } from '../src/auth/externalAccountAuthorizedUserClient';
 import {EXPIRATION_TIME_OFFSET} from '../src/auth/baseexternalclient';
 import {GaxiosError, GaxiosResponse} from 'gaxios';
@@ -89,7 +90,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     refresh_token: 'refreshToken',
     token_url: TOKEN_REFRESH_URL,
     token_info_url: TOKEN_INFO_URL,
-  };
+  } as ExternalAccountAuthorizedUserClientOptions;
   const successfulRefreshResponse = {
     access_token: 'newAccessToken',
     refresh_token: 'newRefreshToken',
@@ -110,21 +111,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   });
 
   describe('Constructor', () => {
-    it('should throw on invalid type', () => {
-      const expectedError = new Error(
-        'Expected "external_account_authorized_user" type but received "invalid"'
-      );
-      const invalidOptions = Object.assign(
-        {},
-        externalAccountAuthorizedUserCredentialOptions
-      );
-      invalidOptions.type = 'invalid';
-
-      assert.throws(() => {
-        return new ExternalAccountAuthorizedUserClient(invalidOptions);
-      }, expectedError);
-    });
-
     it('should not throw when valid options are provided', () => {
       assert.doesNotThrow(() => {
         return new ExternalAccountAuthorizedUserClient(
@@ -134,9 +120,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     });
 
     it('should set default RefreshOptions', () => {
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
-      );
+      const client = new ExternalAccountAuthorizedUserClient(externalAccountAuthorizedUserCredentialOptions);
 
       assert(!client.forceRefreshOnFailure);
       assert(client.eagerRefreshThresholdMillis === EXPIRATION_TIME_OFFSET);

@@ -35,7 +35,7 @@ import {EXPIRATION_TIME_OFFSET} from './baseexternalclient';
  * External Account Authorized User Credentials JSON interface.
  */
 export interface ExternalAccountAuthorizedUserClientOptions {
-  type: string;
+  type: typeof EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE;
   audience: string;
   client_id: string;
   client_secret: string;
@@ -109,7 +109,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
 
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
-      ...additionalHeaders
+      ...additionalHeaders,
     };
 
     const opts: GaxiosOptions = {
@@ -171,12 +171,6 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     additionalOptions?: RefreshOptions
   ) {
     super();
-    if (options.type !== EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE) {
-      throw new Error(
-        `Expected "${EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE}" type but ` +
-          `received "${options.type}"`
-      );
-    }
     this.refreshToken = options.refresh_token;
     const clientAuth = {
       confidentialClientType: 'basic',
