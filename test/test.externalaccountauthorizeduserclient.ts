@@ -120,7 +120,9 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     });
 
     it('should set default RefreshOptions', () => {
-      const client = new ExternalAccountAuthorizedUserClient(externalAccountAuthorizedUserCredentialOptions);
+      const client = new ExternalAccountAuthorizedUserClient(
+        externalAccountAuthorizedUserCredentialOptions
+      );
 
       assert(!client.forceRefreshOnFailure);
       assert(client.eagerRefreshThresholdMillis === EXPIRATION_TIME_OFFSET);
