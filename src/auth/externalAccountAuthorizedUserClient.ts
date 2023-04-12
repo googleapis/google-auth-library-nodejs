@@ -109,9 +109,8 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
 
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...additionalHeaders
     };
-    // Inject additional headers if available.
-    Object.assign(headers, additionalHeaders || {});
 
     const opts: GaxiosOptions = {
       url: this.url,
