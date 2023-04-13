@@ -53,6 +53,10 @@ import {
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
+import {
+  ExternalAccountAuthorizedUserClient,
+  ExternalAccountAuthorizedUserClientOptions,
+} from '../src/auth/externalAccountAuthorizedUserClient';
 
 nock.disableNetConnect();
 
@@ -82,6 +86,8 @@ describe('googleauth', () => {
   const refreshJSON = require('../../test/fixtures/refresh.json');
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const externalAccountJSON = require('../../test/fixtures/external-account-cred.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const externalAccountAuthorizedUserJSON = require('../../test/fixtures/external-account-authorized-user-cred.json');
   const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
   const wellKnownPathWindows = path.join(
     'C:',
@@ -2454,6 +2460,116 @@ describe('googleauth', () => {
           const body = await auth.getCredentials();
           assert.notStrictEqual(null, body);
           assert.strictEqual(email, body.client_email);
+        });
+      });
+    });
+
+    describe('for external_account_authorized_user types', () => {
+      /**
+       * @return A copy of the external account authorized user JSON auth object
+       *   for testing.
+       */
+      function createExternalAccountAuthorizedUserJson() {
+        return Object.assign({}, externalAccountAuthorizedUserJSON);
+      }
+
+      describe('fromJSON()', () => {
+        it('should create the expected BaseExternalAccountClient', () => {
+          const json = createExternalAccountAuthorizedUserJson();
+          const result = auth.fromJSON(json);
+          assert(result instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('fromStream()', () => {
+        it('should read the stream and create a client', async () => {
+          const stream = fs.createReadStream(
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const actualClient = await auth.fromStream(stream);
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getApplicationDefault()', () => {
+        it('should use environment variable when it is set', async () => {
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+
+          const res = await auth.getApplicationDefault();
+          const actualClient = res.credential;
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should use well-known file when it is available and env const is not set', async () => {
+          mockLinuxWellKnownFile(
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+
+          const res = await auth.getApplicationDefault();
+          const actualClient = res.credential;
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getApplicationCredentialsFromFilePath()', () => {
+        it('should correctly read the file and create a valid client', async () => {
+          const actualClient =
+            await auth._getApplicationCredentialsFromFilePath(
+              './test/fixtures/external-account-authorized-user-cred.json'
+            );
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getClient()', () => {
+        it('should initialize from credentials', async () => {
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountAuthorizedUserJson(),
+          });
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should initialize from keyFileName', async () => {
+          const keyFilename =
+            './test/fixtures/external-account-authorized-user-cred.json';
+          const auth = new GoogleAuth({keyFilename});
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should initialize from ADC', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const auth = new GoogleAuth();
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('sign()', () => {
+        it('should reject', async () => {
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountAuthorizedUserJson(),
+          });
+
+          await assert.rejects(
+            auth.sign('abc123'),
+            /Cannot sign data without `client_email`/
+          );
         });
       });
     });
