@@ -479,7 +479,7 @@ body: |-
 
   #### Using External Account Authorized User workforce credentials
 
-  External account authorized user credentials allow you to sign in with a web browser to an external identity provider account via the
+  [External account authorized user credentials](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials#browser-based-sign-in) allow you to sign in with a web browser to an external identity provider account via the
   gcloud CLI and create a configuration for the auth library to use.
 
   To generate an external account authorized user workforce identity configuration, run the following command:
