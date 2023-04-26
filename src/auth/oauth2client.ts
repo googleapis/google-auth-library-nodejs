@@ -250,6 +250,16 @@ export interface GenerateAuthUrlOpts {
   state?: string;
 
   /**
+   * Recommended. Specifies any string value that your application uses to
+   * maintain state between your authorization request and the authorization
+   * server's response. The server returns the exact value that you send as a
+   * name=value pair in the hash (#) fragment of the 'redirect_uri' after the
+   * user consents to or denies your application's access request.
+   * nonce enables replay protection when present.
+   */
+  nonce?: string;
+
+  /**
    * Optional. Enables applications to use incremental authorization to request
    * access to additional scopes in context. If you set this parameter's value
    * to true and the authorization request is granted, then the new access token
