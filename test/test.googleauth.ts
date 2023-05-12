@@ -1133,17 +1133,20 @@ describe('googleauth', () => {
     });
 
     it('_checkIsGCE should set the _isGCE flag when running on GCE, without metadata check', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(true);
+      const expected = gcpMetadata.detectGCPResidency();
+
       // note - no nocking since we don't expect any network calls;
       // nock would raise an error if we attempt a network call
 
-      assert.strict.notEqual(true, auth.isGCE);
+      assert.strict.notEqual(auth.isGCE, true);
       await auth._checkIsGCE();
-      assert.strictEqual(false, auth.isGCE);
+      assert.strictEqual(auth.isGCE, expected);
     });
 
     it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
       sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(false);
+      const expected = gcpMetadata.detectGCPResidency();
+
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockIsGCE();
       await auth._checkIsGCE();
@@ -1152,8 +1155,6 @@ describe('googleauth', () => {
     });
 
     it('_checkIsGCE should not set the _isGCE flag when not running on GCE', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(false);
-
       const scope = nockNotGCE();
       assert.notStrictEqual(true, auth.isGCE);
       await auth._checkIsGCE();
@@ -1162,8 +1163,6 @@ describe('googleauth', () => {
     });
 
     it('_checkIsGCE should retry the check for isGCE on transient http errors', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(false);
-
       assert.notStrictEqual(true, auth.isGCE);
       // the first request will fail, the second one will succeed
       const scopes = [nock500GCE(), nockIsGCE()];
@@ -1173,8 +1172,6 @@ describe('googleauth', () => {
     });
 
     it('_checkIsGCE should return false on unexpected errors', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(false);
-
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nock500GCE();
       assert.strictEqual(await auth._checkIsGCE(), false);
@@ -1183,8 +1180,6 @@ describe('googleauth', () => {
     });
 
     it('_checkIsGCE should not retry the check for isGCE if it fails with an ENOTFOUND', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(false);
-
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockNotGCE();
       await auth._checkIsGCE();
@@ -1206,8 +1201,6 @@ describe('googleauth', () => {
     });
 
     it('_checkIsGCE does not execute the second time when not running on GCE', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(false);
-
       assert.notStrictEqual(true, auth.isGCE);
       const scope = nockNotGCE();
       await auth._checkIsGCE();
