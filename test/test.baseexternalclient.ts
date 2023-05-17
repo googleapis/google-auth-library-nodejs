@@ -283,6 +283,26 @@ describe('BaseExternalAccountClient', () => {
     });
   });
 
+  describe('universeDomain', () => {
+    it('should be undefined if not set', () => {
+      const client = new TestExternalAccountClient(externalAccountOptions);
+
+      assert(client.universeDomain === undefined);
+    });
+
+    it('should be set if provided', () => {
+      const universeDomain = 'universe.domain.com';
+      const options: BaseExternalAccountClientOptions = Object.assign(
+        {},
+        externalAccountOptions
+      );
+      options.universe_domain = universeDomain;
+      const client = new TestExternalAccountClient(options);
+
+      assert.equal(client.universeDomain, universeDomain);
+    });
+  });
+
   describe('getServiceAccountEmail()', () => {
     it('should return the service account email when impersonation is used', () => {
       const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
