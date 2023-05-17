@@ -76,6 +76,7 @@ export interface BaseExternalAccountClientOptions {
   client_secret?: string;
   quota_project_id?: string;
   workforce_pool_user_project?: string;
+  universe_domain?: string;
 }
 
 /**
@@ -137,9 +138,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly workforcePoolUserProject?: string;
   public projectId: string | null;
   public projectNumber: string | null;
+  public universeDomain?: string;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
-
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -205,6 +206,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
     this.projectId = null;
     this.projectNumber = this.getProjectNumber(this.audience);
+    this.universeDomain = options.universe_domain;
   }
 
   /** The service account email to be impersonated, if available. */
