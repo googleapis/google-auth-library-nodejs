@@ -136,9 +136,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly stsCredential: sts.StsCredentials;
   private readonly clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
+  private universeDomain?: string;
   public projectId: string | null;
   public projectNumber: string | null;
-  public universeDomain?: string;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
   /**
