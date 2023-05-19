@@ -70,6 +70,7 @@ describe('BaseExternalAccountClient', () => {
     credential_source: {
       file: '/var/run/secrets/goog.id/token',
     },
+    universe_domain: 'universe.domain.com',
   };
   const externalAccountOptionsWithCreds = {
     type: 'external_account',
@@ -280,26 +281,6 @@ describe('BaseExternalAccountClient', () => {
 
         assert(client.projectNumber === null);
       });
-    });
-  });
-
-  describe('universeDomain', () => {
-    it('should be undefined if not set', () => {
-      const client = new TestExternalAccountClient(externalAccountOptions);
-
-      assert(client.universeDomain === undefined);
-    });
-
-    it('should be set if provided', () => {
-      const universeDomain = 'universe.domain.com';
-      const options: BaseExternalAccountClientOptions = Object.assign(
-        {},
-        externalAccountOptions
-      );
-      options.universe_domain = universeDomain;
-      const client = new TestExternalAccountClient(options);
-
-      assert.equal(client.universeDomain, universeDomain);
     });
   });
 
