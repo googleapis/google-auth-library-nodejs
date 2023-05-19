@@ -139,7 +139,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private universeDomain?: string;
   public projectId: string | null;
   public projectNumber: string | null;
-  public universeDomain?: string;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
   /**
