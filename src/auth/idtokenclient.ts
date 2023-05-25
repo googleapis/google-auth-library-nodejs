@@ -52,7 +52,8 @@ export class IdTokenClient extends OAuth2Client {
   ): Promise<RequestMetadataResponse> {
     if (
       !this.credentials.id_token ||
-      (this.credentials.expiry_date || 0) < Date.now()
+      !this.credentials.expiry_date ||
+      this.isTokenExpiring()
     ) {
       const idToken = await this.idTokenProvider.fetchIdToken(
         this.targetAudience
