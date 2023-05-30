@@ -18,6 +18,7 @@ const assert = require('assert');
 const cp = require('child_process');
 const {auth} = require('google-auth-library');
 const {describe, it} = require('mocha');
+const fs = require('fs');
 
 const TARGET_AUDIENCE = 'iap.googleapis.com';
 const ZONE = 'us-central1-a';
@@ -62,7 +63,7 @@ describe('auth samples', () => {
   });
 
   it('should verify google id token', async () => {
-    const jsonConfig = require(keyFile);
+    const jsonConfig = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
     const client = auth.fromJSON(jsonConfig);
 
     const idToken = await client.fetchIdToken(TARGET_AUDIENCE);

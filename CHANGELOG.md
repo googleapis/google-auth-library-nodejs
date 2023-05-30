@@ -4,6 +4,26 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [8.8.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.7.0...v8.8.0) (2023-04-25)
+
+
+### Features
+
+* Add External Account Authorized User client type ([#1530](https://github.com/googleapis/google-auth-library-nodejs/issues/1530)) ([06d4ef3](https://github.com/googleapis/google-auth-library-nodejs/commit/06d4ef3cc9ba1651af5b1f90c02b231862822ba2))
+* Document External Account Authorized User Credentials ([#1540](https://github.com/googleapis/google-auth-library-nodejs/issues/1540)) ([c6138be](https://github.com/googleapis/google-auth-library-nodejs/commit/c6138be12753c68d7645843451e1e3f9146e515a))
+
+
+### Bug Fixes
+
+* **deps:** Update `gcp-metadata` to v5.2.0 ([#1502](https://github.com/googleapis/google-auth-library-nodejs/issues/1502)) ([2562d11](https://github.com/googleapis/google-auth-library-nodejs/commit/2562d1192e0f89a3232897b8e27f24a14d5222f2))
+* **deps:** Update dependency @googleapis/iam to v4 ([#1482](https://github.com/googleapis/google-auth-library-nodejs/issues/1482)) ([00d6135](https://github.com/googleapis/google-auth-library-nodejs/commit/00d6135f35a1aa193d50fad6b3ec28a7fda9df66))
+* **deps:** Update dependency @googleapis/iam to v5 ([#1526](https://github.com/googleapis/google-auth-library-nodejs/issues/1526)) ([a1f9835](https://github.com/googleapis/google-auth-library-nodejs/commit/a1f9835fe155722206046d6bb5b56f9e53f2fe9a))
+* **deps:** Update dependency @googleapis/iam to v6 ([#1536](https://github.com/googleapis/google-auth-library-nodejs/issues/1536)) ([86a4de8](https://github.com/googleapis/google-auth-library-nodejs/commit/86a4de82c0de3efeb4b9b05a6ef34bd98cce398c))
+* **deps:** Update dependency @googleapis/iam to v7 ([#1538](https://github.com/googleapis/google-auth-library-nodejs/issues/1538)) ([fdb67dc](https://github.com/googleapis/google-auth-library-nodejs/commit/fdb67dc634f7fa2fcf8977d6d488cc91e9a7cccb))
+* Do not call metadata server if security creds and region are retrievable through environment vars ([#1493](https://github.com/googleapis/google-auth-library-nodejs/issues/1493)) ([d4de941](https://github.com/googleapis/google-auth-library-nodejs/commit/d4de9412e12f1f6f23f2a7c0d176dc5d2543e607))
+* Removing 3pi config URL validation ([#1517](https://github.com/googleapis/google-auth-library-nodejs/issues/1517)) ([a278d19](https://github.com/googleapis/google-auth-library-nodejs/commit/a278d19a0b211b13e5cf5176d40128e704b55780))
+* Removing aws url validation ([#1531](https://github.com/googleapis/google-auth-library-nodejs/issues/1531)) ([f4d9335](https://github.com/googleapis/google-auth-library-nodejs/commit/f4d933579cb5b9e50adf6e679a73cc78388ad8f8))
+
 ## [8.7.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.6.0...v8.7.0) (2022-11-08)
 
 

@@ -44,7 +44,7 @@ export interface RequestError extends GaxiosError {
   errors: Error[];
 }
 
-export class DefaultTransporter {
+export class DefaultTransporter implements Transporter {
   /**
    * Default user agent.
    */

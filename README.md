@@ -521,6 +521,29 @@ Where the following variables need to be substituted:
 - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
 
+#### Using External Account Authorized User workforce credentials
+
+[External account authorized user credentials](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials#browser-based-sign-in) allow you to sign in with a web browser to an external identity provider account via the
+gcloud CLI and create a configuration for the auth library to use.
+
+To generate an external account authorized user workforce identity configuration, run the following command:
+
+```bash
+gcloud auth application-default login --login-config=$LOGIN_CONFIG
+```
+
+Where the following variable needs to be substituted:
+- `$LOGIN_CONFIG`: The login config file generated with the cloud console or
+   [gcloud iam workforce-pools create-login-config](https://cloud.google.com/sdk/gcloud/reference/iam/workforce-pools/create-login-config)
+
+This will open a browser flow for you to sign in via the configured third party identity provider
+and then will store the external account authorized user configuration at the well known ADC location.
+The auth library will then use the provided refresh token from the configuration to generate and refresh
+an access token to call Google Cloud services.
+
+Note that the default lifetime of the refresh token is one hour, after which a new configuration will need to be generated from the gcloud CLI.
+The lifetime can be modified by changing the [session duration of the workforce pool](https://cloud.google.com/iam/docs/reference/rest/v1/locations.workforcePools), and can be set as high as 12 hours.
+
 #### Using Executable-sourced credentials with OIDC and SAML
 
 **Executable-sourced credentials**
@@ -931,6 +954,9 @@ async function main() {
   console.log(res.data);
 }
 ```
+
+#### Security Considerations
+Note that this library does not perform any validation on the token_url, token_info_url, or service_account_impersonation_url fields of the credential configuration. It is not recommended to use a credential configuration that you did not generate with the gcloud CLI unless you verify that the URL fields point to a googleapis.com domain.
 
 ## Working with ID Tokens
 ### Fetching ID Tokens
