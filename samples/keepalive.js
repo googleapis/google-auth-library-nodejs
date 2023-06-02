@@ -41,17 +41,11 @@ async function main() {
   const agent = new https.Agent({keepAlive: true});
 
   // use the agent as an Axios config param to make the request
-  const res = await client.request({
-    url,
-    httpsAgent: agent,
-  });
+  const res = await client.request({url, agent});
   console.log(res.data);
 
   // Re-use the same agent to make the next request over the same connection
-  const res2 = await client.request({
-    url,
-    httpsAgent: agent,
-  });
+  const res2 = await client.request({url, agent});
   console.log(res2.data);
 }
 
