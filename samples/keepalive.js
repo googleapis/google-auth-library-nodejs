@@ -1,4 +1,4 @@
-// Copyright 2017, Google, Inc.
+// Copyright 2023 Google LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -41,17 +41,11 @@ async function main() {
   const agent = new https.Agent({keepAlive: true});
 
   // use the agent as an Axios config param to make the request
-  const res = await client.request({
-    url,
-    httpsAgent: agent,
-  });
+  const res = await client.request({url, agent});
   console.log(res.data);
 
   // Re-use the same agent to make the next request over the same connection
-  const res2 = await client.request({
-    url,
-    httpsAgent: agent,
-  });
+  const res2 = await client.request({url, agent});
   console.log(res2.data);
 }
 
