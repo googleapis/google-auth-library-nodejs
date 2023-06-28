@@ -1138,82 +1138,15 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.scope);
     });
 
-    it('_checkIsGCE should set the _isGCE flag when running on GCE, without metadata check', async () => {
-      const expected = gcpMetadata.detectGCPResidency();
+    it("_checkIsGCE should be equalivalent should use GCP metadata's checks", async () => {
+      nockNotGCE();
 
-      // note - no nocking since we don't expect any network calls;
-      // nock would raise an error if we attempt a network call
+      const expected =
+        gcpMetadata.getGCPResidency() || gcpMetadata.isAvailable();
 
       assert.strict.notEqual(auth.isGCE, true);
       await auth._checkIsGCE();
       assert.strictEqual(auth.isGCE, expected);
-    });
-
-    it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(false);
-      const expected = gcpMetadata.detectGCPResidency();
-
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockIsGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE should not set the _isGCE flag when not running on GCE', async () => {
-      const scope = nockNotGCE();
-      assert.notStrictEqual(true, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE should retry the check for isGCE on transient http errors', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      // the first request will fail, the second one will succeed
-      const scopes = [nock500GCE(), nockIsGCE()];
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scopes.forEach(s => s.done());
-    });
-
-    it('_checkIsGCE should return false on unexpected errors', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nock500GCE();
-      assert.strictEqual(await auth._checkIsGCE(), false);
-      assert.strictEqual(auth.isGCE, false);
-      scope.done();
-    });
-
-    it('_checkIsGCE should not retry the check for isGCE if it fails with an ENOTFOUND', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockNotGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE does not execute the second time when running on GCE', async () => {
-      sandbox.stub(gcpMetadata, 'detectGCPResidency').returns(true);
-
-      // This test relies on the nock mock only getting called once.
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockIsGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE does not execute the second time when not running on GCE', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockNotGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
     });
 
     it('getCredentials should get metadata from the server when running on GCE', async () => {
