@@ -1141,8 +1141,8 @@ describe('googleauth', () => {
     it("_checkIsGCE should be equalivalent should use GCP metadata's checks", async () => {
       nockNotGCE();
 
-      const expected =
-        gcpMetadata.getGCPResidency() || gcpMetadata.isAvailable();
+      const expected = await (gcpMetadata.getGCPResidency() ||
+        gcpMetadata.isAvailable());
 
       assert.strict.notEqual(auth.isGCE, true);
       await auth._checkIsGCE();
