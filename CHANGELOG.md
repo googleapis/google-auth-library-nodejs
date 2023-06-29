@@ -4,6 +4,24 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [8.9.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.8.0...v8.9.0) (2023-06-29)
+
+
+### Features
+
+* Adds universe_domain field to base external client ([#1548](https://github.com/googleapis/google-auth-library-nodejs/issues/1548)) ([7412d7c](https://github.com/googleapis/google-auth-library-nodejs/commit/7412d7c55c688601199b5201b29cfbe63c4c7a70))
+* Utilize `gcp-metadata`'s GCP Residency Check ([#1513](https://github.com/googleapis/google-auth-library-nodejs/issues/1513)) ([43377ac](https://github.com/googleapis/google-auth-library-nodejs/commit/43377ac7af1ece14b82b053b504449f257d11af6))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v8 ([#1581](https://github.com/googleapis/google-auth-library-nodejs/issues/1581)) ([7373b75](https://github.com/googleapis/google-auth-library-nodejs/commit/7373b75c2205876f38ec2697f23758176a327fc7))
+* **deps:** Update dependency puppeteer to v20 ([#1550](https://github.com/googleapis/google-auth-library-nodejs/issues/1550)) ([3563c16](https://github.com/googleapis/google-auth-library-nodejs/commit/3563c16e2376729e399fefc0b1fad7bff78c296e))
+* IdTokenClient expiry_date check ([#1555](https://github.com/googleapis/google-auth-library-nodejs/issues/1555)) ([efcdef1](https://github.com/googleapis/google-auth-library-nodejs/commit/efcdef190fd94537d79087e7fcb26e5925a46173))
+* KeepAlive sample ([#1561](https://github.com/googleapis/google-auth-library-nodejs/issues/1561)) ([e3ab824](https://github.com/googleapis/google-auth-library-nodejs/commit/e3ab8247761b0a61f25e08a1b8fd6b200a4be200))
+* Make universeDomain private ([#1552](https://github.com/googleapis/google-auth-library-nodejs/issues/1552)) ([73b63d5](https://github.com/googleapis/google-auth-library-nodejs/commit/73b63d56fad8da033307e1be501a8846a5311211))
+* Remove auth lib version from x-goog-api-client header ([#1558](https://github.com/googleapis/google-auth-library-nodejs/issues/1558)) ([ce6013c](https://github.com/googleapis/google-auth-library-nodejs/commit/ce6013c6132ba2b82a1f8cba0a15c4710536204c))
+
 ## [8.8.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.7.0...v8.8.0) (2023-04-25)
 
 
