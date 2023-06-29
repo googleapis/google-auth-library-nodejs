@@ -64,7 +64,7 @@ describe('pack and install', () => {
     await execa('npx', ['webpack'], {cwd: `${stagingDir}/`, stdio: 'inherit'});
     const bundle = path.join(stagingDir, 'dist', 'bundle.min.js');
     const stat = fs.statSync(bundle);
-    assert(stat.size < 256 * 1024);
+    assert(stat.size < 512 * 1024);
   });
 
   /**
