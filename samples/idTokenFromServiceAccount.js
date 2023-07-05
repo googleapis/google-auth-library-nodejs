@@ -36,7 +36,8 @@ function main(targetAudience, jsonCredentialsPath) {
   // https://cloud.google.com/docs/authentication/external/set-up-adc
 
   const {GoogleAuth} = require('google-auth-library');
-  const credentials = require(jsonCredentialsPath);
+  const fs = require('fs');
+  const credentials = JSON.parse(fs.readFileSync(jsonCredentialsPath, 'utf8'));
 
   async function getIdTokenFromServiceAccount() {
     const auth = new GoogleAuth({credentials});

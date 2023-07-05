@@ -1,17 +1,26 @@
-# Copyright 2023 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-docker:
-  image: gcr.io/cloud-devrel-public-resources/owlbot-nodejs:latest
-  digest: sha256:0527a86c10b67742c409dc726ba9a31ec4e69b0006e3d7a49b0e6686c59cdaa9
-# created: 2023-05-24T20:32:43.844586914Z
+"""This script is used to synthesize generated parts of this library."""
+
+import synthtool.languages.node as node
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+# List of excludes for the enhanced library
+node.owlbot_main(
+    templates_excludes=[
+        ".github/workflows/ci.yaml",
+    ],
+)

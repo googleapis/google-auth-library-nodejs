@@ -25,6 +25,7 @@ import {
   SECONDARY_HOST_ADDRESS,
   resetIsAvailableCache,
 } from 'gcp-metadata';
+import * as gcpMetadata from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
@@ -53,6 +54,10 @@ import {
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
+import {
+  ExternalAccountAuthorizedUserClient,
+  ExternalAccountAuthorizedUserClientOptions,
+} from '../src/auth/externalAccountAuthorizedUserClient';
 
 nock.disableNetConnect();
 
@@ -82,6 +87,8 @@ describe('googleauth', () => {
   const refreshJSON = require('../../test/fixtures/refresh.json');
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const externalAccountJSON = require('../../test/fixtures/external-account-cred.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const externalAccountAuthorizedUserJSON = require('../../test/fixtures/external-account-authorized-user-cred.json');
   const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
   const wellKnownPathWindows = path.join(
     'C:',
@@ -1131,66 +1138,15 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.scope);
     });
 
-    it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockIsGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scope.done();
-    });
+    it("_checkIsGCE should be equalivalent should use GCP metadata's checks", async () => {
+      nockNotGCE();
 
-    it('_checkIsGCE should not set the _isGCE flag when not running on GCE', async () => {
-      const scope = nockNotGCE();
-      assert.notStrictEqual(true, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
-    });
+      const expected = await (gcpMetadata.getGCPResidency() ||
+        gcpMetadata.isAvailable());
 
-    it('_checkIsGCE should retry the check for isGCE on transient http errors', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      // the first request will fail, the second one will succeed
-      const scopes = [nock500GCE(), nockIsGCE()];
+      assert.strict.notEqual(auth.isGCE, true);
       await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scopes.forEach(s => s.done());
-    });
-
-    it('_checkIsGCE should return false on unexpected errors', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nock500GCE();
-      assert.strictEqual(await auth._checkIsGCE(), false);
-      assert.strictEqual(auth.isGCE, false);
-      scope.done();
-    });
-
-    it('_checkIsGCE should not retry the check for isGCE if it fails with an ENOTFOUND', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockNotGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE does not execute the second time when running on GCE', async () => {
-      // This test relies on the nock mock only getting called once.
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockIsGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE does not execute the second time when not running on GCE', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockNotGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
+      assert.strictEqual(auth.isGCE, expected);
     });
 
     it('getCredentials should get metadata from the server when running on GCE', async () => {
@@ -2454,6 +2410,116 @@ describe('googleauth', () => {
           const body = await auth.getCredentials();
           assert.notStrictEqual(null, body);
           assert.strictEqual(email, body.client_email);
+        });
+      });
+    });
+
+    describe('for external_account_authorized_user types', () => {
+      /**
+       * @return A copy of the external account authorized user JSON auth object
+       *   for testing.
+       */
+      function createExternalAccountAuthorizedUserJson() {
+        return Object.assign({}, externalAccountAuthorizedUserJSON);
+      }
+
+      describe('fromJSON()', () => {
+        it('should create the expected BaseExternalAccountClient', () => {
+          const json = createExternalAccountAuthorizedUserJson();
+          const result = auth.fromJSON(json);
+          assert(result instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('fromStream()', () => {
+        it('should read the stream and create a client', async () => {
+          const stream = fs.createReadStream(
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const actualClient = await auth.fromStream(stream);
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getApplicationDefault()', () => {
+        it('should use environment variable when it is set', async () => {
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+
+          const res = await auth.getApplicationDefault();
+          const actualClient = res.credential;
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should use well-known file when it is available and env const is not set', async () => {
+          mockLinuxWellKnownFile(
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+
+          const res = await auth.getApplicationDefault();
+          const actualClient = res.credential;
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getApplicationCredentialsFromFilePath()', () => {
+        it('should correctly read the file and create a valid client', async () => {
+          const actualClient =
+            await auth._getApplicationCredentialsFromFilePath(
+              './test/fixtures/external-account-authorized-user-cred.json'
+            );
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getClient()', () => {
+        it('should initialize from credentials', async () => {
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountAuthorizedUserJson(),
+          });
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should initialize from keyFileName', async () => {
+          const keyFilename =
+            './test/fixtures/external-account-authorized-user-cred.json';
+          const auth = new GoogleAuth({keyFilename});
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should initialize from ADC', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const auth = new GoogleAuth();
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('sign()', () => {
+        it('should reject', async () => {
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountAuthorizedUserJson(),
+          });
+
+          await assert.rejects(
+            auth.sign('abc123'),
+            /Cannot sign data without `client_email`/
+          );
         });
       });
     });

@@ -48,6 +48,11 @@ import {
   BaseExternalAccountClient,
 } from './baseexternalclient';
 import {AuthClient} from './authclient';
+import {
+  EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
+  ExternalAccountAuthorizedUserClient,
+  ExternalAccountAuthorizedUserClientOptions,
+} from './externalAccountAuthorizedUserClient';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -57,6 +62,7 @@ export type JSONClient =
   | JWT
   | UserRefreshClient
   | BaseExternalAccountClient
+  | ExternalAccountAuthorizedUserClient
   | Impersonated;
 
 export interface ProjectIdCallback {
@@ -390,13 +396,18 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   /**
    * Determines whether the auth layer is running on Google Compute Engine.
+   * Checks for GCP Residency, then fallback to checking if metadata server
+   * is available.
+   *
    * @returns A promise that resolves with the boolean.
    * @api private
    */
   async _checkIsGCE() {
     if (this.checkIsGCE === undefined) {
-      this.checkIsGCE = await gcpMetadata.isAvailable();
+      this.checkIsGCE =
+        gcpMetadata.getGCPResidency() || (await gcpMetadata.isAvailable());
     }
+
     return this.checkIsGCE;
   }
 
@@ -589,6 +600,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         options
       )!;
       client.scopes = this.getAnyScopes();
+    } else if (json.type === EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE) {
+      client = new ExternalAccountAuthorizedUserClient(
+        json as ExternalAccountAuthorizedUserClientOptions,
+        options
+      );
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);

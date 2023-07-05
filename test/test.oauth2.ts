@@ -74,6 +74,8 @@ describe('oauth2', () => {
         access_type: ACCESS_TYPE,
         scope: SCOPE,
         response_type: 'code token',
+        random: 'thing',
+        another: 'random_thing',
       };
 
       const oauth2client = new OAuth2Client({
@@ -89,6 +91,8 @@ describe('oauth2', () => {
       assert.strictEqual(query.get('scope'), SCOPE);
       assert.strictEqual(query.get('client_id'), CLIENT_ID);
       assert.strictEqual(query.get('redirect_uri'), REDIRECT_URI);
+      assert.strictEqual(query.get('random'), 'thing');
+      assert.strictEqual(query.get('another'), 'random_thing');
       done();
     });
 

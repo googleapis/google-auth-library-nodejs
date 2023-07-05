@@ -37,10 +37,6 @@ const STS_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:token-exchange';
 const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 /** The default OAuth scope to request when none is provided. */
 const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
-/** The google apis domain pattern. */
-const GOOGLE_APIS_DOMAIN_PATTERN = '\\.googleapis\\.com$';
-/** The variable portion pattern in a Google APIs domain. */
-const VARIABLE_PORTION_PATTERN = '[^\\.\\s\\/\\\\]+';
 /** Default impersonated token lifespan in seconds.*/
 const DEFAULT_TOKEN_LIFESPAN = 3600;
 
@@ -80,6 +76,7 @@ export interface BaseExternalAccountClientOptions {
   client_secret?: string;
   quota_project_id?: string;
   workforce_pool_user_project?: string;
+  universe_domain?: string;
 }
 
 /**
@@ -139,11 +136,11 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly stsCredential: sts.StsCredentials;
   private readonly clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
+  private universeDomain?: string;
   public projectId: string | null;
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
-
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -171,9 +168,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           clientSecret: options.client_secret,
         } as ClientAuthentication)
       : undefined;
-    if (!this.validateGoogleAPIsUrl('sts', options.token_url)) {
-      throw new Error(`"${options.token_url}" is not a valid token url.`);
-    }
     this.stsCredential = new sts.StsCredentials(
       options.token_url,
       this.clientAuth
@@ -195,18 +189,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           'credentials.'
       );
     }
-    if (
-      typeof options.service_account_impersonation_url !== 'undefined' &&
-      !this.validateGoogleAPIsUrl(
-        'iamcredentials',
-        options.service_account_impersonation_url
-      )
-    ) {
-      throw new Error(
-        `"${options.service_account_impersonation_url}" is ` +
-          'not a valid service account impersonation url.'
-      );
-    }
     this.serviceAccountImpersonationUrl =
       options.service_account_impersonation_url;
     this.serviceAccountImpersonationLifetime =
@@ -224,6 +206,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
     this.projectId = null;
     this.projectNumber = this.getProjectNumber(this.audience);
+    this.universeDomain = options.universe_domain;
   }
 
   /** The service account email to be impersonated, if available. */
@@ -560,66 +543,5 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     } else {
       return this.scopes;
     }
-  }
-
-  /**
-   * Checks whether Google APIs URL is valid.
-   * @param apiName The apiName of url.
-   * @param url The Google API URL to validate.
-   * @return Whether the URL is valid or not.
-   */
-  private validateGoogleAPIsUrl(apiName: string, url: string): boolean {
-    let parsedUrl;
-    // Return false if error is thrown during parsing URL.
-    try {
-      parsedUrl = new URL(url);
-    } catch (e) {
-      return false;
-    }
-
-    const urlDomain = parsedUrl.hostname;
-    // Check the protocol is https.
-    if (parsedUrl.protocol !== 'https:') {
-      return false;
-    }
-
-    const googleAPIsDomainPatterns: RegExp[] = [
-      new RegExp(
-        '^' +
-          VARIABLE_PORTION_PATTERN +
-          '\\.' +
-          apiName +
-          GOOGLE_APIS_DOMAIN_PATTERN
-      ),
-      new RegExp('^' + apiName + GOOGLE_APIS_DOMAIN_PATTERN),
-      new RegExp(
-        '^' +
-          apiName +
-          '\\.' +
-          VARIABLE_PORTION_PATTERN +
-          GOOGLE_APIS_DOMAIN_PATTERN
-      ),
-      new RegExp(
-        '^' +
-          VARIABLE_PORTION_PATTERN +
-          '\\-' +
-          apiName +
-          GOOGLE_APIS_DOMAIN_PATTERN
-      ),
-      new RegExp(
-        '^' +
-          apiName +
-          '\\-' +
-          VARIABLE_PORTION_PATTERN +
-          '\\.p' +
-          GOOGLE_APIS_DOMAIN_PATTERN
-      ),
-    ];
-    for (const googleAPIsDomainPattern of googleAPIsDomainPatterns) {
-      if (urlDomain.match(googleAPIsDomainPattern)) {
-        return true;
-      }
-    }
-    return false;
   }
 }
