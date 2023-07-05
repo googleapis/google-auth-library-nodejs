@@ -49,7 +49,11 @@ export class Compute extends OAuth2Client {
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};
     this.serviceAccountEmail = options.serviceAccountEmail || 'default';
-    this.scopes = arrify(options.scopes);
+    this.scopes = Array.isArray(options.scopes)
+      ? options.scopes
+      : options.scopes
+      ? [options.scopes]
+      : [];
   }
 
   /**
