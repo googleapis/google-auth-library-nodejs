@@ -58,11 +58,7 @@ describe('transporters', () => {
     const opts = transporter.configure({
       url: '',
     });
-    assert(
-      /^gl-node\/[.-\w$]+ auth\/[.-\w$]+$/.test(
-        opts.headers!['x-goog-api-client']
-      )
-    );
+    assert(/^gl-node\/[.-\w$]+$/.test(opts.headers!['x-goog-api-client']));
   });
 
   it('should append to x-goog-api-client header if it exists', () => {
@@ -70,9 +66,7 @@ describe('transporters', () => {
       headers: {'x-goog-api-client': 'gdcl/1.0.0'},
       url: '',
     });
-    assert(
-      /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(opts.headers!['x-goog-api-client'])
-    );
+    assert(/^gdcl\/[.-\w$]+$/.test(opts.headers!['x-goog-api-client']));
   });
 
   // see: https://github.com/googleapis/google-auth-library-nodejs/issues/819
@@ -84,9 +78,7 @@ describe('transporters', () => {
     let configuredOpts = transporter.configure(opts);
     configuredOpts = transporter.configure(opts);
     assert(
-      /^gdcl\/[.-\w$]+ auth\/[.-\w$]+$/.test(
-        configuredOpts.headers!['x-goog-api-client']
-      )
+      /^gdcl\/[.-\w$]+$/.test(configuredOpts.headers!['x-goog-api-client'])
     );
   });
 

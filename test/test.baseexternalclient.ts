@@ -70,6 +70,7 @@ describe('BaseExternalAccountClient', () => {
     credential_source: {
       file: '/var/run/secrets/goog.id/token',
     },
+    universe_domain: 'universe.domain.com',
   };
   const externalAccountOptionsWithCreds = {
     type: 'external_account',
