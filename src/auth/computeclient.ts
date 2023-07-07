@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import arrify = require('arrify');
 import {GaxiosError} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 
