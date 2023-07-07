@@ -18,14 +18,6 @@
 
 import * as base64js from 'base64-js';
 
-// Not all browsers support `TextEncoder`. The following `require` will
-// provide a fast UTF8-only replacement for those browsers that don't support
-// text encoding natively.
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
-if (typeof process === 'undefined' && typeof TextEncoder === 'undefined') {
-  require('fast-text-encoding');
-}
-
 import {Crypto, JwkCertificate, fromArrayBufferToHex} from '../crypto';
 
 export class BrowserCrypto implements Crypto {
