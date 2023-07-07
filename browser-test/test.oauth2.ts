@@ -18,11 +18,6 @@ import * as sinon from 'sinon';
 import {privateKey, publicKey} from './fixtures/keys';
 import {it, describe, beforeEach} from 'mocha';
 
-// Not all browsers support `TextEncoder`. The following `require` will
-// provide a fast UTF8-only replacement for those browsers that don't support
-// text encoding natively.
-require('fast-text-encoding');
-
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {CertificateFormat} from '../src/auth/oauth2client';
 import {JwkCertificate} from '../src/crypto/crypto';

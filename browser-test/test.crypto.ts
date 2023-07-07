@@ -19,11 +19,6 @@ import {BrowserCrypto} from '../src/crypto/browser/crypto';
 import {privateKey, publicKey} from './fixtures/keys';
 import {describe, it} from 'mocha';
 
-// Not all browsers support `TextEncoder`. The following `require` will
-// provide a fast UTF8-only replacement for those browsers that don't support
-// text encoding natively.
-require('fast-text-encoding');
-
 describe('Browser crypto tests', () => {
   const crypto = createCrypto();
 
