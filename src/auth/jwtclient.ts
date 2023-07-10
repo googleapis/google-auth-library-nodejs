@@ -46,7 +46,8 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   subject?: string;
   gtoken?: GoogleToken;
   additionalClaims?: {};
-
+  useJWTAccessWithScope?: boolean;
+  defaultServicePath?: string;
   private access?: JWTAccess;
 
   /**
@@ -121,12 +122,18 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    if (!this.apiKey && !this.hasUserScopes() && url) {
+    url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
+    const useSelfSignedJWT =
+      (!this.hasUserScopes() && url) ||
+      (this.useJWTAccessWithScope && this.hasAnyScopes());
+    if (!this.apiKey && useSelfSignedJWT) {
       if (
         this.additionalClaims &&
-        (this.additionalClaims as {
-          target_audience: string;
-        }).target_audience
+        (
+          this.additionalClaims as {
+            target_audience: string;
+          }
+        ).target_audience
       ) {
         const {tokens} = await this.refreshToken();
         return {
@@ -145,10 +152,22 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
             this.eagerRefreshThresholdMillis
           );
         }
+
+        let scopes: string | string[] | undefined;
+        if (this.hasUserScopes()) {
+          scopes = this.scopes;
+        } else if (!url) {
+          scopes = this.defaultScopes;
+        }
+
         const headers = await this.access.getRequestHeaders(
-          url,
-          this.additionalClaims
+          url ?? undefined,
+          this.additionalClaims,
+          // Scopes take precedent over audience for signing,
+          // so we only provide them if useJWTAccessWithScope is on
+          this.useJWTAccessWithScope ? scopes : undefined
         );
+
         return {headers: this.addSharedMetadataHeaders(headers)};
       }
     } else if (this.hasAnyScopes() || this.apiKey) {
@@ -173,6 +192,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       keyFile: this.keyFile,
       key: this.key,
       additionalClaims: {target_audience: targetAudience},
+      transporter: this.transporter,
     });
     await gtoken.getToken({
       forceRefresh: true,
@@ -266,6 +286,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         keyFile: this.keyFile,
         key: this.key,
         additionalClaims: this.additionalClaims,
+        transporter: this.transporter,
       });
     }
     return this.gtoken;

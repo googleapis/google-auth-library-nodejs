@@ -25,6 +25,7 @@ import {
   SECONDARY_HOST_ADDRESS,
   resetIsAvailableCache,
 } from 'gcp-metadata';
+import * as gcpMetadata from 'gcp-metadata';
 import * as nock from 'nock';
 import * as os from 'os';
 import * as path from 'path';
@@ -39,16 +40,24 @@ import {
   OAuth2Client,
   ExternalAccountClientOptions,
   RefreshOptions,
+  Impersonated,
 } from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
 import {Compute} from '../src/auth/computeclient';
 import {
+  getServiceAccountImpersonationUrl,
   mockCloudResourceManager,
+  mockGenerateAccessToken,
   mockStsTokenExchange,
+  saEmail,
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
+import {
+  ExternalAccountAuthorizedUserClient,
+  ExternalAccountAuthorizedUserClientOptions,
+} from '../src/auth/externalAccountAuthorizedUserClient';
 
 nock.disableNetConnect();
 
@@ -78,6 +87,8 @@ describe('googleauth', () => {
   const refreshJSON = require('../../test/fixtures/refresh.json');
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const externalAccountJSON = require('../../test/fixtures/external-account-cred.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const externalAccountAuthorizedUserJSON = require('../../test/fixtures/external-account-authorized-user-cred.json');
   const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
   const wellKnownPathWindows = path.join(
     'C:',
@@ -123,6 +134,7 @@ describe('googleauth', () => {
         GCLOUD_PROJECT: undefined,
         GOOGLE_APPLICATION_CREDENTIALS: undefined,
         google_application_credentials: undefined,
+        GOOGLE_CLOUD_QUOTA_PROJECT: undefined,
         HOME: path.join('/', 'fake', 'user'),
       });
       sandbox.stub(process, 'env').value(envVars);
@@ -282,6 +294,33 @@ describe('googleauth', () => {
       return sandbox.stub(process, 'env').value(envVars);
     }
 
+    it('should accept and use an `AuthClient`', async () => {
+      const customRequestHeaders = {
+        'my-unique': 'header',
+      };
+
+      // Using a custom `AuthClient` to ensure any `AuthClient` would work
+      class MyAuthClient extends AuthClient {
+        async getAccessToken() {
+          return {token: '', res: undefined};
+        }
+
+        async getRequestHeaders() {
+          return {...customRequestHeaders};
+        }
+
+        request = OAuth2Client.prototype.request.bind(this);
+      }
+
+      const authClient = new MyAuthClient();
+
+      const auth = new GoogleAuth({authClient});
+
+      assert.equal(auth.cachedCredential, authClient);
+      assert.equal(await auth.getClient(), authClient);
+      assert.deepEqual(await auth.getRequestHeaders(''), customRequestHeaders);
+    });
+
     it('fromJSON should support the instantiated named export', () => {
       const result = auth.fromJSON(createJwtJSON());
       assert(result);
@@ -376,7 +415,7 @@ describe('googleauth', () => {
 
     it('fromJSON should error on missing client_email', () => {
       const json = createJwtJSON();
-      delete json.client_email;
+      delete (json as Partial<typeof json>).client_email;
       assert.throws(() => {
         auth.fromJSON(json);
       });
@@ -384,7 +423,7 @@ describe('googleauth', () => {
 
     it('fromJSON should error on missing private_key', () => {
       const json = createJwtJSON();
-      delete json.private_key;
+      delete (json as Partial<typeof json>).private_key;
       assert.throws(() => {
         auth.fromJSON(json);
       });
@@ -402,10 +441,37 @@ describe('googleauth', () => {
       assert.strictEqual(json.private_key, (result as JWT).key);
     });
 
+    it('fromJSON should set useJWTAccessWithScope with private key', () => {
+      auth.useJWTAccessWithScope = true;
+      const json = createJwtJSON();
+      const result = auth.fromJSON(json);
+      assert.ok((result as JWT).useJWTAccessWithScope);
+    });
+
+    it('fromJSON should set default service path with private key', () => {
+      auth.defaultServicePath = 'a/b/c';
+      const json = createJwtJSON();
+      const result = auth.fromJSON(json);
+      assert.strictEqual((result as JWT).defaultServicePath, 'a/b/c');
+    });
+
     it('fromJSON should create JWT with null scopes', () => {
       const json = createJwtJSON();
       const result = auth.fromJSON(json);
       assert.strictEqual(undefined, (result as JWT).scopes);
+    });
+    it('fromJSON should set useJWTAccessWithScope with private key', () => {
+      auth.useJWTAccessWithScope = true;
+      const json = createJwtJSON();
+      const result = auth.fromJSON(json);
+      assert.ok((result as JWT).useJWTAccessWithScope);
+    });
+
+    it('fromJSON should set default service path with private key', () => {
+      auth.defaultServicePath = 'a/b/c';
+      const json = createJwtJSON();
+      const result = auth.fromJSON(json);
+      assert.strictEqual((result as JWT).defaultServicePath, 'a/b/c');
     });
 
     it('fromJSON should create JWT with null subject', () => {
@@ -629,14 +695,16 @@ describe('googleauth', () => {
     it('tryGetApplicationCredentialsFromEnvironmentVariable should return null when env const is not set', async () => {
       // Set up a mock to return a null path string.
       mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
-      const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const client =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.strictEqual(client, null);
     });
 
     it('tryGetApplicationCredentialsFromEnvironmentVariable should return null when env const is empty string', async () => {
       // Set up a mock to return an empty path string.
       mockEnvVar('GOOGLE_APPLICATION_CREDENTIALS');
-      const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const client =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.strictEqual(client, null);
     });
 
@@ -657,7 +725,8 @@ describe('googleauth', () => {
         'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json'
       );
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       const jwt = result as JWT;
       assert.strictEqual(privateJSON.private_key, jwt.key);
       assert.strictEqual(privateJSON.client_email, jwt.email);
@@ -672,9 +741,10 @@ describe('googleauth', () => {
         'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json'
       );
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
-        {eagerRefreshThresholdMillis: 60 * 60 * 1000}
-      );
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable({
+          eagerRefreshThresholdMillis: 60 * 60 * 1000,
+        });
       const jwt = result as JWT;
       assert.strictEqual(privateJSON.private_key, jwt.key);
       assert.strictEqual(privateJSON.client_email, jwt.email);
@@ -687,14 +757,16 @@ describe('googleauth', () => {
     it('_tryGetApplicationCredentialsFromWellKnownFile should build the correct directory for Windows', async () => {
       mockWindows();
       mockWindowsWellKnownFile();
-      const result = (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
+      const result =
+        (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
       assert.ok(result);
       assert.strictEqual(result.email, private2JSON.client_email);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should build the correct directory for non-Windows', async () => {
       mockLinuxWellKnownFile();
-      const client = (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
+      const client =
+        (await auth._tryGetApplicationCredentialsFromWellKnownFile()) as JWT;
       assert.strictEqual(client.email, private2JSON.client_email);
     });
 
@@ -702,25 +774,29 @@ describe('googleauth', () => {
       mockWindows();
       mockEnvVar('APPDATA');
       mockWindowsWellKnownFile();
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should fail on non-Windows when HOME is not defined', async () => {
       mockEnvVar('HOME');
       mockLinuxWellKnownFile();
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should fail on Windows when file does not exist', async () => {
       mockWindows();
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
     it('_tryGetApplicationCredentialsFromWellKnownFile should fail on non-Windows when file does not exist', async () => {
-      const result = await auth._tryGetApplicationCredentialsFromWellKnownFile();
+      const result =
+        await auth._tryGetApplicationCredentialsFromWellKnownFile();
       assert.strictEqual(null, result);
     });
 
@@ -846,7 +922,7 @@ describe('googleauth', () => {
         configuration: {properties: {core: {project: STUB_PROJECT}}},
       });
 
-      ((child_process.exec as unknown) as sinon.SinonStub).restore();
+      (child_process.exec as unknown as sinon.SinonStub).restore();
       const stub = sandbox
         .stub(child_process, 'exec')
         .callsArgWith(1, null, stdout, null);
@@ -858,7 +934,7 @@ describe('googleauth', () => {
     it('getProjectId should use GCE when well-known file and env const are not set', async () => {
       const scope = createGetProjectIdNock(STUB_PROJECT);
       const projectId = await auth.getProjectId();
-      const stub = (child_process.exec as unknown) as sinon.SinonStub;
+      const stub = child_process.exec as unknown as sinon.SinonStub;
       stub.restore();
       assert(stub.calledOnce);
       assert.strictEqual(projectId, STUB_PROJECT);
@@ -975,6 +1051,40 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.scope);
     });
 
+    it('explicitly set quota project should not be overriden by environment value', async () => {
+      mockLinuxWellKnownFile(
+        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', 'quota_from_env');
+      let result = await auth.getApplicationDefault();
+      let client = result.credential as JWT;
+      assert.strictEqual('quota_from_env', client.quotaProjectId);
+
+      client.quotaProjectId = 'explicit_quota';
+      result = await auth.getApplicationDefault();
+      client = result.credential as JWT;
+      assert.strictEqual('explicit_quota', client.quotaProjectId);
+    });
+
+    it('getApplicationDefault should use quota project id from file if environment variable is empty', async () => {
+      mockLinuxWellKnownFile(
+        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_QUOTA_PROJECT', '');
+      const result = await auth.getApplicationDefault();
+      const client = result.credential as JWT;
+      assert.strictEqual('my-quota-project', client.quotaProjectId);
+    });
+
+    it('getApplicationDefault should use quota project id from file if environment variable is not set', async () => {
+      mockLinuxWellKnownFile(
+        './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      );
+      const result = await auth.getApplicationDefault();
+      const client = result.credential as JWT;
+      assert.strictEqual('my-quota-project', client.quotaProjectId);
+    });
+
     it('getApplicationDefault should use GCE when well-known file and env const are not set', async () => {
       // Set up the creds.
       // * Environment variable is not set.
@@ -1028,66 +1138,15 @@ describe('googleauth', () => {
       assert.strictEqual(undefined, client.scope);
     });
 
-    it('_checkIsGCE should set the _isGCE flag when running on GCE', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockIsGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scope.done();
-    });
+    it("_checkIsGCE should be equalivalent should use GCP metadata's checks", async () => {
+      nockNotGCE();
 
-    it('_checkIsGCE should not set the _isGCE flag when not running on GCE', async () => {
-      const scope = nockNotGCE();
-      assert.notStrictEqual(true, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
-    });
+      const expected = await (gcpMetadata.getGCPResidency() ||
+        gcpMetadata.isAvailable());
 
-    it('_checkIsGCE should retry the check for isGCE on transient http errors', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      // the first request will fail, the second one will succeed
-      const scopes = [nock500GCE(), nockIsGCE()];
+      assert.strict.notEqual(auth.isGCE, true);
       await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scopes.forEach(s => s.done());
-    });
-
-    it('_checkIsGCE should return false on unexpected errors', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nock500GCE();
-      assert.strictEqual(await auth._checkIsGCE(), false);
-      assert.strictEqual(auth.isGCE, false);
-      scope.done();
-    });
-
-    it('_checkIsGCE should not retry the check for isGCE if it fails with an ENOTFOUND', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockNotGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE does not execute the second time when running on GCE', async () => {
-      // This test relies on the nock mock only getting called once.
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockIsGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      scope.done();
-    });
-
-    it('_checkIsGCE does not execute the second time when not running on GCE', async () => {
-      assert.notStrictEqual(true, auth.isGCE);
-      const scope = nockNotGCE();
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      await auth._checkIsGCE();
-      assert.strictEqual(false as boolean, auth.isGCE);
-      scope.done();
+      assert.strictEqual(auth.isGCE, expected);
     });
 
     it('getCredentials should get metadata from the server when running on GCE', async () => {
@@ -1150,7 +1209,8 @@ describe('googleauth', () => {
         'GOOGLE_APPLICATION_CREDENTIALS',
         './test/fixtures/private.json'
       );
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert(result);
       const jwt = result as JWT;
       const body = await auth.getCredentials();
@@ -1169,7 +1229,8 @@ describe('googleauth', () => {
       const spy = sinon.spy(auth, 'getClient');
       const body = await auth.getCredentials();
 
-      const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const result =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       if (!(result instanceof JWT)) {
         throw new assert.AssertionError({
           message: 'Credentials are not a JWT object',
@@ -1198,7 +1259,8 @@ describe('googleauth', () => {
 
     it('getCredentials should return error when env const is not set', async () => {
       // Set up a mock to return a null path string
-      const client = await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
+      const client =
+        await auth._tryGetApplicationCredentialsFromEnvironmentVariable();
       assert.strictEqual(null, client);
       await assert.rejects(auth.getCredentials());
     });
@@ -1354,6 +1416,14 @@ describe('googleauth', () => {
       assert.strictEqual(env, envDetect.GCPEnv.APP_ENGINE);
     });
 
+    it('should get the current environment if Cloud Run', async () => {
+      envDetect.clear();
+      mockEnvVar('K_CONFIGURATION', 'KITTY');
+      const {auth} = mockGCE();
+      const env = await auth.getEnv();
+      assert.strictEqual(env, envDetect.GCPEnv.CLOUD_RUN);
+    });
+
     it('should make the request', async () => {
       const url = 'http://example.com';
       const {auth, scopes} = mockGCE();
@@ -1380,9 +1450,16 @@ describe('googleauth', () => {
       assert.strictEqual(value, computed);
     });
 
-    it('sign should hit the IAM endpoint if no private_key is available', async () => {
+    it('sign should hit the IAM endpoint if no projectId nor private_key is available', async () => {
       const {auth, scopes} = mockGCE();
-      mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+
+      sinon
+        .stub(
+          auth as unknown as {getProjectIdAsync: () => Promise<string | null>},
+          'getProjectIdAsync'
+        )
+        .resolves();
+
       const email = 'google@auth.library';
       const iamUri = 'https://iamcredentials.googleapis.com';
       const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
@@ -1415,14 +1492,6 @@ describe('googleauth', () => {
       await assert.rejects(
         auth.getProjectId(),
         /Unable to detect a Project Id in the current environment/
-      );
-    });
-
-    it('should throw if options are passed to getClient()', async () => {
-      const auth = new GoogleAuth();
-      await assert.rejects(
-        auth.getClient({hello: 'world'}),
-        /Passing options to getClient is forbidden in v5.0.0/
       );
     });
 
@@ -1530,6 +1599,7 @@ describe('googleauth', () => {
       try {
         await auth.getIdTokenClient('a-target-audience');
       } catch (e) {
+        assert(e instanceof Error);
         assert(
           e.message.startsWith('Cannot fetch ID token in this environment')
         );
@@ -1561,6 +1631,11 @@ describe('googleauth', () => {
         token_type: 'Bearer',
         expires_in: 3600,
         scope: 'scope1 scope2',
+      };
+      const now = new Date().getTime();
+      const saSuccessResponse = {
+        accessToken: 'SA_ACCESS_TOKEN',
+        expireTime: new Date(now + 3600 * 1000).toISOString(),
       };
       const fileSubjectToken = fs.readFileSync(
         externalAccountJSON.credential_source.file,
@@ -1606,13 +1681,19 @@ describe('googleauth', () => {
        * manager.
        * @param mockProjectIdRetrieval Whether to mock project ID retrieval.
        * @param expectedScopes The list of expected scopes.
+       * @param mockServiceAccountImpersonation Whether to mock IAMCredentials
+       *   GenerateAccessToken.
        * @return The list of nock.Scope corresponding to the mocked HTTP
        *   requests.
        */
       function mockGetAccessTokenAndProjectId(
         mockProjectIdRetrieval = true,
-        expectedScopes = ['https://www.googleapis.com/auth/cloud-platform']
+        expectedScopes = ['https://www.googleapis.com/auth/cloud-platform'],
+        mockServiceAccountImpersonation = false
       ): nock.Scope[] {
+        const stsScopes = mockServiceAccountImpersonation
+          ? 'https://www.googleapis.com/auth/cloud-platform'
+          : expectedScopes.join(' ');
         const scopes = [
           mockStsTokenExchange([
             {
@@ -1621,7 +1702,7 @@ describe('googleauth', () => {
               request: {
                 grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
                 audience: externalAccountJSON.audience,
-                scope: expectedScopes.join(' '),
+                scope: stsScopes,
                 requested_token_type:
                   'urn:ietf:params:oauth:token-type:access_token',
                 subject_token: fileSubjectToken,
@@ -1630,6 +1711,18 @@ describe('googleauth', () => {
             },
           ]),
         ];
+        if (mockServiceAccountImpersonation) {
+          scopes.push(
+            mockGenerateAccessToken([
+              {
+                statusCode: 200,
+                response: saSuccessResponse,
+                token: stsSuccessfulResponse.access_token,
+                scopes: expectedScopes,
+              },
+            ])
+          );
+        }
 
         if (mockProjectIdRetrieval) {
           scopes.push(
@@ -1896,13 +1989,37 @@ describe('googleauth', () => {
           );
           scopes.forEach(s => s.done());
         });
+
+        it('should return `null` for `projectId` when on cannot be found', async () => {
+          // Environment variable is set up to point to external-account-cred.json
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-cred.json'
+          );
+
+          const auth = new GoogleAuth();
+
+          sandbox
+            .stub(
+              auth as {} as {
+                getProjectIdAsync: Promise<string | null>;
+              },
+              'getProjectIdAsync'
+            )
+            .resolves(null);
+
+          const res = await auth.getApplicationDefault();
+
+          assert.equal(res.projectId, null);
+        });
       });
 
       describe('getApplicationCredentialsFromFilePath()', () => {
         it('should correctly read the file and create a valid client', async () => {
-          const actualClient = await auth._getApplicationCredentialsFromFilePath(
-            './test/fixtures/external-account-cred.json'
-          );
+          const actualClient =
+            await auth._getApplicationCredentialsFromFilePath(
+              './test/fixtures/external-account-cred.json'
+            );
 
           assertExternalAccountClientInitialized(
             actualClient,
@@ -2002,9 +2119,10 @@ describe('googleauth', () => {
           'GOOGLE_APPLICATION_CREDENTIALS',
           './test/fixtures/external-account-cred.json'
         );
-        const result = await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
-          refreshOptions
-        );
+        const result =
+          await auth._tryGetApplicationCredentialsFromEnvironmentVariable(
+            refreshOptions
+          );
 
         assert(result);
         assertExternalAccountClientInitialized(
@@ -2017,9 +2135,10 @@ describe('googleauth', () => {
       it('tryGetApplicationCredentialsFromWellKnownFile() should resolve', async () => {
         // Set up a mock to return path to a valid credentials file.
         mockLinuxWellKnownFile('./test/fixtures/external-account-cred.json');
-        const result = await auth._tryGetApplicationCredentialsFromWellKnownFile(
-          refreshOptions
-        );
+        const result =
+          await auth._tryGetApplicationCredentialsFromWellKnownFile(
+            refreshOptions
+          );
 
         assert(result);
         assertExternalAccountClientInitialized(
@@ -2086,6 +2205,44 @@ describe('googleauth', () => {
           scopes.forEach(s => s.done());
         });
 
+        it('should initialize from impersonated ADC', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/impersonated_application_default_credentials.json'
+          );
+
+          // Set up a mock to explicity return the Project ID, as needed for impersonated ADC
+          mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+
+          const auth = new GoogleAuth();
+          const client = await auth.getClient();
+
+          assert(client instanceof Impersonated);
+
+          // Check if targetPrincipal gets extracted and used correctly
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+
+          const scopes = [
+            nock('https://oauth2.googleapis.com').post('/token').reply(200, {
+              access_token: 'abc123',
+            }),
+            nock('https://iamcredentials.googleapis.com')
+              .post(
+                '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken'
+              )
+              .reply(200, {
+                accessToken: 'qwerty345',
+                expireTime: tomorrow.toISOString(),
+              }),
+          ];
+
+          await client.refreshAccessToken();
+          scopes.forEach(s => s.done());
+          assert.strictEqual(client.credentials.access_token, 'qwerty345');
+        });
+
         it('should allow use defaultScopes when no scopes are available', async () => {
           const keyFilename = './test/fixtures/external-account-cred.json';
           const auth = new GoogleAuth({keyFilename});
@@ -2126,6 +2283,57 @@ describe('googleauth', () => {
         });
       });
 
+      describe('sign()', () => {
+        it('should reject when no impersonation is used', async () => {
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountJSON(),
+          });
+
+          await assert.rejects(
+            auth.sign('abc123'),
+            /Cannot sign data without `client_email`/
+          );
+        });
+
+        it('should use IAMCredentials endpoint when impersonation is used', async () => {
+          const scopes = mockGetAccessTokenAndProjectId(
+            false,
+            ['https://www.googleapis.com/auth/cloud-platform'],
+            true
+          );
+          const email = saEmail;
+          const configWithImpersonation = createExternalAccountJSON();
+          configWithImpersonation.service_account_impersonation_url =
+            getServiceAccountImpersonationUrl();
+          const iamUri = 'https://iamcredentials.googleapis.com';
+          const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
+          const signedBlob = 'erutangis';
+          const data = 'abc123';
+          scopes.push(
+            nock(iamUri)
+              .post(
+                iamPath,
+                {
+                  payload: Buffer.from(data, 'utf-8').toString('base64'),
+                },
+                {
+                  reqheaders: {
+                    Authorization: `Bearer ${saSuccessResponse.accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              )
+              .reply(200, {signedBlob})
+          );
+          const auth = new GoogleAuth({credentials: configWithImpersonation});
+
+          const value = await auth.sign(data);
+
+          scopes.forEach(x => x.done());
+          assert.strictEqual(value, signedBlob);
+        });
+      });
+
       it('getIdTokenClient() should reject', async () => {
         const auth = new GoogleAuth({credentials: createExternalAccountJSON()});
 
@@ -2133,17 +2341,6 @@ describe('googleauth', () => {
           auth.getIdTokenClient('a-target-audience'),
           /Cannot fetch ID token in this environment/
         );
-      });
-
-      it('sign() should reject', async () => {
-        const scopes = mockGetAccessTokenAndProjectId();
-        const auth = new GoogleAuth({credentials: createExternalAccountJSON()});
-
-        await assert.rejects(
-          auth.sign('abc123'),
-          /Cannot sign data without `client_email`/
-        );
-        scopes.forEach(s => s.done());
       });
 
       it('getAccessToken() should get an access token', async () => {
@@ -2200,6 +2397,130 @@ describe('googleauth', () => {
 
         assert.deepStrictEqual(res.data, data);
         scopes.forEach(s => s.done());
+      });
+
+      describe('getCredentials()', () => {
+        it('getCredentials() should return the service account email for external accounts', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          const email = saEmail;
+          const configWithImpersonation = createExternalAccountJSON();
+          configWithImpersonation.service_account_impersonation_url =
+            getServiceAccountImpersonationUrl();
+          const auth = new GoogleAuth({credentials: configWithImpersonation});
+          const body = await auth.getCredentials();
+          assert.notStrictEqual(null, body);
+          assert.strictEqual(email, body.client_email);
+        });
+      });
+    });
+
+    describe('for external_account_authorized_user types', () => {
+      /**
+       * @return A copy of the external account authorized user JSON auth object
+       *   for testing.
+       */
+      function createExternalAccountAuthorizedUserJson() {
+        return Object.assign({}, externalAccountAuthorizedUserJSON);
+      }
+
+      describe('fromJSON()', () => {
+        it('should create the expected BaseExternalAccountClient', () => {
+          const json = createExternalAccountAuthorizedUserJson();
+          const result = auth.fromJSON(json);
+          assert(result instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('fromStream()', () => {
+        it('should read the stream and create a client', async () => {
+          const stream = fs.createReadStream(
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const actualClient = await auth.fromStream(stream);
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getApplicationDefault()', () => {
+        it('should use environment variable when it is set', async () => {
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+
+          const res = await auth.getApplicationDefault();
+          const actualClient = res.credential;
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should use well-known file when it is available and env const is not set', async () => {
+          mockLinuxWellKnownFile(
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+
+          const res = await auth.getApplicationDefault();
+          const actualClient = res.credential;
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getApplicationCredentialsFromFilePath()', () => {
+        it('should correctly read the file and create a valid client', async () => {
+          const actualClient =
+            await auth._getApplicationCredentialsFromFilePath(
+              './test/fixtures/external-account-authorized-user-cred.json'
+            );
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('getClient()', () => {
+        it('should initialize from credentials', async () => {
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountAuthorizedUserJson(),
+          });
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should initialize from keyFileName', async () => {
+          const keyFilename =
+            './test/fixtures/external-account-authorized-user-cred.json';
+          const auth = new GoogleAuth({keyFilename});
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should initialize from ADC', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const auth = new GoogleAuth();
+          const actualClient = await auth.getClient();
+
+          assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+      });
+
+      describe('sign()', () => {
+        it('should reject', async () => {
+          const auth = new GoogleAuth({
+            credentials: createExternalAccountAuthorizedUserJson(),
+          });
+
+          await assert.rejects(
+            auth.sign('abc123'),
+            /Cannot sign data without `client_email`/
+          );
+        });
       });
     });
   });

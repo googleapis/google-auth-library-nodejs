@@ -72,7 +72,11 @@ const {assert} = require('chai');
 const {describe, it, before, afterEach} = require('mocha');
 const fs = require('fs');
 const {promisify} = require('util');
-const {GoogleAuth, DefaultTransporter} = require('google-auth-library');
+const {
+  GoogleAuth,
+  DefaultTransporter,
+  IdentityPoolClient,
+} = require('google-auth-library');
 const os = require('os');
 const path = require('path');
 const http = require('http');
@@ -217,6 +221,7 @@ describe('samples for external-account', () => {
   const suffix = generateRandomString(10);
   const configFilePath = path.join(os.tmpdir(), `config-${suffix}.json`);
   const oidcTokenFilePath = path.join(os.tmpdir(), `token-${suffix}.txt`);
+  const executableFilePath = path.join(os.tmpdir(), `executable-${suffix}.sh`);
   const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
@@ -248,6 +253,9 @@ describe('samples for external-account', () => {
     if (fs.existsSync(oidcTokenFilePath)) {
       await unlink(oidcTokenFilePath);
     }
+    if (fs.existsSync(executableFilePath)) {
+      await unlink(executableFilePath);
+    }
     // Close any open http servers.
     if (httpServer) {
       httpServer.close();
@@ -262,7 +270,7 @@ describe('samples for external-account', () => {
       type: 'external_account',
       audience: AUDIENCE_OIDC,
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-      token_url: 'https://sts.googleapis.com/v1beta/token',
+      token_url: 'https://sts.googleapis.com/v1/token',
       service_account_impersonation_url:
         'https://iamcredentials.googleapis.com/v1/projects/' +
         `-/serviceAccounts/${clientEmail}:generateAccessToken`,
@@ -285,6 +293,38 @@ describe('samples for external-account', () => {
     assert.match(output, /DNS Info:/);
   });
 
+  it('should sign the blobs with IAM credentials API', async () => {
+    // Create file-sourced configuration JSON file.
+    // The created OIDC token will be used as the subject token and will be
+    // retrieved from a file location.
+    const config = {
+      type: 'external_account',
+      audience: AUDIENCE_OIDC,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      token_url: 'https://sts.googleapis.com/v1/token',
+      service_account_impersonation_url:
+        'https://iamcredentials.googleapis.com/v1/projects/' +
+        `-/serviceAccounts/${clientEmail}:generateAccessToken`,
+      credential_source: {
+        file: oidcTokenFilePath,
+      },
+    };
+    await writeFile(oidcTokenFilePath, oidcToken);
+    await writeFile(configFilePath, JSON.stringify(config));
+
+    // Run sample script with GOOGLE_APPLICATION_CREDENTIALS envvar
+    // pointing to the temporarily created configuration file.
+    // This script will use signBlob to sign some data using
+    // service account impersonated workload identity pool credentials.
+    const output = await execAsync(`${process.execPath} signBlob`, {
+      env: {
+        ...process.env,
+        GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
+      },
+    });
+    assert.ok(output.length > 0);
+  });
+
   it('should acquire ADC for url-sourced creds', async () => {
     // Create url-sourced configuration JSON file.
     // The created OIDC token will be used as the subject token and will be
@@ -293,7 +333,7 @@ describe('samples for external-account', () => {
       type: 'external_account',
       audience: AUDIENCE_OIDC,
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-      token_url: 'https://sts.googleapis.com/v1beta/token',
+      token_url: 'https://sts.googleapis.com/v1/token',
       service_account_impersonation_url:
         'https://iamcredentials.googleapis.com/v1/projects/' +
         `-/serviceAccounts/${clientEmail}:generateAccessToken`,
@@ -358,7 +398,7 @@ describe('samples for external-account', () => {
       type: 'external_account',
       audience: AUDIENCE_AWS,
       subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-      token_url: 'https://sts.googleapis.com/v1beta/token',
+      token_url: 'https://sts.googleapis.com/v1/token',
       service_account_impersonation_url:
         'https://iamcredentials.googleapis.com/v1/projects/' +
         `-/serviceAccounts/${clientEmail}:generateAccessToken`,
@@ -388,5 +428,84 @@ describe('samples for external-account', () => {
     });
     // Confirm expected script output.
     assert.match(output, /DNS Info:/);
+  });
+
+  it('should acquire ADC for PluggableAuth creds', async () => {
+    // Create Pluggable Auth configuration JSON file.
+    const config = {
+      type: 'external_account',
+      audience: AUDIENCE_OIDC,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      token_url: 'https://sts.googleapis.com/v1/token',
+      service_account_impersonation_url:
+        'https://iamcredentials.googleapis.com/v1/projects/' +
+        `-/serviceAccounts/${clientEmail}:generateAccessToken`,
+      credential_source: {
+        executable: {
+          command: executableFilePath,
+          timeout_millis: 5000,
+        },
+      },
+    };
+    await writeFile(configFilePath, JSON.stringify(config));
+
+    const expirationTime = Date.now() / 1000 + 60;
+    const responseJson = {
+      version: 1,
+      success: true,
+      expiration_time: expirationTime,
+      token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      id_token: oidcToken,
+    };
+    let exeContent = '#!/bin/bash\n';
+    exeContent += 'echo ';
+    exeContent += JSON.stringify(JSON.stringify(responseJson));
+    exeContent += '\n';
+    await writeFile(executableFilePath, exeContent, {mode: 0x766});
+    // Run sample script with GOOGLE_APPLICATION_CREDENTIALS environment
+    // variable pointing to the temporarily created configuration file.
+    const output = await execAsync(`${process.execPath} adc`, {
+      env: {
+        ...process.env,
+        // Set environment variable to allow pluggable auth executable to run.
+        GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: 1,
+        // GOOGLE_APPLICATION_CREDENTIALS environment variable used for ADC.
+        GOOGLE_APPLICATION_CREDENTIALS: configFilePath,
+      },
+    });
+    // Confirm expected script output.
+    assert.match(output, /DNS Info:/);
+  });
+
+  it('should acquire access token with service account impersonation options', async () => {
+    // Create file-sourced configuration JSON file.
+    // The created OIDC token will be used as the subject token and will be
+    // retrieved from a file location.
+    const config = {
+      type: 'external_account',
+      audience: AUDIENCE_OIDC,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      token_url: 'https://sts.googleapis.com/v1/token',
+      service_account_impersonation_url:
+        'https://iamcredentials.googleapis.com/v1/projects/' +
+        `-/serviceAccounts/${clientEmail}:generateAccessToken`,
+      service_account_impersonation: {
+        token_lifetime_seconds: 2800,
+      },
+      credential_source: {
+        file: oidcTokenFilePath,
+      },
+    };
+    await writeFile(oidcTokenFilePath, oidcToken);
+    const client = new IdentityPoolClient(config);
+
+    const minExpireTime = new Date().getTime() + (2800 * 1000 - 5 * 1000);
+    const maxExpireTime = new Date().getTime() + (2800 * 1000 + 5 * 1000);
+    const token = await client.getAccessToken();
+    const actualExpireTime = new Date(token.res.data.expireTime).getTime();
+
+    assert.isTrue(
+      minExpireTime <= actualExpireTime && actualExpireTime <= maxExpireTime
+    );
   });
 });

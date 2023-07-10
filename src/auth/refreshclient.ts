@@ -16,6 +16,8 @@ import * as stream from 'stream';
 import {JWTInput} from './credentials';
 import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
 
+export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
+
 export interface UserRefreshClientOptions extends RefreshOptions {
   clientId?: string;
   clientSecret?: string;

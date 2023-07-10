@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 name: ci
 jobs:
@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [10, 12, 14, 15]
+        node: [14, 16, 18, 20]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
       - run: node --version
@@ -24,30 +24,24 @@ jobs:
       - run: rm -rf node_modules
       - run: npm install
       - run: npm test
-      - name: coverage
-        uses: codecov/codecov-action@v1
-        with:
-          name: actions ${{ matrix.node }}
-          fail_ci_if_error: false
+        env:
+          MOCHA_THROW_DEPRECATION: false
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
       - run: npm install
       - run: npm test
-      - name: coverage
-        uses: codecov/codecov-action@v1
-        with:
-          name: actions windows
-          fail_ci_if_error: false
+        env:
+          MOCHA_THROW_DEPRECATION: false
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
       - run: npm install
@@ -55,9 +49,5 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 14
-      - run: npm install
-      - run: npm run docs-test
+      # See: https://github.com/JustinBeckwith/linkinator-action/issues/148
+      - run: echo "temporarily skipping until linkinator's fixed upstream"

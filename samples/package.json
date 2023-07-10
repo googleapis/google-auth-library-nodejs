@@ -5,15 +5,17 @@
     "*.js"
   ],
   "scripts": {
-    "setup": "node scripts/externalclient-setup.js",
+    "setup": "node scripts/*.js",
     "test": "mocha --timeout 60000"
   },
   "engines": {
-    "node": ">=10"
+    "node": ">=14"
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "google-auth-library": "^7.0.4",
+    "@google-cloud/storage": "^6.0.0",
+    "@googleapis/iam": "^8.0.0",
+    "google-auth-library": "^8.9.0",
     "node-fetch": "^2.3.0",
     "opn": "^5.3.0",
     "server-destroy": "^1.0.1"

@@ -44,14 +44,16 @@ interface NockMockGenerateAccessToken {
   token: string;
   response: IamGenerateAccessTokenResponse | CloudRequestError;
   scopes: string[];
+  lifetime?: number;
 }
 
+const defaultLifetime = 3600;
 const defaultProjectNumber = '123456';
 const poolId = 'POOL_ID';
 const providerId = 'PROVIDER_ID';
 const baseUrl = 'https://sts.googleapis.com';
 const path = '/v1/token';
-const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
+export const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 
@@ -86,6 +88,8 @@ export function mockGenerateAccessToken(
         saPath,
         {
           scope: nockMockGenerateAccessToken.scopes,
+          lifetime:
+            (nockMockGenerateAccessToken.lifetime ?? defaultLifetime) + 's',
         },
         {
           reqheaders: {

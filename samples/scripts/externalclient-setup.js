@@ -29,7 +29,8 @@
 //    identity pools).
 // 2. Security Admin (needed to get and set IAM policies).
 // 3. Service Account Token Creator (needed to generate Google ID tokens and
-//    access tokens).
+//    access tokens). This is also needed to call the IAMCredentials signBlob
+//    API.
 //
 // The following APIs need to be enabled on the project:
 // 1. Identity and Access Management (IAM) API.
@@ -84,6 +85,7 @@
 const fs = require('fs');
 const {promisify} = require('util');
 const {GoogleAuth} = require('google-auth-library');
+const Iam = require('@googleapis/iam');
 
 const readFile = promisify(fs.readFile);
 
@@ -141,23 +143,21 @@ async function main(config) {
   const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
-
-  // TODO: switch to using IAM client SDK once v1 API has all the v1beta
-  // changes.
-  // https://cloud.google.com/iam/docs/reference/rest/v1beta/projects.locations.workloadIdentityPools
-  // https://github.com/googleapis/google-api-nodejs-client/tree/master/src/apis/iam
+  const iam = await Iam.iam({
+    version: 'v1',
+    auth,
+  });
 
   // Create the workload identity pool.
-  response = await auth.request({
-    url:
-      `https://iam.googleapis.com/v1beta/projects/${projectId}/` +
-      `locations/global/workloadIdentityPools?workloadIdentityPoolId=${poolId}`,
-    method: 'POST',
-    data: {
+  response = await iam.projects.locations.workloadIdentityPools.create({
+    parent: `projects/${projectId}/locations/global`,
+    workloadIdentityPoolId: poolId,
+    requestBody: {
       displayName: 'Test workload identity pool',
       description: 'Test workload identity pool for Node.js',
     },
   });
+
   // Populate the audience field. This will be used by the tests, specifically
   // the credential configuration file.
   const poolResourcePath = response.data.name.split('/operations')[0];
@@ -166,12 +166,10 @@ async function main(config) {
 
   // Allow service account impersonation.
   // Get the existing IAM policity bindings on the current service account.
-  response = await auth.request({
-    url:
-      `https://iam.googleapis.com/v1/projects/${projectId}/` +
-      `serviceAccounts/${clientEmail}:getIamPolicy`,
-    method: 'POST',
+  response = await iam.projects.serviceAccounts.getIamPolicy({
+    resource: `projects/${projectId}/serviceAccounts/${clientEmail}`,
   });
+
   const bindings = response.data.bindings || [];
   // If not found, add roles/iam.workloadIdentityUser role binding to the
   // workload identity pool member.
@@ -203,12 +201,9 @@ async function main(config) {
       ],
     });
   }
-  await auth.request({
-    url:
-      `https://iam.googleapis.com/v1/projects/${projectId}/` +
-      `serviceAccounts/${clientEmail}:setIamPolicy`,
-    method: 'POST',
-    data: {
+  await iam.projects.serviceAccounts.setIamPolicy({
+    resource: `projects/${projectId}/serviceAccounts/${clientEmail}`,
+    requestBody: {
       policy: {
         bindings,
       },
@@ -217,13 +212,10 @@ async function main(config) {
 
   // Create an OIDC provider. This will use the accounts.google.com issuer URL.
   // This will use the STS audience as the OIDC token audience.
-  await auth.request({
-    url:
-      `https://iam.googleapis.com/v1beta/projects/${projectId}/` +
-      `locations/global/workloadIdentityPools/${poolId}/providers?` +
-      `workloadIdentityPoolProviderId=${oidcProviderId}`,
-    method: 'POST',
-    data: {
+  await iam.projects.locations.workloadIdentityPools.providers.create({
+    parent: `projects/${projectId}/locations/global/workloadIdentityPools/${poolId}`,
+    workloadIdentityPoolProviderId: oidcProviderId,
+    requestBody: {
       displayName: 'Test OIDC provider',
       description: 'Test OIDC provider for Node.js',
       attributeMapping: {
@@ -237,13 +229,10 @@ async function main(config) {
   });
 
   // Create an AWS provider.
-  await auth.request({
-    url:
-      `https://iam.googleapis.com/v1beta/projects/${projectId}/` +
-      `locations/global/workloadIdentityPools/${poolId}/providers?` +
-      `workloadIdentityPoolProviderId=${awsProviderId}`,
-    method: 'POST',
-    data: {
+  await iam.projects.locations.workloadIdentityPools.providers.create({
+    parent: `projects/${projectId}/locations/global/workloadIdentityPools/${poolId}`,
+    workloadIdentityPoolProviderId: awsProviderId,
+    requestBody: {
       displayName: 'Test AWS provider',
       description: 'Test AWS provider for Node.js',
       aws: {
@@ -292,7 +281,7 @@ main(config)
     console.log(`AUDIENCE_OIDC='${audiences.oidcAudience}'`);
     console.log(`AUDIENCE_AWS='${audiences.awsAudience}'`);
     console.log(
-      `AWS_ROLE_ARN='arn:aws::iam::${config.awsAccountId}:role/${config.awsRoleName}'`
+      `AWS_ROLE_ARN='arn:aws:iam::${config.awsAccountId}:role/${config.awsRoleName}'`
     );
   })
   .catch(console.error);

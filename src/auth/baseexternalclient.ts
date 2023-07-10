@@ -37,6 +37,9 @@ const STS_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:token-exchange';
 const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 /** The default OAuth scope to request when none is provided. */
 const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
+/** Default impersonated token lifespan in seconds.*/
+const DEFAULT_TOKEN_LIFESPAN = 3600;
+
 /**
  * Offset to take into account network delays and server clock skews.
  */
@@ -52,6 +55,9 @@ export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
 /** Cloud resource manager URL used to retrieve project information. */
 export const CLOUD_RESOURCE_MANAGER =
   'https://cloudresourcemanager.googleapis.com/v1/projects/';
+/** The workforce audience pattern. */
+const WORKFORCE_AUDIENCE_PATTERN =
+  '//iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 
 /**
  * Base external account credentials json interface.
@@ -61,11 +67,16 @@ export interface BaseExternalAccountClientOptions {
   audience: string;
   subject_token_type: string;
   service_account_impersonation_url?: string;
+  service_account_impersonation?: {
+    token_lifetime_seconds?: number;
+  };
   token_url: string;
   token_info_url?: string;
   client_id?: string;
   client_secret?: string;
   quota_project_id?: string;
+  workforce_pool_user_project?: string;
+  universe_domain?: string;
 }
 
 /**
@@ -119,14 +130,17 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   public scopes?: string | string[];
   private cachedAccessToken: CredentialsWithResponse | null;
   protected readonly audience: string;
-  private readonly subjectTokenType: string;
+  protected readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
+  private readonly serviceAccountImpersonationLifetime?: number;
   private readonly stsCredential: sts.StsCredentials;
+  private readonly clientAuth?: ClientAuthentication;
+  private readonly workforcePoolUserProject?: string;
+  private universeDomain?: string;
   public projectId: string | null;
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
-
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -147,22 +161,39 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           `received "${options.type}"`
       );
     }
-    const clientAuth = options.client_id
+    this.clientAuth = options.client_id
       ? ({
           confidentialClientType: 'basic',
           clientId: options.client_id,
           clientSecret: options.client_secret,
         } as ClientAuthentication)
       : undefined;
-    this.stsCredential = new sts.StsCredentials(options.token_url, clientAuth);
+    this.stsCredential = new sts.StsCredentials(
+      options.token_url,
+      this.clientAuth
+    );
     // Default OAuth scope. This could be overridden via public property.
     this.scopes = [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
     this.audience = options.audience;
     this.subjectTokenType = options.subject_token_type;
     this.quotaProjectId = options.quota_project_id;
+    this.workforcePoolUserProject = options.workforce_pool_user_project;
+    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
+    if (
+      this.workforcePoolUserProject &&
+      !this.audience.match(workforceAudiencePattern)
+    ) {
+      throw new Error(
+        'workforcePoolUserProject should not be set for non-workforce pool ' +
+          'credentials.'
+      );
+    }
     this.serviceAccountImpersonationUrl =
       options.service_account_impersonation_url;
+    this.serviceAccountImpersonationLifetime =
+      options.service_account_impersonation?.token_lifetime_seconds ??
+      DEFAULT_TOKEN_LIFESPAN;
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
@@ -175,6 +206,19 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
     this.projectId = null;
     this.projectNumber = this.getProjectNumber(this.audience);
+    this.universeDomain = options.universe_domain;
+  }
+
+  /** The service account email to be impersonated, if available. */
+  getServiceAccountEmail(): string | null {
+    if (this.serviceAccountImpersonationUrl) {
+      // Parse email from URL. The formal looks as follows:
+      // https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/name@project-id.iam.gserviceaccount.com:generateAccessToken
+      const re = /serviceAccounts\/(?<email>[^:]+):generateAccessToken$/;
+      const result = re.exec(this.serviceAccountImpersonationUrl);
+      return result?.groups?.email || null;
+    }
+    return null;
   }
 
   /**
@@ -195,7 +239,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * the type of external credential used.
    * @return A promise that resolves with the external subject token.
    */
-  abstract async retrieveSubjectToken(): Promise<string>;
+  abstract retrieveSubjectToken(): Promise<string>;
 
   /**
    * @return A promise that resolves with the current GCP access token
@@ -215,7 +259,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   /**
    * The main authentication interface. It takes an optional url which when
-   * present is the endpoint> being accessed, and returns a Promise which
+   * present is the endpoint being accessed, and returns a Promise which
    * resolves with authorization header fields.
    *
    * The result has the form:
@@ -258,8 +302,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   /**
    * @return A promise that resolves with the project ID corresponding to the
-   *   current workload identity pool. When not determinable, this resolves with
-   *   null.
+   *   current workload identity pool or current workforce pool if
+   *   determinable. For workforce pool credential, it returns the project ID
+   *   corresponding to the workforcePoolUserProject.
    *   This is introduced to match the current pattern of using the Auth
    *   library:
    *   const projectId = await auth.getProjectId();
@@ -271,15 +316,16 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    *   https://cloud.google.com/resource-manager/reference/rest/v1/projects/get#authorization-scopes
    */
   async getProjectId(): Promise<string | null> {
+    const projectNumber = this.projectNumber || this.workforcePoolUserProject;
     if (this.projectId) {
       // Return previously determined project ID.
       return this.projectId;
-    } else if (this.projectNumber) {
+    } else if (projectNumber) {
       // Preferable not to use request() to avoid retrial policies.
       const headers = await this.getRequestHeaders();
       const response = await this.transporter.request<ProjectInfo>({
         headers,
-        url: `${CLOUD_RESOURCE_MANAGER}${this.projectNumber}`,
+        url: `${CLOUD_RESOURCE_MANAGER}${projectNumber}`,
         responseType: 'json',
       });
       this.projectId = response.data.projectId;
@@ -369,19 +415,33 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     };
 
     // Exchange the external credentials for a GCP access token.
+    // Client auth is prioritized over passing the workforcePoolUserProject
+    // parameter for STS token exchange.
+    const additionalOptions =
+      !this.clientAuth && this.workforcePoolUserProject
+        ? {userProject: this.workforcePoolUserProject}
+        : undefined;
     const stsResponse = await this.stsCredential.exchangeToken(
-      stsCredentialsOptions
+      stsCredentialsOptions,
+      undefined,
+      additionalOptions
     );
 
     if (this.serviceAccountImpersonationUrl) {
       this.cachedAccessToken = await this.getImpersonatedAccessToken(
         stsResponse.access_token
       );
-    } else {
+    } else if (stsResponse.expires_in) {
       // Save response in cached access token.
       this.cachedAccessToken = {
         access_token: stsResponse.access_token,
         expiry_date: new Date().getTime() + stsResponse.expires_in * 1000,
+        res: stsResponse.res,
+      };
+    } else {
+      // Save response in cached access token.
+      this.cachedAccessToken = {
+        access_token: stsResponse.access_token,
         res: stsResponse.res,
       };
     }
@@ -442,12 +502,12 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       },
       data: {
         scope: this.getScopesArray(),
+        lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
       responseType: 'json',
     };
-    const response = await this.transporter.request<IamGenerateAccessTokenResponse>(
-      opts
-    );
+    const response =
+      await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
     const successResponse = response.data;
     return {
       access_token: successResponse.accessToken,

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import arrify = require('arrify');
 import {GaxiosError} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 
@@ -49,7 +48,11 @@ export class Compute extends OAuth2Client {
     // refreshed before the first API call is made.
     this.credentials = {expiry_date: 1, refresh_token: 'compute-placeholder'};
     this.serviceAccountEmail = options.serviceAccountEmail || 'default';
-    this.scopes = arrify(options.scopes);
+    this.scopes = Array.isArray(options.scopes)
+      ? options.scopes
+      : options.scopes
+      ? [options.scopes]
+      : [];
   }
 
   /**
@@ -73,8 +76,11 @@ export class Compute extends OAuth2Client {
       }
       data = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
-      e.message = `Could not refresh access token: ${e.message}`;
-      this.wrapError(e);
+      if (e instanceof GaxiosError) {
+        e.message = `Could not refresh access token: ${e.message}`;
+        this.wrapError(e);
+      }
+
       throw e;
     }
     const tokens = data as Credentials;
@@ -101,7 +107,10 @@ export class Compute extends OAuth2Client {
       };
       idToken = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
-      e.message = `Could not fetch ID token: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Could not fetch ID token: ${e.message}`;
+      }
+
       throw e;
     }
 

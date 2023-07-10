@@ -44,6 +44,7 @@ describe('AwsClient', () => {
   const secretAccessKey = awsSecurityCredentials.SecretAccessKey;
   const token = awsSecurityCredentials.Token;
   const awsRole = 'gcp-aws-role';
+  const awsSessionToken = 'sessiontoken';
   const audience = getAudience();
   const metadataBaseUrl = 'http://169.254.169.254';
   const awsCredentialSource = {
@@ -54,12 +55,23 @@ describe('AwsClient', () => {
       'https://sts.{region}.amazonaws.com?' +
       'Action=GetCallerIdentity&Version=2011-06-15',
   };
+  const awsCredentialSourceWithImdsv2 = Object.assign(
+    {imdsv2_session_token_url: `${metadataBaseUrl}/latest/api/token`},
+    awsCredentialSource
+  );
   const awsOptions = {
     type: 'external_account',
     audience,
     subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
     token_url: getTokenUrl(),
     credential_source: awsCredentialSource,
+  };
+  const awsOptionsWithImdsv2 = {
+    type: 'external_account',
+    audience,
+    subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+    token_url: getTokenUrl(),
+    credential_source: awsCredentialSourceWithImdsv2,
   };
   const awsOptionsWithSA = Object.assign(
     {
@@ -196,10 +208,25 @@ describe('AwsClient', () => {
           credential_source: invalidCredentialSource,
         };
 
-        assert.throws(() => {
-          return new AwsClient(invalidOptions);
-        }, expectedError);
+        assert.throws(() => new AwsClient(invalidOptions), expectedError);
       });
+    });
+
+    it('should support credential_source with a port number', () => {
+      const validCredentialSource = {...awsCredentialSource};
+      const validURLWithPort = new URL(validCredentialSource.url);
+      validURLWithPort.port = '8888';
+
+      validCredentialSource.url = validURLWithPort.href;
+      const validOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        token_url: getTokenUrl(),
+        credential_source: validCredentialSource,
+      };
+
+      assert.doesNotThrow(() => new AwsClient(validOptions));
     });
 
     it('should throw when an unsupported environment ID is provided', () => {
@@ -216,9 +243,7 @@ describe('AwsClient', () => {
         credential_source: invalidCredentialSource,
       };
 
-      assert.throws(() => {
-        return new AwsClient(invalidOptions);
-      }, expectedError);
+      assert.throws(() => new AwsClient(invalidOptions), expectedError);
     });
 
     it('should throw when an unsupported environment version is provided', () => {
@@ -235,9 +260,7 @@ describe('AwsClient', () => {
         credential_source: invalidCredentialSource,
       };
 
-      assert.throws(() => {
-        return new AwsClient(invalidOptions);
-      }, expectedError);
+      assert.throws(() => new AwsClient(invalidOptions), expectedError);
     });
 
     it('should not throw when valid AWS options are provided', () => {
@@ -263,6 +286,68 @@ describe('AwsClient', () => {
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
         scope.done();
+      });
+
+      it('should resolve on success with ipv6', async () => {
+        const ipv6baseUrl = 'http://[fd00:ec2::254]';
+        const ipv6CredentialSource = {
+          environment_id: 'aws1',
+          region_url: `${ipv6baseUrl}/latest/meta-data/placement/availability-zone`,
+          url: `${ipv6baseUrl}/latest/meta-data/iam/security-credentials`,
+          regional_cred_verification_url:
+            'https://sts.{region}.amazonaws.com?' +
+            'Action=GetCallerIdentity&Version=2011-06-15',
+        };
+        const ipv6Options = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+          token_url: getTokenUrl(),
+          credential_source: ipv6CredentialSource,
+        };
+
+        const scope = nock(ipv6baseUrl)
+          .get('/latest/meta-data/placement/availability-zone')
+          .reply(200, `${awsRegion}b`)
+          .get('/latest/meta-data/iam/security-credentials')
+          .reply(200, awsRole)
+          .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+          .reply(200, awsSecurityCredentials);
+
+        const client = new AwsClient(ipv6Options);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scope.done();
+      });
+
+      it('should resolve on success with imdsv2 session token', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/placement/availability-zone')
+            .reply(200, `${awsRegion}b`)
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scopes.forEach(scope => scope.done());
       });
 
       it('should resolve on success with permanent creds', async () => {
@@ -366,7 +451,9 @@ describe('AwsClient', () => {
           {},
           awsCredentialSource
         );
-        delete missingUrlCredentialSource.url;
+        delete (
+          missingUrlCredentialSource as Partial<typeof awsCredentialSource>
+        ).url;
         const invalidOptions = {
           type: 'external_account',
           audience,
@@ -393,7 +480,11 @@ describe('AwsClient', () => {
           {},
           awsCredentialSource
         );
-        delete missingRegionUrlCredentialSource.region_url;
+        delete (
+          missingRegionUrlCredentialSource as Partial<
+            typeof awsCredentialSource
+          >
+        ).region_url;
         const invalidOptions = {
           type: 'external_account',
           audience,
@@ -665,8 +756,12 @@ describe('AwsClient', () => {
           awsCredentialSource
         );
         // Remove all optional fields.
-        delete requiredOnlyCredentialSource.region_url;
-        delete requiredOnlyCredentialSource.url;
+        delete (
+          requiredOnlyCredentialSource as Partial<typeof awsCredentialSource>
+        ).region_url;
+        delete (
+          requiredOnlyCredentialSource as Partial<typeof awsCredentialSource>
+        ).url;
         const requiredOnlyOptions = {
           type: 'external_account',
           audience,
@@ -679,6 +774,163 @@ describe('AwsClient', () => {
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+      });
+
+      it('should resolve on success for permanent creds with imdsv2', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/placement/availability-zone')
+            .reply(200, `${awsRegion}b`)
+        );
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should resolve on success for temporary creds with imdsv2', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_SESSION_TOKEN = token;
+
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/placement/availability-zone')
+            .reply(200, `${awsRegion}b`)
+        );
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should not call metadata server with imdsv2 if creds are retrievable through env', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_REGION = awsRegion;
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+      });
+
+      it('should call metadata server with imdsv2 if creds are not retrievable through env', async () => {
+        process.env.AWS_REGION = awsRegion;
+
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should call metadata server with imdsv2 if secret access key is not not retrievable through env', async () => {
+        process.env.AWS_REGION = awsRegion;
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should call metadata server with imdsv2 if access key is not not retrievable through env', async () => {
+        process.env.AWS_DEFAULT_REGION = awsRegion;
+        process.env.AWS_SECRET_ACCESS_KEY = accessKeyId;
+
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scopes.forEach(scope => scope.done());
       });
     });
 

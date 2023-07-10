@@ -86,8 +86,13 @@ export declare interface AuthClient {
 
 export abstract class AuthClient
   extends EventEmitter
-  implements CredentialsClient {
-  protected quotaProjectId?: string;
+  implements CredentialsClient
+{
+  /**
+   * The quota project ID. The quota project can be used by client libraries for the billing purpose.
+   * See {@link https://cloud.google.com/docs/quota| Working with quotas}
+   */
+  quotaProjectId?: string;
   transporter = new DefaultTransporter();
   credentials: Credentials = {};
   projectId?: string | null;
@@ -132,7 +137,7 @@ export abstract class AuthClient
    * that overrides getRequestMetadataAsync(), which is a shared helper for
    * setting request information in both gRPC and HTTP API calls.
    *
-   * @param headers objedcdt to append additional headers to.
+   * @param headers object to append additional headers to.
    */
   protected addSharedMetadataHeaders(headers: Headers): Headers {
     // quota_project_id, stored in application_default_credentials.json, is set in

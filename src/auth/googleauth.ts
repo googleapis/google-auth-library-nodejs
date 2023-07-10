@@ -20,16 +20,25 @@ import * as os from 'os';
 import * as path from 'path';
 import * as stream from 'stream';
 
-import {createCrypto} from '../crypto/crypto';
+import {Crypto, createCrypto} from '../crypto/crypto';
 import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
-import {CredentialBody, JWTInput} from './credentials';
+import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
-import {UserRefreshClient, UserRefreshClientOptions} from './refreshclient';
+import {
+  UserRefreshClient,
+  UserRefreshClientOptions,
+  USER_REFRESH_ACCOUNT_TYPE,
+} from './refreshclient';
+import {
+  Impersonated,
+  ImpersonatedOptions,
+  IMPERSONATED_ACCOUNT_TYPE,
+} from './impersonated';
 import {
   ExternalAccountClient,
   ExternalAccountClientOptions,
@@ -39,12 +48,22 @@ import {
   BaseExternalAccountClient,
 } from './baseexternalclient';
 import {AuthClient} from './authclient';
+import {
+  EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
+  ExternalAccountAuthorizedUserClient,
+  ExternalAccountAuthorizedUserClientOptions,
+} from './externalAccountAuthorizedUserClient';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
  * config file.
  */
-export type JSONClient = JWT | UserRefreshClient | BaseExternalAccountClient;
+export type JSONClient =
+  | JWT
+  | UserRefreshClient
+  | BaseExternalAccountClient
+  | ExternalAccountAuthorizedUserClient
+  | Impersonated;
 
 export interface ProjectIdCallback {
   (err?: Error | null, projectId?: string | null): void;
@@ -53,9 +72,6 @@ export interface ProjectIdCallback {
 export interface CredentialCallback {
   (err: Error | null, result?: JSONClient): void;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface DeprecatedGetClientOptions {}
 
 export interface ADCCallback {
   (err: Error | null, credential?: AuthClient, projectId?: string | null): void;
@@ -66,7 +82,11 @@ export interface ADCResponse {
   projectId: string | null;
 }
 
-export interface GoogleAuthOptions {
+export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
+  /**
+   * An `AuthClient` to use
+   */
+  authClient?: T;
   /**
    * Path to a .json, .pem, or .p12 key file
    */
@@ -86,7 +106,11 @@ export interface GoogleAuthOptions {
   /**
    * Options object passed to the constructor of the client
    */
-  clientOptions?: JWTOptions | OAuth2ClientOptions | UserRefreshClientOptions;
+  clientOptions?:
+    | JWTOptions
+    | OAuth2ClientOptions
+    | UserRefreshClientOptions
+    | ImpersonatedOptions;
 
   /**
    * Required scopes for the desired API request
@@ -102,7 +126,14 @@ export interface GoogleAuthOptions {
 export const CLOUD_SDK_CLIENT_ID =
   '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
-export class GoogleAuth {
+const GoogleAuthExceptionMessages = {
+  NO_PROJECT_ID_FOUND:
+    'Unable to detect a Project Id in the current environment. \n' +
+    'To learn more about authentication and Google APIs, visit: \n' +
+    'https://cloud.google.com/docs/authentication/getting-started',
+} as const;
+
+export class GoogleAuth<T extends AuthClient = JSONClient> {
   transporter?: Transporter;
 
   /**
@@ -111,6 +142,8 @@ export class GoogleAuth {
    * @private
    */
   private checkIsGCE?: boolean = undefined;
+  useJWTAccessWithScope?: boolean;
+  defaultServicePath?: string;
 
   // Note:  this properly is only public to satisify unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
@@ -118,20 +151,19 @@ export class GoogleAuth {
     return this.checkIsGCE;
   }
 
-  private _getDefaultProjectIdPromise?: Promise<string | null>;
+  private _findProjectIdPromise?: Promise<string | null>;
   private _cachedProjectId?: string | null;
 
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
 
-  cachedCredential: JSONClient | Compute | null = null;
+  cachedCredential: JSONClient | Impersonated | Compute | T | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
    * these and user defined scopes when deciding whether to use a self-signed JWT.
    */
   defaultScopes?: string | string[];
-
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: RefreshOptions;
@@ -141,13 +173,24 @@ export class GoogleAuth {
    */
   static DefaultTransporter = DefaultTransporter;
 
-  constructor(opts?: GoogleAuthOptions) {
+  constructor(opts?: GoogleAuthOptions<T>) {
     opts = opts || {};
+
     this._cachedProjectId = opts.projectId || null;
+    this.cachedCredential = opts.authClient || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions;
+  }
+
+  // GAPIC client libraries should always use self-signed JWTs. The following
+  // variables are set on the JWT client in order to indicate the type of library,
+  // and sign the JWT with the correct audience and scopes (if not supplied).
+  setGapicJWTValues(client: JWT) {
+    client.defaultServicePath = this.defaultServicePath;
+    client.useJWTAccessWithScope = this.useJWTAccessWithScope;
+    client.defaultScopes = this.defaultScopes;
   }
 
   /**
@@ -165,46 +208,66 @@ export class GoogleAuth {
     }
   }
 
-  private getProjectIdAsync(): Promise<string | null> {
+  /**
+   * A temporary method for internal `getProjectId` usages where `null` is
+   * acceptable. In a future major release, `getProjectId` should return `null`
+   * (as the `Promise<string | null>` base signature describes) and this private
+   * method should be removed.
+   *
+   * @returns Promise that resolves with project id (or `null`)
+   */
+  private async getProjectIdOptional(): Promise<string | null> {
+    try {
+      return await this.getProjectId();
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message === GoogleAuthExceptionMessages.NO_PROJECT_ID_FOUND
+      ) {
+        return null;
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  /*
+   * A private method for finding and caching a projectId.
+   *
+   * Supports environments in order of precedence:
+   * - GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
+   * - GOOGLE_APPLICATION_CREDENTIALS JSON file
+   * - Cloud SDK: `gcloud config config-helper --format json`
+   * - GCE project ID from metadata server
+   *
+   * @returns projectId
+   */
+  private async findAndCacheProjectId(): Promise<string> {
+    let projectId: string | null | undefined = null;
+
+    projectId ||= await this.getProductionProjectId();
+    projectId ||= await this.getFileProjectId();
+    projectId ||= await this.getDefaultServiceProjectId();
+    projectId ||= await this.getGCEProjectId();
+    projectId ||= await this.getExternalAccountClientProjectId();
+
+    if (projectId) {
+      this._cachedProjectId = projectId;
+      return projectId;
+    } else {
+      throw new Error(GoogleAuthExceptionMessages.NO_PROJECT_ID_FOUND);
+    }
+  }
+
+  private async getProjectIdAsync(): Promise<string | null> {
     if (this._cachedProjectId) {
-      return Promise.resolve(this._cachedProjectId);
+      return this._cachedProjectId;
     }
 
-    // In implicit case, supports three environments. In order of precedence,
-    // the implicit environments are:
-    // - GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
-    // - GOOGLE_APPLICATION_CREDENTIALS JSON file
-    // - Cloud SDK: `gcloud config config-helper --format json`
-    // - GCE project ID from metadata server)
-    if (!this._getDefaultProjectIdPromise) {
-      // TODO: refactor the below code so that it doesn't mix and match
-      // promises and async/await.
-      this._getDefaultProjectIdPromise = new Promise(
-        // eslint-disable-next-line no-async-promise-executor
-        async (resolve, reject) => {
-          try {
-            const projectId =
-              this.getProductionProjectId() ||
-              (await this.getFileProjectId()) ||
-              (await this.getDefaultServiceProjectId()) ||
-              (await this.getGCEProjectId()) ||
-              (await this.getExternalAccountClientProjectId());
-            this._cachedProjectId = projectId;
-            if (!projectId) {
-              throw new Error(
-                'Unable to detect a Project Id in the current environment. \n' +
-                  'To learn more about authentication and Google APIs, visit: \n' +
-                  'https://cloud.google.com/docs/authentication/getting-started'
-              );
-            }
-            resolve(projectId);
-          } catch (e) {
-            reject(e);
-          }
-        }
-      );
+    if (!this._findProjectIdPromise) {
+      this._findProjectIdPromise = this.findAndCacheProjectId();
     }
-    return this._getDefaultProjectIdPromise;
+    return this._findProjectIdPromise;
   }
 
   /**
@@ -248,32 +311,31 @@ export class GoogleAuth {
   private async getApplicationDefaultAsync(
     options: RefreshOptions = {}
   ): Promise<ADCResponse> {
-    // If we've already got a cached credential, just return it.
+    // If we've already got a cached credential, return it.
+    // This will also preserve one's configured quota project, in case they
+    // set one directly on the credential previously.
     if (this.cachedCredential) {
-      return {
-        credential: this.cachedCredential as JSONClient,
-        projectId: await this.getProjectIdAsync(),
-      };
+      return await this.prepareAndCacheADC(this.cachedCredential);
     }
 
+    // Since this is a 'new' ADC to cache we will use the environment variable
+    // if it's available. We prefer this value over the value from ADC.
+    const quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
+
     let credential: JSONClient | null;
-    let projectId: string | null;
     // Check for the existence of a local environment variable pointing to the
     // location of the credential file. This is typically used in local
     // developer scenarios.
-    credential = await this._tryGetApplicationCredentialsFromEnvironmentVariable(
-      options
-    );
+    credential =
+      await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      this.cachedCredential = credential;
-      projectId = await this.getProjectId();
-      return {credential, projectId};
+
+      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
     }
 
     // Look in the well-known credential file location.
@@ -282,14 +344,11 @@ export class GoogleAuth {
     );
     if (credential) {
       if (credential instanceof JWT) {
-        credential.defaultScopes = this.defaultScopes;
         credential.scopes = this.scopes;
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      this.cachedCredential = credential;
-      projectId = await this.getProjectId();
-      return {credential, projectId};
+      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
     }
 
     // Determine if we're running on GCE.
@@ -297,7 +356,10 @@ export class GoogleAuth {
     try {
       isGCE = await this._checkIsGCE();
     } catch (e) {
-      e.message = `Unexpected error determining execution environment: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Unexpected error determining execution environment: ${e.message}`;
+      }
+
       throw e;
     }
 
@@ -311,20 +373,41 @@ export class GoogleAuth {
     // For GCE, just return a default ComputeClient. It will take care of
     // the rest.
     (options as ComputeOptions).scopes = this.getAnyScopes();
-    this.cachedCredential = new Compute(options);
-    projectId = await this.getProjectId();
-    return {projectId, credential: this.cachedCredential};
+    return await this.prepareAndCacheADC(
+      new Compute(options),
+      quotaProjectIdOverride
+    );
+  }
+
+  private async prepareAndCacheADC(
+    credential: JSONClient | Impersonated | Compute | T,
+    quotaProjectIdOverride?: string
+  ): Promise<ADCResponse> {
+    const projectId = await this.getProjectIdOptional();
+
+    if (quotaProjectIdOverride) {
+      credential.quotaProjectId = quotaProjectIdOverride;
+    }
+
+    this.cachedCredential = credential;
+
+    return {credential, projectId};
   }
 
   /**
    * Determines whether the auth layer is running on Google Compute Engine.
+   * Checks for GCP Residency, then fallback to checking if metadata server
+   * is available.
+   *
    * @returns A promise that resolves with the boolean.
    * @api private
    */
   async _checkIsGCE() {
     if (this.checkIsGCE === undefined) {
-      this.checkIsGCE = await gcpMetadata.isAvailable();
+      this.checkIsGCE =
+        gcpMetadata.getGCPResidency() || (await gcpMetadata.isAvailable());
     }
+
     return this.checkIsGCE;
   }
 
@@ -348,7 +431,10 @@ export class GoogleAuth {
         options
       );
     } catch (e) {
-      e.message = `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Unable to read the credential file specified by the GOOGLE_APPLICATION_CREDENTIALS environment variable: ${e.message}`;
+      }
+
       throw e;
     }
   }
@@ -422,7 +508,10 @@ export class GoogleAuth {
         throw new Error();
       }
     } catch (err) {
-      err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
+      if (err instanceof Error) {
+        err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
+      }
+
       throw err;
     }
 
@@ -432,32 +521,94 @@ export class GoogleAuth {
   }
 
   /**
+   * Create a credentials instance using a given impersonated input options.
+   * @param json The impersonated input object.
+   * @returns JWT or UserRefresh Client with data
+   */
+  fromImpersonatedJSON(json: ImpersonatedJWTInput): Impersonated {
+    if (!json) {
+      throw new Error(
+        'Must pass in a JSON object containing an  impersonated refresh token'
+      );
+    }
+    if (json.type !== IMPERSONATED_ACCOUNT_TYPE) {
+      throw new Error(
+        `The incoming JSON object does not have the "${IMPERSONATED_ACCOUNT_TYPE}" type`
+      );
+    }
+    if (!json.source_credentials) {
+      throw new Error(
+        'The incoming JSON object does not contain a source_credentials field'
+      );
+    }
+    if (!json.service_account_impersonation_url) {
+      throw new Error(
+        'The incoming JSON object does not contain a service_account_impersonation_url field'
+      );
+    }
+
+    // Create source client for impersonation
+    const sourceClient = new UserRefreshClient(
+      json.source_credentials.client_id,
+      json.source_credentials.client_secret,
+      json.source_credentials.refresh_token
+    );
+
+    // Extreact service account from service_account_impersonation_url
+    const targetPrincipal = /(?<target>[^/]+):generateAccessToken$/.exec(
+      json.service_account_impersonation_url
+    )?.groups?.target;
+
+    if (!targetPrincipal) {
+      throw new RangeError(
+        `Cannot extract target principal from ${json.service_account_impersonation_url}`
+      );
+    }
+
+    const targetScopes = this.getAnyScopes() ?? [];
+
+    const client = new Impersonated({
+      delegates: json.delegates ?? [],
+      sourceClient: sourceClient,
+      targetPrincipal: targetPrincipal,
+      targetScopes: Array.isArray(targetScopes) ? targetScopes : [targetScopes],
+    });
+    return client;
+  }
+
+  /**
    * Create a credentials instance using the given input options.
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
    */
-  fromJSON(json: JWTInput, options?: RefreshOptions): JSONClient {
+  fromJSON(
+    json: JWTInput | ImpersonatedJWTInput,
+    options: RefreshOptions = {}
+  ): JSONClient {
     let client: JSONClient;
-    if (!json) {
-      throw new Error(
-        'Must pass in a JSON object containing the Google auth settings.'
-      );
-    }
+
     options = options || {};
-    if (json.type === 'authorized_user') {
+    if (json.type === USER_REFRESH_ACCOUNT_TYPE) {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
+    } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
+      client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
       client = ExternalAccountClient.fromJSON(
         json as ExternalAccountClientOptions,
         options
       )!;
       client.scopes = this.getAnyScopes();
+    } else if (json.type === EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE) {
+      client = new ExternalAccountAuthorizedUserClient(
+        json as ExternalAccountAuthorizedUserClientOptions,
+        options
+      );
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
-      client.defaultScopes = this.defaultScopes;
+      this.setGapicJWTValues(client);
       client.fromJSON(json);
     }
     return client;
@@ -474,28 +625,12 @@ export class GoogleAuth {
     json: JWTInput,
     options?: RefreshOptions
   ): JSONClient {
-    let client: JSONClient;
-    // create either a UserRefreshClient or JWT client.
-    options = options || {};
-    if (json.type === 'authorized_user') {
-      client = new UserRefreshClient(options);
-      client.fromJSON(json);
-    } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
-      client = ExternalAccountClient.fromJSON(
-        json as ExternalAccountClientOptions,
-        options
-      )!;
-      client.scopes = this.getAnyScopes();
-    } else {
-      (options as JWTOptions).scopes = this.scopes;
-      client = new JWT(options);
-      client.defaultScopes = this.defaultScopes;
-      client.fromJSON(json);
-    }
+    const client = this.fromJSON(json, options);
+
     // cache both raw data used to instantiate client and client itself.
     this.jsonContent = json;
     this.cachedCredential = client;
-    return this.cachedCredential;
+    return client;
   }
 
   /**
@@ -565,6 +700,7 @@ export class GoogleAuth {
                 keyFile: this.keyFilename,
               });
               this.cachedCredential = client;
+              this.setGapicJWTValues(client);
               return resolve(client);
             }
           } catch (err) {
@@ -609,8 +745,8 @@ export class GoogleAuth {
       exec('gcloud config config-helper --format json', (err, stdout) => {
         if (!err && stdout) {
           try {
-            const projectId = JSON.parse(stdout).configuration.properties.core
-              .project;
+            const projectId =
+              JSON.parse(stdout).configuration.properties.core.project;
             resolve(projectId);
             return;
           } catch (e) {
@@ -701,8 +837,10 @@ export class GoogleAuth {
   /**
    * The callback function handles a credential object that contains the
    * client_email and private_key (if exists).
-   * getCredentials checks for these values from the user JSON at first.
-   * If it doesn't exist, and the environment is on GCE, it gets the
+   * getCredentials first checks if the client is using an external account and
+   * uses the service account email in place of client_email.
+   * If that doesn't exist, it checks for these values from the user JSON.
+   * If the user JSON doesn't exist, and the environment is on GCE, it gets the
    * client_email from the cloud metadata server.
    * @param callback Callback that handles the credential object that contains
    * a client_email and optional private key, or the error.
@@ -723,7 +861,14 @@ export class GoogleAuth {
   }
 
   private async getCredentialsAsync(): Promise<CredentialBody> {
-    await this.getClient();
+    const client = await this.getClient();
+
+    if (client instanceof BaseExternalAccountClient) {
+      const serviceAccountEmail = client.getServiceAccountEmail();
+      if (serviceAccountEmail) {
+        return {client_email: serviceAccountEmail};
+      }
+    }
 
     if (this.jsonContent) {
       const credential: CredentialBody = {
@@ -758,12 +903,7 @@ export class GoogleAuth {
    * Automatically obtain a client based on the provided configuration.  If no
    * options were passed, use Application Default Credentials.
    */
-  async getClient(options?: DeprecatedGetClientOptions) {
-    if (options) {
-      throw new Error(
-        'Passing options to getClient is forbidden in v5.0.0. Use new GoogleAuth(opts) instead.'
-      );
-    }
+  async getClient() {
     if (!this.cachedCredential) {
       if (this.jsonContent) {
         this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
@@ -860,17 +1000,22 @@ export class GoogleAuth {
       return sign;
     }
 
-    const projectId = await this.getProjectId();
-    if (!projectId) {
-      throw new Error('Cannot sign data without a project ID.');
-    }
-
     const creds = await this.getCredentials();
     if (!creds.client_email) {
       throw new Error('Cannot sign data without `client_email`.');
     }
 
-    const url = `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${creds.client_email}:signBlob`;
+    return this.signBlob(crypto, creds.client_email, data);
+  }
+
+  private async signBlob(
+    crypto: Crypto,
+    emailOrUniqueId: string,
+    data: string
+  ): Promise<string> {
+    const url =
+      'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/' +
+      `${emailOrUniqueId}:signBlob`;
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
       url,

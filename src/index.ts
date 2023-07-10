@@ -13,6 +13,7 @@
 // limitations under the License.
 import {GoogleAuth} from './auth/googleauth';
 
+export {AuthClient} from './auth/authclient';
 export {Compute, ComputeOptions} from './auth/computeclient';
 export {
   CredentialBody,
@@ -26,6 +27,7 @@ export {IAMAuth, RequestMetadata} from './auth/iam';
 export {IdTokenClient, IdTokenProvider} from './auth/idtokenclient';
 export {Claims, JWTAccess} from './auth/jwtaccess';
 export {JWT, JWTOptions} from './auth/jwtclient';
+export {Impersonated, ImpersonatedOptions} from './auth/impersonated';
 export {
   Certificates,
   CodeChallengeMethod,
@@ -56,6 +58,14 @@ export {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './auth/baseexternalclient';
+export {
+  CredentialAccessBoundary,
+  DownscopedClient,
+} from './auth/downscopedclient';
+export {
+  PluggableAuthClient,
+  PluggableAuthClientOptions,
+} from './auth/pluggable-auth-client';
 export {DefaultTransporter} from './transporters';
 
 const auth = new GoogleAuth();

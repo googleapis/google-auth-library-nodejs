@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions, GaxiosResponse} from 'gaxios';
+import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
 
 import {DefaultTransporter} from '../transporters';
@@ -120,9 +120,9 @@ export interface StsSuccessfulResponse {
   access_token: string;
   issued_token_type: string;
   token_type: string;
-  expires_in: number;
+  expires_in?: number;
   refresh_token?: string;
-  scope: string;
+  scope?: string;
   res?: GaxiosResponse | null;
 }
 
@@ -198,7 +198,9 @@ export class StsCredentials extends OAuthClientAuthHandler {
       url: this.tokenExchangeEndpoint,
       method: 'POST',
       headers,
-      data: querystring.stringify(values),
+      data: querystring.stringify(
+        values as unknown as querystring.ParsedUrlQueryInput
+      ),
       responseType: 'json',
     };
     // Apply OAuth client authentication.
@@ -214,7 +216,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
       return stsSuccessfulResponse;
     } catch (error) {
       // Translate error to OAuthError.
-      if (error.response) {
+      if (error instanceof GaxiosError && error.response) {
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.

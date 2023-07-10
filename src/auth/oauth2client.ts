@@ -31,7 +31,7 @@ import {LoginTicket, TokenPayload} from './loginticket';
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
- * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
+ * https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js
  */
 export interface CodeVerifierResults {
   /**
@@ -158,8 +158,8 @@ export interface TokenInfo {
 interface TokenInfoRequest {
   aud: string;
   user_id?: string;
-  scope: string;
-  expires_in: number;
+  scope?: string;
+  expires_in?: number;
   azp?: string;
   sub?: string;
   exp?: number;
@@ -296,6 +296,23 @@ export interface GenerateAuthUrlOpts {
    * must be used with the 'code_challenge' parameter described above.
    */
   code_challenge?: string;
+
+  /**
+   * A way for developers and/or the auth team to provide a set of key value
+   * pairs to be added as query parameters to the authorization url.
+   */
+  [
+    key: string
+  ]: querystring.ParsedUrlQueryInput[keyof querystring.ParsedUrlQueryInput];
+}
+
+export interface AccessTokenResponse {
+  access_token: string;
+  expiry_date: number;
+}
+
+export interface GetRefreshHandlerCallback {
+  (): Promise<AccessTokenResponse>;
 }
 
 export interface GetTokenCallback {
@@ -427,6 +444,8 @@ export class OAuth2Client extends AuthClient {
 
   forceRefreshOnFailure: boolean;
 
+  refreshHandler?: GetRefreshHandlerCallback;
+
   /**
    * Handles OAuth2 flow for Google APIs.
    *
@@ -529,11 +548,15 @@ export class OAuth2Client extends AuthClient {
     opts.client_id = opts.client_id || this._clientId;
     opts.redirect_uri = opts.redirect_uri || this.redirectUri;
     // Allow scopes to be passed either as array or a string
-    if (opts.scope instanceof Array) {
+    if (Array.isArray(opts.scope)) {
       opts.scope = opts.scope.join(' ');
     }
     const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
-    return rootUrl + '?' + querystring.stringify(opts);
+    return (
+      rootUrl +
+      '?' +
+      querystring.stringify(opts as querystring.ParsedUrlQueryInput)
+    );
   }
 
   generateCodeVerifier(): void {
@@ -550,7 +573,7 @@ export class OAuth2Client extends AuthClient {
    * code_challenge_method.
    *
    * For a full example see:
-   * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
+   * https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js
    */
   async generateCodeVerifierAsync(): Promise<CodeVerifierResults> {
     // base64 encoding uses 6 bits per character, and we want to generate128
@@ -673,13 +696,28 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'refresh_token',
     };
 
-    // request for new token
-    const res = await this.transporter.request<CredentialRequest>({
-      method: 'POST',
-      url,
-      data: querystring.stringify(data),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    });
+    let res: GaxiosResponse<CredentialRequest>;
+
+    try {
+      // request for new token
+      res = await this.transporter.request<CredentialRequest>({
+        method: 'POST',
+        url,
+        data: querystring.stringify(data),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      });
+    } catch (e) {
+      if (
+        e instanceof GaxiosError &&
+        e.message === 'invalid_grant' &&
+        e.response?.data &&
+        /ReAuth/i.test(e.response.data.error_description)
+      ) {
+        e.message = JSON.stringify(e.response.data);
+      }
+
+      throw e;
+    }
 
     const tokens = res.data as Credentials;
     // TODO: de-duplicate this code from a few spots
@@ -694,7 +732,6 @@ export class OAuth2Client extends AuthClient {
   /**
    * Retrieves the access token using refresh token
    *
-   * @deprecated use getRequestHeaders instead.
    * @param callback callback
    */
   refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
@@ -745,7 +782,18 @@ export class OAuth2Client extends AuthClient {
       !this.credentials.access_token || this.isTokenExpiring();
     if (shouldRefresh) {
       if (!this.credentials.refresh_token) {
-        throw new Error('No refresh token is set.');
+        if (this.refreshHandler) {
+          const refreshedAccessToken =
+            await this.processAndValidateRefreshHandler();
+          if (refreshedAccessToken?.access_token) {
+            this.setCredentials(refreshedAccessToken);
+            return {token: this.credentials.access_token};
+          }
+        } else {
+          throw new Error(
+            'No refresh token or refresh handler callback is set.'
+          );
+        }
       }
 
       const r = await this.refreshAccessTokenAsync();
@@ -777,8 +825,15 @@ export class OAuth2Client extends AuthClient {
     url?: string | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
-    if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
-      throw new Error('No access, refresh token or API key is set.');
+    if (
+      !thisCreds.access_token &&
+      !thisCreds.refresh_token &&
+      !this.apiKey &&
+      !this.refreshHandler
+    ) {
+      throw new Error(
+        'No access, refresh token, API key or refresh handler callback is set.'
+      );
     }
 
     if (thisCreds.access_token && !this.isTokenExpiring()) {
@@ -787,6 +842,19 @@ export class OAuth2Client extends AuthClient {
         Authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
       };
       return {headers: this.addSharedMetadataHeaders(headers)};
+    }
+
+    // If refreshHandler exists, call processAndValidateRefreshHandler().
+    if (this.refreshHandler) {
+      const refreshedAccessToken =
+        await this.processAndValidateRefreshHandler();
+      if (refreshedAccessToken?.access_token) {
+        this.setCredentials(refreshedAccessToken);
+        const headers = {
+          Authorization: 'Bearer ' + this.credentials.access_token,
+        };
+        return {headers: this.addSharedMetadataHeaders(headers)};
+      }
     }
 
     if (this.apiKey) {
@@ -941,15 +1009,43 @@ export class OAuth2Client extends AuthClient {
         //   fails on the first try because it's expired. Some developers may
         //   choose to enable forceRefreshOnFailure to mitigate time-related
         //   errors.
+        // Or the following criteria are true:
+        // - We haven't already retried.  It only makes sense to retry once.
+        // - The response was a 401 or a 403
+        // - The request didn't send a readableStream
+        // - No refresh_token was available
+        // - An access_token and a refreshHandler callback were available, but
+        //   either no expiry_date was available or the forceRefreshOnFailure
+        //   flag is set. The access_token fails on the first try because it's
+        //   expired. Some developers may choose to enable forceRefreshOnFailure
+        //   to mitigate time-related errors.
         const mayRequireRefresh =
           this.credentials &&
           this.credentials.access_token &&
           this.credentials.refresh_token &&
           (!this.credentials.expiry_date || this.forceRefreshOnFailure);
+        const mayRequireRefreshWithNoRefreshToken =
+          this.credentials &&
+          this.credentials.access_token &&
+          !this.credentials.refresh_token &&
+          (!this.credentials.expiry_date || this.forceRefreshOnFailure) &&
+          this.refreshHandler;
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
           await this.refreshAccessTokenAsync();
+          return this.requestAsync<T>(opts, true);
+        } else if (
+          !retry &&
+          isAuthErr &&
+          !isReadableStream &&
+          mayRequireRefreshWithNoRefreshToken
+        ) {
+          const refreshedAccessToken =
+            await this.processAndValidateRefreshHandler();
+          if (refreshedAccessToken?.access_token) {
+            this.setCredentials(refreshedAccessToken);
+          }
           return this.requestAsync<T>(opts, true);
         }
       }
@@ -1024,8 +1120,8 @@ export class OAuth2Client extends AuthClient {
     });
     const info = Object.assign(
       {
-        expiry_date: new Date().getTime() + data.expires_in * 1000,
-        scopes: data.scope.split(' '),
+        expiry_date: new Date().getTime() + data.expires_in! * 1000,
+        scopes: data.scope!.split(' '),
       },
       data
     );
@@ -1082,7 +1178,10 @@ export class OAuth2Client extends AuthClient {
     try {
       res = await this.transporter.request({url});
     } catch (e) {
-      e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      }
+
       throw e;
     }
 
@@ -1147,7 +1246,10 @@ export class OAuth2Client extends AuthClient {
     try {
       res = await this.transporter.request({url});
     } catch (e) {
-      e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      if (e instanceof Error) {
+        e.message = `Failed to retrieve verification certificates: ${e.message}`;
+      }
+
       throw e;
     }
 
@@ -1198,7 +1300,10 @@ export class OAuth2Client extends AuthClient {
     try {
       envelope = JSON.parse(crypto.decodeBase64StringUtf8(segments[0]));
     } catch (err) {
-      err.message = `Can't parse token envelope: ${segments[0]}': ${err.message}`;
+      if (err instanceof Error) {
+        err.message = `Can't parse token envelope: ${segments[0]}': ${err.message}`;
+      }
+
       throw err;
     }
 
@@ -1209,7 +1314,9 @@ export class OAuth2Client extends AuthClient {
     try {
       payload = JSON.parse(crypto.decodeBase64StringUtf8(segments[1]));
     } catch (err) {
-      err.message = `Can't parse token payload '${segments[0]}`;
+      if (err instanceof Error) {
+        err.message = `Can't parse token payload '${segments[0]}`;
+      }
       throw err;
     }
 
@@ -1310,6 +1417,26 @@ export class OAuth2Client extends AuthClient {
       }
     }
     return new LoginTicket(envelope, payload);
+  }
+
+  /**
+   * Returns a promise that resolves with AccessTokenResponse type if
+   * refreshHandler is defined.
+   * If not, nothing is returned.
+   */
+  private async processAndValidateRefreshHandler(): Promise<
+    AccessTokenResponse | undefined
+  > {
+    if (this.refreshHandler) {
+      const accessTokenResponse = await this.refreshHandler();
+      if (!accessTokenResponse.access_token) {
+        throw new Error(
+          'No access token is returned by the refreshHandler callback.'
+        );
+      }
+      return accessTokenResponse;
+    }
+    return;
   }
 
   /**
