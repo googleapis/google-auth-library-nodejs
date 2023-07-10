@@ -4,7 +4,7 @@
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
-    "node": ">=12"
+    "node": ">=14"
   },
   "main": "./build/src/index.js",
   "types": "./build/src/index.d.ts",
@@ -41,7 +41,7 @@
     "chai": "^4.2.0",
     "codecov": "^3.0.2",
     "execa": "^5.0.0",
-    "gts": "^3.1.0",
+    "gts": "^3.1.1",
     "is-docker": "^2.0.0",
     "karma": "^6.0.0",
     "karma-chrome-launcher": "^3.0.0",
@@ -60,7 +60,7 @@
     "puppeteer": "^20.0.0",
     "sinon": "^15.0.0",
     "ts-loader": "^8.0.0",
-    "typescript": "^4.6.3",
+    "typescript": "^5.1.6",
     "webpack": "^5.21.2",
     "webpack-cli": "^4.0.0"
   },
