@@ -52,6 +52,7 @@ This library provides a variety of ways to authenticate to your Google services.
 - [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users. Especially useful for server->server or server->API communication.
 - [Google Compute](#compute) - Directly use a service account on Google Cloud Platform. Useful for server->server or server->API communication.
 - [Workload Identity Federation](#workload-identity-federation) - Use workload identity federation to access Google Cloud resources from Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC).
+- [Workforce Identity Federation](#workforce-identity-federation) - Use workforce identity federation to access Google Cloud resources using an external identity provider (IdP) to authenticate and authorize a workforce—a group of users, such as employees, partners, and contractors—using IAM, so that the users can access Google Cloud services.
 - [Impersonated Credentials Client](#impersonated-credentials-client) - access protected resources on behalf of another service account.
 - [Downscoped Client](#downscoped-client) - Use Downscoped Client with Credential Access Boundary to generate a short-lived credential with downscoped, restricted IAM permissions that can use for Cloud Storage.
 
@@ -520,7 +521,383 @@ Where the following variables need to be substituted:
 - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
 
-You can now [start using the Auth library](#using-external-identities) to call Google Cloud resources from an OIDC provider.
+#### Using External Account Authorized User workforce credentials
+
+[External account authorized user credentials](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials#browser-based-sign-in) allow you to sign in with a web browser to an external identity provider account via the
+gcloud CLI and create a configuration for the auth library to use.
+
+To generate an external account authorized user workforce identity configuration, run the following command:
+
+```bash
+gcloud auth application-default login --login-config=$LOGIN_CONFIG
+```
+
+Where the following variable needs to be substituted:
+- `$LOGIN_CONFIG`: The login config file generated with the cloud console or
+   [gcloud iam workforce-pools create-login-config](https://cloud.google.com/sdk/gcloud/reference/iam/workforce-pools/create-login-config)
+
+This will open a browser flow for you to sign in via the configured third party identity provider
+and then will store the external account authorized user configuration at the well known ADC location.
+The auth library will then use the provided refresh token from the configuration to generate and refresh
+an access token to call Google Cloud services.
+
+Note that the default lifetime of the refresh token is one hour, after which a new configuration will need to be generated from the gcloud CLI.
+The lifetime can be modified by changing the [session duration of the workforce pool](https://cloud.google.com/iam/docs/reference/rest/v1/locations.workforcePools), and can be set as high as 12 hours.
+
+#### Using Executable-sourced credentials with OIDC and SAML
+
+**Executable-sourced credentials**
+For executable-sourced credentials, a local executable is used to retrieve the 3rd party token.
+The executable must handle providing a valid, unexpired OIDC ID token or SAML assertion in JSON format
+to stdout.
+
+To use executable-sourced credentials, the `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES`
+environment variable must be set to `1`.
+
+To generate an executable-sourced workload identity configuration, run the following command:
+
+```bash
+# Generate a configuration file for executable-sourced credentials.
+gcloud iam workload-identity-pools create-cred-config \
+    projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/providers/$PROVIDER_ID \
+    --service-account=$SERVICE_ACCOUNT_EMAIL \
+    --subject-token-type=$SUBJECT_TOKEN_TYPE \
+    # The absolute path for the program, including arguments.
+    # e.g. --executable-command="/path/to/command --foo=bar"
+    --executable-command=$EXECUTABLE_COMMAND \
+    # Optional argument for the executable timeout. Defaults to 30s.
+    # --executable-timeout-millis=$EXECUTABLE_TIMEOUT \
+    # Optional argument for the absolute path to the executable output file.
+    # See below on how this argument impacts the library behaviour.
+    # --executable-output-file=$EXECUTABLE_OUTPUT_FILE \
+    --output-file /path/to/generated/config.json
+```
+Where the following variables need to be substituted:
+- `$PROJECT_NUMBER`: The Google Cloud project number.
+- `$POOL_ID`: The workload identity pool ID.
+- `$PROVIDER_ID`: The OIDC or SAML provider ID.
+- `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
+- `$SUBJECT_TOKEN_TYPE`: The subject token type.
+- `$EXECUTABLE_COMMAND`: The full command to run, including arguments. Must be an absolute path to the program.
+
+The `--executable-timeout-millis` flag is optional. This is the duration for which
+the auth library will wait for the executable to finish, in milliseconds.
+Defaults to 30 seconds when not provided. The maximum allowed value is 2 minutes.
+The minimum is 5 seconds.
+
+The `--executable-output-file` flag is optional. If provided, the file path must
+point to the 3PI credential response generated by the executable. This is useful
+for caching the credentials. By specifying this path, the Auth libraries will first
+check for its existence before running the executable. By caching the executable JSON
+response to this file, it improves performance as it avoids the need to run the executable
+until the cached credentials in the output file are expired. The executable must
+handle writing to this file - the auth libraries will only attempt to read from
+this location. The format of contents in the file should match the JSON format
+expected by the executable shown below.
+
+To retrieve the 3rd party token, the library will call the executable
+using the command specified. The executable's output must adhere to the response format
+specified below. It must output the response to stdout.
+
+A sample successful executable OIDC response:
+```json
+{
+  "version": 1,
+  "success": true,
+  "token_type": "urn:ietf:params:oauth:token-type:id_token",
+  "id_token": "HEADER.PAYLOAD.SIGNATURE",
+  "expiration_time": 1620499962
+}
+```
+
+A sample successful executable SAML response:
+```json
+{
+  "version": 1,
+  "success": true,
+  "token_type": "urn:ietf:params:oauth:token-type:saml2",
+  "saml_response": "...",
+  "expiration_time": 1620499962
+}
+```
+For successful responses, the `expiration_time` field is only required
+when an output file is specified in the credential configuration.
+
+A sample executable error response:
+```json
+{
+  "version": 1,
+  "success": false,
+  "code": "401",
+  "message": "Caller not authorized."
+}
+```
+These are all required fields for an error response. The code and message
+fields will be used by the library as part of the thrown exception.
+
+Response format fields summary:
+* `version`: The version of the JSON output. Currently, only version 1 is supported.
+* `success`: The status of the response. When true, the response must contain the 3rd party token
+     and token type. The response must also contain the expiration time if an output file was specified in the credential configuration.
+     The executable must also exit with exit code 0.
+     When false, the response must contain the error code and message fields and exit with a non-zero value.
+* `token_type`: The 3rd party subject token type. Must be *urn:ietf:params:oauth:token-type:jwt*,
+*urn:ietf:params:oauth:token-type:id_token*, or *urn:ietf:params:oauth:token-type:saml2*.
+* `id_token`: The 3rd party OIDC token.
+* `saml_response`: The 3rd party SAML response.
+* `expiration_time`: The 3rd party subject token expiration time in seconds (unix epoch time).
+* `code`: The error code string.
+* `message`: The error message.
+
+All response types must include both the `version` and `success` fields.
+* Successful responses must include the `token_type` and one of
+`id_token` or `saml_response`. The `expiration_time` field must also be present if an output file was specified in
+the credential configuration.
+* Error responses must include both the `code` and `message` fields.
+
+The library will populate the following environment variables when the executable is run:
+* `GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE`: The audience field from the credential configuration. Always present.
+* `GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL`: The service account email. Only present when service account impersonation is used.
+* `GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE`: The output file location from the credential configuration. Only present when specified in the credential configuration.
+* `GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE`: This expected subject token type. Always present.
+
+These environment variables can be used by the executable to avoid hard-coding these values.
+
+##### Security considerations
+The following security practices are highly recommended:
+* Access to the script should be restricted as it will be displaying credentials to stdout. This ensures that rogue processes do not gain  access to the script.
+* The configuration file should not be modifiable. Write access should be restricted to avoid processes modifying the executable command portion.
+
+Given the complexity of using executable-sourced credentials, it is recommended to use
+the existing supported mechanisms (file-sourced/URL-sourced) for providing 3rd party
+credentials unless they do not meet your specific requirements.
+
+You can now [use the Auth library](#using-external-identities) to call Google Cloud
+resources from an OIDC or SAML provider.
+
+#### Configurable Token Lifetime
+When creating a credential configuration with workload identity federation using service account impersonation, you can provide an optional argument to configure the service account access token lifetime.
+
+To generate the configuration with configurable token lifetime, run the following command (this example uses an AWS configuration, but the token lifetime can be configured for all workload identity federation providers):
+
+```bash
+# Generate an AWS configuration file with configurable token lifetime.
+gcloud iam workload-identity-pools create-cred-config \
+    projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/providers/$AWS_PROVIDER_ID \
+    --service-account $SERVICE_ACCOUNT_EMAIL \
+    --aws \
+    --output-file /path/to/generated/config.json \
+    --service-account-token-lifetime-seconds $TOKEN_LIFETIME
+```
+
+ Where the following variables need to be substituted:
+- `$PROJECT_NUMBER`: The Google Cloud project number.
+- `$POOL_ID`: The workload identity pool ID.
+- `$AWS_PROVIDER_ID`: The AWS provider ID.
+- `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
+- `$TOKEN_LIFETIME`: The desired lifetime duration of the service account access token in seconds.
+
+The `service-account-token-lifetime-seconds` flag is optional. If not provided, this defaults to one hour.
+The minimum allowed value is 600 (10 minutes) and the maximum allowed value is 43200 (12 hours).
+If a lifetime greater than one hour is required, the service account must be added as an allowed value in an Organization Policy that enforces the `constraints/iam.allowServiceAccountCredentialLifetimeExtension` constraint.
+
+Note that configuring a short lifetime (e.g. 10 minutes) will result in the library initiating the entire token exchange flow every 10 minutes, which will call the 3rd party token provider even if the 3rd party token is not expired.
+
+## Workforce Identity Federation
+
+[Workforce identity federation](https://cloud.google.com/iam/docs/workforce-identity-federation) lets you use an
+external identity provider (IdP) to authenticate and authorize a workforce—a group of users, such as employees,
+partners, and contractors—using IAM, so that the users can access Google Cloud services. Workforce identity federation
+extends Google Cloud's identity capabilities to support syncless, attribute-based single sign on.
+
+With workforce identity federation, your workforce can access Google Cloud resources using an external
+identity provider (IdP) that supports OpenID Connect (OIDC) or SAML 2.0 such as Azure Active Directory (Azure AD),
+Active Directory Federation Services (AD FS), Okta, and others.
+
+### Accessing resources using an OIDC or SAML 2.0 identity provider
+
+In order to access Google Cloud resources from an identity provider that supports [OpenID Connect (OIDC)](https://openid.net/connect/),
+the following requirements are needed:
+- A workforce identity pool needs to be created.
+- An OIDC or SAML 2.0 identity provider needs to be added in the workforce pool.
+
+Follow the detailed [instructions](https://cloud.google.com/iam/docs/configuring-workforce-identity-federation) on how
+to configure workforce identity federation.
+
+After configuring an OIDC or SAML 2.0 provider, a credential configuration
+file needs to be generated. The generated credential configuration file contains non-sensitive metadata to instruct the
+library on how to retrieve external subject tokens and exchange them for GCP access tokens.
+The configuration file can be generated by using the [gcloud CLI](https://cloud.google.com/sdk/).
+
+The Auth library can retrieve external subject tokens from a local file location
+(file-sourced credentials), from a local server (URL-sourced credentials) or by calling an executable
+(executable-sourced credentials).
+
+**File-sourced credentials**
+For file-sourced credentials, a background process needs to be continuously refreshing the file
+location with a new subject token prior to expiration. For tokens with one hour lifetimes, the token
+needs to be updated in the file every hour. The token can be stored directly as plain text or in
+JSON format.
+
+To generate a file-sourced OIDC configuration, run the following command:
+
+```bash
+# Generate an OIDC configuration file for file-sourced credentials.
+gcloud iam workforce-pools create-cred-config \
+    locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID \
+    --subject-token-type=urn:ietf:params:oauth:token-type:id_token \
+    --credential-source-file=$PATH_TO_OIDC_ID_TOKEN \
+    --workforce-pool-user-project=$WORKFORCE_POOL_USER_PROJECT \
+    # Optional arguments for file types. Default is "text":
+    # --credential-source-type "json" \
+    # Optional argument for the field that contains the OIDC credential.
+    # This is required for json.
+    # --credential-source-field-name "id_token" \
+    --output-file=/path/to/generated/config.json
+```
+Where the following variables need to be substituted:
+- `$WORKFORCE_POOL_ID`: The workforce pool ID.
+- `$PROVIDER_ID`: The provider ID.
+- `$PATH_TO_OIDC_ID_TOKEN`: The file path used to retrieve the OIDC token.
+- `$WORKFORCE_POOL_USER_PROJECT`: The project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
+
+To generate a file-sourced SAML configuration, run the following command:
+
+```bash
+# Generate a SAML configuration file for file-sourced credentials.
+gcloud iam workforce-pools create-cred-config \
+    locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID \
+    --credential-source-file=$PATH_TO_SAML_ASSERTION \
+    --subject-token-type=urn:ietf:params:oauth:token-type:saml2 \
+    --workforce-pool-user-project=$WORKFORCE_POOL_USER_PROJECT \
+    --output-file=/path/to/generated/config.json
+```
+
+Where the following variables need to be substituted:
+- `$WORKFORCE_POOL_ID`: The workforce pool ID.
+- `$PROVIDER_ID`: The provider ID.
+- `$PATH_TO_SAML_ASSERTION`: The file path used to retrieve the base64-encoded SAML assertion.
+- `$WORKFORCE_POOL_USER_PROJECT`: The project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
+
+These commands generate the configuration file in the specified output file.
+
+**URL-sourced credentials**
+For URL-sourced credentials, a local server needs to host a GET endpoint to return the OIDC token.
+The response can be in plain text or JSON. Additional required request headers can also be
+specified.
+
+To generate a URL-sourced OIDC workforce identity configuration, run the following command:
+
+```bash
+# Generate an OIDC configuration file for URL-sourced credentials.
+gcloud iam workforce-pools create-cred-config \
+    locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID \
+    --subject-token-type=urn:ietf:params:oauth:token-type:id_token \
+    --credential-source-url=$URL_TO_RETURN_OIDC_ID_TOKEN \
+    --credential-source-headers $HEADER_KEY=$HEADER_VALUE \
+    --workforce-pool-user-project=$WORKFORCE_POOL_USER_PROJECT \
+    --output-file=/path/to/generated/config.json
+```
+
+Where the following variables need to be substituted:
+- `$WORKFORCE_POOL_ID`: The workforce pool ID.
+- `$PROVIDER_ID`: The provider ID.
+- `$URL_TO_RETURN_OIDC_ID_TOKEN`: The URL of the local server endpoint.
+- `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to
+   `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
+- `$WORKFORCE_POOL_USER_PROJECT`: The project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
+
+To generate a URL-sourced SAML configuration, run the following command:
+
+```bash
+# Generate a SAML configuration file for file-sourced credentials.
+gcloud iam workforce-pools create-cred-config \
+    locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID \
+    --subject-token-type=urn:ietf:params:oauth:token-type:saml2 \
+    --credential-source-url=$URL_TO_GET_SAML_ASSERTION \
+    --credential-source-headers $HEADER_KEY=$HEADER_VALUE \
+    --workforce-pool-user-project=$WORKFORCE_POOL_USER_PROJECT \
+    --output-file=/path/to/generated/config.json
+```
+
+These commands generate the configuration file in the specified output file.
+
+Where the following variables need to be substituted:
+- `$WORKFORCE_POOL_ID`: The workforce pool ID.
+- `$PROVIDER_ID`: The provider ID.
+- `$URL_TO_GET_SAML_ASSERTION`: The URL of the local server endpoint.
+- `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to
+     `$URL_TO_GET_SAML_ASSERTION`, e.g. `Metadata-Flavor=Google`.
+- `$WORKFORCE_POOL_USER_PROJECT`: The project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
+
+### Using Executable-sourced workforce credentials with OIDC and SAML
+
+**Executable-sourced credentials**
+For executable-sourced credentials, a local executable is used to retrieve the 3rd party token.
+The executable must handle providing a valid, unexpired OIDC ID token or SAML assertion in JSON format
+to stdout.
+
+To use executable-sourced credentials, the `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES`
+environment variable must be set to `1`.
+
+To generate an executable-sourced workforce identity configuration, run the following command:
+
+```bash
+# Generate a configuration file for executable-sourced credentials.
+gcloud iam workforce-pools create-cred-config \
+    locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID \
+    --subject-token-type=$SUBJECT_TOKEN_TYPE \
+    # The absolute path for the program, including arguments.
+    # e.g. --executable-command="/path/to/command --foo=bar"
+    --executable-command=$EXECUTABLE_COMMAND \
+    # Optional argument for the executable timeout. Defaults to 30s.
+    # --executable-timeout-millis=$EXECUTABLE_TIMEOUT \
+    # Optional argument for the absolute path to the executable output file.
+    # See below on how this argument impacts the library behaviour.
+    # --executable-output-file=$EXECUTABLE_OUTPUT_FILE \
+    --workforce-pool-user-project=$WORKFORCE_POOL_USER_PROJECT \
+    --output-file /path/to/generated/config.json
+```
+Where the following variables need to be substituted:
+- `$WORKFORCE_POOL_ID`: The workforce pool ID.
+- `$PROVIDER_ID`: The provider ID.
+- `$SUBJECT_TOKEN_TYPE`: The subject token type.
+- `$EXECUTABLE_COMMAND`: The full command to run, including arguments. Must be an absolute path to the program.
+- `$WORKFORCE_POOL_USER_PROJECT`: The project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
+
+The `--executable-timeout-millis` flag is optional. This is the duration for which
+the auth library will wait for the executable to finish, in milliseconds.
+Defaults to 30 seconds when not provided. The maximum allowed value is 2 minutes.
+The minimum is 5 seconds.
+
+The `--executable-output-file` flag is optional. If provided, the file path must
+point to the 3rd party credential response generated by the executable. This is useful
+for caching the credentials. By specifying this path, the Auth libraries will first
+check for its existence before running the executable. By caching the executable JSON
+response to this file, it improves performance as it avoids the need to run the executable
+until the cached credentials in the output file are expired. The executable must
+handle writing to this file - the auth libraries will only attempt to read from
+this location. The format of contents in the file should match the JSON format
+expected by the executable shown below.
+
+To retrieve the 3rd party token, the library will call the executable
+using the command specified. The executable's output must adhere to the response format
+specified below. It must output the response to stdout.
+
+Refer to the [using executable-sourced credentials with Workload Identity Federation](#using-executable-sourced-credentials-with-oidc-and-saml)
+above for the executable response specification.
+
+##### Security considerations
+The following security practices are highly recommended:
+* Access to the script should be restricted as it will be displaying credentials to stdout. This ensures that rogue processes do not gain access to the script.
+* The configuration file should not be modifiable. Write access should be restricted to avoid processes modifying the executable command portion.
+
+Given the complexity of using executable-sourced credentials, it is recommended to use
+the existing supported mechanisms (file-sourced/URL-sourced) for providing 3rd party
+credentials unless they do not meet your specific requirements.
+
+You can now [use the Auth library](#using-external-identities) to call Google Cloud
+resources from an OIDC or SAML provider.
 
 ### Using External Identities
 
@@ -577,6 +954,9 @@ async function main() {
   console.log(res.data);
 }
 ```
+
+#### Security Considerations
+Note that this library does not perform any validation on the token_url, token_info_url, or service_account_impersonation_url fields of the credential configuration. It is not recommended to use a credential configuration that you did not generate with the gcloud CLI unless you verify that the URL fields point to a googleapis.com domain.
 
 ## Working with ID Tokens
 ### Fetching ID Tokens
@@ -833,10 +1213,15 @@ Samples are in the [`samples/`](https://github.com/googleapis/google-auth-librar
 | Sample                      | Source Code                       | Try it |
 | --------------------------- | --------------------------------- | ------ |
 | Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
+| Authenticate Explicit | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateExplicit.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateExplicit.js,samples/README.md) |
+| Authenticate Implicit With Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md) |
 | Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
 | Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md) |
 | Downscopedclient | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/downscopedclient.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/downscopedclient.js,samples/README.md) |
 | Headers | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/headers.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md) |
+| Id Token From Impersonated Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromImpersonatedCredentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromImpersonatedCredentials.js,samples/README.md) |
+| Id Token From Metadata Server | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromMetadataServer.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromMetadataServer.js,samples/README.md) |
+| Id Token From Service Account | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromServiceAccount.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromServiceAccount.js,samples/README.md) |
 | ID Tokens for Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md) |
 | ID Tokens for Serverless | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-serverless.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md) |
 | Jwt | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/jwt.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/jwt.js,samples/README.md) |
@@ -845,6 +1230,7 @@ Samples are in the [`samples/`](https://github.com/googleapis/google-auth-librar
 | Oauth2-code Verifier | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2-codeVerifier.js,samples/README.md) |
 | Oauth2 | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2.js,samples/README.md) |
 | Sign Blob | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlob.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md) |
+| Verify Google Id Token | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyGoogleIdToken.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyGoogleIdToken.js,samples/README.md) |
 | Verifying ID Tokens from Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md) |
 | Verify Id Token | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken.js,samples/README.md) |
 

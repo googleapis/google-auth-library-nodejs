@@ -62,6 +62,10 @@ export {
   CredentialAccessBoundary,
   DownscopedClient,
 } from './auth/downscopedclient';
+export {
+  PluggableAuthClient,
+  PluggableAuthClientOptions,
+} from './auth/pluggable-auth-client';
 export {DefaultTransporter} from './transporters';
 
 const auth = new GoogleAuth();

@@ -2,7 +2,127 @@
 
 [npm history][1]
 
-[1]: https://www.npmjs.com/package/google-auth-library-nodejs?activeTab=versions
+[1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
+
+## [8.9.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.8.0...v8.9.0) (2023-06-29)
+
+
+### Features
+
+* Adds universe_domain field to base external client ([#1548](https://github.com/googleapis/google-auth-library-nodejs/issues/1548)) ([7412d7c](https://github.com/googleapis/google-auth-library-nodejs/commit/7412d7c55c688601199b5201b29cfbe63c4c7a70))
+* Utilize `gcp-metadata`'s GCP Residency Check ([#1513](https://github.com/googleapis/google-auth-library-nodejs/issues/1513)) ([43377ac](https://github.com/googleapis/google-auth-library-nodejs/commit/43377ac7af1ece14b82b053b504449f257d11af6))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v8 ([#1581](https://github.com/googleapis/google-auth-library-nodejs/issues/1581)) ([7373b75](https://github.com/googleapis/google-auth-library-nodejs/commit/7373b75c2205876f38ec2697f23758176a327fc7))
+* **deps:** Update dependency puppeteer to v20 ([#1550](https://github.com/googleapis/google-auth-library-nodejs/issues/1550)) ([3563c16](https://github.com/googleapis/google-auth-library-nodejs/commit/3563c16e2376729e399fefc0b1fad7bff78c296e))
+* IdTokenClient expiry_date check ([#1555](https://github.com/googleapis/google-auth-library-nodejs/issues/1555)) ([efcdef1](https://github.com/googleapis/google-auth-library-nodejs/commit/efcdef190fd94537d79087e7fcb26e5925a46173))
+* KeepAlive sample ([#1561](https://github.com/googleapis/google-auth-library-nodejs/issues/1561)) ([e3ab824](https://github.com/googleapis/google-auth-library-nodejs/commit/e3ab8247761b0a61f25e08a1b8fd6b200a4be200))
+* Make universeDomain private ([#1552](https://github.com/googleapis/google-auth-library-nodejs/issues/1552)) ([73b63d5](https://github.com/googleapis/google-auth-library-nodejs/commit/73b63d56fad8da033307e1be501a8846a5311211))
+* Remove auth lib version from x-goog-api-client header ([#1558](https://github.com/googleapis/google-auth-library-nodejs/issues/1558)) ([ce6013c](https://github.com/googleapis/google-auth-library-nodejs/commit/ce6013c6132ba2b82a1f8cba0a15c4710536204c))
+
+## [8.8.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.7.0...v8.8.0) (2023-04-25)
+
+
+### Features
+
+* Add External Account Authorized User client type ([#1530](https://github.com/googleapis/google-auth-library-nodejs/issues/1530)) ([06d4ef3](https://github.com/googleapis/google-auth-library-nodejs/commit/06d4ef3cc9ba1651af5b1f90c02b231862822ba2))
+* Document External Account Authorized User Credentials ([#1540](https://github.com/googleapis/google-auth-library-nodejs/issues/1540)) ([c6138be](https://github.com/googleapis/google-auth-library-nodejs/commit/c6138be12753c68d7645843451e1e3f9146e515a))
+
+
+### Bug Fixes
+
+* **deps:** Update `gcp-metadata` to v5.2.0 ([#1502](https://github.com/googleapis/google-auth-library-nodejs/issues/1502)) ([2562d11](https://github.com/googleapis/google-auth-library-nodejs/commit/2562d1192e0f89a3232897b8e27f24a14d5222f2))
+* **deps:** Update dependency @googleapis/iam to v4 ([#1482](https://github.com/googleapis/google-auth-library-nodejs/issues/1482)) ([00d6135](https://github.com/googleapis/google-auth-library-nodejs/commit/00d6135f35a1aa193d50fad6b3ec28a7fda9df66))
+* **deps:** Update dependency @googleapis/iam to v5 ([#1526](https://github.com/googleapis/google-auth-library-nodejs/issues/1526)) ([a1f9835](https://github.com/googleapis/google-auth-library-nodejs/commit/a1f9835fe155722206046d6bb5b56f9e53f2fe9a))
+* **deps:** Update dependency @googleapis/iam to v6 ([#1536](https://github.com/googleapis/google-auth-library-nodejs/issues/1536)) ([86a4de8](https://github.com/googleapis/google-auth-library-nodejs/commit/86a4de82c0de3efeb4b9b05a6ef34bd98cce398c))
+* **deps:** Update dependency @googleapis/iam to v7 ([#1538](https://github.com/googleapis/google-auth-library-nodejs/issues/1538)) ([fdb67dc](https://github.com/googleapis/google-auth-library-nodejs/commit/fdb67dc634f7fa2fcf8977d6d488cc91e9a7cccb))
+* Do not call metadata server if security creds and region are retrievable through environment vars ([#1493](https://github.com/googleapis/google-auth-library-nodejs/issues/1493)) ([d4de941](https://github.com/googleapis/google-auth-library-nodejs/commit/d4de9412e12f1f6f23f2a7c0d176dc5d2543e607))
+* Removing 3pi config URL validation ([#1517](https://github.com/googleapis/google-auth-library-nodejs/issues/1517)) ([a278d19](https://github.com/googleapis/google-auth-library-nodejs/commit/a278d19a0b211b13e5cf5176d40128e704b55780))
+* Removing aws url validation ([#1531](https://github.com/googleapis/google-auth-library-nodejs/issues/1531)) ([f4d9335](https://github.com/googleapis/google-auth-library-nodejs/commit/f4d933579cb5b9e50adf6e679a73cc78388ad8f8))
+
+## [8.7.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.6.0...v8.7.0) (2022-11-08)
+
+
+### Features
+
+* Introduce environment variable for quota project ([#1478](https://github.com/googleapis/google-auth-library-nodejs/issues/1478)) ([8706abc](https://github.com/googleapis/google-auth-library-nodejs/commit/8706abc64bb7d7b4336597589abb011150015a8c))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency puppeteer to v19 ([#1476](https://github.com/googleapis/google-auth-library-nodejs/issues/1476)) ([86b258d](https://github.com/googleapis/google-auth-library-nodejs/commit/86b258da699810ead624419333a1a7f998f1b376))
+* Validate url domain for aws metadata urls ([#1484](https://github.com/googleapis/google-auth-library-nodejs/issues/1484)) ([6dc4e58](https://github.com/googleapis/google-auth-library-nodejs/commit/6dc4e583dfd3aa3030dfbf959ee1c68a259abe2f))
+
+## [8.6.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.2...v8.6.0) (2022-10-06)
+
+
+### Features
+
+* Adding validation for psc endpoints ([#1473](https://github.com/googleapis/google-auth-library-nodejs/issues/1473)) ([4bbd13f](https://github.com/googleapis/google-auth-library-nodejs/commit/4bbd13fbf9081e004209d0ffc336648cff0c529e))
+* **samples:** Auth samples ([#1444](https://github.com/googleapis/google-auth-library-nodejs/issues/1444)) ([137883a](https://github.com/googleapis/google-auth-library-nodejs/commit/137883aff56c9e847abb6445c89a76a27536fe26))
+
+## [8.5.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.1...v8.5.2) (2022-09-22)
+
+
+### Bug Fixes
+
+* **deps:** Update dependency puppeteer to v17 ([#1452](https://github.com/googleapis/google-auth-library-nodejs/issues/1452)) ([b317b59](https://github.com/googleapis/google-auth-library-nodejs/commit/b317b5963c18a598fceb85d4f32cc8cd64bb9b7b))
+* **deps:** Update dependency puppeteer to v18 ([#1471](https://github.com/googleapis/google-auth-library-nodejs/issues/1471)) ([9a2a918](https://github.com/googleapis/google-auth-library-nodejs/commit/9a2a9188c674c41a6a67095c3b102a7dc545fff5))
+
+## [8.5.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.5.0...v8.5.1) (2022-08-31)
+
+
+### Bug Fixes
+
+* do not use #private ([#1454](https://github.com/googleapis/google-auth-library-nodejs/issues/1454)) ([6c30274](https://github.com/googleapis/google-auth-library-nodejs/commit/6c302746c9eb4778619dec5f2f5f6e940af8086a))
+
+## [8.5.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.4.0...v8.5.0) (2022-08-31)
+
+
+### Features
+
+* Support Not Requiring `projectId` When Not Required ([#1448](https://github.com/googleapis/google-auth-library-nodejs/issues/1448)) ([b37489b](https://github.com/googleapis/google-auth-library-nodejs/commit/b37489b6bc17645d3ea23fbceb2326adb296240b))
+
+
+### Bug Fixes
+
+* add hashes to requirements.txt ([#1544](https://github.com/googleapis/google-auth-library-nodejs/issues/1544)) ([#1449](https://github.com/googleapis/google-auth-library-nodejs/issues/1449)) ([54afa8e](https://github.com/googleapis/google-auth-library-nodejs/commit/54afa8ef184c8a68c9930d67d850b7334c28ecaf))
+* remove `projectId` check for `signBlob` calls ([6c04661](https://github.com/googleapis/google-auth-library-nodejs/commit/6c04661c6950532a8239cb95f0509a9d5368ffcc))
+
+## [8.4.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.3.0...v8.4.0) (2022-08-23)
+
+
+### Features
+
+* adding configurable token lifespan support ([#1441](https://github.com/googleapis/google-auth-library-nodejs/issues/1441)) ([178e3b8](https://github.com/googleapis/google-auth-library-nodejs/commit/178e3b83104f5a050f09e17d522d36c8feca632c))
+
+
+### Bug Fixes
+
+* **functions:** clarify auth comments ([#1427](https://github.com/googleapis/google-auth-library-nodejs/issues/1427)) ([7e06732](https://github.com/googleapis/google-auth-library-nodejs/commit/7e067327634281bba948c9cc6bc99c7ab860f827))
+
+## [8.3.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.2.0...v8.3.0) (2022-08-19)
+
+
+### Features
+
+* Add `generateIdToken` support for `Impersonated` Clients ([#1439](https://github.com/googleapis/google-auth-library-nodejs/issues/1439)) ([4ace981](https://github.com/googleapis/google-auth-library-nodejs/commit/4ace981ba1d37a9a00201a1c91e1b79c8cdb5cec))
+
+## [8.2.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.1.1...v8.2.0) (2022-08-11)
+
+
+### Features
+
+* adds Pluggable Auth support ([#1437](https://github.com/googleapis/google-auth-library-nodejs/issues/1437)) ([ed7ef7a](https://github.com/googleapis/google-auth-library-nodejs/commit/ed7ef7a5d1fa6bf5d06bdaab278052fd3930fb7f))
+
+## [8.1.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.1.0...v8.1.1) (2022-07-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependency puppeteer to v15 ([#1424](https://github.com/googleapis/google-auth-library-nodejs/issues/1424)) ([1462f2c](https://github.com/googleapis/google-auth-library-nodejs/commit/1462f2c533da22b0a07130b25c41df046d4d713d))
 
 ## [8.1.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.0.3...v8.1.0) (2022-06-30)
 

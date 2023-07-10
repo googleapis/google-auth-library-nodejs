@@ -74,6 +74,8 @@ describe('oauth2', () => {
         access_type: ACCESS_TYPE,
         scope: SCOPE,
         response_type: 'code token',
+        random: 'thing',
+        another: 'random_thing',
       };
 
       const oauth2client = new OAuth2Client({
@@ -89,6 +91,8 @@ describe('oauth2', () => {
       assert.strictEqual(query.get('scope'), SCOPE);
       assert.strictEqual(query.get('client_id'), CLIENT_ID);
       assert.strictEqual(query.get('redirect_uri'), REDIRECT_URI);
+      assert.strictEqual(query.get('random'), 'thing');
+      assert.strictEqual(query.get('another'), 'random_thing');
       done();
     });
 
@@ -1005,6 +1009,37 @@ describe('oauth2', () => {
       await client.request({url: 'http://example.com'});
       scopes.forEach(s => s.done());
       assert.strictEqual('abc123', client.credentials.access_token);
+    });
+
+    it('should have a custom ReAuth error message', async () => {
+      // We have custom handling for make it easier for customers to resolve ReAuth errors
+      const reAuthErrorBody = {
+        error: 'invalid_grant',
+        error_description: 'a ReAuth error',
+        custom: 'property',
+      };
+
+      const scopes = [
+        nock(baseUrl)
+          .post('/token', undefined, {
+            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          })
+          .reply(500, reAuthErrorBody),
+      ];
+      client.credentials = {refresh_token: 'refresh-token-placeholder'};
+
+      try {
+        await client.request({url: 'http://example.com'});
+      } catch (e) {
+        assert(e instanceof GaxiosError);
+        assert(e.message.includes(JSON.stringify(reAuthErrorBody)));
+
+        return;
+      } finally {
+        scopes.forEach(s => s.done());
+      }
+
+      throw new Error("expected an error, but didn't get one");
     });
 
     it('should refresh if access token is expired', done => {

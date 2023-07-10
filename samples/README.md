@@ -13,10 +13,15 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
 * [Before you begin](#before-you-begin)
 * [Samples](#samples)
   * [Adc](#adc)
+  * [Authenticate Explicit](#authenticate-explicit)
+  * [Authenticate Implicit With Adc](#authenticate-implicit-with-adc)
   * [Compute](#compute)
   * [Credentials](#credentials)
   * [Downscopedclient](#downscopedclient)
   * [Headers](#headers)
+  * [Id Token From Impersonated Credentials](#id-token-from-impersonated-credentials)
+  * [Id Token From Metadata Server](#id-token-from-metadata-server)
+  * [Id Token From Service Account](#id-token-from-service-account)
   * [ID Tokens for Identity-Aware Proxy (IAP)](#id-tokens-for-identity-aware-proxy-iap)
   * [ID Tokens for Serverless](#id-tokens-for-serverless)
   * [Jwt](#jwt)
@@ -25,6 +30,7 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
   * [Oauth2-code Verifier](#oauth2-code-verifier)
   * [Oauth2](#oauth2)
   * [Sign Blob](#sign-blob)
+  * [Verify Google Id Token](#verify-google-id-token)
   * [Verifying ID Tokens from Identity-Aware Proxy (IAP)](#verifying-id-tokens-from-identity-aware-proxy-iap)
   * [Verify Id Token](#verify-id-token)
 
@@ -53,6 +59,40 @@ __Usage:__
 
 
 `node samples/adc.js`
+
+
+-----
+
+
+
+
+### Authenticate Explicit
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateExplicit.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateExplicit.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/authenticateExplicit.js`
+
+
+-----
+
+
+
+
+### Authenticate Implicit With Adc
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/authenticateImplicitWithAdc.js`
 
 
 -----
@@ -121,6 +161,57 @@ __Usage:__
 
 
 `node samples/headers.js`
+
+
+-----
+
+
+
+
+### Id Token From Impersonated Credentials
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromImpersonatedCredentials.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromImpersonatedCredentials.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/idTokenFromImpersonatedCredentials.js`
+
+
+-----
+
+
+
+
+### Id Token From Metadata Server
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromMetadataServer.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromMetadataServer.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/idTokenFromMetadataServer.js`
+
+
+-----
+
+
+
+
+### Id Token From Service Account
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromServiceAccount.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromServiceAccount.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/idTokenFromServiceAccount.js`
 
 
 -----
@@ -261,6 +352,23 @@ __Usage:__
 
 
 `node samples/signBlob.js`
+
+
+-----
+
+
+
+
+### Verify Google Id Token
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyGoogleIdToken.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyGoogleIdToken.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/verifyGoogleIdToken.js`
 
 
 -----

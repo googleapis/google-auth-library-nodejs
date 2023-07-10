@@ -44,7 +44,7 @@ export interface RequestError extends GaxiosError {
   errors: Error[];
 }
 
-export class DefaultTransporter {
+export class DefaultTransporter implements Transporter {
   /**
    * Default user agent.
    */
@@ -68,19 +68,9 @@ export class DefaultTransporter {
         ] = `${uaValue} ${DefaultTransporter.USER_AGENT}`;
       }
       // track google-auth-library-nodejs version:
-      const authVersion = `auth/${pkg.version}`;
-      if (
-        opts.headers['x-goog-api-client'] &&
-        !opts.headers['x-goog-api-client'].includes(authVersion)
-      ) {
-        opts.headers[
-          'x-goog-api-client'
-        ] = `${opts.headers['x-goog-api-client']} ${authVersion}`;
-      } else if (!opts.headers['x-goog-api-client']) {
+      if (!opts.headers['x-goog-api-client']) {
         const nodeVersion = process.version.replace(/^v/, '');
-        opts.headers[
-          'x-goog-api-client'
-        ] = `gl-node/${nodeVersion} ${authVersion}`;
+        opts.headers['x-goog-api-client'] = `gl-node/${nodeVersion}`;
       }
     }
     return opts;
