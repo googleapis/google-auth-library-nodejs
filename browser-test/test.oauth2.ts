@@ -17,6 +17,7 @@ import {assert} from 'chai';
 import * as sinon from 'sinon';
 import {privateKey, publicKey} from './fixtures/keys';
 import {it, describe, beforeEach} from 'mocha';
+
 import {CodeChallengeMethod, OAuth2Client} from '../src';
 import {CertificateFormat} from '../src/auth/oauth2client';
 import {JwkCertificate} from '../src/crypto/crypto';

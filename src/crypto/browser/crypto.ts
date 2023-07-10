@@ -17,6 +17,7 @@
 // SubtleCrypto interface `window.crypto.subtle`.
 
 import * as base64js from 'base64-js';
+
 import {Crypto, JwkCertificate, fromArrayBufferToHex} from '../crypto';
 
 export class BrowserCrypto implements Crypto {
