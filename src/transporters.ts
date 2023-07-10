@@ -28,11 +28,6 @@ const PRODUCT_NAME = 'google-api-nodejs-client';
 
 export interface Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
-  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
-  request<T>(
-    opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
-  ): GaxiosPromise | void;
 }
 
 export interface BodyResponseCallback<T> {
@@ -82,38 +77,14 @@ export class DefaultTransporter implements Transporter {
    * @param callback optional callback that contains GaxiosResponse object.
    * @return GaxiosPromise, assuming no callback is passed.
    */
-  request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
-  request<T>(opts: GaxiosOptions, callback?: BodyResponseCallback<T>): void;
-  request<T>(
-    opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
-  ): GaxiosPromise | void {
+  request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
     // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
-    try {
-      validate(opts);
-    } catch (e) {
-      if (callback) {
-        return callback(e as Error);
-      } else {
-        throw e;
-      }
-    }
+    validate(opts);
 
-    if (callback) {
-      request<T>(opts).then(
-        r => {
-          callback(null, r);
-        },
-        e => {
-          callback(this.processError(e));
-        }
-      );
-    } else {
-      return request<T>(opts).catch(e => {
-        throw this.processError(e);
-      });
-    }
+    return request<T>(opts).catch(e => {
+      throw this.processError(e);
+    });
   }
 
   /**
