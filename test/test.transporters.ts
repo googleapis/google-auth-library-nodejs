@@ -97,7 +97,7 @@ describe('transporters', () => {
       error => {
         scope.done();
         assert.strictEqual(error!.message, 'Error 1\nError 2');
-        assert.strictEqual((error as RequestError).code, 500);
+        assert.strictEqual((error as RequestError).code, '500');
         assert.strictEqual((error as RequestError).errors.length, 2);
         done();
       }
