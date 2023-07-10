@@ -92,7 +92,7 @@ export abstract class AuthClient
    * The quota project ID. The quota project can be used by client libraries for the billing purpose.
    * See {@link https://cloud.google.com/docs/quota| Working with quotas}
    */
-  protected quotaProjectId?: string;
+  quotaProjectId?: string;
   transporter: Transporter = new DefaultTransporter();
   credentials: Credentials = {};
   projectId?: string | null;
