@@ -528,27 +528,29 @@ describe('BaseExternalAccountClient', () => {
       });
 
       it('should use client auth over passing the workforce user project when both are provided', async () => {
-        const scope = mockStsTokenExchange([
+        const scope = mockStsTokenExchange(
+          [
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+              },
+            },
+          ],
           {
-            statusCode: 200,
-            response: stsSuccessfulResponse,
-            request: {
-              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-              audience:
-                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
-              scope: 'https://www.googleapis.com/auth/cloud-platform',
-              requested_token_type:
-                'urn:ietf:params:oauth:token-type:access_token',
-              subject_token: 'subject_token_0',
-              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-            },
-            additionalHeaders: {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
-                basicAuthCreds
-              )}`,
-            },
-          },
-        ]);
+            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+              basicAuthCreds
+            )}`,
+          }
+        );
 
         const client = new TestExternalAccountClient(
           externalAccountOptionsWithClientAuthAndWorkforceUserProject
@@ -601,27 +603,29 @@ describe('BaseExternalAccountClient', () => {
       });
 
       it('should not throw if client auth is provided but workforce user project is not', async () => {
-        const scope = mockStsTokenExchange([
+        const scope = mockStsTokenExchange(
+          [
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+              },
+            },
+          ],
           {
-            statusCode: 200,
-            response: stsSuccessfulResponse,
-            request: {
-              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-              audience:
-                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
-              scope: 'https://www.googleapis.com/auth/cloud-platform',
-              requested_token_type:
-                'urn:ietf:params:oauth:token-type:access_token',
-              subject_token: 'subject_token_0',
-              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-            },
-            additionalHeaders: {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
-                basicAuthCreds
-              )}`,
-            },
-          },
-        ]);
+            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+              basicAuthCreds
+            )}`,
+          }
+        );
         const externalAccountOptionsWithClientAuth: BaseExternalAccountClientOptions =
           Object.assign(
             {},
@@ -980,26 +984,28 @@ describe('BaseExternalAccountClient', () => {
       });
 
       it('should apply basic auth when credentials are provided', async () => {
-        const scope = mockStsTokenExchange([
+        const scope = mockStsTokenExchange(
+          [
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ],
           {
-            statusCode: 200,
-            response: stsSuccessfulResponse,
-            request: {
-              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-              audience,
-              scope: 'https://www.googleapis.com/auth/cloud-platform',
-              requested_token_type:
-                'urn:ietf:params:oauth:token-type:access_token',
-              subject_token: 'subject_token_0',
-              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-            },
-            additionalHeaders: {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
-                basicAuthCreds
-              )}`,
-            },
-          },
-        ]);
+            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+              basicAuthCreds
+            )}`,
+          }
+        );
 
         const client = new TestExternalAccountClient(
           externalAccountOptionsWithCreds
@@ -1050,14 +1056,12 @@ describe('BaseExternalAccountClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new TestExternalAccountClient(
@@ -1109,20 +1113,20 @@ describe('BaseExternalAccountClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: saErrorResponse.error.code,
-              response: saErrorResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse2.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: saErrorResponse.error.code,
+            response: saErrorResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
+        );
+        scopes.push(
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse2.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new TestExternalAccountClient(
@@ -1163,14 +1167,12 @@ describe('BaseExternalAccountClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['scope1', 'scope2'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['scope1', 'scope2'],
+          })
         );
 
         const client = new TestExternalAccountClient(
@@ -1237,20 +1239,20 @@ describe('BaseExternalAccountClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-            {
-              statusCode: 200,
-              response: saSuccessResponse2,
-              token: stsSuccessfulResponse2.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
+        );
+        scopes.push(
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse2,
+            token: stsSuccessfulResponse2.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new TestExternalAccountClient(
@@ -1361,20 +1363,20 @@ describe('BaseExternalAccountClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-            {
-              statusCode: 200,
-              response: saSuccessResponse2,
-              token: stsSuccessfulResponse2.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
+        );
+        scopes.push(
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse2,
+            token: stsSuccessfulResponse2.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new TestExternalAccountClient(
@@ -1421,36 +1423,36 @@ describe('BaseExternalAccountClient', () => {
       it('should apply basic auth when credentials are provided', async () => {
         const scopes: nock.Scope[] = [];
         scopes.push(
-          mockStsTokenExchange([
+          mockStsTokenExchange(
+            [
+              {
+                statusCode: 200,
+                response: stsSuccessfulResponse,
+                request: {
+                  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                  audience,
+                  scope: 'https://www.googleapis.com/auth/cloud-platform',
+                  requested_token_type:
+                    'urn:ietf:params:oauth:token-type:access_token',
+                  subject_token: 'subject_token_0',
+                  subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+                },
+              },
+            ],
             {
-              statusCode: 200,
-              response: stsSuccessfulResponse,
-              request: {
-                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-                audience,
-                scope: 'https://www.googleapis.com/auth/cloud-platform',
-                requested_token_type:
-                  'urn:ietf:params:oauth:token-type:access_token',
-                subject_token: 'subject_token_0',
-                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-              },
-              additionalHeaders: {
-                Authorization: `Basic ${crypto.encodeBase64StringUtf8(
-                  basicAuthCreds
-                )}`,
-              },
-            },
-          ])
+              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+                basicAuthCreds
+              )}`,
+            }
+          )
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new TestExternalAccountClient(
@@ -1492,14 +1494,12 @@ describe('BaseExternalAccountClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new TestExternalAccountClient(
@@ -1536,15 +1536,13 @@ describe('BaseExternalAccountClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              lifetime: 2800,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            lifetime: 2800,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const externalAccountOptionsWithSATokenLifespan = Object.assign(
@@ -1628,14 +1626,12 @@ describe('BaseExternalAccountClient', () => {
         ])
       );
       scopes.push(
-        mockGenerateAccessToken([
-          {
-            statusCode: 200,
-            response: saSuccessResponse,
-            token: stsSuccessfulResponse.access_token,
-            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          },
-        ])
+        mockGenerateAccessToken({
+          statusCode: 200,
+          response: saSuccessResponse,
+          token: stsSuccessfulResponse.access_token,
+          scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        })
       );
 
       const client = new TestExternalAccountClient(
@@ -1750,10 +1746,10 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -1813,18 +1809,16 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        mockGenerateAccessToken([
-          {
-            statusCode: 200,
-            response: saSuccessResponse,
-            token: stsSuccessfulResponse.access_token,
-            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          },
-        ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        mockGenerateAccessToken({
+          statusCode: 200,
+          response: saSuccessResponse,
+          token: stsSuccessfulResponse.access_token,
+          scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        }),
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -1875,10 +1869,10 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -1966,10 +1960,10 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -2020,10 +2014,10 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(400, errorMessage),
       ];
 
@@ -2095,14 +2089,15 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
-          .reply(401)
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
+          .reply(401),
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -2149,10 +2144,10 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(401),
       ];
 
@@ -2219,14 +2214,15 @@ describe('BaseExternalAccountClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
-          .reply(403)
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
+          .reply(403),
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
+        })
+          .post('/api', exampleRequest)
           .reply(403),
       ];
 

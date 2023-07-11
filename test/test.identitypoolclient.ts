@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it} from 'mocha';
+import {afterEach, describe, it} from 'mocha';
 import * as fs from 'fs';
 import * as nock from 'nock';
 import {createCrypto} from '../src/crypto/crypto';
@@ -168,6 +168,10 @@ describe('IdentityPoolClient', () => {
     expires_in: ONE_HOUR_IN_SECS,
     scope: 'scope1 scope2',
   };
+
+  afterEach(() => {
+    nock.cleanAll();
+  });
 
   it('should be a subclass of BaseExternalAccountClient', () => {
     assert(IdentityPoolClient.prototype instanceof BaseExternalAccountClient);
@@ -425,28 +429,30 @@ describe('IdentityPoolClient', () => {
       });
 
       it('should resolve with the expected response on workforce configs with client auth', async () => {
-        const scope = mockStsTokenExchange([
+        const scope = mockStsTokenExchange(
+          [
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                // Subject token loaded from file should be used.
+                subject_token: fileSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+              },
+            },
+          ],
           {
-            statusCode: 200,
-            response: stsSuccessfulResponse,
-            request: {
-              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-              audience:
-                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
-              scope: 'https://www.googleapis.com/auth/cloud-platform',
-              requested_token_type:
-                'urn:ietf:params:oauth:token-type:access_token',
-              // Subject token loaded from file should be used.
-              subject_token: fileSubjectToken,
-              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-            },
-            additionalHeaders: {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
-                basicAuthCreds
-              )}`,
-            },
-          },
-        ]);
+            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+              basicAuthCreds
+            )}`,
+          }
+        );
 
         const client = new IdentityPoolClient(
           fileSourcedOptionsWithClientAuthAndWorkforceUserProject
@@ -500,27 +506,29 @@ describe('IdentityPoolClient', () => {
       });
 
       it('should not throw if client auth is provided but workforce user project is not', async () => {
-        const scope = mockStsTokenExchange([
+        const scope = mockStsTokenExchange(
+          [
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience:
+                  '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: fileSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+              },
+            },
+          ],
           {
-            statusCode: 200,
-            response: stsSuccessfulResponse,
-            request: {
-              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-              audience:
-                '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
-              scope: 'https://www.googleapis.com/auth/cloud-platform',
-              requested_token_type:
-                'urn:ietf:params:oauth:token-type:access_token',
-              subject_token: fileSubjectToken,
-              subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-            },
-            additionalHeaders: {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
-                basicAuthCreds
-              )}`,
-            },
-          },
-        ]);
+            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+              basicAuthCreds
+            )}`,
+          }
+        );
         const fileSourcedOptionsWithClientAuth: IdentityPoolClientOptions =
           Object.assign(
             {},
@@ -570,14 +578,12 @@ describe('IdentityPoolClient', () => {
           ])
         );
         scopes.push(
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new IdentityPoolClient(
@@ -618,14 +624,12 @@ describe('IdentityPoolClient', () => {
               },
             },
           ]),
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new IdentityPoolClient(fileSourcedOptionsWithSA);
@@ -694,14 +698,12 @@ describe('IdentityPoolClient', () => {
               },
             },
           ]),
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new IdentityPoolClient(jsonFileSourcedOptionsWithSA);
@@ -734,10 +736,10 @@ describe('IdentityPoolClient', () => {
     describe('retrieveSubjectToken()', () => {
       it('should resolve on text response success', async () => {
         const externalSubjectToken = 'SUBJECT_TOKEN_1';
-        const scope = nock(metadataBaseUrl)
-          .get(metadataPath, undefined, {
-            reqheaders: metadataHeaders,
-          })
+        const scope = nock(metadataBaseUrl, {
+          reqheaders: metadataHeaders,
+        })
+          .get(metadataPath)
           .reply(200, externalSubjectToken);
 
         const client = new IdentityPoolClient(urlSourcedOptions);
@@ -752,10 +754,10 @@ describe('IdentityPoolClient', () => {
         const jsonResponse = {
           access_token: externalSubjectToken,
         };
-        const scope = nock(metadataBaseUrl)
-          .get(metadataPath, undefined, {
-            reqheaders: metadataHeaders,
-          })
+        const scope = nock(metadataBaseUrl, {
+          reqheaders: metadataHeaders,
+        })
+          .get(metadataPath)
           .reply(200, jsonResponse);
 
         const client = new IdentityPoolClient(jsonRespUrlSourcedOptions);
@@ -787,10 +789,10 @@ describe('IdentityPoolClient', () => {
         const jsonResponse = {
           access_token: externalSubjectToken,
         };
-        const scope = nock(metadataBaseUrl)
-          .get(metadataPath, undefined, {
-            reqheaders: metadataHeaders,
-          })
+        const scope = nock(metadataBaseUrl, {
+          reqheaders: metadataHeaders,
+        })
+          .get(metadataPath)
           .reply(200, jsonResponse);
         const client = new IdentityPoolClient(invalidOptions);
 
@@ -817,10 +819,10 @@ describe('IdentityPoolClient', () => {
       });
 
       it('should reject with underlying on non-200 response', async () => {
-        const scope = nock(metadataBaseUrl)
-          .get(metadataPath, undefined, {
-            reqheaders: metadataHeaders,
-          })
+        const scope = nock(metadataBaseUrl, {
+          reqheaders: metadataHeaders,
+        })
+          .get(metadataPath)
           .reply(404);
 
         const client = new IdentityPoolClient(urlSourcedOptions);
@@ -855,10 +857,10 @@ describe('IdentityPoolClient', () => {
           ])
         );
         scopes.push(
-          nock(metadataBaseUrl)
-            .get(metadataPath, undefined, {
-              reqheaders: metadataHeaders,
-            })
+          nock(metadataBaseUrl, {
+            reqheaders: metadataHeaders,
+          })
+            .get(metadataPath)
             .reply(200, externalSubjectToken)
         );
 
@@ -883,10 +885,10 @@ describe('IdentityPoolClient', () => {
         const externalSubjectToken = 'SUBJECT_TOKEN_1';
         const scopes: nock.Scope[] = [];
         scopes.push(
-          nock(metadataBaseUrl)
-            .get(metadataPath, undefined, {
-              reqheaders: metadataHeaders,
-            })
+          nock(metadataBaseUrl, {
+            reqheaders: metadataHeaders,
+          })
+            .get(metadataPath)
             .reply(200, externalSubjectToken),
           mockStsTokenExchange([
             {
@@ -904,14 +906,12 @@ describe('IdentityPoolClient', () => {
               },
             },
           ]),
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new IdentityPoolClient(urlSourcedOptionsWithSA);
@@ -951,10 +951,10 @@ describe('IdentityPoolClient', () => {
           ])
         );
         scopes.push(
-          nock(metadataBaseUrl)
-            .get(metadataPath, undefined, {
-              reqheaders: metadataHeaders,
-            })
+          nock(metadataBaseUrl, {
+            reqheaders: metadataHeaders,
+          })
+            .get(metadataPath)
             .reply(200, jsonResponse)
         );
 
@@ -982,10 +982,10 @@ describe('IdentityPoolClient', () => {
         };
         const scopes: nock.Scope[] = [];
         scopes.push(
-          nock(metadataBaseUrl)
-            .get(metadataPath, undefined, {
-              reqheaders: metadataHeaders,
-            })
+          nock(metadataBaseUrl, {
+            reqheaders: metadataHeaders,
+          })
+            .get(metadataPath)
             .reply(200, jsonResponse),
           mockStsTokenExchange([
             {
@@ -1003,14 +1003,12 @@ describe('IdentityPoolClient', () => {
               },
             },
           ]),
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new IdentityPoolClient(jsonRespUrlSourcedOptionsWithSA);
@@ -1026,10 +1024,10 @@ describe('IdentityPoolClient', () => {
       });
 
       it('should reject with retrieveSubjectToken error', async () => {
-        const scope = nock(metadataBaseUrl)
-          .get(metadataPath, undefined, {
-            reqheaders: metadataHeaders,
-          })
+        const scope = nock(metadataBaseUrl, {
+          reqheaders: metadataHeaders,
+        })
+          .get(metadataPath)
           .reply(404);
 
         const client = new IdentityPoolClient(urlSourcedOptions);
