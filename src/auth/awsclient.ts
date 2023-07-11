@@ -100,6 +100,7 @@ export class AwsClient extends BaseExternalAccountClient {
       options.credential_source.imdsv2_session_token_url;
     this.awsRequestSigner = null;
     this.region = '';
+    this.metricsSource = 'aws';
 
     // Data validators.
     this.validateEnvironmentId();
