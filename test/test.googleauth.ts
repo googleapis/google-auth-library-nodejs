@@ -1713,14 +1713,12 @@ describe('googleauth', () => {
         ];
         if (mockServiceAccountImpersonation) {
           scopes.push(
-            mockGenerateAccessToken([
-              {
-                statusCode: 200,
-                response: saSuccessResponse,
-                token: stsSuccessfulResponse.access_token,
-                scopes: expectedScopes,
-              },
-            ])
+            mockGenerateAccessToken({
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: expectedScopes,
+            })
           );
         }
 
