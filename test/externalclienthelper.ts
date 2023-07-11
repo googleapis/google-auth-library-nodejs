@@ -126,7 +126,9 @@ export function mockCloudResourceManager(
   statusCode: number,
   response: ProjectInfo | CloudRequestError
 ): nock.Scope {
-  return nock('https://cloudresourcemanager.googleapis.com', {reqheaders: {Authorization: `Bearer ${accessToken}`}})
+  return nock('https://cloudresourcemanager.googleapis.com', {
+    reqheaders: {Authorization: `Bearer ${accessToken}`},
+  })
     .get(`/v1/projects/${projectNumber}`)
     .reply(statusCode, response);
 }
