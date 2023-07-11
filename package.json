@@ -21,7 +21,7 @@
     "ecdsa-sig-formatter": "^1.0.11",
     "gaxios": "^5.0.0",
     "gcp-metadata": "^5.3.0",
-    "gtoken": "^6.1.0",
+    "gtoken": "^7.0.0",
     "jws": "^4.0.0",
     "lru-cache": "^6.0.0"
   },
