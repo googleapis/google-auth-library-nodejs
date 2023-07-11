@@ -89,35 +89,33 @@ describe('transporters', () => {
     const scope = nock(url)
       .get('/')
       .reply(400, {error: {code: 500, errors: [firstError, secondError]}});
-    transporter.request({url}, error => {
-      scope.done();
-      assert.strictEqual(error!.message, 'Error 1\nError 2');
-      assert.strictEqual((error as RequestError).code, 500);
-      assert.strictEqual((error as RequestError).errors.length, 2);
-      done();
-    });
+    transporter.request({url}).then(
+      () => {
+        scope.done();
+        done('Unexpected promise success');
+      },
+      error => {
+        scope.done();
+        assert.strictEqual(error!.message, 'Error 1\nError 2');
+        assert.strictEqual((error as RequestError).code, 500);
+        assert.strictEqual((error as RequestError).errors.length, 2);
+        done();
+      }
+    );
   });
 
   it('should return an error for a 404 response', done => {
     const url = 'http://example.com';
     const scope = nock(url).get('/').reply(404, 'Not found');
-    transporter.request({url}, error => {
-      scope.done();
-      assert.strictEqual(error!.message, 'Not found');
-      assert.strictEqual((error as RequestError).code, '404');
-      done();
-    });
-  });
-
-  it('should return an error if you try to use request config options', done => {
-    const expected =
-      "'uri' is not a valid configuration option. Please use 'url' instead. This library is using Axios for requests. Please see https://github.com/axios/axios to learn more about the valid request options.";
-    transporter.request(
-      {
-        uri: 'http://example.com/api',
-      } as GaxiosOptions,
+    transporter.request({url}).then(
+      () => {
+        scope.done();
+        done('Unexpected promise success');
+      },
       error => {
-        assert.strictEqual(error!.message, expected);
+        scope.done();
+        assert.strictEqual(error!.message, 'Not found');
+        assert.strictEqual((error as RequestError).code, '404');
         done();
       }
     );
@@ -151,12 +149,17 @@ describe('transporters', () => {
   it('should work with a callback', done => {
     const url = 'http://example.com';
     const scope = nock(url).get('/').reply(200);
-    transporter.request({url}, (err, res) => {
-      scope.done();
-      assert.strictEqual(err, null);
-      assert.strictEqual(res!.status, 200);
-      done();
-    });
+    transporter.request({url}).then(
+      res => {
+        scope.done();
+        assert.strictEqual(res!.status, 200);
+        done();
+      },
+      _error => {
+        scope.done();
+        done('Unexpected promise failure');
+      }
+    );
   });
 
   // tslint:disable-next-line ban

@@ -20,7 +20,7 @@ import {
   OAuthClientAuthHandler,
   OAuthErrorResponse,
 } from './oauth2common';
-import {BodyResponseCallback, DefaultTransporter} from '../transporters';
+import {BodyResponseCallback, Transporter} from '../transporters';
 import {
   GaxiosError,
   GaxiosOptions,
@@ -83,7 +83,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
    */
   constructor(
     private readonly url: string,
-    private readonly transporter: DefaultTransporter,
+    private readonly transporter: Transporter,
     clientAuthentication?: ClientAuthentication
   ) {
     super(clientAuthentication);
