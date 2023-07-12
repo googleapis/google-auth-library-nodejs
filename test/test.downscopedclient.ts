@@ -832,10 +832,10 @@ describe('DownscopedClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -887,10 +887,10 @@ describe('DownscopedClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -982,10 +982,10 @@ describe('DownscopedClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -1036,10 +1036,10 @@ describe('DownscopedClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(400, errorMessage),
       ];
 
@@ -1111,14 +1111,15 @@ describe('DownscopedClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
-          .reply(401)
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
+          .reply(401),
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -1165,10 +1166,10 @@ describe('DownscopedClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(401),
       ];
 
@@ -1237,14 +1238,15 @@ describe('DownscopedClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
-          .reply(403)
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
+          .reply(403),
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders2),
+        })
+          .post('/api', exampleRequest)
           .reply(403),
       ];
 

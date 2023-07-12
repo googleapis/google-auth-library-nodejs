@@ -914,10 +914,10 @@ describe('oauth2', () => {
 
     function mockExample() {
       return [
-        nock(baseUrl)
-          .post('/token', undefined, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-          })
+        nock(baseUrl, {
+          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+        })
+          .post('/token')
           .reply(200, {access_token: 'abc123', expires_in: 1}),
         nock('http://example.com').get('/').reply(200),
       ];
@@ -948,10 +948,10 @@ describe('oauth2', () => {
       // Mock a single call to the token server, and 3 calls to the example
       // endpoint. This makes sure that refreshToken is called only once.
       const scopes = [
-        nock(baseUrl)
-          .post('/token', undefined, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-          })
+        nock(baseUrl, {
+          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+        })
+          .post('/token')
           .reply(200, {access_token: 'abc123', expires_in: 1}),
         nock('http://example.com').get('/').thrice().reply(200),
       ];
@@ -970,10 +970,10 @@ describe('oauth2', () => {
       // This makes sure that the token endpoint is invoked twice, preventing
       // the promise from getting cached for too long.
       const scopes = [
-        nock(baseUrl)
-          .post('/token', undefined, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-          })
+        nock(baseUrl, {
+          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+        })
+          .post('/token')
           .twice()
           .reply(200, {access_token: 'abc123', expires_in: 100000}),
         nock('http://example.com').get('/').twice().reply(200),
@@ -990,14 +990,12 @@ describe('oauth2', () => {
       // Mock a failed call to the refreshToken endpoint. This should trigger
       // a second call to refreshToken, which should use a different promise.
       const scopes = [
-        nock(baseUrl)
-          .post('/token', undefined, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-          })
+        nock(baseUrl, {
+          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+        })
+          .post('/token')
           .reply(500)
-          .post('/token', undefined, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-          })
+          .post('/token')
           .reply(200, {access_token: 'abc123', expires_in: 100000}),
         nock('http://example.com').get('/').reply(200),
       ];
@@ -1020,10 +1018,10 @@ describe('oauth2', () => {
       };
 
       const scopes = [
-        nock(baseUrl)
-          .post('/token', undefined, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-          })
+        nock(baseUrl, {
+          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+        })
+          .post('/token')
           .reply(500, reAuthErrorBody),
       ];
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
@@ -1138,15 +1136,16 @@ describe('oauth2', () => {
             .get('/access')
             .reply(code, {
               error: {code, message: 'Invalid Credentials'},
-            })
-            .get('/access', undefined, {
-              reqheaders: {Authorization: 'Bearer abc123'},
-            })
+            }),
+          nock('http://example.com', {
+            reqheaders: {Authorization: 'Bearer abc123'},
+          })
+            .get('/access')
             .reply(200),
-          nock(baseUrl)
-            .post('/token', undefined, {
-              reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-            })
+          nock(baseUrl, {
+            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          })
+            .post('/token')
             .reply(200, {access_token: 'abc123', expires_in: 1000}),
         ];
         client.credentials = {
@@ -1170,19 +1169,20 @@ describe('oauth2', () => {
           forceRefreshOnFailure: true,
         });
         const scopes = [
-          nock(baseUrl)
-            .post('/token', undefined, {
-              reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
-            })
+          nock(baseUrl, {
+            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          })
+            .post('/token')
             .reply(200, {access_token: 'abc123', expires_in: 1000}),
           nock('http://example.com')
             .get('/access')
             .reply(code, {
               error: {code, message: 'Invalid Credentials'},
-            })
-            .get('/access', undefined, {
-              reqheaders: {Authorization: 'Bearer abc123'},
-            })
+            }),
+          nock('http://example.com', {
+            reqheaders: {Authorization: 'Bearer abc123'},
+          })
+            .get('/access')
             .reply(200),
         ];
         client.credentials = {
@@ -1203,15 +1203,18 @@ describe('oauth2', () => {
         const authHeaders = {
           Authorization: 'Bearer access_token',
         };
-        const scope = nock('http://example.com')
-          .get('/access')
-          .reply(code, {
-            error: {code, message: 'Invalid Credentials'},
-          })
-          .get('/access', undefined, {
+        const scopes = [
+          nock('http://example.com')
+            .get('/access')
+            .reply(code, {
+              error: {code, message: 'Invalid Credentials'},
+            }),
+          nock('http://example.com', {
             reqheaders: authHeaders,
           })
-          .reply(200, {foo: 'bar'});
+            .get('/access')
+            .reply(200, {foo: 'bar'}),
+        ];
         const expectedRefreshedAccessToken = {
           access_token: 'access_token',
           expiry_date: new Date().getTime() + 3600 * 1000,
@@ -1226,7 +1229,7 @@ describe('oauth2', () => {
 
         client.request({url: 'http://example.com/access'}, err => {
           assert.strictEqual(err, null);
-          scope.done();
+          scopes.forEach(s => s.done());
           assert.strictEqual(
             client.credentials.access_token,
             expectedRefreshedAccessToken.access_token
@@ -1242,15 +1245,18 @@ describe('oauth2', () => {
         const authHeaders = {
           Authorization: 'Bearer access_token',
         };
-        const scope = nock('http://example.com')
-          .get('/access')
-          .reply(code, {
-            error: {code, message: 'Invalid Credentials'},
-          })
-          .get('/access', undefined, {
+        const scopes = [
+          nock('http://example.com')
+            .get('/access')
+            .reply(code, {
+              error: {code, message: 'Invalid Credentials'},
+            }),
+          nock('http://example.com', {
             reqheaders: authHeaders,
           })
-          .reply(200, {foo: 'bar'});
+            .get('/access')
+            .reply(200, {foo: 'bar'}),
+        ];
         const expectedRefreshedAccessToken = {
           access_token: 'access_token',
           expiry_date: new Date().getTime() + 3600 * 1000,
@@ -1261,7 +1267,7 @@ describe('oauth2', () => {
 
         client.request({url: 'http://example.com/access'}, err => {
           assert.strictEqual(err, null);
-          scope.done();
+          scopes.forEach(s => s.done());
           assert.strictEqual(
             client.credentials.access_token,
             expectedRefreshedAccessToken.access_token
@@ -1319,10 +1325,10 @@ describe('oauth2', () => {
     });
 
     it('getToken should allow a code_verifier to be passed', async () => {
-      const scope = nock(baseUrl)
-        .post('/token', undefined, {
-          reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
-        })
+      const scope = nock(baseUrl, {
+        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+      })
+        .post('/token')
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1340,10 +1346,10 @@ describe('oauth2', () => {
     });
 
     it('getToken should set redirect_uri if not provided in options', async () => {
-      const scope = nock(baseUrl)
-        .post('/token', undefined, {
-          reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
-        })
+      const scope = nock(baseUrl, {
+        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+      })
+        .post('/token')
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1358,10 +1364,10 @@ describe('oauth2', () => {
     });
 
     it('getToken should set client_id if not provided in options', async () => {
-      const scope = nock(baseUrl)
-        .post('/token', undefined, {
-          reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
-        })
+      const scope = nock(baseUrl, {
+        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+      })
+        .post('/token')
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1376,10 +1382,10 @@ describe('oauth2', () => {
     });
 
     it('getToken should override redirect_uri if provided in options', async () => {
-      const scope = nock(baseUrl)
-        .post('/token', undefined, {
-          reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
-        })
+      const scope = nock(baseUrl, {
+        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+      })
+        .post('/token')
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1397,10 +1403,10 @@ describe('oauth2', () => {
     });
 
     it('getToken should override client_id if provided in options', async () => {
-      const scope = nock(baseUrl)
-        .post('/token', undefined, {
-          reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
-        })
+      const scope = nock(baseUrl, {
+        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+      })
+        .post('/token')
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1419,10 +1425,10 @@ describe('oauth2', () => {
 
     it('should return expiry_date', done => {
       const now = new Date().getTime();
-      const scope = nock(baseUrl)
-        .post('/token', undefined, {
-          reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
-        })
+      const scope = nock(baseUrl, {
+        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+      })
+        .post('/token')
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',

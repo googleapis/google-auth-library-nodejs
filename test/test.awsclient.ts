@@ -181,6 +181,7 @@ describe('AwsClient', () => {
     if (clock) {
       clock.restore();
     }
+    nock.cleanAll();
   });
 
   it('should be a subclass of ExternalAccountClient', () => {
@@ -574,14 +575,12 @@ describe('AwsClient', () => {
               },
             },
           ]),
-          mockGenerateAccessToken([
-            {
-              statusCode: 200,
-              response: saSuccessResponse,
-              token: stsSuccessfulResponse.access_token,
-              scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-            },
-          ])
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
         );
 
         const client = new AwsClient(awsOptionsWithSA);

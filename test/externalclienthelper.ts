@@ -36,7 +36,6 @@ interface NockMockStsToken {
   response: StsSuccessfulResponse | OAuthErrorResponse;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   request: {[key: string]: any};
-  additionalHeaders?: {[key: string]: string};
 }
 
 interface NockMockGenerateAccessToken {
@@ -58,51 +57,43 @@ const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 
 export function mockStsTokenExchange(
-  nockParams: NockMockStsToken[]
+  nockParams: NockMockStsToken[],
+  additionalHeaders?: {[key: string]: string}
 ): nock.Scope {
-  const scope = nock(baseUrl);
+  const headers = Object.assign(
+    {
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    additionalHeaders || {}
+  );
+  const scope = nock(baseUrl, {reqheaders: headers});
   nockParams.forEach(nockMockStsToken => {
-    const headers = Object.assign(
-      {
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      nockMockStsToken.additionalHeaders || {}
-    );
     scope
-      .post(path, qs.stringify(nockMockStsToken.request), {
-        reqheaders: headers,
-      })
+      .post(path, qs.stringify(nockMockStsToken.request))
       .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
   });
   return scope;
 }
 
 export function mockGenerateAccessToken(
-  nockParams: NockMockGenerateAccessToken[]
+  nockMockGenerateAccessToken: NockMockGenerateAccessToken
 ): nock.Scope {
-  const scope = nock(saBaseUrl);
-  nockParams.forEach(nockMockGenerateAccessToken => {
-    const token = nockMockGenerateAccessToken.token;
-    scope
-      .post(
-        saPath,
-        {
-          scope: nockMockGenerateAccessToken.scopes,
-          lifetime:
-            (nockMockGenerateAccessToken.lifetime ?? defaultLifetime) + 's',
-        },
-        {
-          reqheaders: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-      .reply(
-        nockMockGenerateAccessToken.statusCode,
-        nockMockGenerateAccessToken.response
-      );
+  const token = nockMockGenerateAccessToken.token;
+  const scope = nock(saBaseUrl, {
+    reqheaders: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
   });
+  scope
+    .post(saPath, {
+      scope: nockMockGenerateAccessToken.scopes,
+      lifetime: (nockMockGenerateAccessToken.lifetime ?? defaultLifetime) + 's',
+    })
+    .reply(
+      nockMockGenerateAccessToken.statusCode,
+      nockMockGenerateAccessToken.response
+    );
   return scope;
 }
 
@@ -135,11 +126,9 @@ export function mockCloudResourceManager(
   statusCode: number,
   response: ProjectInfo | CloudRequestError
 ): nock.Scope {
-  return nock('https://cloudresourcemanager.googleapis.com')
-    .get(`/v1/projects/${projectNumber}`, undefined, {
-      reqheaders: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
+  return nock('https://cloudresourcemanager.googleapis.com', {
+    reqheaders: {Authorization: `Bearer ${accessToken}`},
+  })
+    .get(`/v1/projects/${projectNumber}`)
     .reply(statusCode, response);
 }
