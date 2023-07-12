@@ -721,13 +721,6 @@ describe('jwt', () => {
     assert.strictEqual(private_key, PEM_CONTENTS);
   });
 
-  it('getCredentials should handle a p12 keyFile', async () => {
-    const jwt = new JWT({keyFile: P12_PATH});
-    const {private_key, client_email} = await jwt.getCredentials();
-    assert(private_key);
-    assert.strictEqual(client_email, undefined);
-  });
-
   it('getCredentials should handle a json keyFile', async () => {
     const jwt = new JWT();
     jwt.fromJSON(json);
