@@ -1713,14 +1713,12 @@ describe('googleauth', () => {
         ];
         if (mockServiceAccountImpersonation) {
           scopes.push(
-            mockGenerateAccessToken([
-              {
-                statusCode: 200,
-                response: saSuccessResponse,
-                token: stsSuccessfulResponse.access_token,
-                scopes: expectedScopes,
-              },
-            ])
+            mockGenerateAccessToken({
+              statusCode: 200,
+              response: saSuccessResponse,
+              token: stsSuccessfulResponse.access_token,
+              scopes: expectedScopes,
+            })
           );
         }
 
@@ -2546,25 +2544,6 @@ describe('googleauth', () => {
     scope.done();
     assert.strictEqual('http://foo', (jwt as JWT).gtoken!.scope);
   });
-  it('allows client to be instantiated from p12 key file', async () => {
-    const auth = new GoogleAuth({
-      keyFile: P12_PATH,
-      clientOptions: {
-        scopes: 'http://foo',
-        email: 'foo@serviceaccount.com',
-        subject: 'bar@subjectaccount.com',
-      },
-    });
-    const jwt = await auth.getClient();
-    const scope = createGTokenMock({access_token: 'initial-access-token'});
-    const headers = await jwt.getRequestHeaders();
-    assert.deepStrictEqual(
-      headers.Authorization,
-      'Bearer initial-access-token'
-    );
-    scope.done();
-    assert.strictEqual('http://foo', (jwt as JWT).gtoken!.scope);
-  });
 
   // Allows a client to be instantiated from a certificate,
   // See: https://github.com/googleapis/google-auth-library-nodejs/issues/808
@@ -2587,50 +2566,12 @@ describe('googleauth', () => {
     scope.done();
     assert.strictEqual('http://foo', (jwt as JWT).gtoken!.scope);
   });
-  it('allows client to be instantiated from p12 key file', async () => {
-    const auth = new GoogleAuth({
-      keyFile: P12_PATH,
-      clientOptions: {
-        scopes: 'http://foo',
-        email: 'foo@serviceaccount.com',
-        subject: 'bar@subjectaccount.com',
-      },
-    });
-    const jwt = await auth.getClient();
-    const scope = createGTokenMock({access_token: 'initial-access-token'});
-    const headers = await jwt.getRequestHeaders();
-    assert.deepStrictEqual(
-      headers.Authorization,
-      'Bearer initial-access-token'
-    );
-    scope.done();
-    assert.strictEqual('http://foo', (jwt as JWT).gtoken!.scope);
-  });
 
   // Allows a client to be instantiated from a certificate,
   // See: https://github.com/googleapis/google-auth-library-nodejs/issues/808
   it('allows client to be instantiated from PEM key file', async () => {
     const auth = new GoogleAuth({
       keyFile: PEM_PATH,
-      clientOptions: {
-        scopes: 'http://foo',
-        email: 'foo@serviceaccount.com',
-        subject: 'bar@subjectaccount.com',
-      },
-    });
-    const jwt = await auth.getClient();
-    const scope = createGTokenMock({access_token: 'initial-access-token'});
-    const headers = await jwt.getRequestHeaders();
-    assert.deepStrictEqual(
-      headers.Authorization,
-      'Bearer initial-access-token'
-    );
-    scope.done();
-    assert.strictEqual('http://foo', (jwt as JWT).gtoken!.scope);
-  });
-  it('allows client to be instantiated from p12 key file', async () => {
-    const auth = new GoogleAuth({
-      keyFile: P12_PATH,
       clientOptions: {
         scopes: 'http://foo',
         email: 'foo@serviceaccount.com',

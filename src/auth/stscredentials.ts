@@ -15,7 +15,7 @@
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
 
-import {DefaultTransporter} from '../transporters';
+import {DefaultTransporter, Transporter} from '../transporters';
 import {Headers} from './oauth2client';
 import {
   ClientAuthentication,
@@ -131,7 +131,7 @@ export interface StsSuccessfulResponse {
  * https://tools.ietf.org/html/rfc8693
  */
 export class StsCredentials extends OAuthClientAuthHandler {
-  private transporter: DefaultTransporter;
+  private transporter: Transporter;
 
   /**
    * Initializes an STS credentials instance.

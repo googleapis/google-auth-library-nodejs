@@ -51,28 +51,29 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     request: {[key: string]: any};
     times?: number;
-    additionalHeaders?: {[key: string]: string};
   }
 
   function mockStsTokenRefresh(
     url: string,
     path: string,
-    nockParams: NockMockRefreshResponse[]
+    nockParams: NockMockRefreshResponse[],
+    additionalHeaders?: {[key: string]: string}
   ): nock.Scope {
-    const scope = nock(url);
+    const headers = Object.assign(
+      {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      additionalHeaders || {}
+    );
+    const scope = nock(url, {
+      reqheaders: headers,
+    });
+
     nockParams.forEach(nockMockStsToken => {
       const times =
         nockMockStsToken.times !== undefined ? nockMockStsToken.times : 1;
-      const headers = Object.assign(
-        {
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        nockMockStsToken.additionalHeaders || {}
-      );
       scope
-        .post(path, qs.stringify(nockMockStsToken.request), {
-          reqheaders: headers,
-        })
+        .post(path, qs.stringify(nockMockStsToken.request))
         .times(times)
         .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
     });
@@ -105,6 +106,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   });
 
   afterEach(() => {
+    nock.cleanAll();
     if (clock) {
       clock.restore();
     }
@@ -208,12 +210,12 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         refresh_token: 'refreshToken',
       });
 
-      const scope = nock(BASE_URL)
-        .post(REFRESH_PATH, expectedRequest.toString(), {
-          reqheaders: {
-            'content-type': 'application/x-www-form-urlencoded',
-          },
-        })
+      const scope = nock(BASE_URL, {
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+      })
+        .post(REFRESH_PATH, expectedRequest.toString())
         .replyWithError({code: 'ETIMEDOUT'});
 
       const client = new ExternalAccountAuthorizedUserClient(
@@ -426,10 +428,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -511,10 +513,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -562,10 +564,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(400, errorMessage),
       ];
 
@@ -617,14 +619,15 @@ describe('ExternalAccountAuthorizedUserClient', () => {
             times: 2,
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
-          .reply(401)
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
+          .reply(401),
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
@@ -669,10 +672,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(401),
       ];
 
@@ -722,14 +725,15 @@ describe('ExternalAccountAuthorizedUserClient', () => {
             times: 2,
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
-          .reply(403)
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, exampleHeaders, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
+          .reply(403),
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, exampleHeaders, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(403),
       ];
 
@@ -777,10 +781,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
             },
           },
         ]),
-        nock('https://example.com')
-          .post('/api', exampleRequest, {
-            reqheaders: Object.assign({}, authHeaders),
-          })
+        nock('https://example.com', {
+          reqheaders: Object.assign({}, authHeaders),
+        })
+          .post('/api', exampleRequest)
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
