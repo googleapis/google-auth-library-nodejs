@@ -213,7 +213,6 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       headers,
       responseType: formatType,
     };
-    console.log(opts);
     let subjectToken: string | undefined;
     if (formatType === 'text') {
       const response = await this.transporter.request<string>(opts);

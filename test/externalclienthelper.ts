@@ -56,6 +56,9 @@ export const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pkg = require('../../package.json');
+
 export function mockStsTokenExchange(
   nockParams: NockMockStsToken[],
   additionalHeaders?: {[key: string]: string}
@@ -131,4 +134,13 @@ export function mockCloudResourceManager(
   })
     .get(`/v1/projects/${projectNumber}`)
     .reply(statusCode, response);
+}
+
+export function getExpectedExternalAccountMetricsHeaderValue(
+  expectedSource: string,
+  expectedSaImpersonation: boolean,
+  expectedConfigLifetime: boolean
+): string {
+  const languageVersion = process.version.replace(/^v/, '');
+  return `gl-node/${languageVersion} auth/${pkg.version} google-byoid-sdk source/${expectedSource} sa-impersonation/${expectedSaImpersonation} config-lifetime/${expectedConfigLifetime}`;
 }

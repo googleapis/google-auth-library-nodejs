@@ -17,11 +17,14 @@ import {
   ExecutableError,
   PluggableAuthClient,
 } from '../src/auth/pluggable-auth-client';
-import {BaseExternalAccountClient} from '../src';
+import {BaseExternalAccountClient, IdentityPoolClient} from '../src';
 import {
+  assertGaxiosResponsePresent,
   getAudience,
+  getExpectedExternalAccountMetricsHeaderValue,
   getServiceAccountImpersonationUrl,
   getTokenUrl,
+  mockStsTokenExchange,
   saEmail,
 } from './externalclienthelper';
 import {beforeEach} from 'mocha';
@@ -32,6 +35,7 @@ import {
   InvalidExpirationTimeFieldError,
 } from '../src/auth/executable-response';
 import {PluggableAuthHandler} from '../src/auth/pluggable-auth-handler';
+import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 
 const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
@@ -91,6 +95,50 @@ describe('PluggableAuthClient', () => {
     token_url: getTokenUrl(),
     credential_source: pluggableAuthCredentialSourceNoTimeout,
   };
+
+  const sandbox = sinon.createSandbox();
+  let clock: sinon.SinonFakeTimers;
+  const referenceTime = Date.now();
+  let responseJson: ExecutableResponseJson;
+  let fileStub: sinon.SinonStub<[], Promise<ExecutableResponse | undefined>>;
+  let executableStub: sinon.SinonStub<
+    [envMap: Map<string, string>],
+    Promise<ExecutableResponse>
+  >;
+
+  beforeEach(() => {
+    // Set Allow Executables environment variables to 1
+    const envVars = Object.assign({}, process.env, {
+      GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: '1',
+    });
+    sandbox.stub(process, 'env').value(envVars);
+    clock = sinon.useFakeTimers({now: referenceTime});
+
+    responseJson = {
+      success: true,
+      version: 1,
+      token_type: SAML_SUBJECT_TOKEN_TYPE,
+      saml_response: 'response',
+      expiration_time: referenceTime / 1000 + 10,
+    } as ExecutableResponseJson;
+
+    fileStub = sandbox.stub(
+      PluggableAuthHandler.prototype,
+      'retrieveCachedResponse'
+    );
+
+    executableStub = sandbox.stub(
+      PluggableAuthHandler.prototype,
+      'retrieveResponseFromExecutable'
+    );
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    if (clock) {
+      clock.restore();
+    }
+  });
 
   it('should be a subclass of ExternalAccountClient', () => {
     assert(PluggableAuthClient.prototype instanceof BaseExternalAccountClient);
@@ -198,50 +246,6 @@ describe('PluggableAuthClient', () => {
   });
 
   describe('RetrieveSubjectToken', () => {
-    const sandbox = sinon.createSandbox();
-    let clock: sinon.SinonFakeTimers;
-    const referenceTime = Date.now();
-    let responseJson: ExecutableResponseJson;
-    let fileStub: sinon.SinonStub<[], Promise<ExecutableResponse | undefined>>;
-    let executableStub: sinon.SinonStub<
-      [envMap: Map<string, string>],
-      Promise<ExecutableResponse>
-    >;
-
-    beforeEach(() => {
-      // Set Allow Executables environment variables to 1
-      const envVars = Object.assign({}, process.env, {
-        GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: '1',
-      });
-      sandbox.stub(process, 'env').value(envVars);
-      clock = sinon.useFakeTimers({now: referenceTime});
-
-      responseJson = {
-        success: true,
-        version: 1,
-        token_type: SAML_SUBJECT_TOKEN_TYPE,
-        saml_response: 'response',
-        expiration_time: referenceTime / 1000 + 10,
-      } as ExecutableResponseJson;
-
-      fileStub = sandbox.stub(
-        PluggableAuthHandler.prototype,
-        'retrieveCachedResponse'
-      );
-
-      executableStub = sandbox.stub(
-        PluggableAuthHandler.prototype,
-        'retrieveResponseFromExecutable'
-      );
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-      if (clock) {
-        clock.restore();
-      }
-    });
-
     it('should throw when allow executables environment variables is not 1', async () => {
       process.env.GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES = '0';
       const expectedError = new Error(
@@ -474,6 +478,61 @@ describe('PluggableAuthClient', () => {
       await subjectToken;
 
       sinon.assert.calledOnceWithExactly(executableStub, expectedEnvMap);
+    });
+  });
+
+  describe('GetAccessToken', () => {
+    const stsSuccessfulResponse: StsSuccessfulResponse = {
+      access_token: 'ACCESS_TOKEN',
+      issued_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+      token_type: 'Bearer',
+      expires_in: 3600,
+      scope: 'scope1 scope2',
+    };
+
+    it('should set x-goog-api-client header correctly', async () => {
+      const scope = mockStsTokenExchange(
+        [
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              // Subject token loaded from file should be used.
+              subject_token: 'subject_token',
+              subject_token_type: OIDC_SUBJECT_TOKEN_TYPE1,
+            },
+          },
+        ],
+        {
+          'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+            'executable',
+            false,
+            false
+          ),
+        }
+      );
+
+      const client = new PluggableAuthClient(pluggableAuthOptionsOIDC);
+      responseJson.id_token = 'subject_token';
+      responseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
+      responseJson.saml_response = undefined;
+      fileStub.resolves(undefined);
+      executableStub.resolves(new ExecutableResponse(responseJson));
+
+      const actualResponse = await client.getAccessToken();
+
+      // Confirm raw GaxiosResponse appended to response.
+      assertGaxiosResponsePresent(actualResponse);
+      delete actualResponse.res;
+      assert.deepStrictEqual(actualResponse, {
+        token: stsSuccessfulResponse.access_token,
+      });
+      scope.done();
     });
   });
 });
