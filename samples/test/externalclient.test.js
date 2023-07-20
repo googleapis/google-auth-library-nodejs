@@ -127,7 +127,6 @@ const generateGoogleIdToken = async (auth, aud, clientEmail) => {
  * @return {?string} The value if found, null otherwise.
  */
 const getXmlValueByTagName = (rawXml, tagName) => {
-  console.log(rawXml);
   const startIndex = rawXml.indexOf(`<${tagName}>`);
   const endIndex = rawXml.indexOf(`</${tagName}>`, startIndex);
   if (startIndex >= 0 && endIndex > startIndex) {
