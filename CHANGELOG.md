@@ -4,6 +4,36 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.0.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.9.0...v9.0.0) (2023-07-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** upgrade node-gtoken to 7.0.0 ([#1590](https://github.com/googleapis/google-auth-library-nodejs/issues/1590))
+* make transporter attribute type more generic ([#1406](https://github.com/googleapis/google-auth-library-nodejs/issues/1406))
+* migrate to Node 14 ([#1582](https://github.com/googleapis/google-auth-library-nodejs/issues/1582))
+* remove arrify and fast-text-encoding ([#1583](https://github.com/googleapis/google-auth-library-nodejs/issues/1583))
+
+### Features
+
+* Make transporter attribute type more generic ([#1406](https://github.com/googleapis/google-auth-library-nodejs/issues/1406)) ([dfac525](https://github.com/googleapis/google-auth-library-nodejs/commit/dfac5259fa573f25960949ae1c2f98bc78962717))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v10 ([#1588](https://github.com/googleapis/google-auth-library-nodejs/issues/1588)) ([f95a153](https://github.com/googleapis/google-auth-library-nodejs/commit/f95a153409735a1f4c470fd7de18bf9ab5d5e771))
+
+
+### Build System
+
+* Remove arrify and fast-text-encoding ([#1583](https://github.com/googleapis/google-auth-library-nodejs/issues/1583)) ([d736da3](https://github.com/googleapis/google-auth-library-nodejs/commit/d736da3fa5536650ae6a3aebbcae408254ebd035))
+
+
+### Miscellaneous Chores
+
+* **deps:** Upgrade node-gtoken to 7.0.0 ([#1590](https://github.com/googleapis/google-auth-library-nodejs/issues/1590)) ([8738df9](https://github.com/googleapis/google-auth-library-nodejs/commit/8738df9e24c62213b5a78e34a70cdcf456a794fa))
+* Migrate to Node 14 ([#1582](https://github.com/googleapis/google-auth-library-nodejs/issues/1582)) ([6004dca](https://github.com/googleapis/google-auth-library-nodejs/commit/6004dca8d7e7aca7e570b56afd84d3c7f5d40242))
+
 ## [8.9.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.8.0...v8.9.0) (2023-06-29)
 
 
