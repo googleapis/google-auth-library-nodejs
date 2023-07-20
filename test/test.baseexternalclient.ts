@@ -2161,7 +2161,7 @@ describe('BaseExternalAccountClient', () => {
           responseType: 'json',
         }),
         {
-          code: '401',
+          status: 401,
         }
       );
 
@@ -2238,7 +2238,7 @@ describe('BaseExternalAccountClient', () => {
           responseType: 'json',
         }),
         {
-          code: '403',
+          status: 403,
         }
       );
 
