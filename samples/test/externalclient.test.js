@@ -127,6 +127,7 @@ const generateGoogleIdToken = async (auth, aud, clientEmail) => {
  * @return {?string} The value if found, null otherwise.
  */
 const getXmlValueByTagName = (rawXml, tagName) => {
+  console.log(rawXml);
   const startIndex = rawXml.indexOf(`<${tagName}>`);
   const endIndex = rawXml.indexOf(`</${tagName}>`, startIndex);
   if (startIndex >= 0 && endIndex > startIndex) {
@@ -165,7 +166,7 @@ const assumeRoleWithWebIdentity = async (
     `&RoleArn=${awsRoleArn}&WebIdentityToken=${oidcToken}`;
   // The response is in XML format but we will parse it as text.
   const response = await transporter.request({url, responseType: 'text'});
-  const rawXml = response.data;
+  const rawXml = String(response.data);
   return {
     awsAccessKeyId: getXmlValueByTagName(rawXml, 'AccessKeyId'),
     awsSecretAccessKey: getXmlValueByTagName(rawXml, 'SecretAccessKey'),
