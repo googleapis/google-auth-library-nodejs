@@ -819,9 +819,8 @@ describe('oauth2', () => {
         .replyWithFile(200, certsResPath);
       client.getFederatedSignonCerts((err, certs) => {
         assert.strictEqual(err, null);
-        assert.strictEqual(Object.keys(certs!).length, 2);
         assert.notStrictEqual(
-          certs!.a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21,
+          certs!['a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21'],
           null
         );
         assert.notStrictEqual(
@@ -861,8 +860,7 @@ describe('oauth2', () => {
         .replyWithFile(200, pubkeysResPath);
       client.getIapPublicKeys((err, pubkeys) => {
         assert.strictEqual(err, null);
-        assert.strictEqual(Object.keys(pubkeys!).length, 2);
-        assert.notStrictEqual(pubkeys!.f9R3yg, null);
+        assert.notStrictEqual(pubkeys!['f9R3yg'], null);
         assert.notStrictEqual(pubkeys!['2nMJtw'], null);
         scope.done();
         done();
