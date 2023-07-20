@@ -115,7 +115,7 @@ describe('transporters', () => {
       error => {
         scope.done();
         assert.strictEqual(error!.message, 'Not found');
-        assert.strictEqual((error as RequestError).code, '404');
+        assert.strictEqual((error as RequestError).status, 404);
         done();
       }
     );

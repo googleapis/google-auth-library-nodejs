@@ -828,7 +828,7 @@ describe('IdentityPoolClient', () => {
         const client = new IdentityPoolClient(urlSourcedOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          code: '404',
+          status: 404,
         });
         scope.done();
       });
@@ -1033,7 +1033,7 @@ describe('IdentityPoolClient', () => {
         const client = new IdentityPoolClient(urlSourcedOptions);
 
         await assert.rejects(client.getAccessToken(), {
-          code: '404',
+          status: 404,
         });
         scope.done();
       });

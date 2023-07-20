@@ -1185,7 +1185,7 @@ describe('DownscopedClient', () => {
           responseType: 'json',
         }),
         {
-          code: '401',
+          status: 401,
         }
       );
 
@@ -1262,7 +1262,7 @@ describe('DownscopedClient', () => {
           responseType: 'json',
         }),
         {
-          code: '403',
+          status: 403,
         }
       );
       scopes.forEach(scope => scope.done());
