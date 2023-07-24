@@ -405,7 +405,7 @@ describe('AwsClient', () => {
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          code: '500',
+          status: 500,
         });
         scope.done();
       });
@@ -421,7 +421,7 @@ describe('AwsClient', () => {
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          code: '403',
+          status: 403,
         });
         scope.done();
       });
@@ -439,7 +439,7 @@ describe('AwsClient', () => {
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          code: '408',
+          status: 408,
         });
         scope.done();
       });
@@ -606,7 +606,7 @@ describe('AwsClient', () => {
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.getAccessToken(), {
-          code: '500',
+          status: 500,
         });
         scope.done();
       });
@@ -708,7 +708,7 @@ describe('AwsClient', () => {
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          code: '500',
+          status: 500,
         });
         scope.done();
       });
@@ -986,7 +986,7 @@ describe('AwsClient', () => {
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.getAccessToken(), {
-          code: '500',
+          status: 500,
         });
         scope.done();
       });

@@ -120,7 +120,7 @@ export class Compute extends OAuth2Client {
   protected wrapError(e: GaxiosError) {
     const res = e.response;
     if (res && res.status) {
-      e.code = res.status.toString();
+      e.status = res.status;
       if (res.status === 403) {
         e.message =
           'A Forbidden error was returned while attempting to retrieve an access ' +

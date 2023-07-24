@@ -81,7 +81,6 @@ export class DefaultTransporter implements Transporter {
     // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
     validate(opts);
-
     return request<T>(opts).catch(e => {
       throw this.processError(e);
     });
@@ -97,7 +96,7 @@ export class DefaultTransporter implements Transporter {
     if (res && body && body.error && res.status !== 200) {
       if (typeof body.error === 'string') {
         err.message = body.error;
-        err.code = res.status.toString();
+        err.status = res.status;
       } else if (Array.isArray(body.error.errors)) {
         err.message = body.error.errors
           .map((err2: Error) => err2.message)
@@ -106,12 +105,12 @@ export class DefaultTransporter implements Transporter {
         err.errors = body.error.errors;
       } else {
         err.message = body.error.message;
-        err.code = body.error.code || res.status;
+        err.code = body.error.code;
       }
     } else if (res && res.status >= 400) {
       // Consider all 4xx and 5xx responses errors.
       err.message = body;
-      err.code = res.status.toString();
+      err.status = res.status;
     }
     return err;
   }
