@@ -11,7 +11,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "google-auth-library": "^8.0.0",
+    "google-auth-library": "^9.0.0",
     "puppeteer": "^20.0.0"
   }
 }
