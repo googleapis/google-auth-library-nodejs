@@ -145,7 +145,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
   private readonly configLifetimeRequested: boolean;
-  protected metricsSource?: string;
+  protected credentialSourceType?: string;
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -562,7 +562,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private getMetricsHeaderValue(): string {
     const nodeVersion = process.version.replace(/^v/, '');
     const saImpersonation = this.serviceAccountImpersonationUrl !== undefined;
-    const metricsSource = this.metricsSource ? this.metricsSource : 'unknown';
-    return `gl-node/${nodeVersion} auth/${pkg.version} google-byoid-sdk source/${this.metricsSource} sa-impersonation/${saImpersonation} config-lifetime/${this.configLifetimeRequested}`;
+    const credentialSourceType = this.credentialSourceType
+      ? this.credentialSourceType
+      : 'unknown';
+    return `gl-node/${nodeVersion} auth/${pkg.version} google-byoid-sdk source/${credentialSourceType} sa-impersonation/${saImpersonation} config-lifetime/${this.configLifetimeRequested}`;
   }
 }

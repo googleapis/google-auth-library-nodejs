@@ -39,7 +39,7 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
-import {AwsClientOptions, RefreshOptions} from '../src';
+import {RefreshOptions} from '../src';
 
 nock.disableNetConnect();
 
@@ -57,7 +57,7 @@ class TestExternalAccountClient extends BaseExternalAccountClient {
     additionalOptions?: RefreshOptions
   ) {
     super(options, additionalOptions);
-    this.metricsSource = 'test';
+    this.credentialSourceType = 'test';
   }
 
   async retrieveSubjectToken(): Promise<string> {

@@ -91,9 +91,9 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         'No valid Identity Pool "credential_source" provided, must be either file or url.'
       );
     } else if (this.file && !this.url) {
-      this.metricsSource = 'file';
+      this.credentialSourceType = 'file';
     } else if (!this.file && this.url) {
-      this.metricsSource = 'url';
+      this.credentialSourceType = 'url';
     } else {
       throw new Error(
         'No valid Identity Pool "credential_source" provided, must be either file or url.'

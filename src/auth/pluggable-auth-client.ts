@@ -229,7 +229,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       outputFile: this.outputFile,
     });
 
-    this.metricsSource = 'executable';
+    this.credentialSourceType = 'executable';
   }
 
   /**
