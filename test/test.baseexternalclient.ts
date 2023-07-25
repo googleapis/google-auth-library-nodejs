@@ -37,7 +37,9 @@ import {
   mockCloudResourceManager,
   mockGenerateAccessToken,
   mockStsTokenExchange,
+  getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
+import {RefreshOptions} from '../src';
 
 nock.disableNetConnect();
 
@@ -49,6 +51,14 @@ interface SampleResponse {
 /** Test class to test abstract class ExternalAccountClient. */
 class TestExternalAccountClient extends BaseExternalAccountClient {
   private counter = 0;
+
+  constructor(
+    options: BaseExternalAccountClientOptions,
+    additionalOptions?: RefreshOptions
+  ) {
+    super(options, additionalOptions);
+    this.credentialSourceType = 'test';
+  }
 
   async retrieveSubjectToken(): Promise<string> {
     // Increment subject_token counter each time this is called.
@@ -1020,6 +1030,44 @@ describe('BaseExternalAccountClient', () => {
         });
         scope.done();
       });
+
+      it('should send the correct x-goog-api-client header', async () => {
+        const scope = mockStsTokenExchange(
+          [
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: 'subject_token_0',
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ],
+          {
+            'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+              'test',
+              false,
+              false
+            ),
+          }
+        );
+
+        const client = new TestExternalAccountClient(externalAccountOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
     });
 
     describe('with service account impersonation', () => {
@@ -1534,6 +1582,118 @@ describe('BaseExternalAccountClient', () => {
               },
             },
           ])
+        );
+        scopes.push(
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            lifetime: 2800,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
+        );
+
+        const externalAccountOptionsWithSATokenLifespan = Object.assign(
+          {
+            service_account_impersonation: {
+              token_lifetime_seconds: 2800,
+            },
+          },
+          externalAccountOptionsWithSA
+        );
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSATokenLifespan
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should send correct x-goog-api-client header', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange(
+            [
+              {
+                statusCode: 200,
+                response: stsSuccessfulResponse,
+                request: {
+                  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                  audience,
+                  scope: 'https://www.googleapis.com/auth/cloud-platform',
+                  requested_token_type:
+                    'urn:ietf:params:oauth:token-type:access_token',
+                  subject_token: 'subject_token_0',
+                  subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+                },
+              },
+            ],
+            {
+              'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+                'test',
+                true,
+                false
+              ),
+            }
+          )
+        );
+        scopes.push(
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
+        );
+
+        const client = new TestExternalAccountClient(
+          externalAccountOptionsWithSA
+        );
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should set correct x-goog-api-client header for custom token lifetime', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange(
+            [
+              {
+                statusCode: 200,
+                response: stsSuccessfulResponse,
+                request: {
+                  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                  audience,
+                  scope: 'https://www.googleapis.com/auth/cloud-platform',
+                  requested_token_type:
+                    'urn:ietf:params:oauth:token-type:access_token',
+                  subject_token: 'subject_token_0',
+                  subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+                },
+              },
+            ],
+            {
+              'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+                'test',
+                true,
+                true
+              ),
+            }
+          )
         );
         scopes.push(
           mockGenerateAccessToken({

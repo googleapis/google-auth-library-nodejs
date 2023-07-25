@@ -30,6 +30,7 @@ import {
   getServiceAccountImpersonationUrl,
   mockGenerateAccessToken,
   mockStsTokenExchange,
+  getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
 
 nock.disableNetConnect();
@@ -201,9 +202,9 @@ describe('IdentityPoolClient', () => {
         'credentials.'
     );
 
-    it('should throw when invalid options are provided', () => {
+    it('should throw when neither file or url sources are provided', () => {
       const expectedError = new Error(
-        'No valid Identity Pool "credential_source" provided'
+        'No valid Identity Pool "credential_source" provided, must be either file or url.'
       );
       const invalidOptions = {
         type: 'external_account',
@@ -212,6 +213,27 @@ describe('IdentityPoolClient', () => {
         token_url: getTokenUrl(),
         credential_source: {
           other: 'invalid',
+        },
+      };
+
+      assert.throws(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new IdentityPoolClient(invalidOptions as any);
+      }, expectedError);
+    });
+
+    it('should throw when both file and url options are provided', () => {
+      const expectedError = new Error(
+        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+      );
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        token_url: getTokenUrl(),
+        credential_source: {
+          file: 'filesource',
+          url: 'urlsource.com',
         },
       };
 
@@ -729,6 +751,45 @@ describe('IdentityPoolClient', () => {
           )
         );
       });
+
+      it('should send the correct x-goog-api-client header value', async () => {
+        const scope = mockStsTokenExchange(
+          [
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                // Subject token loaded from file should be used.
+                subject_token: fileSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ],
+          {
+            'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+              'file',
+              false,
+              false
+            ),
+          }
+        );
+
+        const client = new IdentityPoolClient(fileSourcedOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scope.done();
+      });
     });
   });
 
@@ -1036,6 +1097,56 @@ describe('IdentityPoolClient', () => {
           status: 404,
         });
         scope.done();
+      });
+
+      it('should send the correct x-goog-api-client header value', async () => {
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange(
+            [
+              {
+                statusCode: 200,
+                response: stsSuccessfulResponse,
+                request: {
+                  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                  audience,
+                  scope: 'https://www.googleapis.com/auth/cloud-platform',
+                  requested_token_type:
+                    'urn:ietf:params:oauth:token-type:access_token',
+                  // Subject token retrieved from url should be used.
+                  subject_token: externalSubjectToken,
+                  subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+                },
+              },
+            ],
+            {
+              'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+                'url',
+                false,
+                false
+              ),
+            }
+          )
+        );
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: metadataHeaders,
+          })
+            .get(metadataPath)
+            .reply(200, externalSubjectToken)
+        );
+
+        const client = new IdentityPoolClient(urlSourcedOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
       });
     });
   });

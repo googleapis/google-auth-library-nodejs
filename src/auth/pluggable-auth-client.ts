@@ -228,6 +228,8 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       timeoutMillis: this.timeoutMillis,
       outputFile: this.outputFile,
     });
+
+    this.credentialSourceType = 'executable';
   }
 
   /**

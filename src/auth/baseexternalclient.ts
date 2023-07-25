@@ -59,6 +59,9 @@ export const CLOUD_RESOURCE_MANAGER =
 const WORKFORCE_AUDIENCE_PATTERN =
   '//iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pkg = require('../../../package.json');
+
 /**
  * Base external account credentials json interface.
  */
@@ -141,6 +144,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
   public readonly forceRefreshOnFailure: boolean;
+  private readonly configLifetimeRequested: boolean;
+  protected credentialSourceType?: string;
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -191,9 +196,15 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
     this.serviceAccountImpersonationUrl =
       options.service_account_impersonation_url;
+
     this.serviceAccountImpersonationLifetime =
-      options.service_account_impersonation?.token_lifetime_seconds ??
-      DEFAULT_TOKEN_LIFESPAN;
+      options.service_account_impersonation?.token_lifetime_seconds;
+    if (this.serviceAccountImpersonationLifetime) {
+      this.configLifetimeRequested = true;
+    } else {
+      this.configLifetimeRequested = false;
+      this.serviceAccountImpersonationLifetime = DEFAULT_TOKEN_LIFESPAN;
+    }
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
@@ -421,9 +432,12 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       !this.clientAuth && this.workforcePoolUserProject
         ? {userProject: this.workforcePoolUserProject}
         : undefined;
+    const additionalHeaders: Headers = {
+      'x-goog-api-client': this.getMetricsHeaderValue(),
+    };
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
-      undefined,
+      additionalHeaders,
       additionalOptions
     );
 
@@ -543,5 +557,14 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     } else {
       return this.scopes;
     }
+  }
+
+  private getMetricsHeaderValue(): string {
+    const nodeVersion = process.version.replace(/^v/, '');
+    const saImpersonation = this.serviceAccountImpersonationUrl !== undefined;
+    const credentialSourceType = this.credentialSourceType
+      ? this.credentialSourceType
+      : 'unknown';
+    return `gl-node/${nodeVersion} auth/${pkg.version} google-byoid-sdk source/${credentialSourceType} sa-impersonation/${saImpersonation} config-lifetime/${this.configLifetimeRequested}`;
   }
 }

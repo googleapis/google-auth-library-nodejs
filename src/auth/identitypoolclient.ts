@@ -86,8 +86,18 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     this.file = options.credential_source.file;
     this.url = options.credential_source.url;
     this.headers = options.credential_source.headers;
-    if (!this.file && !this.url) {
-      throw new Error('No valid Identity Pool "credential_source" provided');
+    if (this.file && this.url) {
+      throw new Error(
+        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+      );
+    } else if (this.file && !this.url) {
+      this.credentialSourceType = 'file';
+    } else if (!this.file && this.url) {
+      this.credentialSourceType = 'url';
+    } else {
+      throw new Error(
+        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+      );
     }
     // Text is the default format type.
     this.formatType = options.credential_source.format?.type || 'text';

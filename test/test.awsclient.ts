@@ -26,6 +26,7 @@ import {
   getServiceAccountImpersonationUrl,
   mockGenerateAccessToken,
   mockStsTokenExchange,
+  getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
 
 nock.disableNetConnect();
@@ -988,6 +989,55 @@ describe('AwsClient', () => {
           status: 500,
         });
         scope.done();
+      });
+
+      it('should set x-goog-api-client header correctly', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange(
+            [
+              {
+                statusCode: 200,
+                response: stsSuccessfulResponse,
+                request: {
+                  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                  audience,
+                  scope: 'https://www.googleapis.com/auth/cloud-platform',
+                  requested_token_type:
+                    'urn:ietf:params:oauth:token-type:access_token',
+                  subject_token: expectedSubjectTokenNoToken,
+                  subject_token_type:
+                    'urn:ietf:params:aws:token-type:aws4_request',
+                },
+              },
+            ],
+            {
+              'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+                'aws',
+                false,
+                false
+              ),
+            }
+          )
+        );
+        scopes.push(
+          nock(metadataBaseUrl)
+            .get('/latest/meta-data/placement/availability-zone')
+            .reply(200, `${awsRegion}b`)
+        );
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+
+        const client = new AwsClient(awsOptions);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
       });
     });
   });
