@@ -47,7 +47,7 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {AuthClient} from './authclient';
+import {AuthClient, AuthClientLike} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -133,7 +133,23 @@ const GoogleAuthExceptionMessages = {
     'https://cloud.google.com/docs/authentication/getting-started',
 } as const;
 
-export class GoogleAuth<T extends AuthClient = JSONClient> {
+/**
+ * A capabilities-based, backwards-compatible interface for `GoogleAuth`.
+ * This is useful for projects where multiple versions of `google-auth-library`
+ * may exist and thus instances of `GoogleAuth != GoogleAuth` (e.g. v8 vs v9).
+ *
+ * @see {@link GoogleAuth.normalize} for the normalizing this to {@link GoogleAuth}.
+ * @see {@link AuthClientLike} for the compatibility version of {@link AuthClient}.
+ *
+ * @see {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1402} for background.
+ */
+export interface GoogleAuthLike {
+  getClient: () => Promise<AuthClientLike>;
+}
+
+export class GoogleAuth<T extends AuthClient = JSONClient>
+  implements GoogleAuthLike
+{
   transporter?: Transporter;
 
   /**
@@ -172,6 +188,30 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Export DefaultTransporter as a static property of the class.
    */
   static DefaultTransporter = DefaultTransporter;
+
+  /**
+   * Different versions of `GoogleAuth` may use this method to ensure
+   * the provided `AuthClient` or `GoogleAuthLike` has the appropriate
+   * capabilities required for its respective version.
+   *
+   * @see {@link GoogleAuthLike}'s description and background.
+   * @see {@link AuthClientLike}'s description and background.
+   *
+   * @param auth an AuthLike or GoogleAuthLike instance to normalize.
+   * @returns a normalized GoogleAuth instance.
+   */
+  static normalize<T extends AuthClient = AuthClient>(
+    auth: AuthClientLike | T | GoogleAuthLike | GoogleAuth<T>
+  ): GoogleAuth<T> {
+    if (!('getClient' in auth)) {
+      // must be `AuthClient` | `AuthClientLike`
+      const authClient = AuthClient.normalize(auth);
+
+      return new GoogleAuth({authClient});
+    }
+
+    return auth as GoogleAuth<T>;
+  }
 
   constructor(opts?: GoogleAuthOptions<T>) {
     opts = opts || {};

@@ -84,13 +84,26 @@ export declare interface AuthClient {
   on(event: 'tokens', listener: (tokens: Credentials) => void): this;
 }
 
+/**
+ * A capabilities-based, backwards-compatible interface for `AuthClient`.
+ * This is useful for projects where multiple versions of `google-auth-library`
+ * may exist and thus instances of `AuthClient != AuthClient` (e.g. v8 vs v9).
+ *
+ * @see {@link AuthClient.normalize} for the normalizing this to {@link AuthClient}.
+ *
+ * @see {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1402} for background.
+ */
+export interface AuthClientLike {
+  request: (opts: {}) => Promise<{}>;
+}
+
 export abstract class AuthClient
   extends EventEmitter
-  implements CredentialsClient
+  implements CredentialsClient, AuthClientLike
 {
   /**
    * The quota project ID. The quota project can be used by client libraries for the billing purpose.
-   * See {@link https://cloud.google.com/docs/quota| Working with quotas}
+   * See {@link https://cloud.google.com/docs/quota Working with quotas}
    */
   quotaProjectId?: string;
   transporter: Transporter = new DefaultTransporter();
@@ -98,6 +111,22 @@ export abstract class AuthClient
   projectId?: string | null;
   eagerRefreshThresholdMillis = 5 * 60 * 1000;
   forceRefreshOnFailure = false;
+
+  /**
+   * Different versions of `AuthClient` may use this method to ensure
+   * the provided `AuthClientLike` has the appropriate capabilities
+   * required for its respective version.
+   *
+   * @see {@link AuthClientLike}'s description and background.
+   *
+   * @param authClient an AuthLike instance to normalize.
+   * @returns a normalized AuthClient instance.
+   */
+  static normalize<T extends AuthClient = AuthClient>(
+    authClient: AuthClientLike | T
+  ): T {
+    return authClient as T;
+  }
 
   /**
    * Provides an alternative Gaxios request implementation with auth credentials

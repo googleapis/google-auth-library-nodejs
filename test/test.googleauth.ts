@@ -54,10 +54,8 @@ import {
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
-import {
-  ExternalAccountAuthorizedUserClient,
-  ExternalAccountAuthorizedUserClientOptions,
-} from '../src/auth/externalAccountAuthorizedUserClient';
+import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
+import {GaxiosPromise} from 'gaxios';
 
 nock.disableNetConnect();
 
@@ -70,7 +68,6 @@ describe('googleauth', () => {
   const svcAccountPath = `${instancePath}/service-accounts/?recursive=true`;
   const API_KEY = 'test-123';
   const PEM_PATH = './test/fixtures/private.pem';
-  const P12_PATH = './test/fixtures/key.p12';
   const STUB_PROJECT = 'my-awesome-project';
   const ENDPOINT = '/events:report';
   const RESPONSE_BODY = 'RESPONSE_BODY';
@@ -111,7 +108,49 @@ describe('googleauth', () => {
       .reply(200, body);
   }
 
-  describe('googleauth', () => {
+  describe('static', () => {
+    describe('normalize', () => {
+      it('should accept and normalize `GoogleAuth`', () => {
+        const googleAuth = new GoogleAuth();
+
+        const auth = GoogleAuth.normalize(googleAuth);
+        assert.strictEqual(auth, googleAuth);
+      });
+
+      it('should accept and normalize `GoogleAuthLike`', () => {
+        const authClientLike = {request: async () => ({})};
+        const googleAuthLike = {getClient: async () => authClientLike};
+
+        const auth = GoogleAuth.normalize(googleAuthLike);
+        assert.strictEqual(auth, googleAuthLike);
+      });
+
+      it('should accept and normalize `AuthClient`', async () => {
+        class MyAuthClient extends AuthClient {
+          getRequestHeaders = async () => ({});
+          getAccessToken = async () => ({});
+
+          request<T>(): GaxiosPromise<T> {
+            return {} as GaxiosPromise<T>;
+          }
+        }
+
+        const authClient = new MyAuthClient();
+        const auth = GoogleAuth.normalize(authClient);
+
+        assert.strictEqual(await auth.getClient(), authClient);
+      });
+
+      it('should accept and normalize `AuthClientLike`', async () => {
+        const authClientLike = {request: async () => ({})};
+        const auth = GoogleAuth.normalize(authClientLike);
+
+        assert.strictEqual(await auth.getClient(), authClientLike);
+      });
+    });
+  });
+
+  describe('instance', () => {
     let auth: GoogleAuth;
     const sandbox = sinon.createSandbox();
     let osStub: sinon.SinonStub<[], NodeJS.Platform>;
