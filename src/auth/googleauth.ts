@@ -197,8 +197,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient>
    * @see {@link GoogleAuthLike}'s description and background.
    * @see {@link AuthClientLike}'s description and background.
    *
-   * @param auth an AuthLike or GoogleAuthLike instance to normalize.
-   * @returns a normalized GoogleAuth instance.
+   * @param auth an {@link AuthClientLike} or {@link GoogleAuthLike} instance to normalize.
+   * @returns a normalized {@link GoogleAuth} instance.
    */
   static normalize<T extends AuthClient = AuthClient>(
     auth: AuthClientLike | T | GoogleAuthLike | GoogleAuth<T>

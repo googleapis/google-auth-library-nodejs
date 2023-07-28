@@ -119,8 +119,8 @@ export abstract class AuthClient
    *
    * @see {@link AuthClientLike}'s description and background.
    *
-   * @param authClient an AuthLike instance to normalize.
-   * @returns a normalized AuthClient instance.
+   * @param authClient an {@link AuthClientLike} instance to normalize.
+   * @returns a normalized {@link AuthClient} instance.
    */
   static normalize<T extends AuthClient = AuthClient>(
     authClient: AuthClientLike | T
