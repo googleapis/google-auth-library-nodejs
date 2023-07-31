@@ -89,6 +89,7 @@ export declare interface AuthClient {
  * This is useful for projects where multiple versions of `google-auth-library`
  * may exist and thus instances of `AuthClient != AuthClient` (e.g. v8 vs v9).
  *
+ * @see {@link AuthClient}.
  * @see {@link AuthClient.normalize} for the normalizing this to {@link AuthClient}.
  *
  * @see {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1402} for background.

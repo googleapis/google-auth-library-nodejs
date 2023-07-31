@@ -138,10 +138,16 @@ const GoogleAuthExceptionMessages = {
  * This is useful for projects where multiple versions of `google-auth-library`
  * may exist and thus instances of `GoogleAuth != GoogleAuth` (e.g. v8 vs v9).
  *
+ * @see {@link GoogleAuth}.
  * @see {@link GoogleAuth.normalize} for the normalizing this to {@link GoogleAuth}.
  * @see {@link AuthClientLike} for the compatibility version of {@link AuthClient}.
  *
  * @see {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1402} for background.
+ *
+ * @example
+ * ```ts
+ * const auth = new GoogleAuth();
+ * ```
  */
 export interface GoogleAuthLike {
   getClient: () => Promise<AuthClientLike>;
