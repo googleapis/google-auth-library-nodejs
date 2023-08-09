@@ -100,7 +100,7 @@ describe('PluggableAuthHandler', () => {
       [
         command: string,
         args: readonly string[],
-        options: child_process.SpawnOptions
+        options: child_process.SpawnOptions,
       ],
       child_process.ChildProcess
     >;
@@ -360,7 +360,7 @@ describe('PluggableAuthHandler', () => {
     let realPathStub: sinon.SinonStub<
       [
         path: fs.PathLike,
-        options?: fs.ObjectEncodingOptions | BufferEncoding | null | undefined
+        options?: fs.ObjectEncodingOptions | BufferEncoding | null | undefined,
       ],
       Promise<string | Buffer>
     >;
