@@ -134,7 +134,7 @@ const GoogleAuthExceptionMessages = {
 } as const;
 
 /**
- * A capabilities-based, backwards-compatible interface for `GoogleAuth`.
+ * A capabilities-based, backwards-compatible interface for {@link GoogleAuth}.
  * This is useful for projects where multiple versions of `google-auth-library`
  * may exist and thus instances of `GoogleAuth != GoogleAuth` (e.g. v8 vs v9).
  *

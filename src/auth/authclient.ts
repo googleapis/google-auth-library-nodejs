@@ -85,7 +85,7 @@ export declare interface AuthClient {
 }
 
 /**
- * A capabilities-based, backwards-compatible interface for `AuthClient`.
+ * A capabilities-based, backwards-compatible interface for {@link AuthClient}.
  * This is useful for projects where multiple versions of `google-auth-library`
  * may exist and thus instances of `AuthClient != AuthClient` (e.g. v8 vs v9).
  *
