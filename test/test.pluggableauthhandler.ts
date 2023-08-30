@@ -100,7 +100,7 @@ describe('PluggableAuthHandler', () => {
       [
         command: string,
         args: readonly string[],
-        options: child_process.SpawnOptions
+        options: child_process.SpawnOptions,
       ],
       child_process.ChildProcess
     >;
