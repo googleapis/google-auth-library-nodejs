@@ -264,19 +264,6 @@ console.log(tokenInfo.scopes);
 
 This method will throw if the token is invalid.
 
-#### OAuth2 with Installed Apps (Electron)
-If you're authenticating with OAuth2 from an installed application (like Electron), you may not want to embed your `client_secret` inside of the application sources. To work around this restriction, you can choose the `iOS` application type when creating your OAuth2 credentials in the [Google Developers console](https://console.cloud.google.com/):
-
-![application type](https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png)
-
-If using the `iOS` type, when creating the OAuth2 client you won't need to pass a `client_secret` into the constructor:
-```js
-const oAuth2Client = new OAuth2Client({
-  clientId: <your_client_id>,
-  redirectUri: <your_redirect_uri>
-});
-```
-
 ## JSON Web Tokens
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
