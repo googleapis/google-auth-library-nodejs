@@ -63,23 +63,35 @@ const WORKFORCE_AUDIENCE_PATTERN =
 const pkg = require('../../../package.json');
 
 /**
+ * The default cloud universe
+ */
+export const DEFAULT_UNIVERSE = 'googleapis.com';
+
+export interface SharedExternalAccountClientOptions {
+  audience: string;
+  token_url: string;
+  quota_project_id?: string;
+  /**
+   * universe domain is the default service domain for a given Cloud universe
+   */
+  universe_domain?: string;
+}
+
+/**
  * Base external account credentials json interface.
  */
-export interface BaseExternalAccountClientOptions {
+export interface BaseExternalAccountClientOptions
+  extends SharedExternalAccountClientOptions {
   type: string;
-  audience: string;
   subject_token_type: string;
   service_account_impersonation_url?: string;
   service_account_impersonation?: {
     token_lifetime_seconds?: number;
   };
-  token_url: string;
   token_info_url?: string;
   client_id?: string;
   client_secret?: string;
-  quota_project_id?: string;
   workforce_pool_user_project?: string;
-  universe_domain?: string;
 }
 
 /**
@@ -139,7 +151,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly stsCredential: sts.StsCredentials;
   private readonly clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
-  private universeDomain?: string;
+  public universeDomain = DEFAULT_UNIVERSE;
   public projectId: string | null;
   public projectNumber: string | null;
   public readonly eagerRefreshThresholdMillis: number;
@@ -217,7 +229,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
     this.projectId = null;
     this.projectNumber = this.getProjectNumber(this.audience);
-    this.universeDomain = options.universe_domain;
+
+    if (options.universe_domain) {
+      this.universeDomain = options.universe_domain;
+    }
   }
 
   /** The service account email to be impersonated, if available. */

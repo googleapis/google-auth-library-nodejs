@@ -23,6 +23,7 @@ import {
   EXPIRATION_TIME_OFFSET,
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
+  DEFAULT_UNIVERSE,
 } from '../src/auth/baseexternalclient';
 import {
   OAuthErrorResponse,
@@ -80,7 +81,6 @@ describe('BaseExternalAccountClient', () => {
     credential_source: {
       file: '/var/run/secrets/goog.id/token',
     },
-    universe_domain: 'universe.domain.com',
   };
   const externalAccountOptionsWithCreds = {
     type: 'external_account',
@@ -291,6 +291,26 @@ describe('BaseExternalAccountClient', () => {
 
         assert(client.projectNumber === null);
       });
+    });
+  });
+
+  describe('universeDomain', () => {
+    it('should be the default universe if not set', () => {
+      const client = new TestExternalAccountClient(externalAccountOptions);
+
+      assert.equal(client.universeDomain, DEFAULT_UNIVERSE);
+    });
+
+    it('should be set if provided', () => {
+      const universeDomain = 'my-universe.domain.com';
+      const options: BaseExternalAccountClientOptions = {
+        ...externalAccountOptions,
+        universe_domain: universeDomain,
+      };
+
+      const client = new TestExternalAccountClient(options);
+
+      assert.equal(client.universeDomain, universeDomain);
     });
   });
 

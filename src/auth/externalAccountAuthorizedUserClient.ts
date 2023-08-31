@@ -29,22 +29,11 @@ import {
 } from 'gaxios';
 import {Credentials} from './credentials';
 import * as stream from 'stream';
-import {EXPIRATION_TIME_OFFSET} from './baseexternalclient';
-
-/**
- * External Account Authorized User Credentials JSON interface.
- */
-export interface ExternalAccountAuthorizedUserClientOptions {
-  type: typeof EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE;
-  audience: string;
-  client_id: string;
-  client_secret: string;
-  refresh_token: string;
-  token_url: string;
-  token_info_url: string;
-  revoke_url?: string;
-  quota_project_id?: string;
-}
+import {
+  DEFAULT_UNIVERSE,
+  EXPIRATION_TIME_OFFSET,
+  SharedExternalAccountClientOptions,
+} from './baseexternalclient';
 
 /**
  * The credentials JSON file type for external account authorized user clients.
@@ -52,6 +41,18 @@ export interface ExternalAccountAuthorizedUserClientOptions {
 export const EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE =
   'external_account_authorized_user';
 
+/**
+ * External Account Authorized User Credentials JSON interface.
+ */
+export interface ExternalAccountAuthorizedUserClientOptions
+  extends SharedExternalAccountClientOptions {
+  type: typeof EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE;
+  client_id: string;
+  client_secret: string;
+  refresh_token: string;
+  token_info_url: string;
+  revoke_url?: string;
+}
 /**
  * Internal interface for tracking the access token expiration time.
  */
@@ -155,6 +156,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
   private cachedAccessToken: CredentialsWithResponse | null;
   private readonly externalAccountAuthorizedUserHandler: ExternalAccountAuthorizedUserHandler;
   private refreshToken: string;
+  public universeDomain = DEFAULT_UNIVERSE;
 
   /**
    * Instantiates an ExternalAccountAuthorizedUserClient instances using the
@@ -197,6 +199,10 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
         .eagerRefreshThresholdMillis as number;
     }
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
+
+    if (options.universe_domain) {
+      this.universeDomain = options.universe_domain;
+    }
   }
 
   async getAccessToken(): Promise<{

@@ -23,7 +23,10 @@ import {
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from '../src/auth/externalAccountAuthorizedUserClient';
-import {EXPIRATION_TIME_OFFSET} from '../src/auth/baseexternalclient';
+import {
+  DEFAULT_UNIVERSE,
+  EXPIRATION_TIME_OFFSET,
+} from '../src/auth/baseexternalclient';
 import {GaxiosError, GaxiosResponse} from 'gaxios';
 import {
   getErrorFromOAuthErrorResponse,
@@ -148,6 +151,26 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         client.eagerRefreshThresholdMillis,
         refreshOptions.eagerRefreshThresholdMillis
       );
+    });
+
+    describe('universeDomain', () => {
+      it('should be the default universe if not set', () => {
+        const client = new ExternalAccountAuthorizedUserClient(
+          externalAccountAuthorizedUserCredentialOptions
+        );
+
+        assert.equal(client.universeDomain, DEFAULT_UNIVERSE);
+      });
+
+      it('should be set if provided', () => {
+        const universeDomain = 'my-universe.domain.com';
+        const client = new ExternalAccountAuthorizedUserClient({
+          ...externalAccountAuthorizedUserCredentialOptions,
+          universe_domain: universeDomain,
+        });
+
+        assert.equal(client.universeDomain, universeDomain);
+      });
     });
   });
 
