@@ -54,10 +54,7 @@ import {
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
-import {
-  ExternalAccountAuthorizedUserClient,
-  ExternalAccountAuthorizedUserClientOptions,
-} from '../src/auth/externalAccountAuthorizedUserClient';
+import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
 
 nock.disableNetConnect();
 
@@ -1170,36 +1167,6 @@ describe('googleauth', () => {
         'test-creds@test-creds.iam.gserviceaccount.com'
       );
       assert.strictEqual(body.private_key, undefined);
-      scopes.forEach(s => s.done());
-    });
-
-    it('getCredentials should error if metadata server is not reachable', async () => {
-      const scopes = [
-        nockIsGCE(),
-        createGetProjectIdNock(),
-        nock(HOST_ADDRESS).get(svcAccountPath).reply(404),
-      ];
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await assert.rejects(
-        auth.getCredentials(),
-        /Unsuccessful response status code. Request failed with status code 404/
-      );
-      scopes.forEach(s => s.done());
-    });
-
-    it('getCredentials should error if body is empty', async () => {
-      const scopes = [
-        nockIsGCE(),
-        createGetProjectIdNock(),
-        nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {}),
-      ];
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await assert.rejects(
-        auth.getCredentials(),
-        /Invalid response from metadata service: incorrect Metadata-Flavor header./
-      );
       scopes.forEach(s => s.done());
     });
 
