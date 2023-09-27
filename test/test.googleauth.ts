@@ -67,7 +67,6 @@ describe('googleauth', () => {
   const svcAccountPath = `${instancePath}/service-accounts/?recursive=true`;
   const API_KEY = 'test-123';
   const PEM_PATH = './test/fixtures/private.pem';
-  const P12_PATH = './test/fixtures/key.p12';
   const STUB_PROJECT = 'my-awesome-project';
   const ENDPOINT = '/events:report';
   const RESPONSE_BODY = 'RESPONSE_BODY';
@@ -231,24 +230,6 @@ describe('googleauth', () => {
             primary.done();
             secondary.done();
           } catch (_err) {
-            // secondary can sometimes complete prior to primary.
-          }
-        },
-      };
-    }
-
-    function nock500GCE() {
-      const primary = nock(host).get(instancePath).reply(500, {}, HEADERS);
-      const secondary = nock(SECONDARY_HOST_ADDRESS)
-        .get(instancePath)
-        .reply(500, {}, HEADERS);
-
-      return {
-        done: () => {
-          try {
-            primary.done();
-            secondary.done();
-          } catch (err) {
             // secondary can sometimes complete prior to primary.
           }
         },
