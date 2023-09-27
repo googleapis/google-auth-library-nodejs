@@ -404,12 +404,6 @@ export interface VerifyIdTokenOptions {
   maxExpiry?: number;
 }
 
-export interface OAuth2ClientOptions extends RefreshOptions {
-  clientId?: string;
-  clientSecret?: string;
-  redirectUri?: string;
-}
-
 export interface RefreshOptions {
   // Eagerly refresh unexpired tokens when they are within this many
   // milliseconds from expiring".
@@ -421,6 +415,13 @@ export interface RefreshOptions {
   // on the expiry_date.
   // Defaults to false.
   forceRefreshOnFailure?: boolean;
+}
+
+export interface OAuth2ClientOptions extends RefreshOptions {
+  clientId?: string;
+  clientSecret?: string;
+  redirectUri?: string;
+  credentials?: Credentials;
 }
 
 export class OAuth2Client extends AuthClient {
@@ -474,6 +475,7 @@ export class OAuth2Client extends AuthClient {
     this.eagerRefreshThresholdMillis =
       opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
     this.forceRefreshOnFailure = !!opts.forceRefreshOnFailure;
+    this.credentials = opts.credentials || {};
   }
 
   protected static readonly GOOGLE_TOKEN_INFO_URL =
