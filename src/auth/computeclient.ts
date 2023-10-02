@@ -33,7 +33,7 @@ export interface ComputeOptions extends RefreshOptions {
 }
 
 export class Compute extends OAuth2Client {
-  serviceAccountEmail: string;
+  readonly serviceAccountEmail: string;
   scopes: string[];
 
   /**
