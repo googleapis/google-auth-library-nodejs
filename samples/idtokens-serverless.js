@@ -62,6 +62,9 @@ function main(
   async function request() {
     console.info(`request ${url} with target audience ${targetAudience}`);
     const client = await auth.getIdTokenClient(targetAudience);
+
+    // Alternatively, one can use `client.idTokenProvider.fetchIdToken`
+    // to return the ID Token.
     const res = await client.request({url});
     console.info(res.data);
   }
