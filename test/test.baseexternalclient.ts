@@ -184,6 +184,7 @@ describe('BaseExternalAccountClient', () => {
       '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
       '//iam.googleapis.com/locations//workforcePools/pool/providers/provider',
       '//iam.googleapis.com/locations/workforcePools/pool/providers/provider',
+      '//iamAgoogleapisAcom/locations/global/workforcePools/workloadPools/providers/oidc',
     ];
     const invalidExternalAccountOptionsWorkforceUserProject = Object.assign(
       {},
