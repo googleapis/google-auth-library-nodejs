@@ -22,15 +22,13 @@
     "gaxios": "^6.0.0",
     "gcp-metadata": "^6.0.0",
     "gtoken": "^7.0.0",
-    "jws": "^4.0.0",
-    "lru-cache": "^6.0.0"
+    "jws": "^4.0.0"
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.7",
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
     "@types/jws": "^3.1.0",
-    "@types/lru-cache": "^5.0.0",
     "@types/mocha": "^9.0.0",
     "@types/mv": "^2.1.0",
     "@types/ncp": "^2.0.1",
