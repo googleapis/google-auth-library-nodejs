@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import * as jws from 'jws';
-import * as LRU from 'lru-cache';
 import * as stream from 'stream';
 
 import {JWTInput} from './credentials';
@@ -28,6 +27,130 @@ export interface Claims {
   [index: string]: string;
 }
 
+interface LRUOptions {
+  capacity: number;
+  maxAge?: number;
+}
+
+class LRUNode<T> {
+  constructor(
+    public key: string,
+    public value: T,
+    public prev?: LRUNode<T>,
+    public next?: LRUNode<T>,
+    public lastAccessed = Date.now()
+  ) {}
+}
+
+export class LRU<T> {
+  readonly capacity: number;
+  /**
+   * In milliseconds
+   */
+  readonly maxAge?: number;
+
+  #cache: {[k: string]: LRUNode<T>} = {};
+  #head?: LRUNode<T>;
+  #tail?: LRUNode<T>;
+  #cacheCount = 0;
+
+  constructor(options: LRUOptions) {
+    this.capacity = options.capacity;
+    this.maxAge = options.maxAge;
+  }
+
+  #setHead(node: LRUNode<T>) {
+    if (this.#head === node) return;
+
+    if (this.#head) {
+      const tail = this.#head;
+      this.#head = node;
+      this.#head.next = tail;
+      tail.prev = this.#head;
+    } else {
+      this.#head = node;
+      this.#tail = node;
+    }
+  }
+
+  set(key: string, value: T) {
+    let node: LRUNode<T>;
+
+    if (key in this.#cache) {
+      node = this.#cache[key];
+      node.value = value;
+
+      this.get(key);
+      return;
+    }
+
+    node = new LRUNode<T>(key, value);
+    this.#cache[key] = node;
+    this.#cacheCount++;
+    this.#setHead(node);
+    this.evict();
+  }
+
+  evict() {
+    const cutoffDate = this.maxAge ? Date.now() - this.maxAge : 0;
+
+    while (
+      this.#tail &&
+      (this.#cacheCount > this.capacity || // too many
+        this.#tail.lastAccessed < cutoffDate) // too old
+    ) {
+      const evicted = this.#tail;
+      const prev = evicted?.prev;
+
+      if (prev) {
+        delete this.#cache[evicted.key];
+
+        this.#tail = prev;
+        this.#tail.next = undefined;
+        this.#cacheCount--;
+      } else {
+        this.#head = this.#tail = undefined;
+        this.#cacheCount = 0;
+        this.#cache = {};
+        break;
+      }
+    }
+
+    console.dir({
+      cache: this.#cache,
+      head: this.#head,
+      tail: this.#tail,
+    });
+  }
+
+  get(key: string): T | null {
+    if (!(key in this.#cache)) return null;
+
+    const node = this.#cache[key];
+    node.lastAccessed = Date.now();
+
+    if (node.next && node.prev) {
+      // somewhere in the middle
+      const next = node.next;
+      const prev = node.prev;
+
+      next.prev = prev;
+      prev.next = next;
+    } else if (node.prev) {
+      // this is the tail
+      this.#tail = node.prev;
+      node.prev.next = undefined;
+      node.prev = undefined;
+    }
+
+    this.#setHead(node);
+
+    this.evict();
+
+    return node.value;
+  }
+}
+
 export class JWTAccess {
   email?: string | null;
   key?: string | null;
@@ -35,8 +158,8 @@ export class JWTAccess {
   projectId?: string;
   eagerRefreshThresholdMillis: number;
 
-  private cache = new LRU<string, {expiration: number; headers: Headers}>({
-    max: 500,
+  private cache = new LRU<{expiration: number; headers: Headers}>({
+    capacity: 500,
     maxAge: 60 * 60 * 1000,
   });
 
