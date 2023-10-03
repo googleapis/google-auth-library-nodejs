@@ -28,120 +28,72 @@ export interface Claims {
 }
 
 interface LRUOptions {
+  /**
+   * The maximum number of items to cache.
+   */
   capacity: number;
+  /**
+   * An optional max age for items in milliseconds.
+   */
   maxAge?: number;
-}
-
-class LRUNode<T> {
-  constructor(
-    public key: string,
-    public value: T,
-    public prev?: LRUNode<T>,
-    public next?: LRUNode<T>,
-    public lastAccessed = Date.now()
-  ) {}
 }
 
 export class LRU<T> {
   readonly capacity: number;
-  /**
-   * In milliseconds
-   */
-  readonly maxAge?: number;
 
-  #cache: {[k: string]: LRUNode<T>} = {};
-  #head?: LRUNode<T>;
-  #tail?: LRUNode<T>;
-  #cacheCount = 0;
+  /**
+   * Maps are in order. Thus, the older item is the first item.
+   *
+   * {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map}
+   */
+  #cache = new Map<string, {lastAccessed: number; value: T}>();
+  maxAge?: number;
 
   constructor(options: LRUOptions) {
     this.capacity = options.capacity;
     this.maxAge = options.maxAge;
   }
 
-  #setHead(node: LRUNode<T>) {
-    if (this.#head === node) return;
-
-    if (this.#head) {
-      const tail = this.#head;
-      this.#head = node;
-      this.#head.next = tail;
-      tail.prev = this.#head;
-    } else {
-      this.#head = node;
-      this.#tail = node;
-    }
+  #moveToEnd(key: string, value: T) {
+    this.#cache.delete(key);
+    this.#cache.set(key, {
+      value,
+      lastAccessed: Date.now(),
+    });
   }
 
   set(key: string, value: T) {
-    let node: LRUNode<T>;
-
-    if (key in this.#cache) {
-      node = this.#cache[key];
-      node.value = value;
-
-      this.get(key);
-      return;
-    }
-
-    node = new LRUNode<T>(key, value);
-    this.#cache[key] = node;
-    this.#cacheCount++;
-    this.#setHead(node);
-    this.evict();
+    this.#moveToEnd(key, value);
+    this.#evict();
   }
 
-  evict() {
+  get(key: string): T | undefined {
+    const item = this.#cache.get(key);
+    if (!item) return;
+
+    this.#moveToEnd(key, item.value);
+    this.#evict();
+
+    return item.value;
+  }
+
+  #evict() {
     const cutoffDate = this.maxAge ? Date.now() - this.maxAge : 0;
 
+    /**
+     * Because we know Maps are in order, this item is both the
+     * last item in the list (capacity) and oldest (maxAge).
+     */
+    let oldestItem = this.#cache.entries().next();
+
     while (
-      this.#tail &&
-      (this.#cacheCount > this.capacity || // too many
-        this.#tail.lastAccessed < cutoffDate) // too old
+      !oldestItem.done &&
+      (this.#cache.size > this.capacity || // too many
+        oldestItem.value[1].lastAccessed < cutoffDate) // too old
     ) {
-      const evicted = this.#tail;
-      const prev = evicted?.prev;
-
-      if (prev) {
-        delete this.#cache[evicted.key];
-
-        this.#tail = prev;
-        this.#tail.next = undefined;
-        this.#cacheCount--;
-      } else {
-        this.#head = this.#tail = undefined;
-        this.#cacheCount = 0;
-        this.#cache = {};
-        break;
-      }
+      this.#cache.delete(oldestItem.value[0]);
+      oldestItem = this.#cache.entries().next();
     }
-  }
-
-  get(key: string): T | null {
-    if (!(key in this.#cache)) return null;
-
-    const node = this.#cache[key];
-    node.lastAccessed = Date.now();
-
-    if (node.next && node.prev) {
-      // somewhere in the middle
-      const next = node.next;
-      const prev = node.prev;
-
-      next.prev = prev;
-      prev.next = next;
-    } else if (node.prev) {
-      // this is the tail
-      this.#tail = node.prev;
-      node.prev.next = undefined;
-      node.prev = undefined;
-    }
-
-    this.#setHead(node);
-
-    this.evict();
-
-    return node.value;
   }
 }
 
