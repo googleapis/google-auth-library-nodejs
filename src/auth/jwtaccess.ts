@@ -115,12 +115,6 @@ export class LRU<T> {
         break;
       }
     }
-
-    console.dir({
-      cache: this.#cache,
-      head: this.#head,
-      tail: this.#tail,
-    });
   }
 
   get(key: string): T | null {
