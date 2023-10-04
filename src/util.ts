@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface LRUOptions {
+export interface LRUCacheOptions {
   /**
    * The maximum number of items to cache.
    */
@@ -23,7 +23,7 @@ export interface LRUOptions {
   maxAge?: number;
 }
 
-export class LRU<T> {
+export class LRUCache<T> {
   readonly capacity: number;
 
   /**
@@ -34,7 +34,7 @@ export class LRU<T> {
   #cache = new Map<string, {lastAccessed: number; value: T}>();
   maxAge?: number;
 
-  constructor(options: LRUOptions) {
+  constructor(options: LRUCacheOptions) {
     this.capacity = options.capacity;
     this.maxAge = options.maxAge;
   }
