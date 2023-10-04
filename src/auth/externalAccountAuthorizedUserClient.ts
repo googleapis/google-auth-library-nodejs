@@ -124,9 +124,8 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
     this.applyClientAuthenticationOptions(opts);
 
     try {
-      const response = await this.transporter.request<TokenRefreshResponse>(
-        opts
-      );
+      const response =
+        await this.transporter.request<TokenRefreshResponse>(opts);
       // Successful response.
       const tokenRefreshResponse = response.data;
       tokenRefreshResponse.res = response;

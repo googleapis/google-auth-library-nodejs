@@ -590,9 +590,8 @@ export class OAuth2Client extends AuthClient {
       .replace(/=/g, '_')
       .replace(/\//g, '-');
     // Generate the base64 encoded SHA256
-    const unencodedCodeChallenge = await crypto.sha256DigestBase64(
-      codeVerifier
-    );
+    const unencodedCodeChallenge =
+      await crypto.sha256DigestBase64(codeVerifier);
     // We need to use base64UrlEncoding instead of standard base64
     const codeChallenge = unencodedCodeChallenge
       .split('=')[0]
