@@ -17,6 +17,7 @@ import * as stream from 'stream';
 
 import {JWTInput} from './credentials';
 import {Headers} from './oauth2client';
+import {LRUCache} from '../util';
 
 const DEFAULT_HEADER: jws.Header = {
   alg: 'RS256',
@@ -27,76 +28,6 @@ export interface Claims {
   [index: string]: string;
 }
 
-interface LRUOptions {
-  /**
-   * The maximum number of items to cache.
-   */
-  capacity: number;
-  /**
-   * An optional max age for items in milliseconds.
-   */
-  maxAge?: number;
-}
-
-export class LRU<T> {
-  readonly capacity: number;
-
-  /**
-   * Maps are in order. Thus, the older item is the first item.
-   *
-   * {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map}
-   */
-  #cache = new Map<string, {lastAccessed: number; value: T}>();
-  maxAge?: number;
-
-  constructor(options: LRUOptions) {
-    this.capacity = options.capacity;
-    this.maxAge = options.maxAge;
-  }
-
-  #moveToEnd(key: string, value: T) {
-    this.#cache.delete(key);
-    this.#cache.set(key, {
-      value,
-      lastAccessed: Date.now(),
-    });
-  }
-
-  set(key: string, value: T) {
-    this.#moveToEnd(key, value);
-    this.#evict();
-  }
-
-  get(key: string): T | undefined {
-    const item = this.#cache.get(key);
-    if (!item) return;
-
-    this.#moveToEnd(key, item.value);
-    this.#evict();
-
-    return item.value;
-  }
-
-  #evict() {
-    const cutoffDate = this.maxAge ? Date.now() - this.maxAge : 0;
-
-    /**
-     * Because we know Maps are in order, this item is both the
-     * last item in the list (capacity) and oldest (maxAge).
-     */
-    let oldestItem = this.#cache.entries().next();
-
-    while (
-      !oldestItem.done &&
-      (this.#cache.size > this.capacity || // too many
-        oldestItem.value[1].lastAccessed < cutoffDate) // too old
-    ) {
-      this.#cache.delete(oldestItem.value[0]);
-      oldestItem = this.#cache.entries().next();
-    }
-  }
-}
-
 export class JWTAccess {
   email?: string | null;
   key?: string | null;
@@ -104,7 +35,7 @@ export class JWTAccess {
   projectId?: string;
   eagerRefreshThresholdMillis: number;
 
-  private cache = new LRU<{expiration: number; headers: Headers}>({
+  private cache = new LRUCache<{expiration: number; headers: Headers}>({
     capacity: 500,
     maxAge: 60 * 60 * 1000,
   });
