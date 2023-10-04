@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {strict as assert} from 'assert';
-import {setTimeout} from 'timers/promises';
 
 import {LRUCache} from '../src/util';
 
@@ -56,7 +55,7 @@ describe('util', () => {
       lru.set('first', 1);
       lru.set('second', 2);
 
-      await setTimeout(maxAge + 1);
+      await new Promise(res => setTimeout(res, maxAge + 1));
 
       lru.set('third', 3);
 
