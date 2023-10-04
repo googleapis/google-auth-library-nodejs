@@ -4,6 +4,26 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.1.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.0.0...v9.1.0) (2023-10-02)
+
+
+### Features
+
+* Byoid metrics ([#1595](https://github.com/googleapis/google-auth-library-nodejs/issues/1595)) ([fe09d6b](https://github.com/googleapis/google-auth-library-nodejs/commit/fe09d6b4eb5a8215d21564a97bcc7ea5beb570bf))
+* Expose `gcp-metadata` ([#1655](https://github.com/googleapis/google-auth-library-nodejs/issues/1655)) ([d76140f](https://github.com/googleapis/google-auth-library-nodejs/commit/d76140f253c3903a22ed9087623be05e79a220f9))
+* Expose Compute's Service Account Email ([#1656](https://github.com/googleapis/google-auth-library-nodejs/issues/1656)) ([ef29297](https://github.com/googleapis/google-auth-library-nodejs/commit/ef29297215eb907c511627543391db9b43c1eac5))
+* Extend `universe_domain` support ([#1633](https://github.com/googleapis/google-auth-library-nodejs/issues/1633)) ([4ee02da](https://github.com/googleapis/google-auth-library-nodejs/commit/4ee02da4f6934eeb9550b8b659d1abda85194e6b))
+* Support Instantiating OAuth2Client with Credentials ([#1652](https://github.com/googleapis/google-auth-library-nodejs/issues/1652)) ([4339d64](https://github.com/googleapis/google-auth-library-nodejs/commit/4339d6410da7b792f96d31f62800507313c25430))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @google-cloud/storage to v7 ([#1629](https://github.com/googleapis/google-auth-library-nodejs/issues/1629)) ([8075b6f](https://github.com/googleapis/google-auth-library-nodejs/commit/8075b6fbb347067ec231134fb4388ab9bcd1bde0))
+* **deps:** Update dependency @googleapis/iam to v11 ([#1622](https://github.com/googleapis/google-auth-library-nodejs/issues/1622)) ([03c0ac9](https://github.com/googleapis/google-auth-library-nodejs/commit/03c0ac9950217ec08ac9ad66eaaa4e9a9e67d423))
+* **deps:** Update dependency google-auth-library to v9 ([#1618](https://github.com/googleapis/google-auth-library-nodejs/issues/1618)) ([1873fef](https://github.com/googleapis/google-auth-library-nodejs/commit/1873fefcdf4df00ff40b0f311e40dcdd402f799e))
+* **deps:** Update dependency puppeteer to v21 ([#1627](https://github.com/googleapis/google-auth-library-nodejs/issues/1627)) ([dd04fbd](https://github.com/googleapis/google-auth-library-nodejs/commit/dd04fbdeb17e457a09b06a4abc2aedf511f355ea))
+* Workforce Audience Pattern ([#1654](https://github.com/googleapis/google-auth-library-nodejs/issues/1654)) ([77eeaed](https://github.com/googleapis/google-auth-library-nodejs/commit/77eeaed1d66c89e855a15db0bb6b9dbd96179c8f))
+
 ## [9.0.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v8.9.0...v9.0.0) (2023-07-20)
 
 
