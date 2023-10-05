@@ -21,9 +21,9 @@ import {Headers} from './oauth2client';
 import {OriginalAndCamel, getOriginalOrCamel as getOpt} from '../util';
 
 /**
- * Options that are parameters of auth configurations (e.g. from key files)
+ * Base auth configurations (e.g. from JWT or `.json` files)
  */
-export interface BaseAuthJSONOptions {
+export interface AuthJSONOptions {
   /**
    * The project ID corresponding to the current credentials if available.
    */
@@ -42,10 +42,10 @@ export interface BaseAuthJSONOptions {
 }
 
 /**
- * Options that are parameters of Auth Client configurations
+ * Base Auth Client configuration
  */
 export type AuthClientOptions = Partial<
-  OriginalAndCamel<BaseAuthJSONOptions> & {
+  OriginalAndCamel<AuthJSONOptions> & {
     credentials: Credentials;
 
     /**
@@ -76,7 +76,7 @@ export type AuthClientOptions = Partial<
 /**
  * The default cloud universe
  *
- * @see {@link BaseAuthJSONOptions.universe_domain}
+ * @see {@link AuthJSONOptions.universe_domain}
  */
 export const DEFAULT_UNIVERSE = 'googleapis.com';
 
