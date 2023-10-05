@@ -16,6 +16,8 @@
  * A utility for converting snake_case to camelCase
  *
  * For, for example `my_snake_string` becomes `mySnakeString`.
+ *
+ * @internal
  */
 export type SnakeToCamel<S> = S extends `${infer FirstWord}_${infer Remainder}`
   ? `${FirstWord}${Capitalize<SnakeToCamel<Remainder>>}`
@@ -48,6 +50,8 @@ export type SnakeToCamel<S> = S extends `${infer FirstWord}_${infer Remainder}`
  * The generated documentation for the camelCase'd properties won't be available
  * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
  * resolved.
+ *
+ * @internal
  */
 export type SnakeToCamelObject<T> = {
   [K in keyof T as SnakeToCamel<K>]: T[K];
@@ -80,6 +84,8 @@ export type SnakeToCamelObject<T> = {
  * The generated documentation for the camelCase'd properties won't be available
  * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
  * resolved.
+ *
+ * @internal
  */
 export type OriginalAndCamel<T> = T & SnakeToCamelObject<T>;
 
@@ -91,8 +97,10 @@ export type OriginalAndCamel<T> = T & SnakeToCamelObject<T>;
  * Match any `_` and not `_` pair, then return the uppercase of the not `_`
  * character
  *
+ * @internal
+ *
  * @param str the string to convert
- * @returns
+ * @returns the camelCase'd string
  */
 export function snakeToCamel<T extends string>(str: T): SnakeToCamel<T> {
   return str.replace(/([_][^_])/g, match =>
@@ -103,6 +111,8 @@ export function snakeToCamel<T extends string>(str: T): SnakeToCamel<T> {
 /**
  * Returns the value of `obj[key]` or `obj[camelCaseKey]`, with a preference
  * for original, non-camelCase key.
+ *
+ * @internal
  *
  * @param obj object to lookup a value in
  * @param key an index of object, preferably snake_case
