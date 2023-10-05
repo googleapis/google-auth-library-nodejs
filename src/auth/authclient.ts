@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {EventEmitter} from 'events';
-import {GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
+import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
@@ -49,14 +49,15 @@ export type AuthClientOptions = Partial<
     credentials: Credentials;
 
     /**
-     * .
+     * A `Gaxios` or `Transporter` instance to use for `AuthClient` requests.
      */
-    defaultTransportOptions: GaxiosOptions;
+    transporter: Gaxios | Transporter;
 
     /**
-     * .
+     * Provides default options to the transporter, such as {@link GaxiosOptions.agent `agent`} or
+     *  {@link GaxiosOptions.retryConfig `retryConfig`}.
      */
-    transporter: Transporter;
+    transporterOptions: GaxiosOptions;
 
     /**
      * The expiration threshold in milliseconds before forcing token refresh of
@@ -171,8 +172,8 @@ export abstract class AuthClient
     // Shared client options
     this.transporter = opts.transporter ?? new DefaultTransporter();
 
-    if (opts.defaultTransportOptions) {
-      this.transporter.defaults = opts.defaultTransportOptions;
+    if (opts.transporterOptions) {
+      this.transporter.defaults = opts.transporterOptions;
     }
 
     if (opts.eagerRefreshThresholdMillis) {
