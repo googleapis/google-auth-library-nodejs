@@ -159,7 +159,7 @@ export abstract class AuthClient
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
 
-  constructor(opts: Partial<AuthClientOptions> = {}) {
+  constructor(opts: AuthClientOptions = {}) {
     super();
 
     // Shared auth options
