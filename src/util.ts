@@ -23,6 +23,13 @@ export interface LRUCacheOptions {
   maxAge?: number;
 }
 
+/**
+ * A simple LRU cache utility.
+ * Not meant for external usage.
+ *
+ * @experimental
+ * @internal
+ */
 export class LRUCache<T> {
   readonly capacity: number;
 
@@ -39,6 +46,12 @@ export class LRUCache<T> {
     this.maxAge = options.maxAge;
   }
 
+  /**
+   * Moves the key to the end of the cache.
+   *
+   * @param key the key to move
+   * @param value the value of the key
+   */
   #moveToEnd(key: string, value: T) {
     this.#cache.delete(key);
     this.#cache.set(key, {
@@ -47,11 +60,22 @@ export class LRUCache<T> {
     });
   }
 
+  /**
+   * Add an item to the cache.
+   *
+   * @param key the key to upsert
+   * @param value the value of the key
+   */
   set(key: string, value: T) {
     this.#moveToEnd(key, value);
     this.#evict();
   }
 
+  /**
+   * Get an item from the cache.
+   *
+   * @param key the key to retrieve
+   */
   get(key: string): T | undefined {
     const item = this.#cache.get(key);
     if (!item) return;
@@ -62,6 +86,9 @@ export class LRUCache<T> {
     return item.value;
   }
 
+  /**
+   * Maintain the cache based on capacity and TTL.
+   */
   #evict() {
     const cutoffDate = this.maxAge ? Date.now() - this.maxAge : 0;
 
