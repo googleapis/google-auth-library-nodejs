@@ -16,12 +16,12 @@ import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
-import {RefreshOptions} from './oauth2client';
 import {
   ExecutableResponse,
   InvalidExpirationTimeFieldError,
 } from './executable-response';
 import {PluggableAuthHandler} from './pluggable-auth-handler';
+import {AuthClientOptions} from './authclient';
 
 /**
  * Defines the credential source portion of the configuration for PluggableAuthClient.
@@ -195,7 +195,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
    */
   constructor(
     options: PluggableAuthClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: AuthClientOptions
   ) {
     super(options, additionalOptions);
     if (!options.credential_source.executable) {

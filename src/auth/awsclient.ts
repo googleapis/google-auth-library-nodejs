@@ -19,7 +19,8 @@ import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
-import {RefreshOptions, Headers} from './oauth2client';
+import {Headers} from './oauth2client';
+import {AuthClientOptions} from './authclient';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
@@ -85,7 +86,10 @@ export class AwsClient extends BaseExternalAccountClient {
    *   options. These currently customize expiration threshold time and
    *   whether to retry on 401/403 API request errors.
    */
-  constructor(options: AwsClientOptions, additionalOptions?: RefreshOptions) {
+  constructor(
+    options: AwsClientOptions,
+    additionalOptions?: AuthClientOptions
+  ) {
     super(options, additionalOptions);
     this.environmentId = options.credential_source.environment_id;
     // This is only required if the AWS region is not available in the

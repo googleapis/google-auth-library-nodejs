@@ -20,7 +20,7 @@ import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
-import {RefreshOptions} from './oauth2client';
+import {AuthClientOptions} from './authclient';
 
 // fs.readfile is undefined in browser karma tests causing
 // `npm run browser-test` to fail as test.oauth2.ts imports this file via
@@ -80,7 +80,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    */
   constructor(
     options: IdentityPoolClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: AuthClientOptions
   ) {
     super(options, additionalOptions);
     this.file = options.credential_source.file;

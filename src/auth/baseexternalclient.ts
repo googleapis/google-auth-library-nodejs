@@ -21,9 +21,9 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient} from './authclient';
+import {AuthClient, AuthClientOptions} from './authclient';
 import {BodyResponseCallback} from '../transporters';
-import {GetAccessTokenResponse, Headers, RefreshOptions} from './oauth2client';
+import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 
@@ -63,18 +63,13 @@ const WORKFORCE_AUDIENCE_PATTERN =
 const pkg = require('../../../package.json');
 
 /**
- * The default cloud universe
+ * For backwards compatibility.
  */
-export const DEFAULT_UNIVERSE = 'googleapis.com';
+export {DEFAULT_UNIVERSE} from './authclient';
 
-export interface SharedExternalAccountClientOptions {
+export interface SharedExternalAccountClientOptions extends AuthClientOptions {
   audience: string;
   token_url: string;
-  quota_project_id?: string;
-  /**
-   * universe domain is the default service domain for a given Cloud universe
-   */
-  universe_domain?: string;
 }
 
 /**
@@ -151,11 +146,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly stsCredential: sts.StsCredentials;
   private readonly clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
-  public universeDomain = DEFAULT_UNIVERSE;
-  public projectId: string | null;
   public projectNumber: string | null;
-  public readonly eagerRefreshThresholdMillis: number;
-  public readonly forceRefreshOnFailure: boolean;
   private readonly configLifetimeRequested: boolean;
   protected credentialSourceType?: string;
   /**
@@ -169,9 +160,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    */
   constructor(
     options: BaseExternalAccountClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: AuthClientOptions
   ) {
-    super();
+    super({...options, ...additionalOptions});
+
     if (options.type !== EXTERNAL_ACCOUNT_TYPE) {
       throw new Error(
         `Expected "${EXTERNAL_ACCOUNT_TYPE}" type but ` +
@@ -194,7 +186,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.cachedAccessToken = null;
     this.audience = options.audience;
     this.subjectTokenType = options.subject_token_type;
-    this.quotaProjectId = options.quota_project_id;
     this.workforcePoolUserProject = options.workforce_pool_user_project;
     const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
     if (
@@ -217,22 +208,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       this.configLifetimeRequested = false;
       this.serviceAccountImpersonationLifetime = DEFAULT_TOKEN_LIFESPAN;
     }
-    // As threshold could be zero,
-    // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
-    // zero value.
-    if (typeof additionalOptions?.eagerRefreshThresholdMillis !== 'number') {
-      this.eagerRefreshThresholdMillis = EXPIRATION_TIME_OFFSET;
-    } else {
-      this.eagerRefreshThresholdMillis = additionalOptions!
-        .eagerRefreshThresholdMillis as number;
-    }
-    this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
-    this.projectId = null;
-    this.projectNumber = this.getProjectNumber(this.audience);
 
-    if (options.universe_domain) {
-      this.universeDomain = options.universe_domain;
-    }
+    this.projectNumber = this.getProjectNumber(this.audience);
   }
 
   /** The service account email to be impersonated, if available. */

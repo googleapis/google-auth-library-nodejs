@@ -16,9 +16,13 @@ import {GaxiosError} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 
 import {CredentialRequest, Credentials} from './credentials';
-import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+import {
+  GetTokenResponse,
+  OAuth2Client,
+  OAuth2ClientOptions,
+} from './oauth2client';
 
-export interface ComputeOptions extends RefreshOptions {
+export interface ComputeOptions extends OAuth2ClientOptions {
   /**
    * The service account email to use, or 'default'. A Compute Engine instance
    * may have multiple service accounts.

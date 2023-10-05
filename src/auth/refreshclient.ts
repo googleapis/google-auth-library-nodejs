@@ -14,11 +14,15 @@
 
 import * as stream from 'stream';
 import {JWTInput} from './credentials';
-import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+import {
+  GetTokenResponse,
+  OAuth2Client,
+  OAuth2ClientOptions,
+} from './oauth2client';
 
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
-export interface UserRefreshClientOptions extends RefreshOptions {
+export interface UserRefreshClientOptions extends OAuth2ClientOptions {
   clientId?: string;
   clientSecret?: string;
   refreshToken?: string;
@@ -57,12 +61,7 @@ export class UserRefreshClient extends OAuth2Client {
             eagerRefreshThresholdMillis,
             forceRefreshOnFailure,
           };
-    super({
-      clientId: opts.clientId,
-      clientSecret: opts.clientSecret,
-      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis,
-      forceRefreshOnFailure: opts.forceRefreshOnFailure,
-    });
+    super(opts);
     this._refreshToken = opts.refreshToken;
     this.credentials.refresh_token = opts.refreshToken;
   }

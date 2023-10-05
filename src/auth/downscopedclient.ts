@@ -22,9 +22,9 @@ import * as stream from 'stream';
 
 import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
-import {AuthClient} from './authclient';
+import {AuthClient, AuthClientOptions} from './authclient';
 
-import {GetAccessTokenResponse, Headers, RefreshOptions} from './oauth2client';
+import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 
 /**
@@ -107,8 +107,6 @@ interface AvailabilityCondition {
 export class DownscopedClient extends AuthClient {
   private cachedDownscopedAccessToken: CredentialsWithResponse | null;
   private readonly stsCredential: sts.StsCredentials;
-  public readonly eagerRefreshThresholdMillis: number;
-  public readonly forceRefreshOnFailure: boolean;
 
   /**
    * Instantiates a downscoped client object using the provided source
@@ -126,18 +124,17 @@ export class DownscopedClient extends AuthClient {
    *   permissions that are available on that resource and an optional
    *   condition to further restrict permissions.
    * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   *   options.
    * @param quotaProjectId Optional quota project id for setting up in the
    *   x-goog-user-project header.
    */
   constructor(
     private readonly authClient: AuthClient,
     private readonly credentialAccessBoundary: CredentialAccessBoundary,
-    additionalOptions?: RefreshOptions,
+    additionalOptions?: AuthClientOptions,
     quotaProjectId?: string
   ) {
-    super();
+    super({...additionalOptions, quotaProjectId});
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
@@ -167,17 +164,6 @@ export class DownscopedClient extends AuthClient {
 
     this.stsCredential = new sts.StsCredentials(STS_ACCESS_TOKEN_URL);
     this.cachedDownscopedAccessToken = null;
-    // As threshold could be zero,
-    // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
-    // zero value.
-    if (typeof additionalOptions?.eagerRefreshThresholdMillis !== 'number') {
-      this.eagerRefreshThresholdMillis = EXPIRATION_TIME_OFFSET;
-    } else {
-      this.eagerRefreshThresholdMillis = additionalOptions!
-        .eagerRefreshThresholdMillis as number;
-    }
-    this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
-    this.quotaProjectId = quotaProjectId;
   }
 
   /**

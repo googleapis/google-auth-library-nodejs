@@ -21,11 +21,11 @@ import {JWTAccess} from './jwtaccess';
 import {
   GetTokenResponse,
   OAuth2Client,
-  RefreshOptions,
+  OAuth2ClientOptions,
   RequestMetadataResponse,
 } from './oauth2client';
 
-export interface JWTOptions extends RefreshOptions {
+export interface JWTOptions extends OAuth2ClientOptions {
   email?: string;
   keyFile?: string;
   key?: string;
@@ -83,10 +83,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       optionsOrEmail && typeof optionsOrEmail === 'object'
         ? optionsOrEmail
         : {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
-    super({
-      eagerRefreshThresholdMillis: opts.eagerRefreshThresholdMillis,
-      forceRefreshOnFailure: opts.forceRefreshOnFailure,
-    });
+    super(opts);
     this.email = opts.email;
     this.keyFile = opts.keyFile;
     this.key = opts.key;
@@ -94,6 +91,8 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     this.scopes = opts.scopes;
     this.subject = opts.subject;
     this.additionalClaims = opts.additionalClaims;
+    // Start with an expired refresh token, which will automatically be
+    // refreshed before the first API call is made.
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
   }
 

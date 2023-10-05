@@ -18,26 +18,85 @@ import {GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
 import {Headers} from './oauth2client';
+import {OriginalAndCamel, getOriginalOrCamel as getOpt} from '../util';
+
+/**
+ * Options that are parameters of auth configurations (e.g. from key files)
+ */
+export interface BaseAuthJSONOptions {
+  /**
+   * The project ID corresponding to the current credentials if available.
+   */
+  project_id: string | null;
+
+  /**
+   * The quota project ID. The quota project can be used by client libraries for the billing purpose.
+   * See {@link https://cloud.google.com/docs/quota Working with quotas}
+   */
+  quota_project_id: string;
+
+  /**
+   * The default service domain for a given Cloud universe
+   */
+  universe_domain: string;
+}
+
+/**
+ * Options that are parameters of Auth Client configurations
+ */
+export type AuthClientOptions = Partial<
+  OriginalAndCamel<BaseAuthJSONOptions> & {
+    credentials: Credentials;
+
+    /**
+     * .
+     */
+    defaultTransportOptions: GaxiosOptions;
+
+    /**
+     * .
+     */
+    transporter: Transporter;
+
+    /**
+     * The expiration threshold in milliseconds before forcing token refresh of
+     * unexpired tokens.
+     */
+    eagerRefreshThresholdMillis: number;
+
+    /**
+     * Whether to attempt to refresh tokens on status 401/403 responses
+     * even if an attempt is made to refresh the token preemptively based
+     * on the expiry_date.
+     */
+    forceRefreshOnFailure: boolean;
+  }
+>;
+
+/**
+ * The default cloud universe
+ *
+ * @see {@link BaseAuthJSONOptions.universe_domain}
+ */
+export const DEFAULT_UNIVERSE = 'googleapis.com';
+
+/**
+ * The default {@link AuthClientOptions.eagerRefreshThresholdMillis}
+ */
+export const DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS = 5 * 60 * 1000;
 
 /**
  * Defines the root interface for all clients that generate credentials
  * for calling Google APIs. All clients should implement this interface.
  */
 export interface CredentialsClient {
-  /**
-   * The project ID corresponding to the current credentials if available.
-   */
-  projectId?: string | null;
-
-  /**
-   * The expiration threshold in milliseconds before forcing token refresh.
-   */
-  eagerRefreshThresholdMillis: number;
-
-  /**
-   * Whether to force refresh on failure when making an authorization request.
-   */
-  forceRefreshOnFailure: boolean;
+  projectId?: AuthClientOptions['projectId'];
+  eagerRefreshThresholdMillis: NonNullable<
+    AuthClientOptions['eagerRefreshThresholdMillis']
+  >;
+  forceRefreshOnFailure: NonNullable<
+    AuthClientOptions['forceRefreshOnFailure']
+  >;
 
   /**
    * @return A promise that resolves with the current GCP access token
@@ -88,16 +147,40 @@ export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient
 {
+  projectId?: string | null;
   /**
    * The quota project ID. The quota project can be used by client libraries for the billing purpose.
-   * See {@link https://cloud.google.com/docs/quota| Working with quotas}
+   * See {@link https://cloud.google.com/docs/quota Working with quotas}
    */
   quotaProjectId?: string;
-  transporter: Transporter = new DefaultTransporter();
+  transporter: Transporter;
   credentials: Credentials = {};
-  projectId?: string | null;
-  eagerRefreshThresholdMillis = 5 * 60 * 1000;
+  eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
+  universeDomain = DEFAULT_UNIVERSE;
+
+  constructor(opts: Partial<AuthClientOptions> = {}) {
+    super();
+
+    // Shared auth options
+    this.projectId = getOpt(opts, 'project_id') ?? null;
+    this.quotaProjectId = getOpt(opts, 'quota_project_id');
+    this.credentials = getOpt(opts, 'credentials') ?? {};
+    this.universeDomain = getOpt(opts, 'universe_domain') ?? DEFAULT_UNIVERSE;
+
+    // Shared client options
+    this.transporter = opts.transporter ?? new DefaultTransporter();
+
+    if (opts.defaultTransportOptions) {
+      this.transporter.defaults = opts.defaultTransportOptions;
+    }
+
+    if (opts.eagerRefreshThresholdMillis) {
+      this.eagerRefreshThresholdMillis = opts.eagerRefreshThresholdMillis;
+    }
+
+    this.forceRefreshOnFailure = opts.forceRefreshOnFailure ?? false;
+  }
 
   /**
    * Provides an alternative Gaxios request implementation with auth credentials

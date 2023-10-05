@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-import {GetTokenResponse, OAuth2Client, RefreshOptions} from './oauth2client';
+import {
+  GetTokenResponse,
+  OAuth2Client,
+  OAuth2ClientOptions,
+} from './oauth2client';
 import {AuthClient} from './authclient';
 import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 
-export interface ImpersonatedOptions extends RefreshOptions {
+export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
    * Client used to perform exchange for impersonated client.
    */
@@ -108,6 +112,8 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
    */
   constructor(options: ImpersonatedOptions = {}) {
     super(options);
+    // Start with an expired refresh token, which will automatically be
+    // refreshed before the first API call is made.
     this.credentials = {
       expiry_date: 1,
       refresh_token: 'impersonated-placeholder',

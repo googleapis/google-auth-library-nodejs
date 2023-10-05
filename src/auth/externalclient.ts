@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {RefreshOptions} from './oauth2client';
 import {
   BaseExternalAccountClient,
   // This is the identifier in the JSON config for the type of credential.
@@ -33,6 +32,7 @@ import {
   PluggableAuthClient,
   PluggableAuthClientOptions,
 } from './pluggable-auth-client';
+import {AuthClientOptions} from './authclient';
 
 export type ExternalAccountClientOptions =
   | IdentityPoolClientOptions
@@ -68,7 +68,7 @@ export class ExternalAccountClient {
    */
   static fromJSON(
     options: ExternalAccountClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: AuthClientOptions
   ): BaseExternalAccountClient | null {
     if (options && options.type === EXTERNAL_ACCOUNT_TYPE) {
       if ((options as AwsClientOptions).credential_source?.environment_id) {
