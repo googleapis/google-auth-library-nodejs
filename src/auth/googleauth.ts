@@ -173,6 +173,17 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   static DefaultTransporter = DefaultTransporter;
 
+  /**
+   * Configuration is resolved in the following order of precedence:
+   * - {@link GoogleAuthOptions.credentials `credentials`}
+   * - {@link GoogleAuthOptions.keyFilename `keyFilename`}
+   * - {@link GoogleAuthOptions.keyFile `keyFile`}
+   *
+   * {@link GoogleAuthOptions.clientOptions `clientOptions`} are passed to the
+   * {@link AuthClient `AuthClient`s}.
+   *
+   * @param opts
+   */
   constructor(opts?: GoogleAuthOptions<T>) {
     opts = opts || {};
 
@@ -195,8 +206,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   /**
    * Obtains the default project ID for the application.
-   * @param callback Optional callback
-   * @returns Promise that resolves with project Id (if used without callback)
+   *
+   * Retrieves in the following order of precedence:
+   * - The `projectId` provided in this object's construction
+   * - GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable
+   * - GOOGLE_APPLICATION_CREDENTIALS JSON file
+   * - Cloud SDK: `gcloud config config-helper --format json`
+   * - GCE project ID from metadata server
    */
   getProjectId(): Promise<string>;
   getProjectId(callback: ProjectIdCallback): void;
@@ -342,9 +358,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     // Look in the well-known credential file location.
-    credential = await this._tryGetApplicationCredentialsFromWellKnownFile(
-      options
-    );
+    credential =
+      await this._tryGetApplicationCredentialsFromWellKnownFile(options);
     if (credential) {
       if (credential instanceof JWT) {
         credential.scopes = this.scopes;
@@ -902,8 +917,9 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   /**
-   * Automatically obtain a client based on the provided configuration.  If no
-   * options were passed, use Application Default Credentials.
+   * Automatically obtain an {@link AuthClient `AuthClient`} based on the
+   * provided configuration. If no options were passed, use Application
+   * Default Credentials.
    */
   async getClient() {
     if (!this.cachedCredential) {

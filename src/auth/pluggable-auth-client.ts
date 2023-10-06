@@ -281,9 +281,8 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
           serviceAccountEmail
         );
       }
-      executableResponse = await this.handler.retrieveResponseFromExecutable(
-        envMap
-      );
+      executableResponse =
+        await this.handler.retrieveResponseFromExecutable(envMap);
     }
 
     if (executableResponse.version > MAXIMUM_EXECUTABLE_VERSION) {

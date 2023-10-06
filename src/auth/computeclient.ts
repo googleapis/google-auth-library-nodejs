@@ -37,7 +37,7 @@ export interface ComputeOptions extends OAuth2ClientOptions {
 }
 
 export class Compute extends OAuth2Client {
-  private serviceAccountEmail: string;
+  readonly serviceAccountEmail: string;
   scopes: string[];
 
   /**
