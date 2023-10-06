@@ -355,9 +355,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     // Look in the well-known credential file location.
-    credential = await this._tryGetApplicationCredentialsFromWellKnownFile(
-      options
-    );
+    credential =
+      await this._tryGetApplicationCredentialsFromWellKnownFile(options);
     if (credential) {
       if (credential instanceof JWT) {
         credential.scopes = this.scopes;
