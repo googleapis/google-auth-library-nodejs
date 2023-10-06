@@ -207,9 +207,8 @@ export class StsCredentials extends OAuthClientAuthHandler {
     this.applyClientAuthenticationOptions(opts);
 
     try {
-      const response = await this.transporter.request<StsSuccessfulResponse>(
-        opts
-      );
+      const response =
+        await this.transporter.request<StsSuccessfulResponse>(opts);
       // Successful response.
       const stsSuccessfulResponse = response.data;
       stsSuccessfulResponse.res = response;

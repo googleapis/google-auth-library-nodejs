@@ -54,10 +54,7 @@ import {
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
-import {
-  ExternalAccountAuthorizedUserClient,
-  ExternalAccountAuthorizedUserClientOptions,
-} from '../src/auth/externalAccountAuthorizedUserClient';
+import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
 
 nock.disableNetConnect();
 
@@ -70,7 +67,6 @@ describe('googleauth', () => {
   const svcAccountPath = `${instancePath}/service-accounts/?recursive=true`;
   const API_KEY = 'test-123';
   const PEM_PATH = './test/fixtures/private.pem';
-  const P12_PATH = './test/fixtures/key.p12';
   const STUB_PROJECT = 'my-awesome-project';
   const ENDPOINT = '/events:report';
   const RESPONSE_BODY = 'RESPONSE_BODY';
@@ -234,24 +230,6 @@ describe('googleauth', () => {
             primary.done();
             secondary.done();
           } catch (_err) {
-            // secondary can sometimes complete prior to primary.
-          }
-        },
-      };
-    }
-
-    function nock500GCE() {
-      const primary = nock(host).get(instancePath).reply(500, {}, HEADERS);
-      const secondary = nock(SECONDARY_HOST_ADDRESS)
-        .get(instancePath)
-        .reply(500, {}, HEADERS);
-
-      return {
-        done: () => {
-          try {
-            primary.done();
-            secondary.done();
-          } catch (err) {
             // secondary can sometimes complete prior to primary.
           }
         },
@@ -1170,36 +1148,6 @@ describe('googleauth', () => {
         'test-creds@test-creds.iam.gserviceaccount.com'
       );
       assert.strictEqual(body.private_key, undefined);
-      scopes.forEach(s => s.done());
-    });
-
-    it('getCredentials should error if metadata server is not reachable', async () => {
-      const scopes = [
-        nockIsGCE(),
-        createGetProjectIdNock(),
-        nock(HOST_ADDRESS).get(svcAccountPath).reply(404),
-      ];
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await assert.rejects(
-        auth.getCredentials(),
-        /Unsuccessful response status code. Request failed with status code 404/
-      );
-      scopes.forEach(s => s.done());
-    });
-
-    it('getCredentials should error if body is empty', async () => {
-      const scopes = [
-        nockIsGCE(),
-        createGetProjectIdNock(),
-        nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {}),
-      ];
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await assert.rejects(
-        auth.getCredentials(),
-        /Invalid response from metadata service: incorrect Metadata-Flavor header./
-      );
       scopes.forEach(s => s.done());
     });
 

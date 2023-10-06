@@ -218,9 +218,8 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       const response = await this.transporter.request<string>(opts);
       subjectToken = response.data;
     } else if (formatType === 'json' && formatSubjectTokenFieldName) {
-      const response = await this.transporter.request<SubjectTokenJsonResponse>(
-        opts
-      );
+      const response =
+        await this.transporter.request<SubjectTokenJsonResponse>(opts);
       subjectToken = response.data[formatSubjectTokenFieldName];
     }
     if (!subjectToken) {

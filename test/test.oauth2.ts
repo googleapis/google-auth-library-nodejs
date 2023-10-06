@@ -1478,9 +1478,8 @@ describe('oauth2', () => {
       };
       assert.deepStrictEqual(client.credentials, {});
 
-      const requestMetaData = await client.getRequestHeaders(
-        'http://example.com'
-      );
+      const requestMetaData =
+        await client.getRequestHeaders('http://example.com');
 
       assert.deepStrictEqual(requestMetaData, expectedMetadata);
     });
@@ -1501,9 +1500,8 @@ describe('oauth2', () => {
         Authorization: 'Bearer access_token',
       };
 
-      const requestMetaData = await client.getRequestHeaders(
-        'http://example.com'
-      );
+      const requestMetaData =
+        await client.getRequestHeaders('http://example.com');
 
       assert.deepStrictEqual(requestMetaData, expectedMetadata);
     });
@@ -1517,9 +1515,8 @@ describe('oauth2', () => {
         Authorization: 'Bearer initial-access-token',
       };
 
-      const requestMetaData = await client.getRequestHeaders(
-        'http://example.com'
-      );
+      const requestMetaData =
+        await client.getRequestHeaders('http://example.com');
 
       assert.deepStrictEqual(requestMetaData, expectedMetadata);
     });
