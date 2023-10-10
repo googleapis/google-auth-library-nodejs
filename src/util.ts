@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * A utility for converting snake_case to camelCase
+ * A utility for converting snake_case to camelCase.
  *
  * For, for example `my_snake_string` becomes `mySnakeString`.
  *
