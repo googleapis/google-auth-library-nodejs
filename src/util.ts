@@ -95,7 +95,7 @@ export type OriginalAndCamel<T> = T & SnakeToCamelObject<T>;
  * @remarks
  *
  * Match any `_` and not `_` pair, then return the uppercase of the not `_`
- * character
+ * character.
  *
  * @internal
  *
