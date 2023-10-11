@@ -569,6 +569,16 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       json.source_credentials.refresh_token
     );
 
+    if (json.service_account_impersonation_url?.length > 256) {
+      /**
+       * Prevents DOS attacks.
+       * @see {@link https://github.com/googleapis/google-auth-library-nodejs/security/code-scanning/85}
+       **/
+      throw new RangeError(
+        `Target principal is too long: ${json.service_account_impersonation_url}`
+      );
+    }
+
     // Extreact service account from service_account_impersonation_url
     const targetPrincipal = /(?<target>[^/]+):generateAccessToken$/.exec(
       json.service_account_impersonation_url
