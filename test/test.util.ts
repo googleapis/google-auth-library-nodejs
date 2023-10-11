@@ -71,13 +71,13 @@ describe('util', () => {
       // back to the future 🏎️
       sandbox.clock.tick(maxAge + 1);
 
-      // these are too old
-      assert.equal(lru.get('first'), undefined);
-      assert.equal(lru.get('second'), undefined);
-
       // just set, so should be fine
       lru.set('third', 3);
       assert.equal(lru.get('third'), 3);
+
+      // these are too old
+      assert.equal(lru.get('first'), undefined);
+      assert.equal(lru.get('second'), undefined);
     });
   });
 });
