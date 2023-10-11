@@ -102,15 +102,10 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    * @return The cloned instance.
    */
   createScoped(scopes?: string | string[]) {
-    return new JWT({
-      email: this.email,
-      keyFile: this.keyFile,
-      key: this.key,
-      keyId: this.keyId,
-      scopes,
-      subject: this.subject,
-      additionalClaims: this.additionalClaims,
-    });
+    const jwt = new JWT(this as {} as JWTOptions);
+    jwt.scopes = scopes;
+
+    return jwt;
   }
 
   /**
