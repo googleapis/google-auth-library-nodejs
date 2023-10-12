@@ -238,6 +238,16 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   /** The service account email to be impersonated, if available. */
   getServiceAccountEmail(): string | null {
     if (this.serviceAccountImpersonationUrl) {
+      if (this.serviceAccountImpersonationUrl.length > 256) {
+        /**
+         * Prevents DOS attacks.
+         * @see {@link https://github.com/googleapis/google-auth-library-nodejs/security/code-scanning/84}
+         **/
+        throw new RangeError(
+          `URL is too long: ${this.serviceAccountImpersonationUrl}`
+        );
+      }
+
       // Parse email from URL. The formal looks as follows:
       // https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/name@project-id.iam.gserviceaccount.com:generateAccessToken
       const re = /serviceAccounts\/(?<email>[^:]+):generateAccessToken$/;
