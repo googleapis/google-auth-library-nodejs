@@ -23,7 +23,7 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
 
-import {CodeChallengeMethod, OAuth2Client} from '../src';
+import {CodeChallengeMethod, Credentials, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 
 nock.disableNetConnect();
@@ -1478,9 +1478,8 @@ describe('oauth2', () => {
       };
       assert.deepStrictEqual(client.credentials, {});
 
-      const requestMetaData = await client.getRequestHeaders(
-        'http://example.com'
-      );
+      const requestMetaData =
+        await client.getRequestHeaders('http://example.com');
 
       assert.deepStrictEqual(requestMetaData, expectedMetadata);
     });
@@ -1501,9 +1500,8 @@ describe('oauth2', () => {
         Authorization: 'Bearer access_token',
       };
 
-      const requestMetaData = await client.getRequestHeaders(
-        'http://example.com'
-      );
+      const requestMetaData =
+        await client.getRequestHeaders('http://example.com');
 
       assert.deepStrictEqual(requestMetaData, expectedMetadata);
     });
@@ -1517,9 +1515,8 @@ describe('oauth2', () => {
         Authorization: 'Bearer initial-access-token',
       };
 
-      const requestMetaData = await client.getRequestHeaders(
-        'http://example.com'
-      );
+      const requestMetaData =
+        await client.getRequestHeaders('http://example.com');
 
       assert.deepStrictEqual(requestMetaData, expectedMetadata);
     });
@@ -1592,6 +1589,33 @@ describe('oauth2', () => {
         client.getAccessToken(),
         /No access token is returned by the refreshHandler callback./
       );
+    });
+
+    it('should accept and attempt to use an `access_token`', async () => {
+      const credentials: Credentials = {access_token: 'my-access-token'};
+      const url = 'http://example.com';
+
+      const client = new OAuth2Client({credentials});
+
+      const scope = nock(url, {
+        reqheaders: {
+          Authorization: `Bearer ${credentials.access_token}`,
+        },
+      })
+        .get('/')
+        .reply(200);
+
+      // We want the credentials object to be reference equal
+      assert.strict.equal(client.credentials, credentials);
+
+      await client.request({url});
+
+      scope.done();
+
+      // The access token should still be available after use
+      assert.strict.deepEqual(await client.getAccessToken(), {
+        token: credentials.access_token,
+      });
     });
   });
 });

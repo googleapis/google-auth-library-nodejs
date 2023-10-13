@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import * as jws from 'jws';
-import * as LRU from 'lru-cache';
 import * as stream from 'stream';
 
 import {JWTInput} from './credentials';
 import {Headers} from './oauth2client';
+import {LRUCache} from '../util';
 
 const DEFAULT_HEADER: jws.Header = {
   alg: 'RS256',
@@ -35,8 +35,8 @@ export class JWTAccess {
   projectId?: string;
   eagerRefreshThresholdMillis: number;
 
-  private cache = new LRU<string, {expiration: number; headers: Headers}>({
-    max: 500,
+  private cache = new LRUCache<{expiration: number; headers: Headers}>({
+    capacity: 500,
     maxAge: 60 * 60 * 1000,
   });
 

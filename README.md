@@ -57,7 +57,7 @@ This library provides a variety of ways to authenticate to your Google services.
 - [Downscoped Client](#downscoped-client) - Use Downscoped Client with Credential Access Boundary to generate a short-lived credential with downscoped, restricted IAM permissions that can use for Cloud Storage.
 
 ## Application Default Credentials
-This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started)for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
+This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
 
 They are best suited for cases when the call needs to have the same identity and authorization level for the application independent of the user. This is the recommended approach to authorize calls to Cloud APIs, particularly when you're building an application that uses Google Cloud Platform.
 
@@ -263,19 +263,6 @@ console.log(tokenInfo.scopes);
 ```
 
 This method will throw if the token is invalid.
-
-#### OAuth2 with Installed Apps (Electron)
-If you're authenticating with OAuth2 from an installed application (like Electron), you may not want to embed your `client_secret` inside of the application sources. To work around this restriction, you can choose the `iOS` application type when creating your OAuth2 credentials in the [Google Developers console](https://console.cloud.google.com/):
-
-![application type](https://user-images.githubusercontent.com/534619/36553844-3f9a863c-17b2-11e8-904a-29f6cd5f807a.png)
-
-If using the `iOS` type, when creating the OAuth2 client you won't need to pass a `client_secret` into the constructor:
-```js
-const oAuth2Client = new OAuth2Client({
-  clientId: <your_client_id>,
-  redirectUri: <your_redirect_uri>
-});
-```
 
 ## JSON Web Tokens
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
@@ -1241,7 +1228,7 @@ also contains samples.
 
 ## Supported Node.js Versions
 
-Our client libraries follow the [Node.js release schedule](https://nodejs.org/en/about/releases/).
+Our client libraries follow the [Node.js release schedule](https://github.com/nodejs/release#release-schedule).
 Libraries are compatible with all current _active_ and _maintenance_ versions of
 Node.js.
 If you are using an end-of-life version of Node.js, we recommend that you update

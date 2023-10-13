@@ -279,24 +279,6 @@ describe('googleauth', () => {
       };
     }
 
-    function nock500GCE() {
-      const primary = nock(host).get(instancePath).reply(500, {}, HEADERS);
-      const secondary = nock(SECONDARY_HOST_ADDRESS)
-        .get(instancePath)
-        .reply(500, {}, HEADERS);
-
-      return {
-        done: () => {
-          try {
-            primary.done();
-            secondary.done();
-          } catch (err) {
-            // secondary can sometimes complete prior to primary.
-          }
-        },
-      };
-    }
-
     function createGetProjectIdNock(projectId = 'not-real') {
       return nock(host)
         .get(`${BASE_PATH}/project/project-id`)
@@ -1209,36 +1191,6 @@ describe('googleauth', () => {
         'test-creds@test-creds.iam.gserviceaccount.com'
       );
       assert.strictEqual(body.private_key, undefined);
-      scopes.forEach(s => s.done());
-    });
-
-    it('getCredentials should error if metadata server is not reachable', async () => {
-      const scopes = [
-        nockIsGCE(),
-        createGetProjectIdNock(),
-        nock(HOST_ADDRESS).get(svcAccountPath).reply(404),
-      ];
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await assert.rejects(
-        auth.getCredentials(),
-        /Unsuccessful response status code. Request failed with status code 404/
-      );
-      scopes.forEach(s => s.done());
-    });
-
-    it('getCredentials should error if body is empty', async () => {
-      const scopes = [
-        nockIsGCE(),
-        createGetProjectIdNock(),
-        nock(HOST_ADDRESS).get(svcAccountPath).reply(200, {}),
-      ];
-      await auth._checkIsGCE();
-      assert.strictEqual(true, auth.isGCE);
-      await assert.rejects(
-        auth.getCredentials(),
-        /Invalid response from metadata service: incorrect Metadata-Flavor header./
-      );
       scopes.forEach(s => s.done());
     });
 
