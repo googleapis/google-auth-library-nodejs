@@ -30,21 +30,26 @@ const https = require('https');
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
+  // create a new agent with keepAlive enabled
+  const agent = new https.Agent({keepAlive: true});
+
   const auth = new GoogleAuth({
     scopes: 'https://www.googleapis.com/auth/cloud-platform',
+    clientOptions: {
+      transporterOptions: {
+        agent,
+      },
+    },
   });
   const client = await auth.getClient();
   const projectId = await auth.getProjectId();
   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
 
-  // create a new agent with keepAlive enabled
-  const agent = new https.Agent({keepAlive: true});
-
-  // use the agent as an Axios config param to make the request
-  const res = await client.request({url, agent});
+  // the agent uses the provided agent.
+  const res = await client.request({url});
   console.log(res.data);
 
-  // Re-use the same agent to make the next request over the same connection
+  // Can also use another agent per-request.
   const res2 = await client.request({url, agent});
   console.log(res2.data);
 }
