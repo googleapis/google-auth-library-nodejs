@@ -95,6 +95,7 @@ export declare interface AuthClient {
  * @see {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1402} for background.
  */
 export interface AuthClientLike {
+  setCredentials(credentials: Credentials): void;
   request: (opts: {}) => Promise<{}>;
 }
 

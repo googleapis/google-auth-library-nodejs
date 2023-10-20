@@ -118,7 +118,10 @@ describe('googleauth', () => {
       });
 
       it('should accept and normalize `GoogleAuthLike`', () => {
-        const authClientLike = {request: async () => ({})};
+        const authClientLike = {
+          request: async () => ({}),
+          setCredentials: () => {},
+        };
         const googleAuthLike = {getClient: async () => authClientLike};
 
         const auth = GoogleAuth.normalize(googleAuthLike);
@@ -142,7 +145,10 @@ describe('googleauth', () => {
       });
 
       it('should accept and normalize `AuthClientLike`', async () => {
-        const authClientLike = {request: async () => ({})};
+        const authClientLike = {
+          request: async () => ({}),
+          setCredentials: () => {},
+        };
         const auth = GoogleAuth.normalize(authClientLike);
 
         assert.strictEqual(await auth.getClient(), authClientLike);

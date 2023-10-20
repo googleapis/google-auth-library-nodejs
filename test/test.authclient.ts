@@ -35,7 +35,10 @@ describe('static', () => {
     });
 
     it('should accept and normalize `AuthClientLike`', async () => {
-      const authClientLike = {request: async () => ({})};
+      const authClientLike = {
+        request: async () => ({}),
+        setCredentials: () => {},
+      };
       const auth = AuthClient.normalize(authClientLike);
 
       assert.equal(auth, authClientLike);
