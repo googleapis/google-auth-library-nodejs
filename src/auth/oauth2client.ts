@@ -416,13 +416,6 @@ export type RefreshOptions = Pick<
   'eagerRefreshThresholdMillis' | 'forceRefreshOnFailure'
 >;
 
-export interface OAuth2ClientOptions extends RefreshOptions {
-  clientId?: string;
-  clientSecret?: string;
-  redirectUri?: string;
-  credentials?: Credentials;
-}
-
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
   private certificateCache: Certificates = {};
