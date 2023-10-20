@@ -141,7 +141,12 @@ export abstract class AuthClient
    * @see {@link AUTH_CLIENT_SYMBOL}
    */
   static [Symbol.hasInstance](obj: {}): boolean {
-    return AUTH_CLIENT_SYMBOL in obj;
+    if (this === AuthClient) {
+      return AUTH_CLIENT_SYMBOL in obj;
+    } else {
+      // must be an inheritor, use the original method.
+      return Function.prototype[Symbol.hasInstance].call(this, obj);
+    }
   }
 
   /**
