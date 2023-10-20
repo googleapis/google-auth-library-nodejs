@@ -30,7 +30,7 @@ const https = require('https');
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main() {
-  // create a new agent with keepAlive enabled
+  // create a new agent with keepAlive enabled.
   const agent = new https.Agent({keepAlive: true});
 
   const auth = new GoogleAuth({
