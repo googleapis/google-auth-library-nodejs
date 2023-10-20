@@ -20,9 +20,7 @@ import {
   request,
 } from 'gaxios';
 import {validate} from './options';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../package.json');
+import {pkg} from './util';
 
 const PRODUCT_NAME = 'google-api-nodejs-client';
 

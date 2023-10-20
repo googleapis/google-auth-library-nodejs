@@ -53,6 +53,14 @@ import {
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from './externalAccountAuthorizedUserClient';
+import {pkg} from '../util';
+
+/**
+ * Support `instanceof` operator for `GoogleAuth`s in different versions of this library.
+ *
+ * @see {@link GoogleAuth[Symbol.hasInstance]}
+ */
+export const GOOGLE_AUTH_SYMBOL = Symbol.for(`${pkg.name}-googleauth`);
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -139,14 +147,20 @@ const GoogleAuthExceptionMessages = {
  * may exist and thus instances of `GoogleAuth != GoogleAuth` (e.g. v8 vs v9).
  *
  * @see {@link GoogleAuth}.
- * @see {@link GoogleAuth.normalize} for the normalizing this to {@link GoogleAuth}.
- * @see {@link AuthClientLike} for the compatibility version of {@link AuthClient}.
+ * @see {@link GoogleAuth[Symbol.hasInstance]}.
  *
  * @see {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1402} for background.
  *
  * @example
  * ```ts
  * const auth = new GoogleAuth();
+ * ```
+ *
+ * @example
+ * ```ts
+ * const auth: GoogleAuthLike = {};
+ *
+ * assert(auth instanceof GoogleAuth);
  * ```
  */
 export interface GoogleAuthLike {
@@ -196,27 +210,12 @@ export class GoogleAuth<T extends AuthClient = JSONClient>
   static DefaultTransporter = DefaultTransporter;
 
   /**
-   * Different versions of `GoogleAuth` may use this method to ensure
-   * the provided `AuthClient` or `GoogleAuthLike` has the appropriate
-   * capabilities required for its respective version.
+   * Support `instanceof` operator for `GoogleAuth`s in different versions of this library.
    *
-   * @see {@link GoogleAuthLike}'s description and background.
-   * @see {@link AuthClientLike}'s description and background.
-   *
-   * @param auth an {@link AuthClientLike} or {@link GoogleAuthLike} instance to normalize.
-   * @returns a normalized {@link GoogleAuth} instance.
+   * @see {@link GOOGLE_AUTH_SYMBOL}
    */
-  static normalize<T extends AuthClient = AuthClient>(
-    auth: AuthClientLike | T | GoogleAuthLike | GoogleAuth<T>
-  ): GoogleAuth<T> {
-    if (!('getClient' in auth)) {
-      // must be `AuthClient` | `AuthClientLike`
-      const authClient = AuthClient.normalize(auth);
-
-      return new GoogleAuth({authClient});
-    }
-
-    return auth as GoogleAuth<T>;
+  static [Symbol.hasInstance](obj: {}): boolean {
+    return GOOGLE_AUTH_SYMBOL in obj;
   }
 
   /*

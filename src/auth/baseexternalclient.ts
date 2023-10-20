@@ -26,6 +26,7 @@ import {BodyResponseCallback} from '../transporters';
 import {GetAccessTokenResponse, Headers, RefreshOptions} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
+import {pkg} from '../util';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -58,9 +59,6 @@ export const CLOUD_RESOURCE_MANAGER =
 /** The workforce audience pattern. */
 const WORKFORCE_AUDIENCE_PATTERN =
   '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../../package.json');
 
 /**
  * The default cloud universe

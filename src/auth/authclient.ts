@@ -18,6 +18,14 @@ import {GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
 import {Headers} from './oauth2client';
+import {pkg} from '../util';
+
+/**
+ * Support `instanceof` operator for `AuthClient`s in different versions of this library.
+ *
+ * @see {@link AuthClient[Symbol.hasInstance]}
+ */
+export const AUTH_CLIENT_SYMBOL = Symbol.for(`${pkg.name}-authclient`);
 
 /**
  * Defines the root interface for all clients that generate credentials
@@ -90,9 +98,15 @@ export declare interface AuthClient {
  * may exist and thus instances of `AuthClient != AuthClient` (e.g. v8 vs v9).
  *
  * @see {@link AuthClient}.
- * @see {@link AuthClient.normalize} for the normalizing this to {@link AuthClient}.
+ * @see {@link AuthClient[Symbol.hasInstance]}.
  *
  * @see {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1402} for background.
+ *
+ * @example
+ * ```ts
+ * const auth: AuthClientLike = {};
+ *
+ * assert(auth instanceof AuthClient);
  */
 export interface AuthClientLike {
   setCredentials(credentials: Credentials): void;
@@ -103,6 +117,13 @@ export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient, AuthClientLike
 {
+  /**
+   * Support `instanceof` operator for `AuthClient`s in different versions of this library.
+   *
+   * @see {@link AuthClient[Symbol.hasInstance]}
+   */
+  [AUTH_CLIENT_SYMBOL] = pkg.version;
+
   /**
    * The quota project ID. The quota project can be used by client libraries for the billing purpose.
    * See {@link https://cloud.google.com/docs/quota Working with quotas}
@@ -115,19 +136,12 @@ export abstract class AuthClient
   forceRefreshOnFailure = false;
 
   /**
-   * Different versions of `AuthClient` may use this method to ensure
-   * the provided `AuthClientLike` has the appropriate capabilities
-   * required for its respective version.
+   * Support `instanceof` operator for `AuthClient`s in different versions of this library.
    *
-   * @see {@link AuthClientLike}'s description and background.
-   *
-   * @param authClient an {@link AuthClientLike} instance to normalize.
-   * @returns a normalized {@link AuthClient} instance.
+   * @see {@link AUTH_CLIENT_SYMBOL}
    */
-  static normalize<T extends AuthClient = AuthClient>(
-    authClient: AuthClientLike | T
-  ): T {
-    return authClient as T;
+  static [Symbol.hasInstance](obj: {}): boolean {
+    return AUTH_CLIENT_SYMBOL in obj;
   }
 
   /**

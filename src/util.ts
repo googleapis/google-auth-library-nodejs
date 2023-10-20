@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export const pkg: {
+  name: string;
+  version: string;
+} = require('../../package.json');
+
 export interface LRUCacheOptions {
   /**
    * The maximum number of items to cache.

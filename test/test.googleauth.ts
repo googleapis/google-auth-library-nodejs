@@ -55,7 +55,7 @@ import {
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient} from '../src/auth/authclient';
 import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
-import {GaxiosPromise} from 'gaxios';
+import {GOOGLE_AUTH_SYMBOL} from '../src/auth/googleauth';
 
 nock.disableNetConnect();
 
@@ -109,49 +109,11 @@ describe('googleauth', () => {
   }
 
   describe('static', () => {
-    describe('normalize', () => {
-      it('should accept and normalize `GoogleAuth`', () => {
-        const googleAuth = new GoogleAuth();
+    describe('`instanceof`', () => {
+      it('should accept objects with `GOOGLE_AUTH_SYMBOL` as `GoogleAuth`', () => {
+        const myObj = {[GOOGLE_AUTH_SYMBOL]: 'v0.0.0'};
 
-        const auth = GoogleAuth.normalize(googleAuth);
-        assert.strictEqual(auth, googleAuth);
-      });
-
-      it('should accept and normalize `GoogleAuthLike`', () => {
-        const authClientLike = {
-          request: async () => ({}),
-          setCredentials: () => {},
-        };
-        const googleAuthLike = {getClient: async () => authClientLike};
-
-        const auth = GoogleAuth.normalize(googleAuthLike);
-        assert.strictEqual(auth, googleAuthLike);
-      });
-
-      it('should accept and normalize `AuthClient`', async () => {
-        class MyAuthClient extends AuthClient {
-          getRequestHeaders = async () => ({});
-          getAccessToken = async () => ({});
-
-          request<T>(): GaxiosPromise<T> {
-            return {} as GaxiosPromise<T>;
-          }
-        }
-
-        const authClient = new MyAuthClient();
-        const auth = GoogleAuth.normalize(authClient);
-
-        assert.strictEqual(await auth.getClient(), authClient);
-      });
-
-      it('should accept and normalize `AuthClientLike`', async () => {
-        const authClientLike = {
-          request: async () => ({}),
-          setCredentials: () => {},
-        };
-        const auth = GoogleAuth.normalize(authClientLike);
-
-        assert.strictEqual(await auth.getClient(), authClientLike);
+        assert(myObj instanceof GoogleAuth);
       });
     });
   });

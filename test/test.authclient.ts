@@ -14,34 +14,14 @@
 
 import {strict as assert} from 'assert';
 import {AuthClient} from '../src';
-import {GaxiosPromise} from 'gaxios';
+import {AUTH_CLIENT_SYMBOL} from '../src/auth/authclient';
 
 describe('static', () => {
-  describe('normalize', () => {
-    it('should accept and normalize `AuthClient`', async () => {
-      class MyAuthClient extends AuthClient {
-        getRequestHeaders = async () => ({});
-        getAccessToken = async () => ({});
+  describe('`instanceof`', () => {
+    it('should accept objects with `AUTH_CLIENT_SYMBOL` as `AuthClient`', () => {
+      const myObj = {[AUTH_CLIENT_SYMBOL]: 'v0.0.0'};
 
-        request<T>(): GaxiosPromise<T> {
-          return {} as GaxiosPromise<T>;
-        }
-      }
-
-      const authClient = new MyAuthClient();
-      const auth = AuthClient.normalize(authClient);
-
-      assert.equal(auth, authClient);
-    });
-
-    it('should accept and normalize `AuthClientLike`', async () => {
-      const authClientLike = {
-        request: async () => ({}),
-        setCredentials: () => {},
-      };
-      const auth = AuthClient.normalize(authClientLike);
-
-      assert.equal(auth, authClientLike);
+      assert(myObj instanceof AuthClient);
     });
   });
 });
