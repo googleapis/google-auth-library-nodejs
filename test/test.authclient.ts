@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {strict as assert} from 'assert';
-import {AuthClient} from '../src';
+import {AuthClient, OAuth2Client} from '../src';
 import {AUTH_CLIENT_SYMBOL} from '../src/auth/authclient';
 
 describe('static', () => {
@@ -22,6 +22,7 @@ describe('static', () => {
       const myObj = {[AUTH_CLIENT_SYMBOL]: 'v0.0.0'};
 
       assert(myObj instanceof AuthClient);
+      assert(new OAuth2Client() instanceof AuthClient);
     });
   });
 });
