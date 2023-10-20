@@ -189,9 +189,10 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
    * An error is thrown if the credential is not a valid pluggable auth credential.
    * @param options The external account options object typically loaded from
    *   the external account JSON credential file.
-   * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   * @param additionalOptions **DEPRECATED, all options are available in the
+   *   `options` parameter.** Optional additional behavior customization options.
+   *   These currently customize expiration threshold time and whether to retry
+   *   on 401/403 API request errors.
    */
   constructor(
     options: PluggableAuthClientOptions,

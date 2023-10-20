@@ -161,9 +161,10 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * An error is throws if the credential is not valid.
    * @param options The external account authorized user option object typically
    *   from the external accoutn authorized user JSON credential file.
-   * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   * @param additionalOptions **DEPRECATED, all options are available in the
+   *   `options` parameter.** Optional additional behavior customization options.
+   *   These currently customize expiration threshold time and whether to retry
+   *   on 401/403 API request errors.
    */
   constructor(
     options: ExternalAccountAuthorizedUserClientOptions,

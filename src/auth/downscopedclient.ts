@@ -123,10 +123,10 @@ export class DownscopedClient extends AuthClient {
    *   on the resource that the rule applies to, the upper bound of the
    *   permissions that are available on that resource and an optional
    *   condition to further restrict permissions.
-   * @param additionalOptions Optional additional behavior customization
-   *   options.
-   * @param quotaProjectId Optional quota project id for setting up in the
-   *   x-goog-user-project header.
+   * @param additionalOptions **DEPRECATED, set this in the provided `authClient`.**
+   *   Optional additional behavior customization options.
+   * @param quotaProjectId **DEPRECATED, set this in the provided `authClient`.**
+   *   Optional quota project id for setting up in the x-goog-user-project header.
    */
   constructor(
     private readonly authClient: AuthClient,
