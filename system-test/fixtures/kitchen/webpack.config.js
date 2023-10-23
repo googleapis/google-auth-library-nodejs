@@ -1,6 +1,11 @@
 const path = require('path');
 
 module.exports = {
+  performance: {
+    hints: false,
+    maxEntrypointSize: 524288,
+    maxAssetSize: 524288,
+  },
   entry: './src/index.ts',
   resolve: {
     extensions: ['.ts', '.js', '.json'],
