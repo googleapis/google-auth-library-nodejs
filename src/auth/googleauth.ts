@@ -143,8 +143,11 @@ const GoogleAuthExceptionMessages = {
 
 /**
  * A capabilities-based, backwards-compatible interface for {@link GoogleAuth}.
- * This is useful for projects where multiple versions of `google-auth-library`
- * may exist and thus instances of `GoogleAuth != GoogleAuth` (e.g. v8 vs v9).
+ * Library maintainers should use this interface when library maintainers want
+ * an `GoogleAuth` from a non-specific `google-auth-library` version.
+ * This greatly improves user experience where customers have multiple versions
+ * of `google-auth-library` thus instances of `GoogleAuth != GoogleAuth` (e.g.
+ * v8 vs v9).
  *
  * @see {@link GoogleAuth}.
  * @see {@link GoogleAuth[Symbol.hasInstance]}.
@@ -158,8 +161,9 @@ const GoogleAuthExceptionMessages = {
  *
  * @example
  * ```ts
- * const auth: GoogleAuthLike = {};
+ * const auth: GoogleAuth | GoogleAuthLike = {};
  *
+ * // Assert `auth` a valid `GoogleAuth`
  * assert(auth instanceof GoogleAuth);
  * ```
  */

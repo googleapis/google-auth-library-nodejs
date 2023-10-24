@@ -94,8 +94,11 @@ export declare interface AuthClient {
 
 /**
  * A capabilities-based, backwards-compatible interface for {@link AuthClient}.
- * This is useful for projects where multiple versions of `google-auth-library`
- * may exist and thus instances of `AuthClient != AuthClient` (e.g. v8 vs v9).
+ * Library maintainers should use this interface when library maintainers want
+ * an `AuthClient` from a non-specific `google-auth-library` version.
+ * This greatly improves user experience where customers have multiple versions
+ * of `google-auth-library` thus instances of `AuthClient != AuthClient` (e.g.
+ * v8 vs v9).
  *
  * @see {@link AuthClient}.
  * @see {@link AuthClient[Symbol.hasInstance]}.
@@ -104,9 +107,11 @@ export declare interface AuthClient {
  *
  * @example
  * ```ts
- * const auth: AuthClientLike = {};
+ * const authClient: AuthClient | AuthClientLike = {};
  *
- * assert(auth instanceof AuthClient);
+ * // Assert `authClient` a valid `AuthClient`
+ * assert(authClient instanceof AuthClient);
+ * ```
  */
 export interface AuthClientLike {
   setCredentials(credentials: Credentials): void;
