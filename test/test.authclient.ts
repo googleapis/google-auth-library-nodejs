@@ -19,7 +19,7 @@ import {AUTH_CLIENT_SYMBOL} from '../src/auth/authclient';
 describe('static', () => {
   describe('`instanceof`', () => {
     it('should accept objects with `AUTH_CLIENT_SYMBOL` as `AuthClient`', () => {
-      const myObj = {[AUTH_CLIENT_SYMBOL]: 'v0.0.0'};
+      const myObj = {[AUTH_CLIENT_SYMBOL]: '0.0.0'};
 
       assert(myObj instanceof AuthClient);
       assert(new OAuth2Client() instanceof AuthClient);

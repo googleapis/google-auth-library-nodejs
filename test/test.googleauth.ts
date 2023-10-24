@@ -111,7 +111,7 @@ describe('googleauth', () => {
   describe('static', () => {
     describe('`instanceof`', () => {
       it('should accept objects with `GOOGLE_AUTH_SYMBOL` as `GoogleAuth`', () => {
-        const myObj = {[GOOGLE_AUTH_SYMBOL]: 'v0.0.0'};
+        const myObj = {[GOOGLE_AUTH_SYMBOL]: '0.0.0'};
 
         assert(myObj instanceof GoogleAuth);
       });
