@@ -147,7 +147,7 @@ export abstract class AuthClient
    */
   static [Symbol.hasInstance](obj: {}): boolean {
     if (this === AuthClient) {
-      return AUTH_CLIENT_SYMBOL in obj;
+      return obj && AUTH_CLIENT_SYMBOL in obj;
     } else {
       // must be a child of this class, use the original method.
       return Function.prototype[Symbol.hasInstance].call(this, obj);

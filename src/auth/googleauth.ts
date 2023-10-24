@@ -219,7 +219,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient>
    * @see {@link GOOGLE_AUTH_SYMBOL}
    */
   static [Symbol.hasInstance](obj: {}): boolean {
-    return GOOGLE_AUTH_SYMBOL in obj;
+    return obj && GOOGLE_AUTH_SYMBOL in obj;
   }
 
   /*
