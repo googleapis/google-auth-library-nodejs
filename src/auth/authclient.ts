@@ -144,7 +144,7 @@ export abstract class AuthClient
     if (this === AuthClient) {
       return AUTH_CLIENT_SYMBOL in obj;
     } else {
-      // must be an inheritor, use the original method.
+      // must be a child of this class, use the original method.
       return Function.prototype[Symbol.hasInstance].call(this, obj);
     }
   }
