@@ -36,43 +36,72 @@ export interface AuthJSONOptions {
   quota_project_id: string;
 
   /**
-   * The default service domain for a given Cloud universe
+   * The default service domain for a given Cloud universe.
    */
   universe_domain: string;
 }
 
 /**
- * Base Auth Client configuration
+ * An interface of `AuthJSONOptions` with conventional camelCased options.
+ *
+ * @privateRemarks
+ *
+ * This interface is purposely not exported so that it can be removed once
+ * {@link https://github.com/microsoft/TypeScript/issues/50715} has been
+ * resolved.
  */
-export type AuthClientOptions = Partial<
-  OriginalAndCamel<AuthJSONOptions> & {
-    credentials: Credentials;
+interface AuthJSONOptionsWithCamelCase
+  extends OriginalAndCamel<AuthJSONOptions> {
+  /**
+   * An alias for {@link AuthJSONOptions.project_id `project_id`}.
+   */
+  projectId: AuthJSONOptions['project_id'];
 
-    /**
-     * A `Gaxios` or `Transporter` instance to use for `AuthClient` requests.
-     */
-    transporter: Gaxios | Transporter;
+  /**
+   * An alias for {@link AuthJSONOptions.quota_project_id `quota_project_id`}.
+   */
+  quotaProjectId: AuthJSONOptions['quota_project_id'];
 
-    /**
-     * Provides default options to the transporter, such as {@link GaxiosOptions.agent `agent`} or
-     *  {@link GaxiosOptions.retryConfig `retryConfig`}.
-     */
-    transporterOptions: GaxiosOptions;
+  /**
+   * An alias for {@link AuthJSONOptions.universe_domain `universe_domain`}.
+   */
+  universeDomain: AuthJSONOptions['universe_domain'];
+}
 
-    /**
-     * The expiration threshold in milliseconds before forcing token refresh of
-     * unexpired tokens.
-     */
-    eagerRefreshThresholdMillis: number;
+/**
+ * Base `AuthClient` configuration.
+ *
+ * The camelCased options are aliases of the snake_cased options, supporting both
+ * JSON API and JS conventions.
+ */
+export interface AuthClientOptions
+  extends Partial<AuthJSONOptionsWithCamelCase> {
+  credentials?: Credentials;
 
-    /**
-     * Whether to attempt to refresh tokens on status 401/403 responses
-     * even if an attempt is made to refresh the token preemptively based
-     * on the expiry_date.
-     */
-    forceRefreshOnFailure: boolean;
-  }
->;
+  /**
+   * A `Gaxios` or `Transporter` instance to use for `AuthClient` requests.
+   */
+  transporter?: Gaxios | Transporter;
+
+  /**
+   * Provides default options to the transporter, such as {@link GaxiosOptions.agent `agent`} or
+   *  {@link GaxiosOptions.retryConfig `retryConfig`}.
+   */
+  transporterOptions?: GaxiosOptions;
+
+  /**
+   * The expiration threshold in milliseconds before forcing token refresh of
+   * unexpired tokens.
+   */
+  eagerRefreshThresholdMillis?: number;
+
+  /**
+   * Whether to attempt to refresh tokens on status 401/403 responses
+   * even if an attempt is made to refresh the token preemptively based
+   * on the expiry_date.
+   */
+  forceRefreshOnFailure?: boolean;
+}
 
 /**
  * The default cloud universe
