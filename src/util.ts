@@ -24,40 +24,6 @@ export type SnakeToCamel<S> = S extends `${infer FirstWord}_${infer Remainder}`
   : S;
 
 /**
- * A utility for converting an type's keys from snake_case
- * to camelCase, if the keys are strings.
- *
- * For example:
- *
- * ```ts
- * {
- *   my_snake_string: boolean;
- *   myCamelString: string;
- * }
- * ```
- *
- * becomes:
- *
- * ```ts
- * {
- *   mySnakeString: boolean;
- *   myCamelString: string;
- * }
- * ```
- *
- * @remarks
- *
- * The generated documentation for the camelCase'd properties won't be available
- * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
- * resolved.
- *
- * @internal
- */
-export type SnakeToCamelObject<T> = {
-  [K in keyof T as SnakeToCamel<K>]: T[K];
-};
-
-/**
  * A utility for adding camelCase versions of a type's snake_case keys, if the
  * keys are strings, preserving any existing keys.
  *
@@ -65,8 +31,11 @@ export type SnakeToCamelObject<T> = {
  *
  * ```ts
  * {
- *   my_snake_string: boolean;
+ *   my_snake_boolean: boolean;
  *   myCamelString: string;
+ *   my_snake_obj: {
+ *     my_snake_obj_string: string;
+ *   };
  * }
  * ```
  *
@@ -74,9 +43,15 @@ export type SnakeToCamelObject<T> = {
  *
  * ```ts
  * {
- *   my_snake_string: boolean;
- *   mySnakeString: boolean;
+ *   my_snake_boolean: boolean;
+ *   mySnakeBoolean: boolean;
  *   myCamelString: string;
+ *   my_snake_obj: {
+ *     my_snake_obj_string: string;
+ *   };
+ *   mySnakeObj: {
+ *     mySnakeObjString: string;
+ *   }
  * }
  * ```
  * @remarks
@@ -85,9 +60,15 @@ export type SnakeToCamelObject<T> = {
  * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
  * resolved.
  *
+ * Tracking: {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1686}
+ *
  * @internal
  */
-export type OriginalAndCamel<T> = T & SnakeToCamelObject<T>;
+export type OriginalAndCamel<T> = {
+  [K in keyof T as K | SnakeToCamel<K>]: T[K] extends {}
+    ? OriginalAndCamel<T[K]>
+    : T[K];
+};
 
 /**
  * Returns the camel case of a provided string.
