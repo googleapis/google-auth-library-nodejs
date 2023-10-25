@@ -49,6 +49,8 @@ export interface AuthJSONOptions {
  * This interface is purposely not exported so that it can be removed once
  * {@link https://github.com/microsoft/TypeScript/issues/50715} has been
  * resolved.
+ *
+ * Tracking: {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1686}
  */
 interface AuthJSONOptionsWithCamelCase
   extends OriginalAndCamel<AuthJSONOptions> {
