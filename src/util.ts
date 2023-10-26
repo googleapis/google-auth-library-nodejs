@@ -90,21 +90,24 @@ export function snakeToCamel<T extends string>(str: T): SnakeToCamel<T> {
 }
 
 /**
- * Returns the value of `obj[key]` or `obj[camelCaseKey]`, with a preference
+ * Get the value of `obj[key]` or `obj[camelCaseKey]`, with a preference
  * for original, non-camelCase key.
  *
- * @internal
- *
  * @param obj object to lookup a value in
- * @param key an index of object, preferably snake_case
- * @returns the value `obj[key || snakeKey]`, if available
+ * @returns a `get` function for getting `obj[key || snakeKey]`, if available
  */
-export function getOriginalOrCamel<
-  T extends {},
-  K extends keyof OriginalAndCamel<T> & string,
->(obj: T, key: K): OriginalAndCamel<T>[K] {
-  const o = obj as OriginalAndCamel<T>;
-  return o[key] ?? o[snakeToCamel(key) as K];
+export function originalOrCamelOptions<T extends {}>(obj: T) {
+  /**
+   *
+   * @param key an index of object, preferably snake_case
+   * @returns the value `obj[key || snakeKey]`, if available
+   */
+  function get<K extends keyof OriginalAndCamel<T> & string>(key: K) {
+    const o = obj as OriginalAndCamel<T>;
+    return o[key] ?? o[snakeToCamel(key) as K];
+  }
+
+  return {get};
 }
 
 export interface LRUCacheOptions {

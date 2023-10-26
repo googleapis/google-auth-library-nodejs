@@ -18,7 +18,7 @@ import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
 import {Headers} from './oauth2client';
-import {OriginalAndCamel, getOriginalOrCamel} from '../util';
+import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 
 /**
  * Base auth configurations (e.g. from JWT or `.json` files)
@@ -194,12 +194,13 @@ export abstract class AuthClient
   constructor(opts: AuthClientOptions = {}) {
     super();
 
+    const options = originalOrCamelOptions(opts);
+
     // Shared auth options
-    this.projectId = getOriginalOrCamel(opts, 'project_id') ?? null;
-    this.quotaProjectId = getOriginalOrCamel(opts, 'quota_project_id');
-    this.credentials = getOriginalOrCamel(opts, 'credentials') ?? {};
-    this.universeDomain =
-      getOriginalOrCamel(opts, 'universe_domain') ?? DEFAULT_UNIVERSE;
+    this.projectId = options.get('project_id') ?? null;
+    this.quotaProjectId = options.get('quota_project_id');
+    this.credentials = options.get('credentials') ?? {};
+    this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
 
     // Shared client options
     this.transporter = opts.transporter ?? new DefaultTransporter();
