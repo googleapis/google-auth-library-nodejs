@@ -4,6 +4,21 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.2.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.1.0...v9.2.0) (2023-10-26)
+
+
+### Features
+
+* Unify Base `AuthClient` Options ([#1663](https://github.com/googleapis/google-auth-library-nodejs/issues/1663)) ([5ac6705](https://github.com/googleapis/google-auth-library-nodejs/commit/5ac67052f6c19e93c3e8c4e1636fad4737fcee08))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v12 ([#1671](https://github.com/googleapis/google-auth-library-nodejs/issues/1671)) ([4f94ffe](https://github.com/googleapis/google-auth-library-nodejs/commit/4f94ffe474ee41b560813b81e8d621be848d38d0))
+* DOS security risks ([#1668](https://github.com/googleapis/google-auth-library-nodejs/issues/1668)) ([b25d4f5](https://github.com/googleapis/google-auth-library-nodejs/commit/b25d4f54f88c52c8496ef65f5ab2a75122100f2c))
+* Increase max asset size ([#1682](https://github.com/googleapis/google-auth-library-nodejs/issues/1682)) ([edb9401](https://github.com/googleapis/google-auth-library-nodejs/commit/edb94018cadd2ad796ccec5496e3bfcbade39c7f))
+* Remove broken source maps ([#1669](https://github.com/googleapis/google-auth-library-nodejs/issues/1669)) ([56cb3ad](https://github.com/googleapis/google-auth-library-nodejs/commit/56cb3ad24c5e4b6952169b88d0a43e89cbf1252e))
+
 ## [9.1.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.0.0...v9.1.0) (2023-10-02)
 
 
