@@ -17,7 +17,7 @@
     "google-auth-library": "file:./google-auth-library.tgz"
   },
   "devDependencies": {
-    "@types/node": "^16.11.3",
+    "@types/node": "^20.0.0",
     "typescript": "^5.0.0",
     "gts": "^5.0.0",
     "null-loader": "^4.0.0",
