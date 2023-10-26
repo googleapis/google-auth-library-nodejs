@@ -24,6 +24,48 @@ export type SnakeToCamel<S> = S extends `${infer FirstWord}_${infer Remainder}`
   : S;
 
 /**
+ * A utility for converting an type's keys from snake_case
+ * to camelCase, if the keys are strings.
+ *
+ * For example:
+ *
+ * ```ts
+ * {
+ *   my_snake_string: boolean;
+ *   myCamelString: string;
+ *   my_snake_obj: {
+ *     my_snake_obj_string: string;
+ *   };
+ * }
+ * ```
+ *
+ * becomes:
+ *
+ * ```ts
+ * {
+ *   mySnakeString: boolean;
+ *   myCamelString: string;
+ *   mySnakeObj: {
+ *     mySnakeObjString: string;
+ *   }
+ * }
+ * ```
+ *
+ * @remarks
+ *
+ * The generated documentation for the camelCase'd properties won't be available
+ * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
+ * resolved.
+ *
+ * @internal
+ */
+export type SnakeToCamelObject<T> = {
+  [K in keyof T as SnakeToCamel<K>]: T[K] extends {}
+    ? SnakeToCamelObject<T[K]>
+    : T[K];
+};
+
+/**
  * A utility for adding camelCase versions of a type's snake_case keys, if the
  * keys are strings, preserving any existing keys.
  *
