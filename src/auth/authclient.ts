@@ -21,13 +21,26 @@ import {Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 
 /**
- * Base auth configurations (e.g. from JWT or `.json` files)
+ * Base auth configurations (e.g. from JWT or `.json` files) with conventional
+ * camelCased options.
+ *
+ * @privateRemarks
+ *
+ * This interface is purposely not exported so that it can be removed once
+ * {@link https://github.com/microsoft/TypeScript/issues/50715} has been
+ * resolved. Then, we can use {@link OriginalAndCamel} to shrink this interface.
+ *
+ * Tracking: {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1686}
  */
-export interface AuthJSONOptions {
+interface AuthJSONOptions {
   /**
    * The project ID corresponding to the current credentials if available.
    */
   project_id: string | null;
+  /**
+   * An alias for {@link AuthJSONOptions.project_id `project_id`}.
+   */
+  projectId: AuthJSONOptions['project_id'];
 
   /**
    * The quota project ID. The quota project can be used by client libraries for the billing purpose.
@@ -36,33 +49,14 @@ export interface AuthJSONOptions {
   quota_project_id: string;
 
   /**
-   * The default service domain for a given Cloud universe.
-   */
-  universe_domain: string;
-}
-
-/**
- * An interface of `AuthJSONOptions` with conventional camelCased options.
- *
- * @privateRemarks
- *
- * This interface is purposely not exported so that it can be removed once
- * {@link https://github.com/microsoft/TypeScript/issues/50715} has been
- * resolved.
- *
- * Tracking: {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1686}
- */
-interface AuthJSONOptionsWithCamelCase
-  extends OriginalAndCamel<AuthJSONOptions> {
-  /**
-   * An alias for {@link AuthJSONOptions.project_id `project_id`}.
-   */
-  projectId: AuthJSONOptions['project_id'];
-
-  /**
    * An alias for {@link AuthJSONOptions.quota_project_id `quota_project_id`}.
    */
   quotaProjectId: AuthJSONOptions['quota_project_id'];
+
+  /**
+   * The default service domain for a given Cloud universe.
+   */
+  universe_domain: string;
 
   /**
    * An alias for {@link AuthJSONOptions.universe_domain `universe_domain`}.
@@ -77,7 +71,7 @@ interface AuthJSONOptionsWithCamelCase
  * JSON API and JS conventions.
  */
 export interface AuthClientOptions
-  extends Partial<AuthJSONOptionsWithCamelCase> {
+  extends Partial<OriginalAndCamel<AuthJSONOptions>> {
   credentials?: Credentials;
 
   /**
