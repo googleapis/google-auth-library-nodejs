@@ -20,7 +20,8 @@ import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
-import {RefreshOptions} from './oauth2client';
+import {AuthClientOptions} from './authclient';
+import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 
 // fs.readfile is undefined in browser karma tests causing
 // `npm run browser-test` to fail as test.oauth2.ts imports this file via
@@ -73,19 +74,28 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * url-sourced credential or a workforce pool user project is provided
    * with a non workforce audience.
    * @param options The external account options object typically loaded
-   *   from the external account JSON credential file.
-   * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   *   from the external account JSON credential file. The camelCased options
+   *   are aliases for the snake_cased options.
+   * @param additionalOptions **DEPRECATED, all options are available in the
+   *   `options` parameter.** Optional additional behavior customization options.
+   *   These currently customize expiration threshold time and whether to retry
+   *   on 401/403 API request errors.
    */
   constructor(
-    options: IdentityPoolClientOptions,
-    additionalOptions?: RefreshOptions
+    options:
+      | IdentityPoolClientOptions
+      | SnakeToCamelObject<IdentityPoolClientOptions>,
+    additionalOptions?: AuthClientOptions
   ) {
     super(options, additionalOptions);
-    this.file = options.credential_source.file;
-    this.url = options.credential_source.url;
-    this.headers = options.credential_source.headers;
+
+    const opts = originalOrCamelOptions(options as IdentityPoolClientOptions);
+    const credentialSource = opts.get('credential_source');
+    const credentialSourceOpts = originalOrCamelOptions(credentialSource);
+
+    this.file = credentialSourceOpts.get('file');
+    this.url = credentialSourceOpts.get('url');
+    this.headers = credentialSourceOpts.get('headers');
     if (this.file && this.url) {
       throw new Error(
         'No valid Identity Pool "credential_source" provided, must be either file or url.'
@@ -99,10 +109,17 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         'No valid Identity Pool "credential_source" provided, must be either file or url.'
       );
     }
+
+    const formatOpts = originalOrCamelOptions(
+      credentialSourceOpts.get('format')
+    );
+
     // Text is the default format type.
-    this.formatType = options.credential_source.format?.type || 'text';
-    this.formatSubjectTokenFieldName =
-      options.credential_source.format?.subject_token_field_name;
+    this.formatType = formatOpts.get('type') || 'text';
+    this.formatSubjectTokenFieldName = formatOpts.get(
+      'subject_token_field_name'
+    );
+
     if (this.formatType !== 'json' && this.formatType !== 'text') {
       throw new Error(`Invalid credential_source format "${this.formatType}"`);
     }

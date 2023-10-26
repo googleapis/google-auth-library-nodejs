@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient} from './authclient';
-import {Headers, RefreshOptions} from './oauth2client';
+import {AuthClient, AuthClientOptions} from './authclient';
+import {Headers} from './oauth2client';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
@@ -30,7 +30,6 @@ import {
 import {Credentials} from './credentials';
 import * as stream from 'stream';
 import {
-  DEFAULT_UNIVERSE,
   EXPIRATION_TIME_OFFSET,
   SharedExternalAccountClientOptions,
 } from './baseexternalclient';
@@ -155,7 +154,6 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
   private cachedAccessToken: CredentialsWithResponse | null;
   private readonly externalAccountAuthorizedUserHandler: ExternalAccountAuthorizedUserHandler;
   private refreshToken: string;
-  public universeDomain = DEFAULT_UNIVERSE;
 
   /**
    * Instantiates an ExternalAccountAuthorizedUserClient instances using the
@@ -163,15 +161,16 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * An error is throws if the credential is not valid.
    * @param options The external account authorized user option object typically
    *   from the external accoutn authorized user JSON credential file.
-   * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   * @param additionalOptions **DEPRECATED, all options are available in the
+   *   `options` parameter.** Optional additional behavior customization options.
+   *   These currently customize expiration threshold time and whether to retry
+   *   on 401/403 API request errors.
    */
   constructor(
     options: ExternalAccountAuthorizedUserClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: AuthClientOptions
   ) {
-    super();
+    super({...options, ...additionalOptions});
     this.refreshToken = options.refresh_token;
     const clientAuth = {
       confidentialClientType: 'basic',

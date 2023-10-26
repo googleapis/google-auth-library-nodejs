@@ -16,12 +16,12 @@ import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
-import {RefreshOptions} from './oauth2client';
 import {
   ExecutableResponse,
   InvalidExpirationTimeFieldError,
 } from './executable-response';
 import {PluggableAuthHandler} from './pluggable-auth-handler';
+import {AuthClientOptions} from './authclient';
 
 /**
  * Defines the credential source portion of the configuration for PluggableAuthClient.
@@ -189,13 +189,14 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
    * An error is thrown if the credential is not a valid pluggable auth credential.
    * @param options The external account options object typically loaded from
    *   the external account JSON credential file.
-   * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   * @param additionalOptions **DEPRECATED, all options are available in the
+   *   `options` parameter.** Optional additional behavior customization options.
+   *   These currently customize expiration threshold time and whether to retry
+   *   on 401/403 API request errors.
    */
   constructor(
     options: PluggableAuthClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: AuthClientOptions
   ) {
     super(options, additionalOptions);
     if (!options.credential_source.executable) {

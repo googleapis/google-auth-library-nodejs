@@ -13,10 +13,21 @@
 // limitations under the License.
 
 import {strict as assert} from 'assert';
+import * as sinon from 'sinon';
 
 import {LRUCache} from '../src/util';
 
 describe('util', () => {
+  let sandbox: sinon.SinonSandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('LRUCache', () => {
     it('should set and get a cached item', () => {
       const expected = 'value';
@@ -50,18 +61,23 @@ describe('util', () => {
     it('should evict items older than a supplied `maxAge`', async () => {
       const maxAge = 50;
 
+      sandbox.clock = sinon.useFakeTimers();
+
       const lru = new LRUCache({capacity: 5, maxAge});
 
       lru.set('first', 1);
       lru.set('second', 2);
 
-      await new Promise(res => setTimeout(res, maxAge + 1));
+      // back to the future 🏎️
+      sandbox.clock.tick(maxAge + 1);
 
+      // just set, so should be fine
       lru.set('third', 3);
+      assert.equal(lru.get('third'), 3);
 
+      // these are too old
       assert.equal(lru.get('first'), undefined);
       assert.equal(lru.get('second'), undefined);
-      assert.equal(lru.get('third'), 3);
     });
   });
 });

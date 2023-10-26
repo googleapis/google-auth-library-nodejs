@@ -12,6 +12,146 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * A utility for converting snake_case to camelCase.
+ *
+ * For, for example `my_snake_string` becomes `mySnakeString`.
+ *
+ * @internal
+ */
+export type SnakeToCamel<S> = S extends `${infer FirstWord}_${infer Remainder}`
+  ? `${FirstWord}${Capitalize<SnakeToCamel<Remainder>>}`
+  : S;
+
+/**
+ * A utility for converting an type's keys from snake_case
+ * to camelCase, if the keys are strings.
+ *
+ * For example:
+ *
+ * ```ts
+ * {
+ *   my_snake_string: boolean;
+ *   myCamelString: string;
+ *   my_snake_obj: {
+ *     my_snake_obj_string: string;
+ *   };
+ * }
+ * ```
+ *
+ * becomes:
+ *
+ * ```ts
+ * {
+ *   mySnakeString: boolean;
+ *   myCamelString: string;
+ *   mySnakeObj: {
+ *     mySnakeObjString: string;
+ *   }
+ * }
+ * ```
+ *
+ * @remarks
+ *
+ * The generated documentation for the camelCase'd properties won't be available
+ * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
+ * resolved.
+ *
+ * @internal
+ */
+export type SnakeToCamelObject<T> = {
+  [K in keyof T as SnakeToCamel<K>]: T[K] extends {}
+    ? SnakeToCamelObject<T[K]>
+    : T[K];
+};
+
+/**
+ * A utility for adding camelCase versions of a type's snake_case keys, if the
+ * keys are strings, preserving any existing keys.
+ *
+ * For example:
+ *
+ * ```ts
+ * {
+ *   my_snake_boolean: boolean;
+ *   myCamelString: string;
+ *   my_snake_obj: {
+ *     my_snake_obj_string: string;
+ *   };
+ * }
+ * ```
+ *
+ * becomes:
+ *
+ * ```ts
+ * {
+ *   my_snake_boolean: boolean;
+ *   mySnakeBoolean: boolean;
+ *   myCamelString: string;
+ *   my_snake_obj: {
+ *     my_snake_obj_string: string;
+ *   };
+ *   mySnakeObj: {
+ *     mySnakeObjString: string;
+ *   }
+ * }
+ * ```
+ * @remarks
+ *
+ * The generated documentation for the camelCase'd properties won't be available
+ * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
+ * resolved.
+ *
+ * Tracking: {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1686}
+ *
+ * @internal
+ */
+export type OriginalAndCamel<T> = {
+  [K in keyof T as K | SnakeToCamel<K>]: T[K] extends {}
+    ? OriginalAndCamel<T[K]>
+    : T[K];
+};
+
+/**
+ * Returns the camel case of a provided string.
+ *
+ * @remarks
+ *
+ * Match any `_` and not `_` pair, then return the uppercase of the not `_`
+ * character.
+ *
+ * @internal
+ *
+ * @param str the string to convert
+ * @returns the camelCase'd string
+ */
+export function snakeToCamel<T extends string>(str: T): SnakeToCamel<T> {
+  return str.replace(/([_][^_])/g, match =>
+    match.slice(1).toUpperCase()
+  ) as SnakeToCamel<T>;
+}
+
+/**
+ * Get the value of `obj[key]` or `obj[camelCaseKey]`, with a preference
+ * for original, non-camelCase key.
+ *
+ * @param obj object to lookup a value in
+ * @returns a `get` function for getting `obj[key || snakeKey]`, if available
+ */
+export function originalOrCamelOptions<T extends {}>(obj?: T) {
+  /**
+   *
+   * @param key an index of object, preferably snake_case
+   * @returns the value `obj[key || snakeKey]`, if available
+   */
+  function get<K extends keyof OriginalAndCamel<T> & string>(key: K) {
+    const o = (obj || {}) as OriginalAndCamel<T>;
+    return o[key] ?? o[snakeToCamel(key) as K];
+  }
+
+  return {get};
+}
+
 export interface LRUCacheOptions {
   /**
    * The maximum number of items to cache.

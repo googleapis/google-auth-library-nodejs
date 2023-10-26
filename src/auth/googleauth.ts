@@ -28,7 +28,7 @@ import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {Headers, OAuth2ClientOptions, RefreshOptions} from './oauth2client';
+import {Headers, OAuth2ClientOptions} from './oauth2client';
 import {
   UserRefreshClient,
   UserRefreshClientOptions,
@@ -47,7 +47,7 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {AuthClient} from './authclient';
+import {AuthClient, AuthClientOptions} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -166,7 +166,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   defaultScopes?: string | string[];
   private keyFilename?: string;
   private scopes?: string | string[];
-  private clientOptions?: RefreshOptions;
+  private clientOptions?: AuthClientOptions;
 
   /**
    * Export DefaultTransporter as a static property of the class.
@@ -302,13 +302,16 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   getApplicationDefault(): Promise<ADCResponse>;
   getApplicationDefault(callback: ADCCallback): void;
-  getApplicationDefault(options: RefreshOptions): Promise<ADCResponse>;
-  getApplicationDefault(options: RefreshOptions, callback: ADCCallback): void;
+  getApplicationDefault(options: AuthClientOptions): Promise<ADCResponse>;
   getApplicationDefault(
-    optionsOrCallback: ADCCallback | RefreshOptions = {},
+    options: AuthClientOptions,
+    callback: ADCCallback
+  ): void;
+  getApplicationDefault(
+    optionsOrCallback: ADCCallback | AuthClientOptions = {},
     callback?: ADCCallback
   ): void | Promise<ADCResponse> {
-    let options: RefreshOptions | undefined;
+    let options: AuthClientOptions | undefined;
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;
     } else {
@@ -325,7 +328,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async getApplicationDefaultAsync(
-    options: RefreshOptions = {}
+    options: AuthClientOptions = {}
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, return it.
     // This will also preserve one's configured quota project, in case they
@@ -432,7 +435,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * @api private
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable(
-    options?: RefreshOptions
+    options?: AuthClientOptions
   ): Promise<JSONClient | null> {
     const credentialsPath =
       process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
@@ -460,7 +463,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * @api private
    */
   async _tryGetApplicationCredentialsFromWellKnownFile(
-    options?: RefreshOptions
+    options?: AuthClientOptions
   ): Promise<JSONClient | null> {
     // First, figure out the location of the file, depending upon the OS type.
     let location = null;
@@ -505,7 +508,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   async _getApplicationCredentialsFromFilePath(
     filePath: string,
-    options: RefreshOptions = {}
+    options: AuthClientOptions = {}
   ): Promise<JSONClient> {
     // Make sure the path looks like a string.
     if (!filePath || filePath.length === 0) {
@@ -609,11 +612,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   fromJSON(
     json: JWTInput | ImpersonatedJWTInput,
-    options: RefreshOptions = {}
+    options: AuthClientOptions = {}
   ): JSONClient {
     let client: JSONClient;
 
-    options = options || {};
     if (json.type === USER_REFRESH_ACCOUNT_TYPE) {
       client = new UserRefreshClient(options);
       client.fromJSON(json);
@@ -647,8 +649,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * @returns JWT or UserRefresh Client with data
    */
   private _cacheClientFromJSON(
-    json: JWTInput,
-    options?: RefreshOptions
+    json: JWTInput | ImpersonatedJWTInput,
+    options?: AuthClientOptions
   ): JSONClient {
     const client = this.fromJSON(json, options);
 
@@ -667,19 +669,19 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   fromStream(inputStream: stream.Readable, callback: CredentialCallback): void;
   fromStream(
     inputStream: stream.Readable,
-    options: RefreshOptions
+    options: AuthClientOptions
   ): Promise<JSONClient>;
   fromStream(
     inputStream: stream.Readable,
-    options: RefreshOptions,
+    options: AuthClientOptions,
     callback: CredentialCallback
   ): void;
   fromStream(
     inputStream: stream.Readable,
-    optionsOrCallback: RefreshOptions | CredentialCallback = {},
+    optionsOrCallback: AuthClientOptions | CredentialCallback = {},
     callback?: CredentialCallback
   ): Promise<JSONClient> | void {
-    let options: RefreshOptions = {};
+    let options: AuthClientOptions = {};
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;
     } else {
@@ -697,7 +699,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   private fromStreamAsync(
     inputStream: stream.Readable,
-    options?: RefreshOptions
+    options?: AuthClientOptions
   ): Promise<JSONClient> {
     return new Promise((resolve, reject) => {
       if (!inputStream) {
@@ -741,7 +743,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * @param options An optional options object.
    * @returns A JWT loaded from the key
    */
-  fromAPIKey(apiKey: string, options?: RefreshOptions): JWT {
+  fromAPIKey(apiKey: string, options?: AuthClientOptions): JWT {
     options = options || {};
     const client = new JWT(options);
     client.fromAPIKey(apiKey);

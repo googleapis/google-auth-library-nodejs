@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {RefreshOptions} from './oauth2client';
 import {
   BaseExternalAccountClient,
   // This is the identifier in the JSON config for the type of credential.
@@ -33,6 +32,7 @@ import {
   PluggableAuthClient,
   PluggableAuthClientOptions,
 } from './pluggable-auth-client';
+import {AuthClientOptions} from './authclient';
 
 export type ExternalAccountClientOptions =
   | IdentityPoolClientOptions
@@ -60,15 +60,16 @@ export class ExternalAccountClient {
    * underlying credential source.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
-   * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   * @param additionalOptions **DEPRECATED, all options are available in the
+   *   `options` parameter.** Optional additional behavior customization options.
+   *   These currently customize expiration threshold time and whether to retry
+   *   on 401/403 API request errors.
    * @return A BaseExternalAccountClient instance or null if the options
    *   provided do not correspond to an external account credential.
    */
   static fromJSON(
     options: ExternalAccountClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: AuthClientOptions
   ): BaseExternalAccountClient | null {
     if (options && options.type === EXTERNAL_ACCOUNT_TYPE) {
       if ((options as AwsClientOptions).credential_source?.environment_id) {

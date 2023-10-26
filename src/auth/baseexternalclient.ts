@@ -21,11 +21,12 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient} from './authclient';
+import {AuthClient, AuthClientOptions} from './authclient';
 import {BodyResponseCallback} from '../transporters';
-import {GetAccessTokenResponse, Headers, RefreshOptions} from './oauth2client';
+import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
+import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -63,18 +64,13 @@ const WORKFORCE_AUDIENCE_PATTERN =
 const pkg = require('../../../package.json');
 
 /**
- * The default cloud universe
+ * For backwards compatibility.
  */
-export const DEFAULT_UNIVERSE = 'googleapis.com';
+export {DEFAULT_UNIVERSE} from './authclient';
 
-export interface SharedExternalAccountClientOptions {
+export interface SharedExternalAccountClientOptions extends AuthClientOptions {
   audience: string;
   token_url: string;
-  quota_project_id?: string;
-  /**
-   * universe domain is the default service domain for a given Cloud universe
-   */
-  universe_domain?: string;
 }
 
 /**
@@ -151,51 +147,69 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly stsCredential: sts.StsCredentials;
   private readonly clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
-  public universeDomain = DEFAULT_UNIVERSE;
-  public projectId: string | null;
   public projectNumber: string | null;
-  public readonly eagerRefreshThresholdMillis: number;
-  public readonly forceRefreshOnFailure: boolean;
   private readonly configLifetimeRequested: boolean;
   protected credentialSourceType?: string;
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * @param options The external account options object typically loaded
-   *   from the external account JSON credential file.
-   * @param additionalOptions Optional additional behavior customization
-   *   options. These currently customize expiration threshold time and
-   *   whether to retry on 401/403 API request errors.
+   *   from the external account JSON credential file. The camelCased options
+   *   are aliases for the snake_cased options.
+   * @param additionalOptions **DEPRECATED, all options are available in the
+   *   `options` parameter.** Optional additional behavior customization options.
+   *   These currently customize expiration threshold time and whether to retry
+   *   on 401/403 API request errors.
    */
   constructor(
-    options: BaseExternalAccountClientOptions,
-    additionalOptions?: RefreshOptions
+    options:
+      | BaseExternalAccountClientOptions
+      | SnakeToCamelObject<BaseExternalAccountClientOptions>,
+    additionalOptions?: AuthClientOptions
   ) {
-    super();
-    if (options.type !== EXTERNAL_ACCOUNT_TYPE) {
+    super({...options, ...additionalOptions});
+
+    const opts = originalOrCamelOptions(
+      options as BaseExternalAccountClientOptions
+    );
+
+    if (opts.get('type') !== EXTERNAL_ACCOUNT_TYPE) {
       throw new Error(
         `Expected "${EXTERNAL_ACCOUNT_TYPE}" type but ` +
           `received "${options.type}"`
       );
     }
-    this.clientAuth = options.client_id
-      ? ({
-          confidentialClientType: 'basic',
-          clientId: options.client_id,
-          clientSecret: options.client_secret,
-        } as ClientAuthentication)
-      : undefined;
-    this.stsCredential = new sts.StsCredentials(
-      options.token_url,
-      this.clientAuth
+
+    const clientId = opts.get('client_id');
+    const clientSecret = opts.get('client_secret');
+    const tokenUrl = opts.get('token_url');
+    const subjectTokenType = opts.get('subject_token_type');
+    const workforcePoolUserProject = opts.get('workforce_pool_user_project');
+    const serviceAccountImpersonationUrl = opts.get(
+      'service_account_impersonation_url'
     );
+    const serviceAccountImpersonation = opts.get(
+      'service_account_impersonation'
+    );
+    const serviceAccountImpersonationLifetime = originalOrCamelOptions(
+      serviceAccountImpersonation
+    ).get('token_lifetime_seconds');
+
+    if (clientId) {
+      this.clientAuth = {
+        confidentialClientType: 'basic',
+        clientId,
+        clientSecret,
+      };
+    }
+
+    this.stsCredential = new sts.StsCredentials(tokenUrl, this.clientAuth);
     // Default OAuth scope. This could be overridden via public property.
     this.scopes = [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
-    this.audience = options.audience;
-    this.subjectTokenType = options.subject_token_type;
-    this.quotaProjectId = options.quota_project_id;
-    this.workforcePoolUserProject = options.workforce_pool_user_project;
+    this.audience = opts.get('audience');
+    this.subjectTokenType = subjectTokenType;
+    this.workforcePoolUserProject = workforcePoolUserProject;
     const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
     if (
       this.workforcePoolUserProject &&
@@ -206,33 +220,18 @@ export abstract class BaseExternalAccountClient extends AuthClient {
           'credentials.'
       );
     }
-    this.serviceAccountImpersonationUrl =
-      options.service_account_impersonation_url;
-
+    this.serviceAccountImpersonationUrl = serviceAccountImpersonationUrl;
     this.serviceAccountImpersonationLifetime =
-      options.service_account_impersonation?.token_lifetime_seconds;
+      serviceAccountImpersonationLifetime;
+
     if (this.serviceAccountImpersonationLifetime) {
       this.configLifetimeRequested = true;
     } else {
       this.configLifetimeRequested = false;
       this.serviceAccountImpersonationLifetime = DEFAULT_TOKEN_LIFESPAN;
     }
-    // As threshold could be zero,
-    // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
-    // zero value.
-    if (typeof additionalOptions?.eagerRefreshThresholdMillis !== 'number') {
-      this.eagerRefreshThresholdMillis = EXPIRATION_TIME_OFFSET;
-    } else {
-      this.eagerRefreshThresholdMillis = additionalOptions!
-        .eagerRefreshThresholdMillis as number;
-    }
-    this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
-    this.projectId = null;
-    this.projectNumber = this.getProjectNumber(this.audience);
 
-    if (options.universe_domain) {
-      this.universeDomain = options.universe_domain;
-    }
+    this.projectNumber = this.getProjectNumber(this.audience);
   }
 
   /** The service account email to be impersonated, if available. */
