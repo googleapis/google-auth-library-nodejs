@@ -13,9 +13,14 @@
 // limitations under the License.
 
 import {Credentials} from './credentials';
-import {Headers, OAuth2Client, RequestMetadataResponse} from './oauth2client';
+import {
+  Headers,
+  OAuth2Client,
+  OAuth2ClientOptions,
+  RequestMetadataResponse,
+} from './oauth2client';
 
-export interface IdTokenOptions {
+export interface IdTokenOptions extends OAuth2ClientOptions {
   /**
    * The client to make the request to fetch an ID token.
    */
@@ -41,7 +46,7 @@ export class IdTokenClient extends OAuth2Client {
    * See: https://developers.google.com/compute/docs/authentication
    */
   constructor(options: IdTokenOptions) {
-    super();
+    super(options);
     this.targetAudience = options.targetAudience;
     this.idTokenProvider = options.idTokenProvider;
   }

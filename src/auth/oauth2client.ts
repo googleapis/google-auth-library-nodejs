@@ -25,7 +25,7 @@ import * as formatEcdsa from 'ecdsa-sig-formatter';
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 import {BodyResponseCallback} from '../transporters';
 
-import {AuthClient} from './authclient';
+import {AuthClient, AuthClientOptions} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 /**
@@ -404,25 +404,17 @@ export interface VerifyIdTokenOptions {
   maxExpiry?: number;
 }
 
-export interface RefreshOptions {
-  // Eagerly refresh unexpired tokens when they are within this many
-  // milliseconds from expiring".
-  // Defaults to a value of 300000 (5 minutes).
-  eagerRefreshThresholdMillis?: number;
-
-  // Whether to attempt to lazily refresh tokens on 401/403 responses
-  // even if an attempt is made to refresh the token preemptively based
-  // on the expiry_date.
-  // Defaults to false.
-  forceRefreshOnFailure?: boolean;
-}
-
-export interface OAuth2ClientOptions extends RefreshOptions {
+export interface OAuth2ClientOptions extends AuthClientOptions {
   clientId?: string;
   clientSecret?: string;
   redirectUri?: string;
-  credentials?: Credentials;
 }
+
+// Re-exporting here for backwards compatibility
+export type RefreshOptions = Pick<
+  AuthClientOptions,
+  'eagerRefreshThresholdMillis' | 'forceRefreshOnFailure'
+>;
 
 export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
@@ -438,12 +430,6 @@ export class OAuth2Client extends AuthClient {
   _clientSecret?: string;
 
   apiKey?: string;
-
-  projectId?: string;
-
-  eagerRefreshThresholdMillis: number;
-
-  forceRefreshOnFailure: boolean;
 
   refreshHandler?: GetRefreshHandlerCallback;
 
@@ -464,18 +450,16 @@ export class OAuth2Client extends AuthClient {
     clientSecret?: string,
     redirectUri?: string
   ) {
-    super();
     const opts =
       optionsOrClientId && typeof optionsOrClientId === 'object'
         ? optionsOrClientId
         : {clientId: optionsOrClientId, clientSecret, redirectUri};
+
+    super(opts);
+
     this._clientId = opts.clientId;
     this._clientSecret = opts.clientSecret;
     this.redirectUri = opts.redirectUri;
-    this.eagerRefreshThresholdMillis =
-      opts.eagerRefreshThresholdMillis || 5 * 60 * 1000;
-    this.forceRefreshOnFailure = !!opts.forceRefreshOnFailure;
-    this.credentials = opts.credentials || {};
   }
 
   protected static readonly GOOGLE_TOKEN_INFO_URL =

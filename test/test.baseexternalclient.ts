@@ -40,7 +40,7 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
-import {RefreshOptions} from '../src';
+import {AuthClientOptions} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -55,7 +55,7 @@ class TestExternalAccountClient extends BaseExternalAccountClient {
 
   constructor(
     options: BaseExternalAccountClientOptions,
-    additionalOptions?: RefreshOptions
+    additionalOptions?: Partial<AuthClientOptions>
   ) {
     super(options, additionalOptions);
     this.credentialSourceType = 'test';

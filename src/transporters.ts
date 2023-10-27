@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
   GaxiosResponse,
-  request,
 } from 'gaxios';
 import {validate} from './options';
 import {pkg} from './util';
@@ -25,6 +25,7 @@ import {pkg} from './util';
 const PRODUCT_NAME = 'google-api-nodejs-client';
 
 export interface Transporter {
+  defaults?: GaxiosOptions;
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
 }
 
@@ -42,6 +43,11 @@ export class DefaultTransporter implements Transporter {
    * Default user agent.
    */
   static readonly USER_AGENT = `${PRODUCT_NAME}/${pkg.version}`;
+
+  /**
+   * A configurable, replacable `Gaxios` instance.
+   */
+  instance = new Gaxios();
 
   /**
    * Configures request options before making a request.
@@ -79,9 +85,17 @@ export class DefaultTransporter implements Transporter {
     // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
     validate(opts);
-    return request<T>(opts).catch(e => {
+    return this.instance.request<T>(opts).catch(e => {
       throw this.processError(e);
     });
+  }
+
+  get defaults() {
+    return this.instance.defaults;
+  }
+
+  set defaults(opts: GaxiosOptions) {
+    this.instance.defaults = opts;
   }
 
   /**

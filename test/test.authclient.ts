@@ -15,14 +15,56 @@
 import {strict as assert} from 'assert';
 import {AuthClient, OAuth2Client} from '../src';
 import {AUTH_CLIENT_SYMBOL} from '../src/auth/authclient';
+import {GaxiosPromise, GaxiosResponse} from 'gaxios';
+import {Headers} from '../src/auth/oauth2client';
+import {snakeToCamel} from '../src/util';
 
-describe('static', () => {
-  describe('`instanceof`', () => {
-    it('should accept objects with `AUTH_CLIENT_SYMBOL` as `AuthClient`', () => {
-      const myObj = {[AUTH_CLIENT_SYMBOL]: '0.0.0'};
+describe('AuthClient', () => {
+  class TestAuthClient extends AuthClient {
+    request<T>(): GaxiosPromise<T> {
+      throw new Error('Method not implemented.');
+    }
 
-      assert(myObj instanceof AuthClient);
-      assert(new OAuth2Client() instanceof AuthClient);
+    getRequestHeaders(): Promise<Headers> {
+      throw new Error('Method not implemented.');
+    }
+
+    getAccessToken(): Promise<{
+      token?: string | null | undefined;
+      res?: GaxiosResponse | null | undefined;
+    }> {
+      throw new Error('Method not implemented.');
+    }
+  }
+  describe('static', () => {
+    describe('`instanceof`', () => {
+      it('should accept objects with `AUTH_CLIENT_SYMBOL` as `AuthClient`', () => {
+        const myObj = {[AUTH_CLIENT_SYMBOL]: '0.0.0'};
+
+        assert(myObj instanceof AuthClient);
+        assert(new OAuth2Client() instanceof AuthClient);
+      });
     });
+  });
+
+  it('should accept and normalize snake case options to camel case', () => {
+    const expected = {
+      project_id: 'my-projectId',
+      quota_project_id: 'my-quota-project-id',
+      credentials: {},
+      universe_domain: 'my-universe-domain',
+    };
+
+    for (const [key, value] of Object.entries(expected)) {
+      const camelCased = snakeToCamel(key) as keyof typeof authClient;
+
+      // assert snake cased input
+      let authClient = new TestAuthClient({[key]: value});
+      assert.equal(authClient[camelCased], value);
+
+      // assert camel cased input
+      authClient = new TestAuthClient({[camelCased]: value});
+      assert.equal(authClient[camelCased], value);
+    }
   });
 });
