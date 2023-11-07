@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import { describe, it, beforeEach, afterEach } from 'mocha';
 import * as child_process from 'child_process';
 import * as crypto from 'crypto';
-import {CredentialRequest} from '../src/auth/credentials';
+import { CredentialRequest } from '../src/auth/credentials';
 import * as fs from 'fs';
 import {
   BASE_PATH,
@@ -39,12 +39,11 @@ import {
   ExternalAccountClient,
   OAuth2Client,
   ExternalAccountClientOptions,
-  RefreshOptions,
   Impersonated,
 } from '../src';
-import {CredentialBody} from '../src/auth/credentials';
+import { CredentialBody } from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
-import {Compute} from '../src/auth/computeclient';
+import { Compute } from '../src/auth/computeclient';
 import {
   getServiceAccountImpersonationUrl,
   mockCloudResourceManager,
@@ -52,9 +51,9 @@ import {
   mockStsTokenExchange,
   saEmail,
 } from './externalclienthelper';
-import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
-import {AuthClient} from '../src/auth/authclient';
-import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
+import { BaseExternalAccountClient } from '../src/auth/baseexternalclient';
+import { AuthClient } from '../src/auth/authclient';
+import { ExternalAccountAuthorizedUserClient } from '../src/auth/externalAccountAuthorizedUserClient';
 
 nock.disableNetConnect();
 
@@ -165,7 +164,7 @@ describe('googleauth', () => {
         .withArgs('gcloud config config-helper --format json', sinon.match.func)
         .callsArgWith(1, null, '', null);
 
-      const fakeStat = {isFile: () => true} as fs.Stats;
+      const fakeStat = { isFile: () => true } as fs.Stats;
       sandbox
         .stub(fs, 'lstatSync')
         .callThrough()
@@ -220,10 +219,10 @@ describe('googleauth', () => {
     function nockNotGCE() {
       const primary = nock(host)
         .get(instancePath)
-        .replyWithError({code: 'ENOTFOUND'});
+        .replyWithError({ code: 'ENOTFOUND' });
       const secondary = nock(SECONDARY_HOST_ADDRESS)
         .get(instancePath)
-        .replyWithError({code: 'ENOTFOUND'});
+        .replyWithError({ code: 'ENOTFOUND' });
       return {
         done: () => {
           try {
@@ -261,14 +260,14 @@ describe('googleauth', () => {
       sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
       const scope2 = nock(HOST_ADDRESS)
         .get(tokenPath)
-        .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
-      return {auth, scopes: [scope1, scope2]};
+        .reply(200, { access_token: 'abc123', expires_in: 10000 }, HEADERS);
+      return { auth, scopes: [scope1, scope2] };
     }
 
     // Intercepts the specified environment variable, returning the specified
     // value.
     function mockEnvVar(name: string, value = '') {
-      const envVars = Object.assign({}, process.env, {[name]: value});
+      const envVars = Object.assign({}, process.env, { [name]: value });
       return sandbox.stub(process, 'env').value(envVars);
     }
 
@@ -280,11 +279,11 @@ describe('googleauth', () => {
       // Using a custom `AuthClient` to ensure any `AuthClient` would work
       class MyAuthClient extends AuthClient {
         async getAccessToken() {
-          return {token: '', res: undefined};
+          return { token: '', res: undefined };
         }
 
         async getRequestHeaders() {
-          return {...customRequestHeaders};
+          return { ...customRequestHeaders };
         }
 
         request = OAuth2Client.prototype.request.bind(this);
@@ -292,7 +291,7 @@ describe('googleauth', () => {
 
       const authClient = new MyAuthClient();
 
-      const auth = new GoogleAuth({authClient});
+      const auth = new GoogleAuth({ authClient });
 
       assert.equal(auth.cachedCredential, authClient);
       assert.equal(await auth.getClient(), authClient);
@@ -344,7 +343,7 @@ describe('googleauth', () => {
       const res = await client.request({
         url: BASE_URL + ENDPOINT,
         method: 'POST',
-        data: {test: true},
+        data: { test: true },
       });
       assert.strictEqual(RESPONSE_BODY, res.data);
       scope.done();
@@ -357,10 +356,10 @@ describe('googleauth', () => {
     });
 
     it('should make a request while preserving original parameters', async () => {
-      const OTHER_QS_PARAM = {test: 'abc'};
+      const OTHER_QS_PARAM = { test: 'abc' };
       const scope = nock(BASE_URL)
         .post(ENDPOINT)
-        .query({test: OTHER_QS_PARAM.test})
+        .query({ test: OTHER_QS_PARAM.test })
         .reply(function (uri) {
           assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
           assert(uri.indexOf('test=' + OTHER_QS_PARAM.test) > -1);
@@ -370,7 +369,7 @@ describe('googleauth', () => {
       const res = await client.request({
         url: BASE_URL + ENDPOINT,
         method: 'POST',
-        data: {test: true},
+        data: { test: true },
         params: OTHER_QS_PARAM,
       });
       assert.strictEqual(RESPONSE_BODY, res.data);
@@ -466,7 +465,7 @@ describe('googleauth', () => {
 
     it('fromJSON should create JWT which eagerRefreshThresholdMillisset when this is set for GoogleAuth', () => {
       const json = createJwtJSON();
-      const result = auth.fromJSON(json, {eagerRefreshThresholdMillis: 5000});
+      const result = auth.fromJSON(json, { eagerRefreshThresholdMillis: 5000 });
       assert.strictEqual(5000, (result as JWT).eagerRefreshThresholdMillis);
     });
 
@@ -658,7 +657,7 @@ describe('googleauth', () => {
     it('getApplicationCredentialsFromFilePath should correctly read the file and create a valid JWT with eager refresh', async () => {
       const result = await auth._getApplicationCredentialsFromFilePath(
         './test/fixtures/private.json',
-        {eagerRefreshThresholdMillis: 7000}
+        { eagerRefreshThresholdMillis: 7000 }
       );
       assert(result);
       const jwt = result as JWT;
@@ -886,7 +885,7 @@ describe('googleauth', () => {
         './test/fixtures/private2.json'
       );
       const PROJECT_ID = 'configured-project-id-should-be-preferred';
-      const auth = new GoogleAuth({projectId: PROJECT_ID});
+      const auth = new GoogleAuth({ projectId: PROJECT_ID });
       const projectId = await auth.getProjectId();
       assert.strictEqual(projectId, PROJECT_ID);
     });
@@ -897,7 +896,7 @@ describe('googleauth', () => {
       // * Well-known file is set up to point to private2.json
       // * Running on GCE is set to true.
       const stdout = JSON.stringify({
-        configuration: {properties: {core: {project: STUB_PROJECT}}},
+        configuration: { properties: { core: { project: STUB_PROJECT } } },
       });
 
       (child_process.exec as unknown as sinon.SinonStub).restore();
@@ -1215,7 +1214,7 @@ describe('googleauth', () => {
 
     it('should use jsonContent if available', async () => {
       const json = createJwtJSON();
-      const auth = new GoogleAuth({credentials: json});
+      const auth = new GoogleAuth({ credentials: json });
       // We know this returned a cached result if a nock scope isn't required
       const body = await auth.getCredentials();
       assert.notStrictEqual(body, null);
@@ -1231,7 +1230,7 @@ describe('googleauth', () => {
     });
 
     it('should error when invalid keyFilename passed to getClient', async () => {
-      const auth = new GoogleAuth({keyFilename: './funky/fresh.json'});
+      const auth = new GoogleAuth({ keyFilename: './funky/fresh.json' });
       await assert.rejects(
         auth.getClient(),
         /ENOENT: no such file or directory/
@@ -1239,7 +1238,7 @@ describe('googleauth', () => {
     });
 
     it('should accept credentials to get a client', async () => {
-      const auth = new GoogleAuth({credentials: privateJSON});
+      const auth = new GoogleAuth({ credentials: privateJSON });
       const client = (await auth.getClient()) as JWT;
       assert.strictEqual(client.email, 'hello@youarecool.com');
     });
@@ -1259,7 +1258,7 @@ describe('googleauth', () => {
     it('should allow passing scopes to get a client', async () => {
       const scopes = ['http://examples.com/is/a/scope'];
       const keyFilename = './test/fixtures/private.json';
-      const auth = new GoogleAuth({scopes, keyFilename});
+      const auth = new GoogleAuth({ scopes, keyFilename });
       const client = (await auth.getClient()) as JWT;
       assert.strictEqual(client.scopes, scopes);
     });
@@ -1267,7 +1266,7 @@ describe('googleauth', () => {
     it('should allow passing a scope to get a client', async () => {
       const scopes = 'http://examples.com/is/a/scope';
       const keyFilename = './test/fixtures/private.json';
-      const auth = new GoogleAuth({scopes, keyFilename});
+      const auth = new GoogleAuth({ scopes, keyFilename });
       const client = (await auth.getClient()) as JWT;
       assert.strictEqual(client.scopes, scopes);
     });
@@ -1275,14 +1274,14 @@ describe('googleauth', () => {
     it('should allow passing a scope to get a Compute client', async () => {
       const scopes = ['http://examples.com/is/a/scope'];
       const nockScopes = [nockIsGCE(), createGetProjectIdNock()];
-      const auth = new GoogleAuth({scopes});
+      const auth = new GoogleAuth({ scopes });
       const client = (await auth.getClient()) as Compute;
       assert.strictEqual(client.scopes, scopes);
       nockScopes.forEach(x => x.done());
     });
 
     it('should get an access token', async () => {
-      const {auth, scopes} = mockGCE();
+      const { auth, scopes } = mockGCE();
       scopes.push(createGetProjectIdNock());
       const token = await auth.getAccessToken();
       scopes.forEach(s => s.done());
@@ -1290,31 +1289,31 @@ describe('googleauth', () => {
     });
 
     it('should get request headers', async () => {
-      const {auth, scopes} = mockGCE();
+      const { auth, scopes } = mockGCE();
       scopes.push(createGetProjectIdNock());
       const headers = await auth.getRequestHeaders();
       scopes.forEach(s => s.done());
-      assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
+      assert.deepStrictEqual(headers, { Authorization: 'Bearer abc123' });
     });
 
     it('should authorize the request', async () => {
-      const {auth, scopes} = mockGCE();
+      const { auth, scopes } = mockGCE();
       scopes.push(createGetProjectIdNock());
-      const opts = await auth.authorizeRequest({url: 'http://example.com'});
+      const opts = await auth.authorizeRequest({ url: 'http://example.com' });
       scopes.forEach(s => s.done());
-      assert.deepStrictEqual(opts.headers, {Authorization: 'Bearer abc123'});
+      assert.deepStrictEqual(opts.headers, { Authorization: 'Bearer abc123' });
     });
 
     it('should get the current environment if GCE', async () => {
       envDetect.clear();
-      const {auth} = mockGCE();
+      const { auth } = mockGCE();
       const env = await auth.getEnv();
       assert.strictEqual(env, envDetect.GCPEnv.COMPUTE_ENGINE);
     });
 
     it('should get the current environment if GKE', async () => {
       envDetect.clear();
-      const {auth} = mockGCE();
+      const { auth } = mockGCE();
       const scope = nock(host)
         .get(`${instancePath}/attributes/cluster-name`)
         .reply(200, {}, HEADERS);
@@ -1325,7 +1324,7 @@ describe('googleauth', () => {
 
     it('should cache prior call to getEnv(), when GCE', async () => {
       envDetect.clear();
-      const {auth} = mockGCE();
+      const { auth } = mockGCE();
       auth.getEnv();
       const env = await auth.getEnv();
       assert.strictEqual(env, envDetect.GCPEnv.COMPUTE_ENGINE);
@@ -1333,7 +1332,7 @@ describe('googleauth', () => {
 
     it('should cache prior call to getEnv(), when GKE', async () => {
       envDetect.clear();
-      const {auth} = mockGCE();
+      const { auth } = mockGCE();
       const scope = nock(host)
         .get(`${instancePath}/attributes/cluster-name`)
         .reply(200, {}, HEADERS);
@@ -1367,18 +1366,18 @@ describe('googleauth', () => {
     it('should get the current environment if Cloud Run', async () => {
       envDetect.clear();
       mockEnvVar('K_CONFIGURATION', 'KITTY');
-      const {auth} = mockGCE();
+      const { auth } = mockGCE();
       const env = await auth.getEnv();
       assert.strictEqual(env, envDetect.GCPEnv.CLOUD_RUN);
     });
 
     it('should make the request', async () => {
       const url = 'http://example.com';
-      const {auth, scopes} = mockGCE();
+      const { auth, scopes } = mockGCE();
       scopes.push(createGetProjectIdNock());
-      const data = {breakfast: 'coffee'};
+      const data = { breakfast: 'coffee' };
       scopes.push(nock(url).get('/').reply(200, data));
-      const res = await auth.request({url});
+      const res = await auth.request({ url });
       scopes.forEach(s => s.done());
       assert.deepStrictEqual(res.data, data);
     });
@@ -1399,11 +1398,11 @@ describe('googleauth', () => {
     });
 
     it('sign should hit the IAM endpoint if no projectId nor private_key is available', async () => {
-      const {auth, scopes} = mockGCE();
+      const { auth, scopes } = mockGCE();
 
       sinon
         .stub(
-          auth as unknown as {getProjectIdAsync: () => Promise<string | null>},
+          auth as unknown as { getProjectIdAsync: () => Promise<string | null> },
           'getProjectIdAsync'
         )
         .resolves();
@@ -1414,10 +1413,10 @@ describe('googleauth', () => {
       const signedBlob = 'erutangis';
       const data = 'abc123';
       scopes.push(
-        nock(iamUri).post(iamPath).reply(200, {signedBlob}),
+        nock(iamUri).post(iamPath).reply(200, { signedBlob }),
         nock(host)
           .get(svcAccountPath)
-          .reply(200, {default: {email, private_key: privateKey}}, HEADERS)
+          .reply(200, { default: { email, private_key: privateKey } }, HEADERS)
       );
       const value = await auth.sign(data);
       scopes.forEach(x => x.done());
@@ -1428,7 +1427,7 @@ describe('googleauth', () => {
       const subject = 'science!';
       const auth = new GoogleAuth({
         keyFilename: './test/fixtures/private.json',
-        clientOptions: {subject},
+        clientOptions: { subject },
       });
       const client = (await auth.getClient()) as JWT;
       assert.strictEqual(client.subject, subject);
@@ -1494,7 +1493,7 @@ describe('googleauth', () => {
       const res = await client.request({
         url: BASE_URL + ENDPOINT,
         method: 'POST',
-        data: {test: true},
+        data: { test: true },
       });
       assert.strictEqual(RESPONSE_BODY, res.data);
       tokenReq.done();
@@ -1570,7 +1569,7 @@ describe('googleauth', () => {
 
     describe('for external_account types', () => {
       let fromJsonSpy: sinon.SinonSpy<
-        [ExternalAccountClientOptions, RefreshOptions?],
+        [ExternalAccountClientOptions],
         BaseExternalAccountClient | null
       >;
       const stsSuccessfulResponse = {
@@ -1690,16 +1689,13 @@ describe('googleauth', () => {
        * @param actualClient The actual client to assert.
        * @param json The expected JSON object that the client should be
        *   initialized with.
-       * @param options The expected RefreshOptions the client should be
-       *   initialized with.
        */
       function assertExternalAccountClientInitialized(
         actualClient: AuthClient,
         json: ExternalAccountClientOptions,
-        options: RefreshOptions
       ) {
         // Confirm expected client is initialized.
-        assert(fromJsonSpy.calledOnceWithExactly(json, options));
+        assert(fromJsonSpy.calledOnceWithExactly(json));
         assert(fromJsonSpy.returned(actualClient as BaseExternalAccountClient));
       }
 
@@ -1719,7 +1715,7 @@ describe('googleauth', () => {
           const json = createExternalAccountJSON();
           const result = auth.fromJSON(json);
 
-          assertExternalAccountClientInitialized(result, json, {});
+          assertExternalAccountClientInitialized(result, json);
         });
 
         it('should honor defaultScopes when no user scopes are available', () => {
@@ -1727,7 +1723,7 @@ describe('googleauth', () => {
           auth.defaultScopes = defaultScopes;
           const result = auth.fromJSON(json);
 
-          assertExternalAccountClientInitialized(result, json, {});
+          assertExternalAccountClientInitialized(result, json);
           assert.strictEqual(
             (result as BaseExternalAccountClient).scopes,
             defaultScopes
@@ -1736,11 +1732,11 @@ describe('googleauth', () => {
 
         it('should prefer user scopes over defaultScopes', () => {
           const json = createExternalAccountJSON();
-          const auth = new GoogleAuth({scopes: userScopes});
+          const auth = new GoogleAuth({ scopes: userScopes });
           auth.defaultScopes = defaultScopes;
           const result = auth.fromJSON(json);
 
-          assertExternalAccountClientInitialized(result, json, {});
+          assertExternalAccountClientInitialized(result, json);
           assert.strictEqual(
             (result as BaseExternalAccountClient).scopes,
             userScopes
@@ -1751,7 +1747,7 @@ describe('googleauth', () => {
           const json = createExternalAccountJSON();
           const result = auth.fromJSON(json, refreshOptions);
 
-          assertExternalAccountClientInitialized(result, json, refreshOptions);
+          assertExternalAccountClientInitialized(result, { ...json, ...refreshOptions });
         });
 
         it('should throw on invalid json', () => {
@@ -1774,8 +1770,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
@@ -1788,8 +1783,10 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             result,
-            createExternalAccountJSON(),
-            refreshOptions
+            {
+              ...createExternalAccountJSON(),
+              ...refreshOptions
+            }
           );
         });
       });
@@ -1809,8 +1806,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           // Project ID should also be set.
           assert.deepEqual(client.projectId, projectId);
@@ -1833,8 +1829,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -1852,15 +1847,14 @@ describe('googleauth', () => {
             './test/fixtures/external-account-cred.json'
           );
 
-          const auth = new GoogleAuth({scopes: userScopes});
+          const auth = new GoogleAuth({ scopes: userScopes });
           auth.defaultScopes = defaultScopes;
           const res = await auth.getApplicationDefault();
           const client = res.credential;
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -1881,8 +1875,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.deepEqual(client.projectId, projectId);
           scopes.forEach(s => s.done());
@@ -1902,8 +1895,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -1919,15 +1911,14 @@ describe('googleauth', () => {
           mockLinuxWellKnownFile('./test/fixtures/external-account-cred.json');
           const scopes = mockGetAccessTokenAndProjectId(true, userScopes);
 
-          const auth = new GoogleAuth({scopes: userScopes});
+          const auth = new GoogleAuth({ scopes: userScopes });
           auth.defaultScopes = defaultScopes;
           const res = await auth.getApplicationDefault();
           const client = res.credential;
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -1969,8 +1960,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
@@ -1982,8 +1972,10 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             result,
-            createExternalAccountJSON(),
-            refreshOptions
+            {
+              ...createExternalAccountJSON(),
+              ...refreshOptions
+            }
           );
         });
       });
@@ -1992,7 +1984,7 @@ describe('googleauth', () => {
         it('should get projectId from cloud resource manager', async () => {
           const scopes = mockGetAccessTokenAndProjectId();
           const keyFilename = './test/fixtures/external-account-cred.json';
-          const auth = new GoogleAuth({keyFilename});
+          const auth = new GoogleAuth({ keyFilename });
           const actualProjectId = await auth.getProjectId();
 
           assert.deepEqual(actualProjectId, projectId);
@@ -2027,7 +2019,7 @@ describe('googleauth', () => {
             )
           );
           const keyFilename = './test/fixtures/external-account-cred.json';
-          const auth = new GoogleAuth({keyFilename});
+          const auth = new GoogleAuth({ keyFilename });
 
           await assert.rejects(
             auth.getProjectId(),
@@ -2039,7 +2031,7 @@ describe('googleauth', () => {
         it('should reject on invalid external_account client', async () => {
           const invalidOptions = createExternalAccountJSON();
           invalidOptions.credential_source.file = 'invalid';
-          const auth = new GoogleAuth({credentials: invalidOptions});
+          const auth = new GoogleAuth({ credentials: invalidOptions });
 
           await assert.rejects(
             auth.getProjectId(),
@@ -2050,7 +2042,7 @@ describe('googleauth', () => {
         it('should reject when projectId not determinable', async () => {
           const json = createExternalAccountJSON();
           json.audience = 'identitynamespace:1f12345:my_provider';
-          const auth = new GoogleAuth({credentials: json});
+          const auth = new GoogleAuth({ credentials: json });
 
           await assert.rejects(
             auth.getProjectId(),
@@ -2073,8 +2065,10 @@ describe('googleauth', () => {
         assert(result);
         assertExternalAccountClientInitialized(
           result as AuthClient,
-          createExternalAccountJSON(),
-          refreshOptions
+          {
+            ...createExternalAccountJSON(),
+            ...refreshOptions
+          }
         );
       });
 
@@ -2089,8 +2083,10 @@ describe('googleauth', () => {
         assert(result);
         assertExternalAccountClientInitialized(
           result as AuthClient,
-          createExternalAccountJSON(),
-          refreshOptions
+          {
+            ...createExternalAccountJSON(),
+            ...refreshOptions
+          }
         );
       });
 
@@ -2102,8 +2098,10 @@ describe('googleauth', () => {
 
         assertExternalAccountClientInitialized(
           result,
-          createExternalAccountJSON(),
-          refreshOptions
+          {
+            ...createExternalAccountJSON(),
+            ...refreshOptions
+          }
         );
       });
 
@@ -2116,20 +2114,18 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
         it('should initialize from keyFileName', async () => {
           const keyFilename = './test/fixtures/external-account-cred.json';
-          const auth = new GoogleAuth({keyFilename});
+          const auth = new GoogleAuth({ keyFilename });
           const actualClient = await auth.getClient();
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
@@ -2145,8 +2141,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           scopes.forEach(s => s.done());
         });
@@ -2191,7 +2186,7 @@ describe('googleauth', () => {
 
         it('should allow use defaultScopes when no scopes are available', async () => {
           const keyFilename = './test/fixtures/external-account-cred.json';
-          const auth = new GoogleAuth({keyFilename});
+          const auth = new GoogleAuth({ keyFilename });
           // Set defaultScopes on Auth instance. This should be set on the
           // underlying client.
           auth.defaultScopes = defaultScopes;
@@ -2202,7 +2197,7 @@ describe('googleauth', () => {
 
         it('should prefer user scopes over defaultScopes', async () => {
           const keyFilename = './test/fixtures/external-account-cred.json';
-          const auth = new GoogleAuth({scopes: userScopes, keyFilename});
+          const auth = new GoogleAuth({ scopes: userScopes, keyFilename });
           // Set defaultScopes on Auth instance. User scopes should be used.
           auth.defaultScopes = defaultScopes;
           const client = (await auth.getClient()) as BaseExternalAccountClient;
@@ -2213,7 +2208,7 @@ describe('googleauth', () => {
         it('should allow passing scopes to get a client', async () => {
           const scopes = ['http://examples.com/is/a/scope'];
           const keyFilename = './test/fixtures/external-account-cred.json';
-          const auth = new GoogleAuth({scopes, keyFilename});
+          const auth = new GoogleAuth({ scopes, keyFilename });
           const client = (await auth.getClient()) as BaseExternalAccountClient;
 
           assert.strictEqual(client.scopes, scopes);
@@ -2222,7 +2217,7 @@ describe('googleauth', () => {
         it('should allow passing a scope to get a client', async () => {
           const scopes = 'http://examples.com/is/a/scope';
           const keyFilename = './test/fixtures/external-account-cred.json';
-          const auth = new GoogleAuth({scopes, keyFilename});
+          const auth = new GoogleAuth({ scopes, keyFilename });
           const client = (await auth.getClient()) as BaseExternalAccountClient;
 
           assert.strictEqual(client.scopes, scopes);
@@ -2269,9 +2264,9 @@ describe('googleauth', () => {
                   },
                 }
               )
-              .reply(200, {signedBlob})
+              .reply(200, { signedBlob })
           );
-          const auth = new GoogleAuth({credentials: configWithImpersonation});
+          const auth = new GoogleAuth({ credentials: configWithImpersonation });
 
           const value = await auth.sign(data);
 
@@ -2281,7 +2276,7 @@ describe('googleauth', () => {
       });
 
       it('getIdTokenClient() should reject', async () => {
-        const auth = new GoogleAuth({credentials: createExternalAccountJSON()});
+        const auth = new GoogleAuth({ credentials: createExternalAccountJSON() });
 
         await assert.rejects(
           auth.getIdTokenClient('a-target-audience'),
@@ -2292,7 +2287,7 @@ describe('googleauth', () => {
       it('getAccessToken() should get an access token', async () => {
         const scopes = mockGetAccessTokenAndProjectId(false);
         const keyFilename = './test/fixtures/external-account-cred.json';
-        const auth = new GoogleAuth({keyFilename});
+        const auth = new GoogleAuth({ keyFilename });
         const token = await auth.getAccessToken();
 
         assert.strictEqual(token, stsSuccessfulResponse.access_token);
@@ -2302,7 +2297,7 @@ describe('googleauth', () => {
       it('getRequestHeaders() should inject authorization header', async () => {
         const scopes = mockGetAccessTokenAndProjectId(false);
         const keyFilename = './test/fixtures/external-account-cred.json';
-        const auth = new GoogleAuth({keyFilename});
+        const auth = new GoogleAuth({ keyFilename });
         const headers = await auth.getRequestHeaders();
 
         assert.deepStrictEqual(headers, {
@@ -2314,8 +2309,8 @@ describe('googleauth', () => {
       it('authorizeRequest() should authorize the request', async () => {
         const scopes = mockGetAccessTokenAndProjectId(false);
         const keyFilename = './test/fixtures/external-account-cred.json';
-        const auth = new GoogleAuth({keyFilename});
-        const opts = await auth.authorizeRequest({url: 'http://example.com'});
+        const auth = new GoogleAuth({ keyFilename });
+        const opts = await auth.authorizeRequest({ url: 'http://example.com' });
 
         assert.deepStrictEqual(opts.headers, {
           Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
@@ -2325,7 +2320,7 @@ describe('googleauth', () => {
 
       it('request() should make the request with auth header', async () => {
         const url = 'http://example.com';
-        const data = {breakfast: 'coffee'};
+        const data = { breakfast: 'coffee' };
         const keyFilename = './test/fixtures/external-account-cred.json';
         const scopes = mockGetAccessTokenAndProjectId(false);
         scopes.push(
@@ -2338,8 +2333,8 @@ describe('googleauth', () => {
             .reply(200, data)
         );
 
-        const auth = new GoogleAuth({keyFilename});
-        const res = await auth.request({url});
+        const auth = new GoogleAuth({ keyFilename });
+        const res = await auth.request({ url });
 
         assert.deepStrictEqual(res.data, data);
         scopes.forEach(s => s.done());
@@ -2352,7 +2347,7 @@ describe('googleauth', () => {
           const configWithImpersonation = createExternalAccountJSON();
           configWithImpersonation.service_account_impersonation_url =
             getServiceAccountImpersonationUrl();
-          const auth = new GoogleAuth({credentials: configWithImpersonation});
+          const auth = new GoogleAuth({ credentials: configWithImpersonation });
           const body = await auth.getCredentials();
           assert.notStrictEqual(null, body);
           assert.strictEqual(email, body.client_email);
@@ -2437,7 +2432,7 @@ describe('googleauth', () => {
         it('should initialize from keyFileName', async () => {
           const keyFilename =
             './test/fixtures/external-account-authorized-user-cred.json';
-          const auth = new GoogleAuth({keyFilename});
+          const auth = new GoogleAuth({ keyFilename });
           const actualClient = await auth.getClient();
 
           assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
@@ -2483,7 +2478,7 @@ describe('googleauth', () => {
       },
     });
     const jwt = await auth.getClient();
-    const scope = createGTokenMock({access_token: 'initial-access-token'});
+    const scope = createGTokenMock({ access_token: 'initial-access-token' });
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
       headers.Authorization,
@@ -2505,7 +2500,7 @@ describe('googleauth', () => {
       },
     });
     const jwt = await auth.getClient();
-    const scope = createGTokenMock({access_token: 'initial-access-token'});
+    const scope = createGTokenMock({ access_token: 'initial-access-token' });
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
       headers.Authorization,
@@ -2527,7 +2522,7 @@ describe('googleauth', () => {
       },
     });
     const jwt = await auth.getClient();
-    const scope = createGTokenMock({access_token: 'initial-access-token'});
+    const scope = createGTokenMock({ access_token: 'initial-access-token' });
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
       headers.Authorization,

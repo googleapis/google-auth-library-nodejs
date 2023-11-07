@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it} from 'mocha';
-import {AwsClient} from '../src/auth/awsclient';
-import {IdentityPoolClient} from '../src/auth/identitypoolclient';
-import {ExternalAccountClient} from '../src/auth/externalclient';
-import {getAudience, getTokenUrl} from './externalclienthelper';
-import {PluggableAuthClient} from '../src/auth/pluggable-auth-client';
+import { describe, it } from 'mocha';
+import { AwsClient } from '../src/auth/awsclient';
+import { IdentityPoolClient } from '../src/auth/identitypoolclient';
+import { ExternalAccountClient } from '../src/auth/externalclient';
+import { getAudience, getTokenUrl } from './externalclienthelper';
+import { PluggableAuthClient } from '../src/auth/pluggable-auth-client';
 
 const serviceAccountKeys = {
   type: 'service_account',
@@ -119,12 +119,11 @@ describe('ExternalAccountClient', () => {
 
     it('should return IdentityPoolClient with expected RefreshOptions', () => {
       const expectedClient = new IdentityPoolClient(
-        fileSourcedOptions,
-        refreshOptions
+        { ...fileSourcedOptions, ...refreshOptions }
       );
 
       assert.deepStrictEqual(
-        ExternalAccountClient.fromJSON(fileSourcedOptions, refreshOptions),
+        ExternalAccountClient.fromJSON({ ...fileSourcedOptions, ...refreshOptions }),
         expectedClient
       );
     });
@@ -139,10 +138,10 @@ describe('ExternalAccountClient', () => {
     });
 
     it('should return AwsClient with expected RefreshOptions', () => {
-      const expectedClient = new AwsClient(awsOptions, refreshOptions);
+      const expectedClient = new AwsClient({ ...awsOptions, ...refreshOptions });
 
       assert.deepStrictEqual(
-        ExternalAccountClient.fromJSON(awsOptions, refreshOptions),
+        ExternalAccountClient.fromJSON({ ...awsOptions, ...refreshOptions }),
         expectedClient
       );
     });
@@ -187,16 +186,16 @@ describe('ExternalAccountClient', () => {
     });
 
     it('should return PluggableAuthClient with expected RefreshOptions', () => {
-      const expectedClient = new PluggableAuthClient(
-        pluggableAuthClientOptions,
-        refreshOptions
-      );
+      const expectedClient = new PluggableAuthClient({
+        ...pluggableAuthClientOptions,
+        ...refreshOptions
+      });
 
       assert.deepStrictEqual(
-        ExternalAccountClient.fromJSON(
-          pluggableAuthClientOptions,
-          refreshOptions
-        ),
+        ExternalAccountClient.fromJSON({
+          ...pluggableAuthClientOptions,
+          ...refreshOptions
+        }),
         expectedClient
       );
     });

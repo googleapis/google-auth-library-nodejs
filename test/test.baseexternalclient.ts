@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it, afterEach} from 'mocha';
+import { describe, it, afterEach } from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import {createCrypto} from '../src/crypto/crypto';
-import {Credentials} from '../src/auth/credentials';
-import {StsSuccessfulResponse} from '../src/auth/stscredentials';
+import { createCrypto } from '../src/crypto/crypto';
+import { Credentials } from '../src/auth/credentials';
+import { StsSuccessfulResponse } from '../src/auth/stscredentials';
 import {
   EXPIRATION_TIME_OFFSET,
   BaseExternalAccountClient,
@@ -29,7 +29,7 @@ import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import {GaxiosError} from 'gaxios';
+import { GaxiosError } from 'gaxios';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -40,7 +40,6 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
-import {AuthClientOptions} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -54,10 +53,9 @@ class TestExternalAccountClient extends BaseExternalAccountClient {
   private counter = 0;
 
   constructor(
-    options: BaseExternalAccountClientOptions,
-    additionalOptions?: Partial<AuthClientOptions>
+    options: BaseExternalAccountClientOptions
   ) {
-    super(options, additionalOptions);
+    super(options);
     this.credentialSourceType = 'test';
   }
 
@@ -192,7 +190,7 @@ describe('BaseExternalAccountClient', () => {
     );
     const expectedWorkforcePoolUserProjectError = new Error(
       'workforcePoolUserProject should not be set for non-workforce pool ' +
-        'credentials.'
+      'credentials.'
     );
 
     invalidWorkforceAudiences.forEach(invalidWorkforceAudience => {
@@ -249,8 +247,7 @@ describe('BaseExternalAccountClient', () => {
         forceRefreshOnFailure: true,
       };
       const client = new TestExternalAccountClient(
-        externalAccountOptions,
-        refreshOptions
+        { ...externalAccountOptions, ...refreshOptions }
       );
 
       assert.strictEqual(
@@ -976,10 +973,8 @@ describe('BaseExternalAccountClient', () => {
           },
         ]);
 
-        const client = new TestExternalAccountClient(externalAccountOptions, {
-          // Override 5min threshold with 10 second threshold.
-          eagerRefreshThresholdMillis: customThresh,
-        });
+        // Override 5min threshold with 10 second threshold.
+        const client = new TestExternalAccountClient({ ...externalAccountOptions, eagerRefreshThresholdMillis: customThresh });
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
@@ -1448,13 +1443,11 @@ describe('BaseExternalAccountClient', () => {
           })
         );
 
+        // Override 5min threshold with 10 second threshold.
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA,
-          {
-            // Override 5min threshold with 10 second threshold.
-            eagerRefreshThresholdMillis: customThresh,
-          }
+          { ...externalAccountOptionsWithSA, eagerRefreshThresholdMillis: customThresh }
         );
+
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
@@ -1847,7 +1840,7 @@ describe('BaseExternalAccountClient', () => {
       ]);
 
       const optionsWithQuotaProjectId = Object.assign(
-        {quota_project_id: quotaProjectId},
+        { quota_project_id: quotaProjectId },
         externalAccountOptions
       );
       const client = new TestExternalAccountClient(optionsWithQuotaProjectId);
@@ -1896,7 +1889,7 @@ describe('BaseExternalAccountClient', () => {
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
-        {quota_project_id: quotaProjectId},
+        { quota_project_id: quotaProjectId },
         externalAccountOptions
       );
       const exampleRequest = {
@@ -1959,7 +1952,7 @@ describe('BaseExternalAccountClient', () => {
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
-        {quota_project_id: quotaProjectId},
+        { quota_project_id: quotaProjectId },
         externalAccountOptionsWithSA
       );
       const exampleRequest = {
@@ -2023,7 +2016,7 @@ describe('BaseExternalAccountClient', () => {
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
-        {quota_project_id: quotaProjectId},
+        { quota_project_id: quotaProjectId },
         externalAccountOptions
       );
       const exampleRequest = {
@@ -2282,9 +2275,7 @@ describe('BaseExternalAccountClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions, {
-        forceRefreshOnFailure: true,
-      });
+      const client = new TestExternalAccountClient({ ...externalAccountOptions, forceRefreshOnFailure: true });
       const actualResponse = await client.request<SampleResponse>({
         url: 'https://example.com/api',
         method: 'POST',
@@ -2407,9 +2398,7 @@ describe('BaseExternalAccountClient', () => {
           .reply(403),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions, {
-        forceRefreshOnFailure: true,
-      });
+      const client = new TestExternalAccountClient({ ...externalAccountOptions, forceRefreshOnFailure: true });
       await assert.rejects(
         client.request<SampleResponse>({
           url: 'https://example.com/api',
