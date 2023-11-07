@@ -13,25 +13,25 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it, afterEach, beforeEach} from 'mocha';
+import { describe, it, afterEach, beforeEach } from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import * as qs from 'querystring';
-import {assertGaxiosResponsePresent, getAudience} from './externalclienthelper';
+import { assertGaxiosResponsePresent, getAudience } from './externalclienthelper';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from '../src/auth/externalAccountAuthorizedUserClient';
 import {
-  DEFAULT_UNIVERSE,
   EXPIRATION_TIME_OFFSET,
 } from '../src/auth/baseexternalclient';
-import {GaxiosError, GaxiosResponse} from 'gaxios';
+import { GaxiosError, GaxiosResponse } from 'gaxios';
 import {
   getErrorFromOAuthErrorResponse,
   OAuthErrorResponse,
 } from '../src/auth/oauth2common';
+import { DEFAULT_UNIVERSE } from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -52,7 +52,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     statusCode: number;
     response: TokenRefreshResponse | OAuthErrorResponse;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: {[key: string]: any};
+    request: { [key: string]: any };
     times?: number;
   }
 
@@ -60,7 +60,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     url: string,
     path: string,
     nockParams: NockMockRefreshResponse[],
-    additionalHeaders?: {[key: string]: string}
+    additionalHeaders?: { [key: string]: string }
   ): nock.Scope {
     const headers = Object.assign(
       {
@@ -239,7 +239,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         },
       })
         .post(REFRESH_PATH, expectedRequest.toString())
-        .replyWithError({code: 'ETIMEDOUT'});
+        .replyWithError({ code: 'ETIMEDOUT' });
 
       const client = new ExternalAccountAuthorizedUserClient(
         externalAccountAuthorizedUserCredentialOptions
@@ -309,8 +309,8 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       // Advance clock to force new refresh.
       clock.tick(
         successfulRefreshResponseNoRefreshToken.expires_in * 1000 -
-          client.eagerRefreshThresholdMillis -
-          1
+        client.eagerRefreshThresholdMillis -
+        1
       );
       // Refresh access token with new access token.
       const actualResponse = await client.getAccessToken();
@@ -344,8 +344,8 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       // Advance clock to force new refresh.
       clock.tick(
         successfulRefreshResponseNoRefreshToken.expires_in * 1000 -
-          client.eagerRefreshThresholdMillis +
-          1
+        client.eagerRefreshThresholdMillis +
+        1
       );
       // Refresh access token with new access token.
       const actualResponse = await client.getAccessToken();
@@ -377,7 +377,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const optionsWithQuotaProjectId = Object.assign(
-        {quota_project_id: 'quotaProjectId'},
+        { quota_project_id: 'quotaProjectId' },
         externalAccountAuthorizedUserCredentialOptions
       );
       const client = new ExternalAccountAuthorizedUserClient(
@@ -425,7 +425,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
-        {quota_project_id: quotaProjectId},
+        { quota_project_id: quotaProjectId },
         externalAccountAuthorizedUserCredentialOptions
       );
       const exampleRequest = {
