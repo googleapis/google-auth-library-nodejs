@@ -63,11 +63,6 @@ const WORKFORCE_AUDIENCE_PATTERN =
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
 
-/**
- * For backwards compatibility.
- */
-export {DEFAULT_UNIVERSE} from './authclient';
-
 export interface SharedExternalAccountClientOptions extends AuthClientOptions {
   audience: string;
   token_url: string;
