@@ -20,7 +20,6 @@ import {
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
 import {Headers} from './oauth2client';
-import {AuthClientOptions} from './authclient';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
@@ -82,16 +81,9 @@ export class AwsClient extends BaseExternalAccountClient {
    * An error is thrown if the credential is not a valid AWS credential.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
-  constructor(
-    options: AwsClientOptions,
-    additionalOptions?: AuthClientOptions
-  ) {
-    super(options, additionalOptions);
+  constructor(options: AwsClientOptions) {
+    super(options);
     this.environmentId = options.credential_source.environment_id;
     // This is only required if the AWS region is not available in the
     // AWS_REGION or AWS_DEFAULT_REGION environment variables.
