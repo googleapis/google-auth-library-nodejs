@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import { describe, it, afterEach } from 'mocha';
+import {describe, it, afterEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import { createCrypto } from '../src/crypto/crypto';
-import { Credentials } from '../src/auth/credentials';
-import { StsSuccessfulResponse } from '../src/auth/stscredentials';
+import {createCrypto} from '../src/crypto/crypto';
+import {Credentials} from '../src/auth/credentials';
+import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   EXPIRATION_TIME_OFFSET,
   BaseExternalAccountClient,
@@ -28,7 +28,7 @@ import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import { GaxiosError } from 'gaxios';
+import {GaxiosError} from 'gaxios';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -39,7 +39,7 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
-import { AuthClientOptions, DEFAULT_UNIVERSE } from '../src/auth/authclient';
+import {AuthClientOptions, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -191,7 +191,7 @@ describe('BaseExternalAccountClient', () => {
     );
     const expectedWorkforcePoolUserProjectError = new Error(
       'workforcePoolUserProject should not be set for non-workforce pool ' +
-      'credentials.'
+        'credentials.'
     );
 
     invalidWorkforceAudiences.forEach(invalidWorkforceAudience => {
@@ -1846,7 +1846,7 @@ describe('BaseExternalAccountClient', () => {
       ]);
 
       const optionsWithQuotaProjectId = Object.assign(
-        { quota_project_id: quotaProjectId },
+        {quota_project_id: quotaProjectId},
         externalAccountOptions
       );
       const client = new TestExternalAccountClient(optionsWithQuotaProjectId);
@@ -1895,7 +1895,7 @@ describe('BaseExternalAccountClient', () => {
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
-        { quota_project_id: quotaProjectId },
+        {quota_project_id: quotaProjectId},
         externalAccountOptions
       );
       const exampleRequest = {
@@ -1958,7 +1958,7 @@ describe('BaseExternalAccountClient', () => {
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
-        { quota_project_id: quotaProjectId },
+        {quota_project_id: quotaProjectId},
         externalAccountOptionsWithSA
       );
       const exampleRequest = {
@@ -2022,7 +2022,7 @@ describe('BaseExternalAccountClient', () => {
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
-        { quota_project_id: quotaProjectId },
+        {quota_project_id: quotaProjectId},
         externalAccountOptions
       );
       const exampleRequest = {
