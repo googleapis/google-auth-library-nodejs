@@ -13,25 +13,25 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import { describe, it, beforeEach, afterEach } from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import { GaxiosError, GaxiosOptions, GaxiosPromise } from 'gaxios';
-import { Credentials } from '../src/auth/credentials';
-import { StsSuccessfulResponse } from '../src/auth/stscredentials';
+import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {Credentials} from '../src/auth/credentials';
+import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
   DownscopedClient,
   CredentialAccessBoundary,
   MAX_ACCESS_BOUNDARY_RULES_COUNT,
 } from '../src/auth/downscopedclient';
-import { AuthClient } from '../src/auth/authclient';
-import { mockStsTokenExchange } from './externalclienthelper';
+import {AuthClient} from '../src/auth/authclient';
+import {mockStsTokenExchange} from './externalclienthelper';
 import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import { GetAccessTokenResponse, Headers } from '../src/auth/oauth2client';
+import {GetAccessTokenResponse, Headers} from '../src/auth/oauth2client';
 
 nock.disableNetConnect();
 
@@ -135,7 +135,7 @@ describe('DownscopedClient', () => {
     it('should throw when number of access boundary rules is exceeded', () => {
       const expectedError = new Error(
         'The provided access boundary has more than ' +
-        `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
+          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
       );
       const cabWithExceedingAccessBoundaryRules: CredentialAccessBoundary = {
         accessBoundary: {
@@ -286,7 +286,7 @@ describe('DownscopedClient', () => {
       assert.doesNotThrow(() => {
         const instance = new DownscopedClient(
           client,
-          cabWithOneAccessBoundaryRule,
+          cabWithOneAccessBoundaryRule
         );
         instance.quotaProjectId = quotaProjectId;
         return instance;
@@ -313,10 +313,12 @@ describe('DownscopedClient', () => {
       };
       const downscopedClient = new DownscopedClient(
         client,
-        cabWithOneAccessBoundaryRules,
+        cabWithOneAccessBoundaryRules
       );
-      downscopedClient.eagerRefreshThresholdMillis = refreshOptions.eagerRefreshThresholdMillis;
-      downscopedClient.forceRefreshOnFailure = refreshOptions.forceRefreshOnFailure;
+      downscopedClient.eagerRefreshThresholdMillis =
+        refreshOptions.eagerRefreshThresholdMillis;
+      downscopedClient.forceRefreshOnFailure =
+        refreshOptions.forceRefreshOnFailure;
       assert.strictEqual(
         downscopedClient.forceRefreshOnFailure,
         refreshOptions.forceRefreshOnFailure
@@ -335,7 +337,7 @@ describe('DownscopedClient', () => {
       };
       const expectedError = new Error(
         'The access token expiry_date field is missing in the provided ' +
-        'credentials.'
+          'credentials.'
       );
       const downscopedClient = new DownscopedClient(
         client,
@@ -756,10 +758,7 @@ describe('DownscopedClient', () => {
         },
       ]);
 
-      const cabClient = new DownscopedClient(
-        client,
-        testClientAccessBoundary,
-      );
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
       cabClient.quotaProjectId = quotaProjectId;
       const actualHeaders = await cabClient.getRequestHeaders();
 
@@ -839,10 +838,7 @@ describe('DownscopedClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const cabClient = new DownscopedClient(
-        client,
-        testClientAccessBoundary,
-      );
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
       cabClient.quotaProjectId = quotaProjectId;
       const actualResponse = await cabClient.request<SampleResponse>({
         url: 'https://example.com/api',
@@ -893,10 +889,7 @@ describe('DownscopedClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const cabClient = new DownscopedClient(
-        client,
-        testClientAccessBoundary,
-      );
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
       cabClient.quotaProjectId = quotaProjectId;
       // Send request with no headers.
       const actualResponse = await cabClient.request<SampleResponse>({
