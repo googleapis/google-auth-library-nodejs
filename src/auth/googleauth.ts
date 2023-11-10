@@ -53,6 +53,7 @@ import {
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from './externalAccountAuthorizedUserClient';
+import {originalOrCamelOptions} from '../util';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -386,6 +387,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       throw new Error(
         'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.'
       );
+    }
+
+    if (!originalOrCamelOptions(options).get('universe_domain')) {
+      options.universeDomain =
+        (await gcpMetadata.universe('universe_domain')) || undefined;
     }
 
     // For GCE, just return a default ComputeClient. It will take care of
@@ -901,6 +907,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       const credential: CredentialBody = {
         client_email: (this.jsonContent as JWTInput).client_email,
         private_key: (this.jsonContent as JWTInput).private_key,
+        universe_domain: this.jsonContent.universe_domain,
       };
       return credential;
     }
@@ -914,16 +921,19 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // NOTE: The trailing '/' at the end of service-accounts/ is very important!
     // The GCF metadata server doesn't respect querystring params if this / is
     // not included.
-    const data = await gcpMetadata.instance({
-      property: 'service-accounts/',
-      params: {recursive: 'true'},
-    });
+    const data = await gcpMetadata.bulk([
+      {
+        metadataKey: 'instance/service-accounts/default/email',
+      },
+      {
+        metadataKey: 'universe/universe_domain',
+      },
+    ]);
 
-    if (!data || !data.default || !data.default.email) {
-      throw new Error('Failure from metadata server.');
-    }
-
-    return {client_email: data.default.email};
+    return {
+      client_email: data['instance/service-accounts/default/email'],
+      universe_domain: data['universe/universe_domain'] || undefined,
+    };
   }
 
   /**
