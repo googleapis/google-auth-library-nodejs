@@ -132,6 +132,14 @@ const GoogleAuthExceptionMessages = {
     'Unable to detect a Project Id in the current environment. \n' +
     'To learn more about authentication and Google APIs, visit: \n' +
     'https://cloud.google.com/docs/authentication/getting-started',
+  NO_CREDENTIALS_FOUND:
+    'Unable to find credentials in current environment. \n' +
+    'To learn more about authentication and Google APIs, visit: \n' +
+    'https://cloud.google.com/docs/authentication/getting-started',
+  NO_UNIVERSE_DOMAIN_FOUND:
+    'Unable to detect a Universe Domain in the current environment.\n' +
+    'To learn more about Universe Domain retrieval, visit: \n' +
+    'https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys',
 } as const;
 
 export class GoogleAuth<T extends AuthClient = JSONClient> {
@@ -168,6 +176,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions?: AuthClientOptions;
+
+  #universeDomain?: string = undefined;
 
   /**
    * Export DefaultTransporter as a static property of the class.
@@ -287,6 +297,24 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     return this._findProjectIdPromise;
   }
 
+  async getUniverseDomain(): Promise<string> {
+    // Get the universe from `clientOptions`, if available
+    this.#universeDomain ??= originalOrCamelOptions(this.clientOptions).get(
+      'universe_domain'
+    );
+
+    if (await this._checkIsGCE()) {
+      // Get the universe from the metadata server, if available
+      this.#universeDomain ??= await gcpMetadata.universe('universe_domain');
+    }
+
+    if (!this.#universeDomain) {
+      throw new Error(GoogleAuthExceptionMessages.NO_UNIVERSE_DOMAIN_FOUND);
+    }
+
+    return this.#universeDomain;
+  }
+
   /**
    * @returns Any scopes (user-specified or default scopes specified by the
    *   client library) that need to be set on the current Auth client.
@@ -390,8 +418,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     if (!originalOrCamelOptions(options).get('universe_domain')) {
-      options.universeDomain =
-        (await gcpMetadata.universe('universe_domain')) || undefined;
+      options.universeDomain = await this.getUniverseDomain();
     }
 
     // For GCE, just return a default ComputeClient. It will take care of
@@ -912,28 +939,16 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       return credential;
     }
 
-    const isGCE = await this._checkIsGCE();
-    if (!isGCE) {
-      throw new Error('Unknown error.');
+    if (await this._checkIsGCE()) {
+      const [client_email, universe_domain] = await Promise.all([
+        gcpMetadata.instance('service-accounts/default/email'),
+        this.getUniverseDomain(),
+      ]);
+
+      return {client_email, universe_domain};
     }
 
-    // For GCE, return the service account details from the metadata server
-    // NOTE: The trailing '/' at the end of service-accounts/ is very important!
-    // The GCF metadata server doesn't respect querystring params if this / is
-    // not included.
-    const data = await gcpMetadata.bulk([
-      {
-        metadataKey: 'instance/service-accounts/default/email',
-      },
-      {
-        metadataKey: 'universe/universe_domain',
-      },
-    ]);
-
-    return {
-      client_email: data['instance/service-accounts/default/email'],
-      universe_domain: data['universe/universe_domain'] || undefined,
-    };
+    throw new Error(GoogleAuthExceptionMessages.NO_CREDENTIALS_FOUND);
   }
 
   /**
