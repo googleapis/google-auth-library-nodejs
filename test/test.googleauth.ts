@@ -1088,11 +1088,10 @@ describe('googleauth', () => {
       // * Well-known file is not set.
       // * Running on GCE is set to true.
       mockWindows();
-      sandbox.stub(auth, '_checkIsGCE').rejects('🤮');
-      await assert.rejects(
-        auth.getApplicationDefault(),
-        /Unexpected error determining execution environment/
-      );
+      const e = new Error('abc');
+
+      sandbox.stub(auth, '_checkIsGCE').rejects(e);
+      await assert.rejects(auth.getApplicationDefault(), e);
     });
 
     it('getApplicationDefault should also get project ID', async () => {
