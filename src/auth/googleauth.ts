@@ -177,6 +177,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private scopes?: string | string[];
   private clientOptions?: AuthClientOptions;
 
+  /**
+   * The cached universe domain.
+   *
+   * @see {@link GoogleAuth.getUniverseDomain}
+   */
   #universeDomain?: string = undefined;
 
   /**
