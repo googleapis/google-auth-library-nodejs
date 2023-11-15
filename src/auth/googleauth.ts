@@ -931,17 +931,19 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (client instanceof BaseExternalAccountClient) {
       const serviceAccountEmail = client.getServiceAccountEmail();
       if (serviceAccountEmail) {
-        return {client_email: serviceAccountEmail};
+        return {
+          client_email: serviceAccountEmail,
+          universe_domain: client.universeDomain,
+        };
       }
     }
 
     if (this.jsonContent) {
-      const credential: CredentialBody = {
+      return {
         client_email: (this.jsonContent as JWTInput).client_email,
         private_key: (this.jsonContent as JWTInput).private_key,
         universe_domain: this.jsonContent.universe_domain,
       };
-      return credential;
     }
 
     if (await this._checkIsGCE()) {
