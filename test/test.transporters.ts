@@ -161,24 +161,4 @@ describe('transporters', () => {
       }
     );
   });
-
-  // tslint:disable-next-line ban
-  it.skip('should use the https proxy if one is configured', async () => {
-    process.env['https_proxy'] = 'https://han:solo@proxy-server:1234';
-    const transporter = new DefaultTransporter();
-    const scope = nock('https://proxy-server:1234')
-      .get('https://example.com/fake', undefined, {
-        reqheaders: {
-          host: 'example.com',
-          accept: /.*/g,
-          'user-agent': /google-api-nodejs-client\/.*/g,
-          'proxy-authorization': /.*/g,
-        },
-      })
-      .reply(200);
-    const url = 'https://example.com/fake';
-    const result = await transporter.request({url});
-    scope.done();
-    assert.strictEqual(result.status, 200);
-  });
 });
