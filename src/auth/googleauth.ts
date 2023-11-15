@@ -14,7 +14,7 @@
 
 import {exec} from 'child_process';
 import * as fs from 'fs';
-import {GaxiosOptions, GaxiosResponse} from 'gaxios';
+import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 import * as os from 'os';
 import * as path from 'path';
@@ -47,7 +47,7 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {AuthClient, AuthClientOptions} from './authclient';
+import {AuthClient, AuthClientOptions, DEFAULT_UNIVERSE} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -297,22 +297,40 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     return this._findProjectIdPromise;
   }
 
+  async #getUniverseFromMetadataServer() {
+    if (!(await this._checkIsGCE())) return;
+
+    let universeDomain: string;
+
+    try {
+      universeDomain = await gcpMetadata.universe('universe_domain');
+      universeDomain ||= DEFAULT_UNIVERSE;
+    } catch (e) {
+      if (e instanceof GaxiosError && e.status === 404) {
+        universeDomain = DEFAULT_UNIVERSE;
+      } else {
+        throw e;
+      }
+    }
+
+    return universeDomain;
+  }
+
+  /**
+   * Retrieves, caches, and returns the universe domain in the following order
+   * of precedence:
+   * - The universe domain in {@link GoogleAuth.clientOptions}
+   * - {@link gcpMetadata.universe}
+   *
+   * @returns The universe domain
+   */
   async getUniverseDomain(): Promise<string> {
-    // Get the universe from `clientOptions`, if available
     this.#universeDomain ??= originalOrCamelOptions(this.clientOptions).get(
       'universe_domain'
     );
+    this.#universeDomain ??= await this.#getUniverseFromMetadataServer();
 
-    if (await this._checkIsGCE()) {
-      // Get the universe from the metadata server, if available
-      this.#universeDomain ??= await gcpMetadata.universe('universe_domain');
-    }
-
-    if (!this.#universeDomain) {
-      throw new Error(GoogleAuthExceptionMessages.NO_UNIVERSE_DOMAIN_FOUND);
-    }
-
-    return this.#universeDomain;
+    return this.#universeDomain || DEFAULT_UNIVERSE;
   }
 
   /**
@@ -399,34 +417,21 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     // Determine if we're running on GCE.
-    let isGCE;
-    try {
-      isGCE = await this._checkIsGCE();
-    } catch (e) {
-      if (e instanceof Error) {
-        e.message = `Unexpected error determining execution environment: ${e.message}`;
+    if (await this._checkIsGCE()) {
+      // set universe domain for Compute client
+      if (!originalOrCamelOptions(options).get('universe_domain')) {
+        options.universeDomain = await this.getUniverseDomain();
       }
 
-      throw e;
-    }
-
-    if (!isGCE) {
-      // We failed to find the default credentials. Bail out with an error.
-      throw new Error(
-        'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.'
+      (options as ComputeOptions).scopes = this.getAnyScopes();
+      return await this.prepareAndCacheADC(
+        new Compute(options),
+        quotaProjectIdOverride
       );
     }
 
-    if (!originalOrCamelOptions(options).get('universe_domain')) {
-      options.universeDomain = await this.getUniverseDomain();
-    }
-
-    // For GCE, just return a default ComputeClient. It will take care of
-    // the rest.
-    (options as ComputeOptions).scopes = this.getAnyScopes();
-    return await this.prepareAndCacheADC(
-      new Compute(options),
-      quotaProjectIdOverride
+    throw new Error(
+      'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.'
     );
   }
 

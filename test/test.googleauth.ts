@@ -1551,6 +1551,23 @@ describe('googleauth', () => {
       assert.fail('failed to throw');
     });
 
+    describe('getUniverseDomain', () => {
+      it('should prefer `clientOptions` > metadata service when available', async () => {
+        const universeDomain = 'my.universe.com';
+        const auth = new GoogleAuth({clientOptions: {universeDomain}});
+
+        assert.equal(await auth.getUniverseDomain(), universeDomain);
+      });
+
+      it('should use the metadata service if on GCP', async () => {
+        const universeDomain = 'my.universe.com';
+        const scope = nockIsGCE({universeDomain});
+
+        assert.equal(await auth.getUniverseDomain(), universeDomain);
+        await scope.done();
+      });
+    });
+
     function mockApplicationDefaultCredentials(path: string) {
       // Fake a home directory in our fixtures path.
       mockEnvVar('GCLOUD_PROJECT', 'my-fake-project');
