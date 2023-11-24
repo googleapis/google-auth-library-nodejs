@@ -25,6 +25,8 @@ async function main() {
     const client = await auth.getClient();
   
     // First impersonate
+    const scopes = ['https://www.googleapis.com/auth/cloud-platform']
+
     let targetPrincipal = 'target@project.iam.gserviceaccount.com';
     let targetClient = new Impersonated({
       sourceClient: client,
