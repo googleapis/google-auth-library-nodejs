@@ -132,10 +132,10 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
    *
    * {@link https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/signBlob Reference Documentation}
    * @param blobToSign String to sign.
-   * @return Signed bytes as base64-encoded string.
+   * @return <SignBlobResponse> denoting the keyyID and signedBlob in base64 string
    */
 
-  async sign(blobToSign: string): Promise<string> {
+  async sign(blobToSign: string): Promise<SignBlobResponse> {
     await this.sourceClient.getAccessToken();
     const name = `projects/-/serviceAccounts/${this.targetPrincipal}`;
     const u = `${this.endpoint}/v1/${name}:signBlob`;
@@ -148,10 +148,10 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       data: body,
       method: 'POST',
     });
-    return res.data.signedBlob;
+    return res.data;
   }
 
-  /** The service account email to be impersonated. */  
+  /** The service account email to be impersonated. */
   getServiceAccountEmail(): string {
     return this.targetPrincipal;
   }

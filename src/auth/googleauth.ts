@@ -1028,7 +1028,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     const client = await this.getClient();
 
     if (client instanceof Impersonated) {
-      return client.sign(data);
+      const signed = await client.sign(data);
+      return signed.signedBlob;
     }
 
     const crypto = createCrypto();

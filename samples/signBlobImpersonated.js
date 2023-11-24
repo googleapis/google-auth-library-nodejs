@@ -13,39 +13,37 @@
 
 'use strict';
 
-const { GoogleAuth, Impersonated } = require('google-auth-library');
+const {GoogleAuth, Impersonated} = require('google-auth-library');
 
 /**
  * Use the iamcredentials API to sign a blob of data.
  */
 async function main() {
-  
-    // get source credentials
-    const auth = new GoogleAuth();
-    const client = await auth.getClient();
-  
-    // First impersonate
-    const scopes = ['https://www.googleapis.com/auth/cloud-platform']
+  // get source credentials
+  const auth = new GoogleAuth();
+  const client = await auth.getClient();
 
-    let targetPrincipal = 'target@project.iam.gserviceaccount.com';
-    let targetClient = new Impersonated({
-      sourceClient: client,
-      targetPrincipal: targetPrincipal,
-      lifetime: 30,
-      delegates: [],
-      targetScopes: [scopes]
-    });
-  
-  const signedData = await targetClient.sign("some data");
-  console.log(signedData);
+  // First impersonate
+  const scopes = ['https://www.googleapis.com/auth/cloud-platform'];
 
+  const targetPrincipal = 'target@project.iam.gserviceaccount.com';
+  const targetClient = new Impersonated({
+    sourceClient: client,
+    targetPrincipal: targetPrincipal,
+    lifetime: 30,
+    delegates: [],
+    targetScopes: [scopes],
+  });
+
+  const signedData = await targetClient.sign('some data');
+  console.log(signedData.signedBlob);
 
   // or use the client to create a GCS signedURL
   // const { Storage } = require('@google-cloud/storage');
 
-  // let projectId = 'yourProjectID'
-  // let bucketName = 'yourBucket'
-  // let objectName = 'yourObject'
+  // const projectId = 'yourProjectID'
+  // const bucketName = 'yourBucket'
+  // const objectName = 'yourObject'
 
   // // use the impersonated client to access gcs
   // const storageOptions = {
@@ -66,7 +64,7 @@ async function main() {
   //   .file(objectName)
   //   .getSignedUrl(signOptions);
 
-  // console.log(signedURL);  
+  // console.log(signedURL);
 }
 
 main().catch(e => {

@@ -493,10 +493,10 @@ describe('impersonated', () => {
       targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
     });
 
-    const blob = await impersonated.sign(expectedBlobToSign);
+    const resp = await impersonated.sign(expectedBlobToSign);
     assert.equal(email, impersonated.getServiceAccountEmail());
-    assert.equal(blob, expectedSignedBlob);
-
+    assert.equal(resp.keyId, expectedKeyID);
+    assert.equal(resp.signedBlob, expectedSignedBlob);
     scopes.forEach(s => s.done());
   });
 });
