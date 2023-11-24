@@ -890,6 +890,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private async getCredentialsAsync(): Promise<CredentialBody> {
     const client = await this.getClient();
 
+    if (client instanceof Impersonated) {
+      return {client_email: client.getServiceAccountEmail()};
+    }
+
     if (client instanceof BaseExternalAccountClient) {
       const serviceAccountEmail = client.getServiceAccountEmail();
       if (serviceAccountEmail) {
@@ -1022,6 +1026,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   async sign(data: string): Promise<string> {
     const client = await this.getClient();
+
+    if (client instanceof Impersonated) {
+      return client.sign(data);
+    }
+
     const crypto = createCrypto();
     if (client instanceof JWT && client.key) {
       const sign = await crypto.sign(client.key, data);
