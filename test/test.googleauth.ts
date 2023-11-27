@@ -1588,13 +1588,11 @@ describe('googleauth', () => {
           const auth = new GoogleAuth();
           const client = await auth.getClient();
 
-          assert(client instanceof Impersonated);
-
           const email = 'target@project.iam.gserviceaccount.com';
           const iamUri = 'https://iamcredentials.googleapis.com';
           const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
           const signedBlob = 'erutangis';
-          const keyId = 12345;
+          const keyId = '12345';
           const data = 'abc123';
           const scopes = [
             nock('https://oauth2.googleapis.com').post('/token').reply(200, {
@@ -1617,13 +1615,11 @@ describe('googleauth', () => {
               .reply(200, {keyId: keyId, signedBlob: signedBlob}),
           ];
 
-          const creds = await auth.getCredentials();
-          const signed = await client.sign(data);
+          const signed = await auth.sign(data);
 
           scopes.forEach(x => x.done());
-          assert.strictEqual(creds.client_email, email);
-          assert.strictEqual(signed.keyId, keyId);
-          assert.strictEqual(signed.signedBlob, signedBlob);
+          assert(client instanceof Impersonated);
+          assert.strictEqual(signed, signedBlob);
         });
       });
     });
