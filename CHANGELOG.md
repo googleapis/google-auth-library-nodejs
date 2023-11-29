@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.3.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.2.0...v9.3.0) (2023-11-29)
+
+
+### Features
+
+* Add impersonated signer ([#1694](https://github.com/googleapis/google-auth-library-nodejs/issues/1694)) ([cb78a1b](https://github.com/googleapis/google-auth-library-nodejs/commit/cb78a1bfb4104e05be85877fee56d703f749e525))
+* Retrieve `universe_domain` for Compute clients ([#1692](https://github.com/googleapis/google-auth-library-nodejs/issues/1692)) ([a735ec5](https://github.com/googleapis/google-auth-library-nodejs/commit/a735ec5f5e280a1c47f0f4d5e99acf228d5a320a))
+
+
+### Bug Fixes
+
+* Verifier algorithm ([#1696](https://github.com/googleapis/google-auth-library-nodejs/issues/1696)) ([c5080a0](https://github.com/googleapis/google-auth-library-nodejs/commit/c5080a0d56b52b90b5d26cfc5f7343afb58199a4))
+
 ## [9.2.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.1.0...v9.2.0) (2023-10-26)
 
 
