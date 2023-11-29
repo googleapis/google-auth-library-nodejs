@@ -212,9 +212,9 @@ describe('googleauth', () => {
       return {
         done: () => {
           return Promise.allSettled([
-            primary.done(),
-            secondary.done(),
-            universeDomain.done(),
+            (async () => primary.done())(),
+            (async () => secondary.done())(),
+            (async () => universeDomain.done())(),
           ]);
         },
       };
