@@ -22,6 +22,7 @@ import {
 import {AuthClient} from './authclient';
 import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
+import {SignBlobResponse} from './googleauth';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -124,6 +125,34 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     this.targetScopes = options.targetScopes ?? [];
     this.lifetime = options.lifetime ?? 3600;
     this.endpoint = options.endpoint ?? 'https://iamcredentials.googleapis.com';
+  }
+
+  /**
+   * Signs some bytes.
+   *
+   * {@link https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/signBlob Reference Documentation}
+   * @param blobToSign String to sign.
+   * @return <SignBlobResponse> denoting the keyyID and signedBlob in base64 string
+   */
+  async sign(blobToSign: string): Promise<SignBlobResponse> {
+    await this.sourceClient.getAccessToken();
+    const name = `projects/-/serviceAccounts/${this.targetPrincipal}`;
+    const u = `${this.endpoint}/v1/${name}:signBlob`;
+    const body = {
+      delegates: this.delegates,
+      payload: Buffer.from(blobToSign).toString('base64'),
+    };
+    const res = await this.sourceClient.request<SignBlobResponse>({
+      url: u,
+      data: body,
+      method: 'POST',
+    });
+    return res.data;
+  }
+
+  /** The service account email to be impersonated. */
+  getTargetPrincipal(): string {
+    return this.targetPrincipal;
   }
 
   /**
