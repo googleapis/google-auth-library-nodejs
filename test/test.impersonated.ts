@@ -494,7 +494,7 @@ describe('impersonated', () => {
     });
 
     const resp = await impersonated.sign(expectedBlobToSign);
-    assert.equal(email, impersonated.getServiceAccountEmail());
+    assert.equal(email, impersonated.getTargetPrincipal());
     assert.equal(resp.keyId, expectedKeyID);
     assert.equal(resp.signedBlob, expectedSignedBlob);
     scopes.forEach(s => s.done());

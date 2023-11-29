@@ -891,7 +891,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     const client = await this.getClient();
 
     if (client instanceof Impersonated) {
-      return {client_email: client.getServiceAccountEmail()};
+      return {client_email: client.getTargetPrincipal()};
     }
 
     if (client instanceof BaseExternalAccountClient) {

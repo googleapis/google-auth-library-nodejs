@@ -134,7 +134,6 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
    * @param blobToSign String to sign.
    * @return <SignBlobResponse> denoting the keyyID and signedBlob in base64 string
    */
-
   async sign(blobToSign: string): Promise<SignBlobResponse> {
     await this.sourceClient.getAccessToken();
     const name = `projects/-/serviceAccounts/${this.targetPrincipal}`;
@@ -152,7 +151,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
   }
 
   /** The service account email to be impersonated. */
-  getServiceAccountEmail(): string {
+  getTargetPrincipal(): string {
     return this.targetPrincipal;
   }
 
