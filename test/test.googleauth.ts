@@ -1578,6 +1578,62 @@ describe('googleauth', () => {
         .post('/token')
         .reply(200, {});
     }
+    describe('for impersonated types', () => {
+      describe('for impersonated credentials signing', () => {
+        const now = new Date().getTime();
+        const saSuccessResponse = {
+          accessToken: 'SA_ACCESS_TOKEN',
+          expireTime: new Date(now + 3600 * 1000).toISOString(),
+        };
+
+        it('should use IAMCredentials signBlob endpoint when impersonation is used', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/impersonated_application_default_credentials.json'
+          );
+
+          // Set up a mock to explicity return the Project ID, as needed for impersonated ADC
+          mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
+
+          const auth = new GoogleAuth();
+          const client = await auth.getClient();
+
+          const email = 'target@project.iam.gserviceaccount.com';
+          const iamUri = 'https://iamcredentials.googleapis.com';
+          const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
+          const signedBlob = 'erutangis';
+          const keyId = '12345';
+          const data = 'abc123';
+          const scopes = [
+            nock('https://oauth2.googleapis.com').post('/token').reply(200, {
+              access_token: saSuccessResponse.accessToken,
+            }),
+            nock(iamUri)
+              .post(
+                iamPath,
+                {
+                  delegates: [],
+                  payload: Buffer.from(data, 'utf-8').toString('base64'),
+                },
+                {
+                  reqheaders: {
+                    Authorization: `Bearer ${saSuccessResponse.accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              )
+              .reply(200, {keyId: keyId, signedBlob: signedBlob}),
+          ];
+
+          const signed = await auth.sign(data);
+
+          scopes.forEach(x => x.done());
+          assert(client instanceof Impersonated);
+          assert.strictEqual(signed, signedBlob);
+        });
+      });
+    });
 
     describe('for external_account types', () => {
       let fromJsonSpy: sinon.SinonSpy<

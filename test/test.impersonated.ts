@@ -455,4 +455,48 @@ describe('impersonated', () => {
 
     scopes.forEach(s => s.done());
   });
+
+  it('should sign a blob', async () => {
+    const expectedKeyID = '12345';
+    const expectedSignedBlob = 'signed';
+    const expectedBlobToSign = 'signme';
+    const expectedDeligates = ['deligate-1', 'deligate-2'];
+    const email = 'target@project.iam.gserviceaccount.com';
+
+    const scopes = [
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock('https://iamcredentials.googleapis.com')
+        .post(
+          `/v1/projects/-/serviceAccounts/${email}:signBlob`,
+          (body: {delegates: string[]; payload: string}) => {
+            assert.strictEqual(
+              body.payload,
+              Buffer.from(expectedBlobToSign).toString('base64')
+            );
+            assert.deepStrictEqual(body.delegates, expectedDeligates);
+            return true;
+          }
+        )
+        .reply(200, {
+          keyId: expectedKeyID,
+          signedBlob: expectedSignedBlob,
+        }),
+    ];
+
+    const impersonated = new Impersonated({
+      sourceClient: createSampleJWTClient(),
+      targetPrincipal: email,
+      lifetime: 30,
+      delegates: expectedDeligates,
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+
+    const resp = await impersonated.sign(expectedBlobToSign);
+    assert.equal(email, impersonated.getTargetPrincipal());
+    assert.equal(resp.keyId, expectedKeyID);
+    assert.equal(resp.signedBlob, expectedSignedBlob);
+    scopes.forEach(s => s.done());
+  });
 });
