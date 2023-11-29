@@ -64,7 +64,8 @@ describe('googleauth', () => {
   const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
   const host = HOST_ADDRESS;
   const instancePath = `${BASE_PATH}/instance`;
-  const svcAccountPath = `${instancePath}/service-accounts/?recursive=true`;
+  const svcAccountPath = `${instancePath}/service-accounts/default/email`;
+  const universeDomainPath = `${BASE_PATH}/universe/universe_domain`;
   const API_KEY = 'test-123';
   const PEM_PATH = './test/fixtures/private.pem';
   const STUB_PROJECT = 'my-awesome-project';
@@ -199,20 +200,22 @@ describe('googleauth', () => {
       createLinuxWellKnownStream = () => fs.createReadStream(filePath);
     }
 
-    function nockIsGCE() {
+    function nockIsGCE(opts = {universeDomain: 'my-universe.com'}) {
       const primary = nock(host).get(instancePath).reply(200, {}, HEADERS);
       const secondary = nock(SECONDARY_HOST_ADDRESS)
         .get(instancePath)
         .reply(200, {}, HEADERS);
+      const universeDomain = nock(HOST_ADDRESS)
+        .get(universeDomainPath)
+        .reply(200, opts.universeDomain, HEADERS);
 
       return {
         done: () => {
-          try {
-            primary.done();
-            secondary.done();
-          } catch (_err) {
-            // secondary can sometimes complete prior to primary.
-          }
+          return Promise.allSettled([
+            primary.done(),
+            secondary.done(),
+            universeDomain.done(),
+          ]);
         },
       };
     }
@@ -1085,11 +1088,10 @@ describe('googleauth', () => {
       // * Well-known file is not set.
       // * Running on GCE is set to true.
       mockWindows();
-      sandbox.stub(auth, '_checkIsGCE').rejects('🤮');
-      await assert.rejects(
-        auth.getApplicationDefault(),
-        /Unexpected error determining execution environment/
-      );
+      const e = new Error('abc');
+
+      sandbox.stub(auth, '_checkIsGCE').rejects(e);
+      await assert.rejects(auth.getApplicationDefault(), e);
     });
 
     it('getApplicationDefault should also get project ID', async () => {
@@ -1128,25 +1130,19 @@ describe('googleauth', () => {
     });
 
     it('getCredentials should get metadata from the server when running on GCE', async () => {
-      const response = {
-        default: {
-          email: 'test-creds@test-creds.iam.gserviceaccount.com',
-          private_key: null,
-        },
-      };
+      const clientEmail = 'test-creds@test-creds.iam.gserviceaccount.com';
+      const universeDomain = 'my-amazing-universe.com';
       const scopes = [
-        nockIsGCE(),
+        nockIsGCE({universeDomain}),
         createGetProjectIdNock(),
-        nock(host).get(svcAccountPath).reply(200, response, HEADERS),
+        nock(host).get(svcAccountPath).reply(200, clientEmail, HEADERS),
       ];
       await auth._checkIsGCE();
       assert.strictEqual(true, auth.isGCE);
       const body = await auth.getCredentials();
       assert.ok(body);
-      assert.strictEqual(
-        body.client_email,
-        'test-creds@test-creds.iam.gserviceaccount.com'
-      );
+      assert.strictEqual(body.client_email, clientEmail);
+      assert.strictEqual(body.universe_domain, universeDomain);
       assert.strictEqual(body.private_key, undefined);
       scopes.forEach(s => s.done());
     });
@@ -1415,9 +1411,7 @@ describe('googleauth', () => {
       const data = 'abc123';
       scopes.push(
         nock(iamUri).post(iamPath).reply(200, {signedBlob}),
-        nock(host)
-          .get(svcAccountPath)
-          .reply(200, {default: {email, private_key: privateKey}}, HEADERS)
+        nock(host).get(svcAccountPath).reply(200, email, HEADERS)
       );
       const value = await auth.sign(data);
       scopes.forEach(x => x.done());
@@ -1554,6 +1548,23 @@ describe('googleauth', () => {
         return;
       }
       assert.fail('failed to throw');
+    });
+
+    describe('getUniverseDomain', () => {
+      it('should prefer `clientOptions` > metadata service when available', async () => {
+        const universeDomain = 'my.universe.com';
+        const auth = new GoogleAuth({clientOptions: {universeDomain}});
+
+        assert.equal(await auth.getUniverseDomain(), universeDomain);
+      });
+
+      it('should use the metadata service if on GCP', async () => {
+        const universeDomain = 'my.universe.com';
+        const scope = nockIsGCE({universeDomain});
+
+        assert.equal(await auth.getUniverseDomain(), universeDomain);
+        await scope.done();
+      });
     });
 
     function mockApplicationDefaultCredentials(path: string) {
