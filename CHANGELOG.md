@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.4.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.3.0...v9.4.0) (2023-11-30)
+
+
+### Features
+
+* Update gcp metadata dependency ([#1703](https://github.com/googleapis/google-auth-library-nodejs/issues/1703)) ([615bdd9](https://github.com/googleapis/google-auth-library-nodejs/commit/615bdd92d1eb1a2a5b8d8c2675fd53350d5fbc21))
+
 ## [9.3.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.2.0...v9.3.0) (2023-11-29)
 
 
