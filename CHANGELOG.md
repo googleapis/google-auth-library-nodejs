@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.4.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.4.0...v9.4.1) (2023-12-01)
+
+
+### Bug Fixes
+
+* Support 404 When `GaxiosError` != `GaxiosError` ([#1707](https://github.com/googleapis/google-auth-library-nodejs/issues/1707)) ([704674f](https://github.com/googleapis/google-auth-library-nodejs/commit/704674fe14750d31e7d3a58d6f9b2387c89fb184))
+
 ## [9.4.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.3.0...v9.4.0) (2023-11-30)
 
 
