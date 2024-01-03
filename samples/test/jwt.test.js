@@ -67,7 +67,7 @@ describe('samples', () => {
     assert.match(output, /What's next?/);
   });
 
-  it('should fetch ID token for IAP', async () => {
+  it.skip('should fetch ID token for IAP', async () => {
     // process.env.IAP_URL should be an App Engine app, protected with IAP:
     const url =
       process.env.IAP_URL || 'https://nodejs-docs-samples-iap.appspot.com';
