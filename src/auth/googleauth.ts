@@ -102,7 +102,7 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
    * Object containing client_email and private_key properties, or the
    * external account client options.
    */
-  credentials?: CredentialBody | ExternalAccountClientOptions;
+  credentials?: JWTInput | ExternalAccountClientOptions;
 
   /**
    * Options object passed to the constructor of the client
