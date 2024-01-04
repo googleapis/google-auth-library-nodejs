@@ -44,7 +44,7 @@ export class Compute extends OAuth2Client {
    * Google Compute Engine service account credentials.
    *
    * Retrieve access token from the metadata server.
-   * See: https://developers.google.com/compute/docs/authentication
+   * See: https://cloud.google.com/compute/docs/access/authenticate-workloads#applications
    */
   constructor(options: ComputeOptions = {}) {
     super(options);
