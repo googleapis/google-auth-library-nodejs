@@ -140,7 +140,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
    *   available.
    */
   constructor(
-    private readonly tokenExchangeEndpoint: string,
+    private readonly tokenExchangeEndpoint: string | URL,
     clientAuthentication?: ClientAuthentication
   ) {
     super(clientAuthentication);
@@ -195,7 +195,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
     Object.assign(headers, additionalHeaders || {});
 
     const opts: GaxiosOptions = {
-      url: this.tokenExchangeEndpoint,
+      url: this.tokenExchangeEndpoint.toString(),
       method: 'POST',
       headers,
       data: querystring.stringify(
