@@ -406,7 +406,7 @@ export interface VerifyIdTokenOptions {
 
 export interface OAuth2ClientEndpoints {
   /**
-   * The
+   * The endpoint for viewing access token information
    *
    * @example
    * 'https://oauth2.googleapis.com/tokeninfo'
@@ -550,7 +550,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   /**
-   * @deprecated
+   * @deprecated use instance's {@link OAuth2Client.endpoints}
    */
   protected static readonly GOOGLE_TOKEN_INFO_URL =
     'https://oauth2.googleapis.com/tokeninfo';
@@ -927,6 +927,11 @@ export class OAuth2Client extends AuthClient {
     return new OAuth2Client().getRevokeTokenURL(token).toString();
   }
 
+  /**
+   * Generates a URL to revoke the given token.
+   *
+   * @param token The existing token to be revoked.
+   */
   getRevokeTokenURL(token: string): URL {
     const url = new URL(this.endpoints.oauth2RevokeUrl);
 
