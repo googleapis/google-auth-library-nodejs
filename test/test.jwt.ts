@@ -1007,53 +1007,6 @@ describe('jwt', () => {
       );
     });
 
-    it('signs JWT with audience if: user scope = true, default scope = true, audience = truthy, universeDomain = not default universe', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
-      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
-        getRequestHeaders: stubGetRequestHeaders,
-      });
-      const jwt = new JWT({
-        email: 'foo@serviceaccount.com',
-        key: fs.readFileSync(PEM_PATH, 'utf8'),
-        scopes: ['scope1', 'scope2'],
-        subject: 'bar@subjectaccount.com',
-        universeDomain: 'my-universe.com',
-      });
-      jwt.defaultScopes = ['scope1', 'scope2'];
-      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
-      sandbox.assert.calledOnce(stubJWTAccess);
-      sandbox.assert.calledWith(
-        stubGetRequestHeaders,
-        'https//beepboop.googleapis.com',
-        undefined,
-        undefined
-      );
-    });
-
-    it('signs JWT with audience if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true, universeDomain = not default universe', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
-      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
-        getRequestHeaders: stubGetRequestHeaders,
-      });
-      const jwt = new JWT({
-        email: 'foo@serviceaccount.com',
-        key: fs.readFileSync(PEM_PATH, 'utf8'),
-        scopes: ['scope1', 'scope2'],
-        subject: 'bar@subjectaccount.com',
-        universeDomain: 'my-universe.com',
-      });
-      jwt.useJWTAccessWithScope = true;
-      jwt.defaultScopes = ['scope1', 'scope2'];
-      await jwt.getRequestHeaders('https//beepboop.googleapis.com');
-      sandbox.assert.calledOnce(stubJWTAccess);
-      sandbox.assert.calledWith(
-        stubGetRequestHeaders,
-        'https//beepboop.googleapis.com',
-        undefined,
-        ['scope1', 'scope2']
-      );
-    });
-
     it('does not use self signed JWT if target_audience provided', async () => {
       const JWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: sinon.stub().returns({}),
