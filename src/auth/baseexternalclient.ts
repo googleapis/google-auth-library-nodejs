@@ -54,11 +54,8 @@ export const EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
  */
 export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
 /** Cloud resource manager URL used to retrieve project information. */
-export const CLOUD_RESOURCE_MANAGER =
+export const DEFAULT_CLOUD_RESOURCE_MANAGER =
   'https://cloudresourcemanager.googleapis.com/v1/projects/';
-/** The workforce audience pattern. */
-const WORKFORCE_AUDIENCE_PATTERN =
-  '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
@@ -88,6 +85,12 @@ export interface BaseExternalAccountClientOptions
   client_id?: string;
   client_secret?: string;
   workforce_pool_user_project?: string;
+  scopes?: string[];
+  /**
+   * @example
+   * https://cloudresourcemanager.googleapis.com/v1/projects/
+   **/
+  cloud_resource_manager_url?: string | URL;
 }
 
 /**
@@ -151,6 +154,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private readonly configLifetimeRequested: boolean;
   protected credentialSourceType?: string;
   /**
+   * @example
+   * ```ts
+   * new URL('https://cloudresourcemanager.googleapis.com/v1/projects/');
+   * ```
+   */
+  protected cloudResourceManagerURL = new URL(DEFAULT_CLOUD_RESOURCE_MANAGER);
+  /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * @param options The external account options object typically loaded
@@ -195,6 +205,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       serviceAccountImpersonation
     ).get('token_lifetime_seconds');
 
+    this.cloudResourceManagerURL = new URL(
+      opts.get('cloud_resource_manager_url') || DEFAULT_CLOUD_RESOURCE_MANAGER
+    );
+
     if (clientId) {
       this.clientAuth = {
         confidentialClientType: 'basic',
@@ -204,22 +218,11 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
 
     this.stsCredential = new sts.StsCredentials(tokenUrl, this.clientAuth);
-    // Default OAuth scope. This could be overridden via public property.
-    this.scopes = [DEFAULT_OAUTH_SCOPE];
+    this.scopes = opts.get('scopes') || [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
     this.audience = opts.get('audience');
     this.subjectTokenType = subjectTokenType;
     this.workforcePoolUserProject = workforcePoolUserProject;
-    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
-    if (
-      this.workforcePoolUserProject &&
-      !this.audience.match(workforceAudiencePattern)
-    ) {
-      throw new Error(
-        'workforcePoolUserProject should not be set for non-workforce pool ' +
-          'credentials.'
-      );
-    }
     this.serviceAccountImpersonationUrl = serviceAccountImpersonationUrl;
     this.serviceAccountImpersonationLifetime =
       serviceAccountImpersonationLifetime;
@@ -360,7 +363,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       const headers = await this.getRequestHeaders();
       const response = await this.transporter.request<ProjectInfo>({
         headers,
-        url: `${CLOUD_RESOURCE_MANAGER}${projectNumber}`,
+        url: `${this.cloudResourceManagerURL.toString()}${projectNumber}`,
         responseType: 'json',
       });
       this.projectId = response.data.projectId;
@@ -576,11 +579,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     // be normalized.
     if (typeof this.scopes === 'string') {
       return [this.scopes];
-    } else if (typeof this.scopes === 'undefined') {
-      return [DEFAULT_OAUTH_SCOPE];
-    } else {
-      return this.scopes;
     }
+
+    return this.scopes || [DEFAULT_OAUTH_SCOPE];
   }
 
   private getMetricsHeaderValue(): string {

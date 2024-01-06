@@ -171,43 +171,6 @@ describe('BaseExternalAccountClient', () => {
       }, expectedError);
     });
 
-    const invalidWorkforceAudiences = [
-      '//iam.googleapis.com/locations/global/workloadIdentityPools/pool/providers/provider',
-      '//iam.googleapis.com/locations/global/workforcepools/pool/providers/provider',
-      '//iam.googleapis.com/locations/global/workforcePools//providers/provider',
-      '//iam.googleapis.com/locations/global/workforcePools/providers/provider',
-      '//iam.googleapis.com/locations/global/workloadIdentityPools/workforcePools/pool/providers/provider',
-      '//iam.googleapis.com//locations/global/workforcePools/pool/providers/provider',
-      '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/provider',
-      '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
-      '//iam.googleapis.com/locations/global/workforcePools/workloadIdentityPools/pool/providers/provider',
-      '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
-      '//iam.googleapis.com/locations//workforcePools/pool/providers/provider',
-      '//iam.googleapis.com/locations/workforcePools/pool/providers/provider',
-      '//iamAgoogleapisAcom/locations/global/workforcePools/workloadPools/providers/oidc',
-    ];
-    const invalidExternalAccountOptionsWorkforceUserProject = Object.assign(
-      {},
-      externalAccountOptionsWorkforceUserProject
-    );
-    const expectedWorkforcePoolUserProjectError = new Error(
-      'workforcePoolUserProject should not be set for non-workforce pool ' +
-        'credentials.'
-    );
-
-    invalidWorkforceAudiences.forEach(invalidWorkforceAudience => {
-      it(`should throw given audience ${invalidWorkforceAudience} with user project defined in options`, () => {
-        invalidExternalAccountOptionsWorkforceUserProject.audience =
-          invalidWorkforceAudience;
-
-        assert.throws(() => {
-          return new TestExternalAccountClient(
-            invalidExternalAccountOptionsWorkforceUserProject
-          );
-        }, expectedWorkforcePoolUserProjectError);
-      });
-    });
-
     it('should not throw on valid workforce audience configs', () => {
       const validWorkforceAudiences = [
         '//iam.googleapis.com/locations/global/workforcePools/workforcePools/providers/provider',

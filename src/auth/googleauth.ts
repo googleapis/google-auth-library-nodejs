@@ -1060,8 +1060,14 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Sign the given data with the current private key, or go out
    * to the IAM API to sign it.
    * @param data The data to be signed.
+   * @param endpoint A custom endpoint to use.
+   *
+   * @example
+   * ```
+   * sign('data', 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/');
+   * ```
    */
-  async sign(data: string): Promise<string> {
+  async sign(data: string, endpoint?: string): Promise<string> {
     const client = await this.getClient();
 
     if (client instanceof Impersonated) {
@@ -1080,24 +1086,24 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       throw new Error('Cannot sign data without `client_email`.');
     }
 
-    return this.signBlob(crypto, creds.client_email, data);
+    return this.signBlob(crypto, creds.client_email, data, endpoint);
   }
 
   private async signBlob(
     crypto: Crypto,
     emailOrUniqueId: string,
-    data: string
+    data: string,
+    endpoint = 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/'
   ): Promise<string> {
-    const url =
-      'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/' +
-      `${emailOrUniqueId}:signBlob`;
+    const url = new URL(endpoint + `${emailOrUniqueId}:signBlob`);
     const res = await this.request<SignBlobResponse>({
       method: 'POST',
-      url,
+      url: url.href,
       data: {
         payload: crypto.encodeBase64StringUtf8(data),
       },
     });
+
     return res.data.signedBlob;
   }
 }
