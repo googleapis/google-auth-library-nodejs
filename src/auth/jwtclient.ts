@@ -122,6 +122,13 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       (!this.hasUserScopes() && url) ||
       (this.useJWTAccessWithScope && this.hasAnyScopes()) ||
       this.universeDomain !== DEFAULT_UNIVERSE;
+
+    if (this.subject && this.universeDomain !== DEFAULT_UNIVERSE) {
+      throw new RangeError(
+        `Service Account user is configured for the credential. Domain-wide delegation is not supported in universes other than ${DEFAULT_UNIVERSE}`
+      );
+    }
+
     if (!this.apiKey && useSelfSignedJWT) {
       if (
         this.additionalClaims &&

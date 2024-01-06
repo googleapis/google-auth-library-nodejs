@@ -1016,7 +1016,6 @@ describe('jwt', () => {
         email: 'foo@serviceaccount.com',
         key: fs.readFileSync(PEM_PATH, 'utf8'),
         scopes: ['scope1', 'scope2'],
-        subject: 'bar@subjectaccount.com',
         universeDomain: 'my-universe.com',
       });
       jwt.defaultScopes = ['scope1', 'scope2'];
@@ -1039,7 +1038,6 @@ describe('jwt', () => {
         email: 'foo@serviceaccount.com',
         key: fs.readFileSync(PEM_PATH, 'utf8'),
         scopes: ['scope1', 'scope2'],
-        subject: 'bar@subjectaccount.com',
         universeDomain: 'my-universe.com',
       });
       jwt.useJWTAccessWithScope = true;
@@ -1051,6 +1049,27 @@ describe('jwt', () => {
         'https//beepboop.googleapis.com',
         undefined,
         ['scope1', 'scope2']
+      );
+    });
+
+    it('throws on domain-wide delegation on non-default universe', async () => {
+      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+        getRequestHeaders: stubGetRequestHeaders,
+      });
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        key: fs.readFileSync(PEM_PATH, 'utf8'),
+        scopes: ['scope1', 'scope2'],
+        subject: 'bar@subjectaccount.com',
+        universeDomain: 'my-universe.com',
+      });
+      jwt.useJWTAccessWithScope = true;
+      jwt.defaultScopes = ['scope1', 'scope2'];
+
+      await assert.rejects(
+        () => jwt.getRequestHeaders('https//beepboop.googleapis.com'),
+        /Domain-wide delegation is not supported in universes other than/
       );
     });
 
