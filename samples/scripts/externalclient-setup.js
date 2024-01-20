@@ -165,7 +165,7 @@ async function main(config) {
   const awsAudience = `//iam.googleapis.com/${poolResourcePath}/providers/${awsProviderId}`;
 
   // Allow service account impersonation.
-  // Get the existing IAM policity bindings on the current service account.
+  // Get the existing IAM policy bindings on the current service account.
   response = await iam.projects.serviceAccounts.getIamPolicy({
     resource: `projects/${projectId}/serviceAccounts/${clientEmail}`,
   });

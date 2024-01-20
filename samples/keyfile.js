@@ -22,7 +22,7 @@ const {GoogleAuth} = require('google-auth-library');
  * Acquire a client, and make a request to an API that's enabled by default.
  */
 async function main(
-  // Full path to the sevice account credential
+  // Full path to the service account credential
   keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
 ) {
   const auth = new GoogleAuth({
