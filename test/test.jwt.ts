@@ -1054,7 +1054,7 @@ describe('jwt', () => {
 
     it('throws on domain-wide delegation on non-default universe', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
-      const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
+      sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
       const jwt = new JWT({
