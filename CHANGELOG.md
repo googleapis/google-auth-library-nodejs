@@ -4,6 +4,14 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.4.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.4.1...v9.4.2) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v13 ([#1710](https://github.com/googleapis/google-auth-library-nodejs/issues/1710)) ([7ae4aae](https://github.com/googleapis/google-auth-library-nodejs/commit/7ae4aaea0311de1a3e10f4e86a1ef93ff00656b5))
+* Expand credentials type ([#1719](https://github.com/googleapis/google-auth-library-nodejs/issues/1719)) ([846c8e9](https://github.com/googleapis/google-auth-library-nodejs/commit/846c8e96cc36feb05148c16e12127e805e388189))
+
 ## [9.4.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.4.0...v9.4.1) (2023-12-01)
 
 
