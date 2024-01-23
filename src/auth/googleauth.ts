@@ -1069,6 +1069,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   async sign(data: string, endpoint?: string): Promise<string> {
     const client = await this.getClient();
+    const universe = await this.getUniverseDomain();
+
+    endpoint =
+      endpoint ||
+      `https://iamcredentials.${universe}/v1/projects/-/serviceAccounts/`;
 
     if (client instanceof Impersonated) {
       const signed = await client.sign(data);
@@ -1093,7 +1098,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     crypto: Crypto,
     emailOrUniqueId: string,
     data: string,
-    endpoint = 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/'
+    endpoint: string
   ): Promise<string> {
     const url = new URL(endpoint + `${emailOrUniqueId}:signBlob`);
     const res = await this.request<SignBlobResponse>({

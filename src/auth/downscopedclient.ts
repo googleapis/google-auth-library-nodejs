@@ -41,11 +41,6 @@ const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 const STS_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
 
 /**
- * The default STS access token exchange endpoint.
- **/
-const DEFAULT_STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
-
-/**
  * The maximum number of access boundary rules a Credential Access Boundary
  * can contain.
  */
@@ -179,7 +174,7 @@ export class DownscopedClient extends AuthClient {
     }
 
     this.stsCredential = new sts.StsCredentials(
-      tokenURL || DEFAULT_STS_ACCESS_TOKEN_URL
+      tokenURL || `https://sts.${this.universeDomain}/v1/token`
     );
 
     this.cachedDownscopedAccessToken = null;

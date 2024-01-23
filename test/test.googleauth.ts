@@ -1404,8 +1404,10 @@ describe('googleauth', () => {
         )
         .resolves();
 
+      const universe = await auth.getUniverseDomain();
+
       const email = 'google@auth.library';
-      const iamUri = 'https://iamcredentials.googleapis.com';
+      const iamUri = `https://iamcredentials.${universe}`;
       const iamPath = `/v1/projects/-/serviceAccounts/${email}:signBlob`;
       const signedBlob = 'erutangis';
       const data = 'abc123';

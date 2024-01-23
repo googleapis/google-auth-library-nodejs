@@ -531,14 +531,12 @@ export class OAuth2Client extends AuthClient {
     this.redirectUri = opts.redirectUri;
 
     this.endpoints = {
-      tokenInfoUrl: 'https://oauth2.googleapis.com/tokeninfo',
+      tokenInfoUrl: `https://oauth2.${this.universeDomain}/tokeninfo`,
       oauth2AuthBaseUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-      oauth2TokenUrl: 'https://oauth2.googleapis.com/token',
-      oauth2RevokeUrl: 'https://oauth2.googleapis.com/revoke',
-      oauth2FederatedSignonPemCertsUrl:
-        'https://www.googleapis.com/oauth2/v1/certs',
-      oauth2FederatedSignonJwkCertsUrl:
-        'https://www.googleapis.com/oauth2/v3/certs',
+      oauth2TokenUrl: `https://oauth2.${this.universeDomain}/token`,
+      oauth2RevokeUrl: `https://oauth2.${this.universeDomain}/revoke`,
+      oauth2FederatedSignonPemCertsUrl: `https://www.${this.universeDomain}/oauth2/v1/certs`,
+      oauth2FederatedSignonJwkCertsUrl: `https://www.${this.universeDomain}/oauth2/v3/certs`,
       oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
       ...opts.endpoints,
     };
@@ -546,6 +544,7 @@ export class OAuth2Client extends AuthClient {
     this.issuers = opts.issuers || [
       'accounts.google.com',
       'https://accounts.google.com',
+      this.universeDomain,
     ];
   }
 

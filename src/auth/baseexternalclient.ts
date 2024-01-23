@@ -53,8 +53,12 @@ export const EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
  * 3. external_Account => non-GCP service (eg. AWS, Azure, K8s)
  */
 export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
-/** Cloud resource manager URL used to retrieve project information. */
-export const DEFAULT_CLOUD_RESOURCE_MANAGER =
+/**
+ * Cloud resource manager URL used to retrieve project information.
+ *
+ * @deprecated use {@link BaseExternalAccountClient.cloudResourceManagerURL} instead
+ **/
+export const CLOUD_RESOURCE_MANAGER =
   'https://cloudresourcemanager.googleapis.com/v1/projects/';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -159,7 +163,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * new URL('https://cloudresourcemanager.googleapis.com/v1/projects/');
    * ```
    */
-  protected cloudResourceManagerURL = new URL(DEFAULT_CLOUD_RESOURCE_MANAGER);
+  protected cloudResourceManagerURL: URL | string;
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -206,7 +210,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     ).get('token_lifetime_seconds');
 
     this.cloudResourceManagerURL = new URL(
-      opts.get('cloud_resource_manager_url') || DEFAULT_CLOUD_RESOURCE_MANAGER
+      opts.get('cloud_resource_manager_url') ||
+        `https://cloudresourcemanager.${this.universeDomain}/v1/projects/`
     );
 
     if (clientId) {
