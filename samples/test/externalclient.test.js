@@ -50,7 +50,7 @@
 // AWS provider tests for AWS credentials
 // -------------------------------------
 // The test suite will also run tests for AWS credentials. This works as
-// follows. (Note prequisite setup is needed. This is documented in
+// follows. (Note prerequisite setup is needed. This is documented in
 // externalclient-setup.js).
 // - iamcredentials:generateIdToken is used to generate a Google ID token using
 //   the service account access token. The service account client_id is used as
