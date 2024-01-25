@@ -22,7 +22,7 @@ import * as stream from 'stream';
 
 import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
+import {AuthClient} from './authclient';
 
 import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
@@ -123,18 +123,12 @@ export class DownscopedClient extends AuthClient {
    *   on the resource that the rule applies to, the upper bound of the
    *   permissions that are available on that resource and an optional
    *   condition to further restrict permissions.
-   * @param additionalOptions **DEPRECATED, set this in the provided `authClient`.**
-   *   Optional additional behavior customization options.
-   * @param quotaProjectId **DEPRECATED, set this in the provided `authClient`.**
-   *   Optional quota project id for setting up in the x-goog-user-project header.
    */
   constructor(
     private readonly authClient: AuthClient,
-    private readonly credentialAccessBoundary: CredentialAccessBoundary,
-    additionalOptions?: AuthClientOptions,
-    quotaProjectId?: string
+    private readonly credentialAccessBoundary: CredentialAccessBoundary
   ) {
-    super({...additionalOptions, quotaProjectId});
+    super();
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (

@@ -138,10 +138,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         eagerRefreshThresholdMillis: 5000,
         forceRefreshOnFailure: true,
       };
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        refreshOptions
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        ...refreshOptions,
+      });
 
       assert.strictEqual(
         client.forceRefreshOnFailure,
@@ -654,12 +654,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        {
-          forceRefreshOnFailure: true,
-        }
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        forceRefreshOnFailure: true,
+      });
       const actualResponse = await client.request<Object>({
         url: 'https://example.com/api',
         method: 'POST',
@@ -702,12 +700,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           .reply(401),
       ];
 
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        {
-          forceRefreshOnFailure: false,
-        }
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        forceRefreshOnFailure: false,
+      });
       await assert.rejects(
         client.request<Object>({
           url: 'https://example.com/api',
@@ -760,12 +756,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           .reply(403),
       ];
 
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        {
-          forceRefreshOnFailure: true,
-        }
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        forceRefreshOnFailure: true,
+      });
       await assert.rejects(
         client.request<Object>({
           url: 'https://example.com/api',

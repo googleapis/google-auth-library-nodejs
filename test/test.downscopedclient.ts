@@ -284,12 +284,12 @@ describe('DownscopedClient', () => {
         },
       };
       assert.doesNotThrow(() => {
-        return new DownscopedClient(
+        const instance = new DownscopedClient(
           client,
-          cabWithOneAccessBoundaryRule,
-          undefined,
-          quotaProjectId
+          cabWithOneAccessBoundaryRule
         );
+        instance.quotaProjectId = quotaProjectId;
+        return instance;
       });
     });
 
@@ -313,9 +313,12 @@ describe('DownscopedClient', () => {
       };
       const downscopedClient = new DownscopedClient(
         client,
-        cabWithOneAccessBoundaryRules,
-        refreshOptions
+        cabWithOneAccessBoundaryRules
       );
+      downscopedClient.eagerRefreshThresholdMillis =
+        refreshOptions.eagerRefreshThresholdMillis;
+      downscopedClient.forceRefreshOnFailure =
+        refreshOptions.forceRefreshOnFailure;
       assert.strictEqual(
         downscopedClient.forceRefreshOnFailure,
         refreshOptions.forceRefreshOnFailure
@@ -755,12 +758,8 @@ describe('DownscopedClient', () => {
         },
       ]);
 
-      const cabClient = new DownscopedClient(
-        client,
-        testClientAccessBoundary,
-        undefined,
-        quotaProjectId
-      );
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.quotaProjectId = quotaProjectId;
       const actualHeaders = await cabClient.getRequestHeaders();
 
       assert.deepStrictEqual(expectedHeaders, actualHeaders);
@@ -839,12 +838,8 @@ describe('DownscopedClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const cabClient = new DownscopedClient(
-        client,
-        testClientAccessBoundary,
-        undefined,
-        quotaProjectId
-      );
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.quotaProjectId = quotaProjectId;
       const actualResponse = await cabClient.request<SampleResponse>({
         url: 'https://example.com/api',
         method: 'POST',
@@ -894,12 +889,8 @@ describe('DownscopedClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const cabClient = new DownscopedClient(
-        client,
-        testClientAccessBoundary,
-        undefined,
-        quotaProjectId
-      );
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.quotaProjectId = quotaProjectId;
       // Send request with no headers.
       const actualResponse = await cabClient.request<SampleResponse>({
         url: 'https://example.com/api',
@@ -1123,9 +1114,8 @@ describe('DownscopedClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const cabClient = new DownscopedClient(client, testClientAccessBoundary, {
-        forceRefreshOnFailure: true,
-      });
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.forceRefreshOnFailure = true;
       const actualResponse = await cabClient.request<SampleResponse>({
         url: 'https://example.com/api',
         method: 'POST',
@@ -1173,9 +1163,8 @@ describe('DownscopedClient', () => {
           .reply(401),
       ];
 
-      const cabClient = new DownscopedClient(client, testClientAccessBoundary, {
-        forceRefreshOnFailure: false,
-      });
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.forceRefreshOnFailure = false;
       await assert.rejects(
         cabClient.request<SampleResponse>({
           url: 'https://example.com/api',
@@ -1250,9 +1239,8 @@ describe('DownscopedClient', () => {
           .reply(403),
       ];
 
-      const cabClient = new DownscopedClient(client, testClientAccessBoundary, {
-        forceRefreshOnFailure: true,
-      });
+      const cabClient = new DownscopedClient(client, testClientAccessBoundary);
+      cabClient.forceRefreshOnFailure = true;
       await assert.rejects(
         cabClient.request<SampleResponse>({
           url: 'https://example.com/api',

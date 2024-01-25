@@ -40,7 +40,6 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
-import {AuthClientOptions} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -53,11 +52,8 @@ interface SampleResponse {
 class TestExternalAccountClient extends BaseExternalAccountClient {
   private counter = 0;
 
-  constructor(
-    options: BaseExternalAccountClientOptions,
-    additionalOptions?: Partial<AuthClientOptions>
-  ) {
-    super(options, additionalOptions);
+  constructor(options: BaseExternalAccountClientOptions) {
+    super(options);
     this.credentialSourceType = 'test';
   }
 
@@ -248,10 +244,10 @@ describe('BaseExternalAccountClient', () => {
         eagerRefreshThresholdMillis: 5000,
         forceRefreshOnFailure: true,
       };
-      const client = new TestExternalAccountClient(
-        externalAccountOptions,
-        refreshOptions
-      );
+      const client = new TestExternalAccountClient({
+        ...externalAccountOptions,
+        ...refreshOptions,
+      });
 
       assert.strictEqual(
         client.forceRefreshOnFailure,
@@ -976,8 +972,9 @@ describe('BaseExternalAccountClient', () => {
           },
         ]);
 
-        const client = new TestExternalAccountClient(externalAccountOptions, {
-          // Override 5min threshold with 10 second threshold.
+        // Override 5min threshold with 10 second threshold.
+        const client = new TestExternalAccountClient({
+          ...externalAccountOptions,
           eagerRefreshThresholdMillis: customThresh,
         });
         const actualResponse = await client.getAccessToken();
@@ -1448,13 +1445,12 @@ describe('BaseExternalAccountClient', () => {
           })
         );
 
-        const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA,
-          {
-            // Override 5min threshold with 10 second threshold.
-            eagerRefreshThresholdMillis: customThresh,
-          }
-        );
+        // Override 5min threshold with 10 second threshold.
+        const client = new TestExternalAccountClient({
+          ...externalAccountOptionsWithSA,
+          eagerRefreshThresholdMillis: customThresh,
+        });
+
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
@@ -2282,7 +2278,8 @@ describe('BaseExternalAccountClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions, {
+      const client = new TestExternalAccountClient({
+        ...externalAccountOptions,
         forceRefreshOnFailure: true,
       });
       const actualResponse = await client.request<SampleResponse>({
@@ -2407,7 +2404,8 @@ describe('BaseExternalAccountClient', () => {
           .reply(403),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions, {
+      const client = new TestExternalAccountClient({
+        ...externalAccountOptions,
         forceRefreshOnFailure: true,
       });
       await assert.rejects(
