@@ -15,7 +15,7 @@ import {GoogleAuth} from './auth/googleauth';
 
 export * as gcpMetadata from 'gcp-metadata';
 
-export {AuthClient} from './auth/authclient';
+export {AuthClient, DEFAULT_UNIVERSE} from './auth/authclient';
 export {Compute, ComputeOptions} from './auth/computeclient';
 export {
   CredentialBody,

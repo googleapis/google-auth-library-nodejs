@@ -1551,6 +1551,13 @@ describe('googleauth', () => {
     });
 
     describe('getUniverseDomain', () => {
+      it('should prefer `universeDomain` > metadata service when available', async () => {
+        const universeDomain = 'my.universe.com';
+        const auth = new GoogleAuth({universeDomain});
+
+        assert.equal(await auth.getUniverseDomain(), universeDomain);
+      });
+
       it('should prefer `clientOptions` > metadata service when available', async () => {
         const universeDomain = 'my.universe.com';
         const auth = new GoogleAuth({clientOptions: {universeDomain}});
