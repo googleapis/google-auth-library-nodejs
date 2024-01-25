@@ -122,6 +122,14 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
    * Your project ID.
    */
   projectId?: string;
+
+  /**
+   * The default service domain for a given Cloud universe.
+   *
+   * This is an ergonomic equivalent to {@link clientOptions}'s `universeDomain`
+   * property and will be set for all generated {@link AuthClient}s.
+   */
+  universeDomain?: string;
 }
 
 export const CLOUD_SDK_CLIENT_ID =
@@ -175,7 +183,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   defaultScopes?: string | string[];
   private keyFilename?: string;
   private scopes?: string | string[];
-  private clientOptions?: AuthClientOptions;
+  private clientOptions: AuthClientOptions = {};
 
   /**
    * The cached universe domain.
@@ -208,7 +216,12 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
     this.jsonContent = opts.credentials || null;
-    this.clientOptions = opts.clientOptions;
+    this.clientOptions = opts.clientOptions || {};
+
+    if (opts.universeDomain) {
+      this.clientOptions.universeDomain = opts.universeDomain;
+      this.#universeDomain = opts.universeDomain;
+    }
   }
 
   // GAPIC client libraries should always use self-signed JWTs. The following
