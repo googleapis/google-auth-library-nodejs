@@ -39,8 +39,6 @@ const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
  * The requested token exchange subject_token_type: rfc8693#section-2.1
  */
 const STS_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
-/** The STS access token exchange end point. */
-const STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
 
 /**
  * The maximum number of access boundary rules a Credential Access Boundary
@@ -75,6 +73,13 @@ export interface CredentialAccessBoundary {
   accessBoundary: {
     accessBoundaryRules: AccessBoundaryRule[];
   };
+  /**
+   * An optional STS access token exchange endpoint.
+   *
+   * @example
+   * 'https://sts.googleapis.com/v1/token'
+   */
+  tokenURL?: string | URL;
 }
 
 /** Defines an upper bound of permissions on a particular resource. */
@@ -135,6 +140,12 @@ export class DownscopedClient extends AuthClient {
     quotaProjectId?: string
   ) {
     super({...additionalOptions, quotaProjectId});
+
+    // extract and remove `tokenURL` as it is not officially a part of the credentialAccessBoundary
+    this.credentialAccessBoundary = {...credentialAccessBoundary};
+    const tokenURL = this.credentialAccessBoundary.tokenURL;
+    delete this.credentialAccessBoundary.tokenURL;
+
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
@@ -162,7 +173,10 @@ export class DownscopedClient extends AuthClient {
       }
     }
 
-    this.stsCredential = new sts.StsCredentials(STS_ACCESS_TOKEN_URL);
+    this.stsCredential = new sts.StsCredentials(
+      tokenURL || `https://sts.${this.universeDomain}/v1/token`
+    );
+
     this.cachedDownscopedAccessToken = null;
   }
 

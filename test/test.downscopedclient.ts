@@ -325,6 +325,42 @@ describe('DownscopedClient', () => {
         refreshOptions.eagerRefreshThresholdMillis
       );
     });
+
+    it('should use a tokenURL', async () => {
+      const tokenURL = new URL('https://my-token-url/v1/token');
+      const scope = mockStsTokenExchange(
+        [
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              options: JSON.stringify(testClientAccessBoundary),
+            },
+          },
+        ],
+        undefined,
+        tokenURL.origin
+      );
+
+      const downscopedClient = new DownscopedClient(client, {
+        ...testClientAccessBoundary,
+        tokenURL,
+      });
+
+      const tokenResponse = await downscopedClient.getAccessToken();
+      assert.deepStrictEqual(
+        tokenResponse.token,
+        stsSuccessfulResponse.access_token
+      );
+
+      scope.done();
+    });
   });
 
   describe('setCredential()', () => {

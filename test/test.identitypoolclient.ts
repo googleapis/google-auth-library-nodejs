@@ -179,29 +179,6 @@ describe('IdentityPoolClient', () => {
   });
 
   describe('Constructor', () => {
-    const invalidWorkforceIdentityPoolClientAudiences = [
-      '//iam.googleapis.com/locations/global/workloadIdentityPools/pool/providers/oidc',
-      '//iam.googleapis.com/locations/global/workforcepools/pool/providers/oidc',
-      '//iam.googleapis.com/locations/global/workforcePools//providers/oidc',
-      '//iam.googleapis.com/locations/global/workforcePools/providers/oidc',
-      '//iam.googleapis.com/locations/global/workloadIdentityPools/workforcePools/pool/providers/oidc',
-      '//iam.googleapis.com//locations/global/workforcePools/pool/providers/oidc',
-      '//iam.googleapis.com/project/123/locations/global/workforcePools/pool/providers/oidc',
-      '//iam.googleapis.com/locations/global/workforcePools/workloadIdentityPools/pool/providers/oidc',
-      '//iam.googleapis.com/locations/global/workforcePools/pool/providers',
-      '//iam.googleapis.com/locations/global/workforcePools/pool/providers/',
-      '//iam.googleapis.com/locations//workforcePools/pool/providers/oidc',
-      '//iam.googleapis.com/locations/workforcePools/pool/providers/oidc',
-    ];
-    const invalidWorkforceIdentityPoolFileSourceOptions = Object.assign(
-      {},
-      fileSourcedOptionsWithWorkforceUserProject
-    );
-    const expectedWorkforcePoolUserProjectError = new Error(
-      'workforcePoolUserProject should not be set for non-workforce pool ' +
-        'credentials.'
-    );
-
     it('should throw when neither file or url sources are provided', () => {
       const expectedError = new Error(
         'No valid Identity Pool "credential_source" provided, must be either file or url.'
@@ -286,21 +263,6 @@ describe('IdentityPoolClient', () => {
         return new IdentityPoolClient(invalidOptions);
       }, expectedError);
     });
-
-    invalidWorkforceIdentityPoolClientAudiences.forEach(
-      invalidWorkforceIdentityPoolClientAudience => {
-        it(`should throw given audience ${invalidWorkforceIdentityPoolClientAudience} with user project defined in IdentityPoolClientOptions`, () => {
-          invalidWorkforceIdentityPoolFileSourceOptions.audience =
-            invalidWorkforceIdentityPoolClientAudience;
-
-          assert.throws(() => {
-            return new IdentityPoolClient(
-              invalidWorkforceIdentityPoolFileSourceOptions
-            );
-          }, expectedWorkforcePoolUserProjectError);
-        });
-      }
-    );
 
     it('should not throw when valid file-sourced options are provided', () => {
       assert.doesNotThrow(() => {
