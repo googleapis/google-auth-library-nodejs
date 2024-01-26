@@ -97,6 +97,50 @@ describe('impersonated', () => {
     scopes.forEach(s => s.done());
   });
 
+  it('should use a `universeDomain` for its endpoint', async () => {
+    const universeDomain = 'my.universe.com';
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const scopes = [
+      nock(url).get('/').reply(200),
+      createGTokenMock({
+        access_token: 'abc123',
+      }),
+      nock(`https://iamcredentials.${universeDomain}`)
+        .post(
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+          (body: ImpersonatedCredentialRequest) => {
+            assert.strictEqual(body.lifetime, '30s');
+            assert.deepStrictEqual(body.delegates, []);
+            assert.deepStrictEqual(body.scope, [
+              'https://www.googleapis.com/auth/cloud-platform',
+            ]);
+            return true;
+          }
+        )
+        .reply(200, {
+          accessToken: 'universe-token',
+          expireTime: tomorrow.toISOString(),
+        }),
+    ];
+
+    const impersonated = new Impersonated({
+      sourceClient: createSampleJWTClient(),
+      targetPrincipal: 'target@project.iam.gserviceaccount.com',
+      lifetime: 30,
+      delegates: [],
+      targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      universeDomain,
+    });
+
+    await impersonated.request({url});
+    assert.strictEqual(impersonated.credentials.access_token, 'universe-token');
+
+    scopes.forEach(s => s.done());
+  });
+
   it('should not request impersonated credentials on second request', async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
