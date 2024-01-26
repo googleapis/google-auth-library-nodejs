@@ -24,6 +24,7 @@ import {
   OAuth2ClientOptions,
   RequestMetadataResponse,
 } from './oauth2client';
+import {DEFAULT_UNIVERSE} from './authclient';
 
 export interface JWTOptions extends OAuth2ClientOptions {
   email?: string;
@@ -119,7 +120,15 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
     const useSelfSignedJWT =
       (!this.hasUserScopes() && url) ||
-      (this.useJWTAccessWithScope && this.hasAnyScopes());
+      (this.useJWTAccessWithScope && this.hasAnyScopes()) ||
+      this.universeDomain !== DEFAULT_UNIVERSE;
+
+    if (this.subject && this.universeDomain !== DEFAULT_UNIVERSE) {
+      throw new RangeError(
+        `Service Account user is configured for the credential. Domain-wide delegation is not supported in universes other than ${DEFAULT_UNIVERSE}`
+      );
+    }
+
     if (!this.apiKey && useSelfSignedJWT) {
       if (
         this.additionalClaims &&
