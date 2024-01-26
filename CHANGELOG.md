@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.5.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.4.2...v9.5.0) (2024-01-25)
+
+
+### Features
+
+* Improve Universe Domain Ergonomics ([#1732](https://github.com/googleapis/google-auth-library-nodejs/issues/1732)) ([eec82f5](https://github.com/googleapis/google-auth-library-nodejs/commit/eec82f5f48a250744b5c3200ef247c3eae184e2f))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v14 ([#1725](https://github.com/googleapis/google-auth-library-nodejs/issues/1725)) ([594bf2c](https://github.com/googleapis/google-auth-library-nodejs/commit/594bf2cc808c03733274d6b08d92f1d4b12dd630))
+* Typos in samples ([#1728](https://github.com/googleapis/google-auth-library-nodejs/issues/1728)) ([058a503](https://github.com/googleapis/google-auth-library-nodejs/commit/058a5035e3e4df35663c6b3adef2dda617271849))
+
 ## [9.4.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.4.1...v9.4.2) (2024-01-04)
 
 
