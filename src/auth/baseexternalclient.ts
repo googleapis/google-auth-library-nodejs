@@ -60,6 +60,9 @@ export const EXTERNAL_ACCOUNT_TYPE = 'external_account';
  **/
 export const CLOUD_RESOURCE_MANAGER =
   'https://cloudresourcemanager.googleapis.com/v1/projects/';
+/** The workforce audience pattern. */
+const WORKFORCE_AUDIENCE_PATTERN =
+  '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
@@ -228,6 +231,17 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.audience = opts.get('audience');
     this.subjectTokenType = subjectTokenType;
     this.workforcePoolUserProject = workforcePoolUserProject;
+    const workforceAudiencePattern = new RegExp(WORKFORCE_AUDIENCE_PATTERN);
+    if (
+      this.workforcePoolUserProject &&
+      !this.audience.match(workforceAudiencePattern)
+    ) {
+      throw new Error(
+        'workforcePoolUserProject should not be set for non-workforce pool ' +
+          'credentials.'
+      );
+    }
+
     this.serviceAccountImpersonationUrl = serviceAccountImpersonationUrl;
     this.serviceAccountImpersonationLifetime =
       serviceAccountImpersonationLifetime;
