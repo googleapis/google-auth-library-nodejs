@@ -53,7 +53,7 @@ import {
   saEmail,
 } from './externalclienthelper';
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
-import {AuthClient} from '../src/auth/authclient';
+import {AuthClient, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
 
 nock.disableNetConnect();
@@ -1386,6 +1386,7 @@ describe('googleauth', () => {
           client_email: 'google@auth.library',
           private_key: privateKey,
         },
+        universeDomain: DEFAULT_UNIVERSE,
       });
       const value = await auth.sign(data);
       const sign = crypto.createSign('RSA-SHA256');
@@ -1605,7 +1606,9 @@ describe('googleauth', () => {
           // Set up a mock to explicity return the Project ID, as needed for impersonated ADC
           mockEnvVar('GCLOUD_PROJECT', STUB_PROJECT);
 
-          const auth = new GoogleAuth();
+          const auth = new GoogleAuth({
+            universeDomain: DEFAULT_UNIVERSE,
+          });
           const client = await auth.getClient();
 
           const email = 'target@project.iam.gserviceaccount.com';
@@ -2309,6 +2312,7 @@ describe('googleauth', () => {
         it('should reject when no impersonation is used', async () => {
           const auth = new GoogleAuth({
             credentials: createExternalAccountJSON(),
+            universeDomain: DEFAULT_UNIVERSE,
           });
 
           await assert.rejects(
@@ -2347,7 +2351,10 @@ describe('googleauth', () => {
               )
               .reply(200, {signedBlob})
           );
-          const auth = new GoogleAuth({credentials: configWithImpersonation});
+          const auth = new GoogleAuth({
+            credentials: configWithImpersonation,
+            universeDomain: DEFAULT_UNIVERSE,
+          });
 
           const value = await auth.sign(data);
 
@@ -2357,7 +2364,10 @@ describe('googleauth', () => {
       });
 
       it('getIdTokenClient() should reject', async () => {
-        const auth = new GoogleAuth({credentials: createExternalAccountJSON()});
+        const auth = new GoogleAuth({
+          credentials: createExternalAccountJSON(),
+          universeDomain: DEFAULT_UNIVERSE,
+        });
 
         await assert.rejects(
           auth.getIdTokenClient('a-target-audience'),
@@ -2536,6 +2546,7 @@ describe('googleauth', () => {
         it('should reject', async () => {
           const auth = new GoogleAuth({
             credentials: createExternalAccountAuthorizedUserJson(),
+            universeDomain: DEFAULT_UNIVERSE,
           });
 
           await assert.rejects(
