@@ -73,13 +73,6 @@ export interface CredentialAccessBoundary {
   accessBoundary: {
     accessBoundaryRules: AccessBoundaryRule[];
   };
-  /**
-   * An optional STS access token exchange endpoint.
-   *
-   * @example
-   * 'https://sts.googleapis.com/v1/token'
-   */
-  tokenURL?: string | URL;
 }
 
 /** Defines an upper bound of permissions on a particular resource. */
@@ -141,11 +134,6 @@ export class DownscopedClient extends AuthClient {
   ) {
     super({...additionalOptions, quotaProjectId});
 
-    // extract and remove `tokenURL` as it is not officially a part of the credentialAccessBoundary
-    this.credentialAccessBoundary = {...credentialAccessBoundary};
-    const tokenURL = this.credentialAccessBoundary.tokenURL;
-    delete this.credentialAccessBoundary.tokenURL;
-
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
@@ -174,7 +162,7 @@ export class DownscopedClient extends AuthClient {
     }
 
     this.stsCredential = new sts.StsCredentials(
-      tokenURL || `https://sts.${this.universeDomain}/v1/token`
+      `https://sts.${this.universeDomain}/v1/token`
     );
 
     this.cachedDownscopedAccessToken = null;

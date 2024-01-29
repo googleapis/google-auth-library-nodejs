@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.6.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.5.0...v9.6.0) (2024-01-29)
+
+
+### Features
+
+* Open More Endpoints for Customization ([#1721](https://github.com/googleapis/google-auth-library-nodejs/issues/1721)) ([effbf87](https://github.com/googleapis/google-auth-library-nodejs/commit/effbf87f6f0fd11a0cb1c749dad81737926dc436))
+* Use self-signed JWTs when non-default Universe Domains ([#1722](https://github.com/googleapis/google-auth-library-nodejs/issues/1722)) ([7e9876e](https://github.com/googleapis/google-auth-library-nodejs/commit/7e9876e2496b073220ca270368da7e9522da88f9))
+
+
+### Bug Fixes
+
+* Revert Missing `WORKFORCE_AUDIENCE_PATTERN` ([#1740](https://github.com/googleapis/google-auth-library-nodejs/issues/1740)) ([422de68](https://github.com/googleapis/google-auth-library-nodejs/commit/422de68d8d9ea66e6bf1fea923f61c8af0842420))
+
 ## [9.5.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.4.2...v9.5.0) (2024-01-25)
 
 
