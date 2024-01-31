@@ -620,7 +620,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     // Create source client for impersonation
-    const sourceClient = new UserRefreshClient(json.source_credentials);
+    const sourceClient = new UserRefreshClient();
+    sourceClient.fromJSON(json.source_credentials);
 
     if (json.service_account_impersonation_url?.length > 256) {
       /**
