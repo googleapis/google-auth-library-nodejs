@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.6.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.0...v9.6.1) (2024-02-01)
+
+
+### Bug Fixes
+
+* Universe Domain Resolution ([#1745](https://github.com/googleapis/google-auth-library-nodejs/issues/1745)) ([a4f9f9c](https://github.com/googleapis/google-auth-library-nodejs/commit/a4f9f9c65853a37e6e83861c5d22533dba774037))
+
 ## [9.6.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.5.0...v9.6.0) (2024-01-29)
 
 
