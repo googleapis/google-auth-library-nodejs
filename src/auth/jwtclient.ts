@@ -321,6 +321,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     this.keyId = json.private_key_id;
     this.projectId = json.project_id;
     this.quotaProjectId = json.quota_project_id;
+    this.universeDomain = json.universe_domain || this.universeDomain;
   }
 
   /**

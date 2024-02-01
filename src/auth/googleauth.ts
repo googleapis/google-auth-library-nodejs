@@ -186,13 +186,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private clientOptions: AuthClientOptions = {};
 
   /**
-   * The cached universe domain.
-   *
-   * @see {@link GoogleAuth.getUniverseDomain}
-   */
-  #universeDomain?: string = undefined;
-
-  /**
    * Export DefaultTransporter as a static property of the class.
    */
   static DefaultTransporter = DefaultTransporter;
@@ -220,7 +213,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
     if (opts.universeDomain) {
       this.clientOptions.universeDomain = opts.universeDomain;
-      this.#universeDomain = opts.universeDomain;
     }
   }
 
@@ -315,9 +307,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     return this._findProjectIdPromise;
   }
 
-  async #getUniverseFromMetadataServer() {
-    if (!(await this._checkIsGCE())) return;
-
+  /**
+   * Retrieves a universe domain from the metadata server via
+   * {@link gcpMetadata.universe}.
+   *
+   * @returns a universe domain
+   */
+  async getUniverseDomainFromMetadataServer(): Promise<string> {
     let universeDomain: string;
 
     try {
@@ -338,17 +334,18 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Retrieves, caches, and returns the universe domain in the following order
    * of precedence:
    * - The universe domain in {@link GoogleAuth.clientOptions}
-   * - {@link gcpMetadata.universe}
+   * - An existing or ADC {@link AuthClient}'s universe domain
+   * - {@link gcpMetadata.universe}, if {@link Compute} client
    *
    * @returns The universe domain
    */
   async getUniverseDomain(): Promise<string> {
-    this.#universeDomain ??= originalOrCamelOptions(this.clientOptions).get(
+    let universeDomain = originalOrCamelOptions(this.clientOptions).get(
       'universe_domain'
     );
-    this.#universeDomain ??= await this.#getUniverseFromMetadataServer();
+    universeDomain ??= (await this.getClient()).universeDomain;
 
-    return this.#universeDomain || DEFAULT_UNIVERSE;
+    return universeDomain;
   }
 
   /**
@@ -438,7 +435,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (await this._checkIsGCE()) {
       // set universe domain for Compute client
       if (!originalOrCamelOptions(options).get('universe_domain')) {
-        options.universeDomain = await this.getUniverseDomain();
+        options.universeDomain =
+          await this.getUniverseDomainFromMetadataServer();
       }
 
       (options as ComputeOptions).scopes = this.getAnyScopes();
@@ -622,11 +620,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     // Create source client for impersonation
-    const sourceClient = new UserRefreshClient(
-      json.source_credentials.client_id,
-      json.source_credentials.client_secret,
-      json.source_credentials.refresh_token
-    );
+    const sourceClient = new UserRefreshClient();
+    sourceClient.fromJSON(json.source_credentials);
 
     if (json.service_account_impersonation_url?.length > 256) {
       /**
@@ -652,6 +647,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     const targetScopes = this.getAnyScopes() ?? [];
 
     const client = new Impersonated({
+      ...json,
       delegates: json.delegates ?? [],
       sourceClient: sourceClient,
       targetPrincipal: targetPrincipal,
@@ -671,6 +667,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     options: AuthClientOptions = {}
   ): JSONClient {
     let client: JSONClient;
+
+    // user's preferred universe domain
+    const preferredUniverseDomain =
+      originalOrCamelOptions(options).get('universe_domain');
 
     if (json.type === USER_REFRESH_ACCOUNT_TYPE) {
       client = new UserRefreshClient(options);
@@ -694,6 +694,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       this.setGapicJWTValues(client);
       client.fromJSON(json);
     }
+
+    if (preferredUniverseDomain) {
+      client.universeDomain = preferredUniverseDomain;
+    }
+
     return client;
   }
 

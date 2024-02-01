@@ -1568,6 +1568,20 @@ describe('googleauth', () => {
         assert.equal(await auth.getUniverseDomain(), universeDomain);
       });
 
+      it('should get the universe from ADC', async () => {
+        mockEnvVar(
+          'GOOGLE_APPLICATION_CREDENTIALS',
+          './test/fixtures/private2.json'
+        );
+        const {universe_domain} = JSON.parse(
+          fs.readFileSync('./test/fixtures/private2.json', 'utf-8')
+        );
+
+        assert(universe_domain);
+        assert.notEqual(universe_domain, DEFAULT_UNIVERSE);
+        assert.equal(await auth.getUniverseDomain(), universe_domain);
+      });
+
       it('should use the metadata service if on GCP', async () => {
         const universeDomain = 'my.universe.com';
         const scope = nockIsGCE({universeDomain});

@@ -4,5 +4,6 @@
   "client_email": "goodbye@youarecool.com",
   "client_id": "client456",
   "type": "service_account",
-  "project_id": "my-awesome-project"
+  "project_id": "my-awesome-project",
+  "universe_domain": "my-universe"
 }
