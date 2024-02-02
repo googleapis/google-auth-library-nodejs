@@ -343,7 +343,12 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     let universeDomain = originalOrCamelOptions(this.clientOptions).get(
       'universe_domain'
     );
-    universeDomain ??= (await this.getClient()).universeDomain;
+    try {
+      universeDomain ??= (await this.getClient()).universeDomain;
+    } catch {
+      // client or ADC is not available
+      universeDomain ??= DEFAULT_UNIVERSE;
+    }
 
     return universeDomain;
   }
