@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.6.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.1...v9.6.2) (2024-02-02)
+
+
+### Bug Fixes
+
+* Allow Get Universe Without Credentials ([#1748](https://github.com/googleapis/google-auth-library-nodejs/issues/1748)) ([696db72](https://github.com/googleapis/google-auth-library-nodejs/commit/696db72bb8644739768d20375d670813d4490714))
+
 ## [9.6.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.0...v9.6.1) (2024-02-01)
 
 
