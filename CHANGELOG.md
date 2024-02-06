@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.6.3](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.2...v9.6.3) (2024-02-06)
+
+
+### Bug Fixes
+
+* Always sign with `scopes` on Non-Default Universes ([#1752](https://github.com/googleapis/google-auth-library-nodejs/issues/1752)) ([f3d3a03](https://github.com/googleapis/google-auth-library-nodejs/commit/f3d3a03dbce42a400c11457131dd1fabc206826a))
+
 ## [9.6.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.1...v9.6.2) (2024-02-02)
 
 
