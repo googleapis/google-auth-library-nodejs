@@ -896,7 +896,7 @@ describe('jwt', () => {
       );
     });
 
-    it('signs JWT with audience if: user scope = true, default scope = false, audience = falsy, useJWTAccessWithScope = true', async () => {
+    it('signs JWT with scopes if: user scope = true, default scope = false, audience = falsy, useJWTAccessWithScope = true', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
@@ -918,7 +918,7 @@ describe('jwt', () => {
       );
     });
 
-    it('signs JWT with audience if: user scope = false, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
+    it('signs JWT with scopes if: user scope = false, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
@@ -939,7 +939,7 @@ describe('jwt', () => {
       ]);
     });
 
-    it('signs JWT with audience if: user scope = true, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
+    it('signs JWT with scopes if: user scope = true, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
@@ -962,7 +962,7 @@ describe('jwt', () => {
       );
     });
 
-    it('signs JWT with audience if: user scope = true, default scope = false, audience = truthy, useJWTAccessWithScope = true', async () => {
+    it('signs JWT with scopes if: user scope = true, default scope = false, audience = truthy, useJWTAccessWithScope = true', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
@@ -984,7 +984,7 @@ describe('jwt', () => {
       );
     });
 
-    it('signs JWT with audience if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true', async () => {
+    it('signs JWT with scopes if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
@@ -1007,7 +1007,7 @@ describe('jwt', () => {
       );
     });
 
-    it('signs JWT with audience if: user scope = true, default scope = true, audience = truthy, universeDomain = not default universe', async () => {
+    it('signs JWT with scopes if: user scope = true, default scope = true, audience = truthy, universeDomain = not default universe', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
@@ -1025,11 +1025,11 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        ['scope1', 'scope2']
       );
     });
 
-    it('signs JWT with audience if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true, universeDomain = not default universe', async () => {
+    it('signs JWT with scopes if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true, universeDomain = not default universe', async () => {
       const stubGetRequestHeaders = sandbox.stub().returns({});
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
