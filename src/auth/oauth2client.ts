@@ -22,7 +22,7 @@ import * as querystring from 'querystring';
 import * as stream from 'stream';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
 
-import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
+import {createCrypto, JwkCertificate} from '../crypto/crypto';
 import {BodyResponseCallback} from '../transporters';
 
 import {AuthClient, AuthClientOptions} from './authclient';
@@ -64,6 +64,9 @@ export enum CodeChallengeMethod {
 }
 
 export enum CertificateFormat {
+  /**
+   * @deprecated
+   */
   PEM = 'PEM',
   JWK = 'JWK',
 }
@@ -433,12 +436,12 @@ export interface OAuth2ClientEndpoints {
    * The base endpoint to revoke tokens.
    *
    * @example
-   * 'https://oauth2.googleapis.com/revoke'
+   * 'https://www.accounts.google.com/o/oauth2/revoke'
    */
   oauth2RevokeUrl: string | URL;
 
   /**
-   * Sign on certificates in PEM format.
+   * Sign on certificates in the legacy PEM format.
    *
    * @example
    * 'https://www.googleapis.com/oauth2/v1/certs'
@@ -534,7 +537,7 @@ export class OAuth2Client extends AuthClient {
       tokenInfoUrl: 'https://oauth2.googleapis.com/tokeninfo',
       oauth2AuthBaseUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
       oauth2TokenUrl: 'https://oauth2.googleapis.com/token',
-      oauth2RevokeUrl: 'https://oauth2.googleapis.com/revoke',
+      oauth2RevokeUrl: 'https://www.accounts.google.com/o/oauth2/revoke',
       oauth2FederatedSignonPemCertsUrl:
         'https://www.googleapis.com/oauth2/v1/certs',
       oauth2FederatedSignonJwkCertsUrl:
@@ -854,7 +857,7 @@ export class OAuth2Client extends AuthClient {
 
   protected async getRequestMetadataAsync(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    url?: string | null
+    url?: string | URL | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
     if (
@@ -1197,11 +1200,11 @@ export class OAuth2Client extends AuthClient {
     }
   }
 
-  async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
+  async getFederatedSignonCertsAsync(
+    format: CertificateFormat = CertificateFormat.JWK
+  ): Promise<FederatedSignonCertsResponse> {
     const nowTime = new Date().getTime();
-    const format = hasBrowserCrypto()
-      ? CertificateFormat.JWK
-      : CertificateFormat.PEM;
+
     if (
       this.certificateExpiry &&
       nowTime < this.certificateExpiry.getTime() &&
@@ -1210,13 +1213,13 @@ export class OAuth2Client extends AuthClient {
       return {certs: this.certificateCache, format};
     }
     let res: GaxiosResponse;
-    let url: string;
+    let url: string | URL;
     switch (format) {
       case CertificateFormat.PEM:
-        url = this.endpoints.oauth2FederatedSignonPemCertsUrl.toString();
+        url = this.endpoints.oauth2FederatedSignonPemCertsUrl;
         break;
       case CertificateFormat.JWK:
-        url = this.endpoints.oauth2FederatedSignonJwkCertsUrl.toString();
+        url = this.endpoints.oauth2FederatedSignonJwkCertsUrl;
         break;
       default:
         throw new Error(`Unsupported certificate format ${format}`);
