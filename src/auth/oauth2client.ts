@@ -854,7 +854,7 @@ export class OAuth2Client extends AuthClient {
 
   protected async getRequestMetadataAsync(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    url?: string | null
+    url?: string | URL | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
     if (
