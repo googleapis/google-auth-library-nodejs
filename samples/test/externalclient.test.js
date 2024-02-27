@@ -290,7 +290,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should sign the blobs with IAM credentials API', async () => {
@@ -389,7 +389,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should acquire ADC for AWS creds', async () => {
@@ -427,7 +427,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should acquire ADC for PluggableAuth creds', async () => {
@@ -474,7 +474,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should acquire access token with service account impersonation options', async () => {
