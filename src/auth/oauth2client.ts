@@ -22,7 +22,7 @@ import * as querystring from 'querystring';
 import * as stream from 'stream';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
 
-import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
+import {createCrypto, JwkCertificate} from '../crypto/crypto';
 import {BodyResponseCallback} from '../transporters';
 
 import {AuthClient, AuthClientOptions} from './authclient';
@@ -64,6 +64,9 @@ export enum CodeChallengeMethod {
 }
 
 export enum CertificateFormat {
+  /**
+   * @deprecated - Use JWK.
+   */
   PEM = 'PEM',
   JWK = 'JWK',
 }
@@ -402,6 +405,7 @@ export interface VerifyIdTokenOptions {
   idToken: string;
   audience?: string | string[];
   maxExpiry?: number;
+  certificateFormat?: CertificateFormat;
 }
 
 export interface OAuth2ClientEndpoints {
@@ -433,12 +437,12 @@ export interface OAuth2ClientEndpoints {
    * The base endpoint to revoke tokens.
    *
    * @example
-   * 'https://oauth2.googleapis.com/revoke'
+   * 'https://www.accounts.google.com/o/oauth2/revoke'
    */
   oauth2RevokeUrl: string | URL;
 
   /**
-   * Sign on certificates in PEM format.
+   * Sign on certificates in the legacy PEM format.
    *
    * @example
    * 'https://www.googleapis.com/oauth2/v1/certs'
@@ -461,6 +465,8 @@ export interface OAuth2ClientEndpoints {
    * 'https://www.gstatic.com/iap/verify/public_key'
    */
   oauth2IapPublicKeyUrl: string | URL;
+
+  [endpoint: string]: string | URL;
 }
 
 export interface OAuth2ClientOptions extends AuthClientOptions {
@@ -487,7 +493,7 @@ export class OAuth2Client extends AuthClient {
   private redirectUri?: string;
   private certificateCache: Certificates = {};
   private certificateExpiry: Date | null = null;
-  private certificateCacheFormat: CertificateFormat = CertificateFormat.PEM;
+  private certificateCacheFormat: CertificateFormat = CertificateFormat.JWK;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
   readonly endpoints: Readonly<OAuth2ClientEndpoints>;
   readonly issuers: string[];
@@ -534,7 +540,7 @@ export class OAuth2Client extends AuthClient {
       tokenInfoUrl: 'https://oauth2.googleapis.com/tokeninfo',
       oauth2AuthBaseUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
       oauth2TokenUrl: 'https://oauth2.googleapis.com/token',
-      oauth2RevokeUrl: 'https://oauth2.googleapis.com/revoke',
+      oauth2RevokeUrl: 'https://www.accounts.google.com/o/oauth2/revoke',
       oauth2FederatedSignonPemCertsUrl:
         'https://www.googleapis.com/oauth2/v1/certs',
       oauth2FederatedSignonJwkCertsUrl:
@@ -659,7 +665,6 @@ export class OAuth2Client extends AuthClient {
   private async getTokenAsync(
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
-    const url = this.endpoints.oauth2TokenUrl.toString();
     const values = {
       code: options.code,
       client_id: options.client_id || this._clientId,
@@ -670,7 +675,7 @@ export class OAuth2Client extends AuthClient {
     };
     const res = await this.transporter.request<CredentialRequest>({
       method: 'POST',
-      url,
+      url: this.endpoints.oauth2TokenUrl,
       data: querystring.stringify(values),
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     });
@@ -720,7 +725,7 @@ export class OAuth2Client extends AuthClient {
     if (!refreshToken) {
       throw new Error('No refresh token is set.');
     }
-    const url = this.endpoints.oauth2TokenUrl.toString();
+
     const data = {
       refresh_token: refreshToken,
       client_id: this._clientId,
@@ -734,7 +739,7 @@ export class OAuth2Client extends AuthClient {
       // request for new token
       res = await this.transporter.request<CredentialRequest>({
         method: 'POST',
-        url,
+        url: this.endpoints.oauth2TokenUrl,
         data: querystring.stringify(data),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       });
@@ -854,7 +859,7 @@ export class OAuth2Client extends AuthClient {
 
   protected async getRequestMetadataAsync(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    url?: string | null
+    url?: string | URL | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
     if (
@@ -1136,10 +1141,12 @@ export class OAuth2Client extends AuthClient {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
     }
-    const response = await this.getFederatedSignonCertsAsync();
+    const {certs} = await this.getFederatedSignonCertsAsync(
+      options.certificateFormat
+    );
     const login = await this.verifySignedJwtWithCertsAsync(
       options.idToken,
-      response.certs,
+      certs,
       options.audience,
       this.issuers,
       options.maxExpiry
@@ -1182,26 +1189,31 @@ export class OAuth2Client extends AuthClient {
    * are certificates in either PEM or JWK format.
    * @param callback Callback supplying the certificates
    */
-  getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
+  getFederatedSignonCerts(
+    format: CertificateFormat
+  ): Promise<FederatedSignonCertsResponse>;
   getFederatedSignonCerts(callback: GetFederatedSignonCertsCallback): void;
   getFederatedSignonCerts(
-    callback?: GetFederatedSignonCertsCallback
+    callbackOrFormat?: CertificateFormat | GetFederatedSignonCertsCallback
   ): Promise<FederatedSignonCertsResponse> | void {
-    if (callback) {
+    if (typeof callbackOrFormat === 'function') {
+      const callback = callbackOrFormat;
+
       this.getFederatedSignonCertsAsync().then(
         r => callback(null, r.certs, r.res),
         callback
       );
     } else {
-      return this.getFederatedSignonCertsAsync();
+      const format = callbackOrFormat;
+      return this.getFederatedSignonCertsAsync(format);
     }
   }
 
-  async getFederatedSignonCertsAsync(): Promise<FederatedSignonCertsResponse> {
+  async getFederatedSignonCertsAsync(
+    format: CertificateFormat = CertificateFormat.JWK
+  ): Promise<FederatedSignonCertsResponse> {
     const nowTime = new Date().getTime();
-    const format = hasBrowserCrypto()
-      ? CertificateFormat.JWK
-      : CertificateFormat.PEM;
+
     if (
       this.certificateExpiry &&
       nowTime < this.certificateExpiry.getTime() &&
@@ -1209,27 +1221,20 @@ export class OAuth2Client extends AuthClient {
     ) {
       return {certs: this.certificateCache, format};
     }
-    let res: GaxiosResponse;
-    let url: string;
+
+    let url: string | URL;
     switch (format) {
       case CertificateFormat.PEM:
-        url = this.endpoints.oauth2FederatedSignonPemCertsUrl.toString();
+        url = this.endpoints.oauth2FederatedSignonPemCertsUrl;
         break;
       case CertificateFormat.JWK:
-        url = this.endpoints.oauth2FederatedSignonJwkCertsUrl.toString();
+        url = this.endpoints.oauth2FederatedSignonJwkCertsUrl;
         break;
       default:
         throw new Error(`Unsupported certificate format ${format}`);
     }
-    try {
-      res = await this.transporter.request({url});
-    } catch (e) {
-      if (e instanceof Error) {
-        e.message = `Failed to retrieve verification certificates: ${e.message}`;
-      }
 
-      throw e;
-    }
+    const res: GaxiosResponse = await this.transporter.request({url});
 
     const cacheControl = res ? res.headers['cache-control'] : undefined;
     let cacheAge = -1;
@@ -1287,10 +1292,11 @@ export class OAuth2Client extends AuthClient {
 
   async getIapPublicKeysAsync(): Promise<IapPublicKeysResponse> {
     let res: GaxiosResponse;
-    const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      res = await this.transporter.request({url});
+      res = await this.transporter.request({
+        url: this.endpoints.oauth2IapPublicKeyUrl,
+      });
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;

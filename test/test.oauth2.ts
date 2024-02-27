@@ -25,6 +25,7 @@ import * as sinon from 'sinon';
 
 import {CodeChallengeMethod, Credentials, OAuth2Client} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
+import {CertificateFormat} from '../src/auth/oauth2client';
 
 nock.disableNetConnect();
 
@@ -38,8 +39,13 @@ describe('oauth2', () => {
   const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
   const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
   const baseUrl = 'https://oauth2.googleapis.com';
-  const certsPath = '/oauth2/v1/certs';
+  const certsPath = '/oauth2/v3/certs';
+  const legacyCertsPath = '/oauth2/v1/certs';
   const certsResPath = path.join(
+    __dirname,
+    '../../test/fixtures/oauthcerts.json'
+  );
+  const legacyCertsResPath = path.join(
     __dirname,
     '../../test/fixtures/oauthcertspem.json'
   );
@@ -132,8 +138,17 @@ describe('oauth2', () => {
       );
     });
 
-    it('should verifyIdToken properly', async () => {
-      const fakeCerts = {a: 'a', b: 'b'};
+    it('should verifyIdToken properly (JWK certs)', async () => {
+      const fakeCertsResponse = {
+        keys: [
+          {kid: 'a', n: 'a-n'},
+          {kid: 'b', n: 'b-n'},
+        ],
+      };
+      const fakeCerts = {
+        a: {kid: 'a', n: 'a-n'},
+        b: {kid: 'b', n: 'b-n'},
+      };
       const idToken = 'idToken';
       const audience = 'fakeAudience';
       const maxExpiry = 5;
@@ -145,8 +160,8 @@ describe('oauth2', () => {
         exp: 1514166043,
       };
       const scope = nock('https://www.googleapis.com')
-        .get('/oauth2/v1/certs')
-        .reply(200, fakeCerts);
+        .get(certsPath)
+        .reply(200, fakeCertsResponse);
       client.verifySignedJwtWithCertsAsync = async (
         jwt: string,
         certs: {},
@@ -161,6 +176,49 @@ describe('oauth2', () => {
         return new LoginTicket('c', payload);
       };
       const result = await client.verifyIdToken({idToken, audience, maxExpiry});
+      scope.done();
+      assert.notStrictEqual(result, null);
+      if (result) {
+        assert.strictEqual(result.getEnvelope(), 'c');
+        assert.strictEqual(result.getPayload(), payload);
+      }
+    });
+
+    it('should verifyIdToken properly (PEM certs)', async () => {
+      const fakeCerts = {a: 'a', b: 'b'};
+      const idToken = 'idToken';
+      const audience = 'fakeAudience';
+      const maxExpiry = 5;
+      const payload = {
+        aud: 'aud',
+        sub: 'sub',
+        iss: 'iss',
+        iat: 1514162443,
+        exp: 1514166043,
+      };
+      const scope = nock('https://www.googleapis.com')
+        .get(legacyCertsPath)
+        .reply(200, fakeCerts);
+
+      client.verifySignedJwtWithCertsAsync = async (
+        jwt: string,
+        certs: {},
+        requiredAudience: string | string[],
+        issuers?: string[],
+        theMaxExpiry?: number
+      ) => {
+        assert.strictEqual(jwt, idToken);
+        assert.deepStrictEqual(certs, fakeCerts);
+        assert.strictEqual(requiredAudience, audience);
+        assert.strictEqual(theMaxExpiry, maxExpiry);
+        return new LoginTicket('c', payload);
+      };
+      const result = await client.verifyIdToken({
+        idToken,
+        audience,
+        maxExpiry,
+        certificateFormat: CertificateFormat.PEM,
+      });
       scope.done();
       assert.notStrictEqual(result, null);
       if (result) {
@@ -813,23 +871,45 @@ describe('oauth2', () => {
       );
     });
 
-    it('should be able to retrieve a list of Google certificates', done => {
+    it('should be able to retrieve a list of Google certificates (JWK)', async () => {
       const scope = nock('https://www.googleapis.com')
         .get(certsPath)
-        .replyWithFile(200, certsResPath);
-      client.getFederatedSignonCerts((err, certs) => {
-        assert.strictEqual(err, null);
-        assert.notStrictEqual(
-          certs!['a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21'],
-          null
-        );
-        assert.notStrictEqual(
-          certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'],
-          null
-        );
-        scope.done();
-        done();
-      });
+        .replyWithFile(200, certsResPath, {
+          'content-type': 'application/json',
+        });
+
+      const expectedCertsData = fs.readFileSync(certsResPath, 'utf-8');
+      const expectedCerts: {[kid: string]: {}} = {};
+      for (const cert of JSON.parse(expectedCertsData).keys) {
+        expectedCerts[cert.kid] = cert;
+      }
+
+      const {certs} = await client.getFederatedSignonCerts(
+        CertificateFormat.JWK
+      );
+
+      assert.deepStrictEqual(certs, expectedCerts);
+
+      scope.done();
+    });
+
+    it('should be able to retrieve a list of Google certificates (PEM)', async () => {
+      const scope = nock('https://www.googleapis.com')
+        .get(legacyCertsPath)
+        .replyWithFile(200, legacyCertsResPath, {
+          'content-type': 'application/json',
+        });
+
+      const expectedCertsData = fs.readFileSync(legacyCertsResPath, 'utf-8');
+      const expectedCerts = JSON.parse(expectedCertsData);
+
+      const {certs} = await client.getFederatedSignonCerts(
+        CertificateFormat.PEM
+      );
+
+      assert.deepStrictEqual(certs, expectedCerts);
+
+      scope.done();
     });
 
     it('should be able to retrieve a list of Google certificates from cache again', done => {
@@ -1298,18 +1378,16 @@ describe('oauth2', () => {
       );
     });
 
-    it('should revoke credentials if access token present', done => {
-      const scope = nock('https://oauth2.googleapis.com')
-        .post('/revoke?token=abc')
+    it('should revoke credentials if access token present', async () => {
+      const scope = nock('https://www.accounts.google.com')
+        .post('/o/oauth2/revoke?token=abc')
         .reply(200, {success: true});
       client.credentials = {access_token: 'abc', refresh_token: 'abc'};
-      client.revokeCredentials((err, result) => {
-        assert.strictEqual(err, null);
-        assert.strictEqual(result!.data!.success, true);
-        assert.deepStrictEqual(client.credentials, {});
-        scope.done();
-        done();
-      });
+      const result = await client.revokeCredentials();
+
+      assert(result.data.success);
+      assert.deepStrictEqual(client.credentials, {});
+      scope.done();
     });
 
     it('should clear credentials and return error if no access token to revoke', done => {
