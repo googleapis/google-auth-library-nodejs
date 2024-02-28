@@ -21,11 +21,12 @@ import {
   fromArrayBufferToHex,
 } from '../src/crypto/crypto';
 import {NodeCrypto} from '../src/crypto/node/crypto';
-import {createPublicKey} from 'crypto';
+import {createPrivateKey, createPublicKey} from 'crypto';
 
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
 const jwtPublicKeyJWT = createPublicKey(publicKey).export({format: 'jwk'});
+const jwtPrivateKeyJWT = createPrivateKey(privateKey).export({format: 'jwk'});
 
 /**
  * Converts a Node.js Buffer to an ArrayBuffer.
@@ -100,7 +101,24 @@ describe('crypto', () => {
     assert(verified);
   });
 
-  it('should sign a message', async () => {
+  it('should sign a message (JWT)', async () => {
+    const message = 'This message is signed';
+    const expectedSignatureBase64 = [
+      'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
+      'm4cCbeXdR1MEmWVhNJjZQFv3KL3tDAnl0Q4bTcSR/',
+      'mmhXaRjdxyJ6xAUp0KcbVq6xsDIbnnYHSgYr3zVoS',
+      'dRRefWSWTknN1S69fNmKEfUeBIJA93xitr3pbqtLC',
+      'bP28XNU=',
+    ].join('');
+
+    const signatureBase64 = await crypto.sign(
+      jwtPrivateKeyJWT as unknown as JwkCertificate,
+      message
+    );
+    assert.strictEqual(signatureBase64, expectedSignatureBase64);
+  });
+
+  it('should sign a message (PEM)', async () => {
     const message = 'This message is signed';
     const expectedSignatureBase64 = [
       'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
