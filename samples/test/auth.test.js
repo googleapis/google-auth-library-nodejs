@@ -69,7 +69,7 @@ describe('auth samples', () => {
     const idToken = await client.fetchIdToken(TARGET_AUDIENCE);
 
     const output = execSync(
-      `node verifyGoogleIdToken ${idToken} ${TARGET_AUDIENCE} https://www.googleapis.com/oauth2/v3/certs`
+      `node verifyGoogleIdToken ${idToken} ${TARGET_AUDIENCE}`
     );
 
     assert.match(output, /ID token verified./);

@@ -15,11 +15,17 @@
 import * as fs from 'fs';
 import {assert} from 'chai';
 import {describe, it} from 'mocha';
-import {createCrypto, fromArrayBufferToHex} from '../src/crypto/crypto';
+import {
+  JwkCertificate,
+  createCrypto,
+  fromArrayBufferToHex,
+} from '../src/crypto/crypto';
 import {NodeCrypto} from '../src/crypto/node/crypto';
+import {createPublicKey} from 'crypto';
 
 const publicKey = fs.readFileSync('./test/fixtures/public.pem', 'utf-8');
 const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
+const jwtPublicKeyJWT = createPublicKey(publicKey).export({format: 'jwk'});
 
 /**
  * Converts a Node.js Buffer to an ArrayBuffer.
@@ -63,7 +69,25 @@ describe('crypto', () => {
     assert.notStrictEqual(generated1Base64, generated2Base64);
   });
 
-  it('should verify a signature', async () => {
+  it('should verify a signature (JWK)', async () => {
+    const message = 'This message is signed';
+    const signatureBase64 = [
+      'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
+      'm4cCbeXdR1MEmWVhNJjZQFv3KL3tDAnl0Q4bTcSR/',
+      'mmhXaRjdxyJ6xAUp0KcbVq6xsDIbnnYHSgYr3zVoS',
+      'dRRefWSWTknN1S69fNmKEfUeBIJA93xitr3pbqtLC',
+      'bP28XNU',
+    ].join(''); // note: no padding
+
+    const verified = await crypto.verify(
+      jwtPublicKeyJWT as unknown as JwkCertificate,
+      message,
+      signatureBase64
+    );
+    assert(verified);
+  });
+
+  it('should verify a signature (PEM)', async () => {
     const message = 'This message is signed';
     const signatureBase64 = [
       'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
