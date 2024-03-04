@@ -101,7 +101,7 @@ describe('crypto', () => {
     assert(verified);
   });
 
-  it('should sign a message (JWT)', async () => {
+  it('should sign a message (JWK)', async () => {
     const message = 'This message is signed';
     const expectedSignatureBase64 = [
       'ufyKBV+Ar7Yq8CSmSIN9m38ch4xnWBz8CP4qHh6V+',
