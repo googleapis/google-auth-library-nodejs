@@ -155,7 +155,7 @@ export class AwsClient extends BaseExternalAccountClient {
       // The credential config contains all the URLs by default but clients may be running this
       // where the metadata server is not available and returning the credentials through the environment.
       // Removing this check may break them.
-      if (this.shouldUseMetadataServer() && this.imdsV2SessionTokenUrl) {
+      if (!this.regionFromEnv && this.imdsV2SessionTokenUrl) {
         metadataHeaders['x-aws-ec2-metadata-token'] =
           await this.getImdsV2SessionToken();
       }
@@ -166,6 +166,10 @@ export class AwsClient extends BaseExternalAccountClient {
         // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
         if (this.securityCredentialsFromEnv) {
           return this.securityCredentialsFromEnv;
+        }
+        if (this.imdsV2SessionTokenUrl) {
+          metadataHeaders['x-aws-ec2-metadata-token'] =
+            await this.getImdsV2SessionToken();
         }
         // Since the role on a VM can change, we don't need to cache it.
         const roleName = await this.getAwsRoleName(metadataHeaders);
@@ -314,12 +318,6 @@ export class AwsClient extends BaseExternalAccountClient {
         headers: headers,
       });
     return response.data;
-  }
-
-  private shouldUseMetadataServer(): boolean {
-    // The metadata server must be used when either the AWS region or AWS security
-    // credentials cannot be retrieved through their defined environment variables.
-    return !this.regionFromEnv || !this.securityCredentialsFromEnv;
   }
 
   private get regionFromEnv(): string | null {
