@@ -330,6 +330,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
           })
             .put('/latest/api/token')
+            .twice()
             .reply(200, awsSessionToken)
         );
 
