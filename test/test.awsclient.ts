@@ -33,7 +33,7 @@ nock.disableNetConnect();
 
 const ONE_HOUR_IN_SECS = 3600;
 
-describe.only('AwsClient', () => {
+describe('AwsClient', () => {
   let clock: sinon.SinonFakeTimers;
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials-fake.json');
