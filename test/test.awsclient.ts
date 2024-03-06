@@ -33,10 +33,11 @@ nock.disableNetConnect();
 
 const ONE_HOUR_IN_SECS = 3600;
 
-describe('AwsClient', () => {
+describe.only('AwsClient', () => {
   let clock: sinon.SinonFakeTimers;
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials-fake.json');
+  const awsConstructorCredentials = require('../../test/fixtures/aws-constructor-credentials-fake.json');
   const referenceDate = new Date('2020-08-11T06:55:22.345Z');
   const amzDate = '20200811T065522Z';
   const dateStamp = '20200811';
@@ -44,6 +45,9 @@ describe('AwsClient', () => {
   const accessKeyId = awsSecurityCredentials.AccessKeyId;
   const secretAccessKey = awsSecurityCredentials.SecretAccessKey;
   const token = awsSecurityCredentials.Token;
+  const constructorAccessKeyId = awsConstructorCredentials.AccessKeyId;
+  const constructorSecretAccessKey = awsConstructorCredentials.SecretAccessKey;
+  const constructorToken = awsConstructorCredentials.Token;
   const awsRole = 'gcp-aws-role';
   const awsSessionToken = 'sessiontoken';
   const audience = getAudience();
@@ -128,6 +132,50 @@ describe('AwsClient', () => {
         {
           key: 'x-amz-security-token',
           value: expectedSignedRequest.headers['x-amz-security-token'],
+        },
+      ],
+    })
+  );
+  const expectedConstructorCredsSignedRequest = {
+    url:
+      'https://sts.us-east-2.amazonaws.com' +
+      '?Action=GetCallerIdentity&Version=2011-06-15',
+    method: 'POST',
+    headers: {
+      Authorization:
+        `AWS4-HMAC-SHA256 Credential=${constructorAccessKeyId}/` +
+        `${dateStamp}/${awsRegion}/sts/aws4_request, SignedHeaders=host;` +
+        'x-amz-date;x-amz-security-token, Signature=' +
+        '3891ab9a152c770b33a5451c041f46564a11bc24f8184da4c7a9c969bc682015',
+      host: 'sts.us-east-2.amazonaws.com',
+      'x-amz-date': amzDate,
+      'x-amz-security-token': constructorToken,
+    },
+  };
+  const expectedConstructorCredsSubjectToken = encodeURIComponent(
+    JSON.stringify({
+      url: expectedConstructorCredsSignedRequest.url,
+      method: expectedConstructorCredsSignedRequest.method,
+      headers: [
+        {
+          key: 'x-goog-cloud-target-resource',
+          value: awsOptions.audience,
+        },
+        {
+          key: 'x-amz-date',
+          value: expectedConstructorCredsSignedRequest.headers['x-amz-date'],
+        },
+        {
+          key: 'Authorization',
+          value: expectedConstructorCredsSignedRequest.headers.Authorization,
+        },
+        {
+          key: 'host',
+          value: expectedConstructorCredsSignedRequest.headers.host,
+        },
+        {
+          key: 'x-amz-security-token',
+          value: constructorToken,
         },
       ],
     })
@@ -610,6 +658,149 @@ describe('AwsClient', () => {
           status: 500,
         });
         scope.done();
+      });
+    });
+  });
+
+  describe('for constructor credentials retrieved tokens', () => {
+    let envAwsAccessKeyId: string | undefined;
+    let envAwsSecretAccessKey: string | undefined;
+    let envAwsSessionToken: string | undefined;
+    let envAwsRegion: string | undefined;
+    let envAwsDefaultRegion: string | undefined;
+
+    const mockCredentials = {
+      accessKeyId: constructorAccessKeyId,
+      secretAccessKey: constructorSecretAccessKey,
+      token: constructorToken,
+    };
+    beforeEach(() => {
+      // Store external state.
+      envAwsAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
+      envAwsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+      envAwsSessionToken = process.env.AWS_SESSION_TOKEN;
+      envAwsRegion = process.env.AWS_REGION;
+      envAwsDefaultRegion = process.env.AWS_DEFAULT_REGION;
+      // Reset environment variables.
+      delete process.env.AWS_ACCESS_KEY_ID;
+      delete process.env.AWS_SECRET_ACCESS_KEY;
+      delete process.env.AWS_SESSION_TOKEN;
+      delete process.env.AWS_REGION;
+      delete process.env.AWS_DEFAULT_REGION;
+    });
+    afterEach(() => {
+      // Restore environment variables.
+      if (envAwsAccessKeyId) {
+        process.env.AWS_ACCESS_KEY_ID = envAwsAccessKeyId;
+      } else {
+        delete process.env.AWS_ACCESS_KEY_ID;
+      }
+      if (envAwsSecretAccessKey) {
+        process.env.AWS_SECRET_ACCESS_KEY = envAwsSecretAccessKey;
+      } else {
+        delete process.env.AWS_SECRET_ACCESS_KEY;
+      }
+      if (envAwsSessionToken) {
+        process.env.AWS_SESSION_TOKEN = envAwsSessionToken;
+      } else {
+        delete process.env.AWS_SESSION_TOKEN;
+      }
+      if (envAwsRegion) {
+        process.env.AWS_REGION = envAwsRegion;
+      } else {
+        delete process.env.AWS_REGION;
+      }
+      if (envAwsDefaultRegion) {
+        process.env.AWS_DEFAULT_REGION = envAwsDefaultRegion;
+      } else {
+        delete process.env.AWS_DEFAULT_REGION;
+      }
+    });
+
+    describe('retrieveSubjectToken()', () => {
+      it('should resolve on success for constructor creds', async () => {
+        const scope = nock(metadataBaseUrl)
+          .get('/latest/meta-data/placement/availability-zone')
+          .reply(200, `${awsRegion}b`);
+
+        const client = new AwsClient(awsOptions, {}, mockCredentials);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedConstructorCredsSubjectToken);
+        scope.done();
+      });
+
+      it('should reject when AWS region is not determined', async () => {
+        // Simulate error during region retrieval.
+        const scope = nock(metadataBaseUrl)
+          .get('/latest/meta-data/placement/availability-zone')
+          .reply(500);
+
+        const client = new AwsClient(awsOptions, {}, mockCredentials);
+
+        await assert.rejects(client.retrieveSubjectToken(), {
+          status: 500,
+        });
+        scope.done();
+      });
+
+      it('should not check env creds if constructor creds are available', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_SESSION_TOKEN = token;
+        const scope = nock(metadataBaseUrl)
+          .get('/latest/meta-data/placement/availability-zone')
+          .reply(200, `${awsRegion}b`);
+
+        const client = new AwsClient(awsOptions, {}, mockCredentials);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedConstructorCredsSubjectToken);
+        scope.done();
+      });
+
+      it('should check env creds if constructor creds are not available', async () => {
+        process.env.AWS_ACCESS_KEY_ID = accessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
+        process.env.AWS_SESSION_TOKEN = token;
+        const scope = nock(metadataBaseUrl)
+          .get('/latest/meta-data/placement/availability-zone')
+          .reply(200, `${awsRegion}b`);
+
+        const client = new AwsClient(awsOptions);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scope.done();
+      });
+
+      it('should call metadata server with imdsv2 if creds are not retrievable through constructor or env', async () => {
+        process.env.AWS_REGION = awsRegion;
+
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+          })
+            .put('/latest/api/token')
+            .reply(200, awsSessionToken)
+        );
+
+        scopes.push(
+          nock(metadataBaseUrl, {
+            reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
+          })
+            .get('/latest/meta-data/iam/security-credentials')
+            .reply(200, awsRole)
+            .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
+            .reply(200, awsSecurityCredentials)
+        );
+
+        const client = new AwsClient(awsOptionsWithImdsv2);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+        scopes.forEach(scope => scope.done());
       });
     });
   });
