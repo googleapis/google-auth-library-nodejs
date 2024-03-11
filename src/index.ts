@@ -68,6 +68,7 @@ export {
   PluggableAuthClient,
   PluggableAuthClientOptions,
 } from './auth/pluggable-auth-client';
+export {PassThroughClient} from './auth/passthrough';
 export {DefaultTransporter} from './transporters';
 
 const auth = new GoogleAuth();
