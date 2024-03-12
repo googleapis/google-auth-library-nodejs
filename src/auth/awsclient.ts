@@ -19,8 +19,7 @@ import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
 } from './baseexternalclient';
-import {Headers} from './oauth2client';
-import {AuthClientOptions} from './authclient';
+import {Headers, AuthClientOptions} from './authclient';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
