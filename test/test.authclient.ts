@@ -14,29 +14,10 @@
 
 import {strict as assert} from 'assert';
 
-import {GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
-import {AuthClient} from '../src';
-import {Headers} from '../src/auth/oauth2client';
+import {PassThroughClient} from '../src';
 import {snakeToCamel} from '../src/util';
 
 describe('AuthClient', () => {
-  class TestAuthClient extends AuthClient {
-    request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
-      throw new Error('Method not implemented.');
-    }
-
-    getRequestHeaders(url?: string | undefined): Promise<Headers> {
-      throw new Error('Method not implemented.');
-    }
-
-    getAccessToken(): Promise<{
-      token?: string | null | undefined;
-      res?: GaxiosResponse<any> | null | undefined;
-    }> {
-      throw new Error('Method not implemented.');
-    }
-  }
-
   it('should accept and normalize snake case options to camel case', () => {
     const expected = {
       project_id: 'my-projectId',
@@ -49,11 +30,11 @@ describe('AuthClient', () => {
       const camelCased = snakeToCamel(key) as keyof typeof authClient;
 
       // assert snake cased input
-      let authClient = new TestAuthClient({[key]: value});
+      let authClient = new PassThroughClient({[key]: value});
       assert.equal(authClient[camelCased], value);
 
       // assert camel cased input
-      authClient = new TestAuthClient({[camelCased]: value});
+      authClient = new PassThroughClient({[camelCased]: value});
       assert.equal(authClient[camelCased], value);
     }
   });

@@ -17,7 +17,7 @@ import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
-import {Headers} from './oauth2client';
+import {GetAccessTokenResponse, Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 
 /**
@@ -128,10 +128,7 @@ export interface CredentialsClient {
    * @return A promise that resolves with the current GCP access token
    *   response. If the current credential is expired, a new one is retrieved.
    */
-  getAccessToken(): Promise<{
-    token?: string | null;
-    res?: GaxiosResponse | null;
-  }>;
+  getAccessToken(): Promise<GetAccessTokenResponse>;
 
   /**
    * The main authentication interface. It takes an optional url which when
