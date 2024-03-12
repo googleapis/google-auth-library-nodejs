@@ -14,6 +14,7 @@
 
 import {GaxiosOptions} from 'gaxios';
 import {AuthClient} from './authclient';
+import {GetAccessTokenResponse, Headers} from './oauth2client';
 
 /**
  * An AuthClient without any Authentication information. Useful for:
@@ -44,7 +45,7 @@ export class PassThroughClient extends AuthClient {
    *
    * @returns {}
    */
-  async getAccessToken() {
+  async getAccessToken(): Promise<GetAccessTokenResponse> {
     return {};
   }
 
@@ -54,7 +55,11 @@ export class PassThroughClient extends AuthClient {
    *
    * @returns {}
    */
-  async getRequestHeaders() {
+  async getRequestHeaders(): Promise<Headers> {
     return {};
   }
 }
+
+const a = new PassThroughClient();
+
+a.getAccessToken();
