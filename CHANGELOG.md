@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.7.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.3...v9.7.0) (2024-03-12)
+
+
+### Features
+
+* `PassThrough` AuthClient ([#1771](https://github.com/googleapis/google-auth-library-nodejs/issues/1771)) ([0003bee](https://github.com/googleapis/google-auth-library-nodejs/commit/0003bee317dd8e99b553857edfffeb4a47a4af26))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v15 ([#1772](https://github.com/googleapis/google-auth-library-nodejs/issues/1772)) ([f45f975](https://github.com/googleapis/google-auth-library-nodejs/commit/f45f9753a7c83bc04616a1bdbaf687b3f38a17d2))
+* Making aws request signer get a new session token each time security credentials are requested. ([#1765](https://github.com/googleapis/google-auth-library-nodejs/issues/1765)) ([6a6e496](https://github.com/googleapis/google-auth-library-nodejs/commit/6a6e49634863f61487688724d0d20632e03f0299))
+
 ## [9.6.3](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.2...v9.6.3) (2024-02-06)
 
 
