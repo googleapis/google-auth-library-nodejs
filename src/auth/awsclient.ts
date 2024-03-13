@@ -65,6 +65,7 @@ interface AwsSecurityCredentialsResponse {
  * GCP access token.
  */
 export class AwsClient extends BaseExternalAccountClient {
+  private awsCredentials: AwsSecurityCredentials | null;
   private readonly environmentId: string;
   private readonly regionUrl?: string;
   private readonly securityCredentialsUrl?: string;
@@ -86,10 +87,13 @@ export class AwsClient extends BaseExternalAccountClient {
    *   `options` parameter.** Optional additional behavior customization options.
    *   These currently customize expiration threshold time and whether to retry
    *   on 401/403 API request errors.
+   * @param credentials Optional AWS security credentials. If provided, these
+   *   credentials will be used instead of the ones from the environment variables.
    */
   constructor(
     options: AwsClientOptions,
-    additionalOptions?: AuthClientOptions
+    additionalOptions?: AuthClientOptions,
+    awsCredentials?: AwsSecurityCredentials,
   ) {
     super(options, additionalOptions);
     this.environmentId = options.credential_source.environment_id;
@@ -106,6 +110,7 @@ export class AwsClient extends BaseExternalAccountClient {
     this.awsRequestSigner = null;
     this.region = '';
     this.credentialSourceType = 'aws';
+    this.awsCredentials = awsCredentials || null;
 
     // Data validators.
     this.validateEnvironmentId();
@@ -135,7 +140,8 @@ export class AwsClient extends BaseExternalAccountClient {
    *    metadata requests. This is a requirement for IDMSv2 but optional
    *    for IDMSv1.
    * 2. Retrieve AWS region from availability-zone.
-   * 3a. Check AWS credentials in environment variables. If not found, get
+   * 3a. Check if AWS credentials are provided in the constructor. If not, check
+   *     AWS credentials in environment variables. If still not found, get
    *     from security-credentials endpoint.
    * 3b. Get AWS credentials from security-credentials endpoint. In order
    *     to retrieve this, the AWS role needs to be determined by calling
@@ -162,7 +168,11 @@ export class AwsClient extends BaseExternalAccountClient {
 
       this.region = await this.getAwsRegion(metadataHeaders);
       this.awsRequestSigner = new AwsRequestSigner(async () => {
-        // Check environment variables for permanent credentials first.
+        // Check provided credentials first
+        if (this.awsCredentials) {
+          return this.awsCredentials;
+        }
+        // Check environment variables for permanent credentials next.
         // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
         if (this.securityCredentialsFromEnv) {
           return this.securityCredentialsFromEnv;
