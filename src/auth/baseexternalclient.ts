@@ -21,7 +21,12 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions, GetAccessTokenResponse, Headers} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 import {BodyResponseCallback} from '../transporters';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';

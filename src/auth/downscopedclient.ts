@@ -22,7 +22,12 @@ import * as stream from 'stream';
 
 import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions, GetAccessTokenResponse, Headers} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 
 import * as sts from './stscredentials';
 

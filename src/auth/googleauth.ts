@@ -47,7 +47,12 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {AuthClient, AuthClientOptions, DEFAULT_UNIVERSE, Headers} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  DEFAULT_UNIVERSE,
+  Headers,
+} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
