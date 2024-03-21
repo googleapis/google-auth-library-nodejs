@@ -12,29 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions} from 'gaxios';
-import * as fs from 'fs';
-import {promisify} from 'util';
+import {Gaxios} from 'gaxios';
 
 import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
+  ExternalAccountSupplierContext,
 } from './baseexternalclient';
 import {AuthClientOptions} from './authclient';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
+import {FileSubjectTokenSupplier} from './filesubjecttokensupplier';
+import {UrlSubjectTokenSupplier} from './urlsubjecttokensupplier';
+import {Transporter} from '../transporters';
 
-// fs.readfile is undefined in browser karma tests causing
-// `npm run browser-test` to fail as test.oauth2.ts imports this file via
-// src/index.ts.
-// Fallback to void function to avoid promisify throwing a TypeError.
-const readFile = promisify(fs.readFile ?? (() => {}));
-const realpath = promisify(fs.realpath ?? (() => {}));
-const lstat = promisify(fs.lstat ?? (() => {}));
+export type SubjectTokenFormatType = 'json' | 'text';
 
-type SubjectTokenFormatType = 'json' | 'text';
-
-interface SubjectTokenJsonResponse {
+export interface SubjectTokenJsonResponse {
   [key: string]: string;
+}
+
+/**
+ * Supplier interface for subject tokens. This can be implemented to
+ * return a subject token which can then be exchanged for a GCP token by an
+ * {@link IdentityPoolClient}.
+ */
+export interface SubjectTokenSupplier {
+  /**
+   * Gets a valid subject token for the requested external account identity.
+   * Note that these are not cached by the calling {@link IdentityPoolClient},
+   * so caching should be including in the implementation.
+   * @param context {@link ExternalAccountSupplierContext} from the calling
+   *   {@link IdentityPoolClient}, contains the requested audience and subject
+   *   token type for the external account identity.
+   * @param transporter The {@link Gaxios} or {@link Transporter} instance from
+   *   the calling {@link IdentityPoolClient} to use for requests.
+   * @return A promise that resolves with the requested subject token string.
+   */
+  getSubjectToken: (
+    context: ExternalAccountSupplierContext,
+    transporter: Transporter | Gaxios
+  ) => Promise<string>;
 }
 
 /**
@@ -61,11 +78,7 @@ export interface IdentityPoolClientOptions
  * used for K8s and Azure workloads.
  */
 export class IdentityPoolClient extends BaseExternalAccountClient {
-  private readonly file?: string;
-  private readonly url?: string;
-  private readonly headers?: {[key: string]: string};
-  private readonly formatType: SubjectTokenFormatType;
-  private readonly formatSubjectTokenFieldName?: string;
+  private readonly subjectTokenSupplier: SubjectTokenSupplier;
 
   /**
    * Instantiate an IdentityPoolClient instance using the provided JSON
@@ -93,157 +106,64 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     const credentialSource = opts.get('credential_source');
     const credentialSourceOpts = originalOrCamelOptions(credentialSource);
 
-    this.file = credentialSourceOpts.get('file');
-    this.url = credentialSourceOpts.get('url');
-    this.headers = credentialSourceOpts.get('headers');
-    if (this.file && this.url) {
-      throw new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file or url.'
-      );
-    } else if (this.file && !this.url) {
-      this.credentialSourceType = 'file';
-    } else if (!this.file && this.url) {
-      this.credentialSourceType = 'url';
-    } else {
-      throw new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file or url.'
-      );
-    }
-
     const formatOpts = originalOrCamelOptions(
       credentialSourceOpts.get('format')
     );
 
     // Text is the default format type.
-    this.formatType = formatOpts.get('type') || 'text';
-    this.formatSubjectTokenFieldName = formatOpts.get(
+    const formatType = formatOpts.get('type') || 'text';
+    const formatSubjectTokenFieldName = formatOpts.get(
       'subject_token_field_name'
     );
 
-    if (this.formatType !== 'json' && this.formatType !== 'text') {
-      throw new Error(`Invalid credential_source format "${this.formatType}"`);
+    if (formatType !== 'json' && formatType !== 'text') {
+      throw new Error(`Invalid credential_source format "${formatType}"`);
     }
-    if (this.formatType === 'json' && !this.formatSubjectTokenFieldName) {
+    if (formatType === 'json' && !formatSubjectTokenFieldName) {
       throw new Error(
         'Missing subject_token_field_name for JSON credential_source format'
+      );
+    }
+
+    const file = credentialSourceOpts.get('file');
+    const url = credentialSourceOpts.get('url');
+    const headers = credentialSourceOpts.get('headers');
+    if (file && url) {
+      throw new Error(
+        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+      );
+    } else if (file && !url) {
+      this.credentialSourceType = 'file';
+      this.subjectTokenSupplier = new FileSubjectTokenSupplier(
+        file,
+        formatType,
+        formatSubjectTokenFieldName
+      );
+    } else if (!file && url) {
+      this.credentialSourceType = 'url';
+      this.subjectTokenSupplier = new UrlSubjectTokenSupplier(
+        url,
+        formatType,
+        formatSubjectTokenFieldName,
+        headers
+      );
+    } else {
+      throw new Error(
+        'No valid Identity Pool "credential_source" provided, must be either file or url.'
       );
     }
   }
 
   /**
    * Triggered when a external subject token is needed to be exchanged for a GCP
-   * access token via GCP STS endpoint.
-   * This uses the `options.credential_source` object to figure out how
-   * to retrieve the token using the current environment. In this case,
-   * this either retrieves the local credential from a file location (k8s
-   * workload) or by sending a GET request to a local metadata server (Azure
-   * workloads).
+   * access token via GCP STS endpoint. Gets a subject token by calling
+   * the configured {@link SubjectTokenSupplier}
    * @return A promise that resolves with the external subject token.
    */
   async retrieveSubjectToken(): Promise<string> {
-    if (this.file) {
-      return await this.getTokenFromFile(
-        this.file!,
-        this.formatType,
-        this.formatSubjectTokenFieldName
-      );
-    }
-    return await this.getTokenFromUrl(
-      this.url!,
-      this.formatType,
-      this.formatSubjectTokenFieldName,
-      this.headers
+    return this.subjectTokenSupplier.getSubjectToken(
+      this.supplierContext,
+      this.transporter
     );
-  }
-
-  /**
-   * Looks up the external subject token in the file path provided and
-   * resolves with that token.
-   * @param file The file path where the external credential is located.
-   * @param formatType The token file or URL response type (JSON or text).
-   * @param formatSubjectTokenFieldName For JSON response types, this is the
-   *   subject_token field name. For Azure, this is access_token. For text
-   *   response types, this is ignored.
-   * @return A promise that resolves with the external subject token.
-   */
-  private async getTokenFromFile(
-    filePath: string,
-    formatType: SubjectTokenFormatType,
-    formatSubjectTokenFieldName?: string
-  ): Promise<string> {
-    // Make sure there is a file at the path. lstatSync will throw if there is
-    // nothing there.
-    try {
-      // Resolve path to actual file in case of symlink. Expect a thrown error
-      // if not resolvable.
-      filePath = await realpath(filePath);
-
-      if (!(await lstat(filePath)).isFile()) {
-        throw new Error();
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
-      }
-
-      throw err;
-    }
-
-    let subjectToken: string | undefined;
-    const rawText = await readFile(filePath, {encoding: 'utf8'});
-    if (formatType === 'text') {
-      subjectToken = rawText;
-    } else if (formatType === 'json' && formatSubjectTokenFieldName) {
-      const json = JSON.parse(rawText) as SubjectTokenJsonResponse;
-      subjectToken = json[formatSubjectTokenFieldName];
-    }
-    if (!subjectToken) {
-      throw new Error(
-        'Unable to parse the subject_token from the credential_source file'
-      );
-    }
-    return subjectToken;
-  }
-
-  /**
-   * Sends a GET request to the URL provided and resolves with the returned
-   * external subject token.
-   * @param url The URL to call to retrieve the subject token. This is typically
-   *   a local metadata server.
-   * @param formatType The token file or URL response type (JSON or text).
-   * @param formatSubjectTokenFieldName For JSON response types, this is the
-   *   subject_token field name. For Azure, this is access_token. For text
-   *   response types, this is ignored.
-   * @param headers The optional additional headers to send with the request to
-   *   the metadata server url.
-   * @return A promise that resolves with the external subject token.
-   */
-  private async getTokenFromUrl(
-    url: string,
-    formatType: SubjectTokenFormatType,
-    formatSubjectTokenFieldName?: string,
-    headers?: {[key: string]: string}
-  ): Promise<string> {
-    const opts: GaxiosOptions = {
-      url,
-      method: 'GET',
-      headers,
-      responseType: formatType,
-    };
-    let subjectToken: string | undefined;
-    if (formatType === 'text') {
-      const response = await this.transporter.request<string>(opts);
-      subjectToken = response.data;
-    } else if (formatType === 'json' && formatSubjectTokenFieldName) {
-      const response =
-        await this.transporter.request<SubjectTokenJsonResponse>(opts);
-      subjectToken = response.data[formatSubjectTokenFieldName];
-    }
-    if (!subjectToken) {
-      throw new Error(
-        'Unable to parse the subject_token from the credential_source URL'
-      );
-    }
-    return subjectToken;
   }
 }

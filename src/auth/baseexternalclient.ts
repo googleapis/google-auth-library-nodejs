@@ -78,6 +78,26 @@ export interface SharedExternalAccountClientOptions extends AuthClientOptions {
 }
 
 /**
+ * Interface containing context about the requested external identity. This is
+ * passed on all requests from external account clients to external identity suppliers.
+ */
+export interface ExternalAccountSupplierContext {
+  /**
+   * The requested external account audience. For example:
+   * "//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID"
+   */
+  audience: string;
+  /**
+   * The requested subject token type. Expected values include:
+   * * "urn:ietf:params:oauth:token-type:jwt"
+   * * "urn:ietf:params:aws:token-type:aws4_request"
+   * * "urn:ietf:params:oauth:token-type:saml2"
+   * * "urn:ietf:params:oauth:token-type:id_token"
+   */
+  subjectTokenType: string;
+}
+
+/**
  * Base external account credentials json interface.
  */
 export interface BaseExternalAccountClientOptions
@@ -167,6 +187,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * ```
    */
   protected cloudResourceManagerURL: URL | string;
+  protected supplierContext: ExternalAccountSupplierContext;
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -254,6 +275,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
 
     this.projectNumber = this.getProjectNumber(this.audience);
+    this.supplierContext = {
+      audience: this.audience,
+      subjectTokenType: this.subjectTokenType,
+    };
   }
 
   /** The service account email to be impersonated, if available. */
