@@ -147,7 +147,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @param transporter The transporter to use for requests.
    * @return A promise that resolves with the IMDSv2 Session Token.
    */
-  private async getImdsV2SessionToken(
+  async #getImdsV2SessionToken(
     transporter: Transporter | Gaxios
   ): Promise<string> {
     const opts: GaxiosOptions = {
@@ -165,7 +165,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @param transporter The transporter to use for requests.
    * @return A promise that resolves with the current AWS region.
    */
-  private async retrieveAwsRegion(
+  async #retrieveAwsRegion(
     headers: Headers,
     transporter: Transporter | Gaxios
   ): Promise<string> {
@@ -198,7 +198,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @return A promise that resolves with the assigned role to the current
    *   AWS VM. This is needed for calling the security-credentials endpoint.
    */
-  private async getAwsRoleName(
+  async #getAwsRoleName(
     headers: Headers,
     transporter: Transporter | Gaxios
   ): Promise<string> {
@@ -227,7 +227,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @return A promise that resolves with the temporary AWS credentials
    *   needed for creating the GetCallerIdentity signed request.
    */
-  private async retrieveAwsSecurityCredentials(
+  async #retrieveAwsSecurityCredentials(
     roleName: string,
     headers: Headers,
     transporter: Transporter | Gaxios
@@ -240,7 +240,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     return response.data;
   }
 
-  private get regionFromEnv(): string | null {
+  get #regionFromEnv(): string | null {
     // The AWS region can be provided through AWS_REGION or AWS_DEFAULT_REGION.
     // Only one is required.
     return (
@@ -248,7 +248,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     );
   }
 
-  private get securityCredentialsFromEnv(): AwsSecurityCredentials | null {
+  get #securityCredentialsFromEnv(): AwsSecurityCredentials | null {
     // Both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required.
     if (
       process.env['AWS_ACCESS_KEY_ID'] &&
