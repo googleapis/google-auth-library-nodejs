@@ -58,7 +58,7 @@ export interface AwsSecurityCredentialsSupplier {
    * Gets the active AWS region.
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link AwsClient}, contains the requested audience and subject token type
-   *   for the external account identity. Not used.
+   *   for the external account identity.
    * @param transporter The {@link Gaxios} or {@link Transporter} instance from
    *   the calling {@link AwsClient} to use for requests.
    * @return A promise that resolves with the AWS region string.
@@ -74,7 +74,7 @@ export interface AwsSecurityCredentialsSupplier {
    * so caching should be including in the implementation.
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link AwsClient}, contains the requested audience and subject token type
-   *   for the external account identity. Not used.
+   *   for the external account identity.
    * @param Transporter The {@link Gaxios} or {@link Transporter} instance from
    *   the calling {@link AwsClient} to use for requests.
    * @return A promise that resolves with the requested {@link AwsSecurityCredentials}.
