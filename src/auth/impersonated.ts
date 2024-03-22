@@ -124,7 +124,8 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     this.delegates = options.delegates ?? [];
     this.targetScopes = options.targetScopes ?? [];
     this.lifetime = options.lifetime ?? 3600;
-    this.endpoint = options.endpoint ?? 'https://iamcredentials.googleapis.com';
+    this.endpoint =
+      options.endpoint ?? `https://iamcredentials.${this.universeDomain}`;
   }
 
   /**

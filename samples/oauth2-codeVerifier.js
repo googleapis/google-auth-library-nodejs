@@ -16,7 +16,7 @@
 const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
-const opn = require('opn');
+const open = require('open');
 const destroyer = require('server-destroy');
 
 // Download your OAuth2 configuration from the Google Developer Console.
@@ -95,7 +95,7 @@ async function getAuthenticatedClient() {
       })
       .listen(3000, () => {
         // open the browser to the authorize url to start the workflow
-        opn(authorizeUrl, {wait: false}).then(cp => cp.unref());
+        open(authorizeUrl, {wait: false}).then(cp => cp.unref());
       });
     destroyer(server);
   });
