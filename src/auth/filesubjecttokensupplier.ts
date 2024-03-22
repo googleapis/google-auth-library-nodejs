@@ -32,6 +32,25 @@ const realpath = promisify(fs.realpath ?? (() => {}));
 const lstat = promisify(fs.lstat ?? (() => {}));
 
 /**
+ * Interface that defines options used to build a {@link FileSubjectTokenSupplier}
+ */
+export interface FileSubjectTokenSupplierOptions {
+  /**
+   * The file path where the external credential is located.
+   */
+  filePath: string;
+  /**
+   * The token file or URL response type (JSON or text).
+   */
+  formatType: SubjectTokenFormatType;
+  /**
+   * For JSON response types, this is the subject_token field name. For Azure,
+   * this is access_token. For text response types, this is ignored.
+   */
+  subjectTokenFieldName?: string;
+}
+
+/**
  * Internal subject token supplier implementation used when a file location
  * is configured in the credential configuration used to build an {@link IdentityPoolClient}
  */
@@ -42,20 +61,13 @@ export class FileSubjectTokenSupplier implements SubjectTokenSupplier {
 
   /**
    * Instantiates a new file based subject token supplier.
-   * @param filePath The file path where the external credential is located.
-   * @param formatType The token file or URL response type (JSON or text).
-   * @param subjectTokenFieldName For JSON response types, this is the
-   *   subject_token field name. For Azure, this is access_token. For text
-   *   response types, this is ignored.
+   * @param opts The file subject token supplier options to build the supplier
+   *   with.
    */
-  constructor(
-    filePath: string,
-    formatType: SubjectTokenFormatType,
-    subjectTokenFieldName?: string
-  ) {
-    this.filePath = filePath;
-    this.formatType = formatType;
-    this.subjectTokenFieldName = subjectTokenFieldName;
+  constructor(opts: FileSubjectTokenSupplierOptions) {
+    this.filePath = opts.filePath;
+    this.formatType = opts.formatType;
+    this.subjectTokenFieldName = opts.subjectTokenFieldName;
   }
 
   /**

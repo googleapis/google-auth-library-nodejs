@@ -22,6 +22,31 @@ import {
 import {Transporter} from '../transporters';
 
 /**
+ * Interface that defines options used to build a {@link UrlSubjectTokenSupplier}
+ */
+export interface UrlSubjectTokenSupplierOptions {
+  /**
+   * The URL to call to retrieve the subject token. This is typically a local
+   * metadata server.
+   */
+  url: string;
+  /**
+   * The token file or URL response type (JSON or text).
+   */
+  formatType: SubjectTokenFormatType;
+  /**
+   * For JSON response types, this is the subject_token field name. For Azure,
+   * this is access_token. For text response types, this is ignored.
+   */
+  subjectTokenFieldName?: string;
+  /**
+   * The optional additional headers to send with the request to the metadata
+   * server url.
+   */
+  headers?: {[key: string]: string};
+}
+
+/**
  * Internal subject token supplier implementation used when a URL
  * is configured in the credential configuration used to build an {@link IdentityPoolClient}
  */
@@ -33,25 +58,13 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
 
   /**
    * Instantiates a URL subject token supplier.
-   * @param url The URL to call to retrieve the subject token. This is typically
-   *   a local metadata server.
-   * @param formatType The token file or URL response type (JSON or text).
-   * @param subjectTokenFieldName or JSON response types, this is the
-   *   subject_token field name. For Azure, this is access_token. For text
-   *   response types, this is ignored.
-   * @param headers The optional additional headers to send with the request to
-   *   the metadata server url.
+   * @param opts The URL subject token supplier options to build the supplier with.
    */
-  constructor(
-    url: string,
-    formatType: SubjectTokenFormatType,
-    subjectTokenFieldName?: string,
-    headers?: {[key: string]: string}
-  ) {
-    this.url = url;
-    this.formatType = formatType;
-    this.subjectTokenFieldName = subjectTokenFieldName;
-    this.headers = headers;
+  constructor(opts: UrlSubjectTokenSupplierOptions) {
+    this.url = opts.url;
+    this.formatType = opts.formatType;
+    this.subjectTokenFieldName = opts.subjectTokenFieldName;
+    this.headers = opts.headers;
   }
 
   /**

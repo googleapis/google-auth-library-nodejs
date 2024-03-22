@@ -123,11 +123,11 @@ export class AwsClient extends BaseExternalAccountClient {
     const imdsV2SessionTokenUrl =
       options.credential_source.imdsv2_session_token_url;
     this.awsSecurityCredentialsSupplier =
-      new DefaultAwsSecurityCredentialsSupplier(
-        regionUrl,
-        securityCredentialsUrl,
-        imdsV2SessionTokenUrl
-      );
+      new DefaultAwsSecurityCredentialsSupplier({
+        regionUrl: regionUrl,
+        securityCredentialsUrl: securityCredentialsUrl,
+        imdsV2SessionTokenUrl: imdsV2SessionTokenUrl,
+      });
 
     this.regionalCredVerificationUrl =
       options.credential_source.regional_cred_verification_url;

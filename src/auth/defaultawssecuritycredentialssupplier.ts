@@ -33,6 +33,23 @@ interface AwsSecurityCredentialsResponse {
 }
 
 /**
+ * Interface defining the options used to build a {@link DefaultAwsSecurityCredentialsSupplier}.
+ */
+export interface DefaultAwsSecurityCredentialsSupplierOptions {
+  /**
+   * The URL to call to retrieve the active AWS region.
+   **/
+  regionUrl?: string;
+  /**
+   * The URL to call to retrieve AWS security credentials.
+   **/
+  securityCredentialsUrl?: string;
+  /**
+   ** The URL to call to retrieve the IMDSV2 session token.
+   **/ imdsV2SessionTokenUrl?: string;
+}
+
+/**
  * Internal AWS security credentials supplier implementation used by {@link AwsClient}
  * when a credential source is provided instead of a user defined supplier.
  * The logic is summarized as:
@@ -61,18 +78,13 @@ export class DefaultAwsSecurityCredentialsSupplier
   /**
    * Instantiates a new DefaultAwsSecurityCredentialsSupplier using information
    * from the credential_source stored in the ADC file.
-   * @param regionUrl The URL to call to retrieve the active AWS region.
-   * @param securityCredentialsUrl The URL to call to retrieve AWS security credentials.
-   * @param imdsV2SessionTokenUrl The URL to call to retrieve the IMDSV2 session token.
+   * @param opts The default aws security credentials supplier options object to
+   *   build the supplier with.
    */
-  constructor(
-    regionUrl?: string,
-    securityCredentialsUrl?: string,
-    imdsV2SessionTokenUrl?: string
-  ) {
-    this.regionUrl = regionUrl;
-    this.securityCredentialsUrl = securityCredentialsUrl;
-    this.imdsV2SessionTokenUrl = imdsV2SessionTokenUrl;
+  constructor(opts: DefaultAwsSecurityCredentialsSupplierOptions) {
+    this.regionUrl = opts.regionUrl;
+    this.securityCredentialsUrl = opts.securityCredentialsUrl;
+    this.imdsV2SessionTokenUrl = opts.imdsV2SessionTokenUrl;
   }
 
   /**
@@ -90,13 +102,33 @@ export class DefaultAwsSecurityCredentialsSupplier
     context: ExternalAccountSupplierContext,
     transporter: Transporter | Gaxios
   ): Promise<string> {
-    const metadataHeaders: Headers = {};
-    if (!this.regionFromEnv && this.imdsV2SessionTokenUrl) {
-      metadataHeaders['x-aws-ec2-metadata-token'] =
-        await this.getImdsV2SessionToken(transporter);
+    // Priority order for region determination:
+    // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
+    if (this.#regionFromEnv) {
+      return this.#regionFromEnv;
     }
 
-    return this.retrieveAwsRegion(metadataHeaders, transporter);
+    const metadataHeaders: Headers = {};
+    if (!this.#regionFromEnv && this.imdsV2SessionTokenUrl) {
+      metadataHeaders['x-aws-ec2-metadata-token'] =
+        await this.#getImdsV2SessionToken(transporter);
+    }
+    if (!this.regionUrl) {
+      throw new Error(
+        'Unable to determine AWS region due to missing ' +
+          '"options.credential_source.region_url"'
+      );
+    }
+    const opts: GaxiosOptions = {
+      url: this.regionUrl,
+      method: 'GET',
+      responseType: 'text',
+      headers: metadataHeaders,
+    };
+    const response = await transporter.request<string>(opts);
+    // Remove last character. For example, if us-east-2b is returned,
+    // the region would be us-east-2.
+    return response.data.substr(0, response.data.length - 1);
   }
 
   /**
@@ -116,22 +148,22 @@ export class DefaultAwsSecurityCredentialsSupplier
   ): Promise<AwsSecurityCredentials> {
     // Check environment variables for permanent credentials first.
     // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
-    if (this.securityCredentialsFromEnv) {
-      return this.securityCredentialsFromEnv;
+    if (this.#securityCredentialsFromEnv) {
+      return this.#securityCredentialsFromEnv;
     }
 
     const metadataHeaders: Headers = {};
     if (this.imdsV2SessionTokenUrl) {
       metadataHeaders['x-aws-ec2-metadata-token'] =
-        await this.getImdsV2SessionToken(transporter);
+        await this.#getImdsV2SessionToken(transporter);
     }
     // Since the role on a VM can change, we don't need to cache it.
-    const roleName = await this.getAwsRoleName(metadataHeaders, transporter);
+    const roleName = await this.#getAwsRoleName(metadataHeaders, transporter);
     // Temporary credentials typically last for several hours.
     // Expiration is returned in response.
     // Consider future optimization of this logic to cache AWS tokens
     // until their natural expiration.
-    const awsCreds = await this.retrieveAwsSecurityCredentials(
+    const awsCreds = await this.#retrieveAwsSecurityCredentials(
       roleName,
       metadataHeaders,
       transporter
@@ -158,38 +190,6 @@ export class DefaultAwsSecurityCredentialsSupplier
     };
     const response = await transporter.request<string>(opts);
     return response.data;
-  }
-
-  /**
-   * @param headers The headers to be used in the metadata request.
-   * @param transporter The transporter to use for requests.
-   * @return A promise that resolves with the current AWS region.
-   */
-  async #retrieveAwsRegion(
-    headers: Headers,
-    transporter: Transporter | Gaxios
-  ): Promise<string> {
-    // Priority order for region determination:
-    // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
-    if (this.regionFromEnv) {
-      return this.regionFromEnv;
-    }
-    if (!this.regionUrl) {
-      throw new Error(
-        'Unable to determine AWS region due to missing ' +
-          '"options.credential_source.region_url"'
-      );
-    }
-    const opts: GaxiosOptions = {
-      url: this.regionUrl,
-      method: 'GET',
-      responseType: 'text',
-      headers: headers,
-    };
-    const response = await transporter.request<string>(opts);
-    // Remove last character. For example, if us-east-2b is returned,
-    // the region would be us-east-2.
-    return response.data.substr(0, response.data.length - 1);
   }
 
   /**

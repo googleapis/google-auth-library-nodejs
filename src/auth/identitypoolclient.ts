@@ -134,19 +134,19 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       );
     } else if (file && !url) {
       this.credentialSourceType = 'file';
-      this.subjectTokenSupplier = new FileSubjectTokenSupplier(
-        file,
-        formatType,
-        formatSubjectTokenFieldName
-      );
+      this.subjectTokenSupplier = new FileSubjectTokenSupplier({
+        filePath: file,
+        formatType: formatType,
+        subjectTokenFieldName: formatSubjectTokenFieldName,
+      });
     } else if (!file && url) {
       this.credentialSourceType = 'url';
-      this.subjectTokenSupplier = new UrlSubjectTokenSupplier(
-        url,
-        formatType,
-        formatSubjectTokenFieldName,
-        headers
-      );
+      this.subjectTokenSupplier = new UrlSubjectTokenSupplier({
+        url: url,
+        formatType: formatType,
+        subjectTokenFieldName: formatSubjectTokenFieldName,
+        headers: headers,
+      });
     } else {
       throw new Error(
         'No valid Identity Pool "credential_source" provided, must be either file or url.'
