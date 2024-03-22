@@ -84,7 +84,8 @@ export interface SharedExternalAccountClientOptions extends AuthClientOptions {
 export interface ExternalAccountSupplierContext {
   /**
    * The requested external account audience. For example:
-   * "//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID"
+   * * "//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID"
+   * * "//iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID"
    */
   audience: string;
   /**
