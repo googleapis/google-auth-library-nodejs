@@ -13,13 +13,12 @@
 // limitations under the License.
 
 import {ExternalAccountSupplierContext} from './baseexternalclient';
-import {Gaxios, GaxiosOptions} from 'gaxios';
+import {GaxiosOptions} from 'gaxios';
 import {
   SubjectTokenFormatType,
   SubjectTokenJsonResponse,
   SubjectTokenSupplier,
 } from './identitypoolclient';
-import {Transporter} from '../transporters';
 
 /**
  * Interface that defines options used to build a {@link UrlSubjectTokenSupplier}

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Gaxios} from 'gaxios';
-
 import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
@@ -23,7 +21,6 @@ import {AuthClientOptions} from './authclient';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {FileSubjectTokenSupplier} from './filesubjecttokensupplier';
 import {UrlSubjectTokenSupplier} from './urlsubjecttokensupplier';
-import {Transporter} from '../transporters';
 
 export type SubjectTokenFormatType = 'json' | 'text';
 

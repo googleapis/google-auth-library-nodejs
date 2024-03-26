@@ -13,13 +13,11 @@
 // limitations under the License.
 
 import {ExternalAccountSupplierContext} from './baseexternalclient';
-import {Gaxios} from 'gaxios';
 import {
   SubjectTokenFormatType,
   SubjectTokenJsonResponse,
   SubjectTokenSupplier,
 } from './identitypoolclient';
-import {Transporter} from '../transporters';
 import {promisify} from 'util';
 import * as fs from 'fs';
 

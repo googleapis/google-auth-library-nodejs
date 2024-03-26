@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Gaxios} from 'gaxios';
-
 import {AwsRequestSigner, AwsSecurityCredentials} from './awsrequestsigner';
 import {
   BaseExternalAccountClient,
@@ -21,7 +19,6 @@ import {
   ExternalAccountSupplierContext,
 } from './baseexternalclient';
 import {AuthClientOptions} from './authclient';
-import {Transporter} from '../transporters';
 import {DefaultAwsSecurityCredentialsSupplier} from './defaultawssecuritycredentialssupplier';
 
 /**
