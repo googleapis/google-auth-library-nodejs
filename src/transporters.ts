@@ -64,9 +64,8 @@ export class DefaultTransporter implements Transporter {
       if (!uaValue) {
         opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
       } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
-        opts.headers[
-          'User-Agent'
-        ] = `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+        opts.headers['User-Agent'] =
+          `${uaValue} ${DefaultTransporter.USER_AGENT}`;
       }
       // track google-auth-library-nodejs version:
       if (!opts.headers['x-goog-api-client']) {

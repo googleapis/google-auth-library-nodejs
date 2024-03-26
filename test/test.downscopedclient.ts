@@ -54,11 +54,11 @@ class TestAuthClient extends AuthClient {
     this.credentials.expiry_date = expirationTime;
   }
 
-  async getRequestHeaders(url?: string): Promise<Headers> {
+  async getRequestHeaders(): Promise<Headers> {
     throw new Error('Not implemented.');
   }
 
-  request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
+  request<T>(): GaxiosPromise<T> {
     throw new Error('Not implemented.');
   }
 }
