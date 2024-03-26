@@ -42,16 +42,12 @@ export interface SubjectTokenSupplier {
    * Note that these are not cached by the calling {@link IdentityPoolClient},
    * so caching should be including in the implementation.
    * @param context {@link ExternalAccountSupplierContext} from the calling
-   *   {@link IdentityPoolClient}, contains the requested audience and subject
-   *   token type for the external account identity.
-   * @param transporter The {@link Gaxios} or {@link Transporter} instance from
-   *   the calling {@link IdentityPoolClient} to use for requests.
+   *   {@link IdentityPoolClient}, contains the requested audience and subject token type
+   *   for the external account identity as well as the transport from the
+   *   calling client to use for requests.
    * @return A promise that resolves with the requested subject token string.
    */
-  getSubjectToken: (
-    context: ExternalAccountSupplierContext,
-    transporter: Transporter | Gaxios
-  ) => Promise<string>;
+  getSubjectToken: (context: ExternalAccountSupplierContext) => Promise<string>;
 }
 
 /**
@@ -161,9 +157,6 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * @return A promise that resolves with the external subject token.
    */
   async retrieveSubjectToken(): Promise<string> {
-    return this.subjectTokenSupplier.getSubjectToken(
-      this.supplierContext,
-      this.transporter
-    );
+    return this.subjectTokenSupplier.getSubjectToken(this.supplierContext);
   }
 }

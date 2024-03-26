@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -22,7 +23,7 @@ import * as stream from 'stream';
 
 import {Credentials} from './credentials';
 import {AuthClient, AuthClientOptions} from './authclient';
-import {BodyResponseCallback} from '../transporters';
+import {BodyResponseCallback, Transporter} from '../transporters';
 import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
@@ -96,6 +97,10 @@ export interface ExternalAccountSupplierContext {
    * * "urn:ietf:params:oauth:token-type:id_token"
    */
   subjectTokenType: string;
+  /** The {@link Gaxios} or {@link Transporter} instance from
+   * the calling external account to use for requests.
+   */
+  transporter: Transporter | Gaxios;
 }
 
 /**
@@ -279,6 +284,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.supplierContext = {
       audience: this.audience,
       subjectTokenType: this.subjectTokenType,
+      transporter: this.transporter,
     };
   }
 

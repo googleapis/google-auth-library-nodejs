@@ -94,14 +94,9 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link AwsClient}, contains the requested audience and subject token type
    *   for the external account identity.
-   * @param transporter The {@link Gaxios} or {@link Transporter} instance from
-   *   the calling {@link AwsClient} to use for requests.
    * @return A promise that resolves with the AWS region string.
    */
-  async getAwsRegion(
-    context: ExternalAccountSupplierContext,
-    transporter: Transporter | Gaxios
-  ): Promise<string> {
+  async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
     // Priority order for region determination:
     // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
     if (this.#regionFromEnv) {
@@ -111,7 +106,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     const metadataHeaders: Headers = {};
     if (!this.#regionFromEnv && this.imdsV2SessionTokenUrl) {
       metadataHeaders['x-aws-ec2-metadata-token'] =
-        await this.#getImdsV2SessionToken(transporter);
+        await this.#getImdsV2SessionToken(context.transporter);
     }
     if (!this.regionUrl) {
       throw new Error(
@@ -125,7 +120,7 @@ export class DefaultAwsSecurityCredentialsSupplier
       responseType: 'text',
       headers: metadataHeaders,
     };
-    const response = await transporter.request<string>(opts);
+    const response = await context.transporter.request<string>(opts);
     // Remove last character. For example, if us-east-2b is returned,
     // the region would be us-east-2.
     return response.data.substr(0, response.data.length - 1);
@@ -138,13 +133,10 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link AwsClient}, contains the requested audience and subject token type
    *   for the external account identity.
-   * @param transporter The {@link Gaxios} or {@link Transporter} instance from
-   * the calling {@link AwsClient} to use for requests.
    * @return A promise that resolves with the AWS security credentials.
    */
   async getAwsSecurityCredentials(
-    context: ExternalAccountSupplierContext,
-    transporter: Transporter | Gaxios
+    context: ExternalAccountSupplierContext
   ): Promise<AwsSecurityCredentials> {
     // Check environment variables for permanent credentials first.
     // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
@@ -155,10 +147,13 @@ export class DefaultAwsSecurityCredentialsSupplier
     const metadataHeaders: Headers = {};
     if (this.imdsV2SessionTokenUrl) {
       metadataHeaders['x-aws-ec2-metadata-token'] =
-        await this.#getImdsV2SessionToken(transporter);
+        await this.#getImdsV2SessionToken(context.transporter);
     }
     // Since the role on a VM can change, we don't need to cache it.
-    const roleName = await this.#getAwsRoleName(metadataHeaders, transporter);
+    const roleName = await this.#getAwsRoleName(
+      metadataHeaders,
+      context.transporter
+    );
     // Temporary credentials typically last for several hours.
     // Expiration is returned in response.
     // Consider future optimization of this logic to cache AWS tokens
@@ -166,7 +161,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     const awsCreds = await this.#retrieveAwsSecurityCredentials(
       roleName,
       metadataHeaders,
-      transporter
+      context.transporter
     );
     return {
       accessKeyId: awsCreds.AccessKeyId,

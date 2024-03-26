@@ -75,12 +75,9 @@ export class FileSubjectTokenSupplier implements SubjectTokenSupplier {
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link IdentityPoolClient}, contains the requested audience and subject
    *   token type for the external account identity. Not used.
-   * @param transporter The {@link Gaxios} or {@link Transporter} instance from
-   *   the calling {@link IdentityPoolClient} to use for requests. Not used.
    */
   async getSubjectToken(
-    context: ExternalAccountSupplierContext,
-    transporter: Transporter | Gaxios
+    context: ExternalAccountSupplierContext
   ): Promise<string> {
     // Make sure there is a file at the path. lstatSync will throw if there is
     // nothing there.

@@ -73,12 +73,9 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link IdentityPoolClient}, contains the requested audience and subject
    *   token type for the external account identity. Not used.
-   * @param transporter The {@link Gaxios} or {@link Transporter} instance from
-   *   the calling {@link IdentityPoolClient} to use for requests.
    */
   async getSubjectToken(
-    context: ExternalAccountSupplierContext,
-    transporter: Transporter | Gaxios
+    context: ExternalAccountSupplierContext
   ): Promise<string> {
     const url = this.url;
     const headers = this.headers;
@@ -90,11 +87,11 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
     };
     let subjectToken: string | undefined;
     if (this.formatType === 'text') {
-      const response = await transporter.request<string>(opts);
+      const response = await context.transporter.request<string>(opts);
       subjectToken = response.data;
     } else if (this.formatType === 'json' && this.subjectTokenFieldName) {
       const response =
-        await transporter.request<SubjectTokenJsonResponse>(opts);
+        await context.transporter.request<SubjectTokenJsonResponse>(opts);
       subjectToken = response.data[this.subjectTokenFieldName];
     }
     if (!subjectToken) {

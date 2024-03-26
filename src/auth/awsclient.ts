@@ -58,15 +58,11 @@ export interface AwsSecurityCredentialsSupplier {
    * Gets the active AWS region.
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link AwsClient}, contains the requested audience and subject token type
-   *   for the external account identity.
-   * @param transporter The {@link Gaxios} or {@link Transporter} instance from
-   *   the calling {@link AwsClient} to use for requests.
+   *   for the external account identity as well as the transport from the
+   *   calling client to use for requests.
    * @return A promise that resolves with the AWS region string.
    */
-  getAwsRegion: (
-    context: ExternalAccountSupplierContext,
-    transporter: Transporter | Gaxios
-  ) => Promise<string>;
+  getAwsRegion: (context: ExternalAccountSupplierContext) => Promise<string>;
 
   /**
    * Gets valid AWS security credentials for the requested external account
@@ -74,14 +70,12 @@ export interface AwsSecurityCredentialsSupplier {
    * so caching should be including in the implementation.
    * @param context {@link ExternalAccountSupplierContext} from the calling
    *   {@link AwsClient}, contains the requested audience and subject token type
-   *   for the external account identity.
-   * @param Transporter The {@link Gaxios} or {@link Transporter} instance from
-   *   the calling {@link AwsClient} to use for requests.
+   *   for the external account identity as well as the transport from the
+   *   calling client to use for requests.
    * @return A promise that resolves with the requested {@link AwsSecurityCredentials}.
    */
   getAwsSecurityCredentials: (
-    context: ExternalAccountSupplierContext,
-    transporter: Transporter | Gaxios
+    context: ExternalAccountSupplierContext
   ) => Promise<AwsSecurityCredentials>;
 }
 
@@ -96,6 +90,15 @@ export class AwsClient extends BaseExternalAccountClient {
   private readonly regionalCredVerificationUrl: string;
   private awsRequestSigner: AwsRequestSigner | null;
   private region: string;
+
+  /**
+   * @deprecated AWS client no validates the EC2 metadata address.
+   **/
+  static AWS_EC2_METADATA_IPV4_ADDRESS = '169.254.169.254';
+  /**
+   * @deprecated AWS client no validates the EC2 metadata address.
+   **/
+  static AWS_EC2_METADATA_IPV6_ADDRESS = 'fd00:ec2::254';
 
   /**
    * Instantiates an AwsClient instance using the provided JSON
@@ -162,13 +165,11 @@ export class AwsClient extends BaseExternalAccountClient {
     // Initialize AWS request signer if not already initialized.
     if (!this.awsRequestSigner) {
       this.region = await this.awsSecurityCredentialsSupplier.getAwsRegion(
-        this.supplierContext,
-        this.transporter
+        this.supplierContext
       );
       this.awsRequestSigner = new AwsRequestSigner(async () => {
         return this.awsSecurityCredentialsSupplier.getAwsSecurityCredentials(
-          this.supplierContext,
-          this.transporter
+          this.supplierContext
         );
       }, this.region);
     }
