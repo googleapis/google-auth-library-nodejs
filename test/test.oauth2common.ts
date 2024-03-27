@@ -17,7 +17,7 @@ import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import * as querystring from 'querystring';
 
-import {Headers} from '../src/auth/oauth2client';
+import {Headers} from '../src/auth/authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,

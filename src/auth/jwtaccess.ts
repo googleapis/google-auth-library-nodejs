@@ -16,7 +16,7 @@ import * as jws from 'jws';
 import * as stream from 'stream';
 
 import {JWTInput} from './credentials';
-import {Headers} from './oauth2client';
+import {Headers} from './authclient';
 import {LRUCache} from '../util';
 
 const DEFAULT_HEADER: jws.Header = {

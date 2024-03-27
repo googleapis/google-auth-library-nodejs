@@ -17,7 +17,6 @@ import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 
 /**
@@ -259,4 +258,13 @@ export abstract class AuthClient
     }
     return headers;
   }
+}
+
+export interface Headers {
+  [index: string]: string;
+}
+
+export interface GetAccessTokenResponse {
+  token?: string | null;
+  res?: GaxiosResponse | null;
 }
