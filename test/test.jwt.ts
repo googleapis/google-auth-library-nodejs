@@ -28,7 +28,6 @@ describe('jwt', () => {
   const keypair = require('keypair');
   const PEM_PATH = './test/fixtures/private.pem';
   const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
-  const P12_PATH = './test/fixtures/key.p12';
 
   nock.disableNetConnect();
 

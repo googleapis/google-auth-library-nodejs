@@ -1,4 +1,4 @@
-// Copyright 2017, Google, Inc.
+// Copyright 2017 Google LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
-const opn = require('opn');
+const open = require('open');
 const destroyer = require('server-destroy');
 
 // Download your OAuth2 configuration from the Google
@@ -88,7 +88,7 @@ function getAuthenticatedClient() {
       })
       .listen(3000, () => {
         // open the browser to the authorize url to start the workflow
-        opn(authorizeUrl, {wait: false}).then(cp => cp.unref());
+        open(authorizeUrl, {wait: false}).then(cp => cp.unref());
       });
     destroyer(server);
   });

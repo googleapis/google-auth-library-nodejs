@@ -155,9 +155,9 @@ describe('transporters', () => {
         assert.strictEqual(res!.status, 200);
         done();
       },
-      _error => {
+      error => {
         scope.done();
-        done('Unexpected promise failure');
+        done(error);
       }
     );
   });
