@@ -23,15 +23,13 @@ import {
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from '../src/auth/externalAccountAuthorizedUserClient';
-import {
-  DEFAULT_UNIVERSE,
-  EXPIRATION_TIME_OFFSET,
-} from '../src/auth/baseexternalclient';
+import {EXPIRATION_TIME_OFFSET} from '../src/auth/baseexternalclient';
 import {GaxiosError, GaxiosResponse} from 'gaxios';
 import {
   getErrorFromOAuthErrorResponse,
   OAuthErrorResponse,
 } from '../src/auth/oauth2common';
+import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
