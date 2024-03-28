@@ -20,9 +20,13 @@ import {createCrypto} from '../src/crypto/crypto';
 import {
   IdentityPoolClient,
   IdentityPoolClientOptions,
+  SubjectTokenSupplier,
 } from '../src/auth/identitypoolclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
+import {
+  BaseExternalAccountClient,
+  ExternalAccountSupplierContext,
+} from '../src/auth/baseexternalclient';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -302,6 +306,42 @@ describe('IdentityPoolClient', () => {
       }
     );
 
+    it('should throw when neither a credential source or a supplier is provided', () => {
+      const expectedError = new Error(
+        'A credential source or subject token supplier must be specified.'
+      );
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        token_url: getTokenUrl(),
+      };
+
+      assert.throws(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new IdentityPoolClient(invalidOptions as any);
+      }, expectedError);
+    });
+
+    it('should throw when both a credential source and a supplier is provided', () => {
+      const expectedError = new Error(
+        'Only one of credential source or subject token supplier can be specified.'
+      );
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        token_url: getTokenUrl(),
+        credential_source: {},
+        subject_token_supplier: new TestSubjectTokenSupplier({}),
+      };
+
+      assert.throws(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new IdentityPoolClient(invalidOptions as any);
+      }, expectedError);
+    });
+
     it('should not throw when valid file-sourced options are provided', () => {
       assert.doesNotThrow(() => {
         return new IdentityPoolClient(fileSourcedOptions);
@@ -314,10 +354,21 @@ describe('IdentityPoolClient', () => {
       });
     });
 
+    it('should not throw when subject token supplier is provided', () => {
+      const options = {
+        audience: audience,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        subject_token_supplier: new TestSubjectTokenSupplier({}),
+      };
+      assert.doesNotThrow(() => {
+        return new IdentityPoolClient(options);
+      });
+    });
+
     it('should not throw on headerless url-sourced options', () => {
       const urlSourcedOptionsNoHeaders = Object.assign({}, urlSourcedOptions);
       urlSourcedOptionsNoHeaders.credential_source = {
-        url: urlSourcedOptions.credential_source.url,
+        url: urlSourcedOptions.credential_source?.url,
       };
       assert.doesNotThrow(() => {
         return new IdentityPoolClient(urlSourcedOptionsNoHeaders);
@@ -865,7 +916,7 @@ describe('IdentityPoolClient', () => {
         // Create options without headers.
         const urlSourcedOptionsNoHeaders = Object.assign({}, urlSourcedOptions);
         urlSourcedOptionsNoHeaders.credential_source = {
-          url: urlSourcedOptions.credential_source.url,
+          url: urlSourcedOptions.credential_source?.url,
         };
         const externalSubjectToken = 'SUBJECT_TOKEN_1';
         const scope = nock(metadataBaseUrl)
@@ -1150,4 +1201,219 @@ describe('IdentityPoolClient', () => {
       });
     });
   });
+
+  describe('for supplier-sourced subject tokens', () => {
+    describe('retrieveSubjectToken()', () => {
+      it('should resolve when the subject token is returned', async () => {
+        const options = {
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          subject_token_supplier: new TestSubjectTokenSupplier({
+            subjectToken: 'TestTokenValue',
+          }),
+        };
+        const client = new IdentityPoolClient(options);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, 'TestTokenValue');
+      });
+
+      it('should return when the an error is returned', async () => {
+        const expectedError = new Error('Test error from supplier.');
+        const options = {
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          subject_token_supplier: new TestSubjectTokenSupplier({
+            error: expectedError,
+          }),
+        };
+        const client = new IdentityPoolClient(options);
+
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
+      });
+    });
+
+    describe('getAccessToken()', () => {
+      it('should resolve on retrieveSubjectToken success', async () => {
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                // Subject token retrieved from url should be used.
+                subject_token: externalSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ])
+        );
+
+        const options = {
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          subject_token_supplier: new TestSubjectTokenSupplier({
+            subjectToken: externalSubjectToken,
+          }),
+        };
+        const client = new IdentityPoolClient(options);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should handle service account access token', async () => {
+        const now = new Date().getTime();
+        const saSuccessResponse = {
+          accessToken: 'SA_ACCESS_TOKEN',
+          expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
+        };
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                // Subject token retrieved from url should be used.
+                subject_token: externalSubjectToken,
+                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              },
+            },
+          ]),
+          mockGenerateAccessToken({
+            statusCode: 200,
+            response: saSuccessResponse,
+            token: stsSuccessfulResponse.access_token,
+            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+          })
+        );
+
+        const options = {
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          service_account_impersonation_url:
+            getServiceAccountImpersonationUrl(),
+          subject_token_supplier: new TestSubjectTokenSupplier({
+            subjectToken: externalSubjectToken,
+          }),
+        };
+        const client = new IdentityPoolClient(options);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: saSuccessResponse.accessToken,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should reject with retrieveSubjectToken error', async () => {
+        const expectedError = new Error('Test error from supplier.');
+        const options = {
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          subject_token_supplier: new TestSubjectTokenSupplier({
+            error: expectedError,
+          }),
+        };
+        const client = new IdentityPoolClient(options);
+
+        await assert.rejects(client.getAccessToken(), expectedError);
+      });
+
+      it('should send the correct x-goog-api-client header value', async () => {
+        const externalSubjectToken = 'SUBJECT_TOKEN_1';
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange(
+            [
+              {
+                statusCode: 200,
+                response: stsSuccessfulResponse,
+                request: {
+                  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                  audience,
+                  scope: 'https://www.googleapis.com/auth/cloud-platform',
+                  requested_token_type:
+                    'urn:ietf:params:oauth:token-type:access_token',
+                  // Subject token retrieved from url should be used.
+                  subject_token: externalSubjectToken,
+                  subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+                },
+              },
+            ],
+            {
+              'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+                'programmatic',
+                false,
+                false
+              ),
+            }
+          )
+        );
+
+        const options = {
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          subject_token_supplier: new TestSubjectTokenSupplier({
+            subjectToken: externalSubjectToken,
+          }),
+        };
+        const client = new IdentityPoolClient(options);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+    });
+  });
 });
+
+interface TestSubjectTokenSupplierOptions {
+  subjectToken?: string;
+  error?: Error;
+}
+
+class TestSubjectTokenSupplier implements SubjectTokenSupplier {
+  private readonly subjectToken: string;
+  private readonly error?: Error;
+
+  constructor(options: TestSubjectTokenSupplierOptions) {
+    this.subjectToken = options.subjectToken ?? '';
+    this.error = options.error;
+  }
+
+  getSubjectToken(context: ExternalAccountSupplierContext): Promise<string> {
+    if (this.error) {
+      throw this.error;
+    }
+    return Promise.resolve(this.subjectToken);
+  }
+}

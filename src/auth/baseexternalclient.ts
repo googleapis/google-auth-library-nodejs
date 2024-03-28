@@ -64,6 +64,7 @@ export const CLOUD_RESOURCE_MANAGER =
 /** The workforce audience pattern. */
 const WORKFORCE_AUDIENCE_PATTERN =
   '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
+const DEFAULT_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
@@ -75,7 +76,7 @@ export {DEFAULT_UNIVERSE} from './authclient';
 
 export interface SharedExternalAccountClientOptions extends AuthClientOptions {
   audience: string;
-  token_url: string;
+  token_url?: string;
 }
 
 /**
@@ -108,7 +109,7 @@ export interface ExternalAccountSupplierContext {
  */
 export interface BaseExternalAccountClientOptions
   extends SharedExternalAccountClientOptions {
-  type: string;
+  type?: string;
   subject_token_type: string;
   service_account_impersonation_url?: string;
   service_account_impersonation?: {
@@ -217,7 +218,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       options as BaseExternalAccountClientOptions
     );
 
-    if (opts.get('type') !== EXTERNAL_ACCOUNT_TYPE) {
+    const type = opts.get('type');
+    if (type && type !== EXTERNAL_ACCOUNT_TYPE) {
       throw new Error(
         `Expected "${EXTERNAL_ACCOUNT_TYPE}" type but ` +
           `received "${options.type}"`
@@ -226,7 +228,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     const clientId = opts.get('client_id');
     const clientSecret = opts.get('client_secret');
-    const tokenUrl = opts.get('token_url');
+    const tokenUrl =
+      opts.get('token_url') ?? DEFAULT_TOKEN_URL;
     const subjectTokenType = opts.get('subject_token_type');
     const workforcePoolUserProject = opts.get('workforce_pool_user_project');
     const serviceAccountImpersonationUrl = opts.get(

@@ -39,6 +39,7 @@ import {
  */
 export const EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE =
   'external_account_authorized_user';
+const DEFAULT_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
 
 /**
  * External Account Authorized User Credentials JSON interface.
@@ -179,7 +180,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     } as ClientAuthentication;
     this.externalAccountAuthorizedUserHandler =
       new ExternalAccountAuthorizedUserHandler(
-        options.token_url,
+        options.token_url ?? DEFAULT_TOKEN_URL,
         this.transporter,
         clientAuth
       );
