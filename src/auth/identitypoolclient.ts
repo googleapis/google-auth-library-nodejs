@@ -53,7 +53,7 @@ export interface SubjectTokenSupplier {
  */
 export interface IdentityPoolClientOptions
   extends BaseExternalAccountClientOptions {
-  credential_source: {
+  credential_source?: {
     file?: string;
     url?: string;
     headers?: {
@@ -64,6 +64,7 @@ export interface IdentityPoolClientOptions
       subject_token_field_name?: string;
     };
   };
+  subject_token_supplier?: SubjectTokenSupplier;
 }
 
 /**
@@ -97,53 +98,67 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
 
     const opts = originalOrCamelOptions(options as IdentityPoolClientOptions);
     const credentialSource = opts.get('credential_source');
-    const credentialSourceOpts = originalOrCamelOptions(credentialSource);
-
-    const formatOpts = originalOrCamelOptions(
-      credentialSourceOpts.get('format')
-    );
-
-    // Text is the default format type.
-    const formatType = formatOpts.get('type') || 'text';
-    const formatSubjectTokenFieldName = formatOpts.get(
-      'subject_token_field_name'
-    );
-
-    if (formatType !== 'json' && formatType !== 'text') {
-      throw new Error(`Invalid credential_source format "${formatType}"`);
-    }
-    if (formatType === 'json' && !formatSubjectTokenFieldName) {
+    const subjectTokenSupplier = opts.get('subject_token_supplier');
+    if (!credentialSource && !subjectTokenSupplier) {
       throw new Error(
-        'Missing subject_token_field_name for JSON credential_source format'
+        'A credential source or subject token supplier must be specified.'
       );
-    }
-
-    const file = credentialSourceOpts.get('file');
-    const url = credentialSourceOpts.get('url');
-    const headers = credentialSourceOpts.get('headers');
-    if (file && url) {
+    } else if (credentialSource && subjectTokenSupplier) {
       throw new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+        'Only one of credential source or subject token supplier can be specified.'
       );
-    } else if (file && !url) {
-      this.credentialSourceType = 'file';
-      this.subjectTokenSupplier = new FileSubjectTokenSupplier({
-        filePath: file,
-        formatType: formatType,
-        subjectTokenFieldName: formatSubjectTokenFieldName,
-      });
-    } else if (!file && url) {
-      this.credentialSourceType = 'url';
-      this.subjectTokenSupplier = new UrlSubjectTokenSupplier({
-        url: url,
-        formatType: formatType,
-        subjectTokenFieldName: formatSubjectTokenFieldName,
-        headers: headers,
-      });
+    } else if (subjectTokenSupplier) {
+      this.subjectTokenSupplier = subjectTokenSupplier;
+      this.credentialSourceType = 'programmatic';
     } else {
-      throw new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+      const credentialSourceOpts = originalOrCamelOptions(credentialSource);
+
+      const formatOpts = originalOrCamelOptions(
+        credentialSourceOpts.get('format')
       );
+
+      // Text is the default format type.
+      const formatType = formatOpts.get('type') || 'text';
+      const formatSubjectTokenFieldName = formatOpts.get(
+        'subject_token_field_name'
+      );
+
+      if (formatType !== 'json' && formatType !== 'text') {
+        throw new Error(`Invalid credential_source format "${formatType}"`);
+      }
+      if (formatType === 'json' && !formatSubjectTokenFieldName) {
+        throw new Error(
+          'Missing subject_token_field_name for JSON credential_source format'
+        );
+      }
+
+      const file = credentialSourceOpts.get('file');
+      const url = credentialSourceOpts.get('url');
+      const headers = credentialSourceOpts.get('headers');
+      if (file && url) {
+        throw new Error(
+          'No valid Identity Pool "credential_source" provided, must be either file or url.'
+        );
+      } else if (file && !url) {
+        this.credentialSourceType = 'file';
+        this.subjectTokenSupplier = new FileSubjectTokenSupplier({
+          filePath: file,
+          formatType: formatType,
+          subjectTokenFieldName: formatSubjectTokenFieldName,
+        });
+      } else if (!file && url) {
+        this.credentialSourceType = 'url';
+        this.subjectTokenSupplier = new UrlSubjectTokenSupplier({
+          url: url,
+          formatType: formatType,
+          subjectTokenFieldName: formatSubjectTokenFieldName,
+          headers: headers,
+        });
+      } else {
+        throw new Error(
+          'No valid Identity Pool "credential_source" provided, must be either file or url.'
+        );
+      }
     }
   }
 

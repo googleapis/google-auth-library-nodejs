@@ -20,12 +20,13 @@ import {
 } from './baseexternalclient';
 import {AuthClientOptions} from './authclient';
 import {DefaultAwsSecurityCredentialsSupplier} from './defaultawssecuritycredentialssupplier';
+import {originalOrCamelOptions, SnakeToCamelObject} from '../util';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
  */
 export interface AwsClientOptions extends BaseExternalAccountClientOptions {
-  credential_source: {
+  credential_source?: {
     environment_id: string;
     // Region can also be determined from the AWS_REGION or AWS_DEFAULT_REGION
     // environment variables.
@@ -43,6 +44,7 @@ export interface AwsClientOptions extends BaseExternalAccountClientOptions {
     // The session token is required for IMDSv2 but optional for IMDSv1
     imdsv2_session_token_url?: string;
   };
+  aws_security_credentials_supplier?: AwsSecurityCredentialsSupplier;
 }
 
 /**
@@ -82,11 +84,14 @@ export interface AwsSecurityCredentialsSupplier {
  * GCP access token.
  */
 export class AwsClient extends BaseExternalAccountClient {
-  private readonly environmentId: string;
+  private readonly environmentId?: string;
   private readonly awsSecurityCredentialsSupplier: AwsSecurityCredentialsSupplier;
   private readonly regionalCredVerificationUrl: string;
   private awsRequestSigner: AwsRequestSigner | null;
   private region: string;
+
+  static #DEFAULT_AWS_REGIONAL_CREDENTINTIAL_VERIFICATION_URL =
+    'https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15';
 
   /**
    * @deprecated AWS client no validates the EC2 metadata address.
@@ -109,34 +114,57 @@ export class AwsClient extends BaseExternalAccountClient {
    *   on 401/403 API request errors.
    */
   constructor(
-    options: AwsClientOptions,
+    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>,
     additionalOptions?: AuthClientOptions
   ) {
     super(options, additionalOptions);
-    this.environmentId = options.credential_source.environment_id;
-    // This is only required if the AWS region is not available in the
-    // AWS_REGION or AWS_DEFAULT_REGION environment variables.
-    const regionUrl = options.credential_source.region_url;
-    // This is only required if AWS security credentials are not available in
-    // environment variables.
-    const securityCredentialsUrl = options.credential_source.url;
-    const imdsV2SessionTokenUrl =
-      options.credential_source.imdsv2_session_token_url;
-    this.awsSecurityCredentialsSupplier =
-      new DefaultAwsSecurityCredentialsSupplier({
-        regionUrl: regionUrl,
-        securityCredentialsUrl: securityCredentialsUrl,
-        imdsV2SessionTokenUrl: imdsV2SessionTokenUrl,
-      });
+    const opts = originalOrCamelOptions(options as AwsClientOptions);
+    const credentialSource = opts.get('credential_source');
+    const awsSecurityCredentialsSupplier = opts.get(
+      'aws_security_credentials_supplier'
+    );
+    if (!credentialSource && !awsSecurityCredentialsSupplier) {
+      throw new Error(
+        'A credential source or AWS security credentials supplier must be specified.'
+      );
+    } else if (credentialSource && awsSecurityCredentialsSupplier) {
+      throw new Error(
+        'Only one of credential source or AWS security credentials supplier can be specified.'
+      );
+    } else if (awsSecurityCredentialsSupplier) {
+      this.awsSecurityCredentialsSupplier = awsSecurityCredentialsSupplier;
+      this.regionalCredVerificationUrl =
+        AwsClient.#DEFAULT_AWS_REGIONAL_CREDENTINTIAL_VERIFICATION_URL;
+      this.credentialSourceType = 'programmatic';
+    } else {
+      const credentialSourceOpts = originalOrCamelOptions(credentialSource);
+      this.environmentId = credentialSourceOpts.get('environment_id');
+      // This is only required if the AWS region is not available in the
+      // AWS_REGION or AWS_DEFAULT_REGION environment variables.
+      const regionUrl = credentialSourceOpts.get('region_url');
+      // This is only required if AWS security credentials are not available in
+      // environment variables.
+      const securityCredentialsUrl = credentialSourceOpts.get('url');
+      const imdsV2SessionTokenUrl = credentialSourceOpts.get(
+        'imdsv2_session_token_url'
+      );
+      this.awsSecurityCredentialsSupplier =
+        new DefaultAwsSecurityCredentialsSupplier({
+          regionUrl: regionUrl,
+          securityCredentialsUrl: securityCredentialsUrl,
+          imdsV2SessionTokenUrl: imdsV2SessionTokenUrl,
+        });
 
-    this.regionalCredVerificationUrl =
-      options.credential_source.regional_cred_verification_url;
+      this.regionalCredVerificationUrl = credentialSourceOpts.get(
+        'regional_cred_verification_url'
+      );
+      this.credentialSourceType = 'aws';
+
+      // Data validators.
+      this.validateEnvironmentId();
+    }
     this.awsRequestSigner = null;
     this.region = '';
-    this.credentialSourceType = 'aws';
-
-    // Data validators.
-    this.validateEnvironmentId();
   }
 
   private validateEnvironmentId() {
