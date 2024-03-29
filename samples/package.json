@@ -17,7 +17,7 @@
     "@googleapis/iam": "^15.0.0",
     "google-auth-library": "^9.7.0",
     "node-fetch": "^2.3.0",
-    "open": "^6.0.0",
+    "open": "^9.0.0",
     "server-destroy": "^1.0.1"
   },
   "devDependencies": {
