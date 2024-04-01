@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as crypto from 'crypto';
-import {Crypto} from '../crypto';
+import {Crypto, JwkCertificate} from '../crypto';
 
 export class NodeCrypto implements Crypto {
   async sha256DigestBase64(str: string): Promise<string> {
@@ -25,21 +25,51 @@ export class NodeCrypto implements Crypto {
   }
 
   async verify(
-    pubkey: string,
+    pubkey: string | JwkCertificate | crypto.JsonWebKey,
     data: string | Buffer,
     signature: string
   ): Promise<boolean> {
     const verifier = crypto.createVerify('RSA-SHA256');
     verifier.update(data);
     verifier.end();
-    return verifier.verify(pubkey, signature, 'base64');
+
+    if (typeof pubkey === 'string') {
+      // must be PEM
+      return verifier.verify(pubkey, signature, 'base64');
+    } else {
+      // must be JWK
+      return verifier.verify(
+        {
+          key: pubkey as crypto.JsonWebKey,
+          format: 'jwk',
+        },
+        signature,
+        'base64'
+      );
+    }
   }
 
-  async sign(privateKey: string, data: string | Buffer): Promise<string> {
+  async sign(
+    privateKey: string | JwkCertificate | crypto.JsonWebKey,
+    data: string | Buffer
+  ): Promise<string> {
     const signer = crypto.createSign('RSA-SHA256');
     signer.update(data);
     signer.end();
-    return signer.sign(privateKey, 'base64');
+
+    if (typeof privateKey === 'string') {
+      // must be PEM
+      return signer.sign(privateKey, 'base64');
+    } else {
+      // must be JWK
+      return signer.sign(
+        {
+          key: privateKey as unknown as crypto.KeyObject,
+          format: 'jwk',
+        },
+        'base64'
+      );
+    }
   }
 
   decodeBase64StringUtf8(base64: string): string {
