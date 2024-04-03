@@ -123,15 +123,19 @@ export class AwsClient extends BaseExternalAccountClient {
     const awsSecurityCredentialsSupplier = opts.get(
       'aws_security_credentials_supplier'
     );
+    // Validate credential sourcing configuration.
     if (!credentialSource && !awsSecurityCredentialsSupplier) {
       throw new Error(
         'A credential source or AWS security credentials supplier must be specified.'
       );
-    } else if (credentialSource && awsSecurityCredentialsSupplier) {
+    }
+    if (credentialSource && awsSecurityCredentialsSupplier) {
       throw new Error(
         'Only one of credential source or AWS security credentials supplier can be specified.'
       );
-    } else if (awsSecurityCredentialsSupplier) {
+    }
+    
+    if (awsSecurityCredentialsSupplier) {
       this.awsSecurityCredentialsSupplier = awsSecurityCredentialsSupplier;
       this.regionalCredVerificationUrl =
         AwsClient.#DEFAULT_AWS_REGIONAL_CREDENTINTIAL_VERIFICATION_URL;

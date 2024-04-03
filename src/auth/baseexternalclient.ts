@@ -228,8 +228,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     const clientId = opts.get('client_id');
     const clientSecret = opts.get('client_secret');
-    const tokenUrl =
-      opts.get('token_url') ?? DEFAULT_TOKEN_URL;
+    const tokenUrl = opts.get('token_url') ?? DEFAULT_TOKEN_URL;
     const subjectTokenType = opts.get('subject_token_type');
     const workforcePoolUserProject = opts.get('workforce_pool_user_project');
     const serviceAccountImpersonationUrl = opts.get(
