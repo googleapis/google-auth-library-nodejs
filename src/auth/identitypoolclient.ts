@@ -99,15 +99,19 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     const opts = originalOrCamelOptions(options as IdentityPoolClientOptions);
     const credentialSource = opts.get('credential_source');
     const subjectTokenSupplier = opts.get('subject_token_supplier');
+    // Validate credential sourcing configuration.
     if (!credentialSource && !subjectTokenSupplier) {
       throw new Error(
         'A credential source or subject token supplier must be specified.'
       );
-    } else if (credentialSource && subjectTokenSupplier) {
+    }
+    if (credentialSource && subjectTokenSupplier) {
       throw new Error(
         'Only one of credential source or subject token supplier can be specified.'
       );
-    } else if (subjectTokenSupplier) {
+    }
+
+    if (subjectTokenSupplier) {
       this.subjectTokenSupplier = subjectTokenSupplier;
       this.credentialSourceType = 'programmatic';
     } else {

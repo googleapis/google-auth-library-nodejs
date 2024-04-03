@@ -64,7 +64,7 @@ export const CLOUD_RESOURCE_MANAGER =
 /** The workforce audience pattern. */
 const WORKFORCE_AUDIENCE_PATTERN =
   '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
-const DEFAULT_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
+const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
@@ -228,7 +228,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     const clientId = opts.get('client_id');
     const clientSecret = opts.get('client_secret');
-    const tokenUrl = opts.get('token_url') ?? DEFAULT_TOKEN_URL;
+    const tokenUrl =
+      opts.get('token_url') ??
+      DEFAULT_TOKEN_URL.replace('{universeDomain}', this.universeDomain);
     const subjectTokenType = opts.get('subject_token_type');
     const workforcePoolUserProject = opts.get('workforce_pool_user_project');
     const serviceAccountImpersonationUrl = opts.get(

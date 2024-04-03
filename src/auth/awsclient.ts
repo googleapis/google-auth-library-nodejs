@@ -90,7 +90,7 @@ export class AwsClient extends BaseExternalAccountClient {
   private awsRequestSigner: AwsRequestSigner | null;
   private region: string;
 
-  static #DEFAULT_AWS_REGIONAL_CREDENTINTIAL_VERIFICATION_URL =
+  static #DEFAULT_AWS_REGIONAL_CREDENTIAL_VERIFICATION_URL =
     'https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15';
 
   /**
@@ -134,11 +134,11 @@ export class AwsClient extends BaseExternalAccountClient {
         'Only one of credential source or AWS security credentials supplier can be specified.'
       );
     }
-    
+
     if (awsSecurityCredentialsSupplier) {
       this.awsSecurityCredentialsSupplier = awsSecurityCredentialsSupplier;
       this.regionalCredVerificationUrl =
-        AwsClient.#DEFAULT_AWS_REGIONAL_CREDENTINTIAL_VERIFICATION_URL;
+        AwsClient.#DEFAULT_AWS_REGIONAL_CREDENTIAL_VERIFICATION_URL;
       this.credentialSourceType = 'programmatic';
     } else {
       const credentialSourceOpts = originalOrCamelOptions(credentialSource);
