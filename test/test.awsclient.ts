@@ -16,9 +16,12 @@ import * as assert from 'assert';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import {AwsClient} from '../src/auth/awsclient';
+import {AwsClient, AwsSecurityCredentialsSupplier} from '../src/auth/awsclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
+import {
+  BaseExternalAccountClient,
+  ExternalAccountSupplierContext,
+} from '../src/auth/baseexternalclient';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -28,6 +31,7 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
+import {AwsSecurityCredentials} from '../src/auth/awsrequestsigner';
 
 nock.disableNetConnect();
 
@@ -260,6 +264,36 @@ describe('AwsClient', () => {
         subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
         token_url: getTokenUrl(),
         credential_source: invalidCredentialSource,
+      };
+
+      assert.throws(() => new AwsClient(invalidOptions), expectedError);
+    });
+
+    it('should throw when both a credential source and supplier are provided', () => {
+      const expectedError = new Error(
+        'Only one of credential source or AWS security credentials supplier can be specified.'
+      );
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        token_url: getTokenUrl(),
+        credential_source: awsCredentialSource,
+        aws_security_credentials_supplier: new TestAwsSupplier({}),
+      };
+
+      assert.throws(() => new AwsClient(invalidOptions), expectedError);
+    });
+
+    it('should throw when neither a credential source or supplier are provided', () => {
+      const expectedError = new Error(
+        'A credential source or AWS security credentials supplier must be specified.'
+      );
+      const invalidOptions = {
+        type: 'external_account',
+        audience,
+        subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        token_url: getTokenUrl(),
       };
 
       assert.throws(() => new AwsClient(invalidOptions), expectedError);
@@ -1042,4 +1076,239 @@ describe('AwsClient', () => {
       });
     });
   });
+
+  describe('for custom supplier retrieved tokens', () => {
+    describe('retrieveSubjectToken()', () => {
+      it('should resolve on success for permanent creds', async () => {
+        const supplier = new TestAwsSupplier({
+          credentials: {
+            accessKeyId: accessKeyId,
+            secretAccessKey: secretAccessKey,
+          },
+          region: awsRegion,
+        });
+        const options = {
+          aws_security_credentials_supplier: supplier,
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        };
+
+        const client = new AwsClient(options);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectTokenNoToken);
+      });
+
+      it('should resolve on success for temporary creds', async () => {
+        const supplier = new TestAwsSupplier({
+          credentials: {
+            accessKeyId: accessKeyId,
+            secretAccessKey: secretAccessKey,
+            token: token,
+          },
+          region: awsRegion,
+        });
+        const options = {
+          aws_security_credentials_supplier: supplier,
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        };
+
+        const client = new AwsClient(options);
+        const subjectToken = await client.retrieveSubjectToken();
+
+        assert.deepEqual(subjectToken, expectedSubjectToken);
+      });
+
+      it('should reject when getAwsRegion() throws an error', async () => {
+        const expectedError = new Error('expected error message');
+        const supplier = new TestAwsSupplier({
+          regionError: expectedError,
+        });
+        const options = {
+          aws_security_credentials_supplier: supplier,
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        };
+
+        const client = new AwsClient(options);
+
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
+      });
+
+      it('should reject when getAwsSecurityCredentials() throws an error', async () => {
+        const expectedError = new Error('expected error message');
+        const supplier = new TestAwsSupplier({
+          region: awsRegion,
+          credentialsError: expectedError,
+        });
+        const options = {
+          aws_security_credentials_supplier: supplier,
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        };
+
+        const client = new AwsClient(options);
+
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
+      });
+    });
+
+    describe('getAccessToken()', () => {
+      it('should resolve on retrieveSubjectToken success', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange([
+            {
+              statusCode: 200,
+              response: stsSuccessfulResponse,
+              request: {
+                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                audience,
+                scope: 'https://www.googleapis.com/auth/cloud-platform',
+                requested_token_type:
+                  'urn:ietf:params:oauth:token-type:access_token',
+                subject_token: expectedSubjectTokenNoToken,
+                subject_token_type:
+                  'urn:ietf:params:aws:token-type:aws4_request',
+              },
+            },
+          ])
+        );
+        const supplier = new TestAwsSupplier({
+          credentials: {
+            accessKeyId: accessKeyId,
+            secretAccessKey: secretAccessKey,
+          },
+          region: awsRegion,
+        });
+        const options = {
+          aws_security_credentials_supplier: supplier,
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        };
+
+        const client = new AwsClient(options);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+
+      it('should reject on retrieveSubjectToken error', async () => {
+        const expectedError = new Error('expected error message');
+        const supplier = new TestAwsSupplier({
+          region: awsRegion,
+          credentialsError: expectedError,
+        });
+        const options = {
+          aws_security_credentials_supplier: supplier,
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        };
+
+        const client = new AwsClient(options);
+
+        await assert.rejects(client.getAccessToken(), expectedError);
+      });
+
+      it('should set x-goog-api-client header correctly', async () => {
+        const scopes: nock.Scope[] = [];
+        scopes.push(
+          mockStsTokenExchange(
+            [
+              {
+                statusCode: 200,
+                response: stsSuccessfulResponse,
+                request: {
+                  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+                  audience,
+                  scope: 'https://www.googleapis.com/auth/cloud-platform',
+                  requested_token_type:
+                    'urn:ietf:params:oauth:token-type:access_token',
+                  subject_token: expectedSubjectTokenNoToken,
+                  subject_token_type:
+                    'urn:ietf:params:aws:token-type:aws4_request',
+                },
+              },
+            ],
+            {
+              'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
+                'programmatic',
+                false,
+                false
+              ),
+            }
+          )
+        );
+        const supplier = new TestAwsSupplier({
+          credentials: {
+            accessKeyId: accessKeyId,
+            secretAccessKey: secretAccessKey,
+          },
+          region: awsRegion,
+        });
+        const options = {
+          aws_security_credentials_supplier: supplier,
+          audience: audience,
+          subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+        };
+
+        const client = new AwsClient(options);
+        const actualResponse = await client.getAccessToken();
+
+        // Confirm raw GaxiosResponse appended to response.
+        assertGaxiosResponsePresent(actualResponse);
+        delete actualResponse.res;
+        assert.deepStrictEqual(actualResponse, {
+          token: stsSuccessfulResponse.access_token,
+        });
+        scopes.forEach(scope => scope.done());
+      });
+    });
+  });
 });
+
+interface TestAwsSupplierOptions {
+  credentials?: AwsSecurityCredentials;
+  region?: string;
+  credentialsError?: Error;
+  regionError?: Error;
+}
+
+class TestAwsSupplier implements AwsSecurityCredentialsSupplier {
+  private readonly credentials?: AwsSecurityCredentials;
+  private readonly region?: string;
+  private readonly credentialsError?: Error;
+  private readonly regionError?: Error;
+
+  constructor(options: TestAwsSupplierOptions) {
+    this.credentials = options.credentials;
+    this.region = options.region;
+    this.credentialsError = options.credentialsError;
+    this.regionError = options.regionError;
+  }
+
+  async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
+    if (this.regionError) {
+      throw this.regionError;
+    } else {
+      return this.region ?? '';
+    }
+  }
+
+  async getAwsSecurityCredentials(
+    context: ExternalAccountSupplierContext
+  ): Promise<AwsSecurityCredentials> {
+    if (this.credentialsError) {
+      throw this.credentialsError;
+    } else {
+      return this.credentials ?? {accessKeyId: '', secretAccessKey: ''};
+    }
+  }
+}
