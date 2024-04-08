@@ -201,6 +201,7 @@ describe('jwt', () => {
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+    assert.ok(decoded);
     assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
     const payload = decoded.payload;
     assert.strictEqual(email, payload.iss);
@@ -222,6 +223,7 @@ describe('jwt', () => {
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+    assert.ok(decoded);
     assert.deepStrictEqual(
       {alg: 'RS256', typ: 'JWT', kid: '101'},
       decoded.header
@@ -245,6 +247,7 @@ describe('jwt', () => {
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+    assert.ok(decoded);
     const payload = decoded.payload;
     assert.strictEqual(testDefault, payload.aud);
     assert.strictEqual(someClaim, payload.someClaim);
