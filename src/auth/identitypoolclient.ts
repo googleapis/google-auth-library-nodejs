@@ -53,17 +53,47 @@ export interface SubjectTokenSupplier {
  */
 export interface IdentityPoolClientOptions
   extends BaseExternalAccountClientOptions {
+  /**
+   * Object containing options to retrieve identity pool credentials. A valid credential
+   * source or a subject token supplier must be specified.
+   */
   credential_source?: {
+    /**
+     * The file location to read the subject token from. Either this or a URL
+     * should be specified.
+     */
     file?: string;
+    /**
+     * The URL to call to retrieve the subject token. Either this or a file
+     * location should be specified.
+     */
     url?: string;
+    /**
+     * Optional headers to send on the request to the specified URL.
+     */
     headers?: {
       [key: string]: string;
     };
+    /**
+     * The format that the subject token is in the file or the URL response.
+     * If not provided, will default to reading the text string directly.
+     */
     format?: {
+      /**
+       * The format type. Can either be 'text' or 'json'.
+       */
       type: SubjectTokenFormatType;
+      /**
+       * The field name containing the subject token value if the type is 'json'.
+       */
       subject_token_field_name?: string;
     };
   };
+  /**
+   * The subject token supplier to call to retrieve the subject token to exchange
+   * for a GCP access token. Either this or a valid credential source should
+   * be specified.
+   */
   subject_token_supplier?: SubjectTokenSupplier;
 }
 
