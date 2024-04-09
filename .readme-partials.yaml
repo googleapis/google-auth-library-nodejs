@@ -522,20 +522,20 @@ body: |-
   Note that the client does not cache the returned subject token, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
 
   ```ts
-    class CustomSupplier implements SubjectTokenSupplier {
+  class CustomSupplier implements SubjectTokenSupplier {
 
     async getSubjectToken(
       context: ExternalAccountSupplierContext
     ): Promise<string> {
       const audience = context.audience;
       const subjectTokenType = context.subjectTokenType;
-      // Return a valid subject token for the requested audience and subject token type..
+      // Return a valid subject token for the requested audience and subject token type.
     }
   }
 
   const clientOptions = {
     audience: '', //Set the GCP audience
-    subject_token_type: 'urn:ietf:params:aws:token-type:id_token', // Set the subject token type.
+    subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
     subject_token_supplier: new CustomSupplier() // Set the custom supplier.
   }
 
@@ -939,20 +939,20 @@ body: |-
   Note that the client does not cache the returned subject token, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
 
   ```ts
-    class CustomSupplier implements SubjectTokenSupplier {
+  class CustomSupplier implements SubjectTokenSupplier {
 
     async getSubjectToken(
       context: ExternalAccountSupplierContext
     ): Promise<string> {
       const audience = context.audience;
       const subjectTokenType = context.subjectTokenType;
-      // Return a valid subject token for the requested audience and subject token type..
+      // Return a valid subject token for the requested audience and subject token type.
     }
   }
 
   const clientOptions = {
     audience: '', //Set the GCP audience
-    subject_token_type: 'urn:ietf:params:aws:token-type:id_token', // Set the subject token type.
+    subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
     subject_token_supplier: new CustomSupplier() // Set the custom supplier.
   }
 
