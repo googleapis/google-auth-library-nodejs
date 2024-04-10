@@ -158,11 +158,8 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
 
   /**
    * Refreshes the access token.
-   * @param refreshToken Unused parameter
    */
-  protected async refreshToken(
-    refreshToken?: string | null
-  ): Promise<GetTokenResponse> {
+  protected async refreshToken(): Promise<GetTokenResponse> {
     try {
       await this.sourceClient.getAccessToken();
       const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
