@@ -396,7 +396,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * Authenticates the provided HTTP request, processes it and resolves with the
    * returned response.
    * @param opts The HTTP request options.
-   * @param reAuthRetried Whether the current attempt is a retry after a failed attempt.
+   * @param reAuthRetried Whether the current attempt is a retry after a failed attempt due to an auth failure.
    * @return A promise that resolves with the successful response.
    */
   protected async requestAsync<T>(
