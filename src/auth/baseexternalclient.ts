@@ -74,8 +74,21 @@ const pkg = require('../../../package.json');
  */
 export {DEFAULT_UNIVERSE} from './authclient';
 
+/**
+ * Shared options used to build {@link ExternalAccountClient} and
+ * {@link ExternalAccountAuthorizedUserClient}.
+ */
 export interface SharedExternalAccountClientOptions extends AuthClientOptions {
+  /**
+   *  The Security Token Service audience, which is usually the fully specified
+   *  resource name of the workload or workforce pool provider.
+   */
   audience: string;
+  /**
+   * The Security Token Service token URL used to exchange the third party token
+   * for a GCP access token. If not provided, will default to
+   * 'https://sts.googleapis.com/v1/token'
+   */
   token_url?: string;
 }
 
@@ -109,16 +122,55 @@ export interface ExternalAccountSupplierContext {
  */
 export interface BaseExternalAccountClientOptions
   extends SharedExternalAccountClientOptions {
+  /**
+   * Credential type, should always be 'external_account'.
+   */
   type?: string;
+  /**
+   * The Security Token Service subject token type based on the OAuth 2.0
+   * token exchange spec. Expected values include:
+   * * 'urn:ietf:params:oauth:token-type:jwt'
+   * * 'urn:ietf:params:aws:token-type:aws4_request'
+   * * 'urn:ietf:params:oauth:token-type:saml2'
+   * * 'urn:ietf:params:oauth:token-type:id_token'
+   */
   subject_token_type: string;
+  /**
+   * The URL for the service account impersonation request. This URL is required
+   * for some APIs. If this URL is not available, the access token from the
+   * Security Token Service is used directly.
+   */
   service_account_impersonation_url?: string;
+  /**
+   * Object containing additional options for service account impersonation.
+   */
   service_account_impersonation?: {
+    /**
+     * The desired lifetime of the impersonated service account access token.
+     * If not provided, the default lifetime will be 3600 seconds.
+     */
     token_lifetime_seconds?: number;
   };
+  /**
+   * The endpoint used to retrieve account related information.
+   */
   token_info_url?: string;
+  /**
+   * Client ID of the service account from the console.
+   */
   client_id?: string;
+  /**
+   * Client secret of the service account from the console.
+   */
   client_secret?: string;
+  /**
+   * The workforce pool user project. Required when using a workforce identity
+   * pool.
+   */
   workforce_pool_user_project?: string;
+  /**
+   * The scopes to request during the authorization grant.
+   */
   scopes?: string[];
   /**
    * @example
