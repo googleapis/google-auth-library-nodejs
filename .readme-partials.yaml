@@ -386,7 +386,7 @@ body: |-
   }
 
   const clientOptions = {
-    audience: '', // Set the GCP audience.
+    audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
     subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request', // Set the subject token type.
     aws_security_credentials_supplier: new AwsSupplier() // Set the custom supplier.
   }
@@ -533,7 +533,7 @@ body: |-
   }
 
   const clientOptions = {
-    audience: '', // Set the GCP audience.
+    audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
     subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
     subject_token_supplier: new CustomSupplier() // Set the custom supplier.
   }
@@ -949,7 +949,7 @@ body: |-
   }
 
   const clientOptions = {
-    audience: '', // Set the GCP audience.
+    audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
     subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
     subject_token_supplier: new CustomSupplier() // Set the custom supplier.
   }
@@ -957,7 +957,7 @@ body: |-
   const client = new CustomSupplier(clientOptions);
   ```
 
-  Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#provider-audience) is: `//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+  Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
 
   Where the following variables need to be substituted:
 
