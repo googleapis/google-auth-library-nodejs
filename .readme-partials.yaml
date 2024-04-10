@@ -386,7 +386,7 @@ body: |-
   }
 
   const clientOptions = {
-    audience: '', //Set the GCP audience
+    audience: '', // Set the GCP audience.
     subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request', // Set the subject token type.
     aws_security_credentials_supplier: new AwsSupplier() // Set the custom supplier.
   }
@@ -523,7 +523,6 @@ body: |-
 
   ```ts
   class CustomSupplier implements SubjectTokenSupplier {
-
     async getSubjectToken(
       context: ExternalAccountSupplierContext
     ): Promise<string> {
@@ -534,7 +533,7 @@ body: |-
   }
 
   const clientOptions = {
-    audience: '', //Set the GCP audience
+    audience: '', // Set the GCP audience.
     subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
     subject_token_supplier: new CustomSupplier() // Set the custom supplier.
   }
@@ -940,7 +939,6 @@ body: |-
 
   ```ts
   class CustomSupplier implements SubjectTokenSupplier {
-
     async getSubjectToken(
       context: ExternalAccountSupplierContext
     ): Promise<string> {
@@ -951,7 +949,7 @@ body: |-
   }
 
   const clientOptions = {
-    audience: '', //Set the GCP audience
+    audience: '', // Set the GCP audience.
     subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
     subject_token_supplier: new CustomSupplier() // Set the custom supplier.
   }
