@@ -143,6 +143,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       payload: Buffer.from(blobToSign).toString('base64'),
     };
     const res = await this.sourceClient.request<SignBlobResponse>({
+      ...Impersonated.RETRY_CONFIG,
       url: u,
       data: body,
       method: 'POST',
@@ -172,6 +173,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
         lifetime: this.lifetime + 's',
       };
       const res = await this.sourceClient.request<TokenResponse>({
+        ...Impersonated.RETRY_CONFIG,
         url: u,
         data: body,
         method: 'POST',
@@ -227,6 +229,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       includeEmail: options?.includeEmail ?? true,
     };
     const res = await this.sourceClient.request<FetchIdTokenResponse>({
+      ...Impersonated.RETRY_CONFIG,
       url: u,
       data: body,
       method: 'POST',

@@ -259,4 +259,22 @@ export abstract class AuthClient
     }
     return headers;
   }
+
+  /**
+   * Retry config for Auth-related requests.
+   *
+   * @remarks
+   *
+   * This is not a part of the default {@link AuthClient.transporter transporter/gaxios}
+   * config as some downstream APIs would prefer if customers explicitly enable retries,
+   * such as GCS.
+   */
+  protected static get RETRY_CONFIG(): GaxiosOptions {
+    return {
+      retry: true,
+      retryConfig: {
+        httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
+      },
+    };
+  }
 }

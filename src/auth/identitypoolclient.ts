@@ -229,6 +229,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       method: 'GET',
       headers,
       responseType: formatType,
+      retry: true,
     };
     let subjectToken: string | undefined;
     if (formatType === 'text') {
