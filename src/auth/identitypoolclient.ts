@@ -225,11 +225,11 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     headers?: {[key: string]: string}
   ): Promise<string> {
     const opts: GaxiosOptions = {
+      ...IdentityPoolClient.RETRY_CONFIG,
       url,
       method: 'GET',
       headers,
       responseType: formatType,
-      retry: true,
     };
     let subjectToken: string | undefined;
     if (formatType === 'text') {
