@@ -992,7 +992,7 @@ describe('oauth2', () => {
           reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
         })
           .post('/token')
-          .reply(500)
+          .reply(400)
           .post('/token')
           .reply(200, {access_token: 'abc123', expires_in: 100000}),
         nock('http://example.com').get('/').reply(200),
@@ -1020,7 +1020,7 @@ describe('oauth2', () => {
           reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
         })
           .post('/token')
-          .reply(500, reAuthErrorBody),
+          .reply(400, reAuthErrorBody),
       ];
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
 
