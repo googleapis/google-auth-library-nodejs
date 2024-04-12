@@ -208,6 +208,26 @@ export abstract class AuthClient
   }
 
   /**
+   * Return the {@link Gaxios `Gaxios`} instance from the {@link AuthClient.transporter}.
+   *
+   * @expiremental
+   */
+  get gaxios(): Gaxios | null {
+    if (this.transporter instanceof Gaxios) {
+      return this.transporter;
+    } else if (this.transporter instanceof DefaultTransporter) {
+      return this.transporter.instance;
+    } else if (
+      'instance' in this.transporter &&
+      this.transporter.instance instanceof Gaxios
+    ) {
+      return this.transporter.instance;
+    }
+
+    return null;
+  }
+
+  /**
    * Provides an alternative Gaxios request implementation with auth credentials
    */
   abstract request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
