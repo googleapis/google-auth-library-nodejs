@@ -192,6 +192,7 @@ export class AwsClient extends BaseExternalAccountClient {
     // Generate signed request to AWS STS GetCallerIdentity API.
     // Use the required regional endpoint. Otherwise, the request will fail.
     const options = await this.awsRequestSigner.getRequestOptions({
+      ...AwsClient.RETRY_CONFIG,
       url: this.regionalCredVerificationUrl.replace('{region}', this.region),
       method: 'POST',
     });
@@ -240,6 +241,7 @@ export class AwsClient extends BaseExternalAccountClient {
    */
   private async getImdsV2SessionToken(): Promise<string> {
     const opts: GaxiosOptions = {
+      ...AwsClient.RETRY_CONFIG,
       url: this.imdsV2SessionTokenUrl,
       method: 'PUT',
       responseType: 'text',
@@ -266,6 +268,7 @@ export class AwsClient extends BaseExternalAccountClient {
       );
     }
     const opts: GaxiosOptions = {
+      ...AwsClient.RETRY_CONFIG,
       url: this.regionUrl,
       method: 'GET',
       responseType: 'text',
@@ -290,6 +293,7 @@ export class AwsClient extends BaseExternalAccountClient {
       );
     }
     const opts: GaxiosOptions = {
+      ...AwsClient.RETRY_CONFIG,
       url: this.securityCredentialsUrl,
       method: 'GET',
       responseType: 'text',
@@ -313,6 +317,7 @@ export class AwsClient extends BaseExternalAccountClient {
   ): Promise<AwsSecurityCredentialsResponse> {
     const response =
       await this.transporter.request<AwsSecurityCredentialsResponse>({
+        ...AwsClient.RETRY_CONFIG,
         url: `${this.securityCredentialsUrl}/${roleName}`,
         responseType: 'json',
         headers: headers,

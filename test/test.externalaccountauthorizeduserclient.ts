@@ -227,7 +227,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       scope.done();
     });
 
-    it('should handle refresh timeout', async () => {
+    it('should handle and retry on timeout', async () => {
+      // we need timers/`setTimeout` for this test
+      clock.restore();
+
       const expectedRequest = new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: 'refreshToken',
@@ -239,13 +242,19 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         },
       })
         .post(REFRESH_PATH, expectedRequest.toString())
-        .replyWithError({code: 'ETIMEDOUT'});
+        .replyWithError({code: 'ETIMEDOUT'})
+        .post(REFRESH_PATH, expectedRequest.toString())
+        .reply(200, successfulRefreshResponse);
 
       const client = new ExternalAccountAuthorizedUserClient(
         externalAccountAuthorizedUserCredentialOptions
       );
-      await assert.rejects(client.getAccessToken(), {
-        code: 'ETIMEDOUT',
+
+      const actualResponse = await client.getAccessToken();
+      assertGaxiosResponsePresent(actualResponse);
+      delete actualResponse.res;
+      assert.deepStrictEqual(actualResponse, {
+        token: successfulRefreshResponse.access_token,
       });
       scope.done();
     });

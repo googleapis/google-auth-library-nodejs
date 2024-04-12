@@ -49,7 +49,8 @@ describe('jwtaccess', () => {
     const headers = client.getRequestHeaders(testUri);
     assert.notStrictEqual(null, headers, 'an creds object should be present');
     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
-    assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
+    assert(decoded);
+    assert.deepStrictEqual(decoded.header, {alg: 'RS256', typ: 'JWT'});
     const payload = decoded.payload;
     assert.strictEqual(email, payload.iss);
     assert.strictEqual(email, payload.sub);
@@ -60,6 +61,7 @@ describe('jwtaccess', () => {
     const client = new JWTAccess(email, keys.private);
     const headers = client.getRequestHeaders(testUri, undefined, 'myfakescope');
     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    assert(decoded);
     const payload = decoded.payload;
     assert.strictEqual('myfakescope', payload.scope);
   });
@@ -68,6 +70,7 @@ describe('jwtaccess', () => {
     const client = new JWTAccess(email, keys.private);
     const headers = client.getRequestHeaders(testUri);
     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    assert(decoded);
     const payload = decoded.payload;
     assert.strictEqual(testUri, payload.aud);
   });
@@ -76,10 +79,12 @@ describe('jwtaccess', () => {
     const client = new JWTAccess(email, keys.private, '101');
     const headers = client.getRequestHeaders(testUri);
     const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
-    assert.deepStrictEqual(
-      {alg: 'RS256', typ: 'JWT', kid: '101'},
-      decoded.header
-    );
+    assert(decoded);
+    assert.deepStrictEqual(decoded.header, {
+      alg: 'RS256',
+      typ: 'JWT',
+      kid: '101',
+    });
   });
 
   it('getRequestHeaders should not allow overriding with additionalClaims', () => {

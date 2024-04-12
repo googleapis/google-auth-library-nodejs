@@ -669,6 +669,7 @@ export class OAuth2Client extends AuthClient {
       code_verifier: options.codeVerifier,
     };
     const res = await this.transporter.request<CredentialRequest>({
+      ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
       data: querystring.stringify(values),
@@ -733,6 +734,7 @@ export class OAuth2Client extends AuthClient {
     try {
       // request for new token
       res = await this.transporter.request<CredentialRequest>({
+        ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
         data: querystring.stringify(data),
@@ -956,6 +958,7 @@ export class OAuth2Client extends AuthClient {
     callback?: BodyResponseCallback<RevokeCredentialsResult>
   ): GaxiosPromise<RevokeCredentialsResult> | void {
     const opts: GaxiosOptions = {
+      ...OAuth2Client.RETRY_CONFIG,
       url: this.getRevokeTokenURL(token).toString(),
       method: 'POST',
     };
@@ -1024,7 +1027,7 @@ export class OAuth2Client extends AuthClient {
 
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let r2: GaxiosResponse;
     try {
@@ -1078,11 +1081,16 @@ export class OAuth2Client extends AuthClient {
           this.refreshHandler;
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
-        if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
+        if (
+          !reAuthRetried &&
+          isAuthErr &&
+          !isReadableStream &&
+          mayRequireRefresh
+        ) {
           await this.refreshAccessTokenAsync();
           return this.requestAsync<T>(opts, true);
         } else if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           mayRequireRefreshWithNoRefreshToken
@@ -1157,6 +1165,7 @@ export class OAuth2Client extends AuthClient {
    */
   async getTokenInfo(accessToken: string): Promise<TokenInfo> {
     const {data} = await this.transporter.request<TokenInfoRequest>({
+      ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1222,7 +1231,10 @@ export class OAuth2Client extends AuthClient {
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
-      res = await this.transporter.request({url});
+      res = await this.transporter.request({
+        ...OAuth2Client.RETRY_CONFIG,
+        url,
+      });
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
@@ -1290,7 +1302,10 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      res = await this.transporter.request({url});
+      res = await this.transporter.request({
+        ...OAuth2Client.RETRY_CONFIG,
+        url,
+      });
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
