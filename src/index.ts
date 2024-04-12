@@ -13,7 +13,10 @@
 // limitations under the License.
 import {GoogleAuth} from './auth/googleauth';
 
+// Export common deps to ensure types/instances are the exact match. Useful
+// for consistently configuring the library across versions.
 export * as gcpMetadata from 'gcp-metadata';
+export * as gaxios from 'gaxios';
 
 export {AuthClient, DEFAULT_UNIVERSE} from './auth/authclient';
 export {Compute, ComputeOptions} from './auth/computeclient';
