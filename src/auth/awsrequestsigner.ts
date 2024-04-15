@@ -14,7 +14,7 @@
 
 import {GaxiosOptions} from 'gaxios';
 
-import {Headers} from './oauth2client';
+import {Headers} from './authclient';
 import {Crypto, createCrypto, fromArrayBufferToHex} from '../crypto/crypto';
 
 type HttpMethod =
