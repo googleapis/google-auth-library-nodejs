@@ -4,6 +4,20 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.8.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.7.0...v9.8.0) (2024-04-12)
+
+
+### Features
+
+* Enable Retries For Auth Requests ([#1791](https://github.com/googleapis/google-auth-library-nodejs/issues/1791)) ([9b69a31](https://github.com/googleapis/google-auth-library-nodejs/commit/9b69a3119c2d0dfe12d41a5f77658d35a2c92d74))
+* Improve `gaxios` exposure ([#1794](https://github.com/googleapis/google-auth-library-nodejs/issues/1794)) ([5058726](https://github.com/googleapis/google-auth-library-nodejs/commit/5058726e2234a2da4edd31f0898465798943ebe6))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency open to v10 ([#1782](https://github.com/googleapis/google-auth-library-nodejs/issues/1782)) ([16e5cae](https://github.com/googleapis/google-auth-library-nodejs/commit/16e5cae1d56d5c3dd6cc3bdca5ecdfb534eaf529))
+* **deps:** Update dependency opn to v6 ([#1775](https://github.com/googleapis/google-auth-library-nodejs/issues/1775)) ([fc8dfe9](https://github.com/googleapis/google-auth-library-nodejs/commit/fc8dfe9d373e30dd1bd06eb8cbb8b52e735b4d83))
+
 ## [9.7.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.3...v9.7.0) (2024-03-12)
 
 
