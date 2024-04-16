@@ -46,7 +46,13 @@ export interface DefaultAwsSecurityCredentialsSupplierOptions {
   securityCredentialsUrl?: string;
   /**
    ** The URL to call to retrieve the IMDSV2 session token.
-   **/ imdsV2SessionTokenUrl?: string;
+   **/
+  imdsV2SessionTokenUrl?: string;
+  /**
+   * Additional Gaxios options to use when making requests to the AWS metadata
+   * endpoints.
+   */
+  additionalGaxiosOptions?: GaxiosOptions;
 }
 
 /**
@@ -74,6 +80,7 @@ export class DefaultAwsSecurityCredentialsSupplier
   private readonly regionUrl?: string;
   private readonly securityCredentialsUrl?: string;
   private readonly imdsV2SessionTokenUrl?: string;
+  private readonly additionalGaxiosOptions?: GaxiosOptions;
 
   /**
    * Instantiates a new DefaultAwsSecurityCredentialsSupplier using information
@@ -85,6 +92,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     this.regionUrl = opts.regionUrl;
     this.securityCredentialsUrl = opts.securityCredentialsUrl;
     this.imdsV2SessionTokenUrl = opts.imdsV2SessionTokenUrl;
+    this.additionalGaxiosOptions = opts.additionalGaxiosOptions;
   }
 
   /**
@@ -115,6 +123,7 @@ export class DefaultAwsSecurityCredentialsSupplier
       );
     }
     const opts: GaxiosOptions = {
+      ...this.additionalGaxiosOptions,
       url: this.regionUrl,
       method: 'GET',
       responseType: 'text',
@@ -178,6 +187,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     transporter: Transporter | Gaxios
   ): Promise<string> {
     const opts: GaxiosOptions = {
+      ...this.additionalGaxiosOptions,
       url: this.imdsV2SessionTokenUrl,
       method: 'PUT',
       responseType: 'text',
@@ -204,6 +214,7 @@ export class DefaultAwsSecurityCredentialsSupplier
       );
     }
     const opts: GaxiosOptions = {
+      ...this.additionalGaxiosOptions,
       url: this.securityCredentialsUrl,
       method: 'GET',
       responseType: 'text',
@@ -228,6 +239,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     transporter: Transporter | Gaxios
   ): Promise<AwsSecurityCredentialsResponse> {
     const response = await transporter.request<AwsSecurityCredentialsResponse>({
+      ...this.additionalGaxiosOptions,
       url: `${this.securityCredentialsUrl}/${roleName}`,
       responseType: 'json',
       headers: headers,

@@ -28,7 +28,6 @@ describe('jwt', () => {
   const keypair = require('keypair');
   const PEM_PATH = './test/fixtures/private.pem';
   const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
-  const P12_PATH = './test/fixtures/key.p12';
 
   nock.disableNetConnect();
 
@@ -201,7 +200,9 @@ describe('jwt', () => {
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
-    assert.deepStrictEqual({alg: 'RS256', typ: 'JWT'}, decoded.header);
+    assert(decoded);
+    assert.strictEqual(decoded.header.alg, 'RS256');
+    assert.strictEqual(decoded.header.typ, 'JWT');
     const payload = decoded.payload;
     assert.strictEqual(email, payload.iss);
     assert.strictEqual(email, payload.sub);
@@ -222,10 +223,12 @@ describe('jwt', () => {
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
-    assert.deepStrictEqual(
-      {alg: 'RS256', typ: 'JWT', kid: '101'},
-      decoded.header
-    );
+    assert(decoded);
+    assert.deepStrictEqual(decoded.header, {
+      alg: 'RS256',
+      typ: 'JWT',
+      kid: '101',
+    });
   });
 
   it('should accept additionalClaims', async () => {
@@ -245,6 +248,7 @@ describe('jwt', () => {
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
     const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+    assert(decoded);
     const payload = decoded.payload;
     assert.strictEqual(testDefault, payload.aud);
     assert.strictEqual(someClaim, payload.someClaim);

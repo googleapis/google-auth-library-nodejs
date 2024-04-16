@@ -43,6 +43,10 @@ export interface UrlSubjectTokenSupplierOptions {
    * server url.
    */
   headers?: {[key: string]: string};
+  /**
+   * Additional gaxios options to use for the request to the specified URL.
+   */
+  additionalGaxiosOptions?: GaxiosOptions;
 }
 
 /**
@@ -54,6 +58,7 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
   private readonly headers?: {[key: string]: string};
   private readonly formatType: SubjectTokenFormatType;
   private readonly subjectTokenFieldName?: string;
+  private readonly additionalGaxiosOptions?: GaxiosOptions;
 
   /**
    * Instantiates a URL subject token supplier.
@@ -64,6 +69,7 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
     this.formatType = opts.formatType;
     this.subjectTokenFieldName = opts.subjectTokenFieldName;
     this.headers = opts.headers;
+    this.additionalGaxiosOptions = opts.additionalGaxiosOptions;
   }
 
   /**
@@ -76,12 +82,11 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
   async getSubjectToken(
     context: ExternalAccountSupplierContext
   ): Promise<string> {
-    const url = this.url;
-    const headers = this.headers;
     const opts: GaxiosOptions = {
-      url,
+      ...this.additionalGaxiosOptions,
+      url: this.url,
       method: 'GET',
-      headers,
+      headers: this.headers,
       responseType: this.formatType,
     };
     let subjectToken: string | undefined;

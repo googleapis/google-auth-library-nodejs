@@ -435,12 +435,12 @@ describe('AwsClient', () => {
         // Simulate error during region retrieval.
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
-          .reply(500);
+          .reply(400);
 
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          status: 500,
+          status: 400,
         });
         scope.done();
       });
@@ -469,12 +469,12 @@ describe('AwsClient', () => {
           .get('/latest/meta-data/iam/security-credentials')
           .reply(200, awsRole)
           .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-          .reply(408);
+          .reply(404);
 
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          status: 408,
+          status: 404,
         });
         scope.done();
       });
@@ -636,12 +636,12 @@ describe('AwsClient', () => {
           .get('/latest/meta-data/placement/availability-zone')
           .reply(200, `${awsRegion}b`)
           .get('/latest/meta-data/iam/security-credentials')
-          .reply(500);
+          .reply(400);
 
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.getAccessToken(), {
-          status: 500,
+          status: 400,
         });
         scope.done();
       });
@@ -738,12 +738,12 @@ describe('AwsClient', () => {
         // Simulate error during region retrieval.
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
-          .reply(500);
+          .reply(400);
 
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.retrieveSubjectToken(), {
-          status: 500,
+          status: 400,
         });
         scope.done();
       });
@@ -1016,12 +1016,12 @@ describe('AwsClient', () => {
 
         const scope = nock(metadataBaseUrl)
           .get('/latest/meta-data/placement/availability-zone')
-          .reply(500);
+          .reply(400);
 
         const client = new AwsClient(awsOptions);
 
         await assert.rejects(client.getAccessToken(), {
-          status: 500,
+          status: 400,
         });
         scope.done();
       });

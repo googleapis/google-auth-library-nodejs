@@ -1130,6 +1130,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       data: {
         payload: crypto.encodeBase64StringUtf8(data),
       },
+      retry: true,
+      retryConfig: {
+        httpMethodsToRetry: ['POST'],
+      },
     });
 
     return res.data.signedBlob;

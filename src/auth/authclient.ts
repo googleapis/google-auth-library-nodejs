@@ -208,6 +208,26 @@ export abstract class AuthClient
   }
 
   /**
+   * Return the {@link Gaxios `Gaxios`} instance from the {@link AuthClient.transporter}.
+   *
+   * @expiremental
+   */
+  get gaxios(): Gaxios | null {
+    if (this.transporter instanceof Gaxios) {
+      return this.transporter;
+    } else if (this.transporter instanceof DefaultTransporter) {
+      return this.transporter.instance;
+    } else if (
+      'instance' in this.transporter &&
+      this.transporter.instance instanceof Gaxios
+    ) {
+      return this.transporter.instance;
+    }
+
+    return null;
+  }
+
+  /**
    * Provides an alternative Gaxios request implementation with auth credentials
    */
   abstract request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
@@ -258,5 +278,23 @@ export abstract class AuthClient
       headers['x-goog-user-project'] = this.quotaProjectId;
     }
     return headers;
+  }
+
+  /**
+   * Retry config for Auth-related requests.
+   *
+   * @remarks
+   *
+   * This is not a part of the default {@link AuthClient.transporter transporter/gaxios}
+   * config as some downstream APIs would prefer if customers explicitly enable retries,
+   * such as GCS.
+   */
+  protected static get RETRY_CONFIG(): GaxiosOptions {
+    return {
+      retry: true,
+      retryConfig: {
+        httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
+      },
+    };
   }
 }

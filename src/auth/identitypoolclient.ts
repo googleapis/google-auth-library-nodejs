@@ -187,6 +187,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
           formatType: formatType,
           subjectTokenFieldName: formatSubjectTokenFieldName,
           headers: headers,
+          additionalGaxiosOptions: IdentityPoolClient.RETRY_CONFIG,
         });
       } else {
         throw new Error(

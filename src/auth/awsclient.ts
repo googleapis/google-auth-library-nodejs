@@ -228,6 +228,7 @@ export class AwsClient extends BaseExternalAccountClient {
     // Generate signed request to AWS STS GetCallerIdentity API.
     // Use the required regional endpoint. Otherwise, the request will fail.
     const options = await this.awsRequestSigner.getRequestOptions({
+      ...AwsClient.RETRY_CONFIG,
       url: this.regionalCredVerificationUrl.replace('{region}', this.region),
       method: 'POST',
     });

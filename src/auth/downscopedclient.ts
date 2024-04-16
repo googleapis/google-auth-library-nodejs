@@ -250,12 +250,12 @@ export class DownscopedClient extends AuthClient {
    * Authenticates the provided HTTP request, processes it and resolves with the
    * returned response.
    * @param opts The HTTP request options.
-   * @param retry Whether the current attempt is a retry after a failed attempt.
+   * @param reAuthRetried Whether the current attempt is a retry after a failed attempt due to an auth failure
    * @return A promise that resolves with the successful response.
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -281,7 +281,7 @@ export class DownscopedClient extends AuthClient {
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           this.forceRefreshOnFailure
