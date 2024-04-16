@@ -294,7 +294,7 @@ describe('BaseExternalAccountClient', () => {
       scope.done();
     });
 
-    it('should set universe domain on default token url', async() => {
+    it('should set universe domain on default token url', async () => {
       const options: BaseExternalAccountClientOptions = {
         ...externalAccountOptionsNoUrl,
         universe_domain: 'test.com',
