@@ -95,6 +95,14 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     token_url: TOKEN_REFRESH_URL,
     token_info_url: TOKEN_INFO_URL,
   } as ExternalAccountAuthorizedUserClientOptions;
+  const externalAccountAuthorizedUserCredentialOptionsNoToken = {
+    type: EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
+    audience: audience,
+    client_id: 'clientId',
+    client_secret: 'clientSecret',
+    refresh_token: 'refreshToken',
+    token_info_url: TOKEN_INFO_URL,
+  } as ExternalAccountAuthorizedUserClientOptions;
   const successfulRefreshResponse = {
     access_token: 'newAccessToken',
     refresh_token: 'newRefreshToken',
@@ -131,6 +139,44 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       assert(!client.forceRefreshOnFailure);
       assert(client.eagerRefreshThresholdMillis === EXPIRATION_TIME_OFFSET);
+    });
+
+    it('should set default token url', async () => {
+      const scope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
+        {
+          statusCode: 200,
+          response: successfulRefreshResponse,
+          request: {
+            grant_type: 'refresh_token',
+            refresh_token: 'refreshToken',
+          },
+        },
+      ]);
+
+      const client = new ExternalAccountAuthorizedUserClient(
+        externalAccountAuthorizedUserCredentialOptionsNoToken
+      );
+      await client.getAccessToken();
+      scope.done();
+    });
+
+    it('should set universe domain token url', async () => {
+      const scope = mockStsTokenRefresh('https://sts.test.com', REFRESH_PATH, [
+        {
+          statusCode: 200,
+          response: successfulRefreshResponse,
+          request: {
+            grant_type: 'refresh_token',
+            refresh_token: 'refreshToken',
+          },
+        },
+      ]);
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptionsNoToken,
+        universe_domain: 'test.com',
+      });
+      await client.getAccessToken();
+      scope.done();
     });
 
     it('should set custom RefreshOptions', () => {

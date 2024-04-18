@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -22,7 +23,7 @@ import * as stream from 'stream';
 
 import {Credentials} from './credentials';
 import {AuthClient, AuthClientOptions} from './authclient';
-import {BodyResponseCallback} from '../transporters';
+import {BodyResponseCallback, Transporter} from '../transporters';
 import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
@@ -63,6 +64,7 @@ export const CLOUD_RESOURCE_MANAGER =
 /** The workforce audience pattern. */
 const WORKFORCE_AUDIENCE_PATTERN =
   '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
+const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
@@ -72,9 +74,47 @@ const pkg = require('../../../package.json');
  */
 export {DEFAULT_UNIVERSE} from './authclient';
 
+/**
+ * Shared options used to build {@link ExternalAccountClient} and
+ * {@link ExternalAccountAuthorizedUserClient}.
+ */
 export interface SharedExternalAccountClientOptions extends AuthClientOptions {
+  /**
+   *  The Security Token Service audience, which is usually the fully specified
+   *  resource name of the workload or workforce pool provider.
+   */
   audience: string;
-  token_url: string;
+  /**
+   * The Security Token Service token URL used to exchange the third party token
+   * for a GCP access token. If not provided, will default to
+   * 'https://sts.googleapis.com/v1/token'
+   */
+  token_url?: string;
+}
+
+/**
+ * Interface containing context about the requested external identity. This is
+ * passed on all requests from external account clients to external identity suppliers.
+ */
+export interface ExternalAccountSupplierContext {
+  /**
+   * The requested external account audience. For example:
+   * * "//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID"
+   * * "//iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID"
+   */
+  audience: string;
+  /**
+   * The requested subject token type. Expected values include:
+   * * "urn:ietf:params:oauth:token-type:jwt"
+   * * "urn:ietf:params:aws:token-type:aws4_request"
+   * * "urn:ietf:params:oauth:token-type:saml2"
+   * * "urn:ietf:params:oauth:token-type:id_token"
+   */
+  subjectTokenType: string;
+  /** The {@link Gaxios} or {@link Transporter} instance from
+   * the calling external account to use for requests.
+   */
+  transporter: Transporter | Gaxios;
 }
 
 /**
@@ -82,16 +122,55 @@ export interface SharedExternalAccountClientOptions extends AuthClientOptions {
  */
 export interface BaseExternalAccountClientOptions
   extends SharedExternalAccountClientOptions {
-  type: string;
+  /**
+   * Credential type, should always be 'external_account'.
+   */
+  type?: string;
+  /**
+   * The Security Token Service subject token type based on the OAuth 2.0
+   * token exchange spec. Expected values include:
+   * * 'urn:ietf:params:oauth:token-type:jwt'
+   * * 'urn:ietf:params:aws:token-type:aws4_request'
+   * * 'urn:ietf:params:oauth:token-type:saml2'
+   * * 'urn:ietf:params:oauth:token-type:id_token'
+   */
   subject_token_type: string;
+  /**
+   * The URL for the service account impersonation request. This URL is required
+   * for some APIs. If this URL is not available, the access token from the
+   * Security Token Service is used directly.
+   */
   service_account_impersonation_url?: string;
+  /**
+   * Object containing additional options for service account impersonation.
+   */
   service_account_impersonation?: {
+    /**
+     * The desired lifetime of the impersonated service account access token.
+     * If not provided, the default lifetime will be 3600 seconds.
+     */
     token_lifetime_seconds?: number;
   };
+  /**
+   * The endpoint used to retrieve account related information.
+   */
   token_info_url?: string;
+  /**
+   * Client ID of the service account from the console.
+   */
   client_id?: string;
+  /**
+   * Client secret of the service account from the console.
+   */
   client_secret?: string;
+  /**
+   * The workforce pool user project. Required when using a workforce identity
+   * pool.
+   */
   workforce_pool_user_project?: string;
+  /**
+   * The scopes to request during the authorization grant.
+   */
   scopes?: string[];
   /**
    * @example
@@ -167,6 +246,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * ```
    */
   protected cloudResourceManagerURL: URL | string;
+  protected supplierContext: ExternalAccountSupplierContext;
   /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
@@ -190,7 +270,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       options as BaseExternalAccountClientOptions
     );
 
-    if (opts.get('type') !== EXTERNAL_ACCOUNT_TYPE) {
+    const type = opts.get('type');
+    if (type && type !== EXTERNAL_ACCOUNT_TYPE) {
       throw new Error(
         `Expected "${EXTERNAL_ACCOUNT_TYPE}" type but ` +
           `received "${options.type}"`
@@ -199,7 +280,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     const clientId = opts.get('client_id');
     const clientSecret = opts.get('client_secret');
-    const tokenUrl = opts.get('token_url');
+    const tokenUrl =
+      opts.get('token_url') ??
+      DEFAULT_TOKEN_URL.replace('{universeDomain}', this.universeDomain);
     const subjectTokenType = opts.get('subject_token_type');
     const workforcePoolUserProject = opts.get('workforce_pool_user_project');
     const serviceAccountImpersonationUrl = opts.get(
@@ -254,6 +337,11 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
 
     this.projectNumber = this.getProjectNumber(this.audience);
+    this.supplierContext = {
+      audience: this.audience,
+      subjectTokenType: this.subjectTokenType,
+      transporter: this.transporter,
+    };
   }
 
   /** The service account email to be impersonated, if available. */

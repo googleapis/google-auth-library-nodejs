@@ -400,6 +400,55 @@ The gcloud create-cred-config command will be updated to support this soon.
 
 You can now [start using the Auth library](#using-external-identities) to call Google Cloud resources from AWS.
 
+### Accessing resources from AWS using a custom AWS security credentials supplier.
+
+In order to access Google Cloud resources from Amazon Web Services (AWS), the following requirements are needed:
+- A workload identity pool needs to be created.
+- AWS needs to be added as an identity provider in the workload identity pool (The Google [organization policy](https://cloud.google.com/iam/docs/manage-workload-identity-pools-providers#restrict) needs to allow federation from AWS).
+- Permission to impersonate a service account needs to be granted to the external identity.
+
+Follow the detailed [instructions](https://cloud.google.com/iam/docs/access-resources-aws) on how to configure workload identity federation from AWS.
+
+If you want to use AWS security credentials that cannot be retrieved using methods supported natively by this library,
+a custom AwsSecurityCredentialsSupplier implementation may be specified when creating an AWS client. The supplier must
+return valid, unexpired AWS security credentials when called by the GCP credential.
+
+Note that the client does not cache the returned AWS security credentials, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
+
+```ts
+class AwsSupplier implements AwsSecurityCredentialsSupplier {
+  async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
+    // Return the current AWS region, i.e. 'us-east-2'.
+  }
+
+  async getAwsSecurityCredentials(
+    context: ExternalAccountSupplierContext
+  ): Promise<AwsSecurityCredentials> {
+    const audience = context.audience;
+    // Return valid AWS security credentials for the requested audience.
+  }
+}
+
+const clientOptions = {
+  audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request', // Set the subject token type.
+  aws_security_credentials_supplier: new AwsSupplier() // Set the custom supplier.
+}
+
+const client = new AwsClient(clientOptions);
+```
+
+Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#provider-audience) is: `//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+
+Where the following variables need to be substituted:
+
+* `$PROJECT_NUMBER`: The Google Cloud project number.
+* `$WORKLOAD_POOL_ID`: The workload pool ID.
+* `$PROVIDER_ID`: The provider ID.
+
+
+The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/sdk/gcloud/reference/iam/workload-identity-pools/create-cred-config).
+
 ### Access resources from Microsoft Azure
 
 In order to access Google Cloud resources from Microsoft Azure, the following requirements are needed:
@@ -507,6 +556,44 @@ Where the following variables need to be substituted:
 - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
 - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
+
+### Accessing resources from an OIDC or SAML2.0 identity provider using a custom supplier
+
+If you want to use OIDC or SAML2.0 that cannot be retrieved using methods supported natively by this library,
+a custom SubjectTokenSupplier implementation may be specified when creating an identity pool client. The supplier must
+return a valid, unexpired subject token when called by the GCP credential.
+
+Note that the client does not cache the returned subject token, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
+
+```ts
+class CustomSupplier implements SubjectTokenSupplier {
+  async getSubjectToken(
+    context: ExternalAccountSupplierContext
+  ): Promise<string> {
+    const audience = context.audience;
+    const subjectTokenType = context.subjectTokenType;
+    // Return a valid subject token for the requested audience and subject token type.
+  }
+}
+
+const clientOptions = {
+  audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
+  subject_token_supplier: new CustomSupplier() // Set the custom supplier.
+}
+
+const client = new CustomSupplier(clientOptions);
+```
+
+Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#provider-audience) is: `//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+
+Where the following variables need to be substituted:
+
+* `$PROJECT_NUMBER`: The Google Cloud project number.
+* `$WORKLOAD_POOL_ID`: The workload pool ID.
+* `$PROVIDER_ID`: The provider ID.
+
+The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/sdk/gcloud/reference/iam/workload-identity-pools/create-cred-config).
 
 #### Using External Account Authorized User workforce credentials
 
@@ -885,6 +972,45 @@ credentials unless they do not meet your specific requirements.
 
 You can now [use the Auth library](#using-external-identities) to call Google Cloud
 resources from an OIDC or SAML provider.
+
+### Accessing resources from an OIDC or SAML2.0 identity provider using a custom supplier
+
+If you want to use OIDC or SAML2.0 that cannot be retrieved using methods supported natively by this library,
+a custom SubjectTokenSupplier implementation may be specified when creating an identity pool client. The supplier must
+return a valid, unexpired subject token when called by the GCP credential.
+
+Note that the client does not cache the returned subject token, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
+
+```ts
+class CustomSupplier implements SubjectTokenSupplier {
+  async getSubjectToken(
+    context: ExternalAccountSupplierContext
+  ): Promise<string> {
+    const audience = context.audience;
+    const subjectTokenType = context.subjectTokenType;
+    // Return a valid subject token for the requested audience and subject token type.
+  }
+}
+
+const clientOptions = {
+  audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
+  subject_token_supplier: new CustomSupplier() // Set the custom supplier.
+}
+
+const client = new CustomSupplier(clientOptions);
+```
+
+Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+
+Where the following variables need to be substituted:
+
+* `WORKFORCE_POOL_ID`: The worforce pool ID.
+* `$PROVIDER_ID`: The provider ID.
+
+and the workforce pool user project is the project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
+
+The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials#use_configuration_files_for_sign-in).
 
 ### Using External Identities
 

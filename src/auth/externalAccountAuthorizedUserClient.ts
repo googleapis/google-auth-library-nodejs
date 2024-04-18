@@ -39,6 +39,7 @@ import {
  */
 export const EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE =
   'external_account_authorized_user';
+const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/oauthtoken';
 
 /**
  * External Account Authorized User Credentials JSON interface.
@@ -172,6 +173,9 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     additionalOptions?: AuthClientOptions
   ) {
     super({...options, ...additionalOptions});
+    if (options.universe_domain) {
+      this.universeDomain = options.universe_domain;
+    }
     this.refreshToken = options.refresh_token;
     const clientAuth = {
       confidentialClientType: 'basic',
@@ -180,7 +184,8 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     } as ClientAuthentication;
     this.externalAccountAuthorizedUserHandler =
       new ExternalAccountAuthorizedUserHandler(
-        options.token_url,
+        options.token_url ??
+          DEFAULT_TOKEN_URL.replace('{universeDomain}', this.universeDomain),
         this.transporter,
         clientAuth
       );
@@ -198,10 +203,6 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
         .eagerRefreshThresholdMillis as number;
     }
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
-
-    if (options.universe_domain) {
-      this.universeDomain = options.universe_domain;
-    }
   }
 
   async getAccessToken(): Promise<{

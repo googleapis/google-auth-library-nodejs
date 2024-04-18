@@ -82,6 +82,14 @@ describe('BaseExternalAccountClient', () => {
       file: '/var/run/secrets/goog.id/token',
     },
   };
+  const externalAccountOptionsNoUrl = {
+    type: 'external_account',
+    audience,
+    subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+    credential_source: {
+      file: '/var/run/secrets/goog.id/token',
+    },
+  };
   const externalAccountOptionsWithCreds = {
     type: 'external_account',
     audience,
@@ -261,6 +269,62 @@ describe('BaseExternalAccountClient', () => {
         client.eagerRefreshThresholdMillis,
         refreshOptions.eagerRefreshThresholdMillis
       );
+    });
+
+    it('should set default token url', async () => {
+      const client = new TestExternalAccountClient(externalAccountOptionsNoUrl);
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      await client.getAccessToken();
+
+      scope.done();
+    });
+
+    it('should set universe domain on default token url', async () => {
+      const options: BaseExternalAccountClientOptions = {
+        ...externalAccountOptionsNoUrl,
+        universe_domain: 'test.com',
+      };
+
+      const client = new TestExternalAccountClient(options);
+
+      const scope = mockStsTokenExchange(
+        [
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ],
+        {},
+        'https://sts.test.com'
+      );
+
+      await client.getAccessToken();
+
+      scope.done();
     });
   });
 

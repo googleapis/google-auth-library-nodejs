@@ -12,51 +12,92 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions} from 'gaxios';
-
 import {AwsRequestSigner, AwsSecurityCredentials} from './awsrequestsigner';
 import {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
+  ExternalAccountSupplierContext,
 } from './baseexternalclient';
-import {Headers} from './oauth2client';
 import {AuthClientOptions} from './authclient';
+import {DefaultAwsSecurityCredentialsSupplier} from './defaultawssecuritycredentialssupplier';
+import {originalOrCamelOptions, SnakeToCamelObject} from '../util';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
  */
 export interface AwsClientOptions extends BaseExternalAccountClientOptions {
-  credential_source: {
+  /**
+   * Object containing options to retrieve AWS security credentials. A valid credential
+   * source or a aws security credentials supplier should be specified.
+   */
+  credential_source?: {
+    /**
+     * AWS environment ID. Currently only 'AWS1' is supported.
+     */
     environment_id: string;
-    // Region can also be determined from the AWS_REGION or AWS_DEFAULT_REGION
-    // environment variables.
+    /**
+     * The EC2 metadata URL to retrieve the current AWS region from. If this is
+     * not provided, the region should be present in the AWS_REGION or AWS_DEFAULT_REGION
+     * environment variables.
+     */
     region_url?: string;
-    // The url field is used to determine the AWS security credentials.
-    // This is optional since these credentials can be retrieved from the
-    // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN
-    // environment variables.
+    /**
+     * The EC2 metadata URL to retrieve AWS security credentials. If this is not provided,
+     * the credentials should be present in the AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+     * and AWS_SESSION_TOKEN environment variables.
+     */
     url?: string;
+    /**
+     * The regional GetCallerIdentity action URL, used to determine the account
+     * ID and its roles.
+     */
     regional_cred_verification_url: string;
-    // The imdsv2 session token url is used to fetch session token from AWS
-    // which is later sent through headers for metadata requests. If the
-    // field is missing, then session token won't be fetched and sent with
-    // the metadata requests.
-    // The session token is required for IMDSv2 but optional for IMDSv1
+    /**
+     *  The imdsv2 session token url is used to fetch session token from AWS
+     *  which is later sent through headers for metadata requests. If the
+     *  field is missing, then session token won't be fetched and sent with
+     *  the metadata requests.
+     *  The session token is required for IMDSv2 but optional for IMDSv1
+     */
     imdsv2_session_token_url?: string;
   };
+  /**
+   * The AWS security credentials supplier to call to retrieve the AWS region
+   * and AWS security credentials. Either this or a valid credential source
+   * must be specified.
+   */
+  aws_security_credentials_supplier?: AwsSecurityCredentialsSupplier;
 }
 
 /**
- * Interface defining the AWS security-credentials endpoint response.
+ * Supplier interface for AWS security credentials. This can be implemented to
+ * return an AWS region and AWS security credentials. These credentials can
+ * then be exchanged for a GCP token by an {@link AwsClient}.
  */
-interface AwsSecurityCredentialsResponse {
-  Code: string;
-  LastUpdated: string;
-  Type: string;
-  AccessKeyId: string;
-  SecretAccessKey: string;
-  Token: string;
-  Expiration: string;
+export interface AwsSecurityCredentialsSupplier {
+  /**
+   * Gets the active AWS region.
+   * @param context {@link ExternalAccountSupplierContext} from the calling
+   *   {@link AwsClient}, contains the requested audience and subject token type
+   *   for the external account identity as well as the transport from the
+   *   calling client to use for requests.
+   * @return A promise that resolves with the AWS region string.
+   */
+  getAwsRegion: (context: ExternalAccountSupplierContext) => Promise<string>;
+
+  /**
+   * Gets valid AWS security credentials for the requested external account
+   * identity. Note that these are not cached by the calling {@link AwsClient},
+   * so caching should be including in the implementation.
+   * @param context {@link ExternalAccountSupplierContext} from the calling
+   *   {@link AwsClient}, contains the requested audience and subject token type
+   *   for the external account identity as well as the transport from the
+   *   calling client to use for requests.
+   * @return A promise that resolves with the requested {@link AwsSecurityCredentials}.
+   */
+  getAwsSecurityCredentials: (
+    context: ExternalAccountSupplierContext
+  ) => Promise<AwsSecurityCredentials>;
 }
 
 /**
@@ -65,15 +106,22 @@ interface AwsSecurityCredentialsResponse {
  * GCP access token.
  */
 export class AwsClient extends BaseExternalAccountClient {
-  private readonly environmentId: string;
-  private readonly regionUrl?: string;
-  private readonly securityCredentialsUrl?: string;
+  private readonly environmentId?: string;
+  private readonly awsSecurityCredentialsSupplier: AwsSecurityCredentialsSupplier;
   private readonly regionalCredVerificationUrl: string;
-  private readonly imdsV2SessionTokenUrl?: string;
   private awsRequestSigner: AwsRequestSigner | null;
   private region: string;
 
+  static #DEFAULT_AWS_REGIONAL_CREDENTIAL_VERIFICATION_URL =
+    'https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15';
+
+  /**
+   * @deprecated AWS client no validates the EC2 metadata address.
+   **/
   static AWS_EC2_METADATA_IPV4_ADDRESS = '169.254.169.254';
+  /**
+   * @deprecated AWS client no validates the EC2 metadata address.
+   **/
   static AWS_EC2_METADATA_IPV6_ADDRESS = 'fd00:ec2::254';
 
   /**
@@ -88,27 +136,61 @@ export class AwsClient extends BaseExternalAccountClient {
    *   on 401/403 API request errors.
    */
   constructor(
-    options: AwsClientOptions,
+    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>,
     additionalOptions?: AuthClientOptions
   ) {
     super(options, additionalOptions);
-    this.environmentId = options.credential_source.environment_id;
-    // This is only required if the AWS region is not available in the
-    // AWS_REGION or AWS_DEFAULT_REGION environment variables.
-    this.regionUrl = options.credential_source.region_url;
-    // This is only required if AWS security credentials are not available in
-    // environment variables.
-    this.securityCredentialsUrl = options.credential_source.url;
-    this.regionalCredVerificationUrl =
-      options.credential_source.regional_cred_verification_url;
-    this.imdsV2SessionTokenUrl =
-      options.credential_source.imdsv2_session_token_url;
+    const opts = originalOrCamelOptions(options as AwsClientOptions);
+    const credentialSource = opts.get('credential_source');
+    const awsSecurityCredentialsSupplier = opts.get(
+      'aws_security_credentials_supplier'
+    );
+    // Validate credential sourcing configuration.
+    if (!credentialSource && !awsSecurityCredentialsSupplier) {
+      throw new Error(
+        'A credential source or AWS security credentials supplier must be specified.'
+      );
+    }
+    if (credentialSource && awsSecurityCredentialsSupplier) {
+      throw new Error(
+        'Only one of credential source or AWS security credentials supplier can be specified.'
+      );
+    }
+
+    if (awsSecurityCredentialsSupplier) {
+      this.awsSecurityCredentialsSupplier = awsSecurityCredentialsSupplier;
+      this.regionalCredVerificationUrl =
+        AwsClient.#DEFAULT_AWS_REGIONAL_CREDENTIAL_VERIFICATION_URL;
+      this.credentialSourceType = 'programmatic';
+    } else {
+      const credentialSourceOpts = originalOrCamelOptions(credentialSource);
+      this.environmentId = credentialSourceOpts.get('environment_id');
+      // This is only required if the AWS region is not available in the
+      // AWS_REGION or AWS_DEFAULT_REGION environment variables.
+      const regionUrl = credentialSourceOpts.get('region_url');
+      // This is only required if AWS security credentials are not available in
+      // environment variables.
+      const securityCredentialsUrl = credentialSourceOpts.get('url');
+      const imdsV2SessionTokenUrl = credentialSourceOpts.get(
+        'imdsv2_session_token_url'
+      );
+      this.awsSecurityCredentialsSupplier =
+        new DefaultAwsSecurityCredentialsSupplier({
+          regionUrl: regionUrl,
+          securityCredentialsUrl: securityCredentialsUrl,
+          imdsV2SessionTokenUrl: imdsV2SessionTokenUrl,
+        });
+
+      this.regionalCredVerificationUrl = credentialSourceOpts.get(
+        'regional_cred_verification_url'
+      );
+      this.credentialSourceType = 'aws';
+
+      // Data validators.
+      this.validateEnvironmentId();
+    }
     this.awsRequestSigner = null;
     this.region = '';
-    this.credentialSourceType = 'aws';
-
-    // Data validators.
-    this.validateEnvironmentId();
   }
 
   private validateEnvironmentId() {
@@ -124,68 +206,22 @@ export class AwsClient extends BaseExternalAccountClient {
 
   /**
    * Triggered when an external subject token is needed to be exchanged for a
-   * GCP access token via GCP STS endpoint.
-   * This uses the `options.credential_source` object to figure out how
-   * to retrieve the token using the current environment. In this case,
-   * this uses a serialized AWS signed request to the STS GetCallerIdentity
-   * endpoint.
-   * The logic is summarized as:
-   * 1. If imdsv2_session_token_url is provided in the credential source, then
-   *    fetch the aws session token and include it in the headers of the
-   *    metadata requests. This is a requirement for IDMSv2 but optional
-   *    for IDMSv1.
-   * 2. Retrieve AWS region from availability-zone.
-   * 3a. Check AWS credentials in environment variables. If not found, get
-   *     from security-credentials endpoint.
-   * 3b. Get AWS credentials from security-credentials endpoint. In order
-   *     to retrieve this, the AWS role needs to be determined by calling
-   *     security-credentials endpoint without any argument. Then the
-   *     credentials can be retrieved via: security-credentials/role_name
-   * 4. Generate the signed request to AWS STS GetCallerIdentity action.
-   * 5. Inject x-goog-cloud-target-resource into header and serialize the
-   *    signed request. This will be the subject-token to pass to GCP STS.
+   * GCP access token via GCP STS endpoint. This will call the
+   * {@link AwsSecurityCredentialsSupplier} to retrieve an AWS region and AWS
+   * Security Credentials, then use them to create a signed AWS STS request that
+   * can be exchanged for a GCP access token.
    * @return A promise that resolves with the external subject token.
    */
   async retrieveSubjectToken(): Promise<string> {
     // Initialize AWS request signer if not already initialized.
     if (!this.awsRequestSigner) {
-      const metadataHeaders: Headers = {};
-      // Only retrieve the IMDSv2 session token if both the security credentials and region are
-      // not retrievable through the environment.
-      // The credential config contains all the URLs by default but clients may be running this
-      // where the metadata server is not available and returning the credentials through the environment.
-      // Removing this check may break them.
-      if (!this.regionFromEnv && this.imdsV2SessionTokenUrl) {
-        metadataHeaders['x-aws-ec2-metadata-token'] =
-          await this.getImdsV2SessionToken();
-      }
-
-      this.region = await this.getAwsRegion(metadataHeaders);
+      this.region = await this.awsSecurityCredentialsSupplier.getAwsRegion(
+        this.supplierContext
+      );
       this.awsRequestSigner = new AwsRequestSigner(async () => {
-        // Check environment variables for permanent credentials first.
-        // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
-        if (this.securityCredentialsFromEnv) {
-          return this.securityCredentialsFromEnv;
-        }
-        if (this.imdsV2SessionTokenUrl) {
-          metadataHeaders['x-aws-ec2-metadata-token'] =
-            await this.getImdsV2SessionToken();
-        }
-        // Since the role on a VM can change, we don't need to cache it.
-        const roleName = await this.getAwsRoleName(metadataHeaders);
-        // Temporary credentials typically last for several hours.
-        // Expiration is returned in response.
-        // Consider future optimization of this logic to cache AWS tokens
-        // until their natural expiration.
-        const awsCreds = await this.getAwsSecurityCredentials(
-          roleName,
-          metadataHeaders
+        return this.awsSecurityCredentialsSupplier.getAwsSecurityCredentials(
+          this.supplierContext
         );
-        return {
-          accessKeyId: awsCreds.AccessKeyId,
-          secretAccessKey: awsCreds.SecretAccessKey,
-          token: awsCreds.Token,
-        };
       }, this.region);
     }
 
@@ -234,117 +270,5 @@ export class AwsClient extends BaseExternalAccountClient {
         headers: reformattedHeader,
       })
     );
-  }
-
-  /**
-   * @return A promise that resolves with the IMDSv2 Session Token.
-   */
-  private async getImdsV2SessionToken(): Promise<string> {
-    const opts: GaxiosOptions = {
-      ...AwsClient.RETRY_CONFIG,
-      url: this.imdsV2SessionTokenUrl,
-      method: 'PUT',
-      responseType: 'text',
-      headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
-    };
-    const response = await this.transporter.request<string>(opts);
-    return response.data;
-  }
-
-  /**
-   * @param headers The headers to be used in the metadata request.
-   * @return A promise that resolves with the current AWS region.
-   */
-  private async getAwsRegion(headers: Headers): Promise<string> {
-    // Priority order for region determination:
-    // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
-    if (this.regionFromEnv) {
-      return this.regionFromEnv;
-    }
-    if (!this.regionUrl) {
-      throw new Error(
-        'Unable to determine AWS region due to missing ' +
-          '"options.credential_source.region_url"'
-      );
-    }
-    const opts: GaxiosOptions = {
-      ...AwsClient.RETRY_CONFIG,
-      url: this.regionUrl,
-      method: 'GET',
-      responseType: 'text',
-      headers: headers,
-    };
-    const response = await this.transporter.request<string>(opts);
-    // Remove last character. For example, if us-east-2b is returned,
-    // the region would be us-east-2.
-    return response.data.substr(0, response.data.length - 1);
-  }
-
-  /**
-   * @param headers The headers to be used in the metadata request.
-   * @return A promise that resolves with the assigned role to the current
-   *   AWS VM. This is needed for calling the security-credentials endpoint.
-   */
-  private async getAwsRoleName(headers: Headers): Promise<string> {
-    if (!this.securityCredentialsUrl) {
-      throw new Error(
-        'Unable to determine AWS role name due to missing ' +
-          '"options.credential_source.url"'
-      );
-    }
-    const opts: GaxiosOptions = {
-      ...AwsClient.RETRY_CONFIG,
-      url: this.securityCredentialsUrl,
-      method: 'GET',
-      responseType: 'text',
-      headers: headers,
-    };
-    const response = await this.transporter.request<string>(opts);
-    return response.data;
-  }
-
-  /**
-   * Retrieves the temporary AWS credentials by calling the security-credentials
-   * endpoint as specified in the `credential_source` object.
-   * @param roleName The role attached to the current VM.
-   * @param headers The headers to be used in the metadata request.
-   * @return A promise that resolves with the temporary AWS credentials
-   *   needed for creating the GetCallerIdentity signed request.
-   */
-  private async getAwsSecurityCredentials(
-    roleName: string,
-    headers: Headers
-  ): Promise<AwsSecurityCredentialsResponse> {
-    const response =
-      await this.transporter.request<AwsSecurityCredentialsResponse>({
-        ...AwsClient.RETRY_CONFIG,
-        url: `${this.securityCredentialsUrl}/${roleName}`,
-        responseType: 'json',
-        headers: headers,
-      });
-    return response.data;
-  }
-
-  private get regionFromEnv(): string | null {
-    // The AWS region can be provided through AWS_REGION or AWS_DEFAULT_REGION.
-    // Only one is required.
-    return (
-      process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'] || null
-    );
-  }
-
-  private get securityCredentialsFromEnv(): AwsSecurityCredentials | null {
-    // Both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required.
-    if (
-      process.env['AWS_ACCESS_KEY_ID'] &&
-      process.env['AWS_SECRET_ACCESS_KEY']
-    ) {
-      return {
-        accessKeyId: process.env['AWS_ACCESS_KEY_ID'],
-        secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY'],
-        token: process.env['AWS_SESSION_TOKEN'],
-      };
-    }
-    return null;
   }
 }
