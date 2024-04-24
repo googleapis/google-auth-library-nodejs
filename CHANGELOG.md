@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.9.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.8.0...v9.9.0) (2024-04-18)
+
+
+### Features
+
+* Adds suppliers for custom subject token and AWS credentials ([#1795](https://github.com/googleapis/google-auth-library-nodejs/issues/1795)) ([c680b5d](https://github.com/googleapis/google-auth-library-nodejs/commit/c680b5ddfa526d414ad1250bb6f5af69c498b909))
+
 ## [9.8.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.7.0...v9.8.0) (2024-04-12)
 
 
