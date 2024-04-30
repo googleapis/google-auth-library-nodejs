@@ -25,7 +25,7 @@
     "jws": "^4.0.0"
   },
   "devDependencies": {
-    "@compodoc/compodoc": "^1.1.7",
+    "@compodoc/compodoc": "1.1.23",
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
     "@types/jws": "^3.1.0",
