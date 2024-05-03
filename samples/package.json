@@ -14,7 +14,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@google-cloud/storage": "^7.0.0",
-    "@googleapis/iam": "^16.0.0",
+    "@googleapis/iam": "^17.0.0",
     "google-auth-library": "^9.9.0",
     "node-fetch": "^2.3.0",
     "open": "^9.0.0",
