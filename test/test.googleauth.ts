@@ -1533,7 +1533,7 @@ describe('googleauth', () => {
       assert(spy.calledOnce);
     });
 
-    it('should fail when using UserRefreshClient', async () => {
+    it('should return a UserRefreshClient client for getIdTokenClient', async () => {
       // Set up a mock to return path to a valid credentials file.
       mockEnvVar(
         'GOOGLE_APPLICATION_CREDENTIALS',
@@ -1541,16 +1541,9 @@ describe('googleauth', () => {
       );
       mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
 
-      try {
-        await auth.getIdTokenClient('a-target-audience');
-      } catch (e) {
-        assert(e instanceof Error);
-        assert(
-          e.message.startsWith('Cannot fetch ID token in this environment')
-        );
-        return;
-      }
-      assert.fail('failed to throw');
+      const client = await auth.getIdTokenClient('a-target-audience');
+      assert(client instanceof IdTokenClient);
+      assert(client.idTokenProvider instanceof UserRefreshClient);
     });
 
     describe('getUniverseDomain', () => {
