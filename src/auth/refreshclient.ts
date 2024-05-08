@@ -80,7 +80,7 @@ export class UserRefreshClient extends OAuth2Client {
   }
 
   async fetchIdToken(targetAudience: string): Promise<string> {
-    const res = await this.request<CredentialRequest>({
+    const res = await this.transporter.request<CredentialRequest>({
       ...UserRefreshClient.RETRY_CONFIG,
       url: this.endpoints.oauth2TokenUrl,
       headers: {
