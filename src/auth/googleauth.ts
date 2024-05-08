@@ -317,7 +317,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     let universeDomain: string;
 
     try {
-      universeDomain = await gcpMetadata.universe('universe_domain');
+      universeDomain = await gcpMetadata.universe('universe-domain');
       universeDomain ||= DEFAULT_UNIVERSE;
     } catch (e) {
       if (e && (e as GaxiosError)?.response?.status === 404) {
