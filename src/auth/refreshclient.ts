@@ -78,6 +78,10 @@ export class UserRefreshClient extends OAuth2Client {
     return super.refreshTokenNoCache(this._refreshToken);
   }
 
+  async fetchIdToken(): Promise<string> {
+    return (await this.refreshToken()).tokens.id_token!;
+  }
+
   /**
    * Create a UserRefreshClient credentials instance using the given input
    * options.
