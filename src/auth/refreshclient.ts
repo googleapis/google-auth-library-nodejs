@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import * as stream from 'stream';
-import {JWTInput} from './credentials';
+import {CredentialRequest, JWTInput} from './credentials';
 import {
   GetTokenResponse,
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
+import {stringify} from 'querystring';
 
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
@@ -76,6 +77,26 @@ export class UserRefreshClient extends OAuth2Client {
     refreshToken?: string | null
   ): Promise<GetTokenResponse> {
     return super.refreshTokenNoCache(this._refreshToken);
+  }
+
+  async fetchIdToken(targetAudience: string): Promise<string> {
+    const res = await this.transporter.request<CredentialRequest>({
+      ...UserRefreshClient.RETRY_CONFIG,
+      url: this.endpoints.oauth2TokenUrl,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      method: 'POST',
+      data: stringify({
+        client_id: this._clientId,
+        client_secret: this._clientSecret,
+        grant_type: 'refresh_token',
+        refresh_token: this._refreshToken,
+        target_audience: targetAudience,
+      }),
+    });
+
+    return res.data.id_token!;
   }
 
   /**

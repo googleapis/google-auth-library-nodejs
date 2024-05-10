@@ -55,6 +55,7 @@ import {
 import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
+import {stringify} from 'querystring';
 
 nock.disableNetConnect();
 
@@ -1520,6 +1521,69 @@ describe('googleauth', () => {
       assert(client.idTokenProvider instanceof JWT);
     });
 
+    it('should return a UserRefreshClient client for getIdTokenClient', async () => {
+      // Set up a mock to return path to a valid credentials file.
+      mockEnvVar(
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        './test/fixtures/refresh.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
+
+      const client = await auth.getIdTokenClient('a-target-audience');
+      assert(client instanceof IdTokenClient);
+      assert(client.idTokenProvider instanceof UserRefreshClient);
+    });
+
+    it('should properly use `UserRefreshClient` client for `getIdTokenClient`', async () => {
+      // Set up a mock to return path to a valid credentials file.
+      mockEnvVar(
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        './test/fixtures/refresh.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
+
+      // Assert `UserRefreshClient`
+      const baseClient = await auth.getClient();
+      assert(baseClient instanceof UserRefreshClient);
+
+      // Setup variables
+      const idTokenPayload = Buffer.from(JSON.stringify({exp: 100})).toString(
+        'base64'
+      );
+      const testIdToken = `TEST.${idTokenPayload}.TOKEN`;
+      const targetAudience = 'a-target-audience';
+      const tokenEndpoint = new URL(baseClient.endpoints.oauth2TokenUrl);
+      const expectedTokenRequestBody = stringify({
+        client_id: baseClient._clientId,
+        client_secret: baseClient._clientSecret,
+        grant_type: 'refresh_token',
+        refresh_token: baseClient._refreshToken,
+        target_audience: targetAudience,
+      });
+      const url = new URL('https://my-protected-endpoint.a.app');
+      const expectedRes = {hello: true};
+
+      // Setup mock endpoints
+      nock(tokenEndpoint.origin)
+        .post(tokenEndpoint.pathname, expectedTokenRequestBody)
+        .reply(200, {id_token: testIdToken});
+      nock(url.origin, {
+        reqheaders: {
+          authorization: `Bearer ${testIdToken}`,
+        },
+      })
+        .get(url.pathname)
+        .reply(200, expectedRes);
+
+      // Make assertions
+      const client = await auth.getIdTokenClient(targetAudience);
+      assert(client instanceof IdTokenClient);
+      assert(client.idTokenProvider instanceof UserRefreshClient);
+
+      const res = await client.request({url});
+      assert.deepStrictEqual(res.data, expectedRes);
+    });
+
     it('should call getClient for getIdTokenClient', async () => {
       // Set up a mock to return path to a valid credentials file.
       mockEnvVar(
@@ -1531,26 +1595,6 @@ describe('googleauth', () => {
       const client = await auth.getIdTokenClient('a-target-audience');
       assert(client instanceof IdTokenClient);
       assert(spy.calledOnce);
-    });
-
-    it('should fail when using UserRefreshClient', async () => {
-      // Set up a mock to return path to a valid credentials file.
-      mockEnvVar(
-        'GOOGLE_APPLICATION_CREDENTIALS',
-        './test/fixtures/refresh.json'
-      );
-      mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
-
-      try {
-        await auth.getIdTokenClient('a-target-audience');
-      } catch (e) {
-        assert(e instanceof Error);
-        assert(
-          e.message.startsWith('Cannot fetch ID token in this environment')
-        );
-        return;
-      }
-      assert.fail('failed to throw');
     });
 
     describe('getUniverseDomain', () => {
