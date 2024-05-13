@@ -4,6 +4,20 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.10.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.9.0...v9.10.0) (2024-05-10)
+
+
+### Features
+
+* Implement `UserRefreshClient#fetchIdToken` ([#1811](https://github.com/googleapis/google-auth-library-nodejs/issues/1811)) ([ae8bc54](https://github.com/googleapis/google-auth-library-nodejs/commit/ae8bc5476f5d93c8516d9a9eb553e7ce7c00edd5))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v16 ([#1803](https://github.com/googleapis/google-auth-library-nodejs/issues/1803)) ([40406a0](https://github.com/googleapis/google-auth-library-nodejs/commit/40406a0512cde1d75d2af7dd23aa7aa7de38d30b))
+* **deps:** Update dependency @googleapis/iam to v17 ([#1808](https://github.com/googleapis/google-auth-library-nodejs/issues/1808)) ([4d67f07](https://github.com/googleapis/google-auth-library-nodejs/commit/4d67f07380f690a99c8facf7266db7cb2d6c69b3))
+* **deps:** Update dependency @googleapis/iam to v18 ([#1809](https://github.com/googleapis/google-auth-library-nodejs/issues/1809)) ([b2b9676](https://github.com/googleapis/google-auth-library-nodejs/commit/b2b9676f933c012fb2cd1789ad80b927af0de07c))
+
 ## [9.9.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.8.0...v9.9.0) (2024-04-18)
 
 
