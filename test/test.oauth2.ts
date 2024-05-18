@@ -23,7 +23,12 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
 
-import {CodeChallengeMethod, Credentials, OAuth2Client, ClientAuthentication} from '../src';
+import {
+  CodeChallengeMethod,
+  Credentials,
+  OAuth2Client,
+  ClientAuthentication
+} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 
 nock.disableNetConnect();
