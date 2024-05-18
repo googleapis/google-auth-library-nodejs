@@ -554,7 +554,8 @@ export class OAuth2Client extends AuthClient {
       oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
       ...opts.endpoints,
     };
-    this.client_authentication = opts.client_authentication || ClientAuthentication.ClientSecretPost;
+    this.client_authentication =
+      opts.client_authentication || ClientAuthentication.ClientSecretPost;
 
     this.issuers = opts.issuers || [
       'accounts.google.com',
@@ -673,12 +674,12 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    let headers: any = {'Content-Type': 'application/x-www-form-urlencoded'};
+    const headers: any = {'Content-Type': 'application/x-www-form-urlencoded'};
     if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
       const basic_auth = 'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
       headers.Authorization = basic_auth;
     }
-    let values: any = {
+    const values: any = {
       code: options.code,
       client_id: options.client_id || this._clientId,
       redirect_uri: options.redirect_uri || this.redirectUri,

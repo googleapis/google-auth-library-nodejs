@@ -1427,12 +1427,12 @@ describe('oauth2', () => {
         clientSecret: CLIENT_SECRET,
         redirectUri: REDIRECT_URI,
         endpoints: {
-          oauth2TokenUrl: 'mytokenurl'
+          oauth2TokenUrl: 'mytokenurl',
         },
         client_authentication: ClientAuthentication.ClientSecretBasic,
-      }
+      };
       const oauth2client = new OAuth2Client(opts);
-      const res = oauth2client.getToken({
+      const _ = oauth2client.getToken({
         code: 'code here',
         client_id: CLIENT_ID,
       });
