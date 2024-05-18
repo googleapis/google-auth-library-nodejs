@@ -27,7 +27,7 @@ import {
   CodeChallengeMethod,
   Credentials,
   OAuth2Client,
-  ClientAuthentication
+  ClientAuthentication,
 } from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 
