@@ -676,8 +676,8 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2TokenUrl.toString();
     const headers: any = {'Content-Type': 'application/x-www-form-urlencoded'};
     if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
-      const basic_auth
-        = 'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
+      const basic_auth =
+        'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
       headers.Authorization = basic_auth;
     }
     const values: any = {
