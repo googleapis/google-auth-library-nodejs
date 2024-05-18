@@ -68,6 +68,12 @@ export enum CertificateFormat {
   JWK = 'JWK',
 }
 
+export enum ClientAuthentication {
+  ClientSecretPost,
+  ClientSecretBasic,
+  None,
+}
+
 export interface GetTokenOptions {
   code: string;
   codeVerifier?: string;
@@ -475,6 +481,11 @@ export interface OAuth2ClientOptions extends AuthClientOptions {
    * The allowed OAuth2 token issuers.
    */
   issuers?: string[];
+  /**
+   * The client_authentication choice from baisc/post/none
+   * https://docs.authlib.org/en/latest/client/oauth2.html#client-authentication
+   */
+  client_authentication?: ClientAuthentication;
 }
 
 // Re-exporting here for backwards compatibility
@@ -491,6 +502,7 @@ export class OAuth2Client extends AuthClient {
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
   readonly endpoints: Readonly<OAuth2ClientEndpoints>;
   readonly issuers: string[];
+  private client_authentication: ClientAuthentication;
 
   // TODO: refactor tests to make this private
   _clientId?: string;
@@ -542,6 +554,7 @@ export class OAuth2Client extends AuthClient {
       oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
       ...opts.endpoints,
     };
+    this.client_authentication = opts.client_authentication || ClientAuthentication.ClientSecretPost;
 
     this.issuers = opts.issuers || [
       'accounts.google.com',
@@ -660,20 +673,27 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const values = {
+    let headers: any = {'Content-Type': 'application/x-www-form-urlencoded'};
+    if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
+      const basic_auth = 'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
+      headers.Authorization = basic_auth;
+    }
+    let values: any = {
       code: options.code,
       client_id: options.client_id || this._clientId,
-      client_secret: this._clientSecret,
       redirect_uri: options.redirect_uri || this.redirectUri,
       grant_type: 'authorization_code',
       code_verifier: options.codeVerifier,
     };
+    if (this.client_authentication === ClientAuthentication.ClientSecretPost) {
+      values.client_secret = this._clientSecret;
+    }
     const res = await this.transporter.request<CredentialRequest>({
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
       data: querystring.stringify(values),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      headers: headers,
     });
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {

@@ -23,7 +23,7 @@ import * as path from 'path';
 import * as qs from 'querystring';
 import * as sinon from 'sinon';
 
-import {CodeChallengeMethod, Credentials, OAuth2Client} from '../src';
+import {CodeChallengeMethod, Credentials, OAuth2Client, ClientAuthentication} from '../src';
 import {LoginTicket} from '../src/auth/loginticket';
 
 nock.disableNetConnect();
@@ -1419,6 +1419,23 @@ describe('oauth2', () => {
       if (!res.res) return;
       const params = qs.parse(res.res.config.data);
       assert.strictEqual(params.client_id, 'overridden');
+    });
+
+    it('getToken should use basic header auth if provided in options', async () => {
+      const opts = {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        redirectUri: REDIRECT_URI,
+        endpoints: {
+          oauth2TokenUrl: 'mytokenurl'
+        },
+        client_authentication: ClientAuthentication.ClientSecretBasic,
+      }
+      const oauth2client = new OAuth2Client(opts);
+      const res = oauth2client.getToken({
+        code: 'code here',
+        client_id: CLIENT_ID,
+      });
     });
 
     it('should return expiry_date', done => {
