@@ -482,7 +482,7 @@ export interface OAuth2ClientOptions extends AuthClientOptions {
    */
   issuers?: string[];
   /**
-   * The client_authentication choice from baisc/post/none
+   * The client authentication type. Support values are basic, post, and none.
    * https://docs.authlib.org/en/latest/client/oauth2.html#client-authentication
    */
   client_authentication?: ClientAuthentication;
