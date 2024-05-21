@@ -67,10 +67,11 @@ export enum CertificateFormat {
   PEM = 'PEM',
   JWK = 'JWK',
 }
-  /**
-   * The client authentication type. Support values are basic, post, and none.
-   * https://datatracker.ietf.org/doc/html/rfc7591#section-2
-   */
+
+/**
+ * The client authentication type. Support values are basic, post, and none.
+ * https://datatracker.ietf.org/doc/html/rfc7591#section-2
+ */
 export enum ClientAuthentication {
   ClientSecretPost,
   ClientSecretBasic,
@@ -678,7 +679,9 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const headers: {[key: string]: string} = {'Content-Type': 'application/x-www-form-urlencoded'};
+    const headers: {[key: string]: string} = {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    };
     if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
       const basic_auth =
         'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
