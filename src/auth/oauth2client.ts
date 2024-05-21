@@ -67,7 +67,10 @@ export enum CertificateFormat {
   PEM = 'PEM',
   JWK = 'JWK',
 }
-
+  /**
+   * The client authentication type. Support values are basic, post, and none.
+   * https://datatracker.ietf.org/doc/html/rfc7591#section-2
+   */
 export enum ClientAuthentication {
   ClientSecretPost,
   ClientSecretBasic,
@@ -482,8 +485,9 @@ export interface OAuth2ClientOptions extends AuthClientOptions {
    */
   issuers?: string[];
   /**
-   * The client authentication type. Supported values are basic, post, and none. If no type is provided, will default to post.
-   * https://docs.authlib.org/en/latest/client/oauth2.html#client-authentication
+   * The client authentication type. Supported values are basic, post, and none.
+   * If no type is provided, will default to post.
+   * https://datatracker.ietf.org/doc/html/rfc7591#section-2
    */
   client_authentication?: ClientAuthentication;
 }
@@ -674,13 +678,13 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const headers: any = {'Content-Type': 'application/x-www-form-urlencoded'};
+    const headers: {[key: string]: string} = {'Content-Type': 'application/x-www-form-urlencoded'};
     if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
       const basic_auth =
         'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
       headers.Authorization = basic_auth;
     }
-    const values: any = {
+    const values: {[key: string]: string | undefined} = {
       code: options.code,
       client_id: options.client_id || this._clientId,
       redirect_uri: options.redirect_uri || this.redirectUri,

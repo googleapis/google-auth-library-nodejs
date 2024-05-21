@@ -1427,6 +1427,35 @@ describe('oauth2', () => {
     });
 
     it('getToken should use basic header auth if provided in options', async () => {
+      const authurl = 'https://auth.cloud.google/authorize';
+      const scope = nock(authurl, {
+        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+      })
+        .post('/token')
+        .reply(200, {
+          access_token: 'abc',
+          refresh_token: '123',
+          expires_in: 10,
+        });
+      const opts = {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        redirectUri: REDIRECT_URI,
+        endpoints: {
+          oauth2AuthBaseUrl: authurl,
+          oauth2TokenUrl: 'mytokenurl',
+          tokenInfoUrl: 'https://sts.googleapis.com/v1/introspect',
+        },
+        client_authentication: ClientAuthentication.ClientSecretBasic,
+      };
+      const oauth2client = new OAuth2Client(opts);
+      const _ = oauth2client.getToken({
+        code: 'code here',
+        client_id: CLIENT_ID,
+      });
+    });
+
+    it('getToken should not use basic header auth if provided none in options', async () => {
       const opts = {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET,
@@ -1434,7 +1463,23 @@ describe('oauth2', () => {
         endpoints: {
           oauth2TokenUrl: 'mytokenurl',
         },
-        client_authentication: ClientAuthentication.ClientSecretBasic,
+        client_authentication: ClientAuthentication.None,
+      };
+      const oauth2client = new OAuth2Client(opts);
+      const _ = oauth2client.getToken({
+        code: 'code here',
+        client_id: CLIENT_ID,
+      });
+    });
+
+    it('getToken should use auth secret post if not provided in options', async () => {
+      const opts = {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        redirectUri: REDIRECT_URI,
+        endpoints: {
+          oauth2TokenUrl: 'mytokenurl',
+        },
       };
       const oauth2client = new OAuth2Client(opts);
       const _ = oauth2client.getToken({
