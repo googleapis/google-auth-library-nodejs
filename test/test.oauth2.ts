@@ -1371,6 +1371,7 @@ describe('oauth2', () => {
         reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
       })
         .post('/token')
+        .matchHeader('authorization', value => value === undefined)
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1428,7 +1429,7 @@ describe('oauth2', () => {
 
     it('getToken should use basic header auth if provided in options', async () => {
       const authurl = 'https://sts.googleapis.com/v1/';
-      const basic_auth = 'basic ' + btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
+      const basic_auth = 'basic Q0xJRU5UX0lEOkNMSUVOVF9TRUNSRVQ=';
       const scope = nock(authurl)
         .post('/oauthtoken')
         .matchHeader('authorization', basic_auth)
