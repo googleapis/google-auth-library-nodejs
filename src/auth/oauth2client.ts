@@ -487,7 +487,7 @@ export interface OAuth2ClientOptions extends AuthClientOptions {
   issuers?: string[];
   /**
    * The client authentication type. Supported values are basic, post, and none.
-   * If no type is provided, will default to post.
+   * Defaults to post if not provided.
    * https://datatracker.ietf.org/doc/html/rfc7591#section-2
    */
   client_authentication?: ClientAuthentication;
