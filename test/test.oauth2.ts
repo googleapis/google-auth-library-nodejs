@@ -1429,8 +1429,9 @@ describe('oauth2', () => {
 
     it('getToken should use basic header auth if provided in options', async () => {
       const authurl = 'https://sts.googleapis.com/v1/';
-      // basic auth of base64 on `{CLIENT_ID}:{CLIENT_SECRET}`
-      const basic_auth = 'basic Q0xJRU5UX0lEOkNMSUVOVF9TRUNSRVQ=';
+      const basic_auth =
+        'basic ' +
+        Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
       const scope = nock(authurl)
         .post('/oauthtoken')
         .matchHeader('authorization', basic_auth)

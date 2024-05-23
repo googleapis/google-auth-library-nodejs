@@ -684,7 +684,10 @@ export class OAuth2Client extends AuthClient {
     };
     if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
       const basic_auth =
-        'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
+        'basic ' +
+        Buffer.from(`${this._clientId}:${this._clientSecret}`).toString(
+          'base64'
+        );
       headers['Authorization'] = basic_auth;
     }
     const values = {
