@@ -695,7 +695,7 @@ export class OAuth2Client extends AuthClient {
       code_verifier: options.codeVerifier,
     };
     if (this.client_authentication === ClientAuthentication.ClientSecretPost) {
-      values.client_secret = this._clientSecret;
+   Object.assign(values, {client_secret: this._clientSecret});
     }
     const res = await this.transporter.request<CredentialRequest>({
       ...OAuth2Client.RETRY_CONFIG,
