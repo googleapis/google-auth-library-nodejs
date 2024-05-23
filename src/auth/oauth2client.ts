@@ -679,7 +679,7 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const headers: {[key: string]: string} = {
+    const headers: Headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
     if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
