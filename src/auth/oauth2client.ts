@@ -69,7 +69,7 @@ export enum CertificateFormat {
 }
 
 /**
- * The client authentication type. Support values are basic, post, and none.
+ * The client authentication type. Supported values are basic, post, and none.
  * https://datatracker.ietf.org/doc/html/rfc7591#section-2
  */
 export enum ClientAuthentication {
