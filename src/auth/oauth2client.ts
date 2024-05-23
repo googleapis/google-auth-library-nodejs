@@ -687,7 +687,7 @@ export class OAuth2Client extends AuthClient {
         'basic ' + btoa(`${this._clientId}:${this._clientSecret}`);
       headers['Authorization'] = basic_auth;
     }
-    const values: {[key: string]: string | undefined} = {
+    const values = {
       code: options.code,
       client_id: options.client_id || this._clientId,
       redirect_uri: options.redirect_uri || this.redirectUri,
