@@ -507,7 +507,7 @@ export class OAuth2Client extends AuthClient {
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
   readonly endpoints: Readonly<OAuth2ClientEndpoints>;
   readonly issuers: string[];
-  private client_authentication: ClientAuthentication;
+  readonly client_authentication: ClientAuthentication;
 
   // TODO: refactor tests to make this private
   _clientId?: string;
@@ -695,7 +695,7 @@ export class OAuth2Client extends AuthClient {
       code_verifier: options.codeVerifier,
     };
     if (this.client_authentication === ClientAuthentication.ClientSecretPost) {
-   Object.assign(values, {client_secret: this._clientSecret});
+      Object.assign(values, {client_secret: this._clientSecret});
     }
     const res = await this.transporter.request<CredentialRequest>({
       ...OAuth2Client.RETRY_CONFIG,
