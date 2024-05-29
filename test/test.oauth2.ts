@@ -1463,7 +1463,10 @@ describe('oauth2', () => {
 
     it('getToken should not use basic header auth if provided none in options and fail', async () => {
       const authurl = 'https://some.example.auth/';
-      const scope = nock(authurl).post('/token').reply(401);
+      const scope = nock(authurl)
+        .post('/token')
+        .matchHeader('Authorization', val => val === undefined)
+        .reply(401);
       const opts = {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET,
