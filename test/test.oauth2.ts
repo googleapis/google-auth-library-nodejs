@@ -1430,7 +1430,7 @@ describe('oauth2', () => {
     it('getToken should use basic header auth if provided in options', async () => {
       const authurl = 'https://sts.googleapis.com/v1/';
       const basic_auth =
-        'basic ' +
+        'Basic ' +
         Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
       const scope = nock(authurl)
         .post('/oauthtoken')
@@ -1461,18 +1461,33 @@ describe('oauth2', () => {
       assert(res.res.data.access_token === 'abc');
     });
 
-    it('getToken should not use basic header auth if provided none in options', async () => {
+    it('getToken should not use basic header auth if provided none in options and fail', async () => {
+      const authurl = 'https://some.example.auth/';
+      const scope = nock(authurl).post('/token').reply(401);
       const opts = {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET,
         redirectUri: REDIRECT_URI,
         endpoints: {
-          oauth2TokenUrl: 'mytokenurl',
+          oauth2AuthBaseUrl: 'https://auth.cloud.google/authorize',
+          oauth2TokenUrl: 'https://some.example.auth/token',
         },
         client_authentication: ClientAuthentication.None,
       };
       const oauth2client = new OAuth2Client(opts);
       assert(oauth2client.client_authentication === ClientAuthentication.None);
+
+      try {
+        await oauth2client.getToken({
+          code: 'code here',
+          client_id: CLIENT_ID,
+        });
+      } catch (err) {
+        scope.done();
+        const e = err as GaxiosError;
+        assert(e);
+        assert.strictEqual(e.response!.status, 401);
+      }
     });
 
     it('getToken should use auth secret post if not provided in options', async () => {

@@ -682,14 +682,6 @@ export class OAuth2Client extends AuthClient {
     const headers: Headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
-    if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
-      const basic_auth =
-        'Basic ' +
-        Buffer.from(`${this._clientId}:${this._clientSecret}`).toString(
-          'base64'
-        );
-      headers['Authorization'] = basic_auth;
-    }
     const values = {
       code: options.code,
       client_id: options.client_id || this._clientId,
@@ -697,7 +689,16 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'authorization_code',
       code_verifier: options.codeVerifier,
     };
-    if (this.client_authentication === ClientAuthentication.ClientSecretPost) {
+    if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
+      const basic_auth =
+        'Basic ' +
+        Buffer.from(`${this._clientId}:${this._clientSecret}`).toString(
+          'base64'
+        );
+      headers['Authorization'] = basic_auth;
+    } else if (
+      this.client_authentication === ClientAuthentication.ClientSecretPost
+    ) {
       Object.assign(values, {client_secret: this._clientSecret});
     }
     const res = await this.transporter.request<CredentialRequest>({
