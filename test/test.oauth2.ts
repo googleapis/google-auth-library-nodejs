@@ -1434,7 +1434,7 @@ describe('oauth2', () => {
         Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
       const scope = nock(authurl)
         .post('/oauthtoken')
-        .matchHeader('authorization', basic_auth)
+        .matchHeader('Authorization', basic_auth)
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1449,7 +1449,7 @@ describe('oauth2', () => {
           oauth2TokenUrl: 'https://sts.googleapis.com/v1/oauthtoken',
           tokenInfoUrl: 'https://sts.googleapis.com/v1/introspect',
         },
-        client_authentication: ClientAuthentication.ClientSecretBasic,
+        clientAuthentication: ClientAuthentication.ClientSecretBasic,
       };
       const oauth2client = new OAuth2Client(opts);
       const res = await oauth2client.getToken({
@@ -1475,10 +1475,13 @@ describe('oauth2', () => {
           oauth2AuthBaseUrl: 'https://auth.cloud.google/authorize',
           oauth2TokenUrl: 'https://some.example.auth/token',
         },
-        client_authentication: ClientAuthentication.None,
+        clientAuthentication: ClientAuthentication.None,
       };
       const oauth2client = new OAuth2Client(opts);
-      assert(oauth2client.client_authentication === ClientAuthentication.None);
+      assert.equal(
+        oauth2client.clientAuthentication,
+        ClientAuthentication.None
+      );
 
       try {
         await oauth2client.getToken({
@@ -1504,7 +1507,10 @@ describe('oauth2', () => {
         },
       };
       const oauth2client = new OAuth2Client(opts);
-      assert.equal(oauth2client.client_authentication, ClientAuthentication.ClientSecretPost);
+      assert.equal(
+        oauth2client.clientAuthentication,
+        ClientAuthentication.ClientSecretPost
+      );
     });
 
     it('should return expiry_date', done => {

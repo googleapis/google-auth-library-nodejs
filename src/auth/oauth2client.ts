@@ -82,8 +82,8 @@ export interface GetTokenOptions {
   code: string;
   codeVerifier?: string;
   /**
-  * @alias GetTokenOptions['codeVerifier']
-  **/
+   * @alias GetTokenOptions['codeVerifier']
+   **/
   code_verifier?: string;
   grant_type?: 'authorization_code';
   /**
@@ -495,7 +495,7 @@ export interface OAuth2ClientOptions extends AuthClientOptions {
    * Defaults to post if not provided.
    * https://datatracker.ietf.org/doc/html/rfc7591#section-2
    */
-  client_authentication?: ClientAuthentication;
+  clientAuthentication?: ClientAuthentication;
 }
 
 // Re-exporting here for backwards compatibility
@@ -564,8 +564,8 @@ export class OAuth2Client extends AuthClient {
       oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
       ...opts.endpoints,
     };
-    this.client_authentication =
-      opts.client_authentication || ClientAuthentication.ClientSecretPost;
+    this.clientAuthentication =
+      opts.clientAuthentication || ClientAuthentication.ClientSecretPost;
 
     this.issuers = opts.issuers || [
       'accounts.google.com',
@@ -694,17 +694,16 @@ export class OAuth2Client extends AuthClient {
       grant_type: options.grant_type || 'authorization_code',
       code_verifier: options.codeVerifier || options.code_verifier,
     };
-    if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
+    if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
       const basic_auth =
         'Basic ' +
         Buffer.from(`${this._clientId}:${this._clientSecret}`).toString(
           'base64'
         );
       headers['Authorization'] = basic_auth;
-    } else if (
-      this.client_authentication === ClientAuthentication.ClientSecretPost
-    ) {
-      values.client_secret = this._clientSecret;
+    }
+    if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
+      Object.assign(values, {client_secret: this._clientSecret});
     }
     const res = await this.transporter.request<CredentialRequest>({
       ...OAuth2Client.RETRY_CONFIG,
