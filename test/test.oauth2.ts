@@ -1485,11 +1485,12 @@ describe('oauth2', () => {
           code: 'code here',
           client_id: CLIENT_ID,
         });
+        throw new Error('Expected an error');
       } catch (err) {
+        assert(err instanceof GaxiosError);
+        assert.equal(err.response?.status, 401);
+      } finally {
         scope.done();
-        const e = err as GaxiosError;
-        assert(e);
-        assert.strictEqual(e.response!.status, 401);
       }
     });
 
