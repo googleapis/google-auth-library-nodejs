@@ -706,7 +706,7 @@ export class OAuth2Client extends AuthClient {
       method: 'POST',
       url,
       data: querystring.stringify(values),
-      headers: headers,
+      headers,
     });
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
