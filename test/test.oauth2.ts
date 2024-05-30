@@ -1458,7 +1458,7 @@ describe('oauth2', () => {
       });
       scope.done();
       assert(res.res);
-      assert(res.res.data.access_token === 'abc');
+      assert.equal(res.res.data.access_token, 'abc');
     });
 
     it('getToken should not use basic header auth if provided none in options and fail', async () => {
