@@ -699,7 +699,7 @@ export class OAuth2Client extends AuthClient {
     } else if (
       this.client_authentication === ClientAuthentication.ClientSecretPost
     ) {
-      Object.assign(values, {client_secret: this._clientSecret});
+      values.client_secret = this._clientSecret;
     }
     const res = await this.transporter.request<CredentialRequest>({
       ...OAuth2Client.RETRY_CONFIG,
