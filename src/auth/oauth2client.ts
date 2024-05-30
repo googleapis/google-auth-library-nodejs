@@ -507,7 +507,7 @@ export class OAuth2Client extends AuthClient {
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
   readonly endpoints: Readonly<OAuth2ClientEndpoints>;
   readonly issuers: string[];
-  readonly client_authentication: ClientAuthentication;
+  readonly clientAuthentication: ClientAuthentication;
 
   // TODO: refactor tests to make this private
   _clientId?: string;
