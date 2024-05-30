@@ -82,6 +82,11 @@ export interface GetTokenOptions {
   code: string;
   codeVerifier?: string;
   /**
+  * @alias GetTokenOptions['codeVerifier']
+  **/
+  code_verifier?: string;
+  grant_type?: 'authorization_code';
+  /**
    * The client ID for your application. The value passed into the constructor
    * will be used if not provided. Must match any client_id option passed to
    * a corresponding call to generateAuthUrl.
