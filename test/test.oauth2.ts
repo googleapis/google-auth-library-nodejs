@@ -1504,10 +1504,7 @@ describe('oauth2', () => {
         },
       };
       const oauth2client = new OAuth2Client(opts);
-      assert(
-        oauth2client.client_authentication ===
-          ClientAuthentication.ClientSecretPost
-      );
+      assert.equal(oauth2client.client_authentication, ClientAuthentication.ClientSecretPost);
     });
 
     it('should return expiry_date', done => {
