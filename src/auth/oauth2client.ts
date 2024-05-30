@@ -691,8 +691,8 @@ export class OAuth2Client extends AuthClient {
       code: options.code,
       client_id: options.client_id || this._clientId,
       redirect_uri: options.redirect_uri || this.redirectUri,
-      grant_type: 'authorization_code',
-      code_verifier: options.codeVerifier,
+      grant_type: options.grant_type || 'authorization_code',
+      code_verifier: options.codeVerifier || options.code_verifier,
     };
     if (this.client_authentication === ClientAuthentication.ClientSecretBasic) {
       const basic_auth =
