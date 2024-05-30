@@ -73,9 +73,9 @@ export enum CertificateFormat {
  * https://datatracker.ietf.org/doc/html/rfc7591#section-2
  */
 export enum ClientAuthentication {
-  ClientSecretPost,
-  ClientSecretBasic,
-  None,
+  ClientSecretPost = 'ClientSecretPost',
+  ClientSecretBasic = 'ClientSecretBasic',
+  None = 'None',
 }
 
 export interface GetTokenOptions {
