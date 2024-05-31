@@ -688,14 +688,13 @@ export class OAuth2Client extends AuthClient {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
     const values: Omit<GetTokenOptions, 'codeVerifier'> & {
-      client_secret: string | undefined;
+      client_secret?: string;
     } = {
       code: options.code,
       client_id: options.client_id || this._clientId,
       redirect_uri: options.redirect_uri || this.redirectUri,
       grant_type: options.grant_type || 'authorization_code',
       code_verifier: options.codeVerifier || options.code_verifier,
-      client_secret: undefined,
     };
     if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
       const basic_auth =
