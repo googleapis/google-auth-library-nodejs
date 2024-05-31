@@ -82,11 +82,6 @@ export interface GetTokenOptions {
   code: string;
   codeVerifier?: string;
   /**
-   * @alias GetTokenOptions['codeVerifier']
-   **/
-  code_verifier?: string;
-  grant_type?: 'authorization_code';
-  /**
    * The client ID for your application. The value passed into the constructor
    * will be used if not provided. Must match any client_id option passed to
    * a corresponding call to generateAuthUrl.
@@ -99,6 +94,19 @@ export interface GetTokenOptions {
    * a corresponding call to generateAuthUrl.
    */
   redirect_uri?: string;
+}
+
+/**
+ * An interface for preparing {@link GetTokenOptions} as a querystring.
+ */
+interface GetTokenQuery {
+  client_id?: string;
+  client_secret?: string;
+  code_verifier?: string;
+  code: string;
+  grant_type: 'authorization_code';
+  redirect_uri?: string;
+  [key: string]: string | undefined;
 }
 
 export interface TokenInfo {
@@ -687,22 +695,17 @@ export class OAuth2Client extends AuthClient {
     const headers: Headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
-    const values: Omit<GetTokenOptions, 'codeVerifier'> & {
-      client_secret?: string;
-    } = {
-      code: options.code,
+    const values: GetTokenQuery = {
       client_id: options.client_id || this._clientId,
+      code_verifier: options.codeVerifier,
+      code: options.code,
+      grant_type: 'authorization_code',
       redirect_uri: options.redirect_uri || this.redirectUri,
-      grant_type: options.grant_type || 'authorization_code',
-      code_verifier: options.codeVerifier || options.code_verifier,
     };
     if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
-      const basic_auth =
-        'Basic ' +
-        Buffer.from(`${this._clientId}:${this._clientSecret}`).toString(
-          'base64'
-        );
-      headers['Authorization'] = basic_auth;
+      const basic = Buffer.from(`${this._clientId}:${this._clientSecret}`);
+
+      headers['Authorization'] = `Basic ${basic.toString('base64')}`;
     }
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
