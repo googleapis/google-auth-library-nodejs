@@ -687,7 +687,9 @@ export class OAuth2Client extends AuthClient {
     const headers: Headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
-    const values: Omit<GetTokenOptions, 'codeVerifier'> & {client_secret : string | undefined} = {
+    const values: Omit<GetTokenOptions, 'codeVerifier'> & {
+      client_secret: string | undefined;
+    } = {
       code: options.code,
       client_id: options.client_id || this._clientId,
       redirect_uri: options.redirect_uri || this.redirectUri,
