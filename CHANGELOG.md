@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.11.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.10.0...v9.11.0) (2024-06-01)
+
+
+### Features
+
+* Adding support of client authentication method. ([#1814](https://github.com/googleapis/google-auth-library-nodejs/issues/1814)) ([4a14e8c](https://github.com/googleapis/google-auth-library-nodejs/commit/4a14e8c3bdcfa9d8531a231b00b946728530ce12))
+
 ## [9.10.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.9.0...v9.10.0) (2024-05-10)
 
 
