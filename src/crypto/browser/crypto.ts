@@ -39,7 +39,6 @@ export class BrowserCrypto implements Crypto {
 
     // To calculate SHA256 digest using SubtleCrypto, we first
     // need to convert an input string to an ArrayBuffer:
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
     const inputBuffer = new TextEncoder().encode(str);
 
     // Result is ArrayBuffer as well.
@@ -74,7 +73,7 @@ export class BrowserCrypto implements Crypto {
       name: 'RSASSA-PKCS1-v1_5',
       hash: {name: 'SHA-256'},
     };
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+
     const dataArray = new TextEncoder().encode(data);
     const signatureArray = base64js.toByteArray(
       BrowserCrypto.padBase64(signature)
@@ -103,7 +102,7 @@ export class BrowserCrypto implements Crypto {
       name: 'RSASSA-PKCS1-v1_5',
       hash: {name: 'SHA-256'},
     };
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+
     const dataArray = new TextEncoder().encode(data);
     const cryptoKey = await window.crypto.subtle.importKey(
       'jwk',
@@ -121,13 +120,11 @@ export class BrowserCrypto implements Crypto {
 
   decodeBase64StringUtf8(base64: string): string {
     const uint8array = base64js.toByteArray(BrowserCrypto.padBase64(base64));
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
     const result = new TextDecoder().decode(uint8array);
     return result;
   }
 
   encodeBase64StringUtf8(text: string): string {
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
     const uint8array = new TextEncoder().encode(text);
     const result = base64js.fromByteArray(uint8array);
     return result;
@@ -145,7 +142,6 @@ export class BrowserCrypto implements Crypto {
 
     // To calculate SHA256 digest using SubtleCrypto, we first
     // need to convert an input string to an ArrayBuffer:
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
     const inputBuffer = new TextEncoder().encode(str);
 
     // Result is ArrayBuffer as well.
@@ -175,7 +171,6 @@ export class BrowserCrypto implements Crypto {
         ? key
         : String.fromCharCode(...new Uint16Array(key));
 
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
     const enc = new TextEncoder();
     const cryptoKey = await window.crypto.subtle.importKey(
       'raw',
