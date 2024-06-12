@@ -20,7 +20,11 @@ const open = require('open');
 const destroyer = require('server-destroy');
 
 // Download your OAuth2 configuration from the Google Developer Console.
-const keys = require('./oauth2.keys.json');
+/**
+ * @example
+ * require('./oauth2.keys.json');
+ */
+const keys = {};
 
 /**
  * Start by acquiring a pre-authenticated oAuth2 client.
