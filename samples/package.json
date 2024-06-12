@@ -15,7 +15,7 @@
   "dependencies": {
     "@google-cloud/storage": "^7.0.0",
     "@googleapis/iam": "^18.0.0",
-    "google-auth-library": "^9.10.0",
+    "google-auth-library": "^9.11.0",
     "node-fetch": "^2.3.0",
     "open": "^9.0.0",
     "server-destroy": "^1.0.1"
