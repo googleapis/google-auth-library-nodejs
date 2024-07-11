@@ -395,7 +395,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async getApplicationDefaultAsync(
-    options: AuthClientOptions = {}
+    options: AuthClientOptions | OAuth2ClientOptions = {}
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, return it.
     // This will also preserve one's configured quota project, in case they
@@ -449,6 +449,13 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         new Compute(options),
         quotaProjectIdOverride
       );
+    }
+
+    // No ADC, but perhaps there's an API key available...
+    if ('apiKey' in options && options.apiKey) {
+      const client = await this.fromAPIKey(options.apiKey, options);
+      client.scopes = this.scopes;
+      return await this.prepareAndCacheADC(client, quotaProjectIdOverride);
     }
 
     throw new Error(
