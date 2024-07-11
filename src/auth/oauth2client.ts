@@ -487,6 +487,10 @@ export interface OAuth2ClientEndpoints {
 }
 
 export interface OAuth2ClientOptions extends AuthClientOptions {
+  /**
+   * An API key to use, optional.
+   */
+  apiKey?: string;
   clientId?: string;
   clientSecret?: string;
   redirectUri?: string;
@@ -559,6 +563,7 @@ export class OAuth2Client extends AuthClient {
     this._clientId = opts.clientId;
     this._clientSecret = opts.clientSecret;
     this.redirectUri = opts.redirectUri;
+    this.apiKey = opts.apiKey;
 
     this.endpoints = {
       tokenInfoUrl: 'https://oauth2.googleapis.com/tokeninfo',

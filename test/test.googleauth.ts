@@ -1423,12 +1423,14 @@ describe('googleauth', () => {
     });
 
     it('should pass options to the JWT constructor via constructor', async () => {
+      const apiKey = 'my-api-key';
       const subject = 'science!';
       const auth = new GoogleAuth({
         keyFilename: './test/fixtures/private.json',
-        clientOptions: {subject},
+        clientOptions: {apiKey, subject},
       });
       const client = (await auth.getClient()) as JWT;
+      assert.strictEqual(client.apiKey, apiKey);
       assert.strictEqual(client.subject, subject);
     });
 
