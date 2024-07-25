@@ -377,12 +377,15 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   /**
    * Creates a JWT credentials instance using an API Key for authentication.
    * @param apiKey The API Key in string form.
+   * @return The current instance.
    */
   fromAPIKey(apiKey: string): void {
     if (typeof apiKey !== 'string') {
       throw new Error('Must provide an API Key string.');
     }
     this.apiKey = apiKey;
+
+    return this;
   }
 
   /**
