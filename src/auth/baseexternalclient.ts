@@ -186,7 +186,12 @@ export interface BaseExternalAccountClientOptions
  */
 export interface IamGenerateAccessTokenResponse {
   accessToken: string;
-  // ISO format used for expiration time: 2014-10-02T15:01:23.045123456Z
+  /**
+   * ISO format used for expiration time.
+   *
+   * @example
+   * '2014-10-02T15:01:23.045123456Z'
+   */
   expireTime: string;
 }
 
