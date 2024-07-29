@@ -253,6 +253,11 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   protected cloudResourceManagerURL: URL | string;
   protected supplierContext: ExternalAccountSupplierContext;
   /**
+   * A pending access token request. Used for concurrent calls.
+   */
+  #pendingAccessToken: Promise<CredentialsWithResponse> | null = null;
+
+  /**
    * Instantiate a BaseExternalAccountClient instance using the provided JSON
    * object loaded from an external account credentials file.
    * @param options The external account options object typically loaded
@@ -545,6 +550,19 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * @return A promise that resolves with the fresh GCP access tokens.
    */
   protected async refreshAccessTokenAsync(): Promise<CredentialsWithResponse> {
+    // Use an existing access token request, or cache a new one
+    this.#pendingAccessToken =
+      this.#pendingAccessToken || this.#internalRefreshAccessTokenAsync();
+
+    try {
+      return await this.#pendingAccessToken;
+    } finally {
+      // clear pending access token for future requests
+      this.#pendingAccessToken = null;
+    }
+  }
+
+  async #internalRefreshAccessTokenAsync(): Promise<CredentialsWithResponse> {
     // Retrieve the external credential.
     const subjectToken = await this.retrieveSubjectToken();
     // Construct the STS credentials options.
