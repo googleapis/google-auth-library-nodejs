@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.13.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.12.0...v9.13.0) (2024-07-29)
+
+
+### Features
+
+* Group Concurrent Access Token Requests for Base External Clients ([#1840](https://github.com/googleapis/google-auth-library-nodejs/issues/1840)) ([0e08fc5](https://github.com/googleapis/google-auth-library-nodejs/commit/0e08fc58eb61bba431ab4f217f7f7ad3a7dce9df))
+
 ## [9.12.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.11.0...v9.12.0) (2024-07-26)
 
 
