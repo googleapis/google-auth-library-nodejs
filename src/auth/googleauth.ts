@@ -25,7 +25,7 @@ import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
-import {IdTokenClient} from './idtokenclient';
+import {IdTokenClient, IdTokenProvider} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions} from './oauth2client';
@@ -1037,7 +1037,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         'Cannot fetch ID token in this environment, use GCE or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a service account credentials JSON file.'
       );
     }
-    return new IdTokenClient({targetAudience, idTokenProvider: client});
+
+    return new IdTokenClient({
+      targetAudience,
+      idTokenProvider: client as IdTokenProvider,
+    });
   }
 
   /**
