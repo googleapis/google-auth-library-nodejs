@@ -56,6 +56,7 @@ import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
 import {stringify} from 'querystring';
+import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
 
 nock.disableNetConnect();
 
@@ -301,6 +302,30 @@ describe('googleauth', () => {
       assert.equal(auth.cachedCredential, authClient);
       assert.equal(await auth.getClient(), authClient);
       assert.deepEqual(await auth.getRequestHeaders(''), customRequestHeaders);
+    });
+
+    it('should accept and use an `apiKey`', async () => {
+      const apiKey = 'myKey';
+      const auth = new GoogleAuth({apiKey});
+      const client = await auth.getClient();
+
+      assert.equal(client.apiKey, apiKey);
+      assert.deepEqual(await auth.getRequestHeaders(), {
+        'X-Goog-Api-Key': apiKey,
+      });
+    });
+
+    it('should not accept both an `apiKey` and `credentials`', async () => {
+      const apiKey = 'myKey';
+      assert.throws(
+        () =>
+          new GoogleAuth({
+            credentials: {},
+            // API key should supported via `clientOptions`
+            clientOptions: {apiKey},
+          }),
+        new RangeError(GoogleAuthExceptionMessages.API_KEY_WITH_CREDENTIALS)
+      );
     });
 
     it('fromJSON should support the instantiated named export', () => {
