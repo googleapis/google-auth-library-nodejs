@@ -231,7 +231,7 @@ body: |-
 
   Note, classes that extend from this can utilize this parameter as well, such as `JWT` and `UserRefreshClient`.
 
-  Additionally, an API key it can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
+  Additionally, an API key can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
   ```js
   const auth = new GoogleAuth({
     clientOptions: {
@@ -239,6 +239,8 @@ body: |-
     }
   })
   ```
+
+  Availability varies by API.
 
   ## JSON Web Tokens
   The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.

@@ -1,5 +1,6 @@
-[//]: # "This README.md file is auto-generated, all changes to this file will be lost."
-[//]: # "To regenerate it, use `python -m synthtool`."
+[//]: # 'This README.md file is auto-generated, all changes to this file will be lost.'
+[//]: # 'To regenerate it, use `python -m synthtool`.'
+
 <img src="https://avatars2.githubusercontent.com/u/2810941?v=3&s=96" alt="Google Cloud Platform logo" title="Google Cloud Platform" align="right" height="96" width="96"/>
 
 # [Google Auth Library: Node.js Client](https://github.com/googleapis/google-auth-library-nodejs)
@@ -7,18 +8,14 @@
 [![release level](https://img.shields.io/badge/release%20level-stable-brightgreen.svg?style=flat)](https://cloud.google.com/terms/launch-stages)
 [![npm version](https://img.shields.io/npm/v/google-auth-library.svg)](https://www.npmjs.org/package/google-auth-library)
 
-
-
-
 This is Google's officially supported [node.js](http://nodejs.org/) client library for using OAuth 2.0 authorization and authentication with Google APIs.
-
 
 A comprehensive list of changes in each version may be found in
 [the CHANGELOG](https://github.com/googleapis/google-auth-library-nodejs/blob/main/CHANGELOG.md).
 
-* [Google Auth Library Node.js Client API Reference][client-docs]
-* [Google Auth Library Documentation][product-docs]
-* [github.com/googleapis/google-auth-library-nodejs](https://github.com/googleapis/google-auth-library-nodejs)
+- [Google Auth Library Node.js Client API Reference][client-docs]
+- [Google Auth Library Documentation][product-docs]
+- [github.com/googleapis/google-auth-library-nodejs](https://github.com/googleapis/google-auth-library-nodejs)
 
 Read more about the client libraries for Cloud APIs, including the older
 Google APIs Client Libraries, in [Client Libraries Explained][explained].
@@ -27,15 +24,14 @@ Google APIs Client Libraries, in [Client Libraries Explained][explained].
 
 **Table of contents:**
 
+- [Quickstart](#quickstart)
 
-* [Quickstart](#quickstart)
+  - [Installing the client library](#installing-the-client-library)
 
-  * [Installing the client library](#installing-the-client-library)
-
-* [Samples](#samples)
-* [Versioning](#versioning)
-* [Contributing](#contributing)
-* [License](#license)
+- [Samples](#samples)
+- [Versioning](#versioning)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Quickstart
 
@@ -46,7 +42,9 @@ npm install google-auth-library
 ```
 
 ## Ways to authenticate
+
 This library provides a variety of ways to authenticate to your Google services.
+
 - [Application Default Credentials](#choosing-the-correct-credential-type-automatically) - Use Application Default Credentials when you use a single identity for all users in your application. Especially useful for applications running on Google Cloud. Application Default Credentials also support workload identity federation to access Google Cloud resources from non-Google Cloud platforms.
 - [OAuth 2](#oauth2) - Use OAuth2 when you need to perform actions on behalf of the end user.
 - [JSON Web Tokens](#json-web-tokens) - Use JWT when you are using a single identity for all users. Especially useful for server->server or server->API communication.
@@ -57,6 +55,7 @@ This library provides a variety of ways to authenticate to your Google services.
 - [Downscoped Client](#downscoped-client) - Use Downscoped Client with Credential Access Boundary to generate a short-lived credential with downscoped, restricted IAM permissions that can use for Cloud Storage.
 
 ## Application Default Credentials
+
 This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
 
 They are best suited for cases when the call needs to have the same identity and authorization level for the application independent of the user. This is the recommended approach to authorize calls to Cloud APIs, particularly when you're building an application that uses Google Cloud Platform.
@@ -67,7 +66,7 @@ Application Default Credentials also support workload identity federation to acc
 
 To use Application Default Credentials, You first need to download a set of JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in the [Google Developers Console](https://console.cloud.google.com/) and select **Service account** from the **Add credentials** dropdown.
 
-> This file is your *only copy* of these credentials. It should never be
+> This file is your _only copy_ of these credentials. It should never be
 > committed with your source code, and should be stored securely.
 
 Once downloaded, store the path to this file in the `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
@@ -75,7 +74,6 @@ Once downloaded, store the path to this file in the `GOOGLE_APPLICATION_CREDENTI
 #### Enable the API you want to use
 
 Before making your API call, you must be sure the API you're calling has been enabled. Go to **APIs & Auth** > **APIs** in the [Google Developers Console](https://console.cloud.google.com/) and enable the APIs you'd like to call. For the example below, you must enable the `DNS API`.
-
 
 #### Choosing the correct credential type automatically
 
@@ -89,17 +87,17 @@ The code below shows how to retrieve a default credential type, depending upon t
 const {GoogleAuth} = require('google-auth-library');
 
 /**
-* Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
-* this library will automatically choose the right client based on the environment.
-*/
+ * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
+ * this library will automatically choose the right client based on the environment.
+ */
 async function main() {
   const auth = new GoogleAuth({
-    scopes: 'https://www.googleapis.com/auth/cloud-platform'
+    scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const client = await auth.getClient();
   const projectId = await auth.getProjectId();
   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
-  const res = await client.request({ url });
+  const res = await client.request({url});
   console.log(res.data);
 }
 
@@ -118,7 +116,7 @@ For more information about OAuth2 and how it works, [see here](https://developer
 
 Let's take a look at a complete example.
 
-``` js
+```js
 const {OAuth2Client} = require('google-auth-library');
 const http = require('http');
 const url = require('url');
@@ -129,8 +127,8 @@ const destroyer = require('server-destroy');
 const keys = require('./oauth2.keys.json');
 
 /**
-* Start by acquiring a pre-authenticated oAuth2 client.
-*/
+ * Start by acquiring a pre-authenticated oAuth2 client.
+ */
 async function main() {
   const oAuth2Client = await getAuthenticatedClient();
   // Make a simple request to the People API using our pre-authenticated client. The `request()` method
@@ -148,9 +146,9 @@ async function main() {
 }
 
 /**
-* Create a new OAuth2Client, and go through the OAuth2 content
-* workflow.  Return the full client to the callback.
-*/
+ * Create a new OAuth2Client, and go through the OAuth2 content
+ * workflow.  Return the full client to the callback.
+ */
 function getAuthenticatedClient() {
   return new Promise((resolve, reject) => {
     // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
@@ -205,12 +203,12 @@ main().catch(console.error);
 
 #### Handling token events
 
-This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization](https://github.com/googleapis/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
+This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present. The `refresh_token` is only returned on the [first authorization](https://github.com/googleapis/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
 
 ```js
 const client = await auth.getClient();
 
-client.on('tokens', (tokens) => {
+client.on('tokens', tokens => {
   if (tokens.refresh_token) {
     // store the refresh_token in my database!
     console.log(tokens.refresh_token);
@@ -219,21 +217,23 @@ client.on('tokens', (tokens) => {
 });
 
 const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
-const res = await client.request({ url });
+const res = await client.request({url});
 // The `tokens` event would now be raised if this was the first request
 ```
 
 #### Retrieve access token
+
 With the code returned, you can ask for an access token as shown below:
 
-``` js
+```js
 const tokens = await oauth2Client.getToken(code);
 // Now tokens contains an access_token and an optional refresh_token. Save them.
 oauth2Client.setCredentials(tokens);
 ```
 
 #### Obtaining a new Refresh Token
-If you need to obtain a new `refresh_token`, ensure the call to `generateAuthUrl` sets the `access_type` to `offline`.  The refresh token will only be returned for the first authorization by the user.  To force consent, set the `prompt` property to `consent`:
+
+If you need to obtain a new `refresh_token`, ensure the call to `generateAuthUrl` sets the `access_type` to `offline`. The refresh token will only be returned for the first authorization by the user. To force consent, set the `prompt` property to `consent`:
 
 ```js
 // Generate the url that will be used for the consent dialog.
@@ -246,13 +246,14 @@ const authorizeUrl = oAuth2Client.generateAuthUrl({
   // consents to providing access.  For illustration purposes,
   // setting the prompt to 'consent' will force this consent
   // every time, forcing a refresh_token to be returned.
-  prompt: 'consent'
+  prompt: 'consent',
 });
 ```
 
 #### Checking `access_token` information
+
 After obtaining and storing an `access_token`, at a later time you may want to go check the expiration date,
-original scopes, or audience for the token.  To get the token info, you can use the `getTokenInfo` method:
+original scopes, or audience for the token. To get the token info, you can use the `getTokenInfo` method:
 
 ```js
 // after acquiring an oAuth2Client...
@@ -267,27 +268,30 @@ This method will throw if the token is invalid.
 #### Using an API Key
 
 An API key can be provided to the constructor:
+
 ```js
 const client = new OAuth2Client({
-  apiKey: 'my-api-key'
+  apiKey: 'my-api-key',
 });
 ```
 
 Note, classes that extend from this can utilize this parameter as well, such as `JWT` and `UserRefreshClient`.
 
-Additionally, an API key it can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
+Additionally, an API key can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
+
 ```js
 const auth = new GoogleAuth({
   clientOptions: {
-    apiKey: 'my-api-key'
-  }
-})
+    apiKey: 'my-api-key',
+  },
+});
 ```
 
 ## JSON Web Tokens
+
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
-``` js
+```js
 const {JWT} = require('google-auth-library');
 const keys = require('./jwt.keys.json');
 
@@ -308,7 +312,8 @@ main().catch(console.error);
 The parameters for the JWT auth client including how to use it with a `.pem` file are explained in [samples/jwt.js](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/jwt.js).
 
 #### Loading credentials from environment variables
-Instead of loading credentials from a key file, you can also provide them using an environment variable and the `GoogleAuth.fromJSON()` method.  This is particularly convenient for systems that deploy directly from source control (Heroku, App Engine, etc).
+
+Instead of loading credentials from a key file, you can also provide them using an environment variable and the `GoogleAuth.fromJSON()` method. This is particularly convenient for systems that deploy directly from source control (Heroku, App Engine, etc).
 
 Start by exporting your credentials:
 
@@ -326,6 +331,7 @@ $ export CREDS='{
   "client_x509_cert_url": "your-cert-url"
 }'
 ```
+
 Now you can create a new client from the credentials:
 
 ```js
@@ -351,20 +357,22 @@ main().catch(console.error);
 ```
 
 #### Using a Proxy
+
 You can set the `HTTPS_PROXY` or `https_proxy` environment variables to proxy HTTPS requests. When `HTTPS_PROXY` or `https_proxy` are set, they will be used to proxy SSL requests that do not have an explicit proxy configuration option present.
 
 ## Compute
+
 If your application is running on Google Cloud Platform, you can authenticate using the default service account or by specifying a specific service account.
 
-**Note**: In most cases, you will want to use [Application Default Credentials](#choosing-the-correct-credential-type-automatically).  Direct use of the `Compute` class is for very specific scenarios.
+**Note**: In most cases, you will want to use [Application Default Credentials](#choosing-the-correct-credential-type-automatically). Direct use of the `Compute` class is for very specific scenarios.
 
-``` js
+```js
 const {auth, Compute} = require('google-auth-library');
 
 async function main() {
   const client = new Compute({
     // Specifying the service account email is optional.
-    serviceAccountEmail: 'my-service-account@example.com'
+    serviceAccountEmail: 'my-service-account@example.com',
   });
   const projectId = await auth.getProjectId();
   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
@@ -385,6 +393,7 @@ This lets you access Google Cloud resources directly, eliminating the maintenanc
 ### Accessing resources from AWS
 
 In order to access Google Cloud resources from Amazon Web Services (AWS), the following requirements are needed:
+
 - A workload identity pool needs to be created.
 - AWS needs to be added as an identity provider in the workload identity pool (The Google [organization policy](https://cloud.google.com/iam/docs/manage-workload-identity-pools-providers#restrict) needs to allow federation from AWS).
 - Permission to impersonate a service account needs to be granted to the external identity.
@@ -407,6 +416,7 @@ gcloud iam workload-identity-pools create-cred-config \
 ```
 
 Where the following variables need to be substituted:
+
 - `$PROJECT_NUMBER`: The Google Cloud project number.
 - `$POOL_ID`: The workload identity pool ID.
 - `$AWS_PROVIDER_ID`: The AWS provider ID.
@@ -423,6 +433,7 @@ You can now [start using the Auth library](#using-external-identities) to call G
 ### Accessing resources from AWS using a custom AWS security credentials supplier.
 
 In order to access Google Cloud resources from Amazon Web Services (AWS), the following requirements are needed:
+
 - A workload identity pool needs to be created.
 - AWS needs to be added as an identity provider in the workload identity pool (The Google [organization policy](https://cloud.google.com/iam/docs/manage-workload-identity-pools-providers#restrict) needs to allow federation from AWS).
 - Permission to impersonate a service account needs to be granted to the external identity.
@@ -450,10 +461,11 @@ class AwsSupplier implements AwsSecurityCredentialsSupplier {
 }
 
 const clientOptions = {
-  audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  audience:
+    '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
   subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request', // Set the subject token type.
-  aws_security_credentials_supplier: new AwsSupplier() // Set the custom supplier.
-}
+  aws_security_credentials_supplier: new AwsSupplier(), // Set the custom supplier.
+};
 
 const client = new AwsClient(clientOptions);
 ```
@@ -462,16 +474,16 @@ Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-
 
 Where the following variables need to be substituted:
 
-* `$PROJECT_NUMBER`: The Google Cloud project number.
-* `$WORKLOAD_POOL_ID`: The workload pool ID.
-* `$PROVIDER_ID`: The provider ID.
-
+- `$PROJECT_NUMBER`: The Google Cloud project number.
+- `$WORKLOAD_POOL_ID`: The workload pool ID.
+- `$PROVIDER_ID`: The provider ID.
 
 The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/sdk/gcloud/reference/iam/workload-identity-pools/create-cred-config).
 
 ### Access resources from Microsoft Azure
 
 In order to access Google Cloud resources from Microsoft Azure, the following requirements are needed:
+
 - A workload identity pool needs to be created.
 - Azure needs to be added as an identity provider in the workload identity pool (The Google [organization policy](https://cloud.google.com/iam/docs/manage-workload-identity-pools-providers#restrict) needs to allow federation from Azure).
 - The Azure tenant needs to be configured for identity federation.
@@ -495,6 +507,7 @@ gcloud iam workload-identity-pools create-cred-config \
 ```
 
 Where the following variables need to be substituted:
+
 - `$PROJECT_NUMBER`: The Google Cloud project number.
 - `$POOL_ID`: The workload identity pool ID.
 - `$AZURE_PROVIDER_ID`: The Azure provider ID.
@@ -507,6 +520,7 @@ You can now [start using the Auth library](#using-external-identities) to call G
 ### Accessing resources from an OIDC identity provider
 
 In order to access Google Cloud resources from an identity provider that supports [OpenID Connect (OIDC)](https://openid.net/connect/), the following requirements are needed:
+
 - A workload identity pool needs to be created.
 - An OIDC identity provider needs to be added in the workload identity pool (The Google [organization policy](https://cloud.google.com/iam/docs/manage-workload-identity-pools-providers#restrict) needs to allow federation from the identity provider).
 - Permission to impersonate a service account needs to be granted to the external identity.
@@ -540,6 +554,7 @@ gcloud iam workload-identity-pools create-cred-config \
 ```
 
 Where the following variables need to be substituted:
+
 - `$PROJECT_NUMBER`: The Google Cloud project number.
 - `$POOL_ID`: The workload identity pool ID.
 - `$OIDC_PROVIDER_ID`: The OIDC provider ID.
@@ -570,6 +585,7 @@ gcloud iam workload-identity-pools create-cred-config \
 ```
 
 Where the following variables need to be substituted:
+
 - `$PROJECT_NUMBER`: The Google Cloud project number.
 - `$POOL_ID`: The workload identity pool ID.
 - `$OIDC_PROVIDER_ID`: The OIDC provider ID.
@@ -597,10 +613,11 @@ class CustomSupplier implements SubjectTokenSupplier {
 }
 
 const clientOptions = {
-  audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  audience:
+    '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
   subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
-  subject_token_supplier: new CustomSupplier() // Set the custom supplier.
-}
+  subject_token_supplier: new CustomSupplier(), // Set the custom supplier.
+};
 
 const client = new CustomSupplier(clientOptions);
 ```
@@ -609,9 +626,9 @@ Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-
 
 Where the following variables need to be substituted:
 
-* `$PROJECT_NUMBER`: The Google Cloud project number.
-* `$WORKLOAD_POOL_ID`: The workload pool ID.
-* `$PROVIDER_ID`: The provider ID.
+- `$PROJECT_NUMBER`: The Google Cloud project number.
+- `$WORKLOAD_POOL_ID`: The workload pool ID.
+- `$PROVIDER_ID`: The provider ID.
 
 The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/sdk/gcloud/reference/iam/workload-identity-pools/create-cred-config).
 
@@ -627,8 +644,9 @@ gcloud auth application-default login --login-config=$LOGIN_CONFIG
 ```
 
 Where the following variable needs to be substituted:
+
 - `$LOGIN_CONFIG`: The login config file generated with the cloud console or
-   [gcloud iam workforce-pools create-login-config](https://cloud.google.com/sdk/gcloud/reference/iam/workforce-pools/create-login-config)
+  [gcloud iam workforce-pools create-login-config](https://cloud.google.com/sdk/gcloud/reference/iam/workforce-pools/create-login-config)
 
 This will open a browser flow for you to sign in via the configured third party identity provider
 and then will store the external account authorized user configuration at the well known ADC location.
@@ -666,7 +684,9 @@ gcloud iam workload-identity-pools create-cred-config \
     # --executable-output-file=$EXECUTABLE_OUTPUT_FILE \
     --output-file /path/to/generated/config.json
 ```
+
 Where the following variables need to be substituted:
+
 - `$PROJECT_NUMBER`: The Google Cloud project number.
 - `$POOL_ID`: The workload identity pool ID.
 - `$PROVIDER_ID`: The OIDC or SAML provider ID.
@@ -694,6 +714,7 @@ using the command specified. The executable's output must adhere to the response
 specified below. It must output the response to stdout.
 
 A sample successful executable OIDC response:
+
 ```json
 {
   "version": 1,
@@ -705,6 +726,7 @@ A sample successful executable OIDC response:
 ```
 
 A sample successful executable SAML response:
+
 ```json
 {
   "version": 1,
@@ -714,10 +736,12 @@ A sample successful executable SAML response:
   "expiration_time": 1620499962
 }
 ```
+
 For successful responses, the `expiration_time` field is only required
 when an output file is specified in the credential configuration.
 
 A sample executable error response:
+
 ```json
 {
   "version": 1,
@@ -726,41 +750,47 @@ A sample executable error response:
   "message": "Caller not authorized."
 }
 ```
+
 These are all required fields for an error response. The code and message
 fields will be used by the library as part of the thrown exception.
 
 Response format fields summary:
-* `version`: The version of the JSON output. Currently, only version 1 is supported.
-* `success`: The status of the response. When true, the response must contain the 3rd party token
-     and token type. The response must also contain the expiration time if an output file was specified in the credential configuration.
-     The executable must also exit with exit code 0.
-     When false, the response must contain the error code and message fields and exit with a non-zero value.
-* `token_type`: The 3rd party subject token type. Must be *urn:ietf:params:oauth:token-type:jwt*,
-*urn:ietf:params:oauth:token-type:id_token*, or *urn:ietf:params:oauth:token-type:saml2*.
-* `id_token`: The 3rd party OIDC token.
-* `saml_response`: The 3rd party SAML response.
-* `expiration_time`: The 3rd party subject token expiration time in seconds (unix epoch time).
-* `code`: The error code string.
-* `message`: The error message.
+
+- `version`: The version of the JSON output. Currently, only version 1 is supported.
+- `success`: The status of the response. When true, the response must contain the 3rd party token
+  and token type. The response must also contain the expiration time if an output file was specified in the credential configuration.
+  The executable must also exit with exit code 0.
+  When false, the response must contain the error code and message fields and exit with a non-zero value.
+- `token_type`: The 3rd party subject token type. Must be _urn:ietf:params:oauth:token-type:jwt_,
+  _urn:ietf:params:oauth:token-type:id_token_, or _urn:ietf:params:oauth:token-type:saml2_.
+- `id_token`: The 3rd party OIDC token.
+- `saml_response`: The 3rd party SAML response.
+- `expiration_time`: The 3rd party subject token expiration time in seconds (unix epoch time).
+- `code`: The error code string.
+- `message`: The error message.
 
 All response types must include both the `version` and `success` fields.
-* Successful responses must include the `token_type` and one of
-`id_token` or `saml_response`. The `expiration_time` field must also be present if an output file was specified in
-the credential configuration.
-* Error responses must include both the `code` and `message` fields.
+
+- Successful responses must include the `token_type` and one of
+  `id_token` or `saml_response`. The `expiration_time` field must also be present if an output file was specified in
+  the credential configuration.
+- Error responses must include both the `code` and `message` fields.
 
 The library will populate the following environment variables when the executable is run:
-* `GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE`: The audience field from the credential configuration. Always present.
-* `GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL`: The service account email. Only present when service account impersonation is used.
-* `GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE`: The output file location from the credential configuration. Only present when specified in the credential configuration.
-* `GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE`: This expected subject token type. Always present.
+
+- `GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE`: The audience field from the credential configuration. Always present.
+- `GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL`: The service account email. Only present when service account impersonation is used.
+- `GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE`: The output file location from the credential configuration. Only present when specified in the credential configuration.
+- `GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE`: This expected subject token type. Always present.
 
 These environment variables can be used by the executable to avoid hard-coding these values.
 
 ##### Security considerations
+
 The following security practices are highly recommended:
-* Access to the script should be restricted as it will be displaying credentials to stdout. This ensures that rogue processes do not gain  access to the script.
-* The configuration file should not be modifiable. Write access should be restricted to avoid processes modifying the executable command portion.
+
+- Access to the script should be restricted as it will be displaying credentials to stdout. This ensures that rogue processes do not gain access to the script.
+- The configuration file should not be modifiable. Write access should be restricted to avoid processes modifying the executable command portion.
 
 Given the complexity of using executable-sourced credentials, it is recommended to use
 the existing supported mechanisms (file-sourced/URL-sourced) for providing 3rd party
@@ -770,6 +800,7 @@ You can now [use the Auth library](#using-external-identities) to call Google Cl
 resources from an OIDC or SAML provider.
 
 #### Configurable Token Lifetime
+
 When creating a credential configuration with workload identity federation using service account impersonation, you can provide an optional argument to configure the service account access token lifetime.
 
 To generate the configuration with configurable token lifetime, run the following command (this example uses an AWS configuration, but the token lifetime can be configured for all workload identity federation providers):
@@ -784,7 +815,8 @@ gcloud iam workload-identity-pools create-cred-config \
     --service-account-token-lifetime-seconds $TOKEN_LIFETIME
 ```
 
- Where the following variables need to be substituted:
+Where the following variables need to be substituted:
+
 - `$PROJECT_NUMBER`: The Google Cloud project number.
 - `$POOL_ID`: The workload identity pool ID.
 - `$AWS_PROVIDER_ID`: The AWS provider ID.
@@ -812,6 +844,7 @@ Active Directory Federation Services (AD FS), Okta, and others.
 
 In order to access Google Cloud resources from an identity provider that supports [OpenID Connect (OIDC)](https://openid.net/connect/),
 the following requirements are needed:
+
 - A workforce identity pool needs to be created.
 - An OIDC or SAML 2.0 identity provider needs to be added in the workforce pool.
 
@@ -849,7 +882,9 @@ gcloud iam workforce-pools create-cred-config \
     # --credential-source-field-name "id_token" \
     --output-file=/path/to/generated/config.json
 ```
+
 Where the following variables need to be substituted:
+
 - `$WORKFORCE_POOL_ID`: The workforce pool ID.
 - `$PROVIDER_ID`: The provider ID.
 - `$PATH_TO_OIDC_ID_TOKEN`: The file path used to retrieve the OIDC token.
@@ -868,6 +903,7 @@ gcloud iam workforce-pools create-cred-config \
 ```
 
 Where the following variables need to be substituted:
+
 - `$WORKFORCE_POOL_ID`: The workforce pool ID.
 - `$PROVIDER_ID`: The provider ID.
 - `$PATH_TO_SAML_ASSERTION`: The file path used to retrieve the base64-encoded SAML assertion.
@@ -894,11 +930,12 @@ gcloud iam workforce-pools create-cred-config \
 ```
 
 Where the following variables need to be substituted:
+
 - `$WORKFORCE_POOL_ID`: The workforce pool ID.
 - `$PROVIDER_ID`: The provider ID.
 - `$URL_TO_RETURN_OIDC_ID_TOKEN`: The URL of the local server endpoint.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to
-   `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
+  `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
 - `$WORKFORCE_POOL_USER_PROJECT`: The project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
 
 To generate a URL-sourced SAML configuration, run the following command:
@@ -917,11 +954,12 @@ gcloud iam workforce-pools create-cred-config \
 These commands generate the configuration file in the specified output file.
 
 Where the following variables need to be substituted:
+
 - `$WORKFORCE_POOL_ID`: The workforce pool ID.
 - `$PROVIDER_ID`: The provider ID.
 - `$URL_TO_GET_SAML_ASSERTION`: The URL of the local server endpoint.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to
-     `$URL_TO_GET_SAML_ASSERTION`, e.g. `Metadata-Flavor=Google`.
+  `$URL_TO_GET_SAML_ASSERTION`, e.g. `Metadata-Flavor=Google`.
 - `$WORKFORCE_POOL_USER_PROJECT`: The project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
 
 ### Using Executable-sourced workforce credentials with OIDC and SAML
@@ -952,7 +990,9 @@ gcloud iam workforce-pools create-cred-config \
     --workforce-pool-user-project=$WORKFORCE_POOL_USER_PROJECT \
     --output-file /path/to/generated/config.json
 ```
+
 Where the following variables need to be substituted:
+
 - `$WORKFORCE_POOL_ID`: The workforce pool ID.
 - `$PROVIDER_ID`: The provider ID.
 - `$SUBJECT_TOKEN_TYPE`: The subject token type.
@@ -982,9 +1022,11 @@ Refer to the [using executable-sourced credentials with Workload Identity Federa
 above for the executable response specification.
 
 ##### Security considerations
+
 The following security practices are highly recommended:
-* Access to the script should be restricted as it will be displaying credentials to stdout. This ensures that rogue processes do not gain access to the script.
-* The configuration file should not be modifiable. Write access should be restricted to avoid processes modifying the executable command portion.
+
+- Access to the script should be restricted as it will be displaying credentials to stdout. This ensures that rogue processes do not gain access to the script.
+- The configuration file should not be modifiable. Write access should be restricted to avoid processes modifying the executable command portion.
 
 Given the complexity of using executable-sourced credentials, it is recommended to use
 the existing supported mechanisms (file-sourced/URL-sourced) for providing 3rd party
@@ -1013,10 +1055,11 @@ class CustomSupplier implements SubjectTokenSupplier {
 }
 
 const clientOptions = {
-  audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  audience:
+    '//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
   subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
-  subject_token_supplier: new CustomSupplier() // Set the custom supplier.
-}
+  subject_token_supplier: new CustomSupplier(), // Set the custom supplier.
+};
 
 const client = new CustomSupplier(clientOptions);
 ```
@@ -1025,8 +1068,8 @@ Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WO
 
 Where the following variables need to be substituted:
 
-* `WORKFORCE_POOL_ID`: The worforce pool ID.
-* `$PROVIDER_ID`: The provider ID.
+- `WORKFORCE_POOL_ID`: The worforce pool ID.
+- `$PROVIDER_ID`: The provider ID.
 
 and the workforce pool user project is the project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
 
@@ -1047,13 +1090,13 @@ The library can now automatically choose the right type of client and initialize
 ```js
 async function main() {
   const auth = new GoogleAuth({
-    scopes: 'https://www.googleapis.com/auth/cloud-platform'
+    scopes: 'https://www.googleapis.com/auth/cloud-platform',
   });
   const client = await auth.getClient();
   const projectId = await auth.getProjectId();
   // List all buckets in a project.
   const url = `https://storage.googleapis.com/storage/v1/b?project=${projectId}`;
-  const res = await client.request({ url });
+  const res = await client.request({url});
   console.log(res.data);
 }
 ```
@@ -1089,10 +1132,13 @@ async function main() {
 ```
 
 #### Security Considerations
+
 Note that this library does not perform any validation on the token_url, token_info_url, or service_account_impersonation_url fields of the credential configuration. It is not recommended to use a credential configuration that you did not generate with the gcloud CLI unless you verify that the URL fields point to a googleapis.com domain.
 
 ## Working with ID Tokens
+
 ### Fetching ID Tokens
+
 If your application is running on Cloud Run or Cloud Functions, or using Cloud Identity-Aware
 Proxy (IAP), you will need to fetch an ID token to access your application. For
 this, use the method `getIdTokenClient` on the `GoogleAuth` client.
@@ -1105,7 +1151,7 @@ For invoking Cloud Functions, your service account will need the
 [`Function Invoker`](https://cloud.google.com/functions/docs/securing/authenticating#function-to-function)
 IAM permission.
 
-``` js
+```js
 // Make a request to a protected Cloud Run service.
 const {GoogleAuth} = require('google-auth-library');
 
@@ -1125,7 +1171,7 @@ A complete example can be found in [`samples/idtokens-serverless.js`](https://gi
 For invoking Cloud Identity-Aware Proxy, you will need to pass the Client ID
 used when you set up your protected resource as the target audience.
 
-``` js
+```js
 // Make a request to a protected Cloud Identity-Aware Proxy (IAP) resource
 const {GoogleAuth} = require('google-auth-library');
 
@@ -1165,7 +1211,7 @@ const ticket = await oAuth2Client.verifySignedJwtWithCertsAsync(
 );
 
 // Print out the info contained in the IAP ID token
-console.log(ticket)
+console.log(ticket);
 ```
 
 A complete example can be found in [`samples/verifyIdToken-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken-iap.js).
@@ -1187,11 +1233,10 @@ set of scopes.
 ### Sample Usage
 
 ```javascript
-const { GoogleAuth, Impersonated } = require('google-auth-library');
-const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+const {GoogleAuth, Impersonated} = require('google-auth-library');
+const {SecretManagerServiceClient} = require('@google-cloud/secret-manager');
 
 async function main() {
-
   // Acquire source credentials:
   const auth = new GoogleAuth();
   const client = await auth.getClient();
@@ -1202,7 +1247,7 @@ async function main() {
     targetPrincipal: 'impersonated-account@projectID.iam.gserviceaccount.com',
     lifetime: 30,
     delegates: [],
-    targetScopes: ['https://www.googleapis.com/auth/cloud-platform']
+    targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
   });
 
   // Get impersonated credentials:
@@ -1210,8 +1255,9 @@ async function main() {
   // Do something with `authHeaders.Authorization`.
 
   // Use impersonated credentials:
-  const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
-  const resp = await targetClient.request({ url });
+  const url =
+    'https://www.googleapis.com/storage/v1/b?project=anotherProjectID';
+  const resp = await targetClient.request({url});
   for (const bucket of resp.data.items) {
     console.log(bucket.name);
   }
@@ -1226,14 +1272,15 @@ async function main() {
       getClient: () => targetClient,
     },
   });
-  const secretName = 'projects/anotherProjectNumber/secrets/someProjectName/versions/1';
+  const secretName =
+    'projects/anotherProjectNumber/secrets/someProjectName/versions/1';
   const [accessResponse] = await smClient.accessSecretVersion({
     name: secretName,
   });
 
   const responsePayload = accessResponse.payload.data.toString('utf8');
   // Do something with the secret contained in `responsePayload`.
-};
+}
 
 main();
 ```
@@ -1248,12 +1295,13 @@ The `DownscopedClient` class can be used to produce a downscoped access token fr
 > Notice: Only Cloud Storage supports Credential Access Boundaries for now.
 
 ### Sample Usage
+
 There are two entities needed to generate and use credentials generated from
 Downscoped Client with Credential Access Boundaries.
 
 - Token broker: This is the entity with elevated permissions. This entity has the permissions needed to generate downscoped tokens. The common pattern of usage is to have a token broker with elevated access generate these downscoped credentials from higher access source credentials and pass the downscoped short-lived access tokens to a token consumer via some secure authenticated channel for limited access to Google Cloud Storage resources.
 
-``` js
+```js
 const {GoogleAuth, DownscopedClient} = require('google-auth-library');
 // Define CAB rules which will restrict the downscoped token to have readonly
 // access to objects starting with "customer-a" in bucket "bucket_name".
@@ -1266,8 +1314,8 @@ const cabRules = {
         availabilityCondition: {
           expression:
             `resource.name.startsWith('projects/_/buckets/` +
-            `bucket_name/objects/customer-a)`
-        }
+            `bucket_name/objects/customer-a)`,
+        },
       },
     ],
   },
@@ -1275,7 +1323,7 @@ const cabRules = {
 
 // This will use ADC to get the credentials used for the downscoped client.
 const googleAuth = new GoogleAuth({
-  scopes: ['https://www.googleapis.com/auth/cloud-platform']
+  scopes: ['https://www.googleapis.com/auth/cloud-platform'],
 });
 
 // Obtain an authenticated client via ADC.
@@ -1299,7 +1347,7 @@ The broker will instantiate downscoped credentials instances that can be used to
 
 - Token consumer: This is the consumer of the downscoped tokens. This entity does not have the direct ability to generate access tokens and instead relies on the token broker to provide it with downscoped tokens to run operations on GCS buckets. It is assumed that the downscoped token consumer may have its own mechanism to authenticate itself with the token broker.
 
-``` js
+```js
 const {OAuth2Client} = require('google-auth-library');
 const {Storage} = require('@google-cloud/storage');
 
@@ -1318,7 +1366,7 @@ oauth2Client.refreshHandler = async () => {
   return {
     access_token: refreshedAccessToken.token,
     expiry_date: refreshedAccessToken.expirationTime,
-  }
+  };
 };
 
 // Use the consumer client to define storageOptions and create a GCS object.
@@ -1330,45 +1378,42 @@ const storageOptions = {
 const storage = new Storage(storageOptions);
 
 const downloadFile = await storage
-    .bucket('bucket_name')
-    .file('customer-a-data.txt')
-    .download();
+  .bucket('bucket_name')
+  .file('customer-a-data.txt')
+  .download();
 console.log(downloadFile.toString('utf8'));
 
 main().catch(console.error);
 ```
 
-
 ## Samples
 
 Samples are in the [`samples/`](https://github.com/googleapis/google-auth-library-nodejs/tree/main/samples) directory. Each sample's `README.md` has instructions for running its sample.
 
-| Sample                      | Source Code                       | Try it |
-| --------------------------- | --------------------------------- | ------ |
-| Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
-| Authenticate Explicit | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateExplicit.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateExplicit.js,samples/README.md) |
-| Authenticate Implicit With Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md) |
-| Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
-| Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md) |
-| Downscopedclient | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/downscopedclient.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/downscopedclient.js,samples/README.md) |
-| Headers | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/headers.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md) |
-| Id Token From Impersonated Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromImpersonatedCredentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromImpersonatedCredentials.js,samples/README.md) |
-| Id Token From Metadata Server | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromMetadataServer.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromMetadataServer.js,samples/README.md) |
-| Id Token From Service Account | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromServiceAccount.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromServiceAccount.js,samples/README.md) |
-| ID Tokens for Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md) |
-| ID Tokens for Serverless | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-serverless.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md) |
-| Jwt | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/jwt.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/jwt.js,samples/README.md) |
-| Keepalive | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keepalive.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keepalive.js,samples/README.md) |
-| Keyfile | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keyfile.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keyfile.js,samples/README.md) |
-| Oauth2-code Verifier | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2-codeVerifier.js,samples/README.md) |
-| Oauth2 | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2.js,samples/README.md) |
-| Sign Blob | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlob.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md) |
-| Sign Blob Impersonated | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlobImpersonated.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlobImpersonated.js,samples/README.md) |
-| Verify Google Id Token | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyGoogleIdToken.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyGoogleIdToken.js,samples/README.md) |
-| Verifying ID Tokens from Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken-iap.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md) |
-| Verify Id Token | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken.js,samples/README.md) |
-
-
+| Sample                                              | Source Code                                                                                                                     | Try it                                                                                                                                                                                                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adc                                                 | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js)                                | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md)                                |
+| Authenticate Explicit                               | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateExplicit.js)               | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateExplicit.js,samples/README.md)               |
+| Authenticate Implicit With Adc                      | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js)        | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md)        |
+| Compute                                             | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js)                            | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md)                            |
+| Credentials                                         | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js)                        | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md)                        |
+| Downscopedclient                                    | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/downscopedclient.js)                   | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/downscopedclient.js,samples/README.md)                   |
+| Headers                                             | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/headers.js)                            | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md)                            |
+| Id Token From Impersonated Credentials              | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromImpersonatedCredentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromImpersonatedCredentials.js,samples/README.md) |
+| Id Token From Metadata Server                       | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromMetadataServer.js)          | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromMetadataServer.js,samples/README.md)          |
+| Id Token From Service Account                       | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromServiceAccount.js)          | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromServiceAccount.js,samples/README.md)          |
+| ID Tokens for Identity-Aware Proxy (IAP)            | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-iap.js)                       | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-iap.js,samples/README.md)                       |
+| ID Tokens for Serverless                            | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-serverless.js)                | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idtokens-serverless.js,samples/README.md)                |
+| Jwt                                                 | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/jwt.js)                                | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/jwt.js,samples/README.md)                                |
+| Keepalive                                           | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keepalive.js)                          | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keepalive.js,samples/README.md)                          |
+| Keyfile                                             | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/keyfile.js)                            | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/keyfile.js,samples/README.md)                            |
+| Oauth2-code Verifier                                | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js)                | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2-codeVerifier.js,samples/README.md)                |
+| Oauth2                                              | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2.js)                             | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/oauth2.js,samples/README.md)                             |
+| Sign Blob                                           | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlob.js)                           | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlob.js,samples/README.md)                           |
+| Sign Blob Impersonated                              | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlobImpersonated.js)               | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlobImpersonated.js,samples/README.md)               |
+| Verify Google Id Token                              | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyGoogleIdToken.js)                | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyGoogleIdToken.js,samples/README.md)                |
+| Verifying ID Tokens from Identity-Aware Proxy (IAP) | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken-iap.js)                  | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken-iap.js,samples/README.md)                  |
+| Verify Id Token                                     | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/verifyIdToken.js)                      | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/verifyIdToken.js,samples/README.md)                      |
 
 The [Google Auth Library Node.js Client API Reference][client-docs] documentation
 also contains samples.
@@ -1384,9 +1429,9 @@ as soon as possible to an actively supported LTS version.
 Google's client libraries support legacy versions of Node.js runtimes on a
 best-efforts basis with the following warnings:
 
-* Legacy versions are not tested in continuous integration.
-* Some security patches and features cannot be backported.
-* Dependencies cannot be kept up-to-date.
+- Legacy versions are not tested in continuous integration.
+- Some security patches and features cannot be backported.
+- Dependencies cannot be kept up-to-date.
 
 Client libraries targeting some end-of-life versions of Node.js are available, and
 can be installed through npm [dist-tags](https://docs.npmjs.com/cli/dist-tag).
@@ -1398,17 +1443,10 @@ for versions compatible with Node.js 8.
 
 This library follows [Semantic Versioning](http://semver.org/).
 
-
-
 This library is considered to be **stable**. The code surface will not change in backwards-incompatible ways
 unless absolutely necessary (e.g. because of critical security issues) or with
 an extensive deprecation period. Issues and requests against **stable** libraries
 are addressed with the highest priority.
-
-
-
-
-
 
 More Information: [Google Cloud Platform Launch Stages][launch_stages]
 
@@ -1435,5 +1473,4 @@ See [LICENSE](https://github.com/googleapis/google-auth-library-nodejs/blob/main
 [shell_img]: https://gstatic.com/cloudssh/images/open-btn.png
 [projects]: https://console.cloud.google.com/project
 [billing]: https://support.google.com/cloud/answer/6293499#enable-billing
-
 [auth]: https://cloud.google.com/docs/authentication/getting-started
