@@ -51,10 +51,19 @@ export {
   UserRefreshClient,
   UserRefreshClientOptions,
 } from './auth/refreshclient';
-export {AwsClient, AwsClientOptions} from './auth/awsclient';
+export {
+  AwsClient,
+  AwsClientOptions,
+  AwsSecurityCredentialsSupplier,
+} from './auth/awsclient';
+export {
+  AwsSecurityCredentials,
+  AwsRequestSigner,
+} from './auth/awsrequestsigner';
 export {
   IdentityPoolClient,
   IdentityPoolClientOptions,
+  SubjectTokenSupplier,
 } from './auth/identitypoolclient';
 export {
   ExternalAccountClient,
@@ -63,6 +72,9 @@ export {
 export {
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
+  SharedExternalAccountClientOptions,
+  ExternalAccountSupplierContext,
+  IamGenerateAccessTokenResponse,
 } from './auth/baseexternalclient';
 export {
   CredentialAccessBoundary,
@@ -71,6 +83,7 @@ export {
 export {
   PluggableAuthClient,
   PluggableAuthClientOptions,
+  ExecutableError,
 } from './auth/pluggable-auth-client';
 export {PassThroughClient} from './auth/passthrough';
 export {DefaultTransporter} from './transporters';

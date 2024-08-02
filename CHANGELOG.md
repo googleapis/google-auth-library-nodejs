@@ -4,6 +4,26 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.13.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.12.0...v9.13.0) (2024-07-29)
+
+
+### Features
+
+* Group Concurrent Access Token Requests for Base External Clients ([#1840](https://github.com/googleapis/google-auth-library-nodejs/issues/1840)) ([0e08fc5](https://github.com/googleapis/google-auth-library-nodejs/commit/0e08fc58eb61bba431ab4f217f7f7ad3a7dce9df))
+
+## [9.12.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.11.0...v9.12.0) (2024-07-26)
+
+
+### Features
+
+* Expose More Public API Types ([#1838](https://github.com/googleapis/google-auth-library-nodejs/issues/1838)) ([5745a49](https://github.com/googleapis/google-auth-library-nodejs/commit/5745a49df31ff87c0e53edf44671f3a10c024d9f))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v19 ([#1823](https://github.com/googleapis/google-auth-library-nodejs/issues/1823)) ([b070ffb](https://github.com/googleapis/google-auth-library-nodejs/commit/b070ffbfeb35a7f4552e86bf1840645096951b58))
+* **deps:** Update dependency @googleapis/iam to v20 ([#1832](https://github.com/googleapis/google-auth-library-nodejs/issues/1832)) ([e31a831](https://github.com/googleapis/google-auth-library-nodejs/commit/e31a831417692e730f79d42608bd543046070ae3))
+
 ## [9.11.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.10.0...v9.11.0) (2024-06-01)
 
 
