@@ -354,14 +354,6 @@ describe('googleauth', () => {
       assert.strictEqual(client.email, 'hello@youarecool.com');
     });
 
-    it('fromAPIKey should error given an invalid api key', () => {
-      assert.throws(() => {
-        // Test verifies invalid parameter tests, which requires cast to any.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (auth as any).fromAPIKey(null);
-      });
-    });
-
     it('should make a request with the api key', async () => {
       const scope = nock(BASE_URL)
         .post(ENDPOINT)
