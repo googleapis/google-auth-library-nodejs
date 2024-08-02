@@ -183,8 +183,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
-
   apiKey: string | null;
+
   cachedCredential: JSONClient | Impersonated | Compute | T | null = null;
 
   /**
@@ -816,6 +816,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   /**
    * Create a credentials instance using the given API key string.
+   * The created client is not cached. In order to create and cache it use the {@link GoogleAuth.getClient `getClient`} method after first providing an {@link GoogleAuth.apiKey `apiKey`}.
+   *
    * @param apiKey The API key string
    * @param options An optional options object.
    * @returns A JWT loaded from the key
