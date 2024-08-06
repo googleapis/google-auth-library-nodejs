@@ -212,9 +212,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    *
    * @param opts
    */
-  constructor(opts?: GoogleAuthOptions<T>) {
-    opts = opts || {};
-
+  constructor(opts: GoogleAuthOptions<T> = {}) {
     this._cachedProjectId = opts.projectId || null;
     this.cachedCredential = opts.authClient || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
