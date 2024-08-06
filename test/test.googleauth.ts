@@ -56,6 +56,7 @@ import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {AuthClient, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
 import {stringify} from 'querystring';
+import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
 
 nock.disableNetConnect();
 
@@ -303,6 +304,30 @@ describe('googleauth', () => {
       assert.deepEqual(await auth.getRequestHeaders(''), customRequestHeaders);
     });
 
+    it('should accept and use an `apiKey`', async () => {
+      const apiKey = 'myKey';
+      const auth = new GoogleAuth({apiKey});
+      const client = await auth.getClient();
+
+      assert.equal(client.apiKey, apiKey);
+      assert.deepEqual(await auth.getRequestHeaders(), {
+        'X-Goog-Api-Key': apiKey,
+      });
+    });
+
+    it('should not accept both an `apiKey` and `credentials`', async () => {
+      const apiKey = 'myKey';
+      assert.throws(
+        () =>
+          new GoogleAuth({
+            credentials: {},
+            // API key should supported via `clientOptions`
+            clientOptions: {apiKey},
+          }),
+        new RangeError(GoogleAuthExceptionMessages.API_KEY_WITH_CREDENTIALS)
+      );
+    });
+
     it('fromJSON should support the instantiated named export', () => {
       const result = auth.fromJSON(createJwtJSON());
       assert(result);
@@ -327,14 +352,6 @@ describe('googleauth', () => {
       });
       const client = (await auth.getClient()) as JWT;
       assert.strictEqual(client.email, 'hello@youarecool.com');
-    });
-
-    it('fromAPIKey should error given an invalid api key', () => {
-      assert.throws(() => {
-        // Test verifies invalid parameter tests, which requires cast to any.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (auth as any).fromAPIKey(null);
-      });
     });
 
     it('should make a request with the api key', async () => {
@@ -1423,12 +1440,14 @@ describe('googleauth', () => {
     });
 
     it('should pass options to the JWT constructor via constructor', async () => {
+      const apiKey = 'my-api-key';
       const subject = 'science!';
       const auth = new GoogleAuth({
         keyFilename: './test/fixtures/private.json',
-        clientOptions: {subject},
+        clientOptions: {apiKey, subject},
       });
       const client = (await auth.getClient()) as JWT;
+      assert.strictEqual(client.apiKey, apiKey);
       assert.strictEqual(client.subject, subject);
     });
 

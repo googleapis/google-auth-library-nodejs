@@ -25,7 +25,7 @@ import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
-import {IdTokenClient} from './idtokenclient';
+import {IdTokenClient, IdTokenProvider} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions} from './oauth2client';
@@ -85,6 +85,11 @@ export interface ADCResponse {
 
 export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   /**
+   * An API key to use, optional. Cannot be used with {@link GoogleAuthOptions.credentials `credentials`}.
+   */
+  apiKey?: string;
+
+  /**
    * An `AuthClient` to use
    */
   authClient?: T;
@@ -101,6 +106,7 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   /**
    * Object containing client_email and private_key properties, or the
    * external account client options.
+   * Cannot be used with {@link GoogleAuthOptions.apiKey `apiKey`}.
    */
   credentials?: JWTInput | ExternalAccountClientOptions;
 
@@ -135,7 +141,9 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
 export const CLOUD_SDK_CLIENT_ID =
   '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
-const GoogleAuthExceptionMessages = {
+export const GoogleAuthExceptionMessages = {
+  API_KEY_WITH_CREDENTIALS:
+    'API Keys and Credentials are mutually exclusive authentication methods and cannot be used together.',
   NO_PROJECT_ID_FOUND:
     'Unable to detect a Project Id in the current environment. \n' +
     'To learn more about authentication and Google APIs, visit: \n' +
@@ -144,6 +152,8 @@ const GoogleAuthExceptionMessages = {
     'Unable to find credentials in current environment. \n' +
     'To learn more about authentication and Google APIs, visit: \n' +
     'https://cloud.google.com/docs/authentication/getting-started',
+  NO_ADC_FOUND:
+    'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.',
   NO_UNIVERSE_DOMAIN_FOUND:
     'Unable to detect a Universe Domain in the current environment.\n' +
     'To learn more about Universe Domain retrieval, visit: \n' +
@@ -173,6 +183,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
+  apiKey: string | null;
 
   cachedCredential: JSONClient | Impersonated | Compute | T | null = null;
 
@@ -201,15 +212,21 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    *
    * @param opts
    */
-  constructor(opts?: GoogleAuthOptions<T>) {
-    opts = opts || {};
-
+  constructor(opts: GoogleAuthOptions<T> = {}) {
     this._cachedProjectId = opts.projectId || null;
     this.cachedCredential = opts.authClient || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
     this.scopes = opts.scopes;
-    this.jsonContent = opts.credentials || null;
     this.clientOptions = opts.clientOptions || {};
+    this.jsonContent = opts.credentials || null;
+    this.apiKey = opts.apiKey || this.clientOptions.apiKey || null;
+
+    // Cannot use both API Key + Credentials
+    if (this.apiKey && (this.jsonContent || this.clientOptions.credentials)) {
+      throw new RangeError(
+        GoogleAuthExceptionMessages.API_KEY_WITH_CREDENTIALS
+      );
+    }
 
     if (opts.universeDomain) {
       this.clientOptions.universeDomain = opts.universeDomain;
@@ -395,18 +412,15 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async getApplicationDefaultAsync(
-    options: AuthClientOptions = {}
+    options: AuthClientOptions | OAuth2ClientOptions = {}
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, return it.
     // This will also preserve one's configured quota project, in case they
     // set one directly on the credential previously.
     if (this.cachedCredential) {
-      return await this.prepareAndCacheADC(this.cachedCredential);
+      // cache, while preserving existing quota project preferences
+      return await this.#prepareAndCacheClient(this.cachedCredential, null);
     }
-
-    // Since this is a 'new' ADC to cache we will use the environment variable
-    // if it's available. We prefer this value over the value from ADC.
-    const quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'];
 
     let credential: JSONClient | null;
     // Check for the existence of a local environment variable pointing to the
@@ -421,7 +435,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         credential.scopes = this.getAnyScopes();
       }
 
-      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
+      return await this.#prepareAndCacheClient(credential);
     }
 
     // Look in the well-known credential file location.
@@ -433,7 +447,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       } else if (credential instanceof BaseExternalAccountClient) {
         credential.scopes = this.getAnyScopes();
       }
-      return await this.prepareAndCacheADC(credential, quotaProjectIdOverride);
+      return await this.#prepareAndCacheClient(credential);
     }
 
     // Determine if we're running on GCE.
@@ -445,20 +459,15 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       }
 
       (options as ComputeOptions).scopes = this.getAnyScopes();
-      return await this.prepareAndCacheADC(
-        new Compute(options),
-        quotaProjectIdOverride
-      );
+      return await this.#prepareAndCacheClient(new Compute(options));
     }
 
-    throw new Error(
-      'Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.'
-    );
+    throw new Error(GoogleAuthExceptionMessages.NO_ADC_FOUND);
   }
 
-  private async prepareAndCacheADC(
+  async #prepareAndCacheClient(
     credential: JSONClient | Impersonated | Compute | T,
-    quotaProjectIdOverride?: string
+    quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'] || null
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
 
@@ -805,15 +814,14 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   /**
    * Create a credentials instance using the given API key string.
+   * The created client is not cached. In order to create and cache it use the {@link GoogleAuth.getClient `getClient`} method after first providing an {@link GoogleAuth.apiKey `apiKey`}.
+   *
    * @param apiKey The API key string
    * @param options An optional options object.
    * @returns A JWT loaded from the key
    */
-  fromAPIKey(apiKey: string, options?: AuthClientOptions): JWT {
-    options = options || {};
-    const client = new JWT(options);
-    client.fromAPIKey(apiKey);
-    return client;
+  fromAPIKey(apiKey: string, options: AuthClientOptions = {}): JWT {
+    return new JWT({...options, apiKey});
   }
 
   /**
@@ -996,18 +1004,25 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Default Credentials.
    */
   async getClient() {
-    if (!this.cachedCredential) {
-      if (this.jsonContent) {
-        this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
-      } else if (this.keyFilename) {
-        const filePath = path.resolve(this.keyFilename);
-        const stream = fs.createReadStream(filePath);
-        await this.fromStreamAsync(stream, this.clientOptions);
-      } else {
-        await this.getApplicationDefaultAsync(this.clientOptions);
-      }
+    if (this.cachedCredential) {
+      return this.cachedCredential;
+    } else if (this.jsonContent) {
+      return this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
+    } else if (this.keyFilename) {
+      const filePath = path.resolve(this.keyFilename);
+      const stream = fs.createReadStream(filePath);
+      return await this.fromStreamAsync(stream, this.clientOptions);
+    } else if (this.apiKey) {
+      const client = await this.fromAPIKey(this.apiKey, this.clientOptions);
+      client.scopes = this.scopes;
+      const {credential} = await this.#prepareAndCacheClient(client);
+      return credential;
+    } else {
+      const {credential} = await this.getApplicationDefaultAsync(
+        this.clientOptions
+      );
+      return credential;
     }
-    return this.cachedCredential!;
   }
 
   /**
@@ -1022,7 +1037,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         'Cannot fetch ID token in this environment, use GCE or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a service account credentials JSON file.'
       );
     }
-    return new IdTokenClient({targetAudience, idTokenProvider: client});
+
+    return new IdTokenClient({
+      targetAudience,
+      idTokenProvider: client as IdTokenProvider,
+    });
   }
 
   /**
