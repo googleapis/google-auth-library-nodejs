@@ -18,6 +18,7 @@ import {GoogleAuth} from './auth/googleauth';
 export * as gcpMetadata from 'gcp-metadata';
 export * as gaxios from 'gaxios';
 
+import {AuthClient} from './auth/authclient';
 export {AuthClient, DEFAULT_UNIVERSE} from './auth/authclient';
 export {Compute, ComputeOptions} from './auth/computeclient';
 export {
@@ -87,6 +88,15 @@ export {
 } from './auth/pluggable-auth-client';
 export {PassThroughClient} from './auth/passthrough';
 export {DefaultTransporter} from './transporters';
+
+/**
+ * A union type for all AuthClients.
+ *
+ * @experimental
+ */
+export type AuthClients = InstanceType<
+  Extract<(typeof import('./'))[keyof typeof import('./')], typeof AuthClient>
+>;
 
 const auth = new GoogleAuth();
 export {auth, GoogleAuth};
