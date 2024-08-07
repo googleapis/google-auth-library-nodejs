@@ -89,13 +89,16 @@ export {
 export {PassThroughClient} from './auth/passthrough';
 export {DefaultTransporter} from './transporters';
 
+type ALL_EXPORTS = (typeof import('./'))[keyof typeof import('./')];
+
 /**
  * A union type for all AuthClients.
  *
  * @experimental
  */
-export type AuthClients = InstanceType<
-  Extract<(typeof import('./'))[keyof typeof import('./')], typeof AuthClient>
+export type AnyAuthClient = InstanceType<
+  // Extract All `AuthClient`s from exports
+  Extract<ALL_EXPORTS, typeof AuthClient>
 >;
 
 const auth = new GoogleAuth();

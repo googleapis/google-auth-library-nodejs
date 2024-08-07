@@ -54,7 +54,7 @@ import {
   ExternalAccountAuthorizedUserClientOptions,
 } from './externalAccountAuthorizedUserClient';
 import {originalOrCamelOptions} from '../util';
-import {AuthClients} from '..';
+import {AnyAuthClient} from '..';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -175,7 +175,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
 
-  cachedCredential: AuthClients | T | null = null;
+  cachedCredential: AnyAuthClient | T | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
@@ -458,7 +458,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async prepareAndCacheADC(
-    credential: AuthClients,
+    credential: AnyAuthClient,
     quotaProjectIdOverride?: string
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
