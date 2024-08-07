@@ -92,9 +92,7 @@ export {DefaultTransporter} from './transporters';
 type ALL_EXPORTS = (typeof import('./'))[keyof typeof import('./')];
 
 /**
- * A union type for all AuthClients.
- *
- * @experimental
+ * A union type for all {@link AuthClient `AuthClient`}s.
  */
 export type AnyAuthClient = InstanceType<
   // Extract All `AuthClient`s from exports
