@@ -25,7 +25,7 @@ import {DefaultTransporter, Transporter} from '../transporters';
 
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
-import {IdTokenClient, IdTokenProvider} from './idtokenclient';
+import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
 import {Headers, OAuth2ClientOptions} from './oauth2client';
@@ -413,7 +413,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async getApplicationDefaultAsync(
-    options: AuthClientOptions | OAuth2ClientOptions = {}
+    options: AuthClientOptions = {}
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, return it.
     // This will also preserve one's configured quota project, in case they
