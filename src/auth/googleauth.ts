@@ -54,6 +54,7 @@ import {
   ExternalAccountAuthorizedUserClientOptions,
 } from './externalAccountAuthorizedUserClient';
 import {originalOrCamelOptions} from '../util';
+import {AnyAuthClient} from '..';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -172,7 +173,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   useJWTAccessWithScope?: boolean;
   defaultServicePath?: string;
 
-  // Note:  this properly is only public to satisify unit tests.
+  // Note:  this properly is only public to satisfy unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
   get isGCE() {
     return this.checkIsGCE;
@@ -185,7 +186,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
   apiKey: string | null;
 
-  cachedCredential: JSONClient | Impersonated | Compute | T | null = null;
+  cachedCredential: AnyAuthClient | T | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
@@ -466,7 +467,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   async #prepareAndCacheClient(
-    credential: JSONClient | Impersonated | Compute | T,
+    credential: AnyAuthClient | T,
     quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'] || null
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
@@ -1003,7 +1004,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * provided configuration. If no options were passed, use Application
    * Default Credentials.
    */
-  async getClient() {
+  async getClient(): Promise<AnyAuthClient | T> {
     if (this.cachedCredential) {
       return this.cachedCredential;
     } else if (this.jsonContent) {
@@ -1040,7 +1041,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
     return new IdTokenClient({
       targetAudience,
-      idTokenProvider: client as IdTokenProvider,
+      idTokenProvider: client,
     });
   }
 
