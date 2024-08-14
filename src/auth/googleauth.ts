@@ -54,6 +54,7 @@ import {
   ExternalAccountAuthorizedUserClientOptions,
 } from './externalAccountAuthorizedUserClient';
 import {originalOrCamelOptions} from '../util';
+import {AnyAuthClient} from '..';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -162,7 +163,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   useJWTAccessWithScope?: boolean;
   defaultServicePath?: string;
 
-  // Note:  this properly is only public to satisify unit tests.
+  // Note:  this properly is only public to satisfy unit tests.
   // https://github.com/Microsoft/TypeScript/issues/5228
   get isGCE() {
     return this.checkIsGCE;
@@ -174,7 +175,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   // To save the contents of the JSON credential file
   jsonContent: JWTInput | ExternalAccountClientOptions | null = null;
 
-  cachedCredential: JSONClient | Impersonated | Compute | T | null = null;
+  cachedCredential: AnyAuthClient | T | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
@@ -457,7 +458,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async prepareAndCacheADC(
-    credential: JSONClient | Impersonated | Compute | T,
+    credential: AnyAuthClient,
     quotaProjectIdOverride?: string
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
