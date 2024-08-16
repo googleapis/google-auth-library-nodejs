@@ -1038,11 +1038,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
         'Cannot fetch ID token in this environment, use GCE or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a service account credentials JSON file.'
       );
     }
-
-    return new IdTokenClient({
-      targetAudience,
-      idTokenProvider: client,
-    });
+    return new IdTokenClient({targetAudience, idTokenProvider: client});
   }
 
   /**
