@@ -13,6 +13,7 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
 * [Before you begin](#before-you-begin)
 * [Samples](#samples)
   * [Adc](#adc)
+  * [Authenticate API Key](#authenticate-api-key)
   * [Authenticate Explicit](#authenticate-explicit)
   * [Authenticate Implicit With Adc](#authenticate-implicit-with-adc)
   * [Compute](#compute)
@@ -60,6 +61,23 @@ __Usage:__
 
 
 `node samples/adc.js`
+
+
+-----
+
+
+
+
+### Authenticate API Key
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateAPIKey.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateAPIKey.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/authenticateAPIKey.js`
 
 
 -----
