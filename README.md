@@ -284,7 +284,7 @@ const auth = new GoogleAuth({
 })
 ```
 
-Availability varies by API.
+API Key support varies by API.
 
 ## JSON Web Tokens
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
