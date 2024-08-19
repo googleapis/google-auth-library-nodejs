@@ -187,6 +187,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   apiKey: string | null;
 
   cachedCredential: AnyAuthClient | T | null = null;
+  /**
+   * A pending {@link AuthClient}. Used for concurrent {@link GoogleAuth.getClient} calls.
+   */
+  #pendingAuthClient: Promise<AnyAuthClient | T> | null = null;
 
   /**
    * Scopes populated by the client library by default. We differentiate between
@@ -1007,7 +1011,22 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   async getClient(): Promise<AnyAuthClient | T> {
     if (this.cachedCredential) {
       return this.cachedCredential;
-    } else if (this.jsonContent) {
+    }
+
+    // Use an existing auth client request, or cache a new one
+    this.#pendingAuthClient =
+      this.#pendingAuthClient || this.#determineClient();
+
+    try {
+      return await this.#pendingAuthClient;
+    } finally {
+      // reset the pending auth client in case it is changed later
+      this.#pendingAuthClient = null;
+    }
+  }
+
+  async #determineClient() {
+    if (this.jsonContent) {
       return this._cacheClientFromJSON(this.jsonContent, this.clientOptions);
     } else if (this.keyFilename) {
       const filePath = path.resolve(this.keyFilename);

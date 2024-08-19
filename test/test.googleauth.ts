@@ -2617,6 +2617,28 @@ describe('googleauth', () => {
 
           assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
         });
+
+        it('should return the same instance for concurrent requests', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const auth = new GoogleAuth();
+
+          let client: AuthClient | null = null;
+          const getClientCalls = await Promise.all([
+            auth.getClient(),
+            auth.getClient(),
+            auth.getClient(),
+          ]);
+
+          for (const resClient of getClientCalls) {
+            if (!client) client = resClient;
+
+            assert(client === resClient);
+          }
+        });
       });
 
       describe('sign()', () => {
