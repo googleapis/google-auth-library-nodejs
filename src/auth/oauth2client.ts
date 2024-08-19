@@ -528,8 +528,6 @@ export class OAuth2Client extends AuthClient {
   // TODO: refactor tests to make this private
   _clientSecret?: string;
 
-  apiKey?: string;
-
   refreshHandler?: GetRefreshHandlerCallback;
 
   /**

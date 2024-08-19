@@ -264,6 +264,28 @@ console.log(tokenInfo.scopes);
 
 This method will throw if the token is invalid.
 
+#### Using an API Key
+
+An API key can be provided to the constructor:
+```js
+const client = new OAuth2Client({
+  apiKey: 'my-api-key'
+});
+```
+
+Note, classes that extend from this can utilize this parameter as well, such as `JWT` and `UserRefreshClient`.
+
+Additionally, an API key can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
+```js
+const auth = new GoogleAuth({
+  clientOptions: {
+    apiKey: 'my-api-key'
+  }
+})
+```
+
+API Key support varies by API.
+
 ## JSON Web Tokens
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
@@ -1326,6 +1348,7 @@ Samples are in the [`samples/`](https://github.com/googleapis/google-auth-librar
 | Sample                      | Source Code                       | Try it |
 | --------------------------- | --------------------------------- | ------ |
 | Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
+| Authenticate API Key | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateAPIKey.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateAPIKey.js,samples/README.md) |
 | Authenticate Explicit | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateExplicit.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateExplicit.js,samples/README.md) |
 | Authenticate Implicit With Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md) |
 | Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |

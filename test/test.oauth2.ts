@@ -74,6 +74,13 @@ describe('oauth2', () => {
       sandbox.restore();
     });
 
+    it('should accept and set an `apiKey`', () => {
+      const API_KEY = 'TEST_API_KEY';
+      const client = new OAuth2Client({apiKey: API_KEY});
+
+      assert.equal(client.apiKey, API_KEY);
+    });
+
     it('should generate a valid consent page url', done => {
       const opts = {
         access_type: ACCESS_TYPE,

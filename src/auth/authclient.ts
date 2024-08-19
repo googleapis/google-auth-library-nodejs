@@ -72,6 +72,10 @@ interface AuthJSONOptions {
  */
 export interface AuthClientOptions
   extends Partial<OriginalAndCamel<AuthJSONOptions>> {
+  /**
+   * An API key to use, optional.
+   */
+  apiKey?: string;
   credentials?: Credentials;
 
   /**
@@ -170,6 +174,7 @@ export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient
 {
+  apiKey?: string;
   projectId?: string | null;
   /**
    * The quota project ID. The quota project can be used by client libraries for the billing purpose.
@@ -188,6 +193,7 @@ export abstract class AuthClient
     const options = originalOrCamelOptions(opts);
 
     // Shared auth options
+    this.apiKey = opts.apiKey;
     this.projectId = options.get('project_id') ?? null;
     this.quotaProjectId = options.get('quota_project_id');
     this.credentials = options.get('credentials') ?? {};

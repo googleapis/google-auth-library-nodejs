@@ -220,6 +220,28 @@ body: |-
 
   This method will throw if the token is invalid.
 
+  #### Using an API Key
+
+  An API key can be provided to the constructor:
+  ```js
+  const client = new OAuth2Client({
+    apiKey: 'my-api-key'
+  });
+  ```
+
+  Note, classes that extend from this can utilize this parameter as well, such as `JWT` and `UserRefreshClient`.
+
+  Additionally, an API key can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
+  ```js
+  const auth = new GoogleAuth({
+    clientOptions: {
+      apiKey: 'my-api-key'
+    }
+  })
+  ```
+
+  API Key support varies by API.
+
   ## JSON Web Tokens
   The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
