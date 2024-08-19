@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * Lists storage buckets by authenticating with ADC.
- */
 function main() {
   // [START apikeys_authenticate_api_key]
 
