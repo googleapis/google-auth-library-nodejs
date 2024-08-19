@@ -4,6 +4,20 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.14.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.13.0...v9.14.0) (2024-08-19)
+
+
+### Features
+
+* Add `AnyAuthClient` type ([#1843](https://github.com/googleapis/google-auth-library-nodejs/issues/1843)) ([3ae120d](https://github.com/googleapis/google-auth-library-nodejs/commit/3ae120d0a45c95e36c59c9ac8286483938781f30))
+* Extend API Key Support ([#1835](https://github.com/googleapis/google-auth-library-nodejs/issues/1835)) ([5fc3bcc](https://github.com/googleapis/google-auth-library-nodejs/commit/5fc3bccacc74082f71983595dd7654b1b60be0f8))
+* Group Concurrent `getClient` Requests ([#1848](https://github.com/googleapis/google-auth-library-nodejs/issues/1848)) ([243ce28](https://github.com/googleapis/google-auth-library-nodejs/commit/243ce284bedd101a15a0e738a59a7db808c2ad3f))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v21 ([#1847](https://github.com/googleapis/google-auth-library-nodejs/issues/1847)) ([e9459f3](https://github.com/googleapis/google-auth-library-nodejs/commit/e9459f3d11418ce8afd4fe87cd92d4b2d06457ba))
+
 ## [9.13.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.12.0...v9.13.0) (2024-07-29)
 
 
