@@ -273,7 +273,7 @@ const client = new OAuth2Client({
 });
 ```
 
-Note, classes that extend from this can utilize this parameter as well, such as `JWT` and `UserRefreshClient`.
+Note, classes that extend from `OAuth2Client` can utilize this parameter as well, such as `JWT` and `UserRefreshClient`.
 
 Additionally, an API key can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
 ```js
