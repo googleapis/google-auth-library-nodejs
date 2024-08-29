@@ -787,15 +787,15 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
           'Must pass in a stream containing the Google auth settings.'
         );
       }
-      let s = '';
+      const chunks: string[] = [];
       inputStream
         .setEncoding('utf8')
         .on('error', reject)
-        .on('data', chunk => (s += chunk))
+        .on('data', chunk => chunks.push(chunk))
         .on('end', () => {
           try {
             try {
-              const data = JSON.parse(s);
+              const data = JSON.parse(chunks.join(''));
               const r = this._cacheClientFromJSON(data, options);
               return resolve(r);
             } catch (err) {
