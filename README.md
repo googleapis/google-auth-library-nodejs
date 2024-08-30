@@ -433,31 +433,56 @@ Follow the detailed [instructions](https://cloud.google.com/iam/docs/access-reso
 
 If you want to use AWS security credentials that cannot be retrieved using methods supported natively by this library,
 a custom AwsSecurityCredentialsSupplier implementation may be specified when creating an AWS client. The supplier must
-return valid, unexpired AWS security credentials when called by the GCP credential.
+return valid, unexpired AWS security credentials when called by the GCP credential. Currently, using ADC with your AWS
+workloads is only supported with EC2. An example of a good use case for using a custom credential suppliers is when
+your workloads are running in other AWS environments, such as ECS, EKS, Fargate, etc.
 
 Note that the client does not cache the returned AWS security credentials, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
 
 ```ts
+import { AwsClient, AwsSecurityCredentials, AwsSecurityCredentialsSupplier, ExternalAccountSupplierContext } from 'google-auth-library';
+import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
+import { Storage } from '@google-cloud/storage';
+
 class AwsSupplier implements AwsSecurityCredentialsSupplier {
+  private readonly region: string
+
+  constructor(region: string) {
+    this.region = options.region;
+  }
+
   async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
-    // Return the current AWS region, i.e. 'us-east-2'.
+    // Return the AWS region i.e. "us-east-2".
+    return this.region
   }
 
   async getAwsSecurityCredentials(
     context: ExternalAccountSupplierContext
   ): Promise<AwsSecurityCredentials> {
-    const audience = context.audience;
-    // Return valid AWS security credentials for the requested audience.
+    // Retrieve the AWS credentails.
+    const awsCredentialsProvider = fromNodeProviderChain();
+    const awsCredentials = await awsCredentialsProvider();
+
+    // Parse the AWS credentials into a AWS security credentials instance and
+    // return them.
+    const awsSecurityCredentials = {
+      accessKeyId: awsCredentials.accessKeyId,
+      secretAccessKey: awsCredentials.secretAccessKey,
+      token: awsCredentials.sessionToken
+    }
+    return awsSecurityCredentials;
   }
 }
 
 const clientOptions = {
   audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
   subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request', // Set the subject token type.
-  aws_security_credentials_supplier: new AwsSupplier() // Set the custom supplier.
+  aws_security_credentials_supplier: new AwsSupplier("AWS_REGION") // Set the custom supplier.
 }
 
-const client = new AwsClient(clientOptions);
+// Create a new Auth client and use it to create service client, i.e. storage.
+const authClient = new AwsClient(clientOptions);
+const storage = new Storage({ authClient });
 ```
 
 Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#provider-audience) is: `//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
