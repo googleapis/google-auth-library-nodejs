@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.14.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.14.0...v9.14.1) (2024-08-30)
+
+
+### Performance Improvements
+
+* **GoogleAuth:** Improve Client Creation From Files/Streams Perf ([#1856](https://github.com/googleapis/google-auth-library-nodejs/issues/1856)) ([85d9d6f](https://github.com/googleapis/google-auth-library-nodejs/commit/85d9d6fe312f5ed68db22a28b84b6c8f257f9ec9))
+
 ## [9.14.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.13.0...v9.14.0) (2024-08-19)
 
 
