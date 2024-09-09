@@ -187,6 +187,13 @@ export abstract class AuthClient
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
 
+  /**
+   * The type of credential.
+   *
+   * @see {@link AuthClient.CREDENTIAL_TYPES}
+   */
+  readonly credentialType?: keyof typeof AuthClient.CREDENTIAL_TYPES;
+
   constructor(opts: AuthClientOptions = {}) {
     super();
 
@@ -234,9 +241,33 @@ export abstract class AuthClient
   }
 
   /**
-   * Provides an alternative Gaxios request implementation with auth credentials
+   * The public request API in which credentials may be added to the request.
+   *
+   * @param options options for `gaxios`
    */
-  abstract request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
+  abstract request<T>(options: GaxiosOptions): GaxiosPromise<T>;
+
+  /**
+   * The internal request handler. At this stage the credentials have been created, but
+   * the standard headers have not been added until this call.
+   *
+   * @param options options for `gaxios`
+   */
+  protected _request<T>(options: GaxiosOptions): GaxiosPromise<T> {
+    if (!options.headers?.['x-goog-api-client']) {
+      options.headers = options.headers || {};
+      const nodeVersion = process.version.replace(/^v/, '');
+      options.headers['x-goog-api-client'] = `gl-node/${nodeVersion}`;
+    }
+
+    if (this.credentialType) {
+      options.headers['x-goog-api-client'] =
+        options.headers['x-goog-api-client'] +
+        ` cred-type/${this.credentialType}`;
+    }
+
+    return this.transporter.request<T>(options);
+  }
 
   /**
    * The main authentication interface. It takes an optional url which when
@@ -285,6 +316,22 @@ export abstract class AuthClient
     }
     return headers;
   }
+
+  /**
+   * An enum of the known credential types
+   */
+  protected static CREDENTIAL_TYPES = {
+    /** for gcloud user credential (auth code flow and refresh flow) */
+    u: 'u',
+    /** service account credential with assertion token flow */
+    sa: 'sa',
+    /** service account credential with self signed jwt token flow */
+    jwt: 'jwt',
+    /** service account credential attached to metadata server, i.e. VM credential */
+    mds: 'mds',
+    /** impersonated credential */
+    imp: 'imp',
+  } as const;
 
   /**
    * Retry config for Auth-related requests.

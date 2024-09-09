@@ -67,7 +67,7 @@ export class DefaultTransporter implements Transporter {
         opts.headers['User-Agent'] =
           `${uaValue} ${DefaultTransporter.USER_AGENT}`;
       }
-      // track google-auth-library-nodejs version:
+
       if (!opts.headers['x-goog-api-client']) {
         const nodeVersion = process.version.replace(/^v/, '');
         opts.headers['x-goog-api-client'] = `gl-node/${nodeVersion}`;

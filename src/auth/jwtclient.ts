@@ -37,6 +37,8 @@ export interface JWTOptions extends OAuth2ClientOptions {
 }
 
 export class JWT extends OAuth2Client implements IdTokenProvider {
+  credentialType!: (typeof JWT.CREDENTIAL_TYPES)['jwt' | 'sa'];
+
   email?: string;
   keyFile?: string;
   key?: string;
@@ -95,6 +97,9 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
+
+    // Using to set the `credentialType`
+    this.#useSelfSigned();
   }
 
   /**
@@ -109,6 +114,24 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     return jwt;
   }
 
+  #useSelfSigned(url?: string | null): boolean {
+    url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
+
+    const useSelfSignedFlow =
+      !this.apiKey &&
+      !!(
+        (!this.hasUserScopes() && url) ||
+        (this.useJWTAccessWithScope && this.hasAnyScopes()) ||
+        this.universeDomain !== DEFAULT_UNIVERSE
+      );
+
+    this.credentialType = useSelfSignedFlow
+      ? JWT.CREDENTIAL_TYPES.jwt
+      : JWT.CREDENTIAL_TYPES.sa;
+
+    return useSelfSignedFlow;
+  }
+
   /**
    * Obtains the metadata to be sent with the request.
    *
@@ -117,19 +140,13 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async getRequestMetadataAsync(
     url?: string | null
   ): Promise<RequestMetadataResponse> {
-    url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
-    const useSelfSignedJWT =
-      (!this.hasUserScopes() && url) ||
-      (this.useJWTAccessWithScope && this.hasAnyScopes()) ||
-      this.universeDomain !== DEFAULT_UNIVERSE;
-
     if (this.subject && this.universeDomain !== DEFAULT_UNIVERSE) {
       throw new RangeError(
         `Service Account user is configured for the credential. Domain-wide delegation is not supported in universes other than ${DEFAULT_UNIVERSE}`
       );
     }
 
-    if (!this.apiKey && useSelfSignedJWT) {
+    if (!this.#useSelfSigned(url)) {
       if (
         this.additionalClaims &&
         (

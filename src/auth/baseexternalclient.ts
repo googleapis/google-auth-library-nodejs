@@ -478,7 +478,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     } else if (projectNumber) {
       // Preferable not to use request() to avoid retrial policies.
       const headers = await this.getRequestHeaders();
-      const response = await this.transporter.request<ProjectInfo>({
+      const response = await this._request<ProjectInfo>({
         ...BaseExternalAccountClient.RETRY_CONFIG,
         headers,
         url: `${this.cloudResourceManagerURL.toString()}${projectNumber}`,
@@ -512,7 +512,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       if (requestHeaders && requestHeaders.Authorization) {
         opts.headers.Authorization = requestHeaders.Authorization;
       }
-      response = await this.transporter.request<T>(opts);
+      response = await this._request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
       if (res) {
@@ -679,8 +679,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       },
       responseType: 'json',
     };
-    const response =
-      await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
+    const response = await this._request<IamGenerateAccessTokenResponse>(opts);
     const successResponse = response.data;
     return {
       access_token: successResponse.accessToken,
