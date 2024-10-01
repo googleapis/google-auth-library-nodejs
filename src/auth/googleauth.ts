@@ -290,7 +290,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
   }
 
-  /*
+  /**
    * A private method for finding and caching a projectId.
    *
    * Supports environments in order of precedence:
