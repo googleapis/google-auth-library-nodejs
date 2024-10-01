@@ -73,13 +73,6 @@ export interface CredentialAccessBoundary {
   accessBoundary: {
     accessBoundaryRules: AccessBoundaryRule[];
   };
-  /**
-   * An optional STS access token exchange endpoint.
-   *
-   * @example
-   * 'https://sts.googleapis.com/v1/token'
-   */
-  tokenURL?: string | URL;
 }
 
 /** Defines an upper bound of permissions on a particular resource. */
@@ -141,11 +134,6 @@ export class DownscopedClient extends AuthClient {
   ) {
     super({...additionalOptions, quotaProjectId});
 
-    // extract and remove `tokenURL` as it is not officially a part of the credentialAccessBoundary
-    this.credentialAccessBoundary = {...credentialAccessBoundary};
-    const tokenURL = this.credentialAccessBoundary.tokenURL;
-    delete this.credentialAccessBoundary.tokenURL;
-
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
@@ -174,7 +162,7 @@ export class DownscopedClient extends AuthClient {
     }
 
     this.stsCredential = new sts.StsCredentials(
-      tokenURL || `https://sts.${this.universeDomain}/v1/token`
+      `https://sts.${this.universeDomain}/v1/token`
     );
 
     this.cachedDownscopedAccessToken = null;
@@ -262,12 +250,12 @@ export class DownscopedClient extends AuthClient {
    * Authenticates the provided HTTP request, processes it and resolves with the
    * returned response.
    * @param opts The HTTP request options.
-   * @param retry Whether the current attempt is a retry after a failed attempt.
+   * @param reAuthRetried Whether the current attempt is a retry after a failed attempt due to an auth failure
    * @return A promise that resolves with the successful response.
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -293,7 +281,7 @@ export class DownscopedClient extends AuthClient {
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           this.forceRefreshOnFailure

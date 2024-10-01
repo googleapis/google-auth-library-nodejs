@@ -4,6 +4,136 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.14.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.14.0...v9.14.1) (2024-08-30)
+
+
+### Performance Improvements
+
+* **GoogleAuth:** Improve Client Creation From Files/Streams Perf ([#1856](https://github.com/googleapis/google-auth-library-nodejs/issues/1856)) ([85d9d6f](https://github.com/googleapis/google-auth-library-nodejs/commit/85d9d6fe312f5ed68db22a28b84b6c8f257f9ec9))
+
+## [9.14.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.13.0...v9.14.0) (2024-08-19)
+
+
+### Features
+
+* Add `AnyAuthClient` type ([#1843](https://github.com/googleapis/google-auth-library-nodejs/issues/1843)) ([3ae120d](https://github.com/googleapis/google-auth-library-nodejs/commit/3ae120d0a45c95e36c59c9ac8286483938781f30))
+* Extend API Key Support ([#1835](https://github.com/googleapis/google-auth-library-nodejs/issues/1835)) ([5fc3bcc](https://github.com/googleapis/google-auth-library-nodejs/commit/5fc3bccacc74082f71983595dd7654b1b60be0f8))
+* Group Concurrent `getClient` Requests ([#1848](https://github.com/googleapis/google-auth-library-nodejs/issues/1848)) ([243ce28](https://github.com/googleapis/google-auth-library-nodejs/commit/243ce284bedd101a15a0e738a59a7db808c2ad3f))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v21 ([#1847](https://github.com/googleapis/google-auth-library-nodejs/issues/1847)) ([e9459f3](https://github.com/googleapis/google-auth-library-nodejs/commit/e9459f3d11418ce8afd4fe87cd92d4b2d06457ba))
+
+## [9.13.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.12.0...v9.13.0) (2024-07-29)
+
+
+### Features
+
+* Group Concurrent Access Token Requests for Base External Clients ([#1840](https://github.com/googleapis/google-auth-library-nodejs/issues/1840)) ([0e08fc5](https://github.com/googleapis/google-auth-library-nodejs/commit/0e08fc58eb61bba431ab4f217f7f7ad3a7dce9df))
+
+## [9.12.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.11.0...v9.12.0) (2024-07-26)
+
+
+### Features
+
+* Expose More Public API Types ([#1838](https://github.com/googleapis/google-auth-library-nodejs/issues/1838)) ([5745a49](https://github.com/googleapis/google-auth-library-nodejs/commit/5745a49df31ff87c0e53edf44671f3a10c024d9f))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v19 ([#1823](https://github.com/googleapis/google-auth-library-nodejs/issues/1823)) ([b070ffb](https://github.com/googleapis/google-auth-library-nodejs/commit/b070ffbfeb35a7f4552e86bf1840645096951b58))
+* **deps:** Update dependency @googleapis/iam to v20 ([#1832](https://github.com/googleapis/google-auth-library-nodejs/issues/1832)) ([e31a831](https://github.com/googleapis/google-auth-library-nodejs/commit/e31a831417692e730f79d42608bd543046070ae3))
+
+## [9.11.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.10.0...v9.11.0) (2024-06-01)
+
+
+### Features
+
+* Adding support of client authentication method. ([#1814](https://github.com/googleapis/google-auth-library-nodejs/issues/1814)) ([4a14e8c](https://github.com/googleapis/google-auth-library-nodejs/commit/4a14e8c3bdcfa9d8531a231b00b946728530ce12))
+
+## [9.10.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.9.0...v9.10.0) (2024-05-10)
+
+
+### Features
+
+* Implement `UserRefreshClient#fetchIdToken` ([#1811](https://github.com/googleapis/google-auth-library-nodejs/issues/1811)) ([ae8bc54](https://github.com/googleapis/google-auth-library-nodejs/commit/ae8bc5476f5d93c8516d9a9eb553e7ce7c00edd5))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v16 ([#1803](https://github.com/googleapis/google-auth-library-nodejs/issues/1803)) ([40406a0](https://github.com/googleapis/google-auth-library-nodejs/commit/40406a0512cde1d75d2af7dd23aa7aa7de38d30b))
+* **deps:** Update dependency @googleapis/iam to v17 ([#1808](https://github.com/googleapis/google-auth-library-nodejs/issues/1808)) ([4d67f07](https://github.com/googleapis/google-auth-library-nodejs/commit/4d67f07380f690a99c8facf7266db7cb2d6c69b3))
+* **deps:** Update dependency @googleapis/iam to v18 ([#1809](https://github.com/googleapis/google-auth-library-nodejs/issues/1809)) ([b2b9676](https://github.com/googleapis/google-auth-library-nodejs/commit/b2b9676f933c012fb2cd1789ad80b927af0de07c))
+
+## [9.9.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.8.0...v9.9.0) (2024-04-18)
+
+
+### Features
+
+* Adds suppliers for custom subject token and AWS credentials ([#1795](https://github.com/googleapis/google-auth-library-nodejs/issues/1795)) ([c680b5d](https://github.com/googleapis/google-auth-library-nodejs/commit/c680b5ddfa526d414ad1250bb6f5af69c498b909))
+
+## [9.8.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.7.0...v9.8.0) (2024-04-12)
+
+
+### Features
+
+* Enable Retries For Auth Requests ([#1791](https://github.com/googleapis/google-auth-library-nodejs/issues/1791)) ([9b69a31](https://github.com/googleapis/google-auth-library-nodejs/commit/9b69a3119c2d0dfe12d41a5f77658d35a2c92d74))
+* Improve `gaxios` exposure ([#1794](https://github.com/googleapis/google-auth-library-nodejs/issues/1794)) ([5058726](https://github.com/googleapis/google-auth-library-nodejs/commit/5058726e2234a2da4edd31f0898465798943ebe6))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency open to v10 ([#1782](https://github.com/googleapis/google-auth-library-nodejs/issues/1782)) ([16e5cae](https://github.com/googleapis/google-auth-library-nodejs/commit/16e5cae1d56d5c3dd6cc3bdca5ecdfb534eaf529))
+* **deps:** Update dependency opn to v6 ([#1775](https://github.com/googleapis/google-auth-library-nodejs/issues/1775)) ([fc8dfe9](https://github.com/googleapis/google-auth-library-nodejs/commit/fc8dfe9d373e30dd1bd06eb8cbb8b52e735b4d83))
+
+## [9.7.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.3...v9.7.0) (2024-03-12)
+
+
+### Features
+
+* `PassThrough` AuthClient ([#1771](https://github.com/googleapis/google-auth-library-nodejs/issues/1771)) ([0003bee](https://github.com/googleapis/google-auth-library-nodejs/commit/0003bee317dd8e99b553857edfffeb4a47a4af26))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v15 ([#1772](https://github.com/googleapis/google-auth-library-nodejs/issues/1772)) ([f45f975](https://github.com/googleapis/google-auth-library-nodejs/commit/f45f9753a7c83bc04616a1bdbaf687b3f38a17d2))
+* Making aws request signer get a new session token each time security credentials are requested. ([#1765](https://github.com/googleapis/google-auth-library-nodejs/issues/1765)) ([6a6e496](https://github.com/googleapis/google-auth-library-nodejs/commit/6a6e49634863f61487688724d0d20632e03f0299))
+
+## [9.6.3](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.2...v9.6.3) (2024-02-06)
+
+
+### Bug Fixes
+
+* Always sign with `scopes` on Non-Default Universes ([#1752](https://github.com/googleapis/google-auth-library-nodejs/issues/1752)) ([f3d3a03](https://github.com/googleapis/google-auth-library-nodejs/commit/f3d3a03dbce42a400c11457131dd1fabc206826a))
+
+## [9.6.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.1...v9.6.2) (2024-02-02)
+
+
+### Bug Fixes
+
+* Allow Get Universe Without Credentials ([#1748](https://github.com/googleapis/google-auth-library-nodejs/issues/1748)) ([696db72](https://github.com/googleapis/google-auth-library-nodejs/commit/696db72bb8644739768d20375d670813d4490714))
+
+## [9.6.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.6.0...v9.6.1) (2024-02-01)
+
+
+### Bug Fixes
+
+* Universe Domain Resolution ([#1745](https://github.com/googleapis/google-auth-library-nodejs/issues/1745)) ([a4f9f9c](https://github.com/googleapis/google-auth-library-nodejs/commit/a4f9f9c65853a37e6e83861c5d22533dba774037))
+
+## [9.6.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.5.0...v9.6.0) (2024-01-29)
+
+
+### Features
+
+* Open More Endpoints for Customization ([#1721](https://github.com/googleapis/google-auth-library-nodejs/issues/1721)) ([effbf87](https://github.com/googleapis/google-auth-library-nodejs/commit/effbf87f6f0fd11a0cb1c749dad81737926dc436))
+* Use self-signed JWTs when non-default Universe Domains ([#1722](https://github.com/googleapis/google-auth-library-nodejs/issues/1722)) ([7e9876e](https://github.com/googleapis/google-auth-library-nodejs/commit/7e9876e2496b073220ca270368da7e9522da88f9))
+
+
+### Bug Fixes
+
+* Revert Missing `WORKFORCE_AUDIENCE_PATTERN` ([#1740](https://github.com/googleapis/google-auth-library-nodejs/issues/1740)) ([422de68](https://github.com/googleapis/google-auth-library-nodejs/commit/422de68d8d9ea66e6bf1fea923f61c8af0842420))
+
 ## [9.5.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.4.2...v9.5.0) (2024-01-25)
 
 

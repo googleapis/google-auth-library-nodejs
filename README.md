@@ -264,6 +264,28 @@ console.log(tokenInfo.scopes);
 
 This method will throw if the token is invalid.
 
+#### Using an API Key
+
+An API key can be provided to the constructor:
+```js
+const client = new OAuth2Client({
+  apiKey: 'my-api-key'
+});
+```
+
+Note, classes that extend from this can utilize this parameter as well, such as `JWT` and `UserRefreshClient`.
+
+Additionally, an API key can be used in `GoogleAuth` via the `clientOptions` parameter and will be passed to any generated `OAuth2Client` instances:
+```js
+const auth = new GoogleAuth({
+  clientOptions: {
+    apiKey: 'my-api-key'
+  }
+})
+```
+
+API Key support varies by API.
+
 ## JSON Web Tokens
 The Google Developers Console provides a `.json` file that you can use to configure a JWT auth client and authenticate your requests, for example when using a service account.
 
@@ -400,6 +422,80 @@ The gcloud create-cred-config command will be updated to support this soon.
 
 You can now [start using the Auth library](#using-external-identities) to call Google Cloud resources from AWS.
 
+### Accessing resources from AWS using a custom AWS security credentials supplier.
+
+In order to access Google Cloud resources from Amazon Web Services (AWS), the following requirements are needed:
+- A workload identity pool needs to be created.
+- AWS needs to be added as an identity provider in the workload identity pool (The Google [organization policy](https://cloud.google.com/iam/docs/manage-workload-identity-pools-providers#restrict) needs to allow federation from AWS).
+- Permission to impersonate a service account needs to be granted to the external identity.
+
+Follow the detailed [instructions](https://cloud.google.com/iam/docs/access-resources-aws) on how to configure workload identity federation from AWS.
+
+If you want to use AWS security credentials that cannot be retrieved using methods supported natively by this library,
+a custom AwsSecurityCredentialsSupplier implementation may be specified when creating an AWS client. The supplier must
+return valid, unexpired AWS security credentials when called by the GCP credential. Currently, using ADC with your AWS
+workloads is only supported with EC2. An example of a good use case for using a custom credential suppliers is when
+your workloads are running in other AWS environments, such as ECS, EKS, Fargate, etc.
+
+Note that the client does not cache the returned AWS security credentials, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
+
+```ts
+import { AwsClient, AwsSecurityCredentials, AwsSecurityCredentialsSupplier, ExternalAccountSupplierContext } from 'google-auth-library';
+import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
+import { Storage } from '@google-cloud/storage';
+
+class AwsSupplier implements AwsSecurityCredentialsSupplier {
+  private readonly region: string
+
+  constructor(region: string) {
+    this.region = options.region;
+  }
+
+  async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
+    // Return the AWS region i.e. "us-east-2".
+    return this.region
+  }
+
+  async getAwsSecurityCredentials(
+    context: ExternalAccountSupplierContext
+  ): Promise<AwsSecurityCredentials> {
+    // Retrieve the AWS credentails.
+    const awsCredentialsProvider = fromNodeProviderChain();
+    const awsCredentials = await awsCredentialsProvider();
+
+    // Parse the AWS credentials into a AWS security credentials instance and
+    // return them.
+    const awsSecurityCredentials = {
+      accessKeyId: awsCredentials.accessKeyId,
+      secretAccessKey: awsCredentials.secretAccessKey,
+      token: awsCredentials.sessionToken
+    }
+    return awsSecurityCredentials;
+  }
+}
+
+const clientOptions = {
+  audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request', // Set the subject token type.
+  aws_security_credentials_supplier: new AwsSupplier("AWS_REGION") // Set the custom supplier.
+}
+
+// Create a new Auth client and use it to create service client, i.e. storage.
+const authClient = new AwsClient(clientOptions);
+const storage = new Storage({ authClient });
+```
+
+Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#provider-audience) is: `//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+
+Where the following variables need to be substituted:
+
+* `$PROJECT_NUMBER`: The Google Cloud project number.
+* `$WORKLOAD_POOL_ID`: The workload pool ID.
+* `$PROVIDER_ID`: The provider ID.
+
+
+The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/sdk/gcloud/reference/iam/workload-identity-pools/create-cred-config).
+
 ### Access resources from Microsoft Azure
 
 In order to access Google Cloud resources from Microsoft Azure, the following requirements are needed:
@@ -507,6 +603,44 @@ Where the following variables need to be substituted:
 - `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
 - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
+
+### Accessing resources from an OIDC or SAML2.0 identity provider using a custom supplier
+
+If you want to use OIDC or SAML2.0 that cannot be retrieved using methods supported natively by this library,
+a custom SubjectTokenSupplier implementation may be specified when creating an identity pool client. The supplier must
+return a valid, unexpired subject token when called by the GCP credential.
+
+Note that the client does not cache the returned subject token, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
+
+```ts
+class CustomSupplier implements SubjectTokenSupplier {
+  async getSubjectToken(
+    context: ExternalAccountSupplierContext
+  ): Promise<string> {
+    const audience = context.audience;
+    const subjectTokenType = context.subjectTokenType;
+    // Return a valid subject token for the requested audience and subject token type.
+  }
+}
+
+const clientOptions = {
+  audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
+  subject_token_supplier: new CustomSupplier() // Set the custom supplier.
+}
+
+const client = new CustomSupplier(clientOptions);
+```
+
+Where the [audience](https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#provider-audience) is: `//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+
+Where the following variables need to be substituted:
+
+* `$PROJECT_NUMBER`: The Google Cloud project number.
+* `$WORKLOAD_POOL_ID`: The workload pool ID.
+* `$PROVIDER_ID`: The provider ID.
+
+The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/sdk/gcloud/reference/iam/workload-identity-pools/create-cred-config).
 
 #### Using External Account Authorized User workforce credentials
 
@@ -886,6 +1020,45 @@ credentials unless they do not meet your specific requirements.
 You can now [use the Auth library](#using-external-identities) to call Google Cloud
 resources from an OIDC or SAML provider.
 
+### Accessing resources from an OIDC or SAML2.0 identity provider using a custom supplier
+
+If you want to use OIDC or SAML2.0 that cannot be retrieved using methods supported natively by this library,
+a custom SubjectTokenSupplier implementation may be specified when creating an identity pool client. The supplier must
+return a valid, unexpired subject token when called by the GCP credential.
+
+Note that the client does not cache the returned subject token, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
+
+```ts
+class CustomSupplier implements SubjectTokenSupplier {
+  async getSubjectToken(
+    context: ExternalAccountSupplierContext
+  ): Promise<string> {
+    const audience = context.audience;
+    const subjectTokenType = context.subjectTokenType;
+    // Return a valid subject token for the requested audience and subject token type.
+  }
+}
+
+const clientOptions = {
+  audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
+  subject_token_supplier: new CustomSupplier() // Set the custom supplier.
+}
+
+const client = new CustomSupplier(clientOptions);
+```
+
+Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+
+Where the following variables need to be substituted:
+
+* `WORKFORCE_POOL_ID`: The worforce pool ID.
+* `$PROVIDER_ID`: The provider ID.
+
+and the workforce pool user project is the project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
+
+The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials#use_configuration_files_for_sign-in).
+
 ### Using External Identities
 
 External identities (AWS, Azure and OIDC-based providers) can be used with `Application Default Credentials`.
@@ -1200,6 +1373,7 @@ Samples are in the [`samples/`](https://github.com/googleapis/google-auth-librar
 | Sample                      | Source Code                       | Try it |
 | --------------------------- | --------------------------------- | ------ |
 | Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/adc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/adc.js,samples/README.md) |
+| Authenticate API Key | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateAPIKey.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateAPIKey.js,samples/README.md) |
 | Authenticate Explicit | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateExplicit.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateExplicit.js,samples/README.md) |
 | Authenticate Implicit With Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md) |
 | Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
@@ -1290,4 +1464,4 @@ See [LICENSE](https://github.com/googleapis/google-auth-library-nodejs/blob/main
 [projects]: https://console.cloud.google.com/project
 [billing]: https://support.google.com/cloud/answer/6293499#enable-billing
 
-[auth]: https://cloud.google.com/docs/authentication/getting-started
+[auth]: https://cloud.google.com/docs/authentication/external/set-up-adc-local

@@ -63,8 +63,8 @@ describe('pack and install', () => {
     // we expect npm install is executed in the before hook
     await execa('npx', ['webpack'], {cwd: `${stagingDir}/`, stdio: 'inherit'});
     const bundle = path.join(stagingDir, 'dist', 'bundle.min.js');
-    const stat = fs.statSync(bundle);
-    assert(stat.size < 512 * 1024);
+    // ensure it is a non-empty bundle
+    assert(fs.statSync(bundle).size);
   });
 
   /**

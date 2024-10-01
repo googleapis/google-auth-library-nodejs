@@ -17,7 +17,7 @@ import {
   ExecutableError,
   PluggableAuthClient,
 } from '../src/auth/pluggable-auth-client';
-import {BaseExternalAccountClient, IdentityPoolClient} from '../src';
+import {BaseExternalAccountClient} from '../src';
 import {
   assertGaxiosResponsePresent,
   getAudience,

@@ -55,8 +55,8 @@ export class Compute extends OAuth2Client {
     this.scopes = Array.isArray(options.scopes)
       ? options.scopes
       : options.scopes
-      ? [options.scopes]
-      : [];
+        ? [options.scopes]
+        : [];
   }
 
   /**

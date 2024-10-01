@@ -17,7 +17,7 @@ import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
-import {Headers} from './oauth2client';
+import {GetAccessTokenResponse, Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 
 /**
@@ -75,6 +75,10 @@ interface AuthJSONOptions {
  */
 export interface AuthClientOptions
   extends Partial<OriginalAndCamel<AuthJSONOptions>> {
+  /**
+   * An API key to use, optional.
+   */
+  apiKey?: string;
   credentials?: Credentials;
 
   /**
@@ -131,10 +135,7 @@ export interface CredentialsClient {
    * @return A promise that resolves with the current GCP access token
    *   response. If the current credential is expired, a new one is retrieved.
    */
-  getAccessToken(): Promise<{
-    token?: string | null;
-    res?: GaxiosResponse | null;
-  }>;
+  getAccessToken(): Promise<GetAccessTokenResponse>;
 
   /**
    * The main authentication interface. It takes an optional url which when
@@ -176,6 +177,7 @@ export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient
 {
+  apiKey?: string;
   projectId?: string | null;
   /**
    * The quota project ID. The quota project can be used by client libraries for the billing purpose.
@@ -194,6 +196,7 @@ export abstract class AuthClient
     const options = originalOrCamelOptions(opts);
 
     // Shared auth options
+    this.apiKey = opts.apiKey;
     this.projectId = options.get('project_id') ?? null;
     this.quotaProjectId = options.get('quota_project_id');
     this.credentials = options.get('credentials') ?? {};
@@ -211,6 +214,26 @@ export abstract class AuthClient
     }
 
     this.forceRefreshOnFailure = opts.forceRefreshOnFailure ?? false;
+  }
+
+  /**
+   * Return the {@link Gaxios `Gaxios`} instance from the {@link AuthClient.transporter}.
+   *
+   * @expiremental
+   */
+  get gaxios(): Gaxios | null {
+    if (this.transporter instanceof Gaxios) {
+      return this.transporter;
+    } else if (this.transporter instanceof DefaultTransporter) {
+      return this.transporter.instance;
+    } else if (
+      'instance' in this.transporter &&
+      this.transporter.instance instanceof Gaxios
+    ) {
+      return this.transporter.instance;
+    }
+
+    return null;
   }
 
   /**
@@ -264,5 +287,23 @@ export abstract class AuthClient
       headers['x-goog-user-project'] = this.quotaProjectId;
     }
     return headers;
+  }
+
+  /**
+   * Retry config for Auth-related requests.
+   *
+   * @remarks
+   *
+   * This is not a part of the default {@link AuthClient.transporter transporter/gaxios}
+   * config as some downstream APIs would prefer if customers explicitly enable retries,
+   * such as GCS.
+   */
+  protected static get RETRY_CONFIG(): GaxiosOptions {
+    return {
+      retry: true,
+      retryConfig: {
+        httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
+      },
+    };
   }
 }

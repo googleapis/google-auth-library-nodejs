@@ -39,6 +39,7 @@ import {
  */
 export const EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE =
   'external_account_authorized_user';
+const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/oauthtoken';
 
 /**
  * External Account Authorized User Credentials JSON interface.
@@ -113,6 +114,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
     };
 
     const opts: GaxiosOptions = {
+      ...ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
       url: this.url,
       method: 'POST',
       headers,
@@ -171,6 +173,9 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     additionalOptions?: AuthClientOptions
   ) {
     super({...options, ...additionalOptions});
+    if (options.universe_domain) {
+      this.universeDomain = options.universe_domain;
+    }
     this.refreshToken = options.refresh_token;
     const clientAuth = {
       confidentialClientType: 'basic',
@@ -179,7 +184,8 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     } as ClientAuthentication;
     this.externalAccountAuthorizedUserHandler =
       new ExternalAccountAuthorizedUserHandler(
-        options.token_url,
+        options.token_url ??
+          DEFAULT_TOKEN_URL.replace('{universeDomain}', this.universeDomain),
         this.transporter,
         clientAuth
       );
@@ -197,10 +203,6 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
         .eagerRefreshThresholdMillis as number;
     }
     this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
-
-    if (options.universe_domain) {
-      this.universeDomain = options.universe_domain;
-    }
   }
 
   async getAccessToken(): Promise<{
@@ -248,12 +250,12 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * Authenticates the provided HTTP request, processes it and resolves with the
    * returned response.
    * @param opts The HTTP request options.
-   * @param retry Whether the current attempt is a retry after a failed attempt.
+   * @param reAuthRetried Whether the current attempt is a retry after a failed attempt due to an auth failure.
    * @return A promise that resolves with the successful response.
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -279,7 +281,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           this.forceRefreshOnFailure

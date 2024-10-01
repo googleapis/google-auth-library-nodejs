@@ -17,7 +17,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {GaxiosError, GaxiosPromise} from 'gaxios';
 import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
@@ -54,11 +54,11 @@ class TestAuthClient extends AuthClient {
     this.credentials.expiry_date = expirationTime;
   }
 
-  async getRequestHeaders(url?: string): Promise<Headers> {
+  async getRequestHeaders(): Promise<Headers> {
     throw new Error('Not implemented.');
   }
 
-  request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
+  request<T>(): GaxiosPromise<T> {
     throw new Error('Not implemented.');
   }
 }
@@ -324,42 +324,6 @@ describe('DownscopedClient', () => {
         downscopedClient.eagerRefreshThresholdMillis,
         refreshOptions.eagerRefreshThresholdMillis
       );
-    });
-
-    it('should use a tokenURL', async () => {
-      const tokenURL = new URL('https://my-token-url/v1/token');
-      const scope = mockStsTokenExchange(
-        [
-          {
-            statusCode: 200,
-            response: stsSuccessfulResponse,
-            request: {
-              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-              requested_token_type:
-                'urn:ietf:params:oauth:token-type:access_token',
-              subject_token: 'subject_token_0',
-              subject_token_type:
-                'urn:ietf:params:oauth:token-type:access_token',
-              options: JSON.stringify(testClientAccessBoundary),
-            },
-          },
-        ],
-        undefined,
-        tokenURL.origin
-      );
-
-      const downscopedClient = new DownscopedClient(client, {
-        ...testClientAccessBoundary,
-        tokenURL,
-      });
-
-      const tokenResponse = await downscopedClient.getAccessToken();
-      assert.deepStrictEqual(
-        tokenResponse.token,
-        stsSuccessfulResponse.access_token
-      );
-
-      scope.done();
     });
   });
 
