@@ -427,10 +427,12 @@ describe('impersonated', () => {
             delegates: string[];
             audience: string;
             includeEmail: boolean;
+            useEmailAzp: true;
           }) => {
             assert.strictEqual(body.audience, expectedAudience);
             assert.strictEqual(body.includeEmail, expectedIncludeEmail);
             assert.deepStrictEqual(body.delegates, expectedDeligates);
+            assert.strictEqual(body.useEmailAzp, true);
             return true;
           }
         )
