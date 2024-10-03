@@ -652,7 +652,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       );
     }
 
-    // Extreact service account from service_account_impersonation_url
+    // Extract service account from service_account_impersonation_url
     const targetPrincipal = /(?<target>[^/]+):generateAccessToken$/.exec(
       json.service_account_impersonation_url
     )?.groups?.target;
