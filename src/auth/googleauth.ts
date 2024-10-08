@@ -457,12 +457,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
     // Determine if we're running on GCE.
     if (await this._checkIsGCE()) {
-      // set universe domain for Compute client
-      if (!originalOrCamelOptions(options).get('universe_domain')) {
-        options.universeDomain =
-          await this.getUniverseDomainFromMetadataServer();
-      }
-
       (options as ComputeOptions).scopes = this.getAnyScopes();
       return await this.#prepareAndCacheClient(new Compute(options));
     }
