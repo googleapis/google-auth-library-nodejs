@@ -55,6 +55,9 @@ interface AuthJSONOptions {
 
   /**
    * The default service domain for a given Cloud universe.
+   *
+   * @example
+   * 'googleapis.com'
    */
   universe_domain: string;
 
