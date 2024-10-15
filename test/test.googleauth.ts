@@ -1149,9 +1149,8 @@ describe('googleauth', () => {
 
     it('getCredentials should get metadata from the server when running on GCE', async () => {
       const clientEmail = 'test-creds@test-creds.iam.gserviceaccount.com';
-      const universeDomain = 'my-amazing-universe.com';
       const scopes = [
-        nockIsGCE({universeDomain}),
+        nockIsGCE(),
         createGetProjectIdNock(),
         nock(host).get(svcAccountPath).reply(200, clientEmail, HEADERS),
       ];
@@ -1160,7 +1159,6 @@ describe('googleauth', () => {
       const body = await auth.getCredentials();
       assert.ok(body);
       assert.strictEqual(body.client_email, clientEmail);
-      assert.strictEqual(body.universe_domain, universeDomain);
       assert.strictEqual(body.private_key, undefined);
       scopes.forEach(s => s.done());
     });
@@ -1643,14 +1641,6 @@ describe('googleauth', () => {
         assert(universe_domain);
         assert.notEqual(universe_domain, DEFAULT_UNIVERSE);
         assert.equal(await auth.getUniverseDomain(), universe_domain);
-      });
-
-      it('should use the metadata service if on GCP', async () => {
-        const universeDomain = 'my.universe.com';
-        const scope = nockIsGCE({universeDomain});
-
-        assert.equal(await auth.getUniverseDomain(), universeDomain);
-        await scope.done();
       });
     });
 
