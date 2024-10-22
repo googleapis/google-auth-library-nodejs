@@ -23,6 +23,7 @@ import {AuthClient} from './authclient';
 import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 import {SignBlobResponse} from './googleauth';
+import {originalOrCamelOptions} from '../util';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -124,6 +125,20 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     this.delegates = options.delegates ?? [];
     this.targetScopes = options.targetScopes ?? [];
     this.lifetime = options.lifetime ?? 3600;
+
+    const usingExplicitUniverseDomain =
+      !!originalOrCamelOptions(options).get('universe_domain');
+
+    if (!usingExplicitUniverseDomain) {
+      // override the default universe with the source's universe
+      this.universeDomain = this.sourceClient.universeDomain;
+    } else if (this.sourceClient.universeDomain !== this.universeDomain) {
+      // non-default and not matching the source
+      throw new RangeError(
+        `Universe domain ${this.sourceClient.universeDomain} in source credentials does not match ${this.universeDomain} universe domain set for impersonated credentials.`
+      );
+    }
+
     this.endpoint =
       options.endpoint ?? `https://iamcredentials.${this.universeDomain}`;
   }

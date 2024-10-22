@@ -97,7 +97,7 @@ describe('impersonated', () => {
     scopes.forEach(s => s.done());
   });
 
-  it('should use a `universeDomain` for its endpoint', async () => {
+  it('should inherit a `universeDomain` from the source client', async () => {
     const universeDomain = 'my.universe.com';
 
     const tomorrow = new Date();
@@ -126,19 +126,45 @@ describe('impersonated', () => {
         }),
     ];
 
+    const sourceClient = createSampleJWTClient();
+
+    // Use a simple API key for this test. No need to get too fancy.
+    sourceClient.apiKey = 'ABC';
+    delete sourceClient.subject;
+
+    sourceClient.universeDomain = universeDomain;
+
     const impersonated = new Impersonated({
-      sourceClient: createSampleJWTClient(),
+      sourceClient,
       targetPrincipal: 'target@project.iam.gserviceaccount.com',
       lifetime: 30,
       delegates: [],
       targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
-      universeDomain,
     });
 
     await impersonated.request({url});
     assert.strictEqual(impersonated.credentials.access_token, 'universe-token');
 
     scopes.forEach(s => s.done());
+  });
+
+  it("should throw if an explicit `universeDomain` does not equal the source's `universeDomain`", async () => {
+    const universeDomain = 'my.universe.com';
+    const otherUniverseDomain = 'not-my.universe.com';
+
+    const sourceClient = createSampleJWTClient();
+    sourceClient.universeDomain = otherUniverseDomain;
+
+    assert.throws(() => {
+      new Impersonated({
+        sourceClient,
+        targetPrincipal: 'target@project.iam.gserviceaccount.com',
+        lifetime: 30,
+        delegates: [],
+        targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        universeDomain,
+      });
+    }, /does not match/);
   });
 
   it('should not request impersonated credentials on second request', async () => {
