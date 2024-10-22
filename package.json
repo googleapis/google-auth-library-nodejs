@@ -25,7 +25,6 @@
     "jws": "^4.0.0"
   },
   "devDependencies": {
-    "@compodoc/compodoc": "1.1.23",
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
     "@types/jws": "^3.1.0",
@@ -42,6 +41,9 @@
     "execa": "^5.0.0",
     "gts": "^5.0.0",
     "is-docker": "^2.0.0",
+    "jsdoc": "^4.0.0",
+    "jsdoc-fresh": "^3.0.0",
+    "jsdoc-region-tag": "^3.0.0",
     "karma": "^6.0.0",
     "karma-chrome-launcher": "^3.0.0",
     "karma-coverage": "^2.0.0",
@@ -76,7 +78,7 @@
     "compile": "tsc -p .",
     "fix": "gts fix",
     "pretest": "npm run compile -- --sourceMap",
-    "docs": "compodoc src/",
+    "docs": "jsdoc -c .jsdoc.json",
     "samples-setup": "cd samples/ && npm link ../ && npm run setup && cd ../",
     "samples-test": "cd samples/ && npm link ../ && npm test && cd ../",
     "system-test": "mocha build/system-test --timeout 60000",
