@@ -36,7 +36,7 @@ export class PassThroughClient extends AuthClient {
    * @returns The response of the request.
    */
   async request<T>(opts: GaxiosOptions) {
-    return this.transporter.request<T>(opts);
+    return this._request<T>(opts);
   }
 
   /**

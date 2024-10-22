@@ -268,7 +268,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
       if (requestHeaders && requestHeaders.Authorization) {
         opts.headers.Authorization = requestHeaders.Authorization;
       }
-      response = await this.transporter.request<T>(opts);
+      response = await this._request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
       if (res) {

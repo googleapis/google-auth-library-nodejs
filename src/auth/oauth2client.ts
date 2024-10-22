@@ -708,7 +708,7 @@ export class OAuth2Client extends AuthClient {
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
     }
-    const res = await this.transporter.request<CredentialRequest>({
+    const res = await this._request<CredentialRequest>({
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
@@ -773,7 +773,7 @@ export class OAuth2Client extends AuthClient {
 
     try {
       // request for new token
-      res = await this.transporter.request<CredentialRequest>({
+      res = await this._request<CredentialRequest>({
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
@@ -1003,11 +1003,12 @@ export class OAuth2Client extends AuthClient {
       method: 'POST',
     };
     if (callback) {
-      this.transporter
-        .request<RevokeCredentialsResult>(opts)
-        .then(r => callback(null, r), callback);
+      this._request<RevokeCredentialsResult>(opts).then(
+        r => callback(null, r),
+        callback
+      );
     } else {
-      return this.transporter.request<RevokeCredentialsResult>(opts);
+      return this._request<RevokeCredentialsResult>(opts);
     }
   }
 
@@ -1082,7 +1083,7 @@ export class OAuth2Client extends AuthClient {
       if (this.apiKey) {
         opts.headers['X-Goog-Api-Key'] = this.apiKey;
       }
-      r2 = await this.transporter.request<T>(opts);
+      r2 = await this._request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
       if (res) {
@@ -1204,7 +1205,7 @@ export class OAuth2Client extends AuthClient {
    * user info.
    */
   async getTokenInfo(accessToken: string): Promise<TokenInfo> {
-    const {data} = await this.transporter.request<TokenInfoRequest>({
+    const {data} = await this._request<TokenInfoRequest>({
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       headers: {
@@ -1271,7 +1272,7 @@ export class OAuth2Client extends AuthClient {
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
-      res = await this.transporter.request({
+      res = await this._request({
         ...OAuth2Client.RETRY_CONFIG,
         url,
       });
@@ -1342,7 +1343,7 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      res = await this.transporter.request({
+      res = await this._request({
         ...OAuth2Client.RETRY_CONFIG,
         url,
       });

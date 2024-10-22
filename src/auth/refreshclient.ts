@@ -35,6 +35,8 @@ export class UserRefreshClient extends OAuth2Client {
   // This is also a hard one because `this.refreshToken` is a function.
   _refreshToken?: string | null;
 
+  credentialType = UserRefreshClient.CREDENTIAL_TYPES.u;
+
   /**
    * User Refresh Token credentials.
    *
@@ -80,7 +82,7 @@ export class UserRefreshClient extends OAuth2Client {
   }
 
   async fetchIdToken(targetAudience: string): Promise<string> {
-    const res = await this.transporter.request<CredentialRequest>({
+    const res = await this._request<CredentialRequest>({
       ...UserRefreshClient.RETRY_CONFIG,
       url: this.endpoints.oauth2TokenUrl,
       headers: {

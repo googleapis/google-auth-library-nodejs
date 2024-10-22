@@ -72,6 +72,7 @@ export interface FetchIdTokenResponse {
 }
 
 export class Impersonated extends OAuth2Client implements IdTokenProvider {
+  credentialType = Impersonated.CREDENTIAL_TYPES.imp;
   private sourceClient: AuthClient;
   private targetPrincipal: string;
   private targetScopes: string[];
