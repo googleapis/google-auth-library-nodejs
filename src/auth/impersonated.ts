@@ -243,6 +243,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       includeEmail: options?.includeEmail ?? true,
       useEmailAzp: true,
     };
+
     const res = await this.sourceClient.request<FetchIdTokenResponse>({
       ...Impersonated.RETRY_CONFIG,
       url: u,
