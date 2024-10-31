@@ -632,18 +632,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       );
     }
 
-    let sourceClient: AuthClient;
-
-    switch (json.source_credentials.type) {
-      case 'external_account':
-        sourceClient = ExternalAccountClient.fromJSON(
-          json.source_credentials as ExternalAccountClientOptions
-        )!;
-        break;
-      case 'authorized_user':
-      default:
-        sourceClient = UserRefreshClient.fromJSON(json.source_credentials);
-    }
+    const sourceClient = this.fromJSON(json.source_credentials);
 
     if (json.service_account_impersonation_url?.length > 256) {
       /**
@@ -656,9 +645,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
 
     // Extract service account from service_account_impersonation_url
-    const targetPrincipal = /(?<target>[^/]+):generateAccessToken$/.exec(
-      json.service_account_impersonation_url
-    )?.groups?.target;
+    const targetPrincipal =
+      /(?<target>[^/]+):(generateAccessToken|generateIdToken)$/.exec(
+        json.service_account_impersonation_url
+      )?.groups?.target;
 
     if (!targetPrincipal) {
       throw new RangeError(
@@ -668,18 +658,18 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
     const targetScopes = this.getAnyScopes() ?? [];
 
-    const client = new Impersonated({
+    return new Impersonated({
       ...json,
-      delegates: json.delegates ?? [],
-      sourceClient: sourceClient,
-      targetPrincipal: targetPrincipal,
+      sourceClient,
+      targetPrincipal,
       targetScopes: Array.isArray(targetScopes) ? targetScopes : [targetScopes],
     });
-    return client;
   }
 
   /**
    * Create a credentials instance using the given input options.
+   * This client is not cached.
+   *
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data

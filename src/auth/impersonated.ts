@@ -133,7 +133,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       // override the default universe with the source's universe
       this.universeDomain = this.sourceClient.universeDomain;
     } else if (this.sourceClient.universeDomain !== this.universeDomain) {
-      // non-default and not matching the source
+      // non-default universe and is not matching the source - this could be a credential leak
       throw new RangeError(
         `Universe domain ${this.sourceClient.universeDomain} in source credentials does not match ${this.universeDomain} universe domain set for impersonated credentials.`
       );
@@ -241,7 +241,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       delegates: this.delegates,
       audience: targetAudience,
       includeEmail: options?.includeEmail ?? true,
-      useEmailAzp: true,
+      useEmailAzp: options?.includeEmail ?? true,
     };
 
     const res = await this.sourceClient.request<FetchIdTokenResponse>({
