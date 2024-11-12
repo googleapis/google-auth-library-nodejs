@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.15.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.14.2...v9.15.0) (2024-11-01)
+
+
+### Features
+
+* Impersonated Universe Domain Support ([#1875](https://github.com/googleapis/google-auth-library-nodejs/issues/1875)) ([902bf8b](https://github.com/googleapis/google-auth-library-nodejs/commit/902bf8b7faf8f7a0735011c252907282f550cd14))
+
 ## [9.14.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.14.1...v9.14.2) (2024-10-09)
 
 
