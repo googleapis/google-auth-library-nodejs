@@ -21,8 +21,6 @@ import * as path from 'path';
 import * as stream from 'stream';
 
 import {Crypto, createCrypto} from '../crypto/crypto';
-import {DefaultTransporter, Transporter} from '../transporters';
-
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
@@ -162,8 +160,6 @@ export const GoogleAuthExceptionMessages = {
 } as const;
 
 export class GoogleAuth<T extends AuthClient = JSONClient> {
-  transporter?: Transporter;
-
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
@@ -200,11 +196,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions: AuthClientOptions = {};
-
-  /**
-   * Export DefaultTransporter as a static property of the class.
-   */
-  static DefaultTransporter = DefaultTransporter;
 
   /**
    * Configuration is resolved in the following order of precedence:
