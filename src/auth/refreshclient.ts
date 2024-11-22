@@ -20,6 +20,8 @@ import {
   OAuth2ClientOptions,
 } from './oauth2client';
 import {stringify} from 'querystring';
+import {log as makeLog} from 'google-logging-utils';
+const log = makeLog('auth');
 
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
@@ -80,13 +82,11 @@ export class UserRefreshClient extends OAuth2Client {
   }
 
   async fetchIdToken(targetAudience: string): Promise<string> {
-    const res = await this.transporter.request<CredentialRequest>({
-      ...UserRefreshClient.RETRY_CONFIG,
+    const request = {
       url: this.endpoints.oauth2TokenUrl,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      method: 'POST',
       data: stringify({
         client_id: this._clientId,
         client_secret: this._clientSecret,
@@ -94,7 +94,16 @@ export class UserRefreshClient extends OAuth2Client {
         refresh_token: this._refreshToken,
         target_audience: targetAudience,
       }),
+    };
+    log.info('fetchIdToken %j', request);
+
+    const res = await this.transporter.request<CredentialRequest>({
+      ...request,
+      ...UserRefreshClient.RETRY_CONFIG,
+      method: 'POST',
     });
+
+    log.info('fetchIdToken success %s', res?.data?.id_token);
 
     return res.data.id_token!;
   }

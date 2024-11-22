@@ -14,6 +14,8 @@
 
 import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {GaxiosOptions} from 'gaxios';
+import {log as makeLog} from 'google-logging-utils';
+const log = makeLog('auth');
 import {
   SubjectTokenFormatType,
   SubjectTokenJsonResponse,
@@ -82,11 +84,16 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
   async getSubjectToken(
     context: ExternalAccountSupplierContext
   ): Promise<string> {
-    const opts: GaxiosOptions = {
-      ...this.additionalGaxiosOptions,
+    const request = {
       url: this.url,
-      method: 'GET',
       headers: this.headers,
+    };
+    log.info('getSubjectToken %j', request);
+
+    const opts: GaxiosOptions = {
+      ...request,
+      ...this.additionalGaxiosOptions,
+      method: 'GET',
       responseType: this.formatType,
     };
     let subjectToken: string | undefined;
@@ -99,10 +106,13 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
       subjectToken = response.data[this.subjectTokenFieldName];
     }
     if (!subjectToken) {
+      log.error('getSubjectToken failed');
       throw new Error(
         'Unable to parse the subject_token from the credential_source URL'
       );
     }
+
+    log.info('getSubjectToken success %s', subjectToken);
     return subjectToken;
   }
 }

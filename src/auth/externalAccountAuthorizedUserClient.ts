@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {log as makeLog} from 'google-logging-utils';
+const log = makeLog('auth');
+
 import {AuthClient, AuthClientOptions} from './authclient';
 import {Headers} from './oauth2client';
 import {
@@ -124,16 +127,24 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
 
+    log.info('refreshToken %j', {
+      url: opts.url,
+      headers: opts.headers,
+      data: opts.data,
+    });
+
     try {
       const response =
         await this.transporter.request<TokenRefreshResponse>(opts);
       // Successful response.
       const tokenRefreshResponse = response.data;
       tokenRefreshResponse.res = response;
+      log.info('refreshToken response %j', tokenRefreshResponse);
       return tokenRefreshResponse;
     } catch (error) {
       // Translate error to OAuthError.
       if (error instanceof GaxiosError && error.response) {
+        log.error('refreshToken failed %j', error.response?.data);
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.

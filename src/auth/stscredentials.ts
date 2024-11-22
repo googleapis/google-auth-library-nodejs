@@ -14,6 +14,8 @@
 
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
+import {log as makeLog} from 'google-logging-utils';
+const log = makeLog('auth');
 
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Headers} from './oauth2client';
@@ -194,14 +196,20 @@ export class StsCredentials extends OAuthClientAuthHandler {
     // Inject additional STS headers if available.
     Object.assign(headers, additionalHeaders || {});
 
-    const opts: GaxiosOptions = {
-      ...StsCredentials.RETRY_CONFIG,
+    const request = {
       url: this.tokenExchangeEndpoint.toString(),
-      method: 'POST',
       headers,
       data: querystring.stringify(
         values as unknown as querystring.ParsedUrlQueryInput
       ),
+    };
+
+    log.info('exchangeToken %j', request);
+
+    const opts: GaxiosOptions = {
+      ...request,
+      ...StsCredentials.RETRY_CONFIG,
+      method: 'POST',
       responseType: 'json',
     };
     // Apply OAuth client authentication.
@@ -211,10 +219,13 @@ export class StsCredentials extends OAuthClientAuthHandler {
       const response =
         await this.transporter.request<StsSuccessfulResponse>(opts);
       // Successful response.
+      log.info('exchangeToken success %j', response.data);
       const stsSuccessfulResponse = response.data;
       stsSuccessfulResponse.res = response;
       return stsSuccessfulResponse;
     } catch (error) {
+      log.error('exchangeToken failure %j', error);
+
       // Translate error to OAuthError.
       if (error instanceof GaxiosError && error.response) {
         throw getErrorFromOAuthErrorResponse(
