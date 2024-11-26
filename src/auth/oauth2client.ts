@@ -21,6 +21,8 @@ import {
 import * as querystring from 'querystring';
 import * as stream from 'stream';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
+import {log as makeLog} from 'google-logging-utils';
+const log = makeLog('auth');
 
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 import {BodyResponseCallback} from '../transporters';
@@ -708,14 +710,21 @@ export class OAuth2Client extends AuthClient {
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
     }
-    const res = await this.transporter.request<CredentialRequest>({
-      ...OAuth2Client.RETRY_CONFIG,
-      method: 'POST',
+
+    const request = {
       url,
       data: querystring.stringify(values),
       headers,
+    };
+    log.info('getTokenAsync %j', request);
+
+    const res = await this.transporter.request<CredentialRequest>({
+      ...request,
+      ...OAuth2Client.RETRY_CONFIG,
+      method: 'POST',
     });
     const tokens = res.data as Credentials;
+    log.info('getTokenAsync success %j', tokens);
     if (res.data && res.data.expires_in) {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
@@ -769,18 +778,24 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'refresh_token',
     };
 
+    const request = {
+      url,
+      data: querystring.stringify(data),
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    };
+    log.info('refreshTokenNoCache %j', request);
+
     let res: GaxiosResponse<CredentialRequest>;
 
     try {
       // request for new token
       res = await this.transporter.request<CredentialRequest>({
+        ...request,
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
-        url,
-        data: querystring.stringify(data),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       });
-    } catch (e) {
+    } catch (exc) {
+      const e = exc as Error;
       if (
         e instanceof GaxiosError &&
         e.message === 'invalid_grant' &&
@@ -789,11 +804,13 @@ export class OAuth2Client extends AuthClient {
       ) {
         e.message = JSON.stringify(e.response.data);
       }
+      log.error('refreshTokenNoCache failure %j', e.message);
 
       throw e;
     }
 
     const tokens = res.data as Credentials;
+    log.info('refreshTokenNoCache success %j', tokens);
     // TODO: de-duplicate this code from a few spots
     if (res.data && res.data.expires_in) {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
@@ -1002,12 +1019,17 @@ export class OAuth2Client extends AuthClient {
       url: this.getRevokeTokenURL(token).toString(),
       method: 'POST',
     };
+    log.info('revokeToken %s', opts.url);
     if (callback) {
-      this.transporter
-        .request<RevokeCredentialsResult>(opts)
-        .then(r => callback(null, r), callback);
+      this.transporter.request<RevokeCredentialsResult>(opts).then(r => {
+        log.info('revokeToken success %s', r.data ?? '');
+        callback(null, r);
+      }, callback);
     } else {
-      return this.transporter.request<RevokeCredentialsResult>(opts);
+      return this.transporter.request<RevokeCredentialsResult>(opts).then(r => {
+        log.info('revokeToken success %j', r.data);
+        return r;
+      });
     }
   }
 
@@ -1271,14 +1293,22 @@ export class OAuth2Client extends AuthClient {
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
+      log.info('getFederatedSignonCertsAsync %s', url);
       res = await this.transporter.request({
         ...OAuth2Client.RETRY_CONFIG,
         url,
       });
-    } catch (e) {
+      log.info(
+        'getFederatedSignonCertsAsync success %j %j',
+        res?.data,
+        res?.headers
+      );
+    } catch (err) {
+      const e = err as Error;
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
       }
+      log.error('getFederatedSignonCertsAsync failed', e?.message);
 
       throw e;
     }
@@ -1342,14 +1372,18 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
+      log.info('getIapPublicKeysAsync %s', url);
       res = await this.transporter.request({
         ...OAuth2Client.RETRY_CONFIG,
         url,
       });
-    } catch (e) {
+      log.info('getIapPublicKeysAsync success %j', res.data);
+    } catch (err) {
+      const e = err as Error;
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
       }
+      log.error('getIapPublicKeysAsync failed', e?.message);
 
       throw e;
     }
