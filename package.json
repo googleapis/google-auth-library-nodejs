@@ -28,6 +28,7 @@
   "devDependencies": {
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
+    "@types/debug": "^4.1.12",
     "@types/jws": "^3.1.0",
     "@types/mocha": "^9.0.0",
     "@types/mv": "^2.1.0",
@@ -60,7 +61,6 @@
     "nock": "^13.0.0",
     "null-loader": "^4.0.0",
     "pdfmake": "0.2.12",
-    "puppeteer": "^21.0.0",
     "sinon": "^18.0.0",
     "ts-loader": "^8.0.0",
     "typescript": "^5.1.6",
