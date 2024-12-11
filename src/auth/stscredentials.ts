@@ -14,8 +14,6 @@
 
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
-import {log as makeLog} from 'google-logging-utils';
-const log = makeLog('auth');
 
 import {DefaultTransporter, Transporter} from '../transporters';
 import {Headers} from './oauth2client';
@@ -204,7 +202,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
       ),
     };
 
-    log.info('exchangeToken %j', request);
+    this.log.info('exchangeToken %j', request);
 
     const opts: GaxiosOptions = {
       ...request,
@@ -219,12 +217,12 @@ export class StsCredentials extends OAuthClientAuthHandler {
       const response =
         await this.transporter.request<StsSuccessfulResponse>(opts);
       // Successful response.
-      log.info('exchangeToken success %j', response.data);
+      this.log.info('exchangeToken success %j', response.data);
       const stsSuccessfulResponse = response.data;
       stsSuccessfulResponse.res = response;
       return stsSuccessfulResponse;
     } catch (error) {
-      log.error('exchangeToken failure %j', error);
+      this.log.error('exchangeToken failure %j', error);
 
       // Translate error to OAuthError.
       if (error instanceof GaxiosError && error.response) {

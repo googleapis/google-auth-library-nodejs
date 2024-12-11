@@ -14,6 +14,7 @@
 
 import {GaxiosOptions} from 'gaxios';
 import * as querystring from 'querystring';
+import {log as makeLog} from 'google-logging-utils';
 
 import {Crypto, createCrypto} from '../crypto/crypto';
 
@@ -69,6 +70,7 @@ export interface ClientAuthentication {
  */
 export abstract class OAuthClientAuthHandler {
   private crypto: Crypto;
+  log = makeLog('auth');
 
   /**
    * Instantiates an OAuth client authentication handler.

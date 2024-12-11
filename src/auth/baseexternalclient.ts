@@ -20,8 +20,6 @@ import {
   GaxiosResponse,
 } from 'gaxios';
 import * as stream from 'stream';
-import {log as makeLog} from 'google-logging-utils';
-const log = makeLog('auth');
 
 import {Credentials} from './credentials';
 import {AuthClient, AuthClientOptions} from './authclient';
@@ -485,14 +483,14 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         headers,
         url,
       };
-      log.info('getProjectId %j', request);
+      this.log.info('getProjectId %j', request);
       const response = await this.transporter.request<ProjectInfo>({
         ...request,
         ...BaseExternalAccountClient.RETRY_CONFIG,
         responseType: 'json',
       });
       this.projectId = response.data.projectId;
-      log.info('getProjectId, id %s', this.projectId);
+      this.log.info('getProjectId, id %s', this.projectId);
       return this.projectId;
     }
     return null;
@@ -684,7 +682,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
     };
-    log.info('getImpersonatedAccessToken %j', request);
+    this.log.info('getImpersonatedAccessToken %j', request);
     const opts: GaxiosOptions = {
       ...request,
       ...BaseExternalAccountClient.RETRY_CONFIG,
@@ -694,7 +692,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     const response =
       await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
     const successResponse = response.data;
-    log.info(
+    this.log.info(
       'getImpersonatedAccessToken success: %s, %s, %s',
       successResponse.accessToken,
       successResponse.expireTime,
