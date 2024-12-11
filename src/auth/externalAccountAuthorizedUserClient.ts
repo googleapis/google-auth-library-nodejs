@@ -124,16 +124,24 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
 
+    this.log.info('refreshToken %j', {
+      url: opts.url,
+      headers: opts.headers,
+      data: opts.data,
+    });
+
     try {
       const response =
         await this.transporter.request<TokenRefreshResponse>(opts);
       // Successful response.
       const tokenRefreshResponse = response.data;
       tokenRefreshResponse.res = response;
+      this.log.info('refreshToken response %j', tokenRefreshResponse);
       return tokenRefreshResponse;
     } catch (error) {
       // Translate error to OAuthError.
       if (error instanceof GaxiosError && error.response) {
+        this.log.error('refreshToken failed %j', error.response?.data);
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.
