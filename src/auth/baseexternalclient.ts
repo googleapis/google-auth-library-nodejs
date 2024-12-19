@@ -478,13 +478,19 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     } else if (projectNumber) {
       // Preferable not to use request() to avoid retrial policies.
       const headers = await this.getRequestHeaders();
-      const response = await this.transporter.request<ProjectInfo>({
-        ...BaseExternalAccountClient.RETRY_CONFIG,
+      const url = `${this.cloudResourceManagerURL.toString()}${projectNumber}`;
+      const request = {
         headers,
-        url: `${this.cloudResourceManagerURL.toString()}${projectNumber}`,
+        url,
+      };
+      this.log.info('getProjectId %j', request);
+      const response = await this.transporter.request<ProjectInfo>({
+        ...request,
+        ...BaseExternalAccountClient.RETRY_CONFIG,
         responseType: 'json',
       });
       this.projectId = response.data.projectId;
+      this.log.info('getProjectId, id %s', this.projectId);
       return this.projectId;
     }
     return null;
@@ -665,10 +671,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private async getImpersonatedAccessToken(
     token: string
   ): Promise<CredentialsWithResponse> {
-    const opts: GaxiosOptions = {
-      ...BaseExternalAccountClient.RETRY_CONFIG,
+    const request = {
       url: this.serviceAccountImpersonationUrl!,
-      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -677,11 +681,23 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         scope: this.getScopesArray(),
         lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
+    };
+    this.log.info('getImpersonatedAccessToken %j', request);
+    const opts: GaxiosOptions = {
+      ...request,
+      ...BaseExternalAccountClient.RETRY_CONFIG,
+      method: 'POST',
       responseType: 'json',
     };
     const response =
       await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
     const successResponse = response.data;
+    this.log.info(
+      'getImpersonatedAccessToken success: %s, %s, %s',
+      successResponse.accessToken,
+      successResponse.expireTime,
+      response
+    );
     return {
       access_token: successResponse.accessToken,
       // Convert from ISO format to timestamp.

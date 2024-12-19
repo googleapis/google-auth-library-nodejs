@@ -18,6 +18,7 @@ import {Transporter} from '../transporters';
 import {AwsSecurityCredentialsSupplier} from './awsclient';
 import {AwsSecurityCredentials} from './awsrequestsigner';
 import {Headers} from './oauth2client';
+import {log as makeLog} from 'google-logging-utils';
 
 /**
  * Interface defining the AWS security-credentials endpoint response.
@@ -82,6 +83,8 @@ export class DefaultAwsSecurityCredentialsSupplier
   private readonly imdsV2SessionTokenUrl?: string;
   private readonly additionalGaxiosOptions?: GaxiosOptions;
 
+  private log = makeLog('auth');
+
   /**
    * Instantiates a new DefaultAwsSecurityCredentialsSupplier using information
    * from the credential_source stored in the ADC file.
@@ -122,14 +125,19 @@ export class DefaultAwsSecurityCredentialsSupplier
           '"options.credential_source.region_url"'
       );
     }
-    const opts: GaxiosOptions = {
-      ...this.additionalGaxiosOptions,
+    const request = {
       url: this.regionUrl,
-      method: 'GET',
-      responseType: 'text',
       headers: metadataHeaders,
     };
+    this.log.info('getAwsRegion %j', request);
+    const opts: GaxiosOptions = {
+      ...request,
+      ...this.additionalGaxiosOptions,
+      method: 'GET',
+      responseType: 'text',
+    };
     const response = await context.transporter.request<string>(opts);
+    this.log.info('getAwsRegion is %s', response.data);
     // Remove last character. For example, if us-east-2b is returned,
     // the region would be us-east-2.
     return response.data.substr(0, response.data.length - 1);
@@ -186,14 +194,19 @@ export class DefaultAwsSecurityCredentialsSupplier
   async #getImdsV2SessionToken(
     transporter: Transporter | Gaxios
   ): Promise<string> {
-    const opts: GaxiosOptions = {
-      ...this.additionalGaxiosOptions,
+    const request = {
       url: this.imdsV2SessionTokenUrl,
-      method: 'PUT',
-      responseType: 'text',
       headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
     };
+    const opts: GaxiosOptions = {
+      ...request,
+      ...this.additionalGaxiosOptions,
+      method: 'PUT',
+      responseType: 'text',
+    };
+    this.log.info('#getImdsV2SessionToken %j', request);
     const response = await transporter.request<string>(opts);
+    this.log.info('#getImdsV2SessionToken is %s', response.data);
     return response.data;
   }
 
@@ -213,14 +226,19 @@ export class DefaultAwsSecurityCredentialsSupplier
           '"options.credential_source.url"'
       );
     }
-    const opts: GaxiosOptions = {
-      ...this.additionalGaxiosOptions,
+    const request = {
       url: this.securityCredentialsUrl,
-      method: 'GET',
-      responseType: 'text',
       headers: headers,
     };
+    this.log.info('#getAwsRoleName %j', request);
+    const opts: GaxiosOptions = {
+      ...request,
+      ...this.additionalGaxiosOptions,
+      method: 'GET',
+      responseType: 'text',
+    };
     const response = await transporter.request<string>(opts);
+    this.log.info('#getAwsRoleName name is %s', response.data);
     return response.data;
   }
 
@@ -238,12 +256,17 @@ export class DefaultAwsSecurityCredentialsSupplier
     headers: Headers,
     transporter: Transporter | Gaxios
   ): Promise<AwsSecurityCredentialsResponse> {
-    const response = await transporter.request<AwsSecurityCredentialsResponse>({
-      ...this.additionalGaxiosOptions,
+    const request = {
       url: `${this.securityCredentialsUrl}/${roleName}`,
-      responseType: 'json',
       headers: headers,
+    };
+    this.log.info('#retrieveAwsSecurityCredentials %j', request);
+    const response = await transporter.request<AwsSecurityCredentialsResponse>({
+      ...request,
+      ...this.additionalGaxiosOptions,
+      responseType: 'json',
     });
+    this.log.info('#retrieveAwsSecurityCredentials %s', response.data);
     return response.data;
   }
 
