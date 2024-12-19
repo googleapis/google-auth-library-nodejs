@@ -21,7 +21,7 @@
     "ecdsa-sig-formatter": "^1.0.11",
     "gaxios": "^6.1.1",
     "gcp-metadata": "^6.1.0",
-    "google-logging-utils": "next",
+    "google-logging-utils": "^1.0.0",
     "gtoken": "^7.0.0",
     "jws": "^4.0.0"
   },
