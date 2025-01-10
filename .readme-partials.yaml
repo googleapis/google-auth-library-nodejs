@@ -997,7 +997,7 @@ body: |-
   }
 
   const clientOptions = {
-    audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+    audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
     subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
     subject_token_supplier: new CustomSupplier() // Set the custom supplier.
   }
@@ -1005,11 +1005,11 @@ body: |-
   const client = new CustomSupplier(clientOptions);
   ```
 
-  Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+  Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID`
 
   Where the following variables need to be substituted:
 
-  * `WORKFORCE_POOL_ID`: The worforce pool ID.
+  * `$WORKFORCE_POOL_ID`: The worforce pool ID.
   * `$PROVIDER_ID`: The provider ID.
 
   and the workforce pool user project is the project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
