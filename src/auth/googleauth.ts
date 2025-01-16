@@ -139,6 +139,7 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   universeDomain?: string;
 }
 
+// remove
 export const CLOUD_SDK_CLIENT_ID =
   '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 
@@ -669,6 +670,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   /**
    * Create a credentials instance using the given input options.
    * This client is not cached.
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud Platform, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    *
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
