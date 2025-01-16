@@ -352,6 +352,8 @@ async function main() {
 main().catch(console.error);
 ```
 
+**Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud Platform, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to [Validate credential configurations from external sources](https://cloud.google.com/docs/authentication/external/externally-sourced-credentials).
+
 #### Using a Proxy
 You can set the `HTTPS_PROXY` or `https_proxy` environment variables to proxy HTTPS requests. When `HTTPS_PROXY` or `https_proxy` are set, they will be used to proxy SSL requests that do not have an explicit proxy configuration option present.
 
@@ -1041,7 +1043,7 @@ class CustomSupplier implements SubjectTokenSupplier {
 }
 
 const clientOptions = {
-  audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
+  audience: '//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
   subject_token_type: 'urn:ietf:params:oauth:token-type:id_token', // Set the subject token type.
   subject_token_supplier: new CustomSupplier() // Set the custom supplier.
 }
@@ -1049,11 +1051,11 @@ const clientOptions = {
 const client = new CustomSupplier(clientOptions);
 ```
 
-Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID`
+Where the audience is: `//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID`
 
 Where the following variables need to be substituted:
 
-* `WORKFORCE_POOL_ID`: The worforce pool ID.
+* `$WORKFORCE_POOL_ID`: The worforce pool ID.
 * `$PROVIDER_ID`: The provider ID.
 
 and the workforce pool user project is the project number associated with the [workforce pools user project](https://cloud.google.com/iam/docs/workforce-identity-federation#workforce-pools-user-project).
