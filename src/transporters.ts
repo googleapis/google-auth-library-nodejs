@@ -19,9 +19,7 @@ import {
   GaxiosPromise,
   GaxiosResponse,
 } from 'gaxios';
-import {validate} from './options';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../package.json');
 
 const PRODUCT_NAME = 'google-api-nodejs-client';
@@ -85,7 +83,6 @@ export class DefaultTransporter implements Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
     // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
-    validate(opts);
     return this.instance.request<T>(opts).catch(e => {
       throw this.processError(e);
     });
