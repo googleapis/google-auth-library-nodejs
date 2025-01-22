@@ -30,10 +30,17 @@ const pkg = require('../../package.json');
 
 let stagingDir: string;
 
+/**
+ * Spawns and runs a command asynchronously.
+ *
+ * @param params params to pass to {@link spawn}
+ */
 async function run(...params: Parameters<typeof spawn>) {
   const command = spawn(...params);
 
   await new Promise<void>((resolve, reject) => {
+    // Unlike `exec`/`execFile`, this keeps the order of STDOUT/STDERR in case they were interweaved;
+    // making it easier to debug and follow along.
     command.stdout?.on('data', console.log);
     command.stderr?.on('data', console.error);
     command.on('close', (code, signal) => {
