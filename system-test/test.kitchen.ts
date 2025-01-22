@@ -39,6 +39,7 @@ async function run(...params: Parameters<typeof spawn>) {
     command.on('close', (code, signal) => {
       return code === 0 ? resolve() : reject({code, signal});
     });
+    command.on('error', reject);
   });
 }
 
