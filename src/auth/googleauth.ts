@@ -108,6 +108,10 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
    * Object containing client_email and private_key properties, or the
    * external account client options.
    * Cannot be used with {@link GoogleAuthOptions.apiKey `apiKey`}.
+   *
+   * @remarks
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    */
   credentials?: JWTInput | ExternalAccountClientOptions;
 
