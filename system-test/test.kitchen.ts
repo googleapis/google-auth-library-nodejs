@@ -38,11 +38,25 @@ let stagingDir: string;
 async function run(...params: Parameters<typeof spawn>) {
   const command = spawn(...params);
 
+  function stdout(str: string) {
+    const prefix = '\n>>> STDOUT: ';
+    console.log(prefix + str.replace(/\n/g, prefix));
+  }
+
+  function stderr(str: string) {
+    const prefix = '\n>>> STDERR: ';
+    console.error(prefix + str.replace(/\n/g, prefix));
+  }
+
   await new Promise<void>((resolve, reject) => {
     // Unlike `exec`/`execFile`, this keeps the order of STDOUT/STDERR in case they were interweaved;
     // making it easier to debug and follow along.
-    command.stdout?.on('data', console.log);
-    command.stderr?.on('data', console.error);
+    command.stdout?.setEncoding('utf8');
+    command.stderr?.setEncoding('utf8');
+
+    command.stdout?.on('data', stdout);
+    command.stderr?.on('data', stderr);
+
     command.on('close', (code, signal) => {
       return code === 0 ? resolve() : reject({code, signal});
     });
