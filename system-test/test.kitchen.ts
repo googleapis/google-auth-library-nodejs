@@ -31,6 +31,11 @@ const pkg = require('../../package.json');
 let stagingDir: string;
 
 /**
+ * 2 minutes
+ */
+const BUILD_TEST_TIMEOUT_MS = 2 * 60_000;
+
+/**
  * Spawns and runs a command asynchronously.
  *
  * @param params params to pass to {@link spawn}
@@ -87,13 +92,15 @@ describe('pack and install', () => {
     // npm, once in a blue moon, fails during pack process. If this happens,
     // we should be safe to retry.
     this.retries(3);
-    this.timeout(40000);
+    this.timeout(BUILD_TEST_TIMEOUT_MS);
+
     await packAndInstall();
   });
 
   it('should be able to webpack the library', async function () {
     this.retries(3);
-    this.timeout(40000);
+    this.timeout(BUILD_TEST_TIMEOUT_MS);
+
     await packAndInstall();
     // we expect npm install is executed in the before hook
     await run('npx', ['webpack'], {cwd: `${stagingDir}/`});
