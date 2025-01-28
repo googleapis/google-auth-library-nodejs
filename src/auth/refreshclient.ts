@@ -80,13 +80,11 @@ export class UserRefreshClient extends OAuth2Client {
   }
 
   async fetchIdToken(targetAudience: string): Promise<string> {
-    const res = await this.transporter.request<CredentialRequest>({
-      ...UserRefreshClient.RETRY_CONFIG,
+    const request = {
       url: this.endpoints.oauth2TokenUrl,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      method: 'POST',
       data: stringify({
         client_id: this._clientId,
         client_secret: this._clientSecret,
@@ -94,7 +92,16 @@ export class UserRefreshClient extends OAuth2Client {
         refresh_token: this._refreshToken,
         target_audience: targetAudience,
       }),
+    };
+    this.log.info('fetchIdToken %j', request);
+
+    const res = await this.transporter.request<CredentialRequest>({
+      ...request,
+      ...UserRefreshClient.RETRY_CONFIG,
+      method: 'POST',
     });
+
+    this.log.info('fetchIdToken success %s', res?.data?.id_token);
 
     return res.data.id_token!;
   }

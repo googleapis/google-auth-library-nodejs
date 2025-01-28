@@ -19,6 +19,7 @@ import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
 import {GetAccessTokenResponse, Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
+import {log as makeLog} from 'google-logging-utils';
 
 /**
  * Base auth configurations (e.g. from JWT or `.json` files) with conventional
@@ -189,6 +190,7 @@ export abstract class AuthClient
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
+  log = makeLog('auth');
 
   constructor(opts: AuthClientOptions = {}) {
     super();
