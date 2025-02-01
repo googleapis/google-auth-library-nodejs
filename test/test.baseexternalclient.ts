@@ -23,7 +23,6 @@ import {
   EXPIRATION_TIME_OFFSET,
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
-  DEFAULT_UNIVERSE,
 } from '../src/auth/baseexternalclient';
 import {
   OAuthErrorResponse,
@@ -40,7 +39,7 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
-import {AuthClientOptions} from '../src/auth/authclient';
+import {AuthClientOptions, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 

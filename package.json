@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "9.15.0",
+  "version": "9.15.1",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
@@ -38,7 +38,7 @@
     "chai": "^4.2.0",
     "cheerio": "1.0.0-rc.12",
     "codecov": "^3.0.2",
-    "execa": "^5.0.0",
+    "engine.io": "6.6.2",
     "gts": "^5.0.0",
     "is-docker": "^2.0.0",
     "jsdoc": "^4.0.0",

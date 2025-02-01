@@ -25,7 +25,12 @@ import * as formatEcdsa from 'ecdsa-sig-formatter';
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 import {BodyResponseCallback} from '../transporters';
 
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 /**
@@ -51,10 +56,6 @@ export interface Certificates {
 }
 
 export interface PublicKeys {
-  [index: string]: string;
-}
-
-export interface Headers {
   [index: string]: string;
 }
 
@@ -357,11 +358,6 @@ export interface GetAccessTokenCallback {
     token?: string | null,
     res?: GaxiosResponse | null
   ): void;
-}
-
-export interface GetAccessTokenResponse {
-  token?: string | null;
-  res?: GaxiosResponse | null;
 }
 
 export interface RefreshAccessTokenCallback {
