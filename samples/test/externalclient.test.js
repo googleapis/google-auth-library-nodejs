@@ -50,7 +50,7 @@
 // AWS provider tests for AWS credentials
 // -------------------------------------
 // The test suite will also run tests for AWS credentials. This works as
-// follows. (Note prequisite setup is needed. This is documented in
+// follows. (Note prerequisite setup is needed. This is documented in
 // externalclient-setup.js).
 // - iamcredentials:generateIdToken is used to generate a Google ID token using
 //   the service account access token. The service account client_id is used as
@@ -290,7 +290,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should sign the blobs with IAM credentials API', async () => {
@@ -389,7 +389,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should acquire ADC for AWS creds', async () => {
@@ -427,7 +427,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should acquire ADC for PluggableAuth creds', async () => {
@@ -474,7 +474,7 @@ describe('samples for external-account', () => {
       },
     });
     // Confirm expected script output.
-    assert.match(output, /DNS Info:/);
+    assert.match(output, /DNS Info:/, output);
   });
 
   it('should acquire access token with service account impersonation options', async () => {

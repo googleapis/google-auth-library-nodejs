@@ -22,9 +22,13 @@ import * as stream from 'stream';
 
 import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 
 /**
@@ -39,8 +43,6 @@ const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
  * The requested token exchange subject_token_type: rfc8693#section-2.1
  */
 const STS_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
-/** The STS access token exchange end point. */
-const STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
 
 /**
  * The maximum number of access boundary rules a Credential Access Boundary
@@ -135,6 +137,7 @@ export class DownscopedClient extends AuthClient {
     quotaProjectId?: string
   ) {
     super({...additionalOptions, quotaProjectId});
+
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
@@ -162,7 +165,10 @@ export class DownscopedClient extends AuthClient {
       }
     }
 
-    this.stsCredential = new sts.StsCredentials(STS_ACCESS_TOKEN_URL);
+    this.stsCredential = new sts.StsCredentials(
+      `https://sts.${this.universeDomain}/v1/token`
+    );
+
     this.cachedDownscopedAccessToken = null;
   }
 
@@ -248,12 +254,12 @@ export class DownscopedClient extends AuthClient {
    * Authenticates the provided HTTP request, processes it and resolves with the
    * returned response.
    * @param opts The HTTP request options.
-   * @param retry Whether the current attempt is a retry after a failed attempt.
+   * @param reAuthRetried Whether the current attempt is a retry after a failed attempt due to an auth failure
    * @return A promise that resolves with the successful response.
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -279,7 +285,7 @@ export class DownscopedClient extends AuthClient {
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           this.forceRefreshOnFailure

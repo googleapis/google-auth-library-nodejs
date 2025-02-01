@@ -216,26 +216,31 @@ describe('StsCredentials', () => {
         scope.done();
       });
 
-      it('should handle request timeout', async () => {
+      it('should handle and retry on timeout', async () => {
         const scope = nock(baseUrl)
           .post(path, qs.stringify(expectedRequest), {
             reqheaders: {
               'content-type': 'application/x-www-form-urlencoded',
             },
           })
-          .replyWithError({code: 'ETIMEDOUT'});
+          .replyWithError({code: 'ETIMEDOUT'})
+          .post(path, qs.stringify(expectedRequest), {
+            reqheaders: {
+              'content-type': 'application/x-www-form-urlencoded',
+            },
+          })
+          .reply(200, stsSuccessfulResponse);
         const stsCredentials = new StsCredentials(tokenExchangeEndpoint);
 
-        await assert.rejects(
-          stsCredentials.exchangeToken(
-            stsCredentialsOptions,
-            additionalHeaders,
-            options
-          ),
-          {
-            code: 'ETIMEDOUT',
-          }
+        const resp = await stsCredentials.exchangeToken(
+          stsCredentialsOptions,
+          additionalHeaders,
+          options
         );
+
+        assertGaxiosResponsePresent(resp);
+        delete resp.res;
+        assert.deepStrictEqual(resp, stsSuccessfulResponse);
         scope.done();
       });
     });

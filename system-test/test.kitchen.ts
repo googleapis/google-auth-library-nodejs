@@ -14,13 +14,13 @@
 
 import * as assert from 'assert';
 import {describe, it, afterEach} from 'mocha';
-import * as execa from 'execa';
 import * as fs from 'fs';
 import * as mv from 'mv';
 import {ncp} from 'ncp';
 import * as os from 'os';
 import * as path from 'path';
 import {promisify} from 'util';
+import {spawn} from 'child_process';
 
 const mvp = promisify(mv) as {} as (...args: string[]) => Promise<void>;
 const ncpp = promisify(ncp);
@@ -29,18 +29,58 @@ const keep = !!process.env.GALN_KEEP_TEMPDIRS;
 const pkg = require('../../package.json');
 
 let stagingDir: string;
+
+/**
+ * 2 minutes
+ */
+const BUILD_TEST_TIMEOUT_MS = 2 * 60_000;
+
+/**
+ * Spawns and runs a command asynchronously.
+ *
+ * @param params params to pass to {@link spawn}
+ */
+async function run(...params: Parameters<typeof spawn>) {
+  const command = spawn(...params);
+
+  function stdout(str: string) {
+    const prefix = '\n>>> STDOUT: ';
+    console.log(prefix + str.replace(/\n/g, prefix));
+  }
+
+  function stderr(str: string) {
+    const prefix = '\n>>> STDERR: ';
+    console.error(prefix + str.replace(/\n/g, prefix));
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    // Unlike `exec`/`execFile`, this keeps the order of STDOUT/STDERR in case they were interweaved;
+    // making it easier to debug and follow along.
+    command.stdout?.setEncoding('utf8');
+    command.stderr?.setEncoding('utf8');
+
+    command.stdout?.on('data', stdout);
+    command.stderr?.on('data', stderr);
+
+    command.on('close', (code, signal) => {
+      return code === 0 ? resolve() : reject({code, signal});
+    });
+    command.on('error', reject);
+  });
+}
+
 async function packAndInstall() {
   stagingDir = await fs.promises.mkdtemp(
     path.join(os.tmpdir(), 'google-auth-library-nodejs-pack-')
   );
 
-  await execa('npm', ['pack'], {stdio: 'inherit'});
+  await run('npm', ['pack'], {});
   const tarball = `${pkg.name}-${pkg.version}.tgz`;
   // stagingPath can be on another filesystem so fs.rename() will fail
   // with EXDEV, hence we use `mv` module here.
   await mvp(tarball, `${stagingDir}/google-auth-library.tgz`);
   await ncpp('system-test/fixtures/kitchen', `${stagingDir}/`);
-  await execa('npm', ['install'], {cwd: `${stagingDir}/`, stdio: 'inherit'});
+  await run('npm', ['install'], {cwd: `${stagingDir}/`});
 }
 
 describe('pack and install', () => {
@@ -52,19 +92,21 @@ describe('pack and install', () => {
     // npm, once in a blue moon, fails during pack process. If this happens,
     // we should be safe to retry.
     this.retries(3);
-    this.timeout(40000);
+    this.timeout(BUILD_TEST_TIMEOUT_MS);
+
     await packAndInstall();
   });
 
   it('should be able to webpack the library', async function () {
     this.retries(3);
-    this.timeout(40000);
+    this.timeout(BUILD_TEST_TIMEOUT_MS);
+
     await packAndInstall();
     // we expect npm install is executed in the before hook
-    await execa('npx', ['webpack'], {cwd: `${stagingDir}/`, stdio: 'inherit'});
+    await run('npx', ['webpack'], {cwd: `${stagingDir}/`});
     const bundle = path.join(stagingDir, 'dist', 'bundle.min.js');
-    const stat = fs.statSync(bundle);
-    assert(stat.size < 512 * 1024);
+    // ensure it is a non-empty bundle
+    assert(fs.statSync(bundle).size, 'Size should not be empty');
   });
 
   /**

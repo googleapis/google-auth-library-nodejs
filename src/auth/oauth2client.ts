@@ -25,7 +25,12 @@ import * as formatEcdsa from 'ecdsa-sig-formatter';
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 import {BodyResponseCallback} from '../transporters';
 
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
 /**
@@ -54,10 +59,6 @@ export interface PublicKeys {
   [index: string]: string;
 }
 
-export interface Headers {
-  [index: string]: string;
-}
-
 export enum CodeChallengeMethod {
   Plain = 'plain',
   S256 = 'S256',
@@ -66,6 +67,16 @@ export enum CodeChallengeMethod {
 export enum CertificateFormat {
   PEM = 'PEM',
   JWK = 'JWK',
+}
+
+/**
+ * The client authentication type. Supported values are basic, post, and none.
+ * https://datatracker.ietf.org/doc/html/rfc7591#section-2
+ */
+export enum ClientAuthentication {
+  ClientSecretPost = 'ClientSecretPost',
+  ClientSecretBasic = 'ClientSecretBasic',
+  None = 'None',
 }
 
 export interface GetTokenOptions {
@@ -84,6 +95,19 @@ export interface GetTokenOptions {
    * a corresponding call to generateAuthUrl.
    */
   redirect_uri?: string;
+}
+
+/**
+ * An interface for preparing {@link GetTokenOptions} as a querystring.
+ */
+interface GetTokenQuery {
+  client_id?: string;
+  client_secret?: string;
+  code_verifier?: string;
+  code: string;
+  grant_type: 'authorization_code';
+  redirect_uri?: string;
+  [key: string]: string | undefined;
 }
 
 export interface TokenInfo {
@@ -336,11 +360,6 @@ export interface GetAccessTokenCallback {
   ): void;
 }
 
-export interface GetAccessTokenResponse {
-  token?: string | null;
-  res?: GaxiosResponse | null;
-}
-
 export interface RefreshAccessTokenCallback {
   (
     err: GaxiosError | null,
@@ -404,10 +423,83 @@ export interface VerifyIdTokenOptions {
   maxExpiry?: number;
 }
 
+export interface OAuth2ClientEndpoints {
+  /**
+   * The endpoint for viewing access token information
+   *
+   * @example
+   * 'https://oauth2.googleapis.com/tokeninfo'
+   */
+  tokenInfoUrl: string | URL;
+
+  /**
+   * The base URL for auth endpoints.
+   *
+   * @example
+   * 'https://accounts.google.com/o/oauth2/v2/auth'
+   */
+  oauth2AuthBaseUrl: string | URL;
+
+  /**
+   * The base endpoint for token retrieval
+   * .
+   * @example
+   * 'https://oauth2.googleapis.com/token'
+   */
+  oauth2TokenUrl: string | URL;
+
+  /**
+   * The base endpoint to revoke tokens.
+   *
+   * @example
+   * 'https://oauth2.googleapis.com/revoke'
+   */
+  oauth2RevokeUrl: string | URL;
+
+  /**
+   * Sign on certificates in PEM format.
+   *
+   * @example
+   * 'https://www.googleapis.com/oauth2/v1/certs'
+   */
+  oauth2FederatedSignonPemCertsUrl: string | URL;
+
+  /**
+   * Sign on certificates in JWK format.
+   *
+   * @example
+   * 'https://www.googleapis.com/oauth2/v3/certs'
+   */
+  oauth2FederatedSignonJwkCertsUrl: string | URL;
+
+  /**
+   * IAP Public Key URL.
+   * This URL contains a JSON dictionary that maps the `kid` claims to the public key values.
+   *
+   * @example
+   * 'https://www.gstatic.com/iap/verify/public_key'
+   */
+  oauth2IapPublicKeyUrl: string | URL;
+}
+
 export interface OAuth2ClientOptions extends AuthClientOptions {
   clientId?: string;
   clientSecret?: string;
   redirectUri?: string;
+  /**
+   * Customizable endpoints.
+   */
+  endpoints?: Partial<OAuth2ClientEndpoints>;
+  /**
+   * The allowed OAuth2 token issuers.
+   */
+  issuers?: string[];
+  /**
+   * The client authentication type. Supported values are basic, post, and none.
+   * Defaults to post if not provided.
+   * https://datatracker.ietf.org/doc/html/rfc7591#section-2
+   */
+  clientAuthentication?: ClientAuthentication;
 }
 
 // Re-exporting here for backwards compatibility
@@ -422,14 +514,15 @@ export class OAuth2Client extends AuthClient {
   private certificateExpiry: Date | null = null;
   private certificateCacheFormat: CertificateFormat = CertificateFormat.PEM;
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
+  readonly endpoints: Readonly<OAuth2ClientEndpoints>;
+  readonly issuers: string[];
+  readonly clientAuthentication: ClientAuthentication;
 
   // TODO: refactor tests to make this private
   _clientId?: string;
 
   // TODO: refactor tests to make this private
   _clientSecret?: string;
-
-  apiKey?: string;
 
   refreshHandler?: GetRefreshHandlerCallback;
 
@@ -460,46 +553,34 @@ export class OAuth2Client extends AuthClient {
     this._clientId = opts.clientId;
     this._clientSecret = opts.clientSecret;
     this.redirectUri = opts.redirectUri;
+
+    this.endpoints = {
+      tokenInfoUrl: 'https://oauth2.googleapis.com/tokeninfo',
+      oauth2AuthBaseUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      oauth2TokenUrl: 'https://oauth2.googleapis.com/token',
+      oauth2RevokeUrl: 'https://oauth2.googleapis.com/revoke',
+      oauth2FederatedSignonPemCertsUrl:
+        'https://www.googleapis.com/oauth2/v1/certs',
+      oauth2FederatedSignonJwkCertsUrl:
+        'https://www.googleapis.com/oauth2/v3/certs',
+      oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
+      ...opts.endpoints,
+    };
+    this.clientAuthentication =
+      opts.clientAuthentication || ClientAuthentication.ClientSecretPost;
+
+    this.issuers = opts.issuers || [
+      'accounts.google.com',
+      'https://accounts.google.com',
+      this.universeDomain,
+    ];
   }
 
+  /**
+   * @deprecated use instance's {@link OAuth2Client.endpoints}
+   */
   protected static readonly GOOGLE_TOKEN_INFO_URL =
     'https://oauth2.googleapis.com/tokeninfo';
-
-  /**
-   * The base URL for auth endpoints.
-   */
-  private static readonly GOOGLE_OAUTH2_AUTH_BASE_URL_ =
-    'https://accounts.google.com/o/oauth2/v2/auth';
-
-  /**
-   * The base endpoint for token retrieval.
-   */
-  private static readonly GOOGLE_OAUTH2_TOKEN_URL_ =
-    'https://oauth2.googleapis.com/token';
-
-  /**
-   * The base endpoint to revoke tokens.
-   */
-  private static readonly GOOGLE_OAUTH2_REVOKE_URL_ =
-    'https://oauth2.googleapis.com/revoke';
-
-  /**
-   * Google Sign on certificates in PEM format.
-   */
-  private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_ =
-    'https://www.googleapis.com/oauth2/v1/certs';
-
-  /**
-   * Google Sign on certificates in JWK format.
-   */
-  private static readonly GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_ =
-    'https://www.googleapis.com/oauth2/v3/certs';
-
-  /**
-   * Google Sign on certificates in JWK format.
-   */
-  private static readonly GOOGLE_OAUTH2_IAP_PUBLIC_KEY_URL_ =
-    'https://www.gstatic.com/iap/verify/public_key';
 
   /**
    * Clock skew - five minutes in seconds
@@ -507,17 +588,9 @@ export class OAuth2Client extends AuthClient {
   private static readonly CLOCK_SKEW_SECS_ = 300;
 
   /**
-   * Max Token Lifetime is one day in seconds
+   * The default max Token Lifetime is one day in seconds
    */
-  private static readonly MAX_TOKEN_LIFETIME_SECS_ = 86400;
-
-  /**
-   * The allowed oauth token issuers.
-   */
-  private static readonly ISSUERS_ = [
-    'accounts.google.com',
-    'https://accounts.google.com',
-  ];
+  private static readonly DEFAULT_MAX_TOKEN_LIFETIME_SECS_ = 86400;
 
   /**
    * Generates URL for consent page landing.
@@ -537,7 +610,7 @@ export class OAuth2Client extends AuthClient {
     if (Array.isArray(opts.scope)) {
       opts.scope = opts.scope.join(' ');
     }
-    const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
+    const rootUrl = this.endpoints.oauth2AuthBaseUrl.toString();
     return (
       rootUrl +
       '?' +
@@ -612,20 +685,31 @@ export class OAuth2Client extends AuthClient {
   private async getTokenAsync(
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
-    const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
-    const values = {
-      code: options.code,
-      client_id: options.client_id || this._clientId,
-      client_secret: this._clientSecret,
-      redirect_uri: options.redirect_uri || this.redirectUri,
-      grant_type: 'authorization_code',
-      code_verifier: options.codeVerifier,
+    const url = this.endpoints.oauth2TokenUrl.toString();
+    const headers: Headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
     };
+    const values: GetTokenQuery = {
+      client_id: options.client_id || this._clientId,
+      code_verifier: options.codeVerifier,
+      code: options.code,
+      grant_type: 'authorization_code',
+      redirect_uri: options.redirect_uri || this.redirectUri,
+    };
+    if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
+      const basic = Buffer.from(`${this._clientId}:${this._clientSecret}`);
+
+      headers['Authorization'] = `Basic ${basic.toString('base64')}`;
+    }
+    if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
+      values.client_secret = this._clientSecret;
+    }
     const res = await this.transporter.request<CredentialRequest>({
+      ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
       data: querystring.stringify(values),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      headers,
     });
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
@@ -673,7 +757,7 @@ export class OAuth2Client extends AuthClient {
     if (!refreshToken) {
       throw new Error('No refresh token is set.');
     }
-    const url = OAuth2Client.GOOGLE_OAUTH2_TOKEN_URL_;
+    const url = this.endpoints.oauth2TokenUrl.toString();
     const data = {
       refresh_token: refreshToken,
       client_id: this._clientId,
@@ -686,6 +770,7 @@ export class OAuth2Client extends AuthClient {
     try {
       // request for new token
       res = await this.transporter.request<CredentialRequest>({
+        ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
         data: querystring.stringify(data),
@@ -807,7 +892,7 @@ export class OAuth2Client extends AuthClient {
 
   protected async getRequestMetadataAsync(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    url?: string | null
+    url?: string | URL | null
   ): Promise<RequestMetadataResponse> {
     const thisCreds = this.credentials;
     if (
@@ -874,10 +959,24 @@ export class OAuth2Client extends AuthClient {
   /**
    * Generates an URL to revoke the given token.
    * @param token The existing token to be revoked.
+   *
+   * @deprecated use instance method {@link OAuth2Client.getRevokeTokenURL}
    */
   static getRevokeTokenUrl(token: string): string {
-    const parameters = querystring.stringify({token});
-    return `${OAuth2Client.GOOGLE_OAUTH2_REVOKE_URL_}?${parameters}`;
+    return new OAuth2Client().getRevokeTokenURL(token).toString();
+  }
+
+  /**
+   * Generates a URL to revoke the given token.
+   *
+   * @param token The existing token to be revoked.
+   */
+  getRevokeTokenURL(token: string): URL {
+    const url = new URL(this.endpoints.oauth2RevokeUrl);
+
+    url.searchParams.append('token', token);
+
+    return url;
   }
 
   /**
@@ -895,7 +994,8 @@ export class OAuth2Client extends AuthClient {
     callback?: BodyResponseCallback<RevokeCredentialsResult>
   ): GaxiosPromise<RevokeCredentialsResult> | void {
     const opts: GaxiosOptions = {
-      url: OAuth2Client.getRevokeTokenUrl(token),
+      ...OAuth2Client.RETRY_CONFIG,
+      url: this.getRevokeTokenURL(token).toString(),
       method: 'POST',
     };
     if (callback) {
@@ -963,7 +1063,7 @@ export class OAuth2Client extends AuthClient {
 
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let r2: GaxiosResponse;
     try {
@@ -1017,11 +1117,16 @@ export class OAuth2Client extends AuthClient {
           this.refreshHandler;
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
-        if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
+        if (
+          !reAuthRetried &&
+          isAuthErr &&
+          !isReadableStream &&
+          mayRequireRefresh
+        ) {
           await this.refreshAccessTokenAsync();
           return this.requestAsync<T>(opts, true);
         } else if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           mayRequireRefreshWithNoRefreshToken
@@ -1080,7 +1185,7 @@ export class OAuth2Client extends AuthClient {
       options.idToken,
       response.certs,
       options.audience,
-      OAuth2Client.ISSUERS_,
+      this.issuers,
       options.maxExpiry
     );
 
@@ -1096,12 +1201,13 @@ export class OAuth2Client extends AuthClient {
    */
   async getTokenInfo(accessToken: string): Promise<TokenInfo> {
     const {data} = await this.transporter.request<TokenInfoRequest>({
+      ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         Authorization: `Bearer ${accessToken}`,
       },
-      url: OAuth2Client.GOOGLE_TOKEN_INFO_URL,
+      url: this.endpoints.tokenInfoUrl.toString(),
     });
     const info = Object.assign(
       {
@@ -1152,16 +1258,19 @@ export class OAuth2Client extends AuthClient {
     let url: string;
     switch (format) {
       case CertificateFormat.PEM:
-        url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_;
+        url = this.endpoints.oauth2FederatedSignonPemCertsUrl.toString();
         break;
       case CertificateFormat.JWK:
-        url = OAuth2Client.GOOGLE_OAUTH2_FEDERATED_SIGNON_JWK_CERTS_URL_;
+        url = this.endpoints.oauth2FederatedSignonJwkCertsUrl.toString();
         break;
       default:
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
-      res = await this.transporter.request({url});
+      res = await this.transporter.request({
+        ...OAuth2Client.RETRY_CONFIG,
+        url,
+      });
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
@@ -1226,10 +1335,13 @@ export class OAuth2Client extends AuthClient {
 
   async getIapPublicKeysAsync(): Promise<IapPublicKeysResponse> {
     let res: GaxiosResponse;
-    const url: string = OAuth2Client.GOOGLE_OAUTH2_IAP_PUBLIC_KEY_URL_;
+    const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      res = await this.transporter.request({url});
+      res = await this.transporter.request({
+        ...OAuth2Client.RETRY_CONFIG,
+        url,
+      });
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
@@ -1269,7 +1381,7 @@ export class OAuth2Client extends AuthClient {
     const crypto = createCrypto();
 
     if (!maxExpiry) {
-      maxExpiry = OAuth2Client.MAX_TOKEN_LIFETIME_SECS_;
+      maxExpiry = OAuth2Client.DEFAULT_MAX_TOKEN_LIFETIME_SECS_;
     }
 
     const segments = jwt.split('.');
