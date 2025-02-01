@@ -69,6 +69,16 @@ export enum CertificateFormat {
   JWK = 'JWK',
 }
 
+/**
+ * The client authentication type. Supported values are basic, post, and none.
+ * https://datatracker.ietf.org/doc/html/rfc7591#section-2
+ */
+export enum ClientAuthentication {
+  ClientSecretPost = 'ClientSecretPost',
+  ClientSecretBasic = 'ClientSecretBasic',
+  None = 'None',
+}
+
 export interface GetTokenOptions {
   code: string;
   codeVerifier?: string;
@@ -85,6 +95,19 @@ export interface GetTokenOptions {
    * a corresponding call to generateAuthUrl.
    */
   redirect_uri?: string;
+}
+
+/**
+ * An interface for preparing {@link GetTokenOptions} as a querystring.
+ */
+interface GetTokenQuery {
+  client_id?: string;
+  client_secret?: string;
+  code_verifier?: string;
+  code: string;
+  grant_type: 'authorization_code';
+  redirect_uri?: string;
+  [key: string]: string | undefined;
 }
 
 export interface TokenInfo {
@@ -471,6 +494,12 @@ export interface OAuth2ClientOptions extends AuthClientOptions {
    * The allowed OAuth2 token issuers.
    */
   issuers?: string[];
+  /**
+   * The client authentication type. Supported values are basic, post, and none.
+   * Defaults to post if not provided.
+   * https://datatracker.ietf.org/doc/html/rfc7591#section-2
+   */
+  clientAuthentication?: ClientAuthentication;
 }
 
 // Re-exporting here for backwards compatibility
@@ -487,14 +516,13 @@ export class OAuth2Client extends AuthClient {
   protected refreshTokenPromises = new Map<string, Promise<GetTokenResponse>>();
   readonly endpoints: Readonly<OAuth2ClientEndpoints>;
   readonly issuers: string[];
+  readonly clientAuthentication: ClientAuthentication;
 
   // TODO: refactor tests to make this private
   _clientId?: string;
 
   // TODO: refactor tests to make this private
   _clientSecret?: string;
-
-  apiKey?: string;
 
   refreshHandler?: GetRefreshHandlerCallback;
 
@@ -538,6 +566,8 @@ export class OAuth2Client extends AuthClient {
       oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
       ...opts.endpoints,
     };
+    this.clientAuthentication =
+      opts.clientAuthentication || ClientAuthentication.ClientSecretPost;
 
     this.issuers = opts.issuers || [
       'accounts.google.com',
@@ -656,19 +686,30 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const values = {
-      code: options.code,
-      client_id: options.client_id || this._clientId,
-      client_secret: this._clientSecret,
-      redirect_uri: options.redirect_uri || this.redirectUri,
-      grant_type: 'authorization_code',
-      code_verifier: options.codeVerifier,
+    const headers: Headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
     };
+    const values: GetTokenQuery = {
+      client_id: options.client_id || this._clientId,
+      code_verifier: options.codeVerifier,
+      code: options.code,
+      grant_type: 'authorization_code',
+      redirect_uri: options.redirect_uri || this.redirectUri,
+    };
+    if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
+      const basic = Buffer.from(`${this._clientId}:${this._clientSecret}`);
+
+      headers['Authorization'] = `Basic ${basic.toString('base64')}`;
+    }
+    if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
+      values.client_secret = this._clientSecret;
+    }
     const res = await this.transporter.request<CredentialRequest>({
+      ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
       data: querystring.stringify(values),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      headers,
     });
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
@@ -729,6 +770,7 @@ export class OAuth2Client extends AuthClient {
     try {
       // request for new token
       res = await this.transporter.request<CredentialRequest>({
+        ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
         data: querystring.stringify(data),
@@ -952,6 +994,7 @@ export class OAuth2Client extends AuthClient {
     callback?: BodyResponseCallback<RevokeCredentialsResult>
   ): GaxiosPromise<RevokeCredentialsResult> | void {
     const opts: GaxiosOptions = {
+      ...OAuth2Client.RETRY_CONFIG,
       url: this.getRevokeTokenURL(token).toString(),
       method: 'POST',
     };
@@ -1020,7 +1063,7 @@ export class OAuth2Client extends AuthClient {
 
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let r2: GaxiosResponse;
     try {
@@ -1074,11 +1117,16 @@ export class OAuth2Client extends AuthClient {
           this.refreshHandler;
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
-        if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
+        if (
+          !reAuthRetried &&
+          isAuthErr &&
+          !isReadableStream &&
+          mayRequireRefresh
+        ) {
           await this.refreshAccessTokenAsync();
           return this.requestAsync<T>(opts, true);
         } else if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           mayRequireRefreshWithNoRefreshToken
@@ -1153,6 +1201,7 @@ export class OAuth2Client extends AuthClient {
    */
   async getTokenInfo(accessToken: string): Promise<TokenInfo> {
     const {data} = await this.transporter.request<TokenInfoRequest>({
+      ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1218,7 +1267,10 @@ export class OAuth2Client extends AuthClient {
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
-      res = await this.transporter.request({url});
+      res = await this.transporter.request({
+        ...OAuth2Client.RETRY_CONFIG,
+        url,
+      });
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
@@ -1286,7 +1338,10 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      res = await this.transporter.request({url});
+      res = await this.transporter.request({
+        ...OAuth2Client.RETRY_CONFIG,
+        url,
+      });
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;

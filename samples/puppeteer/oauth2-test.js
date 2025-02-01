@@ -1,4 +1,4 @@
-// Copyright 2018, Google, LLC
+// Copyright 2018 Google LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,7 +22,11 @@ const puppeteer = require('puppeteer');
 const url = require('url');
 const http = require('http');
 
-const keys = require('../oauth2.keys.json');
+/**
+ * @example
+ * require('../oauth2.keys.json');
+ */
+const keys = {};
 
 /**
  * Keep a config.keys.json with a username and password
@@ -31,8 +35,11 @@ const keys = require('../oauth2.keys.json');
  *   "username": "your-user-name@gmail.com",
  *   "password": "your-password"
  * }
+ *
+ * @example
+ * require('../config.keys.json');
  */
-const config = require('../config.keys.json');
+const config = {};
 
 async function main() {
   const oAuth2Client = await getAuthenticatedClient();

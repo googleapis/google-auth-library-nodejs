@@ -303,6 +303,10 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   /**
    * Create a JWT credentials instance using the given input options.
    * @param json The input object.
+   *
+   * @remarks
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    */
   fromJSON(json: JWTInput): void {
     if (!json) {
@@ -333,6 +337,10 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    * Create a JWT credentials instance using the given input stream.
    * @param inputStream The input stream.
    * @param callback Optional callback.
+   *
+   * @remarks
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(

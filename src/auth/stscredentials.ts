@@ -195,6 +195,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
     Object.assign(headers, additionalHeaders || {});
 
     const opts: GaxiosOptions = {
+      ...StsCredentials.RETRY_CONFIG,
       url: this.tokenExchangeEndpoint.toString(),
       method: 'POST',
       headers,

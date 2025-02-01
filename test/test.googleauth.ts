@@ -41,6 +41,7 @@ import {
   ExternalAccountClientOptions,
   RefreshOptions,
   Impersonated,
+  IdentityPoolClient,
 } from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
@@ -52,9 +53,16 @@ import {
   mockStsTokenExchange,
   saEmail,
 } from './externalclienthelper';
-import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
+import {
+  BaseExternalAccountClient,
+  EXTERNAL_ACCOUNT_TYPE,
+} from '../src/auth/baseexternalclient';
 import {AuthClient, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
+import {stringify} from 'querystring';
+import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
+import {IMPERSONATED_ACCOUNT_TYPE} from '../src/auth/impersonated';
+import {USER_REFRESH_ACCOUNT_TYPE} from '../src/auth/refreshclient';
 
 nock.disableNetConnect();
 
@@ -65,7 +73,7 @@ describe('googleauth', () => {
   const host = HOST_ADDRESS;
   const instancePath = `${BASE_PATH}/instance`;
   const svcAccountPath = `${instancePath}/service-accounts/default/email`;
-  const universeDomainPath = `${BASE_PATH}/universe/universe_domain`;
+  const universeDomainPath = `${BASE_PATH}/universe/universe-domain`;
   const API_KEY = 'test-123';
   const PEM_PATH = './test/fixtures/private.pem';
   const STUB_PROJECT = 'my-awesome-project';
@@ -302,6 +310,30 @@ describe('googleauth', () => {
       assert.deepEqual(await auth.getRequestHeaders(''), customRequestHeaders);
     });
 
+    it('should accept and use an `apiKey`', async () => {
+      const apiKey = 'myKey';
+      const auth = new GoogleAuth({apiKey});
+      const client = await auth.getClient();
+
+      assert.equal(client.apiKey, apiKey);
+      assert.deepEqual(await auth.getRequestHeaders(), {
+        'X-Goog-Api-Key': apiKey,
+      });
+    });
+
+    it('should not accept both an `apiKey` and `credentials`', async () => {
+      const apiKey = 'myKey';
+      assert.throws(
+        () =>
+          new GoogleAuth({
+            credentials: {},
+            // API key should supported via `clientOptions`
+            clientOptions: {apiKey},
+          }),
+        new RangeError(GoogleAuthExceptionMessages.API_KEY_WITH_CREDENTIALS)
+      );
+    });
+
     it('fromJSON should support the instantiated named export', () => {
       const result = auth.fromJSON(createJwtJSON());
       assert(result);
@@ -326,14 +358,6 @@ describe('googleauth', () => {
       });
       const client = (await auth.getClient()) as JWT;
       assert.strictEqual(client.email, 'hello@youarecool.com');
-    });
-
-    it('fromAPIKey should error given an invalid api key', () => {
-      assert.throws(() => {
-        // Test verifies invalid parameter tests, which requires cast to any.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (auth as any).fromAPIKey(null);
-      });
     });
 
     it('should make a request with the api key', async () => {
@@ -1131,9 +1155,8 @@ describe('googleauth', () => {
 
     it('getCredentials should get metadata from the server when running on GCE', async () => {
       const clientEmail = 'test-creds@test-creds.iam.gserviceaccount.com';
-      const universeDomain = 'my-amazing-universe.com';
       const scopes = [
-        nockIsGCE({universeDomain}),
+        nockIsGCE(),
         createGetProjectIdNock(),
         nock(host).get(svcAccountPath).reply(200, clientEmail, HEADERS),
       ];
@@ -1142,7 +1165,6 @@ describe('googleauth', () => {
       const body = await auth.getCredentials();
       assert.ok(body);
       assert.strictEqual(body.client_email, clientEmail);
-      assert.strictEqual(body.universe_domain, universeDomain);
       assert.strictEqual(body.private_key, undefined);
       scopes.forEach(s => s.done());
     });
@@ -1422,12 +1444,14 @@ describe('googleauth', () => {
     });
 
     it('should pass options to the JWT constructor via constructor', async () => {
+      const apiKey = 'my-api-key';
       const subject = 'science!';
       const auth = new GoogleAuth({
         keyFilename: './test/fixtures/private.json',
-        clientOptions: {subject},
+        clientOptions: {apiKey, subject},
       });
       const client = (await auth.getClient()) as JWT;
+      assert.strictEqual(client.apiKey, apiKey);
       assert.strictEqual(client.subject, subject);
     });
 
@@ -1520,6 +1544,69 @@ describe('googleauth', () => {
       assert(client.idTokenProvider instanceof JWT);
     });
 
+    it('should return a UserRefreshClient client for getIdTokenClient', async () => {
+      // Set up a mock to return path to a valid credentials file.
+      mockEnvVar(
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        './test/fixtures/refresh.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
+
+      const client = await auth.getIdTokenClient('a-target-audience');
+      assert(client instanceof IdTokenClient);
+      assert(client.idTokenProvider instanceof UserRefreshClient);
+    });
+
+    it('should properly use `UserRefreshClient` client for `getIdTokenClient`', async () => {
+      // Set up a mock to return path to a valid credentials file.
+      mockEnvVar(
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        './test/fixtures/refresh.json'
+      );
+      mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
+
+      // Assert `UserRefreshClient`
+      const baseClient = await auth.getClient();
+      assert(baseClient instanceof UserRefreshClient);
+
+      // Setup variables
+      const idTokenPayload = Buffer.from(JSON.stringify({exp: 100})).toString(
+        'base64'
+      );
+      const testIdToken = `TEST.${idTokenPayload}.TOKEN`;
+      const targetAudience = 'a-target-audience';
+      const tokenEndpoint = new URL(baseClient.endpoints.oauth2TokenUrl);
+      const expectedTokenRequestBody = stringify({
+        client_id: baseClient._clientId,
+        client_secret: baseClient._clientSecret,
+        grant_type: 'refresh_token',
+        refresh_token: baseClient._refreshToken,
+        target_audience: targetAudience,
+      });
+      const url = new URL('https://my-protected-endpoint.a.app');
+      const expectedRes = {hello: true};
+
+      // Setup mock endpoints
+      nock(tokenEndpoint.origin)
+        .post(tokenEndpoint.pathname, expectedTokenRequestBody)
+        .reply(200, {id_token: testIdToken});
+      nock(url.origin, {
+        reqheaders: {
+          authorization: `Bearer ${testIdToken}`,
+        },
+      })
+        .get(url.pathname)
+        .reply(200, expectedRes);
+
+      // Make assertions
+      const client = await auth.getIdTokenClient(targetAudience);
+      assert(client instanceof IdTokenClient);
+      assert(client.idTokenProvider instanceof UserRefreshClient);
+
+      const res = await client.request({url});
+      assert.deepStrictEqual(res.data, expectedRes);
+    });
+
     it('should call getClient for getIdTokenClient', async () => {
       // Set up a mock to return path to a valid credentials file.
       mockEnvVar(
@@ -1531,26 +1618,6 @@ describe('googleauth', () => {
       const client = await auth.getIdTokenClient('a-target-audience');
       assert(client instanceof IdTokenClient);
       assert(spy.calledOnce);
-    });
-
-    it('should fail when using UserRefreshClient', async () => {
-      // Set up a mock to return path to a valid credentials file.
-      mockEnvVar(
-        'GOOGLE_APPLICATION_CREDENTIALS',
-        './test/fixtures/refresh.json'
-      );
-      mockEnvVar('GOOGLE_CLOUD_PROJECT', 'some-project-id');
-
-      try {
-        await auth.getIdTokenClient('a-target-audience');
-      } catch (e) {
-        assert(e instanceof Error);
-        assert(
-          e.message.startsWith('Cannot fetch ID token in this environment')
-        );
-        return;
-      }
-      assert.fail('failed to throw');
     });
 
     describe('getUniverseDomain', () => {
@@ -1581,14 +1648,6 @@ describe('googleauth', () => {
         assert.notEqual(universe_domain, DEFAULT_UNIVERSE);
         assert.equal(await auth.getUniverseDomain(), universe_domain);
       });
-
-      it('should use the metadata service if on GCP', async () => {
-        const universeDomain = 'my.universe.com';
-        const scope = nockIsGCE({universeDomain});
-
-        assert.equal(await auth.getUniverseDomain(), universeDomain);
-        await scope.done();
-      });
     });
 
     function mockApplicationDefaultCredentials(path: string) {
@@ -1603,6 +1662,86 @@ describe('googleauth', () => {
         .reply(200, {});
     }
     describe('for impersonated types', () => {
+      describe('source clients', () => {
+        it('should support a variety of source clients', async () => {
+          const serviceAccountImpersonationURLBase =
+            'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/test@test-project.iam.gserviceaccount.com:generateToken';
+          const samples: {
+            creds: {
+              type: typeof IMPERSONATED_ACCOUNT_TYPE;
+              service_account_impersonation_url: string;
+              source_credentials: {};
+            };
+            expectedSource: typeof AuthClient;
+          }[] = [
+            // USER_TO_SERVICE_ACCOUNT_JSON
+            {
+              creds: {
+                type: IMPERSONATED_ACCOUNT_TYPE,
+                service_account_impersonation_url: new URL(
+                  './test@test-project.iam.gserviceaccount.com:generateAccessToken',
+                  serviceAccountImpersonationURLBase
+                ).toString(),
+                source_credentials: {
+                  client_id: 'client',
+                  client_secret: 'secret',
+                  refresh_token: 'refreshToken',
+                  type: USER_REFRESH_ACCOUNT_TYPE,
+                },
+              },
+              expectedSource: UserRefreshClient,
+            },
+            // SERVICE_ACCOUNT_TO_SERVICE_ACCOUNT_JSON
+            {
+              creds: {
+                type: IMPERSONATED_ACCOUNT_TYPE,
+                service_account_impersonation_url: new URL(
+                  './test@test-project.iam.gserviceaccount.com:generateIdToken',
+                  serviceAccountImpersonationURLBase
+                ).toString(),
+                source_credentials: {
+                  type: 'service_account',
+                  client_email: 'google@auth.library',
+                  private_key: privateKey,
+                },
+              },
+              expectedSource: JWT,
+            },
+            // EXTERNAL_ACCOUNT_TO_SERVICE_ACCOUNT_JSON
+            {
+              creds: {
+                type: IMPERSONATED_ACCOUNT_TYPE,
+                service_account_impersonation_url: new URL(
+                  './test@test-project.iam.gserviceaccount.com:generateIdToken',
+                  serviceAccountImpersonationURLBase
+                ).toString(),
+                source_credentials: {
+                  type: EXTERNAL_ACCOUNT_TYPE,
+                  audience: 'audience',
+                  subject_token_type: 'access_token',
+                  token_url: 'https://sts.googleapis.com/v1/token',
+                  credential_source: {url: 'https://example.com/token'},
+                },
+              },
+              expectedSource: IdentityPoolClient,
+            },
+          ];
+
+          const auth = new GoogleAuth();
+          for (const {creds, expectedSource} of samples) {
+            const client = auth.fromJSON(creds);
+
+            assert(client instanceof Impersonated);
+
+            // This is a private prop - we will refactor/remove in the future
+            assert(
+              (client as unknown as {sourceClient: {}}).sourceClient instanceof
+                expectedSource
+            );
+          }
+        });
+      });
+
       describe('for impersonated credentials signing', () => {
         const now = new Date().getTime();
         const saSuccessResponse = {
@@ -2553,6 +2692,28 @@ describe('googleauth', () => {
           const actualClient = await auth.getClient();
 
           assert(actualClient instanceof ExternalAccountAuthorizedUserClient);
+        });
+
+        it('should return the same instance for concurrent requests', async () => {
+          // Set up a mock to return path to a valid credentials file.
+          mockEnvVar(
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            './test/fixtures/external-account-authorized-user-cred.json'
+          );
+          const auth = new GoogleAuth();
+
+          let client: AuthClient | null = null;
+          const getClientCalls = await Promise.all([
+            auth.getClient(),
+            auth.getClient(),
+            auth.getClient(),
+          ]);
+
+          for (const resClient of getClientCalls) {
+            if (!client) client = resClient;
+
+            assert(client === resClient);
+          }
         });
       });
 

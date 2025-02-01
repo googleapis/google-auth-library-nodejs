@@ -160,10 +160,8 @@ describe('Browser OAuth2 tests', () => {
       '}';
     const envelope = JSON.stringify({kid: 'keyid', alg: 'RS256'});
     let data =
-      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       base64js.fromByteArray(new TextEncoder().encode(envelope)) +
       '.' +
-      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       base64js.fromByteArray(new TextEncoder().encode(idToken));
     const algo = {
       name: 'RSASSA-PKCS1-v1_5',
@@ -181,7 +179,6 @@ describe('Browser OAuth2 tests', () => {
     const signature = await window.crypto.subtle.sign(
       algo,
       cryptoKey,
-      // eslint-disable-next-line node/no-unsupported-features/node-builtins
       new TextEncoder().encode(data)
     );
     data += '.' + base64js.fromByteArray(new Uint8Array(signature));
