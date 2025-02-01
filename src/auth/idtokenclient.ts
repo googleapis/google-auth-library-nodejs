@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import {Credentials} from './credentials';
+import {Headers} from './authclient';
 import {
-  Headers,
   OAuth2Client,
   OAuth2ClientOptions,
   RequestMetadataResponse,
@@ -42,8 +42,8 @@ export class IdTokenClient extends OAuth2Client {
   /**
    * Google ID Token client
    *
-   * Retrieve access token from the metadata server.
-   * See: https://developers.google.com/compute/docs/authentication
+   * Retrieve ID token from the metadata server.
+   * See: https://cloud.google.com/docs/authentication/get-id-token#metadata-server
    */
   constructor(options: IdTokenOptions) {
     super(options);

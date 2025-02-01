@@ -29,7 +29,7 @@ export class NodeCrypto implements Crypto {
     data: string | Buffer,
     signature: string
   ): Promise<boolean> {
-    const verifier = crypto.createVerify('sha256');
+    const verifier = crypto.createVerify('RSA-SHA256');
     verifier.update(data);
     verifier.end();
     return verifier.verify(pubkey, signature, 'base64');

@@ -22,6 +22,8 @@ import {
 import {AuthClient} from './authclient';
 import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
+import {SignBlobResponse} from './googleauth';
+import {originalOrCamelOptions} from '../util';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -123,16 +125,58 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     this.delegates = options.delegates ?? [];
     this.targetScopes = options.targetScopes ?? [];
     this.lifetime = options.lifetime ?? 3600;
-    this.endpoint = options.endpoint ?? 'https://iamcredentials.googleapis.com';
+
+    const usingExplicitUniverseDomain =
+      !!originalOrCamelOptions(options).get('universe_domain');
+
+    if (!usingExplicitUniverseDomain) {
+      // override the default universe with the source's universe
+      this.universeDomain = this.sourceClient.universeDomain;
+    } else if (this.sourceClient.universeDomain !== this.universeDomain) {
+      // non-default universe and is not matching the source - this could be a credential leak
+      throw new RangeError(
+        `Universe domain ${this.sourceClient.universeDomain} in source credentials does not match ${this.universeDomain} universe domain set for impersonated credentials.`
+      );
+    }
+
+    this.endpoint =
+      options.endpoint ?? `https://iamcredentials.${this.universeDomain}`;
+  }
+
+  /**
+   * Signs some bytes.
+   *
+   * {@link https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/signBlob Reference Documentation}
+   * @param blobToSign String to sign.
+   *
+   * @returns A {@link SignBlobResponse} denoting the keyID and signedBlob in base64 string
+   */
+  async sign(blobToSign: string): Promise<SignBlobResponse> {
+    await this.sourceClient.getAccessToken();
+    const name = `projects/-/serviceAccounts/${this.targetPrincipal}`;
+    const u = `${this.endpoint}/v1/${name}:signBlob`;
+    const body = {
+      delegates: this.delegates,
+      payload: Buffer.from(blobToSign).toString('base64'),
+    };
+    const res = await this.sourceClient.request<SignBlobResponse>({
+      ...Impersonated.RETRY_CONFIG,
+      url: u,
+      data: body,
+      method: 'POST',
+    });
+    return res.data;
+  }
+
+  /** The service account email to be impersonated. */
+  getTargetPrincipal(): string {
+    return this.targetPrincipal;
   }
 
   /**
    * Refreshes the access token.
-   * @param refreshToken Unused parameter
    */
-  protected async refreshToken(
-    refreshToken?: string | null
-  ): Promise<GetTokenResponse> {
+  protected async refreshToken(): Promise<GetTokenResponse> {
     try {
       await this.sourceClient.getAccessToken();
       const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
@@ -143,6 +187,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
         lifetime: this.lifetime + 's',
       };
       const res = await this.sourceClient.request<TokenResponse>({
+        ...Impersonated.RETRY_CONFIG,
         url: u,
         data: body,
         method: 'POST',
@@ -196,8 +241,11 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       delegates: this.delegates,
       audience: targetAudience,
       includeEmail: options?.includeEmail ?? true,
+      useEmailAzp: options?.includeEmail ?? true,
     };
+
     const res = await this.sourceClient.request<FetchIdTokenResponse>({
+      ...Impersonated.RETRY_CONFIG,
       url: u,
       data: body,
       method: 'POST',

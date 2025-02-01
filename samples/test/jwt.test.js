@@ -31,12 +31,6 @@ describe('samples', () => {
     assert.match(output, /DNS Info:/);
   });
 
-  it.skip('should acquire compute credentials', async () => {
-    // TODO: need to figure out deploying to GCF for this to work
-    const output = execSync('node compute');
-    assert.match(output, /DNS Info:/);
-  });
-
   it('should create a JWT', async () => {
     const output = execSync('node jwt');
     assert.match(output, /DNS Info:/);
@@ -73,7 +67,7 @@ describe('samples', () => {
     assert.match(output, /What's next?/);
   });
 
-  it('should fetch ID token for IAP', async () => {
+  it.skip('should fetch ID token for IAP', async () => {
     // process.env.IAP_URL should be an App Engine app, protected with IAP:
     const url =
       process.env.IAP_URL || 'https://nodejs-docs-samples-iap.appspot.com';

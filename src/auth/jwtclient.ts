@@ -24,6 +24,7 @@ import {
   OAuth2ClientOptions,
   RequestMetadataResponse,
 } from './oauth2client';
+import {DEFAULT_UNIVERSE} from './authclient';
 
 export interface JWTOptions extends OAuth2ClientOptions {
   email?: string;
@@ -119,7 +120,15 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
     const useSelfSignedJWT =
       (!this.hasUserScopes() && url) ||
-      (this.useJWTAccessWithScope && this.hasAnyScopes());
+      (this.useJWTAccessWithScope && this.hasAnyScopes()) ||
+      this.universeDomain !== DEFAULT_UNIVERSE;
+
+    if (this.subject && this.universeDomain !== DEFAULT_UNIVERSE) {
+      throw new RangeError(
+        `Service Account user is configured for the credential. Domain-wide delegation is not supported in universes other than ${DEFAULT_UNIVERSE}`
+      );
+    }
+
     if (!this.apiKey && useSelfSignedJWT) {
       if (
         this.additionalClaims &&
@@ -154,12 +163,17 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
           scopes = this.defaultScopes;
         }
 
+        const useScopes =
+          this.useJWTAccessWithScope ||
+          this.universeDomain !== DEFAULT_UNIVERSE;
+
         const headers = await this.access.getRequestHeaders(
           url ?? undefined,
           this.additionalClaims,
           // Scopes take precedent over audience for signing,
-          // so we only provide them if useJWTAccessWithScope is on
-          this.useJWTAccessWithScope ? scopes : undefined
+          // so we only provide them if `useJWTAccessWithScope` is on or
+          // if we are in a non-default universe
+          useScopes ? scopes : undefined
         );
 
         return {headers: this.addSharedMetadataHeaders(headers)};
@@ -289,6 +303,10 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   /**
    * Create a JWT credentials instance using the given input options.
    * @param json The input object.
+   *
+   * @remarks
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    */
   fromJSON(json: JWTInput): void {
     if (!json) {
@@ -312,12 +330,17 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     this.keyId = json.private_key_id;
     this.projectId = json.project_id;
     this.quotaProjectId = json.quota_project_id;
+    this.universeDomain = json.universe_domain || this.universeDomain;
   }
 
   /**
    * Create a JWT credentials instance using the given input stream.
    * @param inputStream The input stream.
    * @param callback Optional callback.
+   *
+   * @remarks
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    */
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(
