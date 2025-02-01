@@ -15,10 +15,11 @@
 import {EventEmitter} from 'events';
 import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
-import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
 import {GetAccessTokenResponse, Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
+
+import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
 
 /**
  * Base auth configurations (e.g. from JWT or `.json` files) with conventional
@@ -82,13 +83,15 @@ export interface AuthClientOptions
   credentials?: Credentials;
 
   /**
-   * A `Gaxios` or `Transporter` instance to use for `AuthClient` requests.
+   * The {@link Gaxios `Gaxios`} instance used for making requests.
    */
-  transporter?: Gaxios | Transporter;
+  gaxios?: Gaxios;
 
   /**
    * Provides default options to the transporter, such as {@link GaxiosOptions.agent `agent`} or
    *  {@link GaxiosOptions.retryConfig `retryConfig`}.
+   *
+   * This option is ignored if {@link AuthClientOptions.gaxios `gaxios`} has been provided
    */
   transporterOptions?: GaxiosOptions;
 
@@ -184,7 +187,10 @@ export abstract class AuthClient
    * See {@link https://cloud.google.com/docs/quota Working with quotas}
    */
   quotaProjectId?: string;
-  transporter: Transporter;
+  /**
+   * The {@link Gaxios `Gaxios`} instance used for making requests.
+   */
+  gaxios: Gaxios;
   credentials: Credentials = {};
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
@@ -203,11 +209,7 @@ export abstract class AuthClient
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
 
     // Shared client options
-    this.transporter = opts.transporter ?? new DefaultTransporter();
-
-    if (opts.transporterOptions) {
-      this.transporter.defaults = opts.transporterOptions;
-    }
+    this.gaxios = opts.gaxios ?? new Gaxios(opts.transporterOptions);
 
     if (opts.eagerRefreshThresholdMillis) {
       this.eagerRefreshThresholdMillis = opts.eagerRefreshThresholdMillis;
@@ -217,29 +219,42 @@ export abstract class AuthClient
   }
 
   /**
-   * Return the {@link Gaxios `Gaxios`} instance from the {@link AuthClient.transporter}.
+   * The public request API in which credentials may be added to the request.
    *
-   * @expiremental
+   * @param options options for `gaxios`
    */
-  get gaxios(): Gaxios | null {
-    if (this.transporter instanceof Gaxios) {
-      return this.transporter;
-    } else if (this.transporter instanceof DefaultTransporter) {
-      return this.transporter.instance;
-    } else if (
-      'instance' in this.transporter &&
-      this.transporter.instance instanceof Gaxios
-    ) {
-      return this.transporter.instance;
-    }
-
-    return null;
-  }
+  abstract request<T>(options: GaxiosOptions): GaxiosPromise<T>;
 
   /**
-   * Provides an alternative Gaxios request implementation with auth credentials
+   * The internal request handler.
+   *
+   * @privateRemarks
+   *
+   * At this stage the credentials have been already prepared - passing it
+   * here adds the standard headers to the request, if not previously configured.
+   *
+   * @param options options for `gaxios`
    */
-  abstract request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
+  protected _request<T>(options: GaxiosOptions): GaxiosPromise<T> {
+    const headers = options.headers || {};
+
+    // Set `x-goog-api-client`, if not already set
+    if (!headers['x-goog-api-client']) {
+      const nodeVersion = process.version.replace(/^v/, '');
+      headers['x-goog-api-client'] = `gl-node/${nodeVersion}`;
+    }
+
+    // Set `User-Agent`
+    if (!headers['User-Agent']) {
+      headers['User-Agent'] = USER_AGENT;
+    } else if (!headers['User-Agent'].includes(`${PRODUCT_NAME}/`)) {
+      headers['User-Agent'] = `${headers['User-Agent']} ${USER_AGENT}`;
+    }
+
+    options.headers = headers;
+
+    return this.gaxios.request<T>(options);
+  }
 
   /**
    * The main authentication interface. It takes an optional url which when
