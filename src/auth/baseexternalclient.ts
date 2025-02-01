@@ -22,9 +22,13 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 import {BodyResponseCallback, Transporter} from '../transporters';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';

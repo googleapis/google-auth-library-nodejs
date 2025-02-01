@@ -28,8 +28,8 @@ function main() {
     const language = new LanguageServiceClient({apiKey});
 
     // Alternatively:
-    // const auth = new GoogleAuth({apiKey});
     // const {GoogleAuth} = require('google-auth-library');
+    // const auth = new GoogleAuth({apiKey});
     // const language = new LanguageServiceClient({auth});
 
     const text = 'Hello, world!';

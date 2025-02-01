@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "9.14.1",
+  "version": "9.15.1",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
@@ -25,7 +25,6 @@
     "jws": "^4.0.0"
   },
   "devDependencies": {
-    "@compodoc/compodoc": "1.1.23",
     "@types/base64-js": "^1.2.5",
     "@types/chai": "^4.1.7",
     "@types/jws": "^3.1.0",
@@ -39,9 +38,12 @@
     "chai": "^4.2.0",
     "cheerio": "1.0.0-rc.12",
     "codecov": "^3.0.2",
-    "execa": "^5.0.0",
+    "engine.io": "6.6.2",
     "gts": "^5.0.0",
     "is-docker": "^2.0.0",
+    "jsdoc": "^4.0.0",
+    "jsdoc-fresh": "^3.0.0",
+    "jsdoc-region-tag": "^3.0.0",
     "karma": "^6.0.0",
     "karma-chrome-launcher": "^3.0.0",
     "karma-coverage": "^2.0.0",
@@ -56,6 +58,7 @@
     "ncp": "^2.0.0",
     "nock": "^13.0.0",
     "null-loader": "^4.0.0",
+    "pdfmake": "0.2.12",
     "puppeteer": "^21.0.0",
     "sinon": "^18.0.0",
     "ts-loader": "^8.0.0",
@@ -75,7 +78,7 @@
     "compile": "tsc -p .",
     "fix": "gts fix",
     "pretest": "npm run compile -- --sourceMap",
-    "docs": "compodoc src/",
+    "docs": "jsdoc -c .jsdoc.json",
     "samples-setup": "cd samples/ && npm link ../ && npm run setup && cd ../",
     "samples-test": "cd samples/ && npm link ../ && npm test && cd ../",
     "system-test": "mocha build/system-test --timeout 60000",

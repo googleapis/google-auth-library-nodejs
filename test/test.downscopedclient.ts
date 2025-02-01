@@ -31,7 +31,7 @@ import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import {GetAccessTokenResponse, Headers} from '../src/auth/oauth2client';
+import {GetAccessTokenResponse, Headers} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
