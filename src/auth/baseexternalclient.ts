@@ -74,11 +74,6 @@ const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
 const pkg = require('../../../package.json');
 
 /**
- * For backwards compatibility.
- */
-export {DEFAULT_UNIVERSE} from './authclient';
-
-/**
  * Shared options used to build {@link ExternalAccountClient} and
  * {@link ExternalAccountAuthorizedUserClient}.
  */
