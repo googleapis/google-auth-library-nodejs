@@ -15,7 +15,7 @@
 import * as assert from 'assert';
 import * as nock from 'nock';
 import * as qs from 'querystring';
-import {GetAccessTokenResponse} from '../src/auth/oauth2client';
+import {GetAccessTokenResponse} from '../src/auth/authclient';
 import {OAuthErrorResponse} from '../src/auth/oauth2common';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
