@@ -22,9 +22,13 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 import {BodyResponseCallback, Transporter} from '../transporters';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
@@ -68,11 +72,6 @@ const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
-
-/**
- * For backwards compatibility.
- */
-export {DEFAULT_UNIVERSE} from './authclient';
 
 /**
  * Shared options used to build {@link ExternalAccountClient} and
