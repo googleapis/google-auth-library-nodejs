@@ -57,6 +57,7 @@ This library provides a variety of ways to authenticate to your Google services.
 - [Downscoped Client](#downscoped-client) - Use Downscoped Client with Credential Access Boundary to generate a short-lived credential with downscoped, restricted IAM permissions that can use for Cloud Storage.
 
 ## Application Default Credentials
+
 This library provides an implementation of [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) for Node.js. ADC provides a simple way to get credentials for use in calling Google APIs. How you [set up ADC](https://cloud.google.com/docs/authentication/provide-credentials-adc) depends on the environment where your code is running.
 
 ADC is best suited for cases when the call needs to have the same identity and authorization level for the application independent of the user. This is the recommended approach to authorize calls to Cloud APIs, particularly when you're building an application that uses Google Cloud Platform.
