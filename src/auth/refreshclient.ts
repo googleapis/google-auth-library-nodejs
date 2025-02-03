@@ -183,4 +183,15 @@ export class UserRefreshClient extends OAuth2Client {
         });
     });
   }
+
+  /**
+   * Create a UserRefreshClient credentials instance using the given input
+   * options.
+   * @param json The input object.
+   */
+  static fromJSON(json: JWTInput): UserRefreshClient {
+    const client = new UserRefreshClient();
+    client.fromJSON(json);
+    return client;
+  }
 }

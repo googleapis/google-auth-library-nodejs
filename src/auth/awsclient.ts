@@ -18,6 +18,7 @@ import {
   BaseExternalAccountClientOptions,
   ExternalAccountSupplierContext,
 } from './baseexternalclient';
+
 import {AuthClientOptions} from './authclient';
 import {DefaultAwsSecurityCredentialsSupplier} from './defaultawssecuritycredentialssupplier';
 import {originalOrCamelOptions, SnakeToCamelObject} from '../util';

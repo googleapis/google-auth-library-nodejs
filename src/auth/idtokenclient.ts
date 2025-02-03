@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import {Credentials} from './credentials';
+import {Headers} from './authclient';
 import {
-  Headers,
   OAuth2Client,
   OAuth2ClientOptions,
   RequestMetadataResponse,
