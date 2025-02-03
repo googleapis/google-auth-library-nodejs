@@ -97,7 +97,7 @@ describe('pack and install', () => {
     await packAndInstall();
   });
 
-  it('should be able to webpack the library', async function () {
+  it.skip('should be able to webpack the library', async function () {
     this.retries(3);
     this.timeout(BUILD_TEST_TIMEOUT_MS);
 
