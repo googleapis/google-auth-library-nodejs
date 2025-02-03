@@ -21,14 +21,12 @@ import * as path from 'path';
 import * as stream from 'stream';
 
 import {Crypto, createCrypto} from '../crypto/crypto';
-import {DefaultTransporter, Transporter} from '../transporters';
-
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {Headers, OAuth2ClientOptions} from './oauth2client';
+import {OAuth2ClientOptions} from './oauth2client';
 import {
   UserRefreshClient,
   UserRefreshClientOptions,
@@ -47,7 +45,12 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {AuthClient, AuthClientOptions, DEFAULT_UNIVERSE} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  DEFAULT_UNIVERSE,
+  Headers,
+} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -108,6 +111,10 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
    * Object containing client_email and private_key properties, or the
    * external account client options.
    * Cannot be used with {@link GoogleAuthOptions.apiKey `apiKey`}.
+   *
+   * @remarks
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    */
   credentials?: JWTInput | ExternalAccountClientOptions;
 
@@ -162,8 +169,6 @@ export const GoogleAuthExceptionMessages = {
 } as const;
 
 export class GoogleAuth<T extends AuthClient = JSONClient> {
-  transporter?: Transporter;
-
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
@@ -200,11 +205,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions: AuthClientOptions = {};
-
-  /**
-   * Export DefaultTransporter as a static property of the class.
-   */
-  static DefaultTransporter = DefaultTransporter;
 
   /**
    * Configuration is resolved in the following order of precedence:
@@ -290,7 +290,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     }
   }
 
-  /*
+  /**
    * A private method for finding and caching a projectId.
    *
    * Supports environments in order of precedence:
@@ -632,9 +632,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       );
     }
 
-    // Create source client for impersonation
-    const sourceClient = new UserRefreshClient();
-    sourceClient.fromJSON(json.source_credentials);
+    const sourceClient = this.fromJSON(json.source_credentials);
 
     if (json.service_account_impersonation_url?.length > 256) {
       /**
@@ -646,10 +644,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       );
     }
 
-    // Extreact service account from service_account_impersonation_url
-    const targetPrincipal = /(?<target>[^/]+):generateAccessToken$/.exec(
-      json.service_account_impersonation_url
-    )?.groups?.target;
+    // Extract service account from service_account_impersonation_url
+    const targetPrincipal =
+      /(?<target>[^/]+):(generateAccessToken|generateIdToken)$/.exec(
+        json.service_account_impersonation_url
+      )?.groups?.target;
 
     if (!targetPrincipal) {
       throw new RangeError(
@@ -659,18 +658,20 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
     const targetScopes = this.getAnyScopes() ?? [];
 
-    const client = new Impersonated({
+    return new Impersonated({
       ...json,
-      delegates: json.delegates ?? [],
-      sourceClient: sourceClient,
-      targetPrincipal: targetPrincipal,
+      sourceClient,
+      targetPrincipal,
       targetScopes: Array.isArray(targetScopes) ? targetScopes : [targetScopes],
     });
-    return client;
   }
 
   /**
    * Create a credentials instance using the given input options.
+   * This client is not cached.
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
+   *
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data

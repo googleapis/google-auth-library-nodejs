@@ -16,7 +16,7 @@ import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
 
 import {DefaultTransporter, Transporter} from '../transporters';
-import {Headers} from './oauth2client';
+import {Headers} from './authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
