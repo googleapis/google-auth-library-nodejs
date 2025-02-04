@@ -128,7 +128,10 @@ describe('DownscopedClient', () => {
         },
       };
       assert.throws(() => {
-        return new DownscopedClient(client, cabWithEmptyAccessBoundaryRules);
+        return new DownscopedClient({
+          authClient: client,
+          credentialAccessBoundary: cabWithEmptyAccessBoundaryRules,
+        });
       }, expectedError);
     });
 
