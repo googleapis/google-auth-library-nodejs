@@ -1260,7 +1260,7 @@ body: |-
   const client = await googleAuth.getClient();
 
   // Use the client to create a DownscopedClient.
-  const cabClient = new DownscopedClient(client, cab);
+  const cabClient = new DownscopedClient({authClient: client, credentialAccessBoundary: cab});
 
   // Refresh the tokens.
   const refreshedAccessToken = await cabClient.getAccessToken();

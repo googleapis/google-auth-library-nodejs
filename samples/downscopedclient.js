@@ -38,7 +38,7 @@ async function main() {
   const objectName = process.env.OBJECT_NAME;
   // Defines a credential access boundary that grants objectViewer access in
   // the specified bucket.
-  const cab = {
+  const credentialAccessBoundary = {
     accessBoundary: {
       accessBoundaryRules: [
         {
@@ -61,7 +61,10 @@ async function main() {
   // Obtain an authenticated client via ADC.
   const client = await googleAuth.getClient();
   // Use the client to generate a DownscopedClient.
-  const cabClient = new DownscopedClient(client, cab);
+  const cabClient = new DownscopedClient({
+    authClient: client,
+    credentialAccessBoundary,
+  });
 
   // OAuth 2.0 Client
   const authClient = new OAuth2Client();
