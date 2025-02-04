@@ -33,13 +33,12 @@ function createGTokenMock(body: CredentialRequest) {
 }
 
 function createSampleJWTClient() {
-  const jwt = new JWT(
-    'foo@serviceaccount.com',
-    PEM_PATH,
-    undefined,
-    ['http://bar', 'http://foo'],
-    'bar@subjectaccount.com'
-  );
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: PEM_PATH,
+    scopes: ['http://bar', 'http://foo'],
+    subject: 'bar@subjectaccount.com',
+  });
 
   return jwt;
 }
