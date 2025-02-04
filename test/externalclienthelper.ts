@@ -15,7 +15,7 @@
 import * as assert from 'assert';
 import * as nock from 'nock';
 import * as qs from 'querystring';
-import {GetAccessTokenResponse} from '../src/auth/oauth2client';
+import {GetAccessTokenResponse} from '../src/auth/authclient';
 import {OAuthErrorResponse} from '../src/auth/oauth2common';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
@@ -61,7 +61,8 @@ const pkg = require('../../package.json');
 
 export function mockStsTokenExchange(
   nockParams: NockMockStsToken[],
-  additionalHeaders?: {[key: string]: string}
+  additionalHeaders?: {[key: string]: string},
+  baseURL = baseUrl
 ): nock.Scope {
   const headers = Object.assign(
     {
@@ -69,7 +70,7 @@ export function mockStsTokenExchange(
     },
     additionalHeaders || {}
   );
-  const scope = nock(baseUrl, {reqheaders: headers});
+  const scope = nock(baseURL, {reqheaders: headers});
   nockParams.forEach(nockMockStsToken => {
     scope
       .post(path, qs.stringify(nockMockStsToken.request))

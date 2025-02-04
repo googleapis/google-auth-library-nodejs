@@ -19,9 +19,7 @@ import {
   GaxiosPromise,
   GaxiosResponse,
 } from 'gaxios';
-import {validate} from './options';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../package.json');
 
 const PRODUCT_NAME = 'google-api-nodejs-client';
@@ -64,9 +62,8 @@ export class DefaultTransporter implements Transporter {
       if (!uaValue) {
         opts.headers['User-Agent'] = DefaultTransporter.USER_AGENT;
       } else if (!uaValue.includes(`${PRODUCT_NAME}/`)) {
-        opts.headers[
-          'User-Agent'
-        ] = `${uaValue} ${DefaultTransporter.USER_AGENT}`;
+        opts.headers['User-Agent'] =
+          `${uaValue} ${DefaultTransporter.USER_AGENT}`;
       }
       // track google-auth-library-nodejs version:
       if (!opts.headers['x-goog-api-client']) {
@@ -86,7 +83,6 @@ export class DefaultTransporter implements Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
     // ensure the user isn't passing in request-style options
     opts = this.configure(opts);
-    validate(opts);
     return this.instance.request<T>(opts).catch(e => {
       throw this.processError(e);
     });

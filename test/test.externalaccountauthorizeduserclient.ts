@@ -23,15 +23,13 @@ import {
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from '../src/auth/externalAccountAuthorizedUserClient';
-import {
-  DEFAULT_UNIVERSE,
-  EXPIRATION_TIME_OFFSET,
-} from '../src/auth/baseexternalclient';
+import {EXPIRATION_TIME_OFFSET} from '../src/auth/baseexternalclient';
 import {GaxiosError, GaxiosResponse} from 'gaxios';
 import {
   getErrorFromOAuthErrorResponse,
   OAuthErrorResponse,
 } from '../src/auth/oauth2common';
+import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -95,6 +93,14 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     token_url: TOKEN_REFRESH_URL,
     token_info_url: TOKEN_INFO_URL,
   } as ExternalAccountAuthorizedUserClientOptions;
+  const externalAccountAuthorizedUserCredentialOptionsNoToken = {
+    type: EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
+    audience: audience,
+    client_id: 'clientId',
+    client_secret: 'clientSecret',
+    refresh_token: 'refreshToken',
+    token_info_url: TOKEN_INFO_URL,
+  } as ExternalAccountAuthorizedUserClientOptions;
   const successfulRefreshResponse = {
     access_token: 'newAccessToken',
     refresh_token: 'newRefreshToken',
@@ -131,6 +137,44 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       assert(!client.forceRefreshOnFailure);
       assert(client.eagerRefreshThresholdMillis === EXPIRATION_TIME_OFFSET);
+    });
+
+    it('should set default token url', async () => {
+      const scope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
+        {
+          statusCode: 200,
+          response: successfulRefreshResponse,
+          request: {
+            grant_type: 'refresh_token',
+            refresh_token: 'refreshToken',
+          },
+        },
+      ]);
+
+      const client = new ExternalAccountAuthorizedUserClient(
+        externalAccountAuthorizedUserCredentialOptionsNoToken
+      );
+      await client.getAccessToken();
+      scope.done();
+    });
+
+    it('should set universe domain token url', async () => {
+      const scope = mockStsTokenRefresh('https://sts.test.com', REFRESH_PATH, [
+        {
+          statusCode: 200,
+          response: successfulRefreshResponse,
+          request: {
+            grant_type: 'refresh_token',
+            refresh_token: 'refreshToken',
+          },
+        },
+      ]);
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptionsNoToken,
+        universe_domain: 'test.com',
+      });
+      await client.getAccessToken();
+      scope.done();
     });
 
     it('should set custom RefreshOptions', () => {
@@ -227,7 +271,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       scope.done();
     });
 
-    it('should handle refresh timeout', async () => {
+    it('should handle and retry on timeout', async () => {
+      // we need timers/`setTimeout` for this test
+      clock.restore();
+
       const expectedRequest = new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: 'refreshToken',
@@ -239,13 +286,19 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         },
       })
         .post(REFRESH_PATH, expectedRequest.toString())
-        .replyWithError({code: 'ETIMEDOUT'});
+        .replyWithError({code: 'ETIMEDOUT'})
+        .post(REFRESH_PATH, expectedRequest.toString())
+        .reply(200, successfulRefreshResponse);
 
       const client = new ExternalAccountAuthorizedUserClient(
         externalAccountAuthorizedUserCredentialOptions
       );
-      await assert.rejects(client.getAccessToken(), {
-        code: 'ETIMEDOUT',
+
+      const actualResponse = await client.getAccessToken();
+      assertGaxiosResponsePresent(actualResponse);
+      delete actualResponse.res;
+      assert.deepStrictEqual(actualResponse, {
+        token: successfulRefreshResponse.access_token,
       });
       scope.done();
     });

@@ -13,6 +13,7 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
 * [Before you begin](#before-you-begin)
 * [Samples](#samples)
   * [Adc](#adc)
+  * [Authenticate API Key](#authenticate-api-key)
   * [Authenticate Explicit](#authenticate-explicit)
   * [Authenticate Implicit With Adc](#authenticate-implicit-with-adc)
   * [Compute](#compute)
@@ -30,6 +31,7 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
   * [Oauth2-code Verifier](#oauth2-code-verifier)
   * [Oauth2](#oauth2)
   * [Sign Blob](#sign-blob)
+  * [Sign Blob Impersonated](#sign-blob-impersonated)
   * [Verify Google Id Token](#verify-google-id-token)
   * [Verifying ID Tokens from Identity-Aware Proxy (IAP)](#verifying-id-tokens-from-identity-aware-proxy-iap)
   * [Verify Id Token](#verify-id-token)
@@ -59,6 +61,23 @@ __Usage:__
 
 
 `node samples/adc.js`
+
+
+-----
+
+
+
+
+### Authenticate API Key
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateAPIKey.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateAPIKey.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/authenticateAPIKey.js`
 
 
 -----
@@ -352,6 +371,23 @@ __Usage:__
 
 
 `node samples/signBlob.js`
+
+
+-----
+
+
+
+
+### Sign Blob Impersonated
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/signBlobImpersonated.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/signBlobImpersonated.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/signBlobImpersonated.js`
 
 
 -----

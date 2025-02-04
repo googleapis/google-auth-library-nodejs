@@ -22,9 +22,13 @@ import * as stream from 'stream';
 
 import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
-import {AuthClient} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 
 /**
@@ -39,8 +43,6 @@ const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
  * The requested token exchange subject_token_type: rfc8693#section-2.1
  */
 const STS_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
-/** The STS access token exchange end point. */
-const STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
 
 /**
  * The maximum number of access boundary rules a Credential Access Boundary
@@ -94,6 +96,20 @@ interface AvailabilityCondition {
   description?: string;
 }
 
+export interface DownscopedClientOptions extends AuthClientOptions {
+  /**
+   * The source AuthClient to be downscoped based on the provided Credential Access Boundary rules.
+   */
+  authClient: AuthClient;
+  /**
+   * The Credential Access Boundary which contains a list of access boundary rules.
+   * Each rule contains information on the resource that the rule applies to, the upper bound of the
+   * permissions that are available on that resource and an optional
+   * condition to further restrict permissions.
+   */
+  credentialAccessBoundary: CredentialAccessBoundary;
+}
+
 /**
  * Defines a set of Google credentials that are downscoped from an existing set
  * of Google OAuth2 credentials. This is useful to restrict the Identity and
@@ -105,6 +121,8 @@ interface AvailabilityCondition {
  * resources.
  */
 export class DownscopedClient extends AuthClient {
+  private readonly authClient: AuthClient;
+  private readonly credentialAccessBoundary: CredentialAccessBoundary;
   private cachedDownscopedAccessToken: CredentialsWithResponse | null;
   private readonly stsCredential: sts.StsCredentials;
 
@@ -124,11 +142,41 @@ export class DownscopedClient extends AuthClient {
    *   permissions that are available on that resource and an optional
    *   condition to further restrict permissions.
    */
+  /**
+   * Instantiates a downscoped client object using the provided source
+   * AuthClient and credential access boundary rules.
+   * To downscope permissions of a source AuthClient, a Credential Access
+   * Boundary that specifies which resources the new credential can access, as
+   * well as an upper bound on the permissions that are available on each
+   * resource, has to be defined. A downscoped client can then be instantiated
+   * using the source AuthClient and the Credential Access Boundary.
+   * @param options the  {@link DownscopedClientOptions `DownscopedClientOptions`} to use. Passing an AuthClient directly is **@DEPRECATED**.
+   * @param credentialAccessBoundary **@DEPRECATED**. Provide a {@link DownscopedClientOptions `DownscopedClientOptions`} object in the first parameter instead.
+   */
   constructor(
-    private readonly authClient: AuthClient,
-    private readonly credentialAccessBoundary: CredentialAccessBoundary
+    /**
+     * AuthClient is for backwards-compatibility.
+     */
+    options: AuthClient | DownscopedClientOptions,
+    /**
+     * @deprecated - provide a {@link DownscopedClientOptions `DownscopedClientOptions`} object in the first parameter instead
+     */
+    credentialAccessBoundary: CredentialAccessBoundary = {
+      accessBoundary: {
+        accessBoundaryRules: [],
+      },
+    }
   ) {
-    super();
+    super(options instanceof AuthClient ? {} : options);
+
+    if (options instanceof AuthClient) {
+      this.authClient = options;
+      this.credentialAccessBoundary = credentialAccessBoundary;
+    } else {
+      this.authClient = options.authClient;
+      this.credentialAccessBoundary = options.credentialAccessBoundary;
+    }
+
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
@@ -156,7 +204,10 @@ export class DownscopedClient extends AuthClient {
       }
     }
 
-    this.stsCredential = new sts.StsCredentials(STS_ACCESS_TOKEN_URL);
+    this.stsCredential = new sts.StsCredentials(
+      `https://sts.${this.universeDomain}/v1/token`
+    );
+
     this.cachedDownscopedAccessToken = null;
   }
 
@@ -242,12 +293,12 @@ export class DownscopedClient extends AuthClient {
    * Authenticates the provided HTTP request, processes it and resolves with the
    * returned response.
    * @param opts The HTTP request options.
-   * @param retry Whether the current attempt is a retry after a failed attempt.
+   * @param reAuthRetried Whether the current attempt is a retry after a failed attempt due to an auth failure
    * @return A promise that resolves with the successful response.
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    retry = false
+    reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -273,7 +324,7 @@ export class DownscopedClient extends AuthClient {
         const isReadableStream = res.config.data instanceof stream.Readable;
         const isAuthErr = statusCode === 401 || statusCode === 403;
         if (
-          !retry &&
+          !reAuthRetried &&
           isAuthErr &&
           !isReadableStream &&
           this.forceRefreshOnFailure

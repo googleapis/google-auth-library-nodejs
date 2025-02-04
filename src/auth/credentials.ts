@@ -76,6 +76,7 @@ export interface JWTInput {
   client_secret?: string;
   refresh_token?: string;
   quota_project_id?: string;
+  universe_domain?: string;
 }
 
 export interface ImpersonatedJWTInput {
@@ -88,4 +89,5 @@ export interface ImpersonatedJWTInput {
 export interface CredentialBody {
   client_email?: string;
   private_key?: string;
+  universe_domain?: string;
 }

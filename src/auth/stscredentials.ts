@@ -16,7 +16,7 @@ import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
 
 import {DefaultTransporter, Transporter} from '../transporters';
-import {Headers} from './oauth2client';
+import {Headers} from './authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
@@ -140,7 +140,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
    *   available.
    */
   constructor(
-    private readonly tokenExchangeEndpoint: string,
+    private readonly tokenExchangeEndpoint: string | URL,
     clientAuthentication?: ClientAuthentication
   ) {
     super(clientAuthentication);
@@ -195,7 +195,8 @@ export class StsCredentials extends OAuthClientAuthHandler {
     Object.assign(headers, additionalHeaders || {});
 
     const opts: GaxiosOptions = {
-      url: this.tokenExchangeEndpoint,
+      ...StsCredentials.RETRY_CONFIG,
+      url: this.tokenExchangeEndpoint.toString(),
       method: 'POST',
       headers,
       data: querystring.stringify(

@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import * as stream from 'stream';
-import {JWTInput} from './credentials';
+import {CredentialRequest, JWTInput} from './credentials';
 import {
   GetTokenResponse,
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
+import {stringify} from 'querystring';
 
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
@@ -78,6 +79,26 @@ export class UserRefreshClient extends OAuth2Client {
     return super.refreshTokenNoCache(this._refreshToken);
   }
 
+  async fetchIdToken(targetAudience: string): Promise<string> {
+    const res = await this.transporter.request<CredentialRequest>({
+      ...UserRefreshClient.RETRY_CONFIG,
+      url: this.endpoints.oauth2TokenUrl,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      method: 'POST',
+      data: stringify({
+        client_id: this._clientId,
+        client_secret: this._clientSecret,
+        grant_type: 'refresh_token',
+        refresh_token: this._refreshToken,
+        target_audience: targetAudience,
+      }),
+    });
+
+    return res.data.id_token!;
+  }
+
   /**
    * Create a UserRefreshClient credentials instance using the given input
    * options.
@@ -114,6 +135,7 @@ export class UserRefreshClient extends OAuth2Client {
     this._refreshToken = json.refresh_token;
     this.credentials.refresh_token = json.refresh_token;
     this.quotaProjectId = json.quota_project_id;
+    this.universeDomain = json.universe_domain || this.universeDomain;
   }
 
   /**
@@ -160,5 +182,16 @@ export class UserRefreshClient extends OAuth2Client {
           }
         });
     });
+  }
+
+  /**
+   * Create a UserRefreshClient credentials instance using the given input
+   * options.
+   * @param json The input object.
+   */
+  static fromJSON(json: JWTInput): UserRefreshClient {
+    const client = new UserRefreshClient();
+    client.fromJSON(json);
+    return client;
   }
 }

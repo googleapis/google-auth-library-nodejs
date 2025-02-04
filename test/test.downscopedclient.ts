@@ -17,7 +17,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 
-import {GaxiosError, GaxiosOptions, GaxiosPromise} from 'gaxios';
+import {GaxiosError, GaxiosPromise} from 'gaxios';
 import {Credentials} from '../src/auth/credentials';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
 import {
@@ -31,7 +31,7 @@ import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import {GetAccessTokenResponse, Headers} from '../src/auth/oauth2client';
+import {GetAccessTokenResponse, Headers} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -54,11 +54,11 @@ class TestAuthClient extends AuthClient {
     this.credentials.expiry_date = expirationTime;
   }
 
-  async getRequestHeaders(url?: string): Promise<Headers> {
+  async getRequestHeaders(): Promise<Headers> {
     throw new Error('Not implemented.');
   }
 
-  request<T>(opts: GaxiosOptions): GaxiosPromise<T> {
+  request<T>(): GaxiosPromise<T> {
     throw new Error('Not implemented.');
   }
 }

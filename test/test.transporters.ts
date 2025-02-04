@@ -121,16 +121,6 @@ describe('transporters', () => {
     );
   });
 
-  it('should return an error if you try to use request config options with a promise', async () => {
-    const expected = new RegExp(
-      "'uri' is not a valid configuration option. Please use 'url' instead. This " +
-        'library is using Axios for requests. Please see https://github.com/axios/axios ' +
-        'to learn more about the valid request options.'
-    );
-    const uri = 'http://example.com/api';
-    assert.throws(() => transporter.request({uri} as GaxiosOptions), expected);
-  });
-
   it('should support invocation with async/await', async () => {
     const url = 'http://example.com';
     const scope = nock(url).get('/').reply(200);
@@ -155,30 +145,10 @@ describe('transporters', () => {
         assert.strictEqual(res!.status, 200);
         done();
       },
-      _error => {
+      error => {
         scope.done();
-        done('Unexpected promise failure');
+        done(error);
       }
     );
-  });
-
-  // tslint:disable-next-line ban
-  it.skip('should use the https proxy if one is configured', async () => {
-    process.env['https_proxy'] = 'https://han:solo@proxy-server:1234';
-    const transporter = new DefaultTransporter();
-    const scope = nock('https://proxy-server:1234')
-      .get('https://example.com/fake', undefined, {
-        reqheaders: {
-          host: 'example.com',
-          accept: /.*/g,
-          'user-agent': /google-api-nodejs-client\/.*/g,
-          'proxy-authorization': /.*/g,
-        },
-      })
-      .reply(200);
-    const url = 'https://example.com/fake';
-    const result = await transporter.request({url});
-    scope.done();
-    assert.strictEqual(result.status, 200);
   });
 });

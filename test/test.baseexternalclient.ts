@@ -23,7 +23,6 @@ import {
   EXPIRATION_TIME_OFFSET,
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
-  DEFAULT_UNIVERSE,
 } from '../src/auth/baseexternalclient';
 import {
   OAuthErrorResponse,
@@ -40,6 +39,7 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
+import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -74,6 +74,14 @@ describe('BaseExternalAccountClient', () => {
     audience,
     subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
     token_url: getTokenUrl(),
+    credential_source: {
+      file: '/var/run/secrets/goog.id/token',
+    },
+  };
+  const externalAccountOptionsNoUrl = {
+    type: 'external_account',
+    audience,
+    subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
     credential_source: {
       file: '/var/run/secrets/goog.id/token',
     },
@@ -257,6 +265,126 @@ describe('BaseExternalAccountClient', () => {
         client.eagerRefreshThresholdMillis,
         refreshOptions.eagerRefreshThresholdMillis
       );
+    });
+
+    it('should set default token url', async () => {
+      const client = new TestExternalAccountClient(externalAccountOptionsNoUrl);
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: stsSuccessfulResponse,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      await client.getAccessToken();
+
+      scope.done();
+    });
+
+    it('should set universe domain on default token url', async () => {
+      const options: BaseExternalAccountClientOptions = {
+        ...externalAccountOptionsNoUrl,
+        universe_domain: 'test.com',
+      };
+
+      const client = new TestExternalAccountClient(options);
+
+      const scope = mockStsTokenExchange(
+        [
+          {
+            statusCode: 200,
+            response: stsSuccessfulResponse,
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ],
+        {},
+        'https://sts.test.com'
+      );
+
+      await client.getAccessToken();
+
+      scope.done();
+    });
+
+    it('should not duplicate access token requests for concurrent requests', async () => {
+      const client = new TestExternalAccountClient(externalAccountOptionsNoUrl);
+      const RESPONSE_A = {
+        access_token: 'ACCESS_TOKEN',
+        issued_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+        token_type: 'Bearer',
+        expires_in: ONE_HOUR_IN_SECS,
+        scope: 'scope1 scope2',
+      };
+
+      const RESPONSE_B = {
+        ...RESPONSE_A,
+        access_token: 'ACCESS_TOKEN_2',
+      };
+
+      const scope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: RESPONSE_A,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+        {
+          statusCode: 200,
+          response: RESPONSE_B,
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_1',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      // simulate 5 concurrent requests
+      const calls = [
+        client.getAccessToken(),
+        client.getAccessToken(),
+        client.getAccessToken(),
+        client.getAccessToken(),
+        client.getAccessToken(),
+      ];
+
+      for (const {token} of await Promise.all(calls)) {
+        assert.strictEqual(token, RESPONSE_A.access_token);
+      }
+
+      // this should be handled in a second request as the above were all awaited and we're forcing an expiration
+      client.eagerRefreshThresholdMillis = RESPONSE_A.expires_in * 1000;
+      assert((await client.getAccessToken()).token, RESPONSE_B.access_token);
+
+      scope.done();
     });
   });
 
