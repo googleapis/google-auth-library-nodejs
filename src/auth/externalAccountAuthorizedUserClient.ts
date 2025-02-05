@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, Headers} from './authclient';
+import {AuthClient, Headers, BodyResponseCallback} from './authclient';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
   OAuthClientAuthHandler,
   OAuthErrorResponse,
 } from './oauth2common';
-import {BodyResponseCallback, Transporter} from '../transporters';
+import {Transporter} from '../transporters';
 import {
   GaxiosError,
   GaxiosOptions,

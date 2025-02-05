@@ -23,13 +23,13 @@ import * as stream from 'stream';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
 
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
-import {BodyResponseCallback} from '../transporters';
 
 import {
   AuthClient,
   AuthClientOptions,
   GetAccessTokenResponse,
   Headers,
+  BodyResponseCallback,
 } from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';

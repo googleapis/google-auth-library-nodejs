@@ -27,8 +27,9 @@ import {
   AuthClientOptions,
   GetAccessTokenResponse,
   Headers,
+  BodyResponseCallback,
 } from './authclient';
-import {BodyResponseCallback, Transporter} from '../transporters';
+import {Transporter} from '../transporters';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';

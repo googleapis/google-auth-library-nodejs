@@ -29,11 +29,6 @@ export interface Transporter {
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
 }
 
-export interface BodyResponseCallback<T> {
-  // The `body` object is a truly dynamic type.  It must be `any`.
-  (err: Error | null, res?: GaxiosResponse<T> | null): void;
-}
-
 export interface RequestError extends GaxiosError {
   errors: Error[];
 }

@@ -20,13 +20,13 @@ import {
 } from 'gaxios';
 import * as stream from 'stream';
 
-import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
 import {
   AuthClient,
   AuthClientOptions,
   GetAccessTokenResponse,
   Headers,
+  BodyResponseCallback,
 } from './authclient';
 
 import * as sts from './stscredentials';

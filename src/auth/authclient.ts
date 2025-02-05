@@ -330,3 +330,10 @@ export interface GetAccessTokenResponse {
   token?: string | null;
   res?: GaxiosResponse | null;
 }
+
+/**
+ * @deprecated - use the Promise API instead
+ */
+export interface BodyResponseCallback<T> {
+  (err: Error | null, res?: GaxiosResponse<T> | null): void;
+}
