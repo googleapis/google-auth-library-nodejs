@@ -293,11 +293,11 @@ describe('impersonated', () => {
         }),
     ];
 
-    const source_client = new UserRefreshClient(
-      'CLIENT_ID',
-      'CLIENT_SECRET',
-      'REFRESH_TOKEN'
-    );
+    const source_client = new UserRefreshClient({
+      clientId: 'CLIENT_ID',
+      clientSecret: 'CLIENT_SECRET',
+      refreshToken: 'REFRESH_TOKEN',
+    });
     const impersonated = new Impersonated({
       sourceClient: source_client,
       targetPrincipal: 'target@project.iam.gserviceaccount.com',

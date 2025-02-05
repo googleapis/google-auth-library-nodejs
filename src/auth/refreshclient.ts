@@ -24,8 +24,17 @@ import {stringify} from 'querystring';
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
 export interface UserRefreshClientOptions extends OAuth2ClientOptions {
+  /**
+   * The authentication client ID.
+   */
   clientId?: string;
+  /**
+   * The authentication client secret.
+   */
   clientSecret?: string;
+  /**
+   * The authentication refresh token.
+   */
   refreshToken?: string;
 }
 
@@ -36,21 +45,32 @@ export class UserRefreshClient extends OAuth2Client {
   _refreshToken?: string | null;
 
   /**
-   * User Refresh Token credentials.
+   * The User Refresh Token client.
    *
-   * @param clientId The authentication client ID.
-   * @param clientSecret The authentication client secret.
-   * @param refreshToken The authentication refresh token.
+   * @param optionsOrClientId The User Refresh Token client options. Passing an `clientId` directly is **@DEPRECATED**.
+   * @param clientSecret **@DEPRECATED**. Provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead.
+   * @param refreshToken **@DEPRECATED**. Provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead.
+   * @param eagerRefreshThresholdMillis **@DEPRECATED**. Provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead.
+   * @param forceRefreshOnFailure **@DEPRECATED**. Provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead.
    */
-  constructor(clientId?: string, clientSecret?: string, refreshToken?: string);
-  constructor(options: UserRefreshClientOptions);
-  constructor(clientId?: string, clientSecret?: string, refreshToken?: string);
   constructor(
     optionsOrClientId?: string | UserRefreshClientOptions,
-    clientSecret?: string,
-    refreshToken?: string,
-    eagerRefreshThresholdMillis?: number,
-    forceRefreshOnFailure?: boolean
+    /**
+     * @deprecated - provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead
+     */
+    clientSecret?: UserRefreshClientOptions['clientSecret'],
+    /**
+     * @deprecated - provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead
+     */
+    refreshToken?: UserRefreshClientOptions['refreshToken'],
+    /**
+     * @deprecated - provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead
+     */
+    eagerRefreshThresholdMillis?: UserRefreshClientOptions['eagerRefreshThresholdMillis'],
+    /**
+     * @deprecated - provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead
+     */
+    forceRefreshOnFailure?: UserRefreshClientOptions['forceRefreshOnFailure']
   ) {
     const opts =
       optionsOrClientId && typeof optionsOrClientId === 'object'
