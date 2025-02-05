@@ -20,7 +20,9 @@ import {
   ExecutableResponse,
   InvalidExpirationTimeFieldError,
 } from './executable-response';
-import {PluggableAuthHandler} from './pluggable-auth-handler';
+import {PluggableAuthHandler, ExecutableError} from './pluggable-auth-handler';
+
+export {ExecutableError} from './pluggable-auth-handler';
 
 /**
  * Defines the credential source portion of the configuration for PluggableAuthClient.
@@ -62,24 +64,6 @@ export interface PluggableAuthClientOptions
       output_file?: string;
     };
   };
-}
-
-/**
- * Error thrown from the executable run by PluggableAuthClient.
- */
-export class ExecutableError extends Error {
-  /**
-   * The exit code returned by the executable.
-   */
-  readonly code: string;
-
-  constructor(message: string, code: string) {
-    super(
-      `The executable failed with exit code: ${code} and error message: ${message}.`
-    );
-    this.code = code;
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
 }
 
 /**
