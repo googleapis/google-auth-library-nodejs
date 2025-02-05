@@ -189,7 +189,7 @@ export abstract class AuthClient
   /**
    * The {@link Gaxios `Gaxios`} instance used for making requests.
    */
-  gaxios: Gaxios;
+  transporter: Gaxios;
   credentials: Credentials = {};
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
@@ -208,7 +208,7 @@ export abstract class AuthClient
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
 
     // Shared client options
-    this.gaxios = opts.gaxios ?? new Gaxios(opts.transporterOptions);
+    this.transporter = opts.gaxios ?? new Gaxios(opts.transporterOptions);
 
     if (opts.eagerRefreshThresholdMillis) {
       this.eagerRefreshThresholdMillis = opts.eagerRefreshThresholdMillis;
@@ -252,7 +252,7 @@ export abstract class AuthClient
 
     options.headers = headers;
 
-    return this.gaxios.request<T>(options);
+    return this.transporter.request<T>(options);
   }
 
   /**

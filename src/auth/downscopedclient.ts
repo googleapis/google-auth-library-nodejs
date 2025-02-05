@@ -189,9 +189,9 @@ export class DownscopedClient extends AuthClient {
       }
     }
 
-    this.stsCredential = new sts.StsCredentials(
-      `https://sts.${this.universeDomain}/v1/token`
-    );
+    this.stsCredential = new sts.StsCredentials({
+      tokenExchangeEndpoint: `https://sts.${this.universeDomain}/v1/token`,
+    });
 
     this.cachedDownscopedAccessToken = null;
   }

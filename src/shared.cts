@@ -14,7 +14,7 @@
 const pkg: {
   name: string;
   version: string;
-} = require('../../../package.json');
+} = require('../../package.json');
 
 const PRODUCT_NAME = 'google-api-nodejs-client';
 const USER_AGENT = `${PRODUCT_NAME}/${pkg.version}`;
