@@ -134,23 +134,7 @@ export class DownscopedClient extends AuthClient {
    * well as an upper bound on the permissions that are available on each
    * resource, has to be defined. A downscoped client can then be instantiated
    * using the source AuthClient and the Credential Access Boundary.
-   * @param authClient The source AuthClient to be downscoped based on the
-   *   provided Credential Access Boundary rules.
-   * @param credentialAccessBoundary The Credential Access Boundary which
-   *   contains a list of access boundary rules. Each rule contains information
-   *   on the resource that the rule applies to, the upper bound of the
-   *   permissions that are available on that resource and an optional
-   *   condition to further restrict permissions.
-   */
-  /**
-   * Instantiates a downscoped client object using the provided source
-   * AuthClient and credential access boundary rules.
-   * To downscope permissions of a source AuthClient, a Credential Access
-   * Boundary that specifies which resources the new credential can access, as
-   * well as an upper bound on the permissions that are available on each
-   * resource, has to be defined. A downscoped client can then be instantiated
-   * using the source AuthClient and the Credential Access Boundary.
-   * @param options the  {@link DownscopedClientOptions `DownscopedClientOptions`} to use. Passing an AuthClient directly is **@DEPRECATED**.
+   * @param options the {@link DownscopedClientOptions `DownscopedClientOptions`} to use. Passing an `AuthClient` directly is **@DEPRECATED**.
    * @param credentialAccessBoundary **@DEPRECATED**. Provide a {@link DownscopedClientOptions `DownscopedClientOptions`} object in the first parameter instead.
    */
   constructor(
