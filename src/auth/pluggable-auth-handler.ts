@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ExecutableError} from './pluggable-auth-client';
 import {
   ExecutableResponse,
   ExecutableResponseError,
@@ -20,6 +19,24 @@ import {
 } from './executable-response';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
+
+/**
+ * Error thrown from the executable run by PluggableAuthClient.
+ */
+export class ExecutableError extends Error {
+  /**
+   * The exit code returned by the executable.
+   */
+  readonly code: string;
+
+  constructor(message: string, code: string) {
+    super(
+      `The executable failed with exit code: ${code} and error message: ${message}.`
+    );
+    this.code = code;
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
 
 /**
  * Defines the options used for the PluggableAuthHandler class.
