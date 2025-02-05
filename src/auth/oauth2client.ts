@@ -25,9 +25,15 @@ import * as formatEcdsa from 'ecdsa-sig-formatter';
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 import {BodyResponseCallback} from '../transporters';
 
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
+
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
@@ -51,10 +57,6 @@ export interface Certificates {
 }
 
 export interface PublicKeys {
-  [index: string]: string;
-}
-
-export interface Headers {
   [index: string]: string;
 }
 
@@ -359,11 +361,6 @@ export interface GetAccessTokenCallback {
   ): void;
 }
 
-export interface GetAccessTokenResponse {
-  token?: string | null;
-  res?: GaxiosResponse | null;
-}
-
 export interface RefreshAccessTokenCallback {
   (
     err: GaxiosError | null,
@@ -486,9 +483,51 @@ export interface OAuth2ClientEndpoints {
   oauth2IapPublicKeyUrl: string | URL;
 }
 
-export interface OAuth2ClientOptions extends AuthClientOptions {
+/**
+ * A convenient interface for those looking to pass the OAuth2 Client config via a parsed
+ * JSON file.
+ */
+interface OAuth2JSONOptions {
+  /**
+   * The authentication client ID.
+   *
+   * @alias {@link OAuth2ClientOptions.clientId}
+   */
+  client_id?: string;
+  /**
+   * The authentication client secret.
+   *
+   * @alias {@link OAuth2ClientOptions.clientSecret}
+   */
+  client_secret?: string;
+  /**
+   * The URIs to redirect to after completing the auth request.
+   *
+   * @alias {@link OAuth2ClientOptions.redirectUri}
+   */
+  redirect_uris?: string[];
+}
+
+export interface OAuth2ClientOptions
+  extends AuthClientOptions,
+    OAuth2JSONOptions {
+  /**
+   * The authentication client ID.
+   *
+   * @alias {@link OAuth2JSONOptions.client_id}
+   */
   clientId?: string;
+  /**
+   * The authentication client secret.
+   *
+   * @alias {@link OAuth2JSONOptions.client_secret}
+   */
   clientSecret?: string;
+  /**
+   * The URI to redirect to after completing the auth request.
+   *
+   * @alias {@link OAuth2JSONOptions.redirect_uris}
+   */
   redirectUri?: string;
   /**
    * Customizable endpoints.
@@ -531,32 +570,36 @@ export class OAuth2Client extends AuthClient {
   refreshHandler?: GetRefreshHandlerCallback;
 
   /**
-   * Handles OAuth2 flow for Google APIs.
+   * An OAuth2 Client for Google APIs.
    *
-   * @param clientId The authentication client ID.
-   * @param clientSecret The authentication client secret.
-   * @param redirectUri The URI to redirect to after completing the auth
-   * request.
-   * @param opts optional options for overriding the given parameters.
-   * @constructor
+   * @param options The OAuth2 Client Options. Passing an `clientId` directly is **@DEPRECATED**.
+   * @param clientSecret **@DEPRECATED**. Provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead.
+   * @param redirectUri **@DEPRECATED**. Provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead.
    */
-  constructor(options?: OAuth2ClientOptions);
-  constructor(clientId?: string, clientSecret?: string, redirectUri?: string);
   constructor(
-    optionsOrClientId?: string | OAuth2ClientOptions,
-    clientSecret?: string,
-    redirectUri?: string
+    options: OAuth2ClientOptions | OAuth2ClientOptions['clientId'] = {},
+    /**
+     * @deprecated - provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead
+     */
+    clientSecret?: OAuth2ClientOptions['clientSecret'],
+    /**
+     * @deprecated - provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead
+     */
+    redirectUri?: OAuth2ClientOptions['redirectUri']
   ) {
-    const opts =
-      optionsOrClientId && typeof optionsOrClientId === 'object'
-        ? optionsOrClientId
-        : {clientId: optionsOrClientId, clientSecret, redirectUri};
+    super(typeof options === 'object' ? options : {});
 
-    super(opts);
+    if (typeof options !== 'object') {
+      options = {
+        clientId: options,
+        clientSecret,
+        redirectUri,
+      };
+    }
 
-    this._clientId = opts.clientId;
-    this._clientSecret = opts.clientSecret;
-    this.redirectUri = opts.redirectUri;
+    this._clientId = options.clientId || options.client_id;
+    this._clientSecret = options.clientSecret || options.client_secret;
+    this.redirectUri = options.redirectUri || options.redirect_uris?.[0];
 
     this.endpoints = {
       tokenInfoUrl: 'https://oauth2.googleapis.com/tokeninfo',
@@ -568,12 +611,12 @@ export class OAuth2Client extends AuthClient {
       oauth2FederatedSignonJwkCertsUrl:
         'https://www.googleapis.com/oauth2/v3/certs',
       oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
-      ...opts.endpoints,
+      ...options.endpoints,
     };
     this.clientAuthentication =
-      opts.clientAuthentication || ClientAuthentication.ClientSecretPost;
+      options.clientAuthentication || ClientAuthentication.ClientSecretPost;
 
-    this.issuers = opts.issuers || [
+    this.issuers = options.issuers || [
       'accounts.google.com',
       'https://accounts.google.com',
       this.universeDomain,

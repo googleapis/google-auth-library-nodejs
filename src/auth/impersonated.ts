@@ -23,6 +23,7 @@ import {AuthClient} from './authclient';
 import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 import {SignBlobResponse} from './googleauth';
+import {originalOrCamelOptions} from '../util';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -124,7 +125,22 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     this.delegates = options.delegates ?? [];
     this.targetScopes = options.targetScopes ?? [];
     this.lifetime = options.lifetime ?? 3600;
-    this.endpoint = options.endpoint ?? 'https://iamcredentials.googleapis.com';
+
+    const usingExplicitUniverseDomain =
+      !!originalOrCamelOptions(options).get('universe_domain');
+
+    if (!usingExplicitUniverseDomain) {
+      // override the default universe with the source's universe
+      this.universeDomain = this.sourceClient.universeDomain;
+    } else if (this.sourceClient.universeDomain !== this.universeDomain) {
+      // non-default universe and is not matching the source - this could be a credential leak
+      throw new RangeError(
+        `Universe domain ${this.sourceClient.universeDomain} in source credentials does not match ${this.universeDomain} universe domain set for impersonated credentials.`
+      );
+    }
+
+    this.endpoint =
+      options.endpoint ?? `https://iamcredentials.${this.universeDomain}`;
   }
 
   /**
@@ -132,7 +148,8 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
    *
    * {@link https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/signBlob Reference Documentation}
    * @param blobToSign String to sign.
-   * @return <SignBlobResponse> denoting the keyyID and signedBlob in base64 string
+   *
+   * @returns A {@link SignBlobResponse} denoting the keyID and signedBlob in base64 string
    */
   async sign(blobToSign: string): Promise<SignBlobResponse> {
     await this.sourceClient.getAccessToken();
@@ -224,7 +241,9 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       delegates: this.delegates,
       audience: targetAudience,
       includeEmail: options?.includeEmail ?? true,
+      useEmailAzp: options?.includeEmail ?? true,
     };
+
     const res = await this.sourceClient.request<FetchIdTokenResponse>({
       ...Impersonated.RETRY_CONFIG,
       url: u,
