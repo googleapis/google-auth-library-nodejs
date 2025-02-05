@@ -39,8 +39,8 @@ import {
   ExternalAccountClient,
   OAuth2Client,
   ExternalAccountClientOptions,
-  RefreshOptions,
   Impersonated,
+  IdentityPoolClient,
 } from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
@@ -52,11 +52,16 @@ import {
   mockStsTokenExchange,
   saEmail,
 } from './externalclienthelper';
-import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
+import {
+  BaseExternalAccountClient,
+  EXTERNAL_ACCOUNT_TYPE,
+} from '../src/auth/baseexternalclient';
 import {AuthClient, DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {ExternalAccountAuthorizedUserClient} from '../src/auth/externalAccountAuthorizedUserClient';
 import {stringify} from 'querystring';
 import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
+import {IMPERSONATED_ACCOUNT_TYPE} from '../src/auth/impersonated';
+import {USER_REFRESH_ACCOUNT_TYPE} from '../src/auth/refreshclient';
 
 nock.disableNetConnect();
 
@@ -1149,9 +1154,8 @@ describe('googleauth', () => {
 
     it('getCredentials should get metadata from the server when running on GCE', async () => {
       const clientEmail = 'test-creds@test-creds.iam.gserviceaccount.com';
-      const universeDomain = 'my-amazing-universe.com';
       const scopes = [
-        nockIsGCE({universeDomain}),
+        nockIsGCE(),
         createGetProjectIdNock(),
         nock(host).get(svcAccountPath).reply(200, clientEmail, HEADERS),
       ];
@@ -1160,7 +1164,6 @@ describe('googleauth', () => {
       const body = await auth.getCredentials();
       assert.ok(body);
       assert.strictEqual(body.client_email, clientEmail);
-      assert.strictEqual(body.universe_domain, universeDomain);
       assert.strictEqual(body.private_key, undefined);
       scopes.forEach(s => s.done());
     });
@@ -1644,14 +1647,6 @@ describe('googleauth', () => {
         assert.notEqual(universe_domain, DEFAULT_UNIVERSE);
         assert.equal(await auth.getUniverseDomain(), universe_domain);
       });
-
-      it('should use the metadata service if on GCP', async () => {
-        const universeDomain = 'my.universe.com';
-        const scope = nockIsGCE({universeDomain});
-
-        assert.equal(await auth.getUniverseDomain(), universeDomain);
-        await scope.done();
-      });
     });
 
     function mockApplicationDefaultCredentials(path: string) {
@@ -1666,6 +1661,86 @@ describe('googleauth', () => {
         .reply(200, {});
     }
     describe('for impersonated types', () => {
+      describe('source clients', () => {
+        it('should support a variety of source clients', async () => {
+          const serviceAccountImpersonationURLBase =
+            'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/test@test-project.iam.gserviceaccount.com:generateToken';
+          const samples: {
+            creds: {
+              type: typeof IMPERSONATED_ACCOUNT_TYPE;
+              service_account_impersonation_url: string;
+              source_credentials: {};
+            };
+            expectedSource: typeof AuthClient;
+          }[] = [
+            // USER_TO_SERVICE_ACCOUNT_JSON
+            {
+              creds: {
+                type: IMPERSONATED_ACCOUNT_TYPE,
+                service_account_impersonation_url: new URL(
+                  './test@test-project.iam.gserviceaccount.com:generateAccessToken',
+                  serviceAccountImpersonationURLBase
+                ).toString(),
+                source_credentials: {
+                  client_id: 'client',
+                  client_secret: 'secret',
+                  refresh_token: 'refreshToken',
+                  type: USER_REFRESH_ACCOUNT_TYPE,
+                },
+              },
+              expectedSource: UserRefreshClient,
+            },
+            // SERVICE_ACCOUNT_TO_SERVICE_ACCOUNT_JSON
+            {
+              creds: {
+                type: IMPERSONATED_ACCOUNT_TYPE,
+                service_account_impersonation_url: new URL(
+                  './test@test-project.iam.gserviceaccount.com:generateIdToken',
+                  serviceAccountImpersonationURLBase
+                ).toString(),
+                source_credentials: {
+                  type: 'service_account',
+                  client_email: 'google@auth.library',
+                  private_key: privateKey,
+                },
+              },
+              expectedSource: JWT,
+            },
+            // EXTERNAL_ACCOUNT_TO_SERVICE_ACCOUNT_JSON
+            {
+              creds: {
+                type: IMPERSONATED_ACCOUNT_TYPE,
+                service_account_impersonation_url: new URL(
+                  './test@test-project.iam.gserviceaccount.com:generateIdToken',
+                  serviceAccountImpersonationURLBase
+                ).toString(),
+                source_credentials: {
+                  type: EXTERNAL_ACCOUNT_TYPE,
+                  audience: 'audience',
+                  subject_token_type: 'access_token',
+                  token_url: 'https://sts.googleapis.com/v1/token',
+                  credential_source: {url: 'https://example.com/token'},
+                },
+              },
+              expectedSource: IdentityPoolClient,
+            },
+          ];
+
+          const auth = new GoogleAuth();
+          for (const {creds, expectedSource} of samples) {
+            const client = auth.fromJSON(creds);
+
+            assert(client instanceof Impersonated);
+
+            // This is a private prop - we will refactor/remove in the future
+            assert(
+              (client as unknown as {sourceClient: {}}).sourceClient instanceof
+                expectedSource
+            );
+          }
+        });
+      });
+
       describe('for impersonated credentials signing', () => {
         const now = new Date().getTime();
         const saSuccessResponse = {
@@ -1726,7 +1801,7 @@ describe('googleauth', () => {
 
     describe('for external_account types', () => {
       let fromJsonSpy: sinon.SinonSpy<
-        [ExternalAccountClientOptions, RefreshOptions?],
+        [ExternalAccountClientOptions],
         BaseExternalAccountClient | null
       >;
       const stsSuccessfulResponse = {
@@ -1846,16 +1921,13 @@ describe('googleauth', () => {
        * @param actualClient The actual client to assert.
        * @param json The expected JSON object that the client should be
        *   initialized with.
-       * @param options The expected RefreshOptions the client should be
-       *   initialized with.
        */
       function assertExternalAccountClientInitialized(
         actualClient: AuthClient,
-        json: ExternalAccountClientOptions,
-        options: RefreshOptions
+        json: ExternalAccountClientOptions
       ) {
         // Confirm expected client is initialized.
-        assert(fromJsonSpy.calledOnceWithExactly(json, options));
+        assert(fromJsonSpy.calledOnceWithExactly(json));
         assert(fromJsonSpy.returned(actualClient as BaseExternalAccountClient));
       }
 
@@ -1875,7 +1947,7 @@ describe('googleauth', () => {
           const json = createExternalAccountJSON();
           const result = auth.fromJSON(json);
 
-          assertExternalAccountClientInitialized(result, json, {});
+          assertExternalAccountClientInitialized(result, json);
         });
 
         it('should honor defaultScopes when no user scopes are available', () => {
@@ -1883,7 +1955,7 @@ describe('googleauth', () => {
           auth.defaultScopes = defaultScopes;
           const result = auth.fromJSON(json);
 
-          assertExternalAccountClientInitialized(result, json, {});
+          assertExternalAccountClientInitialized(result, json);
           assert.strictEqual(
             (result as BaseExternalAccountClient).scopes,
             defaultScopes
@@ -1896,7 +1968,7 @@ describe('googleauth', () => {
           auth.defaultScopes = defaultScopes;
           const result = auth.fromJSON(json);
 
-          assertExternalAccountClientInitialized(result, json, {});
+          assertExternalAccountClientInitialized(result, json);
           assert.strictEqual(
             (result as BaseExternalAccountClient).scopes,
             userScopes
@@ -1907,7 +1979,10 @@ describe('googleauth', () => {
           const json = createExternalAccountJSON();
           const result = auth.fromJSON(json, refreshOptions);
 
-          assertExternalAccountClientInitialized(result, json, refreshOptions);
+          assertExternalAccountClientInitialized(result, {
+            ...json,
+            ...refreshOptions,
+          });
         });
 
         it('should throw on invalid json', () => {
@@ -1930,8 +2005,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
@@ -1942,11 +2016,10 @@ describe('googleauth', () => {
           const auth = new GoogleAuth();
           const result = await auth.fromStream(stream, refreshOptions);
 
-          assertExternalAccountClientInitialized(
-            result,
-            createExternalAccountJSON(),
-            refreshOptions
-          );
+          assertExternalAccountClientInitialized(result, {
+            ...createExternalAccountJSON(),
+            ...refreshOptions,
+          });
         });
       });
 
@@ -1965,8 +2038,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           // Project ID should also be set.
           assert.deepEqual(client.projectId, projectId);
@@ -1989,8 +2061,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -2015,8 +2086,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -2037,8 +2107,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.deepEqual(client.projectId, projectId);
           scopes.forEach(s => s.done());
@@ -2058,8 +2127,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -2082,8 +2150,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           assert.strictEqual(
             (client as BaseExternalAccountClient).scopes,
@@ -2125,8 +2192,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
@@ -2136,11 +2202,10 @@ describe('googleauth', () => {
             refreshOptions
           );
 
-          assertExternalAccountClientInitialized(
-            result,
-            createExternalAccountJSON(),
-            refreshOptions
-          );
+          assertExternalAccountClientInitialized(result, {
+            ...createExternalAccountJSON(),
+            ...refreshOptions,
+          });
         });
       });
 
@@ -2227,11 +2292,10 @@ describe('googleauth', () => {
           );
 
         assert(result);
-        assertExternalAccountClientInitialized(
-          result as AuthClient,
-          createExternalAccountJSON(),
-          refreshOptions
-        );
+        assertExternalAccountClientInitialized(result as AuthClient, {
+          ...createExternalAccountJSON(),
+          ...refreshOptions,
+        });
       });
 
       it('tryGetApplicationCredentialsFromWellKnownFile() should resolve', async () => {
@@ -2243,11 +2307,10 @@ describe('googleauth', () => {
           );
 
         assert(result);
-        assertExternalAccountClientInitialized(
-          result as AuthClient,
-          createExternalAccountJSON(),
-          refreshOptions
-        );
+        assertExternalAccountClientInitialized(result as AuthClient, {
+          ...createExternalAccountJSON(),
+          ...refreshOptions,
+        });
       });
 
       it('getApplicationCredentialsFromFilePath() should resolve', async () => {
@@ -2256,11 +2319,10 @@ describe('googleauth', () => {
           refreshOptions
         );
 
-        assertExternalAccountClientInitialized(
-          result,
-          createExternalAccountJSON(),
-          refreshOptions
-        );
+        assertExternalAccountClientInitialized(result, {
+          ...createExternalAccountJSON(),
+          ...refreshOptions,
+        });
       });
 
       describe('getClient()', () => {
@@ -2272,8 +2334,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
@@ -2284,8 +2345,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             actualClient,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
         });
 
@@ -2301,8 +2361,7 @@ describe('googleauth', () => {
 
           assertExternalAccountClientInitialized(
             client,
-            createExternalAccountJSON(),
-            {}
+            createExternalAccountJSON()
           );
           scopes.forEach(s => s.done());
         });

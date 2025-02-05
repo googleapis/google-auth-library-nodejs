@@ -4,6 +4,27 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [9.15.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.15.0...v9.15.1) (2025-01-24)
+
+
+### Bug Fixes
+
+* Resolve typo in document ([#1901](https://github.com/googleapis/google-auth-library-nodejs/issues/1901)) ([12f2c87](https://github.com/googleapis/google-auth-library-nodejs/commit/12f2c87266de0a3ccd33e6b4993cab3537f9a242))
+
+## [9.15.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.14.2...v9.15.0) (2024-11-01)
+
+
+### Features
+
+* Impersonated Universe Domain Support ([#1875](https://github.com/googleapis/google-auth-library-nodejs/issues/1875)) ([902bf8b](https://github.com/googleapis/google-auth-library-nodejs/commit/902bf8b7faf8f7a0735011c252907282f550cd14))
+
+## [9.14.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.14.1...v9.14.2) (2024-10-09)
+
+
+### Bug Fixes
+
+* Disable Universe Domain Check ([#1878](https://github.com/googleapis/google-auth-library-nodejs/issues/1878)) ([8adb44c](https://github.com/googleapis/google-auth-library-nodejs/commit/8adb44c738b88bfc44e57b0694c3815d138a40e5))
+
 ## [9.14.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.14.0...v9.14.1) (2024-08-30)
 
 

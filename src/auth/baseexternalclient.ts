@@ -22,9 +22,13 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+} from './authclient';
 import {BodyResponseCallback, Transporter} from '../transporters';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
@@ -68,11 +72,6 @@ const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../../package.json');
-
-/**
- * For backwards compatibility.
- */
-export {DEFAULT_UNIVERSE} from './authclient';
 
 /**
  * Shared options used to build {@link ExternalAccountClient} and
@@ -263,18 +262,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file. The camelCased options
    *   are aliases for the snake_cased options.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
   constructor(
     options:
       | BaseExternalAccountClientOptions
-      | SnakeToCamelObject<BaseExternalAccountClientOptions>,
-    additionalOptions?: AuthClientOptions
+      | SnakeToCamelObject<BaseExternalAccountClientOptions>
   ) {
-    super({...options, ...additionalOptions});
+    super(options);
 
     const opts = originalOrCamelOptions(
       options as BaseExternalAccountClientOptions

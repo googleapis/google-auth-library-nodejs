@@ -22,5 +22,6 @@ logging.basicConfig(level=logging.DEBUG)
 node.owlbot_main(
     templates_excludes=[
         ".github/workflows/ci.yaml",
+        ".github/ISSUE_TEMPLATE/bug_report.yml"
     ],
 )
