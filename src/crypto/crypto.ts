@@ -17,7 +17,7 @@ import {BrowserCrypto} from './browser/crypto';
 import {NodeCrypto} from './node/crypto';
 import {Crypto} from './shared';
 
-export {Crypto, JwkCertificate} from './shared';
+export * from './shared';
 
 export interface CryptoSigner {
   update(data: string): void;
