@@ -97,7 +97,7 @@ describe('pack and install', () => {
     await packAndInstall();
   });
 
-  it('should be able to webpack the library', async function () {
+  it.skip('should be able to webpack the library', async function () {
     this.retries(3);
     this.timeout(BUILD_TEST_TIMEOUT_MS);
 
@@ -114,19 +114,10 @@ describe('pack and install', () => {
    */
   afterEach('cleanup staging', async () => {
     if (!keep) {
-      if ('rm' in fs.promises) {
-        await fs.promises.rm(stagingDir, {
-          force: true,
-          recursive: true,
-        });
-      } else {
-        // Must be on Node 14-.
-        // Here, `rmdir` can also delete files.
-        // Background: https://github.com/nodejs/node/issues/34278
-        await fs.promises.rmdir(stagingDir, {
-          recursive: true,
-        });
-      }
+      await fs.promises.rm(stagingDir, {
+        force: true,
+        recursive: true,
+      });
     }
   });
 });

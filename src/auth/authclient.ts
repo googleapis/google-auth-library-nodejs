@@ -16,7 +16,6 @@ import {EventEmitter} from 'events';
 import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
 import {Credentials} from './credentials';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
@@ -321,4 +320,13 @@ export abstract class AuthClient
       },
     };
   }
+}
+
+export interface Headers {
+  [index: string]: string;
+}
+
+export interface GetAccessTokenResponse {
+  token?: string | null;
+  res?: GaxiosResponse | null;
 }

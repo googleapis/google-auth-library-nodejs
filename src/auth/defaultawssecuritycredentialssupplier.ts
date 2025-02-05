@@ -17,7 +17,7 @@ import {Gaxios, GaxiosOptions} from 'gaxios';
 import {Transporter} from '../transporters';
 import {AwsSecurityCredentialsSupplier} from './awsclient';
 import {AwsSecurityCredentials} from './awsrequestsigner';
-import {Headers} from './oauth2client';
+import {Headers} from './authclient';
 
 /**
  * Interface defining the AWS security-credentials endpoint response.
