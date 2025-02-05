@@ -164,11 +164,12 @@ export class DownscopedClient extends AuthClient {
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
-      credentialAccessBoundary.accessBoundary.accessBoundaryRules.length === 0
+      this.credentialAccessBoundary.accessBoundary.accessBoundaryRules
+        .length === 0
     ) {
       throw new Error('At least one access boundary rule needs to be defined.');
     } else if (
-      credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
+      this.credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
       MAX_ACCESS_BOUNDARY_RULES_COUNT
     ) {
       throw new Error(
@@ -179,7 +180,7 @@ export class DownscopedClient extends AuthClient {
 
     // Check at least one permission should be defined in each Access Boundary
     // Rule.
-    for (const rule of credentialAccessBoundary.accessBoundary
+    for (const rule of this.credentialAccessBoundary.accessBoundary
       .accessBoundaryRules) {
       if (rule.availablePermissions.length === 0) {
         throw new Error(
