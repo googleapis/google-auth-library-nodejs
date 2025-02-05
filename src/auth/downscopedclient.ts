@@ -96,6 +96,20 @@ interface AvailabilityCondition {
   description?: string;
 }
 
+export interface DownscopedClientOptions extends AuthClientOptions {
+  /**
+   * The source AuthClient to be downscoped based on the provided Credential Access Boundary rules.
+   */
+  authClient: AuthClient;
+  /**
+   * The Credential Access Boundary which contains a list of access boundary rules.
+   * Each rule contains information on the resource that the rule applies to, the upper bound of the
+   * permissions that are available on that resource and an optional
+   * condition to further restrict permissions.
+   */
+  credentialAccessBoundary: CredentialAccessBoundary;
+}
+
 /**
  * Defines a set of Google credentials that are downscoped from an existing set
  * of Google OAuth2 credentials. This is useful to restrict the Identity and
@@ -107,6 +121,8 @@ interface AvailabilityCondition {
  * resources.
  */
 export class DownscopedClient extends AuthClient {
+  private readonly authClient: AuthClient;
+  private readonly credentialAccessBoundary: CredentialAccessBoundary;
   private cachedDownscopedAccessToken: CredentialsWithResponse | null;
   private readonly stsCredential: sts.StsCredentials;
 
@@ -118,25 +134,32 @@ export class DownscopedClient extends AuthClient {
    * well as an upper bound on the permissions that are available on each
    * resource, has to be defined. A downscoped client can then be instantiated
    * using the source AuthClient and the Credential Access Boundary.
-   * @param authClient The source AuthClient to be downscoped based on the
-   *   provided Credential Access Boundary rules.
-   * @param credentialAccessBoundary The Credential Access Boundary which
-   *   contains a list of access boundary rules. Each rule contains information
-   *   on the resource that the rule applies to, the upper bound of the
-   *   permissions that are available on that resource and an optional
-   *   condition to further restrict permissions.
-   * @param additionalOptions **DEPRECATED, set this in the provided `authClient`.**
-   *   Optional additional behavior customization options.
-   * @param quotaProjectId **DEPRECATED, set this in the provided `authClient`.**
-   *   Optional quota project id for setting up in the x-goog-user-project header.
+   * @param options the {@link DownscopedClientOptions `DownscopedClientOptions`} to use. Passing an `AuthClient` directly is **@DEPRECATED**.
+   * @param credentialAccessBoundary **@DEPRECATED**. Provide a {@link DownscopedClientOptions `DownscopedClientOptions`} object in the first parameter instead.
    */
   constructor(
-    private readonly authClient: AuthClient,
-    private readonly credentialAccessBoundary: CredentialAccessBoundary,
-    additionalOptions?: AuthClientOptions,
-    quotaProjectId?: string
+    /**
+     * AuthClient is for backwards-compatibility.
+     */
+    options: AuthClient | DownscopedClientOptions,
+    /**
+     * @deprecated - provide a {@link DownscopedClientOptions `DownscopedClientOptions`} object in the first parameter instead
+     */
+    credentialAccessBoundary: CredentialAccessBoundary = {
+      accessBoundary: {
+        accessBoundaryRules: [],
+      },
+    }
   ) {
-    super({...additionalOptions, quotaProjectId});
+    super(options instanceof AuthClient ? {} : options);
+
+    if (options instanceof AuthClient) {
+      this.authClient = options;
+      this.credentialAccessBoundary = credentialAccessBoundary;
+    } else {
+      this.authClient = options.authClient;
+      this.credentialAccessBoundary = options.credentialAccessBoundary;
+    }
 
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.

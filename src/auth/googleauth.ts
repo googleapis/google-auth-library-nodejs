@@ -692,16 +692,16 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
       client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
-      client = ExternalAccountClient.fromJSON(
-        json as ExternalAccountClientOptions,
-        options
-      )!;
+      client = ExternalAccountClient.fromJSON({
+        ...json,
+        ...options,
+      } as ExternalAccountClientOptions)!;
       client.scopes = this.getAnyScopes();
     } else if (json.type === EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE) {
-      client = new ExternalAccountAuthorizedUserClient(
-        json as ExternalAccountAuthorizedUserClientOptions,
-        options
-      );
+      client = new ExternalAccountAuthorizedUserClient({
+        ...json,
+        ...options,
+      } as ExternalAccountAuthorizedUserClientOptions);
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);

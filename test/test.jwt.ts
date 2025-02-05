@@ -80,13 +80,12 @@ describe('jwt', () => {
   });
 
   it('should get an initial access token', done => {
-    const jwt = new JWT(
-      'foo@serviceaccount.com',
-      PEM_PATH,
-      undefined,
-      ['http://bar', 'http://foo'],
-      'bar@subjectaccount.com'
-    );
+    const jwt = new JWT({
+      email: 'foo@serviceaccount.com',
+      keyFile: PEM_PATH,
+      scopes: ['http://bar', 'http://foo'],
+      subject: 'bar@subjectaccount.com',
+    });
     const scope = createGTokenMock({access_token: 'initial-access-token'});
     jwt.authorize((err, creds) => {
       scope.done();

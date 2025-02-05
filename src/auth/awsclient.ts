@@ -19,7 +19,6 @@ import {
   ExternalAccountSupplierContext,
 } from './baseexternalclient';
 
-import {AuthClientOptions} from './authclient';
 import {DefaultAwsSecurityCredentialsSupplier} from './defaultawssecuritycredentialssupplier';
 import {originalOrCamelOptions, SnakeToCamelObject} from '../util';
 
@@ -131,16 +130,11 @@ export class AwsClient extends BaseExternalAccountClient {
    * An error is thrown if the credential is not a valid AWS credential.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
   constructor(
-    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>,
-    additionalOptions?: AuthClientOptions
+    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>
   ) {
-    super(options, additionalOptions);
+    super(options);
     const opts = originalOrCamelOptions(options as AwsClientOptions);
     const credentialSource = opts.get('credential_source');
     const awsSecurityCredentialsSupplier = opts.get(

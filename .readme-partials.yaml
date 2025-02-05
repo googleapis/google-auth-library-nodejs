@@ -103,11 +103,11 @@ body: |-
     return new Promise((resolve, reject) => {
       // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
       // which should be downloaded from the Google Developers Console.
-      const oAuth2Client = new OAuth2Client(
-        keys.web.client_id,
-        keys.web.client_secret,
-        keys.web.redirect_uris[0]
-      );
+      const oAuth2Client = new OAuth2Client({
+        clientId: keys.web.client_id,
+        clientSecret: keys.web.client_secret,
+        redirectUri: keys.web.redirect_uris[0]
+      });
 
       // Generate the url that will be used for the consent dialog.
       const authorizeUrl = oAuth2Client.generateAuthUrl({
@@ -1260,7 +1260,7 @@ body: |-
   const client = await googleAuth.getClient();
 
   // Use the client to create a DownscopedClient.
-  const cabClient = new DownscopedClient(client, cab);
+  const cabClient = new DownscopedClient({authClient: client, credentialAccessBoundary: cab});
 
   // Refresh the tokens.
   const refreshedAccessToken = await cabClient.getAccessToken();

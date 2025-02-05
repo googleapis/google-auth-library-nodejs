@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, AuthClientOptions, Headers} from './authclient';
+import {AuthClient, Headers} from './authclient';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
@@ -162,16 +162,9 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * An error is throws if the credential is not valid.
    * @param options The external account authorized user option object typically
    *   from the external accoutn authorized user JSON credential file.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
-  constructor(
-    options: ExternalAccountAuthorizedUserClientOptions,
-    additionalOptions?: AuthClientOptions
-  ) {
-    super({...options, ...additionalOptions});
+  constructor(options: ExternalAccountAuthorizedUserClientOptions) {
+    super(options);
     if (options.universe_domain) {
       this.universeDomain = options.universe_domain;
     }
@@ -195,13 +188,14 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
-    if (typeof additionalOptions?.eagerRefreshThresholdMillis !== 'number') {
+    if (typeof options?.eagerRefreshThresholdMillis !== 'number') {
       this.eagerRefreshThresholdMillis = EXPIRATION_TIME_OFFSET;
     } else {
-      this.eagerRefreshThresholdMillis = additionalOptions!
+      this.eagerRefreshThresholdMillis = options!
         .eagerRefreshThresholdMillis as number;
     }
-    this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
+
+    this.forceRefreshOnFailure = !!options?.forceRefreshOnFailure;
   }
 
   async getAccessToken(): Promise<{

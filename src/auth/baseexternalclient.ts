@@ -262,18 +262,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file. The camelCased options
    *   are aliases for the snake_cased options.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
   constructor(
     options:
       | BaseExternalAccountClientOptions
-      | SnakeToCamelObject<BaseExternalAccountClientOptions>,
-    additionalOptions?: AuthClientOptions
+      | SnakeToCamelObject<BaseExternalAccountClientOptions>
   ) {
-    super({...options, ...additionalOptions});
+    super(options);
 
     const opts = originalOrCamelOptions(
       options as BaseExternalAccountClientOptions

@@ -32,7 +32,6 @@ import {
   PluggableAuthClient,
   PluggableAuthClientOptions,
 } from './pluggable-auth-client';
-import {AuthClientOptions} from './authclient';
 
 export type ExternalAccountClientOptions =
   | IdentityPoolClientOptions
@@ -60,32 +59,21 @@ export class ExternalAccountClient {
    * underlying credential source.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    * @return A BaseExternalAccountClient instance or null if the options
    *   provided do not correspond to an external account credential.
    */
   static fromJSON(
-    options: ExternalAccountClientOptions,
-    additionalOptions?: AuthClientOptions
+    options: ExternalAccountClientOptions
   ): BaseExternalAccountClient | null {
     if (options && options.type === EXTERNAL_ACCOUNT_TYPE) {
       if ((options as AwsClientOptions).credential_source?.environment_id) {
-        return new AwsClient(options as AwsClientOptions, additionalOptions);
+        return new AwsClient(options as AwsClientOptions);
       } else if (
         (options as PluggableAuthClientOptions).credential_source?.executable
       ) {
-        return new PluggableAuthClient(
-          options as PluggableAuthClientOptions,
-          additionalOptions
-        );
+        return new PluggableAuthClient(options as PluggableAuthClientOptions);
       } else {
-        return new IdentityPoolClient(
-          options as IdentityPoolClientOptions,
-          additionalOptions
-        );
+        return new IdentityPoolClient(options as IdentityPoolClientOptions);
       }
     } else {
       return null;
