@@ -16,6 +16,7 @@ import {strict as assert} from 'assert';
 
 import {PassThroughClient} from '../src';
 import {snakeToCamel} from '../src/util';
+import {Gaxios} from 'gaxios';
 
 describe('AuthClient', () => {
   it('should accept and normalize snake case options to camel case', () => {
@@ -37,5 +38,32 @@ describe('AuthClient', () => {
       authClient = new PassThroughClient({[camelCased]: value});
       assert.equal(authClient[camelCased], value);
     }
+  });
+
+  it('should allow disabling of the default interceptor', () => {
+    const gaxios = new Gaxios();
+    const originalInterceptorCount = gaxios.interceptors.request.size;
+
+    const authClient = new PassThroughClient({
+      gaxios,
+      useAuthRequestParameters: false,
+    });
+
+    assert.equal(authClient.transporter, gaxios);
+    assert.equal(
+      authClient.transporter.interceptors.request.size,
+      originalInterceptorCount
+    );
+  });
+
+  it('should add the default interceptor exactly once between instances', () => {
+    const gaxios = new Gaxios();
+    const originalInterceptorCount = gaxios.interceptors.request.size;
+    const expectedInterceptorCount = originalInterceptorCount + 1;
+
+    new PassThroughClient({gaxios});
+    new PassThroughClient({gaxios});
+
+    assert.equal(gaxios.interceptors.request.size, expectedInterceptorCount);
   });
 });

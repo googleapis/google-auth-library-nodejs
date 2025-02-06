@@ -83,6 +83,8 @@ export interface AuthClientOptions
 
   /**
    * The {@link Gaxios `Gaxios`} instance used for making requests.
+   *
+   * @see {@link AuthClientOptions.useAuthRequestParameters}
    */
   gaxios?: Gaxios;
 
@@ -106,6 +108,19 @@ export interface AuthClientOptions
    * on the expiry_date.
    */
   forceRefreshOnFailure?: boolean;
+
+  /**
+   * Enables/disables the adding of the AuthClient's default interceptor.
+   *
+   * @see {@link AuthClientOptions.gaxios}
+   *
+   * @remarks
+   *
+   * Disabling is useful for debugging and experimentation.
+   *
+   * @default true
+   */
+  useAuthRequestParameters?: boolean;
 }
 
 /**
@@ -210,6 +225,12 @@ export abstract class AuthClient
     // Shared client options
     this.transporter = opts.gaxios ?? new Gaxios(opts.transporterOptions);
 
+    if (options.get('useAuthRequestParameters') !== false) {
+      this.transporter.interceptors.request.add(
+        AuthClient.DEFAULT_REQUEST_INTERCEPTOR
+      );
+    }
+
     if (opts.eagerRefreshThresholdMillis) {
       this.eagerRefreshThresholdMillis = opts.eagerRefreshThresholdMillis;
     }
@@ -223,37 +244,6 @@ export abstract class AuthClient
    * @param options options for `gaxios`
    */
   abstract request<T>(options: GaxiosOptions): GaxiosPromise<T>;
-
-  /**
-   * The internal request handler.
-   *
-   * @privateRemarks
-   *
-   * At this stage the credentials have been already prepared - passing it
-   * here adds the standard headers to the request, if not previously configured.
-   *
-   * @param options options for `gaxios`
-   */
-  protected _request<T>(options: GaxiosOptions): GaxiosPromise<T> {
-    const headers = options.headers || {};
-
-    // Set `x-goog-api-client`, if not already set
-    if (!headers['x-goog-api-client']) {
-      const nodeVersion = process.version.replace(/^v/, '');
-      headers['x-goog-api-client'] = `gl-node/${nodeVersion}`;
-    }
-
-    // Set `User-Agent`
-    if (!headers['User-Agent']) {
-      headers['User-Agent'] = USER_AGENT;
-    } else if (!headers['User-Agent'].includes(`${PRODUCT_NAME}/`)) {
-      headers['User-Agent'] = `${headers['User-Agent']} ${USER_AGENT}`;
-    }
-
-    options.headers = headers;
-
-    return this.transporter.request<T>(options);
-  }
 
   /**
    * The main authentication interface. It takes an optional url which when
@@ -302,6 +292,31 @@ export abstract class AuthClient
     }
     return headers;
   }
+
+  static readonly DEFAULT_REQUEST_INTERCEPTOR: Parameters<
+    Gaxios['interceptors']['request']['add']
+  >[0] = {
+    resolved: async config => {
+      const headers = config.headers || {};
+
+      // Set `x-goog-api-client`, if not already set
+      if (!headers['x-goog-api-client']) {
+        const nodeVersion = process.version.replace(/^v/, '');
+        headers['x-goog-api-client'] = `gl-node/${nodeVersion}`;
+      }
+
+      // Set `User-Agent`
+      if (!headers['User-Agent']) {
+        headers['User-Agent'] = USER_AGENT;
+      } else if (!headers['User-Agent'].includes(`${PRODUCT_NAME}/`)) {
+        headers['User-Agent'] = `${headers['User-Agent']} ${USER_AGENT}`;
+      }
+
+      config.headers = headers;
+
+      return config;
+    },
+  };
 
   /**
    * Retry config for Auth-related requests.
