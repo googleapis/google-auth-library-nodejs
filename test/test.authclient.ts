@@ -45,7 +45,7 @@ describe('AuthClient', () => {
     const originalInterceptorCount = gaxios.interceptors.request.size;
 
     const authClient = new PassThroughClient({
-      gaxios,
+      transporter: gaxios,
       useAuthRequestParameters: false,
     });
 
@@ -61,8 +61,8 @@ describe('AuthClient', () => {
     const originalInterceptorCount = gaxios.interceptors.request.size;
     const expectedInterceptorCount = originalInterceptorCount + 1;
 
-    new PassThroughClient({gaxios});
-    new PassThroughClient({gaxios});
+    new PassThroughClient({transporter: gaxios});
+    new PassThroughClient({transporter: gaxios});
 
     assert.equal(gaxios.interceptors.request.size, expectedInterceptorCount);
   });

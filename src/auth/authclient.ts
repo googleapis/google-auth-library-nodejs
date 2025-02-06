@@ -86,13 +86,13 @@ export interface AuthClientOptions
    *
    * @see {@link AuthClientOptions.useAuthRequestParameters}
    */
-  gaxios?: Gaxios;
+  transporter?: Gaxios;
 
   /**
    * Provides default options to the transporter, such as {@link GaxiosOptions.agent `agent`} or
    *  {@link GaxiosOptions.retryConfig `retryConfig`}.
    *
-   * This option is ignored if {@link AuthClientOptions.gaxios `gaxios`} has been provided
+   * This option is ignored if {@link AuthClientOptions.transporter `gaxios`} has been provided
    */
   transporterOptions?: GaxiosOptions;
 
@@ -112,7 +112,7 @@ export interface AuthClientOptions
   /**
    * Enables/disables the adding of the AuthClient's default interceptor.
    *
-   * @see {@link AuthClientOptions.gaxios}
+   * @see {@link AuthClientOptions.transporter}
    *
    * @remarks
    *
@@ -223,7 +223,7 @@ export abstract class AuthClient
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
 
     // Shared client options
-    this.transporter = opts.gaxios ?? new Gaxios(opts.transporterOptions);
+    this.transporter = opts.transporter ?? new Gaxios(opts.transporterOptions);
 
     if (options.get('useAuthRequestParameters') !== false) {
       this.transporter.interceptors.request.add(
