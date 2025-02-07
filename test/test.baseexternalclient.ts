@@ -28,7 +28,7 @@ import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import {Gaxios, GaxiosError} from 'gaxios';
+import {GaxiosError} from 'gaxios';
 import {
   assertGaxiosResponsePresent,
   getAudience,

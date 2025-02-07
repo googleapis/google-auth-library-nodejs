@@ -90,7 +90,7 @@ describe('AuthClient', () => {
       });
 
       it('should append to the header if it does exist and does not have the product name', async () => {
-        const base = `ABC XYZ`;
+        const base = 'ABC XYZ';
         const expected = `${base} ${USER_AGENT}`;
         const options: GaxiosOptions = {
           headers: {

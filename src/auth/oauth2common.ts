@@ -15,7 +15,7 @@
 import {Gaxios, GaxiosOptions} from 'gaxios';
 import * as querystring from 'querystring';
 
-import {Crypto, createCrypto} from '../crypto/crypto';
+import {createCrypto} from '../crypto/crypto';
 
 /** List of HTTP methods that accept request bodies. */
 const METHODS_SUPPORTING_REQUEST_BODY = ['PUT', 'POST', 'PATCH'];
