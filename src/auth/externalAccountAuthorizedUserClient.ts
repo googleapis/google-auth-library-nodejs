@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, Headers} from './authclient';
+import {AuthClient, Headers, BodyResponseCallback} from './authclient';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
   OAuthClientAuthHandler,
+  OAuthClientAuthHandlerOptions,
   OAuthErrorResponse,
 } from './oauth2common';
-import {BodyResponseCallback, Transporter} from '../transporters';
 import {
   GaxiosError,
   GaxiosOptions,
@@ -69,11 +69,21 @@ interface TokenRefreshResponse {
   res?: GaxiosResponse | null;
 }
 
+interface ExternalAccountAuthorizedUserHandlerOptions
+  extends OAuthClientAuthHandlerOptions {
+  /**
+   * The URL of the token refresh endpoint.
+   */
+  tokenRefreshEndpoint: string | URL;
+}
+
 /**
  * Handler for token refresh requests sent to the token_url endpoint for external
  * authorized user credentials.
  */
 class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
+  #tokenRefreshEndpoint: string | URL;
+
   /**
    * Initializes an ExternalAccountAuthorizedUserHandler instance.
    * @param url The URL of the token refresh endpoint.
@@ -81,12 +91,10 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
    * @param clientAuthentication The client authentication credentials to use
    *   for the refresh request.
    */
-  constructor(
-    private readonly url: string,
-    private readonly transporter: Transporter,
-    clientAuthentication?: ClientAuthentication
-  ) {
-    super(clientAuthentication);
+  constructor(options: ExternalAccountAuthorizedUserHandlerOptions) {
+    super(options);
+
+    this.#tokenRefreshEndpoint = options.tokenRefreshEndpoint;
   }
 
   /**
@@ -114,7 +122,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
 
     const opts: GaxiosOptions = {
       ...ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
-      url: this.url,
+      url: this.#tokenRefreshEndpoint,
       method: 'POST',
       headers,
       data: values.toString(),
@@ -169,18 +177,19 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
       this.universeDomain = options.universe_domain;
     }
     this.refreshToken = options.refresh_token;
-    const clientAuth = {
+    const clientAuthentication = {
       confidentialClientType: 'basic',
       clientId: options.client_id,
       clientSecret: options.client_secret,
     } as ClientAuthentication;
     this.externalAccountAuthorizedUserHandler =
-      new ExternalAccountAuthorizedUserHandler(
-        options.token_url ??
+      new ExternalAccountAuthorizedUserHandler({
+        tokenRefreshEndpoint:
+          options.token_url ??
           DEFAULT_TOKEN_URL.replace('{universeDomain}', this.universeDomain),
-        this.transporter,
-        clientAuth
-      );
+        transporter: this.transporter,
+        clientAuthentication,
+      });
 
     this.cachedAccessToken = null;
     this.quotaProjectId = options.quota_project_id;

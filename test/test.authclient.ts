@@ -14,8 +14,11 @@
 
 import {strict as assert} from 'assert';
 
-import {PassThroughClient} from '../src';
+import {Gaxios, GaxiosOptions} from 'gaxios';
+
+import {AuthClient, PassThroughClient} from '../src';
 import {snakeToCamel} from '../src/util';
+import {PRODUCT_NAME, USER_AGENT} from '../src/shared.cjs';
 
 describe('AuthClient', () => {
   it('should accept and normalize snake case options to camel case', () => {
@@ -37,5 +40,107 @@ describe('AuthClient', () => {
       authClient = new PassThroughClient({[camelCased]: value});
       assert.equal(authClient[camelCased], value);
     }
+  });
+
+  describe('shared auth interceptor', () => {
+    it('should use the default interceptor', () => {
+      const gaxios = new Gaxios();
+
+      new PassThroughClient({transporter: gaxios});
+
+      assert(
+        gaxios.interceptors.request.has(AuthClient.DEFAULT_REQUEST_INTERCEPTOR)
+      );
+    });
+
+    it('should allow disabling of the default interceptor', () => {
+      const gaxios = new Gaxios();
+      const originalInterceptorCount = gaxios.interceptors.request.size;
+
+      const authClient = new PassThroughClient({
+        transporter: gaxios,
+        useAuthRequestParameters: false,
+      });
+
+      assert.equal(authClient.transporter, gaxios);
+      assert.equal(
+        authClient.transporter.interceptors.request.size,
+        originalInterceptorCount
+      );
+    });
+
+    it('should add the default interceptor exactly once between instances', () => {
+      const gaxios = new Gaxios();
+      const originalInterceptorCount = gaxios.interceptors.request.size;
+      const expectedInterceptorCount = originalInterceptorCount + 1;
+
+      new PassThroughClient({transporter: gaxios});
+      new PassThroughClient({transporter: gaxios});
+
+      assert.equal(gaxios.interceptors.request.size, expectedInterceptorCount);
+    });
+
+    describe('User-Agent', () => {
+      it('should set the header if it does not exist', async () => {
+        const options: GaxiosOptions = {};
+
+        await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
+
+        assert.equal(options.headers?.['User-Agent'], USER_AGENT);
+      });
+
+      it('should append to the header if it does exist and does not have the product name', async () => {
+        const base = 'ABC XYZ';
+        const expected = `${base} ${USER_AGENT}`;
+        const options: GaxiosOptions = {
+          headers: {
+            'User-Agent': base,
+          },
+        };
+
+        await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
+
+        assert.equal(options.headers?.['User-Agent'], expected);
+      });
+
+      it('should not append to the header if it does exist and does have the product name', async () => {
+        const expected = `ABC ${PRODUCT_NAME}/XYZ`;
+        const options: GaxiosOptions = {
+          headers: {
+            'User-Agent': expected,
+          },
+        };
+
+        await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
+
+        assert.equal(options.headers?.['User-Agent'], expected);
+      });
+    });
+
+    describe('x-goog-api-client', () => {
+      it('should set the header if it does not exist', async () => {
+        const options: GaxiosOptions = {};
+
+        await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
+
+        assert.equal(
+          options.headers?.['x-goog-api-client'],
+          `gl-node/${process.version.replace(/^v/, '')}`
+        );
+      });
+
+      it('should not overwrite an existing header', async () => {
+        const expected = 'abc';
+        const options: GaxiosOptions = {
+          headers: {
+            'x-goog-api-client': expected,
+          },
+        };
+
+        await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
+
+        assert.equal(options.headers?.['x-goog-api-client'], expected);
+      });
+    });
   });
 });

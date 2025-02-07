@@ -62,6 +62,7 @@ import {stringify} from 'querystring';
 import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
 import {IMPERSONATED_ACCOUNT_TYPE} from '../src/auth/impersonated';
 import {USER_REFRESH_ACCOUNT_TYPE} from '../src/auth/refreshclient';
+import {GaxiosError} from 'gaxios';
 
 nock.disableNetConnect();
 
@@ -2250,10 +2251,7 @@ describe('googleauth', () => {
           const keyFilename = './test/fixtures/external-account-cred.json';
           const auth = new GoogleAuth({keyFilename});
 
-          await assert.rejects(
-            auth.getProjectId(),
-            /The caller does not have permission/
-          );
+          await assert.rejects(auth.getProjectId(), GaxiosError);
           scopes.forEach(s => s.done());
         });
 

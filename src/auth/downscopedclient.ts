@@ -20,13 +20,13 @@ import {
 } from 'gaxios';
 import * as stream from 'stream';
 
-import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
 import {
   AuthClient,
   AuthClientOptions,
   GetAccessTokenResponse,
   Headers,
+  BodyResponseCallback,
 } from './authclient';
 
 import * as sts from './stscredentials';
@@ -189,9 +189,9 @@ export class DownscopedClient extends AuthClient {
       }
     }
 
-    this.stsCredential = new sts.StsCredentials(
-      `https://sts.${this.universeDomain}/v1/token`
-    );
+    this.stsCredential = new sts.StsCredentials({
+      tokenExchangeEndpoint: `https://sts.${this.universeDomain}/v1/token`,
+    });
 
     this.cachedDownscopedAccessToken = null;
   }

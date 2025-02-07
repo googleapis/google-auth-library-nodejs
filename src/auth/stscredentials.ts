@@ -14,12 +14,11 @@
 
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as querystring from 'querystring';
-
-import {DefaultTransporter, Transporter} from '../transporters';
 import {Headers} from './authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
+  OAuthClientAuthHandlerOptions,
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from './oauth2common';
@@ -126,25 +125,50 @@ export interface StsSuccessfulResponse {
   res?: GaxiosResponse | null;
 }
 
+export interface StsCredentialsConstructionOptions
+  extends OAuthClientAuthHandlerOptions {
+  /**
+   * The client authentication credentials if available.
+   */
+  clientAuthentication?: ClientAuthentication;
+  /**
+   * The token exchange endpoint.
+   */
+  tokenExchangeEndpoint: string | URL;
+}
+
 /**
  * Implements the OAuth 2.0 token exchange based on
  * https://tools.ietf.org/html/rfc8693
  */
 export class StsCredentials extends OAuthClientAuthHandler {
-  private transporter: Transporter;
+  readonly #tokenExchangeEndpoint: string | URL;
 
   /**
    * Initializes an STS credentials instance.
-   * @param tokenExchangeEndpoint The token exchange endpoint.
-   * @param clientAuthentication The client authentication credentials if
-   *   available.
+   *
+   * @param options The STS credentials instance options. Passing an `tokenExchangeEndpoint` directly is **@DEPRECATED**.
+   * @param clientAuthentication **@DEPRECATED**. Provide a {@link StsCredentialsConstructionOptions `StsCredentialsConstructionOptions`} object in the first parameter instead.
    */
   constructor(
-    private readonly tokenExchangeEndpoint: string | URL,
+    options: StsCredentialsConstructionOptions | string | URL = {
+      tokenExchangeEndpoint: '',
+    },
+    /**
+     * @deprecated - provide a {@link StsCredentialsConstructionOptions `StsCredentialsConstructionOptions`} object in the first parameter instead
+     */
     clientAuthentication?: ClientAuthentication
   ) {
-    super(clientAuthentication);
-    this.transporter = new DefaultTransporter();
+    if (typeof options !== 'object' || options instanceof URL) {
+      options = {
+        tokenExchangeEndpoint: options,
+        clientAuthentication,
+      };
+    }
+
+    super(options);
+
+    this.#tokenExchangeEndpoint = options.tokenExchangeEndpoint;
   }
 
   /**
@@ -196,7 +220,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
 
     const opts: GaxiosOptions = {
       ...StsCredentials.RETRY_CONFIG,
-      url: this.tokenExchangeEndpoint.toString(),
+      url: this.#tokenExchangeEndpoint.toString(),
       method: 'POST',
       headers,
       data: querystring.stringify(

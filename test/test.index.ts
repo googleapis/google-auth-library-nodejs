@@ -22,16 +22,9 @@ describe('index', () => {
     assert.strictEqual(cjs.GoogleAuth, gal.GoogleAuth);
   });
 
-  it('should publicly export DefaultTransporter', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const cjs = require('../src');
-    assert.strictEqual(cjs.DefaultTransporter, gal.DefaultTransporter);
-  });
-
   it('should export all the things', () => {
     assert(gal.CodeChallengeMethod);
     assert(gal.Compute);
-    assert(gal.DefaultTransporter);
     assert(gal.IAMAuth);
     assert(gal.JWT);
     assert(gal.JWTAccess);

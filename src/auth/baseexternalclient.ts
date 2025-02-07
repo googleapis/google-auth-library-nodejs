@@ -27,8 +27,8 @@ import {
   AuthClientOptions,
   GetAccessTokenResponse,
   Headers,
+  BodyResponseCallback,
 } from './authclient';
-import {BodyResponseCallback, Transporter} from '../transporters';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
@@ -110,10 +110,11 @@ export interface ExternalAccountSupplierContext {
    * * "urn:ietf:params:oauth:token-type:id_token"
    */
   subjectTokenType: string;
-  /** The {@link Gaxios} or {@link Transporter} instance from
-   * the calling external account to use for requests.
+  /**
+   * The {@link Gaxios} instance for calling external account
+   * to use for requests.
    */
-  transporter: Transporter | Gaxios;
+  transporter: Gaxios;
 }
 
 /**
@@ -312,7 +313,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       };
     }
 
-    this.stsCredential = new sts.StsCredentials(tokenUrl, this.clientAuth);
+    this.stsCredential = new sts.StsCredentials({
+      tokenExchangeEndpoint: tokenUrl,
+      clientAuthentication: this.clientAuth,
+    });
     this.scopes = opts.get('scopes') || [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
     this.audience = opts.get('audience');

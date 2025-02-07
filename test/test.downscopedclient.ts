@@ -1046,9 +1046,10 @@ describe('DownscopedClient', () => {
           data: exampleRequest,
           responseType: 'json',
         },
-        (err, result) => {
-          assert.strictEqual(err!.message, errorMessage);
-          assert.deepStrictEqual(result, (err as GaxiosError)!.response);
+        err => {
+          assert(err instanceof GaxiosError);
+          assert.equal(err.status, 400);
+
           scopes.forEach(scope => scope.done());
           done();
         }

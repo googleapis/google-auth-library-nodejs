@@ -1040,7 +1040,7 @@ describe('oauth2', () => {
         await client.request({url: 'http://example.com'});
       } catch (e) {
         assert(e instanceof GaxiosError);
-        assert(e.message.includes(JSON.stringify(reAuthErrorBody)));
+        assert.deepStrictEqual(e.response?.data, reAuthErrorBody);
 
         return;
       } finally {

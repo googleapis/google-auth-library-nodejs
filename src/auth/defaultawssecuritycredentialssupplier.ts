@@ -14,7 +14,6 @@
 
 import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {Gaxios, GaxiosOptions} from 'gaxios';
-import {Transporter} from '../transporters';
 import {AwsSecurityCredentialsSupplier} from './awsclient';
 import {AwsSecurityCredentials} from './awsrequestsigner';
 import {Headers} from './authclient';
@@ -183,9 +182,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @param transporter The transporter to use for requests.
    * @return A promise that resolves with the IMDSv2 Session Token.
    */
-  async #getImdsV2SessionToken(
-    transporter: Transporter | Gaxios
-  ): Promise<string> {
+  async #getImdsV2SessionToken(transporter: Gaxios): Promise<string> {
     const opts: GaxiosOptions = {
       ...this.additionalGaxiosOptions,
       url: this.imdsV2SessionTokenUrl,
@@ -205,7 +202,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    */
   async #getAwsRoleName(
     headers: Headers,
-    transporter: Transporter | Gaxios
+    transporter: Gaxios
   ): Promise<string> {
     if (!this.securityCredentialsUrl) {
       throw new Error(
@@ -236,7 +233,7 @@ export class DefaultAwsSecurityCredentialsSupplier
   async #retrieveAwsSecurityCredentials(
     roleName: string,
     headers: Headers,
-    transporter: Transporter | Gaxios
+    transporter: Gaxios
   ): Promise<AwsSecurityCredentialsResponse> {
     const response = await transporter.request<AwsSecurityCredentialsResponse>({
       ...this.additionalGaxiosOptions,

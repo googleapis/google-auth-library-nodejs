@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions} from 'gaxios';
+import {Gaxios, GaxiosOptions} from 'gaxios';
 import * as querystring from 'querystring';
 
-import {Crypto, createCrypto} from '../crypto/crypto';
+import {createCrypto} from '../crypto/crypto';
 
 /** List of HTTP methods that accept request bodies. */
 const METHODS_SUPPORTING_REQUEST_BODY = ['PUT', 'POST', 'PATCH'];
@@ -60,6 +60,18 @@ export interface ClientAuthentication {
   clientSecret?: string;
 }
 
+export interface OAuthClientAuthHandlerOptions {
+  /**
+   * Defines the client authentication credentials for basic and request-body
+   * credentials.
+   */
+  clientAuthentication?: ClientAuthentication;
+  /**
+   * An optional transporter to use.
+   */
+  transporter?: Gaxios;
+}
+
 /**
  * Abstract class for handling client authentication in OAuth-based
  * operations.
@@ -68,14 +80,22 @@ export interface ClientAuthentication {
  * request bodies are supported.
  */
 export abstract class OAuthClientAuthHandler {
-  private crypto: Crypto;
+  #crypto = createCrypto();
+  #clientAuthentication?: ClientAuthentication;
+  protected transporter: Gaxios;
 
   /**
    * Instantiates an OAuth client authentication handler.
-   * @param clientAuthentication The client auth credentials.
+   * @param options The OAuth Client Auth Handler instance options. Passing an `ClientAuthentication` directly is **@DEPRECATED**.
    */
-  constructor(private readonly clientAuthentication?: ClientAuthentication) {
-    this.crypto = createCrypto();
+  constructor(options?: ClientAuthentication | OAuthClientAuthHandlerOptions) {
+    if (options && 'clientId' in options) {
+      this.#clientAuthentication = options;
+      this.transporter = new Gaxios();
+    } else {
+      this.#clientAuthentication = options?.clientAuthentication;
+      this.transporter = options?.transporter || new Gaxios();
+    }
   }
 
   /**
@@ -117,11 +137,11 @@ export abstract class OAuthClientAuthHandler {
       Object.assign(opts.headers, {
         Authorization: `Bearer ${bearerToken}}`,
       });
-    } else if (this.clientAuthentication?.confidentialClientType === 'basic') {
+    } else if (this.#clientAuthentication?.confidentialClientType === 'basic') {
       opts.headers = opts.headers || {};
-      const clientId = this.clientAuthentication!.clientId;
-      const clientSecret = this.clientAuthentication!.clientSecret || '';
-      const base64EncodedCreds = this.crypto.encodeBase64StringUtf8(
+      const clientId = this.#clientAuthentication!.clientId;
+      const clientSecret = this.#clientAuthentication!.clientSecret || '';
+      const base64EncodedCreds = this.#crypto.encodeBase64StringUtf8(
         `${clientId}:${clientSecret}`
       );
       Object.assign(opts.headers, {
@@ -138,7 +158,7 @@ export abstract class OAuthClientAuthHandler {
    *   depending on the client authentication mechanism to be used.
    */
   private injectAuthenticatedRequestBody(opts: GaxiosOptions) {
-    if (this.clientAuthentication?.confidentialClientType === 'request-body') {
+    if (this.#clientAuthentication?.confidentialClientType === 'request-body') {
       const method = (opts.method || 'GET').toUpperCase();
       // Inject authenticated request body.
       if (METHODS_SUPPORTING_REQUEST_BODY.indexOf(method) !== -1) {
@@ -155,27 +175,27 @@ export abstract class OAuthClientAuthHandler {
           opts.data = opts.data || '';
           const data = querystring.parse(opts.data);
           Object.assign(data, {
-            client_id: this.clientAuthentication!.clientId,
-            client_secret: this.clientAuthentication!.clientSecret || '',
+            client_id: this.#clientAuthentication!.clientId,
+            client_secret: this.#clientAuthentication!.clientSecret || '',
           });
           opts.data = querystring.stringify(data);
         } else if (contentType === 'application/json') {
           opts.data = opts.data || {};
           Object.assign(opts.data, {
-            client_id: this.clientAuthentication!.clientId,
-            client_secret: this.clientAuthentication!.clientSecret || '',
+            client_id: this.#clientAuthentication!.clientId,
+            client_secret: this.#clientAuthentication!.clientSecret || '',
           });
         } else {
           throw new Error(
             `${contentType} content-types are not supported with ` +
-              `${this.clientAuthentication!.confidentialClientType} ` +
+              `${this.#clientAuthentication!.confidentialClientType} ` +
               'client authentication'
           );
         }
       } else {
         throw new Error(
           `${method} HTTP method does not support ` +
-            `${this.clientAuthentication!.confidentialClientType} ` +
+            `${this.#clientAuthentication!.confidentialClientType} ` +
             'client authentication'
         );
       }

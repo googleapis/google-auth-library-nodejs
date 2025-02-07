@@ -72,11 +72,7 @@ const {assert} = require('chai');
 const {describe, it, before, afterEach} = require('mocha');
 const fs = require('fs');
 const {promisify} = require('util');
-const {
-  GoogleAuth,
-  DefaultTransporter,
-  IdentityPoolClient,
-} = require('google-auth-library');
+const {GoogleAuth, IdentityPoolClient, gaxios} = require('google-auth-library');
 const os = require('os');
 const path = require('path');
 const http = require('http');
@@ -158,11 +154,16 @@ const assumeRoleWithWebIdentity = async (
   // been configured:
   // https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html
   const oidcToken = await generateGoogleIdToken(auth, aud, clientEmail);
-  const transporter = new DefaultTransporter();
-  const url =
-    'https://sts.amazonaws.com/?Action=AssumeRoleWithWebIdentity' +
-    '&Version=2011-06-15&DurationSeconds=3600&RoleSessionName=nodejs-test' +
-    `&RoleArn=${awsRoleArn}&WebIdentityToken=${oidcToken}`;
+  const transporter = new gaxios.Gaxios();
+
+  const url = new URL('https://sts.amazonaws.com/');
+  url.searchParams.append('Action', 'AssumeRoleWithWebIdentity');
+  url.searchParams.append('Version', '2011-06-15');
+  url.searchParams.append('DurationSeconds', '3600');
+  url.searchParams.append('RoleSessionName', 'nodejs-test');
+  url.searchParams.append('RoleArn', awsRoleArn);
+  url.searchParams.append('WebIdentityToken', oidcToken);
+
   // The response is in XML format but we will parse it as text.
   const response = await transporter.request({url, responseType: 'text'});
   const rawXml = response.data;
