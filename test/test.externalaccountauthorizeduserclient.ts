@@ -23,15 +23,13 @@ import {
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from '../src/auth/externalAccountAuthorizedUserClient';
-import {
-  DEFAULT_UNIVERSE,
-  EXPIRATION_TIME_OFFSET,
-} from '../src/auth/baseexternalclient';
+import {EXPIRATION_TIME_OFFSET} from '../src/auth/baseexternalclient';
 import {GaxiosError, GaxiosResponse} from 'gaxios';
 import {
   getErrorFromOAuthErrorResponse,
   OAuthErrorResponse,
 } from '../src/auth/oauth2common';
+import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -184,10 +182,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         eagerRefreshThresholdMillis: 5000,
         forceRefreshOnFailure: true,
       };
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        refreshOptions
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        ...refreshOptions,
+      });
 
       assert.strictEqual(
         client.forceRefreshOnFailure,
@@ -660,9 +658,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           data: exampleRequest,
           responseType: 'json',
         },
-        (err, result) => {
-          assert.strictEqual(err!.message, errorMessage);
-          assert.deepStrictEqual(result, (err as GaxiosError)!.response);
+        err => {
+          assert(err instanceof GaxiosError);
+          assert.equal(err.status, 400);
+
           scopes.forEach(scope => scope.done());
           done();
         }
@@ -709,12 +708,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        {
-          forceRefreshOnFailure: true,
-        }
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        forceRefreshOnFailure: true,
+      });
       const actualResponse = await client.request<Object>({
         url: 'https://example.com/api',
         method: 'POST',
@@ -757,12 +754,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           .reply(401),
       ];
 
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        {
-          forceRefreshOnFailure: false,
-        }
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        forceRefreshOnFailure: false,
+      });
       await assert.rejects(
         client.request<Object>({
           url: 'https://example.com/api',
@@ -815,12 +810,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           .reply(403),
       ];
 
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-        {
-          forceRefreshOnFailure: true,
-        }
-      );
+      const client = new ExternalAccountAuthorizedUserClient({
+        ...externalAccountAuthorizedUserCredentialOptions,
+        forceRefreshOnFailure: true,
+      });
       await assert.rejects(
         client.request<Object>({
           url: 'https://example.com/api',

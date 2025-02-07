@@ -22,9 +22,13 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
-import {BodyResponseCallback, Transporter} from '../transporters';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  Headers,
+  BodyResponseCallback,
+} from './authclient';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
@@ -70,11 +74,6 @@ const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
 const pkg = require('../../../package.json');
 
 /**
- * For backwards compatibility.
- */
-export {DEFAULT_UNIVERSE} from './authclient';
-
-/**
  * Shared options used to build {@link ExternalAccountClient} and
  * {@link ExternalAccountAuthorizedUserClient}.
  */
@@ -111,10 +110,11 @@ export interface ExternalAccountSupplierContext {
    * * "urn:ietf:params:oauth:token-type:id_token"
    */
   subjectTokenType: string;
-  /** The {@link Gaxios} or {@link Transporter} instance from
-   * the calling external account to use for requests.
+  /**
+   * The {@link Gaxios} instance for calling external account
+   * to use for requests.
    */
-  transporter: Transporter | Gaxios;
+  transporter: Gaxios;
 }
 
 /**
@@ -263,18 +263,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file. The camelCased options
    *   are aliases for the snake_cased options.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
   constructor(
     options:
       | BaseExternalAccountClientOptions
-      | SnakeToCamelObject<BaseExternalAccountClientOptions>,
-    additionalOptions?: AuthClientOptions
+      | SnakeToCamelObject<BaseExternalAccountClientOptions>
   ) {
-    super({...options, ...additionalOptions});
+    super(options);
 
     const opts = originalOrCamelOptions(
       options as BaseExternalAccountClientOptions
@@ -318,7 +313,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       };
     }
 
-    this.stsCredential = new sts.StsCredentials(tokenUrl, this.clientAuth);
+    this.stsCredential = new sts.StsCredentials({
+      tokenExchangeEndpoint: tokenUrl,
+      clientAuthentication: this.clientAuth,
+    });
     this.scopes = opts.get('scopes') || [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
     this.audience = opts.get('audience');

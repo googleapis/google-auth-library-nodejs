@@ -21,14 +21,12 @@ import * as path from 'path';
 import * as stream from 'stream';
 
 import {Crypto, createCrypto} from '../crypto/crypto';
-import {DefaultTransporter, Transporter} from '../transporters';
-
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {Headers, OAuth2ClientOptions} from './oauth2client';
+import {OAuth2ClientOptions} from './oauth2client';
 import {
   UserRefreshClient,
   UserRefreshClientOptions,
@@ -47,7 +45,12 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {AuthClient, AuthClientOptions, DEFAULT_UNIVERSE} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  DEFAULT_UNIVERSE,
+  Headers,
+} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -166,8 +169,6 @@ export const GoogleAuthExceptionMessages = {
 } as const;
 
 export class GoogleAuth<T extends AuthClient = JSONClient> {
-  transporter?: Transporter;
-
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
@@ -204,11 +205,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions: AuthClientOptions = {};
-
-  /**
-   * Export DefaultTransporter as a static property of the class.
-   */
-  static DefaultTransporter = DefaultTransporter;
 
   /**
    * Configuration is resolved in the following order of precedence:
@@ -696,16 +692,16 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
       client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
-      client = ExternalAccountClient.fromJSON(
-        json as ExternalAccountClientOptions,
-        options
-      )!;
+      client = ExternalAccountClient.fromJSON({
+        ...json,
+        ...options,
+      } as ExternalAccountClientOptions)!;
       client.scopes = this.getAnyScopes();
     } else if (json.type === EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE) {
-      client = new ExternalAccountAuthorizedUserClient(
-        json as ExternalAccountAuthorizedUserClientOptions,
-        options
-      );
+      client = new ExternalAccountAuthorizedUserClient({
+        ...json,
+        ...options,
+      } as ExternalAccountAuthorizedUserClientOptions);
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);

@@ -57,20 +57,12 @@ This library provides a variety of ways to authenticate to your Google services.
 - [Downscoped Client](#downscoped-client) - Use Downscoped Client with Credential Access Boundary to generate a short-lived credential with downscoped, restricted IAM permissions that can use for Cloud Storage.
 
 ## Application Default Credentials
-This library provides an implementation of [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) for Node.js. The [Application Default Credentials](https://cloud.google.com/docs/authentication/getting-started) provide a simple way to get authorization credentials for use in calling Google APIs.
 
-They are best suited for cases when the call needs to have the same identity and authorization level for the application independent of the user. This is the recommended approach to authorize calls to Cloud APIs, particularly when you're building an application that uses Google Cloud Platform.
+This library provides an implementation of [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) for Node.js. ADC provides a simple way to get credentials for use in calling Google APIs. How you [set up ADC](https://cloud.google.com/docs/authentication/provide-credentials-adc) depends on the environment where your code is running.
 
-Application Default Credentials also support workload identity federation to access Google Cloud resources from non-Google Cloud platforms including Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC). Workload identity federation is recommended for non-Google Cloud environments as it avoids the need to download, manage and store service account private keys locally, see: [Workload Identity Federation](#workload-identity-federation).
+ADC is best suited for cases when the call needs to have the same identity and authorization level for the application independent of the user. This is the recommended approach to authorize calls to Cloud APIs, particularly when you're building an application that uses Google Cloud Platform.
 
-#### Download your Service Account Credentials JSON file
-
-To use Application Default Credentials, You first need to download a set of JSON credentials for your project. Go to **APIs & Auth** > **Credentials** in the [Google Developers Console](https://console.cloud.google.com/) and select **Service account** from the **Add credentials** dropdown.
-
-> This file is your *only copy* of these credentials. It should never be
-> committed with your source code, and should be stored securely.
-
-Once downloaded, store the path to this file in the `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
+Application Default Credentials also supports Workload Identity Federation to access Google Cloud resources from non-Google Cloud platforms including Amazon Web Services (AWS), Microsoft Azure or any identity provider that supports OpenID Connect (OIDC). Workload Identity Federation is recommended for non-Google Cloud environments as it avoids the need to download, manage and store service account private keys locally, see: [Workload Identity Federation](#workload-identity-federation).
 
 #### Enable the API you want to use
 
@@ -155,11 +147,11 @@ function getAuthenticatedClient() {
   return new Promise((resolve, reject) => {
     // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
     // which should be downloaded from the Google Developers Console.
-    const oAuth2Client = new OAuth2Client(
-      keys.web.client_id,
-      keys.web.client_secret,
-      keys.web.redirect_uris[0]
-    );
+    const oAuth2Client = new OAuth2Client({
+      clientId: keys.web.client_id,
+      clientSecret: keys.web.client_secret,
+      redirectUri: keys.web.redirect_uris[0]
+    });
 
     // Generate the url that will be used for the consent dialog.
     const authorizeUrl = oAuth2Client.generateAuthUrl({
@@ -1312,7 +1304,7 @@ const googleAuth = new GoogleAuth({
 const client = await googleAuth.getClient();
 
 // Use the client to create a DownscopedClient.
-const cabClient = new DownscopedClient(client, cab);
+const cabClient = new DownscopedClient({authClient: client, credentialAccessBoundary: cab});
 
 // Refresh the tokens.
 const refreshedAccessToken = await cabClient.getAccessToken();

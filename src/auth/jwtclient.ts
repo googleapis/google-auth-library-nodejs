@@ -27,12 +27,38 @@ import {
 import {DEFAULT_UNIVERSE} from './authclient';
 
 export interface JWTOptions extends OAuth2ClientOptions {
+  /**
+   * The service account email address.
+   */
   email?: string;
+  /**
+   * The path to private key file. Not necessary if {@link JWTOptions.key} has been provided.
+   */
   keyFile?: string;
+  /**
+   * The value of key. Not necessary if {@link JWTOptions.keyFile} has been provided.
+   */
   key?: string;
+  /**
+   * The list of requested scopes or a single scope.
+   */
   keyId?: string;
+  /**
+   * The impersonated account's email address.
+   */
   scopes?: string | string[];
+  /**
+   * The ID of the key.
+   */
   subject?: string;
+  /**
+   * Additional claims, such as target audience.
+   *
+   * @example
+   * ```
+   * {target_audience: 'targetAudience'}
+   * ```
+   */
   additionalClaims?: {};
 }
 
@@ -56,42 +82,17 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    *
    * Retrieve access token using gtoken.
    *
-   * @param email service account email address.
-   * @param keyFile path to private key file.
-   * @param key value of key
-   * @param scopes list of requested scopes or a single scope.
-   * @param subject impersonated account's email address.
-   * @param key_id the ID of the key
+   * @param options the
    */
-  constructor(options: JWTOptions);
-  constructor(
-    email?: string,
-    keyFile?: string,
-    key?: string,
-    scopes?: string | string[],
-    subject?: string,
-    keyId?: string
-  );
-  constructor(
-    optionsOrEmail?: string | JWTOptions,
-    keyFile?: string,
-    key?: string,
-    scopes?: string | string[],
-    subject?: string,
-    keyId?: string
-  ) {
-    const opts =
-      optionsOrEmail && typeof optionsOrEmail === 'object'
-        ? optionsOrEmail
-        : {email: optionsOrEmail, keyFile, key, keyId, scopes, subject};
-    super(opts);
-    this.email = opts.email;
-    this.keyFile = opts.keyFile;
-    this.key = opts.key;
-    this.keyId = opts.keyId;
-    this.scopes = opts.scopes;
-    this.subject = opts.subject;
-    this.additionalClaims = opts.additionalClaims;
+  constructor(options: JWTOptions = {}) {
+    super(options);
+    this.email = options.email;
+    this.keyFile = options.keyFile;
+    this.key = options.key;
+    this.keyId = options.keyId;
+    this.scopes = options.scopes;
+    this.subject = options.subject;
+    this.additionalClaims = options.additionalClaims;
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};

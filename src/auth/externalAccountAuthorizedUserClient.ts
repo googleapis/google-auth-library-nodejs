@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, AuthClientOptions} from './authclient';
-import {Headers} from './oauth2client';
+import {AuthClient, Headers, BodyResponseCallback} from './authclient';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
   OAuthClientAuthHandler,
+  OAuthClientAuthHandlerOptions,
   OAuthErrorResponse,
 } from './oauth2common';
-import {BodyResponseCallback, Transporter} from '../transporters';
 import {
   GaxiosError,
   GaxiosOptions,
@@ -70,11 +69,21 @@ interface TokenRefreshResponse {
   res?: GaxiosResponse | null;
 }
 
+interface ExternalAccountAuthorizedUserHandlerOptions
+  extends OAuthClientAuthHandlerOptions {
+  /**
+   * The URL of the token refresh endpoint.
+   */
+  tokenRefreshEndpoint: string | URL;
+}
+
 /**
  * Handler for token refresh requests sent to the token_url endpoint for external
  * authorized user credentials.
  */
 class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
+  #tokenRefreshEndpoint: string | URL;
+
   /**
    * Initializes an ExternalAccountAuthorizedUserHandler instance.
    * @param url The URL of the token refresh endpoint.
@@ -82,12 +91,10 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
    * @param clientAuthentication The client authentication credentials to use
    *   for the refresh request.
    */
-  constructor(
-    private readonly url: string,
-    private readonly transporter: Transporter,
-    clientAuthentication?: ClientAuthentication
-  ) {
-    super(clientAuthentication);
+  constructor(options: ExternalAccountAuthorizedUserHandlerOptions) {
+    super(options);
+
+    this.#tokenRefreshEndpoint = options.tokenRefreshEndpoint;
   }
 
   /**
@@ -115,7 +122,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
 
     const opts: GaxiosOptions = {
       ...ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
-      url: this.url,
+      url: this.#tokenRefreshEndpoint,
       method: 'POST',
       headers,
       data: values.toString(),
@@ -163,32 +170,26 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * An error is throws if the credential is not valid.
    * @param options The external account authorized user option object typically
    *   from the external accoutn authorized user JSON credential file.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
-  constructor(
-    options: ExternalAccountAuthorizedUserClientOptions,
-    additionalOptions?: AuthClientOptions
-  ) {
-    super({...options, ...additionalOptions});
+  constructor(options: ExternalAccountAuthorizedUserClientOptions) {
+    super(options);
     if (options.universe_domain) {
       this.universeDomain = options.universe_domain;
     }
     this.refreshToken = options.refresh_token;
-    const clientAuth = {
+    const clientAuthentication = {
       confidentialClientType: 'basic',
       clientId: options.client_id,
       clientSecret: options.client_secret,
     } as ClientAuthentication;
     this.externalAccountAuthorizedUserHandler =
-      new ExternalAccountAuthorizedUserHandler(
-        options.token_url ??
+      new ExternalAccountAuthorizedUserHandler({
+        tokenRefreshEndpoint:
+          options.token_url ??
           DEFAULT_TOKEN_URL.replace('{universeDomain}', this.universeDomain),
-        this.transporter,
-        clientAuth
-      );
+        transporter: this.transporter,
+        clientAuthentication,
+      });
 
     this.cachedAccessToken = null;
     this.quotaProjectId = options.quota_project_id;
@@ -196,13 +197,14 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     // As threshold could be zero,
     // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
     // zero value.
-    if (typeof additionalOptions?.eagerRefreshThresholdMillis !== 'number') {
+    if (typeof options?.eagerRefreshThresholdMillis !== 'number') {
       this.eagerRefreshThresholdMillis = EXPIRATION_TIME_OFFSET;
     } else {
-      this.eagerRefreshThresholdMillis = additionalOptions!
+      this.eagerRefreshThresholdMillis = options!
         .eagerRefreshThresholdMillis as number;
     }
-    this.forceRefreshOnFailure = !!additionalOptions?.forceRefreshOnFailure;
+
+    this.forceRefreshOnFailure = !!options?.forceRefreshOnFailure;
   }
 
   async getAccessToken(): Promise<{

@@ -33,13 +33,12 @@ function createGTokenMock(body: CredentialRequest) {
 }
 
 function createSampleJWTClient() {
-  const jwt = new JWT(
-    'foo@serviceaccount.com',
-    PEM_PATH,
-    undefined,
-    ['http://bar', 'http://foo'],
-    'bar@subjectaccount.com'
-  );
+  const jwt = new JWT({
+    email: 'foo@serviceaccount.com',
+    keyFile: PEM_PATH,
+    scopes: ['http://bar', 'http://foo'],
+    subject: 'bar@subjectaccount.com',
+  });
 
   return jwt;
 }
@@ -294,11 +293,11 @@ describe('impersonated', () => {
         }),
     ];
 
-    const source_client = new UserRefreshClient(
-      'CLIENT_ID',
-      'CLIENT_SECRET',
-      'REFRESH_TOKEN'
-    );
+    const source_client = new UserRefreshClient({
+      clientId: 'CLIENT_ID',
+      clientSecret: 'CLIENT_SECRET',
+      refreshToken: 'REFRESH_TOKEN',
+    });
     const impersonated = new Impersonated({
       sourceClient: source_client,
       targetPrincipal: 'target@project.iam.gserviceaccount.com',

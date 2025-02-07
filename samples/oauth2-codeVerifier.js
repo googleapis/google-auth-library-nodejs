@@ -46,11 +46,7 @@ async function getAuthenticatedClient() {
   // create an oAuth client to authorize the API call. Secrets are kept in a
   // `keys.json` file, which should be downloaded from the Google Developers
   // Console.
-  const oAuth2Client = new OAuth2Client(
-    keys.web.client_id,
-    keys.web.client_secret,
-    keys.web.redirect_uris[0]
-  );
+  const oAuth2Client = new OAuth2Client(keys.web);
 
   // Generate a code_verifier and code_challenge
   const codes = await oAuth2Client.generateCodeVerifierAsync();
