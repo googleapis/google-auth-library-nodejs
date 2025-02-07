@@ -19,7 +19,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.0.0",
-    "gts": "^5.0.0",
+    "gts": "^6.0.0",
     "null-loader": "^4.0.0",
     "ts-loader": "^8.0.0",
     "webpack": "^4.20.2",
