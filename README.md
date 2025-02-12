@@ -1229,7 +1229,7 @@ async function main() {
 
   // Get impersonated credentials:
   const authHeaders = await targetClient.getRequestHeaders();
-  // Do something with `authHeaders.Authorization`.
+  // Do something with `authHeaders.get('Authorization')`.
 
   // Use impersonated credentials:
   const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
