@@ -1272,7 +1272,7 @@ async function main() {
 
   // Get impersonated credentials:
   const authHeaders = await targetClient.getRequestHeaders();
-  // Do something with `authHeaders.authorization`.
+  // Do something with `authHeaders.get('Authorization')`.
 
   // Use impersonated credentials:
   const url =
