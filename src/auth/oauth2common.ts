@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {Gaxios, GaxiosOptions} from 'gaxios';
-import * as querystring from 'querystring';
 
 import {createCrypto} from '../crypto/crypto';
 

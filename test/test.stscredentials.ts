@@ -14,7 +14,6 @@
 
 import * as assert from 'assert';
 import {describe, it, afterEach} from 'mocha';
-import * as qs from 'querystring';
 import * as nock from 'nock';
 import {createCrypto} from '../src/crypto/crypto';
 import {
