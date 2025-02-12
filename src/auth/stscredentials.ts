@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
-import * as querystring from 'querystring';
-import {Headers} from './authclient';
+import {HeadersInit} from './authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
@@ -109,6 +108,7 @@ interface StsRequestOptions {
   client_secret?: string;
   // GCP-specific non-standard field.
   options?: string;
+  [key: string]: string | undefined;
 }
 
 /**
@@ -186,9 +186,8 @@ export class StsCredentials extends OAuthClientAuthHandler {
    */
   async exchangeToken(
     stsCredentialsOptions: StsCredentialsOptions,
-    additionalHeaders?: Headers,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    options?: {[key: string]: any}
+    headers?: HeadersInit,
+    options?: Parameters<JSON['stringify']>[0]
   ): Promise<StsSuccessfulResponse> {
     const values: StsRequestOptions = {
       grant_type: stsCredentialsOptions.grantType,
@@ -203,30 +202,21 @@ export class StsCredentials extends OAuthClientAuthHandler {
       // Non-standard GCP-specific options.
       options: options && JSON.stringify(options),
     };
-    // Remove undefined fields.
-    Object.keys(values).forEach(key => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof (values as {[index: string]: any})[key] === 'undefined') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (values as {[index: string]: any})[key];
+
+    // Keep defined fields.
+    const payload: Record<string, string> = {};
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined) {
+        payload[key] = value;
       }
     });
-
-    const headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
-    // Inject additional STS headers if available.
-    Object.assign(headers, additionalHeaders || {});
 
     const opts: GaxiosOptions = {
       ...StsCredentials.RETRY_CONFIG,
       url: this.#tokenExchangeEndpoint.toString(),
       method: 'POST',
       headers,
-      data: querystring.stringify(
-        values as unknown as querystring.ParsedUrlQueryInput
-      ),
-      responseType: 'json',
+      data: new URLSearchParams(payload),
     };
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);

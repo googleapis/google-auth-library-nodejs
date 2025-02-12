@@ -96,12 +96,12 @@ describe('StsCredentials', () => {
   ): nock.Scope {
     const headers = Object.assign(
       {
-        'content-type': 'application/x-www-form-urlencoded',
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
       },
       additionalHeaders || {}
     );
     return nock(baseUrl)
-      .post(path, qs.stringify(request), {
+      .post(path, request, {
         reqheaders: headers,
       })
       .reply(statusCode, response);
@@ -218,17 +218,27 @@ describe('StsCredentials', () => {
 
       it('should handle and retry on timeout', async () => {
         const scope = nock(baseUrl)
-          .post(path, qs.stringify(expectedRequest), {
-            reqheaders: {
-              'content-type': 'application/x-www-form-urlencoded',
-            },
-          })
-          .replyWithError({code: 'ETIMEDOUT'})
-          .post(path, qs.stringify(expectedRequest), {
-            reqheaders: {
-              'content-type': 'application/x-www-form-urlencoded',
-            },
-          })
+          .post(
+            path,
+            {...expectedRequest},
+            {
+              reqheaders: {
+                'content-type':
+                  'application/x-www-form-urlencoded;charset=UTF-8',
+              },
+            }
+          )
+          .replyWithError('ETIMEDOUT')
+          .post(
+            path,
+            {...expectedRequest},
+            {
+              reqheaders: {
+                'content-type':
+                  'application/x-www-form-urlencoded;charset=UTF-8',
+              },
+            }
+          )
           .reply(200, stsSuccessfulResponse);
         const stsCredentials = new StsCredentials(tokenExchangeEndpoint);
 

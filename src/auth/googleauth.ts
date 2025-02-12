@@ -14,7 +14,7 @@
 
 import {exec} from 'child_process';
 import * as fs from 'fs';
-import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
+import {Gaxios, GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 import * as os from 'os';
 import * as path from 'path';
@@ -45,12 +45,7 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {
-  AuthClient,
-  AuthClientOptions,
-  DEFAULT_UNIVERSE,
-  Headers,
-} from './authclient';
+import {AuthClient, AuthClientOptions, DEFAULT_UNIVERSE} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -1068,7 +1063,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Obtain the HTTP headers that will provide authorization for a given
    * request.
    */
-  async getRequestHeaders(url?: string) {
+  async getRequestHeaders(url?: string | URL) {
     const client = await this.getClient();
     return client.getRequestHeaders(url);
   }
@@ -1078,16 +1073,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * the request options.
    * @param opts Axios or Request options on which to attach the headers
    */
-  async authorizeRequest(opts: {
-    url?: string;
-    uri?: string;
-    headers?: Headers;
-  }) {
-    opts = opts || {};
-    const url = opts.url || opts.uri;
+  async authorizeRequest(opts: Pick<GaxiosOptions, 'url' | 'headers'> = {}) {
+    const url = opts.url;
     const client = await this.getClient();
     const headers = await client.getRequestHeaders(url);
-    opts.headers = Object.assign(opts.headers || {}, headers);
+    opts.headers = Gaxios.mergeHeaders(opts.headers, headers);
     return opts;
   }
 
@@ -1096,8 +1086,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * HTTP request using the given options.
    * @param opts Axios request options for the HTTP request.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async request<T = any>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
+  async request<T>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
     const client = await this.getClient();
     return client.request<T>(opts);
   }

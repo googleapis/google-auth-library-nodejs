@@ -1870,9 +1870,9 @@ describe('BaseExternalAccountClient', () => {
 
   describe('getRequestHeaders()', () => {
     it('should inject the authorization headers', async () => {
-      const expectedHeaders = {
+      const expectedHeaders = new Headers({
         Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
-      };
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -1902,9 +1902,9 @@ describe('BaseExternalAccountClient', () => {
         accessToken: 'SA_ACCESS_TOKEN',
         expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
       };
-      const expectedHeaders = {
+      const expectedHeaders = new Headers({
         Authorization: `Bearer ${saSuccessResponse.accessToken}`,
-      };
+      });
       const scopes: nock.Scope[] = [];
       scopes.push(
         mockStsTokenExchange([
@@ -1943,10 +1943,10 @@ describe('BaseExternalAccountClient', () => {
 
     it('should inject the authorization and metadata headers', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
-      const expectedHeaders = {
+      const expectedHeaders = new Headers({
         Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
-      };
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -2057,7 +2057,6 @@ describe('BaseExternalAccountClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2126,7 +2125,6 @@ describe('BaseExternalAccountClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2180,7 +2178,6 @@ describe('BaseExternalAccountClient', () => {
         url: 'https://example.com/api',
         method: 'POST',
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2219,7 +2216,6 @@ describe('BaseExternalAccountClient', () => {
           url: 'https://example.com/api',
           method: 'POST',
           data: exampleRequest,
-          responseType: 'json',
         }),
         getErrorFromOAuthErrorResponse(errorResponse)
       );
@@ -2272,7 +2268,6 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         (err, result) => {
           assert.strictEqual(err, null);
@@ -2326,7 +2321,6 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         err => {
           assert(err instanceof GaxiosError);
@@ -2409,7 +2403,6 @@ describe('BaseExternalAccountClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2458,7 +2451,6 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 401,
@@ -2536,7 +2528,6 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 403,

@@ -31,7 +31,7 @@ import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import {GetAccessTokenResponse, Headers} from '../src/auth/authclient';
+import {GetAccessTokenResponse} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -715,9 +715,9 @@ describe('DownscopedClient', () => {
 
   describe('getRequestHeader()', () => {
     it('should inject the authorization headers', async () => {
-      const expectedHeaders = {
+      const expectedHeaders = new Headers({
         Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
-      };
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -742,10 +742,10 @@ describe('DownscopedClient', () => {
 
     it('should inject the authorization and metadata headers', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
-      const expectedHeaders = {
+      const expectedHeaders = new Headers({
         Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
-      };
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -848,7 +848,6 @@ describe('DownscopedClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -899,7 +898,6 @@ describe('DownscopedClient', () => {
         url: 'https://example.com/api',
         method: 'POST',
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -937,7 +935,6 @@ describe('DownscopedClient', () => {
           url: 'https://example.com/api',
           method: 'POST',
           data: exampleRequest,
-          responseType: 'json',
         }),
         getErrorFromOAuthErrorResponse(errorResponse)
       );
@@ -990,7 +987,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         (err, result) => {
           assert.strictEqual(err, null);
@@ -1044,7 +1040,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         err => {
           assert(err instanceof GaxiosError);
@@ -1125,7 +1120,6 @@ describe('DownscopedClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -1175,7 +1169,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 401,
@@ -1251,7 +1244,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 403,

@@ -114,15 +114,7 @@ describe('AwsClient', () => {
       method: expectedSignedRequest.method,
       headers: [
         {
-          key: 'x-goog-cloud-target-resource',
-          value: awsOptions.audience,
-        },
-        {
-          key: 'x-amz-date',
-          value: expectedSignedRequest.headers['x-amz-date'],
-        },
-        {
-          key: 'Authorization',
+          key: 'authorization',
           value: expectedSignedRequest.headers.Authorization,
         },
         {
@@ -130,8 +122,16 @@ describe('AwsClient', () => {
           value: expectedSignedRequest.headers.host,
         },
         {
+          key: 'x-amz-date',
+          value: expectedSignedRequest.headers['x-amz-date'],
+        },
+        {
           key: 'x-amz-security-token',
           value: expectedSignedRequest.headers['x-amz-security-token'],
+        },
+        {
+          key: 'x-goog-cloud-target-resource',
+          value: awsOptions.audience,
         },
       ],
     })
@@ -159,20 +159,20 @@ describe('AwsClient', () => {
       method: expectedSignedRequestNoToken.method,
       headers: [
         {
-          key: 'x-goog-cloud-target-resource',
-          value: awsOptions.audience,
+          key: 'authorization',
+          value: expectedSignedRequestNoToken.headers.Authorization,
+        },
+        {
+          key: 'host',
+          value: expectedSignedRequestNoToken.headers.host,
         },
         {
           key: 'x-amz-date',
           value: expectedSignedRequestNoToken.headers['x-amz-date'],
         },
         {
-          key: 'Authorization',
-          value: expectedSignedRequestNoToken.headers.Authorization,
-        },
-        {
-          key: 'host',
-          value: expectedSignedRequestNoToken.headers.host,
+          key: 'x-goog-cloud-target-resource',
+          value: awsOptions.audience,
         },
       ],
     })
@@ -509,7 +509,7 @@ describe('AwsClient', () => {
       });
 
       it('should reject when "credential_source.region_url" is missing', async () => {
-        const expectedError = new Error(
+        const expectedError = new RangeError(
           'Unable to determine AWS region due to missing ' +
             '"options.credential_source.region_url"'
         );

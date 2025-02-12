@@ -110,6 +110,8 @@ export abstract class OAuthClientAuthHandler {
     opts: GaxiosOptions,
     bearerToken?: string
   ) {
+    opts.headers = Gaxios.mergeHeaders(opts.headers);
+
     // Inject authenticated header.
     this.injectAuthenticatedHeaders(opts, bearerToken);
     // Inject authenticated request body.
@@ -133,18 +135,17 @@ export abstract class OAuthClientAuthHandler {
   ) {
     // Bearer token prioritized higher than basic Auth.
     if (bearerToken) {
-      opts.headers = opts.headers || {};
-      Object.assign(opts.headers, {
+      opts.headers = Gaxios.mergeHeaders(opts.headers, {
         Authorization: `Bearer ${bearerToken}}`,
       });
     } else if (this.#clientAuthentication?.confidentialClientType === 'basic') {
-      opts.headers = opts.headers || {};
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
       const clientId = this.#clientAuthentication!.clientId;
       const clientSecret = this.#clientAuthentication!.clientSecret || '';
       const base64EncodedCreds = this.#crypto.encodeBase64StringUtf8(
         `${clientId}:${clientSecret}`
       );
-      Object.assign(opts.headers, {
+      Gaxios.mergeHeaders(opts.headers, {
         Authorization: `Basic ${base64EncodedCreds}`,
       });
     }
@@ -160,41 +161,40 @@ export abstract class OAuthClientAuthHandler {
   private injectAuthenticatedRequestBody(opts: GaxiosOptions) {
     if (this.#clientAuthentication?.confidentialClientType === 'request-body') {
       const method = (opts.method || 'GET').toUpperCase();
-      // Inject authenticated request body.
-      if (METHODS_SUPPORTING_REQUEST_BODY.indexOf(method) !== -1) {
-        // Get content-type.
-        let contentType;
-        const headers = opts.headers || {};
-        for (const key in headers) {
-          if (key.toLowerCase() === 'content-type' && headers[key]) {
-            contentType = headers[key].toLowerCase();
-            break;
-          }
-        }
-        if (contentType === 'application/x-www-form-urlencoded') {
-          opts.data = opts.data || '';
-          const data = querystring.parse(opts.data);
-          Object.assign(data, {
-            client_id: this.#clientAuthentication!.clientId,
-            client_secret: this.#clientAuthentication!.clientSecret || '',
-          });
-          opts.data = querystring.stringify(data);
-        } else if (contentType === 'application/json') {
-          opts.data = opts.data || {};
-          Object.assign(opts.data, {
-            client_id: this.#clientAuthentication!.clientId,
-            client_secret: this.#clientAuthentication!.clientSecret || '',
-          });
-        } else {
-          throw new Error(
-            `${contentType} content-types are not supported with ` +
-              `${this.#clientAuthentication!.confidentialClientType} ` +
-              'client authentication'
-          );
-        }
-      } else {
+
+      if (!METHODS_SUPPORTING_REQUEST_BODY.includes(method)) {
         throw new Error(
           `${method} HTTP method does not support ` +
+            `${this.#clientAuthentication!.confidentialClientType} ` +
+            'client authentication'
+        );
+      }
+
+      // Get content-type
+      const headers = new Headers(opts.headers);
+      const contentType = headers.get('content-type');
+
+      // Inject authenticated request body
+      if (
+        contentType?.startsWith('application/x-www-form-urlencoded') ||
+        opts.data instanceof URLSearchParams
+      ) {
+        const data = new URLSearchParams(opts.data ?? '');
+        data.append('client_id', this.#clientAuthentication!.clientId);
+        data.append(
+          'client_secret',
+          this.#clientAuthentication!.clientSecret || ''
+        );
+        opts.data = data;
+      } else if (contentType?.startsWith('application/json')) {
+        opts.data = opts.data || {};
+        Object.assign(opts.data, {
+          client_id: this.#clientAuthentication!.clientId,
+          client_secret: this.#clientAuthentication!.clientSecret || '',
+        });
+      } else {
+        throw new Error(
+          `${contentType} content-types are not supported with ` +
             `${this.#clientAuthentication!.confidentialClientType} ` +
             'client authentication'
         );
