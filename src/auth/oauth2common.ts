@@ -135,7 +135,7 @@ export abstract class OAuthClientAuthHandler {
     // Bearer token prioritized higher than basic Auth.
     if (bearerToken) {
       opts.headers = Gaxios.mergeHeaders(opts.headers, {
-        Authorization: `Bearer ${bearerToken}}`,
+        authorization: `Bearer ${bearerToken}`,
       });
     } else if (this.#clientAuthentication?.confidentialClientType === 'basic') {
       opts.headers = Gaxios.mergeHeaders(opts.headers);
@@ -145,7 +145,7 @@ export abstract class OAuthClientAuthHandler {
         `${clientId}:${clientSecret}`
       );
       Gaxios.mergeHeaders(opts.headers, {
-        Authorization: `Basic ${base64EncodedCreds}`,
+        authorization: `Basic ${base64EncodedCreds}`,
       });
     }
   }

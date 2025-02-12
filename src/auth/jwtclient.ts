@@ -143,7 +143,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
         return {
           headers: this.addSharedMetadataHeaders(
             new Headers({
-              Authorization: `Bearer ${tokens.id_token}`,
+              authorization: `Bearer ${tokens.id_token}`,
             })
           ),
         };

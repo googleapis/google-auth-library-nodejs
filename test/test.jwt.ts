@@ -24,7 +24,7 @@ import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
 
 function removeBearerFromAuthorizationHeader(headers: Headers): string {
-  return (headers.get('Authorization') || '').replace('Bearer ', '');
+  return (headers.get('authorization') || '').replace('Bearer ', '');
 }
 
 describe('jwt', () => {
@@ -185,8 +185,8 @@ describe('jwt', () => {
     scope.done();
     assert.strictEqual(
       want,
-      headers.get('Authorization'),
-      `the authorization header was wrong: ${headers.get('Authorization')}`
+      headers.get('authorization'),
+      `the authorization header was wrong: ${headers.get('authorization')}`
     );
   });
 
@@ -1166,7 +1166,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders();
       scope.done();
-      assert.strictEqual(headers.get('Authorization'), want);
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = false, audience = falsy, useJWTAccessWithScope = false', async () => {
@@ -1182,7 +1182,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders();
       scope.done();
-      assert.strictEqual(headers.get('Authorization'), want);
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = true, audience = falsy, useJWTAccessWithScope = false', async () => {
@@ -1200,7 +1200,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders();
       scope.done();
-      assert.strictEqual(headers.get('Authorization'), want);
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = false, audience = truthy, useJWTAccessWithScope = false', async () => {
@@ -1217,7 +1217,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders(testUri);
       scope.done();
-      assert.strictEqual(headers.get('Authorization'), want);
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = false', async () => {
@@ -1236,7 +1236,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders(testUri);
       scope.done();
-      assert.strictEqual(headers.get('Authorization'), want);
+      assert.strictEqual(headers.get('authorization'), want);
     });
   });
 });

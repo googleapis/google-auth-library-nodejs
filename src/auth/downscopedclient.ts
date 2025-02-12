@@ -237,12 +237,12 @@ export class DownscopedClient extends AuthClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    */
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
     const headers = new Headers({
-      Authorization: `Bearer ${accessTokenResponse.token}`,
+      authorization: `Bearer ${accessTokenResponse.token}`,
     });
     return this.addSharedMetadataHeaders(headers);
   }

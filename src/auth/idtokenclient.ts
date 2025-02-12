@@ -66,7 +66,7 @@ export class IdTokenClient extends OAuth2Client {
     }
 
     const headers = new Headers({
-      Authorization: 'Bearer ' + this.credentials.id_token,
+      authorization: 'Bearer ' + this.credentials.id_token,
     });
     return {headers};
   }

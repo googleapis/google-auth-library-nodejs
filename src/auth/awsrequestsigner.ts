@@ -139,7 +139,7 @@ export class AwsRequestSigner {
       // Add x-amz-date if available.
       headerMap.amzDate ? {'x-amz-date': headerMap.amzDate} : {},
       {
-        Authorization: headerMap.authorizationHeader,
+        authorization: headerMap.authorizationHeader,
         host: uri.host,
       },
       additionalAmzHeaders || {}

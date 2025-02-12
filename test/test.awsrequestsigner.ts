@@ -123,7 +123,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -158,7 +158,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/foo/bar/../..',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -192,7 +192,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/./',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -227,7 +227,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/./foo',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -261,7 +261,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/%E1%88%B4',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -296,7 +296,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/?foo=Zoo&foo=aha',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -330,7 +330,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/?ሴ=bar',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -366,12 +366,12 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/',
             method: 'POST',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host;zoo, Signature=${signature}`,
               host: 'host.foo.com',
               date: 'Mon, 09 Sep 2011 23:36:00 GMT',
-              ZOO: 'zoobar',
+              zoo: 'zoobar',
             }),
           };
         },
@@ -404,7 +404,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/',
             method: 'POST',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host;zoo, Signature=${signature}`,
               host: 'host.foo.com',
@@ -441,7 +441,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com',
             method: 'POST',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host;p, Signature=${signature}`,
               host: 'host.foo.com',
@@ -467,7 +467,7 @@ describe('AwsRequestSigner', () => {
           method: 'POST',
           url: 'https://host.foo.com',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'content-type': 'application/x-www-form-urlencoded',
             date: 'Mon, 09 Sep 2011 23:36:00 GMT',
           },
           body: 'foo=bar',
@@ -479,12 +479,12 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com',
             method: 'POST',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 'aws4_request, SignedHeaders=content-type;date;host, ' +
                 `Signature=${signature}`,
               host: 'host.foo.com',
-              'Content-Type': 'application/x-www-form-urlencoded',
+              'content-type': 'application/x-www-form-urlencoded',
               date: 'Mon, 09 Sep 2011 23:36:00 GMT',
             }),
             body: 'foo=bar',
@@ -517,7 +517,7 @@ describe('AwsRequestSigner', () => {
             url: 'https://host.foo.com/?foo=bar',
             method: 'POST',
             headers: new Headers({
-              Authorization:
+              authorization:
                 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20110909/us-east-1/host/' +
                 `aws4_request, SignedHeaders=date;host, Signature=${signature}`,
               host: 'host.foo.com',
@@ -546,7 +546,7 @@ describe('AwsRequestSigner', () => {
               'Action=DescribeRegions&Version=2013-10-15',
             method: 'GET',
             headers: new Headers({
-              Authorization:
+              authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
                 `${dateStamp}/us-east-2/ec2/aws4_request, SignedHeaders=host;` +
                 `x-amz-date;x-amz-security-token, Signature=${signature}`,
@@ -579,7 +579,7 @@ describe('AwsRequestSigner', () => {
             method: 'POST',
             headers: new Headers({
               'x-amz-date': amzDate,
-              Authorization:
+              authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
                 `${dateStamp}/us-east-2/sts/aws4_request, SignedHeaders=host;` +
                 `x-amz-date;x-amz-security-token, Signature=${signature}`,
@@ -611,7 +611,7 @@ describe('AwsRequestSigner', () => {
             method: 'POST',
             headers: new Headers({
               'x-amz-date': amzDate,
-              Authorization:
+              authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
                 `${dateStamp}/us-east-2/sts/aws4_request, SignedHeaders=host;` +
                 `x-amz-date, Signature=${signature}`,
@@ -628,7 +628,7 @@ describe('AwsRequestSigner', () => {
           url: 'https://dynamodb.us-east-2.amazonaws.com/',
           method: 'POST',
           headers: {
-            'Content-Type': 'application/x-amz-json-1.0',
+            'content-type': 'application/x-amz-json-1.0',
             'x-amz-target': 'DynamoDB_20120810.CreateTable',
           },
           body: JSON.stringify(requestParams),
@@ -642,12 +642,12 @@ describe('AwsRequestSigner', () => {
             url: 'https://dynamodb.us-east-2.amazonaws.com/',
             method: 'POST',
             headers: new Headers({
-              Authorization:
+              authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
                 `${dateStamp}/us-east-2/dynamodb/aws4_request, SignedHeaders=` +
                 'content-type;host;x-amz-date;x-amz-security-token;x-amz-target' +
                 `, Signature=${signature}`,
-              'Content-Type': 'application/x-amz-json-1.0',
+              'content-type': 'application/x-amz-json-1.0',
               host: 'dynamodb.us-east-2.amazonaws.com',
               'x-amz-date': amzDate,
               'x-amz-security-token': token,
@@ -665,7 +665,7 @@ describe('AwsRequestSigner', () => {
           url: 'https://dynamodb.us-east-2.amazonaws.com/',
           method: 'POST',
           headers: {
-            'Content-Type': 'application/x-amz-json-1.0',
+            'content-type': 'application/x-amz-json-1.0',
             'x-amz-target': 'DynamoDB_20120810.CreateTable',
           },
           data: requestParams,
@@ -679,12 +679,12 @@ describe('AwsRequestSigner', () => {
             url: 'https://dynamodb.us-east-2.amazonaws.com/',
             method: 'POST',
             headers: new Headers({
-              Authorization:
+              authorization:
                 `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
                 `${dateStamp}/us-east-2/dynamodb/aws4_request, SignedHeaders=` +
                 'content-type;host;x-amz-date;x-amz-security-token;x-amz-target' +
                 `, Signature=${signature}`,
-              'Content-Type': 'application/x-amz-json-1.0',
+              'content-type': 'application/x-amz-json-1.0',
               host: 'dynamodb.us-east-2.amazonaws.com',
               'x-amz-date': amzDate,
               'x-amz-security-token': token,

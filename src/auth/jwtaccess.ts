@@ -159,7 +159,7 @@ export class JWTAccess {
 
     // Sign the jwt and add it to the cache
     const signedJWT = jws.sign({header, payload, secret: this.key});
-    const headers = new Headers({Authorization: `Bearer ${signedJWT}`});
+    const headers = new Headers({authorization: `Bearer ${signedJWT}`});
     this.cache.set(key, {
       expiration: exp * 1000,
       headers,

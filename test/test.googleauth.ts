@@ -1317,7 +1317,7 @@ describe('googleauth', () => {
       scopes.forEach(s => s.done());
       assert.deepStrictEqual(
         headers,
-        new Headers({Authorization: 'Bearer abc123'})
+        new Headers({authorization: 'Bearer abc123'})
       );
     });
 
@@ -1328,7 +1328,7 @@ describe('googleauth', () => {
       scopes.forEach(s => s.done());
       assert.deepStrictEqual(
         opts.headers,
-        new Headers({Authorization: 'Bearer abc123'})
+        new Headers({authorization: 'Bearer abc123'})
       );
     });
 
@@ -1798,8 +1798,8 @@ describe('googleauth', () => {
                 },
                 {
                   reqheaders: {
-                    Authorization: `Bearer ${saSuccessResponse.accessToken}`,
-                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${saSuccessResponse.accessToken}`,
+                    'content-type': 'application/json',
                   },
                 }
               )
@@ -2493,8 +2493,8 @@ describe('googleauth', () => {
                 },
                 {
                   reqheaders: {
-                    Authorization: `Bearer ${saSuccessResponse.accessToken}`,
-                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${saSuccessResponse.accessToken}`,
+                    'content-type': 'application/json',
                   },
                 }
               )
@@ -2543,7 +2543,7 @@ describe('googleauth', () => {
         assert.deepStrictEqual(
           headers,
           new Headers({
-            Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+            authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
           })
         );
         scopes.forEach(s => s.done());
@@ -2558,7 +2558,7 @@ describe('googleauth', () => {
         assert.deepStrictEqual(
           opts.headers,
           new Headers({
-            Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+            authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
           })
         );
         scopes.forEach(s => s.done());
@@ -2573,7 +2573,7 @@ describe('googleauth', () => {
           nock(url)
             .get('/', undefined, {
               reqheaders: {
-                Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+                authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
               },
             })
             .reply(200, data)
@@ -2750,7 +2750,7 @@ describe('googleauth', () => {
     const scope = createGTokenMock({access_token: 'initial-access-token'});
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
-      headers.get('Authorization'),
+      headers.get('authorization'),
       'Bearer initial-access-token'
     );
     scope.done();
@@ -2772,7 +2772,7 @@ describe('googleauth', () => {
     const scope = createGTokenMock({access_token: 'initial-access-token'});
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
-      headers.get('Authorization'),
+      headers.get('authorization'),
       'Bearer initial-access-token'
     );
     scope.done();
@@ -2794,7 +2794,7 @@ describe('googleauth', () => {
     const scope = createGTokenMock({access_token: 'initial-access-token'});
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
-      headers.get('Authorization'),
+      headers.get('authorization'),
       'Bearer initial-access-token'
     );
     scope.done();

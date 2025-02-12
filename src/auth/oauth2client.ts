@@ -744,7 +744,7 @@ export class OAuth2Client extends AuthClient {
     if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
       const basic = Buffer.from(`${this._clientId}:${this._clientSecret}`);
 
-      headers.set('Authorization', `Basic ${basic.toString('base64')}`);
+      headers.set('authorization', `Basic ${basic.toString('base64')}`);
     }
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
@@ -926,7 +926,7 @@ export class OAuth2Client extends AuthClient {
    * resolves with authorization header fields.
    *
    * In OAuth2Client, the result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    * @param url The optional url being authorized
    */
   async getRequestHeaders(url?: string | URL): Promise<Headers> {
@@ -953,7 +953,7 @@ export class OAuth2Client extends AuthClient {
     if (thisCreds.access_token && !this.isTokenExpiring()) {
       thisCreds.token_type = thisCreds.token_type || 'Bearer';
       const headers = new Headers({
-        Authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
+        authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
       });
       return {headers: this.addSharedMetadataHeaders(headers)};
     }
@@ -965,7 +965,7 @@ export class OAuth2Client extends AuthClient {
       if (refreshedAccessToken?.access_token) {
         this.setCredentials(refreshedAccessToken);
         const headers = new Headers({
-          Authorization: 'Bearer ' + this.credentials.access_token,
+          authorization: 'Bearer ' + this.credentials.access_token,
         });
         return {headers: this.addSharedMetadataHeaders(headers)};
       }
@@ -995,7 +995,7 @@ export class OAuth2Client extends AuthClient {
     tokens.refresh_token = credentials.refresh_token;
     this.credentials = tokens;
     const headers = new Headers({
-      Authorization: credentials.token_type + ' ' + tokens.access_token,
+      authorization: credentials.token_type + ' ' + tokens.access_token,
     });
     return {headers: this.addSharedMetadataHeaders(headers), res: r.res};
   }
@@ -1244,8 +1244,8 @@ export class OAuth2Client extends AuthClient {
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        authorization: `Bearer ${accessToken}`,
       },
       url: this.endpoints.tokenInfoUrl.toString(),
     });

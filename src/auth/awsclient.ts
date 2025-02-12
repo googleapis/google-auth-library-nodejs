@@ -231,7 +231,7 @@ export class AwsClient extends BaseExternalAccountClient {
     // The GCP STS endpoint expects the headers to be formatted as:
     // [
     //   {key: 'x-amz-date', value: '...'},
-    //   {key: 'Authorization', value: '...'},
+    //   {key: 'authorization', value: '...'},
     //   ...
     // ]
     // And then serialized as:

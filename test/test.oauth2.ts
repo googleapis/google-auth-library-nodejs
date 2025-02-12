@@ -848,7 +848,7 @@ describe('oauth2', () => {
         .defaultReplyHeaders({
           'Cache-Control':
             'public, max-age=23641, must-revalidate, no-transform',
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         })
         .get(certsPath)
         .replyWithFile(200, certsResPath);
@@ -1153,7 +1153,7 @@ describe('oauth2', () => {
               error: {code, message: 'Invalid Credentials'},
             }),
           nock('http://example.com', {
-            reqheaders: {Authorization: 'Bearer abc123'},
+            reqheaders: {authorization: 'Bearer abc123'},
           })
             .get('/access')
             .reply(200),
@@ -1199,7 +1199,7 @@ describe('oauth2', () => {
               error: {code, message: 'Invalid Credentials'},
             }),
           nock('http://example.com', {
-            reqheaders: {Authorization: 'Bearer abc123'},
+            reqheaders: {authorization: 'Bearer abc123'},
           })
             .get('/access')
             .reply(200),
@@ -1220,7 +1220,7 @@ describe('oauth2', () => {
 
       it('should call refreshHandler in request() on token expiration and no refresh token available', async () => {
         const authHeaders = {
-          Authorization: 'Bearer access_token',
+          authorization: 'Bearer access_token',
         };
         const scopes = [
           nock('http://example.com')
@@ -1262,7 +1262,7 @@ describe('oauth2', () => {
 
       it('should call refreshHandler in request() if no credentials available', async () => {
         const authHeaders = {
-          Authorization: 'Bearer access_token',
+          authorization: 'Bearer access_token',
         };
         const scopes = [
           nock('http://example.com')
@@ -1346,7 +1346,7 @@ describe('oauth2', () => {
     it('getToken should allow a code_verifier to be passed', async () => {
       const scope = nock(baseUrl, {
         reqheaders: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
         .post('/token')
@@ -1369,7 +1369,7 @@ describe('oauth2', () => {
     it('getToken should set redirect_uri if not provided in options', async () => {
       const scope = nock(baseUrl, {
         reqheaders: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
         .post('/token')
@@ -1389,7 +1389,7 @@ describe('oauth2', () => {
     it('getToken should set client_id if not provided in options', async () => {
       const scope = nock(baseUrl, {
         reqheaders: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
         .post('/token')
@@ -1410,7 +1410,7 @@ describe('oauth2', () => {
     it('getToken should override redirect_uri if provided in options', async () => {
       const scope = nock(baseUrl, {
         reqheaders: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
         .post('/token')
@@ -1433,7 +1433,7 @@ describe('oauth2', () => {
     it('getToken should override client_id if provided in options', async () => {
       const scope = nock(baseUrl, {
         reqheaders: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
         .post('/token')
@@ -1460,7 +1460,7 @@ describe('oauth2', () => {
         Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
       const scope = nock(authurl)
         .post('/oauthtoken')
-        .matchHeader('Authorization', basic_auth)
+        .matchHeader('authorization', basic_auth)
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1491,7 +1491,7 @@ describe('oauth2', () => {
       const authurl = 'https://some.example.auth/';
       const scope = nock(authurl)
         .post('/token')
-        .matchHeader('Authorization', val => val === undefined)
+        .matchHeader('authorization', val => val === undefined)
         .reply(401);
       const opts = {
         clientId: CLIENT_ID,
@@ -1543,7 +1543,7 @@ describe('oauth2', () => {
       const now = new Date().getTime();
       const scope = nock(baseUrl, {
         reqheaders: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
         .post('/token')
@@ -1594,7 +1594,7 @@ describe('oauth2', () => {
         return expectedRefreshedAccessToken;
       };
       const expectedMetadata = new Headers({
-        Authorization: 'Bearer access_token',
+        authorization: 'Bearer access_token',
       });
       assert.deepStrictEqual(client.credentials, {});
 
@@ -1617,7 +1617,7 @@ describe('oauth2', () => {
         expiry_date: new Date().getTime() - 1000,
       });
       const expectedMetadata = new Headers({
-        Authorization: 'Bearer access_token',
+        authorization: 'Bearer access_token',
       });
 
       const requestMetaData =
@@ -1632,7 +1632,7 @@ describe('oauth2', () => {
         expiry_date: new Date().getTime() + 3600 * 1000,
       };
       const expectedMetadata = new Headers({
-        Authorization: 'Bearer initial-access-token',
+        authorization: 'Bearer initial-access-token',
       });
 
       const requestMetaData =
@@ -1719,7 +1719,7 @@ describe('oauth2', () => {
 
       const scope = nock(url, {
         reqheaders: {
-          Authorization: `Bearer ${credentials.access_token}`,
+          authorization: `Bearer ${credentials.access_token}`,
         },
       })
         .get('/')

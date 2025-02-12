@@ -356,7 +356,7 @@ describe('samples for external-account', () => {
       if (req.url === '/token' && req.method === 'GET') {
         // Confirm expected header is passed along the request.
         if (req.headers['my-header'] === 'some-value') {
-          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('content-type', 'application/json');
           res.writeHead(200);
           res.end(
             JSON.stringify({
@@ -364,7 +364,7 @@ describe('samples for external-account', () => {
             })
           );
         } else {
-          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('content-type', 'application/json');
           res.writeHead(400);
           res.end(
             JSON.stringify({

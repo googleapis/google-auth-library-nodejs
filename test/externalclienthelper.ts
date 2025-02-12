@@ -84,8 +84,8 @@ export function mockGenerateAccessToken(
   const token = nockMockGenerateAccessToken.token;
   const scope = nock(saBaseUrl, {
     reqheaders: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
     },
   });
   scope
@@ -130,7 +130,7 @@ export function mockCloudResourceManager(
   response: ProjectInfo | CloudRequestError
 ): nock.Scope {
   return nock('https://cloudresourcemanager.googleapis.com', {
-    reqheaders: {Authorization: `Bearer ${accessToken}`},
+    reqheaders: {authorization: `Bearer ${accessToken}`},
   })
     .get(`/v1/projects/${projectNumber}`)
     .reply(statusCode, response);

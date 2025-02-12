@@ -98,7 +98,7 @@ describe('AwsClient', () => {
       '?Action=GetCallerIdentity&Version=2011-06-15',
     method: 'POST',
     headers: {
-      Authorization:
+      authorization:
         `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
         `${dateStamp}/${awsRegion}/sts/aws4_request, SignedHeaders=host;` +
         'x-amz-date;x-amz-security-token, Signature=' +
@@ -115,7 +115,7 @@ describe('AwsClient', () => {
       headers: [
         {
           key: 'authorization',
-          value: expectedSignedRequest.headers.Authorization,
+          value: expectedSignedRequest.headers.authorization,
         },
         {
           key: 'host',
@@ -144,7 +144,7 @@ describe('AwsClient', () => {
       '?Action=GetCallerIdentity&Version=2011-06-15',
     method: 'POST',
     headers: {
-      Authorization:
+      authorization:
         `AWS4-HMAC-SHA256 Credential=${accessKeyId}/` +
         `${dateStamp}/${awsRegion}/sts/aws4_request, SignedHeaders=host;` +
         'x-amz-date, Signature=' +
@@ -160,7 +160,7 @@ describe('AwsClient', () => {
       headers: [
         {
           key: 'authorization',
-          value: expectedSignedRequestNoToken.headers.Authorization,
+          value: expectedSignedRequestNoToken.headers.authorization,
         },
         {
           key: 'host',

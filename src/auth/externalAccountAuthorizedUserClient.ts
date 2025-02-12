@@ -219,7 +219,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
     const headers = new Headers({
-      Authorization: `Bearer ${accessTokenResponse.token}`,
+      authorization: `Bearer ${accessTokenResponse.token}`,
     });
     return this.addSharedMetadataHeaders(headers);
   }

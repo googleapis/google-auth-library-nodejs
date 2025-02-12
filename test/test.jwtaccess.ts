@@ -45,7 +45,7 @@ describe('jwtaccess', () => {
   afterEach(() => sandbox.restore());
 
   function removeBearerFromAuthorizationHeader(headers: Headers): string {
-    return (headers.get('Authorization') || '').replace('Bearer ', '');
+    return (headers.get('authorization') || '').replace('Bearer ', '');
   }
 
   it('getRequestHeaders should create a signed JWT token as the access token', () => {

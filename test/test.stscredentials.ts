@@ -263,7 +263,7 @@ describe('StsCredentials', () => {
           expectedRequest,
           Object.assign(
             {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
+              authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
             },
             additionalHeaders
           )
@@ -292,7 +292,7 @@ describe('StsCredentials', () => {
           stsSuccessfulResponse,
           expectedPartialRequest,
           {
-            Authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
+            authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
           }
         );
         const stsCredentials = new StsCredentials(
@@ -319,7 +319,7 @@ describe('StsCredentials', () => {
           expectedRequest,
           Object.assign(
             {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
+              authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
             },
             additionalHeaders
           )

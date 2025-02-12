@@ -716,7 +716,7 @@ describe('DownscopedClient', () => {
   describe('getRequestHeader()', () => {
     it('should inject the authorization headers', async () => {
       const expectedHeaders = new Headers({
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       });
       const scope = mockStsTokenExchange([
         {
@@ -743,7 +743,7 @@ describe('DownscopedClient', () => {
     it('should inject the authorization and metadata headers', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const expectedHeaders = new Headers({
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       });
       const scope = mockStsTokenExchange([
@@ -803,7 +803,7 @@ describe('DownscopedClient', () => {
     it('should process HTTP request with authorization header', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const exampleRequest = {
@@ -857,7 +857,7 @@ describe('DownscopedClient', () => {
     it('should process headerless HTTP request', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const exampleRequest = {
@@ -943,7 +943,7 @@ describe('DownscopedClient', () => {
 
     it('should trigger callback on success when provided', done => {
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1000,7 +1000,7 @@ describe('DownscopedClient', () => {
     it('should trigger callback on error when provided', done => {
       const errorMessage = 'Bad Request';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1055,10 +1055,10 @@ describe('DownscopedClient', () => {
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'DOWNSCOPED_CLIENT_ACCESS_TOKEN_1';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const authHeaders2 = {
-        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1128,7 +1128,7 @@ describe('DownscopedClient', () => {
 
     it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1182,10 +1182,10 @@ describe('DownscopedClient', () => {
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'DOWNSCOPED_CLIENT_ACCESS_TOKEN_1';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const authHeaders2 = {
-        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',

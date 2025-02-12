@@ -425,7 +425,7 @@ describe('impersonated', () => {
     impersonated.credentials.access_token = 'initial-access-token';
     impersonated.credentials.expiry_date = Date.now() - 10000;
     const headers = await impersonated.getRequestHeaders();
-    assert.strictEqual(headers.get('Authorization'), 'Bearer qwerty345');
+    assert.strictEqual(headers.get('authorization'), 'Bearer qwerty345');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
       tomorrow.getTime()

@@ -160,7 +160,7 @@ export interface CredentialsClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    * @param url The URI being authorized.
    */
   getRequestHeaders(url?: string | URL): Promise<Headers>;
@@ -252,7 +252,7 @@ export abstract class AuthClient
    *
    * The result has the form:
    * ```ts
-   * new Headers({'Authorization': 'Bearer <access_token_value>'});
+   * new Headers({'authorization': 'Bearer <access_token_value>'});
    * ```
    *
    * @param url The URI being authorized.
@@ -297,7 +297,7 @@ export abstract class AuthClient
   }
 
   /**
-   * Adds the `x-goog-user-project` and `Authorization` headers to the target Headers
+   * Adds the `x-goog-user-project` and `authorization` headers to the target Headers
    * object, if they exist on the source.
    *
    * @param target the headers to target
@@ -309,14 +309,14 @@ export abstract class AuthClient
     source: Headers
   ): T {
     const xGoogUserProject = source.get('x-goog-user-project');
-    const authorizationHeader = source.get('Authorization');
+    const authorizationHeader = source.get('authorization');
 
     if (xGoogUserProject) {
       target.set('x-goog-user-project', xGoogUserProject);
     }
 
     if (authorizationHeader) {
-      target.set('Authorization', authorizationHeader);
+      target.set('authorization', authorizationHeader);
     }
 
     return target;

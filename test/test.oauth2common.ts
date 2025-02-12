@@ -82,7 +82,7 @@ describe('OAuthClientAuthHandler', () => {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
@@ -101,7 +101,7 @@ describe('OAuthClientAuthHandler', () => {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
@@ -111,7 +111,7 @@ describe('OAuthClientAuthHandler', () => {
 
     const expectedOptions = prepareExpectedOptions(options);
     expectedOptions.headers.set(
-      'Authorization',
+      'authorization',
       `Basic ${expectedBase64EncodedCred}`
     );
 
@@ -125,7 +125,7 @@ describe('OAuthClientAuthHandler', () => {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
@@ -135,7 +135,7 @@ describe('OAuthClientAuthHandler', () => {
 
     const expectedOptions = prepareExpectedOptions(options);
     expectedOptions.headers.set(
-      'Authorization',
+      'authorization',
       `Basic ${expectedBase64EncodedCredNoSecret}`
     );
 
@@ -149,13 +149,13 @@ describe('OAuthClientAuthHandler', () => {
       url: 'https://www.example.com/path/to/api',
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
     };
 
     const expectedOptions = prepareExpectedOptions(options);
     expectedOptions.headers.set(
-      'Authorization',
+      'authorization',
       `Basic ${expectedBase64EncodedCred}`
     );
 
@@ -199,7 +199,7 @@ describe('OAuthClientAuthHandler', () => {
       const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
       const originalOptions: GaxiosOptions = {
         headers: {
-          'Content-Type': 'text/html',
+          'content-type': 'text/html',
         },
         method: 'POST',
         url: 'https://www.example.com/path/to/api',
@@ -216,7 +216,7 @@ describe('OAuthClientAuthHandler', () => {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
         data: {
           key1: 'value1',
@@ -241,7 +241,7 @@ describe('OAuthClientAuthHandler', () => {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
         data: {
           key1: 'value1',
@@ -266,7 +266,7 @@ describe('OAuthClientAuthHandler', () => {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
       };
 
@@ -329,7 +329,7 @@ describe('OAuthClientAuthHandler', () => {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
         data: querystring.stringify({key1: 'value1', key2: 'value2'}),
       };
@@ -352,7 +352,7 @@ describe('OAuthClientAuthHandler', () => {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       };
 
@@ -374,7 +374,7 @@ describe('OAuthClientAuthHandler', () => {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
@@ -383,9 +383,11 @@ describe('OAuthClientAuthHandler', () => {
     };
 
     const expectedOptions = prepareExpectedOptions(options);
-    expectedOptions.headers.set('Authorization', `Bearer ${bearerToken}`);
+    expectedOptions.headers.set('authorization', `Bearer ${bearerToken}`);
 
-    handler.testApplyClientAuthenticationOptions(options);
+    handler.testApplyClientAuthenticationOptions(options, bearerToken);
+
+    assert(options.headers instanceof Headers);
     assert.deepStrictEqual(options, expectedOptions);
   });
 
@@ -396,7 +398,7 @@ describe('OAuthClientAuthHandler', () => {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
@@ -405,9 +407,9 @@ describe('OAuthClientAuthHandler', () => {
     };
 
     const expectedOptions = prepareExpectedOptions(options);
-    expectedOptions.headers.set('Authorization', `Bearer ${bearerToken}`);
+    expectedOptions.headers.set('authorization', `Bearer ${bearerToken}`);
 
-    handler.testApplyClientAuthenticationOptions(options);
+    handler.testApplyClientAuthenticationOptions(options, bearerToken);
     assert.deepStrictEqual(options, expectedOptions);
   });
 
@@ -418,7 +420,7 @@ describe('OAuthClientAuthHandler', () => {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
@@ -427,9 +429,9 @@ describe('OAuthClientAuthHandler', () => {
     };
 
     const expectedOptions = prepareExpectedOptions(options);
-    expectedOptions.headers.set('Authorization', `Bearer ${bearerToken}`);
+    expectedOptions.headers.set('authorization', `Bearer ${bearerToken}`);
 
-    handler.testApplyClientAuthenticationOptions(options);
+    handler.testApplyClientAuthenticationOptions(options, bearerToken);
     assert.deepStrictEqual(options, expectedOptions);
   });
 });

@@ -415,7 +415,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   describe('getRequestHeaders()', () => {
     it('should inject the authorization headers', async () => {
       const expectedHeaders = new Headers({
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
         'x-goog-user-project': 'quotaProjectId',
       });
       const scope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
@@ -474,7 +474,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     it('should process HTTP request with authorization header', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
@@ -562,7 +562,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should trigger callback on success when provided', done => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -616,7 +616,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     it('should trigger callback on error when provided', done => {
       const errorMessage = 'Bad Request';
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -666,7 +666,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should retry on 401 on forceRefreshOnFailure=true', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -721,7 +721,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -770,7 +770,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should not retry more than once', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -824,7 +824,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should process headerless HTTP request', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
