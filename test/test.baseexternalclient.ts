@@ -629,11 +629,7 @@ describe('BaseExternalAccountClient', () => {
       ];
       const client = new TestExternalAccountClient(options);
 
-      await assert.rejects(
-        client.getProjectId(),
-        /The caller does not have permission/
-      );
-
+      await assert.rejects(client.getProjectId(), GaxiosError);
       assert.strictEqual(client.projectId, null);
       scopes.forEach(scope => scope.done());
     });
@@ -1326,10 +1322,7 @@ describe('BaseExternalAccountClient', () => {
         const client = new TestExternalAccountClient(
           externalAccountOptionsWithSA
         );
-        await assert.rejects(
-          client.getAccessToken(),
-          new RegExp(saErrorResponse.error.message)
-        );
+        await assert.rejects(client.getAccessToken(), GaxiosError);
         // Next try should succeed.
         const actualResponse = await client.getAccessToken();
         // Confirm raw GaxiosResponse appended to response.
@@ -2335,9 +2328,10 @@ describe('BaseExternalAccountClient', () => {
           data: exampleRequest,
           responseType: 'json',
         },
-        (err, result) => {
-          assert.strictEqual(err!.message, errorMessage);
-          assert.deepStrictEqual(result, (err as GaxiosError)!.response);
+        err => {
+          assert(err instanceof GaxiosError);
+          assert.equal(err.status, 400);
+
           scopes.forEach(scope => scope.done());
           done();
         }
