@@ -14,7 +14,6 @@
 
 import * as assert from 'assert';
 import * as nock from 'nock';
-import * as qs from 'querystring';
 import {GetAccessTokenResponse} from '../src/auth/authclient';
 import {OAuthErrorResponse} from '../src/auth/oauth2common';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
@@ -66,14 +65,14 @@ export function mockStsTokenExchange(
 ): nock.Scope {
   const headers = Object.assign(
     {
-      'content-type': 'application/x-www-form-urlencoded',
+      'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
     },
     additionalHeaders || {}
   );
   const scope = nock(baseURL, {reqheaders: headers});
   nockParams.forEach(nockMockStsToken => {
     scope
-      .post(path, qs.stringify(nockMockStsToken.request))
+      .post(path, nockMockStsToken.request)
       .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
   });
   return scope;
@@ -85,8 +84,8 @@ export function mockGenerateAccessToken(
   const token = nockMockGenerateAccessToken.token;
   const scope = nock(saBaseUrl, {
     reqheaders: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
     },
   });
   scope
@@ -131,7 +130,7 @@ export function mockCloudResourceManager(
   response: ProjectInfo | CloudRequestError
 ): nock.Scope {
   return nock('https://cloudresourcemanager.googleapis.com', {
-    reqheaders: {Authorization: `Bearer ${accessToken}`},
+    reqheaders: {authorization: `Bearer ${accessToken}`},
   })
     .get(`/v1/projects/${projectNumber}`)
     .reply(statusCode, response);

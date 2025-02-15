@@ -149,7 +149,7 @@ describe('refresh', () => {
     await refresh.fromStream(stream);
 
     const headers = await refresh.getRequestHeaders();
-    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    assert.strictEqual(headers.get('x-goog-user-project'), 'my-quota-project');
     req.done();
   });
 
@@ -168,7 +168,7 @@ describe('refresh', () => {
       expiry_date: new Date().getTime() + eagerRefreshThresholdMillis + 1000,
     };
     const headers = await refresh.getRequestHeaders();
-    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    assert.strictEqual(headers.get('x-goog-user-project'), 'my-quota-project');
   });
 
   it('getRequestHeaders should populate x-goog-user-project header if quota_project_id present and token has expired', async () => {
@@ -186,7 +186,7 @@ describe('refresh', () => {
       expiry_date: new Date().getTime() - 1,
     };
     const headers = await refresh.getRequestHeaders();
-    assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+    assert.strictEqual(headers.get('x-goog-user-project'), 'my-quota-project');
     req.done();
   });
 });

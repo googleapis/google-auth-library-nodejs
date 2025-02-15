@@ -160,10 +160,10 @@ export interface CredentialsClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    * @param url The URI being authorized.
    */
-  getRequestHeaders(url?: string): Promise<Headers>;
+  getRequestHeaders(url?: string | URL): Promise<Headers>;
 
   /**
    * Provides an alternative Gaxios request implementation with auth credentials
@@ -251,10 +251,13 @@ export abstract class AuthClient
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * ```ts
+   * new Headers({'authorization': 'Bearer <access_token_value>'});
+   * ```
+   *
    * @param url The URI being authorized.
    */
-  abstract getRequestHeaders(url?: string): Promise<Headers>;
+  abstract getRequestHeaders(url?: string | URL): Promise<Headers>;
 
   /**
    * @return A promise that resolves with the current GCP access token
@@ -285,34 +288,57 @@ export abstract class AuthClient
     // the x-goog-user-project header, to indicate an alternate account for
     // billing and quota:
     if (
-      !headers['x-goog-user-project'] && // don't override a value the user sets.
+      !headers.has('x-goog-user-project') && // don't override a value the user sets.
       this.quotaProjectId
     ) {
-      headers['x-goog-user-project'] = this.quotaProjectId;
+      headers.set('x-goog-user-project', this.quotaProjectId);
     }
     return headers;
+  }
+
+  /**
+   * Adds the `x-goog-user-project` and `authorization` headers to the target Headers
+   * object, if they exist on the source.
+   *
+   * @param target the headers to target
+   * @param source the headers to source from
+   * @returns the target headers
+   */
+  protected addUserProjectAndAuthHeaders<T extends Headers>(
+    target: T,
+    source: Headers
+  ): T {
+    const xGoogUserProject = source.get('x-goog-user-project');
+    const authorizationHeader = source.get('authorization');
+
+    if (xGoogUserProject) {
+      target.set('x-goog-user-project', xGoogUserProject);
+    }
+
+    if (authorizationHeader) {
+      target.set('authorization', authorizationHeader);
+    }
+
+    return target;
   }
 
   static readonly DEFAULT_REQUEST_INTERCEPTOR: Parameters<
     Gaxios['interceptors']['request']['add']
   >[0] = {
     resolved: async config => {
-      const headers = config.headers || {};
-
       // Set `x-goog-api-client`, if not already set
-      if (!headers['x-goog-api-client']) {
+      if (!config.headers.has('x-goog-api-client')) {
         const nodeVersion = process.version.replace(/^v/, '');
-        headers['x-goog-api-client'] = `gl-node/${nodeVersion}`;
+        config.headers.set('x-goog-api-client', `gl-node/${nodeVersion}`);
       }
 
       // Set `User-Agent`
-      if (!headers['User-Agent']) {
-        headers['User-Agent'] = USER_AGENT;
-      } else if (!headers['User-Agent'].includes(`${PRODUCT_NAME}/`)) {
-        headers['User-Agent'] = `${headers['User-Agent']} ${USER_AGENT}`;
+      const userAgent = config.headers.get('User-Agent');
+      if (!userAgent) {
+        config.headers.set('User-Agent', USER_AGENT);
+      } else if (!userAgent.includes(`${PRODUCT_NAME}/`)) {
+        config.headers.set('User-Agent', `${userAgent} ${USER_AGENT}`);
       }
-
-      config.headers = headers;
 
       return config;
     },
@@ -337,9 +363,8 @@ export abstract class AuthClient
   }
 }
 
-export interface Headers {
-  [index: string]: string;
-}
+// TypeScript does not have `HeadersInit` in the standard types yet
+export type HeadersInit = ConstructorParameters<typeof Headers>[0];
 
 export interface GetAccessTokenResponse {
   token?: string | null;

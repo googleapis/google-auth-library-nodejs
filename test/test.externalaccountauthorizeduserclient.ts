@@ -62,7 +62,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   ): nock.Scope {
     const headers = Object.assign(
       {
-        'content-type': 'application/x-www-form-urlencoded',
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
       },
       additionalHeaders || {}
     );
@@ -275,19 +275,19 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       // we need timers/`setTimeout` for this test
       clock.restore();
 
-      const expectedRequest = new URLSearchParams({
+      const expectedRequest = {
         grant_type: 'refresh_token',
         refresh_token: 'refreshToken',
-      });
+      };
 
       const scope = nock(BASE_URL, {
         reqheaders: {
-          'content-type': 'application/x-www-form-urlencoded',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
-        .post(REFRESH_PATH, expectedRequest.toString())
-        .replyWithError({code: 'ETIMEDOUT'})
-        .post(REFRESH_PATH, expectedRequest.toString())
+        .post(REFRESH_PATH, expectedRequest)
+        .replyWithError('ETIMEOUT')
+        .post(REFRESH_PATH, expectedRequest)
         .reply(200, successfulRefreshResponse);
 
       const client = new ExternalAccountAuthorizedUserClient(
@@ -414,10 +414,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
   describe('getRequestHeaders()', () => {
     it('should inject the authorization headers', async () => {
-      const expectedHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+      const expectedHeaders = new Headers({
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
         'x-goog-user-project': 'quotaProjectId',
-      };
+      });
       const scope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
         {
           statusCode: 200,
@@ -474,7 +474,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     it('should process HTTP request with authorization header', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
@@ -519,7 +519,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -555,7 +554,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           url: 'https://example.com/api',
           method: 'POST',
           data: exampleRequest,
-          responseType: 'json',
         }),
         getErrorFromOAuthErrorResponse(errorResponse)
       );
@@ -564,7 +562,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should trigger callback on success when provided', done => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -605,7 +603,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         (err, result) => {
           assert.strictEqual(err, null);
@@ -619,7 +616,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     it('should trigger callback on error when provided', done => {
       const errorMessage = 'Bad Request';
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -656,7 +653,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         err => {
           assert(err instanceof GaxiosError);
@@ -670,7 +666,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should retry on 401 on forceRefreshOnFailure=true', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -717,7 +713,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -726,7 +721,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -764,7 +759,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 401,
@@ -776,7 +770,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should not retry more than once', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -820,7 +814,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 403,
@@ -831,7 +824,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should process headerless HTTP request', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -867,7 +860,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         url: 'https://example.com/api',
         method: 'POST',
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);

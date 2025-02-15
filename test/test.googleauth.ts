@@ -62,7 +62,7 @@ import {stringify} from 'querystring';
 import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
 import {IMPERSONATED_ACCOUNT_TYPE} from '../src/auth/impersonated';
 import {USER_REFRESH_ACCOUNT_TYPE} from '../src/auth/refreshclient';
-import {GaxiosError} from 'gaxios';
+import {Gaxios, GaxiosError} from 'gaxios';
 
 nock.disableNetConnect();
 
@@ -111,8 +111,8 @@ describe('googleauth', () => {
     'application_default_credentials.json'
   );
   function createGTokenMock(body: CredentialRequest) {
-    return nock('https://www.googleapis.com')
-      .post('/oauth2/v4/token')
+    return nock('https://oauth2.googleapis.com')
+      .post('/token')
       .reply(200, body);
   }
 
@@ -284,9 +284,9 @@ describe('googleauth', () => {
     }
 
     it('should accept and use an `AuthClient`', async () => {
-      const customRequestHeaders = {
+      const customRequestHeaders = new Headers({
         'my-unique': 'header',
-      };
+      });
 
       // Using a custom `AuthClient` to ensure any `AuthClient` would work
       class MyAuthClient extends AuthClient {
@@ -295,7 +295,7 @@ describe('googleauth', () => {
         }
 
         async getRequestHeaders() {
-          return {...customRequestHeaders};
+          return Gaxios.mergeHeaders({...customRequestHeaders});
         }
 
         request = OAuth2Client.prototype.request.bind(this);
@@ -316,9 +316,12 @@ describe('googleauth', () => {
       const client = await auth.getClient();
 
       assert.equal(client.apiKey, apiKey);
-      assert.deepEqual(await auth.getRequestHeaders(), {
-        'X-Goog-Api-Key': apiKey,
-      });
+      assert.deepEqual(
+        await auth.getRequestHeaders(),
+        new Headers({
+          'X-Goog-Api-Key': apiKey,
+        })
+      );
     });
 
     it('should not accept both an `apiKey` and `credentials`', async () => {
@@ -364,7 +367,7 @@ describe('googleauth', () => {
       const scope = nock(BASE_URL)
         .post(ENDPOINT)
         .reply(function () {
-          assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
+          assert.strictEqual(this.req.headers['x-goog-api-key'], API_KEY);
           return [200, RESPONSE_BODY];
         });
       const client = auth.fromAPIKey(API_KEY);
@@ -380,7 +383,7 @@ describe('googleauth', () => {
     it('should put the api key in the headers', async () => {
       const client = auth.fromAPIKey(API_KEY);
       const headers = await client.getRequestHeaders();
-      assert.strictEqual(headers['X-Goog-Api-Key'], API_KEY);
+      assert.strictEqual(headers.get('X-Goog-Api-Key'), API_KEY);
     });
 
     it('should make a request while preserving original parameters', async () => {
@@ -389,7 +392,7 @@ describe('googleauth', () => {
         .post(ENDPOINT)
         .query({test: OTHER_QS_PARAM.test})
         .reply(function (uri) {
-          assert.strictEqual(this.req.headers['x-goog-api-key'][0], API_KEY);
+          assert.strictEqual(this.req.headers['x-goog-api-key'], API_KEY);
           assert(uri.indexOf('test=' + OTHER_QS_PARAM.test) > -1);
           return [200, RESPONSE_BODY];
         });
@@ -1312,7 +1315,10 @@ describe('googleauth', () => {
       scopes.push(createGetProjectIdNock());
       const headers = await auth.getRequestHeaders();
       scopes.forEach(s => s.done());
-      assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
+      assert.deepStrictEqual(
+        headers,
+        new Headers({authorization: 'Bearer abc123'})
+      );
     });
 
     it('should authorize the request', async () => {
@@ -1320,7 +1326,10 @@ describe('googleauth', () => {
       scopes.push(createGetProjectIdNock());
       const opts = await auth.authorizeRequest({url: 'http://example.com'});
       scopes.forEach(s => s.done());
-      assert.deepStrictEqual(opts.headers, {Authorization: 'Bearer abc123'});
+      assert.deepStrictEqual(
+        opts.headers,
+        new Headers({authorization: 'Bearer abc123'})
+      );
     });
 
     it('should get the current environment if GCE', async () => {
@@ -1470,7 +1479,10 @@ describe('googleauth', () => {
       );
       const auth = new GoogleAuth();
       const headers = await auth.getRequestHeaders();
-      assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+      assert.strictEqual(
+        headers.get('x-goog-user-project'),
+        'my-quota-project'
+      );
       tokenReq.done();
     });
 
@@ -1480,7 +1492,7 @@ describe('googleauth', () => {
       );
       const auth = new GoogleAuth();
       const headers = await auth.getRequestHeaders();
-      assert.strictEqual(headers['x-goog-user-project'], undefined);
+      assert.strictEqual(headers.get('x-goog-user-project'), null);
       tokenReq.done();
     });
 
@@ -1492,7 +1504,10 @@ describe('googleauth', () => {
       const client = await auth.getClient();
       assert(client instanceof UserRefreshClient);
       const headers = await client.getRequestHeaders();
-      assert.strictEqual(headers['x-goog-user-project'], 'my-quota-project');
+      assert.strictEqual(
+        headers.get('x-goog-user-project'),
+        'my-quota-project'
+      );
       tokenReq.done();
     });
 
@@ -1507,7 +1522,7 @@ describe('googleauth', () => {
         .post(ENDPOINT)
         .reply(function () {
           assert.strictEqual(
-            this.req.headers['x-goog-user-project'][0],
+            this.req.headers['x-goog-user-project'],
             'my-quota-project'
           );
           return [200, RESPONSE_BODY];
@@ -1783,8 +1798,8 @@ describe('googleauth', () => {
                 },
                 {
                   reqheaders: {
-                    Authorization: `Bearer ${saSuccessResponse.accessToken}`,
-                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${saSuccessResponse.accessToken}`,
+                    'content-type': 'application/json',
                   },
                 }
               )
@@ -2478,8 +2493,8 @@ describe('googleauth', () => {
                 },
                 {
                   reqheaders: {
-                    Authorization: `Bearer ${saSuccessResponse.accessToken}`,
-                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${saSuccessResponse.accessToken}`,
+                    'content-type': 'application/json',
                   },
                 }
               )
@@ -2525,9 +2540,12 @@ describe('googleauth', () => {
         const auth = new GoogleAuth({keyFilename});
         const headers = await auth.getRequestHeaders();
 
-        assert.deepStrictEqual(headers, {
-          Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
-        });
+        assert.deepStrictEqual(
+          headers,
+          new Headers({
+            authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+          })
+        );
         scopes.forEach(s => s.done());
       });
 
@@ -2537,9 +2555,12 @@ describe('googleauth', () => {
         const auth = new GoogleAuth({keyFilename});
         const opts = await auth.authorizeRequest({url: 'http://example.com'});
 
-        assert.deepStrictEqual(opts.headers, {
-          Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
-        });
+        assert.deepStrictEqual(
+          opts.headers,
+          new Headers({
+            authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+          })
+        );
         scopes.forEach(s => s.done());
       });
 
@@ -2552,7 +2573,7 @@ describe('googleauth', () => {
           nock(url)
             .get('/', undefined, {
               reqheaders: {
-                Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+                authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
               },
             })
             .reply(200, data)
@@ -2729,7 +2750,7 @@ describe('googleauth', () => {
     const scope = createGTokenMock({access_token: 'initial-access-token'});
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
-      headers.Authorization,
+      headers.get('authorization'),
       'Bearer initial-access-token'
     );
     scope.done();
@@ -2751,7 +2772,7 @@ describe('googleauth', () => {
     const scope = createGTokenMock({access_token: 'initial-access-token'});
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
-      headers.Authorization,
+      headers.get('authorization'),
       'Bearer initial-access-token'
     );
     scope.done();
@@ -2773,7 +2794,7 @@ describe('googleauth', () => {
     const scope = createGTokenMock({access_token: 'initial-access-token'});
     const headers = await jwt.getRequestHeaders();
     assert.deepStrictEqual(
-      headers.Authorization,
+      headers.get('authorization'),
       'Bearer initial-access-token'
     );
     scope.done();

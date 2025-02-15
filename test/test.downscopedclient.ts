@@ -31,7 +31,7 @@ import {
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
-import {GetAccessTokenResponse, Headers} from '../src/auth/authclient';
+import {GetAccessTokenResponse} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -715,9 +715,9 @@ describe('DownscopedClient', () => {
 
   describe('getRequestHeader()', () => {
     it('should inject the authorization headers', async () => {
-      const expectedHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
-      };
+      const expectedHeaders = new Headers({
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -742,10 +742,10 @@ describe('DownscopedClient', () => {
 
     it('should inject the authorization and metadata headers', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
-      const expectedHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      const expectedHeaders = new Headers({
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
-      };
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -803,7 +803,7 @@ describe('DownscopedClient', () => {
     it('should process HTTP request with authorization header', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const exampleRequest = {
@@ -848,7 +848,6 @@ describe('DownscopedClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -858,7 +857,7 @@ describe('DownscopedClient', () => {
     it('should process headerless HTTP request', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const exampleRequest = {
@@ -899,7 +898,6 @@ describe('DownscopedClient', () => {
         url: 'https://example.com/api',
         method: 'POST',
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -937,7 +935,6 @@ describe('DownscopedClient', () => {
           url: 'https://example.com/api',
           method: 'POST',
           data: exampleRequest,
-          responseType: 'json',
         }),
         getErrorFromOAuthErrorResponse(errorResponse)
       );
@@ -946,7 +943,7 @@ describe('DownscopedClient', () => {
 
     it('should trigger callback on success when provided', done => {
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -990,7 +987,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         (err, result) => {
           assert.strictEqual(err, null);
@@ -1004,7 +1000,7 @@ describe('DownscopedClient', () => {
     it('should trigger callback on error when provided', done => {
       const errorMessage = 'Bad Request';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1044,7 +1040,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         err => {
           assert(err instanceof GaxiosError);
@@ -1060,10 +1055,10 @@ describe('DownscopedClient', () => {
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'DOWNSCOPED_CLIENT_ACCESS_TOKEN_1';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const authHeaders2 = {
-        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1125,7 +1120,6 @@ describe('DownscopedClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -1134,7 +1128,7 @@ describe('DownscopedClient', () => {
 
     it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1175,7 +1169,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 401,
@@ -1189,10 +1182,10 @@ describe('DownscopedClient', () => {
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'DOWNSCOPED_CLIENT_ACCESS_TOKEN_1';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const authHeaders2 = {
-        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -1251,7 +1244,6 @@ describe('DownscopedClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 403,

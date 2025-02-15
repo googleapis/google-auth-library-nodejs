@@ -16,7 +16,6 @@ import * as jws from 'jws';
 import * as stream from 'stream';
 
 import {JWTInput} from './credentials';
-import {Headers} from './authclient';
 import {LRUCache} from '../util';
 
 const DEFAULT_HEADER: jws.Header = {
@@ -107,7 +106,10 @@ export class JWTAccess {
       cachedToken &&
       cachedToken.expiration - now > this.eagerRefreshThresholdMillis
     ) {
-      return cachedToken.headers;
+      // Copying headers into a new `Headers` object to avoid potential leakage -
+      // as this is a cache it is possible for multiple requests to reference this
+      // same value.
+      return new Headers(cachedToken.headers);
     }
 
     const iat = Math.floor(Date.now() / 1000);
@@ -157,7 +159,7 @@ export class JWTAccess {
 
     // Sign the jwt and add it to the cache
     const signedJWT = jws.sign({header, payload, secret: this.key});
-    const headers = {Authorization: `Bearer ${signedJWT}`};
+    const headers = new Headers({authorization: `Bearer ${signedJWT}`});
     this.cache.set(key, {
       expiration: exp * 1000,
       headers,

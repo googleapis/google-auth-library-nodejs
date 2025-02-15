@@ -141,9 +141,11 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       ) {
         const {tokens} = await this.refreshToken();
         return {
-          headers: this.addSharedMetadataHeaders({
-            Authorization: `Bearer ${tokens.id_token}`,
-          }),
+          headers: this.addSharedMetadataHeaders(
+            new Headers({
+              authorization: `Bearer ${tokens.id_token}`,
+            })
+          ),
         };
       } else {
         // no scopes have been set, but a uri has been provided. Use JWTAccess
@@ -184,7 +186,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     } else {
       // If no audience, apiKey, or scopes are provided, we should not attempt
       // to populate any headers:
-      return {headers: {}};
+      return {headers: new Headers()};
     }
   }
 

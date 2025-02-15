@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, Headers, BodyResponseCallback} from './authclient';
+import {AuthClient, BodyResponseCallback} from './authclient';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
@@ -21,6 +21,7 @@ import {
   OAuthErrorResponse,
 } from './oauth2common';
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -108,26 +109,19 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
    */
   async refreshToken(
     refreshToken: string,
-    additionalHeaders?: Headers
+    headers?: HeadersInit
   ): Promise<TokenRefreshResponse> {
-    const values = new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-    });
-
-    const headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      ...additionalHeaders,
-    };
-
     const opts: GaxiosOptions = {
       ...ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
       url: this.#tokenRefreshEndpoint,
       method: 'POST',
       headers,
-      data: values.toString(),
-      responseType: 'json',
+      data: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+      }),
     };
+
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
 
@@ -224,9 +218,9 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
 
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
-    const headers: Headers = {
-      Authorization: `Bearer ${accessTokenResponse.token}`,
-    };
+    const headers = new Headers({
+      authorization: `Bearer ${accessTokenResponse.token}`,
+    });
     return this.addSharedMetadataHeaders(headers);
   }
 
@@ -262,14 +256,10 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     let response: GaxiosResponse;
     try {
       const requestHeaders = await this.getRequestHeaders();
-      opts.headers = opts.headers || {};
-      if (requestHeaders && requestHeaders['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] =
-          requestHeaders['x-goog-user-project'];
-      }
-      if (requestHeaders && requestHeaders.Authorization) {
-        opts.headers.Authorization = requestHeaders.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
+
       response = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;

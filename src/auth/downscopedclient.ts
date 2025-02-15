@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -25,7 +26,6 @@ import {
   AuthClient,
   AuthClientOptions,
   GetAccessTokenResponse,
-  Headers,
   BodyResponseCallback,
 } from './authclient';
 
@@ -237,13 +237,13 @@ export class DownscopedClient extends AuthClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    */
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
-    const headers: Headers = {
-      Authorization: `Bearer ${accessTokenResponse.token}`,
-    };
+    const headers = new Headers({
+      authorization: `Bearer ${accessTokenResponse.token}`,
+    });
     return this.addSharedMetadataHeaders(headers);
   }
 
@@ -288,14 +288,10 @@ export class DownscopedClient extends AuthClient {
     let response: GaxiosResponse;
     try {
       const requestHeaders = await this.getRequestHeaders();
-      opts.headers = opts.headers || {};
-      if (requestHeaders && requestHeaders['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] =
-          requestHeaders['x-goog-user-project'];
-      }
-      if (requestHeaders && requestHeaders.Authorization) {
-        opts.headers.Authorization = requestHeaders.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
+
       response = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;

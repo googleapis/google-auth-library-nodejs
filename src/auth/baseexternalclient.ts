@@ -26,7 +26,6 @@ import {
   AuthClient,
   AuthClientOptions,
   GetAccessTokenResponse,
-  Headers,
   BodyResponseCallback,
 } from './authclient';
 import * as sts from './stscredentials';
@@ -416,13 +415,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    */
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
-    const headers: Headers = {
-      Authorization: `Bearer ${accessTokenResponse.token}`,
-    };
+    const headers = new Headers({
+      authorization: `Bearer ${accessTokenResponse.token}`,
+    });
     return this.addSharedMetadataHeaders(headers);
   }
 
@@ -480,7 +479,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         ...BaseExternalAccountClient.RETRY_CONFIG,
         headers,
         url: `${this.cloudResourceManagerURL.toString()}${projectNumber}`,
-        responseType: 'json',
       });
       this.projectId = response.data.projectId;
       return this.projectId;
@@ -502,14 +500,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     let response: GaxiosResponse;
     try {
       const requestHeaders = await this.getRequestHeaders();
-      opts.headers = opts.headers || {};
-      if (requestHeaders && requestHeaders['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] =
-          requestHeaders['x-goog-user-project'];
-      }
-      if (requestHeaders && requestHeaders.Authorization) {
-        opts.headers.Authorization = requestHeaders.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
+
       response = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
@@ -588,9 +582,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       !this.clientAuth && this.workforcePoolUserProject
         ? {userProject: this.workforcePoolUserProject}
         : undefined;
-    const additionalHeaders: Headers = {
+    const additionalHeaders = new Headers({
       'x-goog-api-client': this.getMetricsHeaderValue(),
-    };
+    });
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       additionalHeaders,
@@ -668,14 +662,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       url: this.serviceAccountImpersonationUrl!,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
       },
       data: {
         scope: this.getScopesArray(),
         lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
-      responseType: 'json',
     };
     const response =
       await this.transporter.request<IamGenerateAccessTokenResponse>(opts);

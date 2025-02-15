@@ -44,11 +44,15 @@ describe('jwtaccess', () => {
   });
   afterEach(() => sandbox.restore());
 
+  function removeBearerFromAuthorizationHeader(headers: Headers): string {
+    return (headers.get('authorization') || '').replace('Bearer ', '');
+  }
+
   it('getRequestHeaders should create a signed JWT token as the access token', () => {
     const client = new JWTAccess(email, keys.private);
     const headers = client.getRequestHeaders(testUri);
     assert.notStrictEqual(null, headers, 'an creds object should be present');
-    const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    const decoded = jws.decode(removeBearerFromAuthorizationHeader(headers));
     assert(decoded);
     assert.deepStrictEqual(decoded.header, {alg: 'RS256', typ: 'JWT'});
     const payload = decoded.payload;
@@ -60,7 +64,7 @@ describe('jwtaccess', () => {
   it('getRequestHeaders should sign with scopes if user supplied scopes', () => {
     const client = new JWTAccess(email, keys.private);
     const headers = client.getRequestHeaders(testUri, undefined, 'myfakescope');
-    const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    const decoded = jws.decode(removeBearerFromAuthorizationHeader(headers));
     assert(decoded);
     const payload = decoded.payload;
     assert.strictEqual('myfakescope', payload.scope);
@@ -69,7 +73,7 @@ describe('jwtaccess', () => {
   it('getRequestHeaders should sign with default if user did not supply scopes', () => {
     const client = new JWTAccess(email, keys.private);
     const headers = client.getRequestHeaders(testUri);
-    const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    const decoded = jws.decode(removeBearerFromAuthorizationHeader(headers));
     assert(decoded);
     const payload = decoded.payload;
     assert.strictEqual(testUri, payload.aud);
@@ -78,7 +82,7 @@ describe('jwtaccess', () => {
   it('getRequestHeaders should set key id in header when available', () => {
     const client = new JWTAccess(email, keys.private, '101');
     const headers = client.getRequestHeaders(testUri);
-    const decoded = jws.decode(headers.Authorization.replace('Bearer ', ''));
+    const decoded = jws.decode(removeBearerFromAuthorizationHeader(headers));
     assert(decoded);
     assert.deepStrictEqual(decoded.header, {
       alg: 'RS256',
@@ -99,7 +103,7 @@ describe('jwtaccess', () => {
     const client = new JWTAccess(email, keys.private);
     const res = client.getRequestHeaders(testUri);
     const res2 = client.getRequestHeaders(testUri);
-    assert.strictEqual(res, res2);
+    assert.deepStrictEqual(res, res2);
   });
 
   it('getRequestHeaders should not return cached tokens older than an hour', () => {

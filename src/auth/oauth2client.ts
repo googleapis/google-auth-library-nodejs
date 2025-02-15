@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -28,7 +29,6 @@ import {
   AuthClient,
   AuthClientOptions,
   GetAccessTokenResponse,
-  Headers,
   BodyResponseCallback,
 } from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
@@ -733,9 +733,7 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const headers: Headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
+    const headers = new Headers();
     const values: GetTokenQuery = {
       client_id: options.client_id || this._clientId,
       code_verifier: options.codeVerifier,
@@ -746,7 +744,7 @@ export class OAuth2Client extends AuthClient {
     if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
       const basic = Buffer.from(`${this._clientId}:${this._clientSecret}`);
 
-      headers['Authorization'] = `Basic ${basic.toString('base64')}`;
+      headers.set('authorization', `Basic ${basic.toString('base64')}`);
     }
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
@@ -755,7 +753,7 @@ export class OAuth2Client extends AuthClient {
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
-      data: querystring.stringify(values),
+      data: new URLSearchParams(values as {}),
       headers,
     });
     const tokens = res.data as Credentials;
@@ -805,7 +803,7 @@ export class OAuth2Client extends AuthClient {
       throw new Error('No refresh token is set.');
     }
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const data = {
+    const data: {} = {
       refresh_token: refreshToken,
       client_id: this._clientId,
       client_secret: this._clientSecret,
@@ -820,8 +818,7 @@ export class OAuth2Client extends AuthClient {
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
-        data: querystring.stringify(data),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        data: new URLSearchParams(data),
       });
     } catch (e) {
       if (
@@ -929,10 +926,10 @@ export class OAuth2Client extends AuthClient {
    * resolves with authorization header fields.
    *
    * In OAuth2Client, the result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    * @param url The optional url being authorized
    */
-  async getRequestHeaders(url?: string): Promise<Headers> {
+  async getRequestHeaders(url?: string | URL): Promise<Headers> {
     const headers = (await this.getRequestMetadataAsync(url)).headers;
     return headers;
   }
@@ -955,9 +952,9 @@ export class OAuth2Client extends AuthClient {
 
     if (thisCreds.access_token && !this.isTokenExpiring()) {
       thisCreds.token_type = thisCreds.token_type || 'Bearer';
-      const headers = {
-        Authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
-      };
+      const headers = new Headers({
+        authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
+      });
       return {headers: this.addSharedMetadataHeaders(headers)};
     }
 
@@ -967,15 +964,15 @@ export class OAuth2Client extends AuthClient {
         await this.processAndValidateRefreshHandler();
       if (refreshedAccessToken?.access_token) {
         this.setCredentials(refreshedAccessToken);
-        const headers = {
-          Authorization: 'Bearer ' + this.credentials.access_token,
-        };
+        const headers = new Headers({
+          authorization: 'Bearer ' + this.credentials.access_token,
+        });
         return {headers: this.addSharedMetadataHeaders(headers)};
       }
     }
 
     if (this.apiKey) {
-      return {headers: {'X-Goog-Api-Key': this.apiKey}};
+      return {headers: new Headers({'X-Goog-Api-Key': this.apiKey})};
     }
     let r: GetTokenResponse | null = null;
     let tokens: Credentials | null = null;
@@ -997,9 +994,9 @@ export class OAuth2Client extends AuthClient {
     credentials.token_type = credentials.token_type || 'Bearer';
     tokens.refresh_token = credentials.refresh_token;
     this.credentials = tokens;
-    const headers: {[index: string]: string} = {
-      Authorization: credentials.token_type + ' ' + tokens.access_token,
-    };
+    const headers = new Headers({
+      authorization: credentials.token_type + ' ' + tokens.access_token,
+    });
     return {headers: this.addSharedMetadataHeaders(headers), res: r.res};
   }
 
@@ -1112,20 +1109,17 @@ export class OAuth2Client extends AuthClient {
     opts: GaxiosOptions,
     reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
-    let r2: GaxiosResponse;
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
-      opts.headers = opts.headers || {};
-      if (r.headers && r.headers['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] = r.headers['x-goog-user-project'];
-      }
-      if (r.headers && r.headers.Authorization) {
-        opts.headers.Authorization = r.headers.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, r.headers);
+
       if (this.apiKey) {
-        opts.headers['X-Goog-Api-Key'] = this.apiKey;
+        opts.headers.set('X-Goog-Api-Key', this.apiKey);
       }
-      r2 = await this.transporter.request<T>(opts);
+
+      return await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
       if (res) {
@@ -1188,7 +1182,6 @@ export class OAuth2Client extends AuthClient {
       }
       throw e;
     }
-    return r2;
   }
 
   /**
@@ -1251,8 +1244,8 @@ export class OAuth2Client extends AuthClient {
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        authorization: `Bearer ${accessToken}`,
       },
       url: this.endpoints.tokenInfoUrl.toString(),
     });
@@ -1326,14 +1319,14 @@ export class OAuth2Client extends AuthClient {
       throw e;
     }
 
-    const cacheControl = res ? res.headers['cache-control'] : undefined;
+    const cacheControl = res?.headers.get('cache-control');
     let cacheAge = -1;
     if (cacheControl) {
-      const pattern = new RegExp('max-age=([0-9]*)');
-      const regexResult = pattern.exec(cacheControl as string);
-      if (regexResult && regexResult.length === 2) {
+      const maxAge = /max-age=(?<maxAge>[0-9]+)/.exec(cacheControl)?.groups
+        ?.maxAge;
+      if (maxAge) {
         // Cache results with max-age (in seconds)
-        cacheAge = Number(regexResult[1]) * 1000; // milliseconds
+        cacheAge = Number(maxAge) * 1000; // milliseconds
       }
     }
 

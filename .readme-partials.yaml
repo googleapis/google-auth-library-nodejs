@@ -56,7 +56,7 @@ body: |-
 
   ## OAuth2
 
-  This library comes with an [OAuth2](https://developers.google.com/identity/protocols/OAuth2) client that allows you to retrieve an access token and refreshes the token and retry the request seamlessly if you also provide an `expiry_date` and the token is expired. The basics of Google's OAuth2 implementation is explained on [Google Authorization and Authentication documentation](https://developers.google.com/accounts/docs/OAuth2Login).
+  This library comes with an [OAuth2](https://developers.google.com/identity/protocols/OAuth2) client that allows you to retrieve an access token and refreshes the token and retry the request seamlessly if you also provide an `expiry_date` and the token is expired. The basics of Google's OAuth2 implementation is explained on [Google authorization and Authentication documentation](https://developers.google.com/accounts/docs/OAuth2Login).
 
   In the following examples, you may need a `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URL`. You can find these pieces of information by going to the [Developer Console](https://console.cloud.google.com/), clicking your project > APIs & auth > credentials.
 
@@ -1185,7 +1185,7 @@ body: |-
 
     // Get impersonated credentials:
     const authHeaders = await targetClient.getRequestHeaders();
-    // Do something with `authHeaders.Authorization`.
+    // Do something with `authHeaders.get('authorization')`.
 
     // Use impersonated credentials:
     const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
