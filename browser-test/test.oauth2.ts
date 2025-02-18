@@ -46,10 +46,10 @@ const FEDERATED_SIGNON_JWK_CERTS = [
   },
 ];
 const FEDERATED_SIGNON_JWK_CERTS_AXIOS_RESPONSE = {
-  headers: {
+  headers: new Headers({
     'cache-control':
       'cache-control: public, max-age=24000, must-revalidate, no-transform',
-  },
+  }),
   data: {keys: FEDERATED_SIGNON_JWK_CERTS},
 };
 

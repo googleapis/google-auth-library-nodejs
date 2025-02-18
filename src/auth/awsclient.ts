@@ -18,9 +18,10 @@ import {
   BaseExternalAccountClientOptions,
   ExternalAccountSupplierContext,
 } from './baseexternalclient';
-import {AuthClientOptions} from './authclient';
+
 import {DefaultAwsSecurityCredentialsSupplier} from './defaultawssecuritycredentialssupplier';
 import {originalOrCamelOptions, SnakeToCamelObject} from '../util';
+import {Gaxios} from 'gaxios';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
@@ -130,16 +131,11 @@ export class AwsClient extends BaseExternalAccountClient {
    * An error is thrown if the credential is not a valid AWS credential.
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
   constructor(
-    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>,
-    additionalOptions?: AuthClientOptions
+    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>
   ) {
-    super(options, additionalOptions);
+    super(options);
     const opts = originalOrCamelOptions(options as AwsClientOptions);
     const credentialSource = opts.get('credential_source');
     const awsSecurityCredentialsSupplier = opts.get(
@@ -235,7 +231,7 @@ export class AwsClient extends BaseExternalAccountClient {
     // The GCP STS endpoint expects the headers to be formatted as:
     // [
     //   {key: 'x-amz-date', value: '...'},
-    //   {key: 'Authorization', value: '...'},
+    //   {key: 'authorization', value: '...'},
     //   ...
     // ]
     // And then serialized as:
@@ -245,7 +241,7 @@ export class AwsClient extends BaseExternalAccountClient {
     //   headers: [{key: 'x-amz-date', value: '...'}, ...]
     // }))
     const reformattedHeader: {key: string; value: string}[] = [];
-    const extendedHeaders = Object.assign(
+    const extendedHeaders = Gaxios.mergeHeaders(
       {
         // The full, canonical resource name of the workload identity pool
         // provider, with or without the HTTPS prefix.
@@ -255,13 +251,12 @@ export class AwsClient extends BaseExternalAccountClient {
       },
       options.headers
     );
+
     // Reformat header to GCP STS expected format.
-    for (const key in extendedHeaders) {
-      reformattedHeader.push({
-        key,
-        value: extendedHeaders[key],
-      });
-    }
+    extendedHeaders.forEach((value, key) =>
+      reformattedHeader.push({key, value})
+    );
+
     // Serialize the reformatted signed request.
     return encodeURIComponent(
       JSON.stringify({

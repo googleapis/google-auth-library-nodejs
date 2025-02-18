@@ -37,11 +37,11 @@ describe('AuthClient', () => {
   });
 
   describe('#getRequestHeaders', () => {
-    it('should return an empty object', async () => {
+    it('should return an empty `Headers` object', async () => {
       const client = new PassThroughClient();
       const token = await client.getRequestHeaders();
 
-      assert.deepEqual(token, {});
+      assert.deepEqual(token, new Headers());
     });
   });
 

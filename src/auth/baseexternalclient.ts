@@ -22,9 +22,12 @@ import {
 import * as stream from 'stream';
 
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
-import {BodyResponseCallback, Transporter} from '../transporters';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  BodyResponseCallback,
+} from './authclient';
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
@@ -70,11 +73,6 @@ const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
 const pkg = require('../../../package.json');
 
 /**
- * For backwards compatibility.
- */
-export {DEFAULT_UNIVERSE} from './authclient';
-
-/**
  * Shared options used to build {@link ExternalAccountClient} and
  * {@link ExternalAccountAuthorizedUserClient}.
  */
@@ -111,10 +109,11 @@ export interface ExternalAccountSupplierContext {
    * * "urn:ietf:params:oauth:token-type:id_token"
    */
   subjectTokenType: string;
-  /** The {@link Gaxios} or {@link Transporter} instance from
-   * the calling external account to use for requests.
+  /**
+   * The {@link Gaxios} instance for calling external account
+   * to use for requests.
    */
-  transporter: Transporter | Gaxios;
+  transporter: Gaxios;
 }
 
 /**
@@ -263,18 +262,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * @param options The external account options object typically loaded
    *   from the external account JSON credential file. The camelCased options
    *   are aliases for the snake_cased options.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
   constructor(
     options:
       | BaseExternalAccountClientOptions
-      | SnakeToCamelObject<BaseExternalAccountClientOptions>,
-    additionalOptions?: AuthClientOptions
+      | SnakeToCamelObject<BaseExternalAccountClientOptions>
   ) {
-    super({...options, ...additionalOptions});
+    super(options);
 
     const opts = originalOrCamelOptions(
       options as BaseExternalAccountClientOptions
@@ -318,7 +312,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       };
     }
 
-    this.stsCredential = new sts.StsCredentials(tokenUrl, this.clientAuth);
+    this.stsCredential = new sts.StsCredentials({
+      tokenExchangeEndpoint: tokenUrl,
+      clientAuthentication: this.clientAuth,
+    });
     this.scopes = opts.get('scopes') || [DEFAULT_OAUTH_SCOPE];
     this.cachedAccessToken = null;
     this.audience = opts.get('audience');
@@ -418,13 +415,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    */
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
-    const headers: Headers = {
-      Authorization: `Bearer ${accessTokenResponse.token}`,
-    };
+    const headers = new Headers({
+      authorization: `Bearer ${accessTokenResponse.token}`,
+    });
     return this.addSharedMetadataHeaders(headers);
   }
 
@@ -510,14 +507,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     let response: GaxiosResponse;
     try {
       const requestHeaders = await this.getRequestHeaders();
-      opts.headers = opts.headers || {};
-      if (requestHeaders && requestHeaders['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] =
-          requestHeaders['x-goog-user-project'];
-      }
-      if (requestHeaders && requestHeaders.Authorization) {
-        opts.headers.Authorization = requestHeaders.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
+
       response = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
@@ -596,9 +589,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       !this.clientAuth && this.workforcePoolUserProject
         ? {userProject: this.workforcePoolUserProject}
         : undefined;
-    const additionalHeaders: Headers = {
+    const additionalHeaders = new Headers({
       'x-goog-api-client': this.getMetricsHeaderValue(),
-    };
+    });
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       additionalHeaders,
@@ -674,8 +667,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     const request = {
       url: this.serviceAccountImpersonationUrl!,
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
       },
       data: {
         scope: this.getScopesArray(),

@@ -13,13 +13,11 @@
 // limitations under the License.
 
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
-import * as querystring from 'querystring';
-
-import {DefaultTransporter, Transporter} from '../transporters';
-import {Headers} from './oauth2client';
+import {HeadersInit} from './authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
+  OAuthClientAuthHandlerOptions,
   OAuthErrorResponse,
   getErrorFromOAuthErrorResponse,
 } from './oauth2common';
@@ -110,6 +108,7 @@ interface StsRequestOptions {
   client_secret?: string;
   // GCP-specific non-standard field.
   options?: string;
+  [key: string]: string | undefined;
 }
 
 /**
@@ -126,25 +125,50 @@ export interface StsSuccessfulResponse {
   res?: GaxiosResponse | null;
 }
 
+export interface StsCredentialsConstructionOptions
+  extends OAuthClientAuthHandlerOptions {
+  /**
+   * The client authentication credentials if available.
+   */
+  clientAuthentication?: ClientAuthentication;
+  /**
+   * The token exchange endpoint.
+   */
+  tokenExchangeEndpoint: string | URL;
+}
+
 /**
  * Implements the OAuth 2.0 token exchange based on
  * https://tools.ietf.org/html/rfc8693
  */
 export class StsCredentials extends OAuthClientAuthHandler {
-  private transporter: Transporter;
+  readonly #tokenExchangeEndpoint: string | URL;
 
   /**
    * Initializes an STS credentials instance.
-   * @param tokenExchangeEndpoint The token exchange endpoint.
-   * @param clientAuthentication The client authentication credentials if
-   *   available.
+   *
+   * @param options The STS credentials instance options. Passing an `tokenExchangeEndpoint` directly is **@DEPRECATED**.
+   * @param clientAuthentication **@DEPRECATED**. Provide a {@link StsCredentialsConstructionOptions `StsCredentialsConstructionOptions`} object in the first parameter instead.
    */
   constructor(
-    private readonly tokenExchangeEndpoint: string | URL,
+    options: StsCredentialsConstructionOptions | string | URL = {
+      tokenExchangeEndpoint: '',
+    },
+    /**
+     * @deprecated - provide a {@link StsCredentialsConstructionOptions `StsCredentialsConstructionOptions`} object in the first parameter instead
+     */
     clientAuthentication?: ClientAuthentication
   ) {
-    super(clientAuthentication);
-    this.transporter = new DefaultTransporter();
+    if (typeof options !== 'object' || options instanceof URL) {
+      options = {
+        tokenExchangeEndpoint: options,
+        clientAuthentication,
+      };
+    }
+
+    super(options);
+
+    this.#tokenExchangeEndpoint = options.tokenExchangeEndpoint;
   }
 
   /**
@@ -162,9 +186,8 @@ export class StsCredentials extends OAuthClientAuthHandler {
    */
   async exchangeToken(
     stsCredentialsOptions: StsCredentialsOptions,
-    additionalHeaders?: Headers,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    options?: {[key: string]: any}
+    headers?: HeadersInit,
+    options?: Parameters<JSON['stringify']>[0]
   ): Promise<StsSuccessfulResponse> {
     const values: StsRequestOptions = {
       grant_type: stsCredentialsOptions.grantType,
@@ -179,27 +202,25 @@ export class StsCredentials extends OAuthClientAuthHandler {
       // Non-standard GCP-specific options.
       options: options && JSON.stringify(options),
     };
-    // Remove undefined fields.
-    Object.keys(values).forEach(key => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof (values as {[index: string]: any})[key] === 'undefined') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (values as {[index: string]: any})[key];
+
+    // Keep defined fields.
+    const payload: Record<string, string> = {};
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined) {
+        payload[key] = value;
       }
     });
 
-    const headers = {
+    const requestHeaders = {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
     // Inject additional STS headers if available.
-    Object.assign(headers, additionalHeaders || {});
+    Object.assign(requestHeaders, headers || {});
 
     const request = {
-      url: this.tokenExchangeEndpoint.toString(),
-      headers,
-      data: querystring.stringify(
-        values as unknown as querystring.ParsedUrlQueryInput
-      ),
+      url: this.#tokenExchangeEndpoint.toString(),
+      requestHeaders,
+      data: new URLSearchParams(payload),
     };
 
     this.log.info('exchangeToken %j', request);

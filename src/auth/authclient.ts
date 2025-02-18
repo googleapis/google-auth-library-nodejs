@@ -15,11 +15,11 @@
 import {EventEmitter} from 'events';
 import {Gaxios, GaxiosOptions, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
-import {DefaultTransporter, Transporter} from '../transporters';
 import {Credentials} from './credentials';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
+
+import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
 
 /**
  * Base auth configurations (e.g. from JWT or `.json` files) with conventional
@@ -83,13 +83,17 @@ export interface AuthClientOptions
   credentials?: Credentials;
 
   /**
-   * A `Gaxios` or `Transporter` instance to use for `AuthClient` requests.
+   * The {@link Gaxios `Gaxios`} instance used for making requests.
+   *
+   * @see {@link AuthClientOptions.useAuthRequestParameters}
    */
-  transporter?: Gaxios | Transporter;
+  transporter?: Gaxios;
 
   /**
    * Provides default options to the transporter, such as {@link GaxiosOptions.agent `agent`} or
    *  {@link GaxiosOptions.retryConfig `retryConfig`}.
+   *
+   * This option is ignored if {@link AuthClientOptions.transporter `gaxios`} has been provided
    */
   transporterOptions?: GaxiosOptions;
 
@@ -105,6 +109,19 @@ export interface AuthClientOptions
    * on the expiry_date.
    */
   forceRefreshOnFailure?: boolean;
+
+  /**
+   * Enables/disables the adding of the AuthClient's default interceptor.
+   *
+   * @see {@link AuthClientOptions.transporter}
+   *
+   * @remarks
+   *
+   * Disabling is useful for debugging and experimentation.
+   *
+   * @default true
+   */
+  useAuthRequestParameters?: boolean;
 }
 
 /**
@@ -144,10 +161,10 @@ export interface CredentialsClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    * @param url The URI being authorized.
    */
-  getRequestHeaders(url?: string): Promise<Headers>;
+  getRequestHeaders(url?: string | URL): Promise<Headers>;
 
   /**
    * Provides an alternative Gaxios request implementation with auth credentials
@@ -185,7 +202,10 @@ export abstract class AuthClient
    * See {@link https://cloud.google.com/docs/quota Working with quotas}
    */
   quotaProjectId?: string;
-  transporter: Transporter;
+  /**
+   * The {@link Gaxios `Gaxios`} instance used for making requests.
+   */
+  transporter: Gaxios;
   credentials: Credentials = {};
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
@@ -205,10 +225,12 @@ export abstract class AuthClient
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
 
     // Shared client options
-    this.transporter = opts.transporter ?? new DefaultTransporter();
+    this.transporter = opts.transporter ?? new Gaxios(opts.transporterOptions);
 
-    if (opts.transporterOptions) {
-      this.transporter.defaults = opts.transporterOptions;
+    if (options.get('useAuthRequestParameters') !== false) {
+      this.transporter.interceptors.request.add(
+        AuthClient.DEFAULT_REQUEST_INTERCEPTOR
+      );
     }
 
     if (opts.eagerRefreshThresholdMillis) {
@@ -219,29 +241,11 @@ export abstract class AuthClient
   }
 
   /**
-   * Return the {@link Gaxios `Gaxios`} instance from the {@link AuthClient.transporter}.
+   * The public request API in which credentials may be added to the request.
    *
-   * @expiremental
+   * @param options options for `gaxios`
    */
-  get gaxios(): Gaxios | null {
-    if (this.transporter instanceof Gaxios) {
-      return this.transporter;
-    } else if (this.transporter instanceof DefaultTransporter) {
-      return this.transporter.instance;
-    } else if (
-      'instance' in this.transporter &&
-      this.transporter.instance instanceof Gaxios
-    ) {
-      return this.transporter.instance;
-    }
-
-    return null;
-  }
-
-  /**
-   * Provides an alternative Gaxios request implementation with auth credentials
-   */
-  abstract request<T>(opts: GaxiosOptions): GaxiosPromise<T>;
+  abstract request<T>(options: GaxiosOptions): GaxiosPromise<T>;
 
   /**
    * The main authentication interface. It takes an optional url which when
@@ -249,10 +253,13 @@ export abstract class AuthClient
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * ```ts
+   * new Headers({'authorization': 'Bearer <access_token_value>'});
+   * ```
+   *
    * @param url The URI being authorized.
    */
-  abstract getRequestHeaders(url?: string): Promise<Headers>;
+  abstract getRequestHeaders(url?: string | URL): Promise<Headers>;
 
   /**
    * @return A promise that resolves with the current GCP access token
@@ -283,13 +290,61 @@ export abstract class AuthClient
     // the x-goog-user-project header, to indicate an alternate account for
     // billing and quota:
     if (
-      !headers['x-goog-user-project'] && // don't override a value the user sets.
+      !headers.has('x-goog-user-project') && // don't override a value the user sets.
       this.quotaProjectId
     ) {
-      headers['x-goog-user-project'] = this.quotaProjectId;
+      headers.set('x-goog-user-project', this.quotaProjectId);
     }
     return headers;
   }
+
+  /**
+   * Adds the `x-goog-user-project` and `authorization` headers to the target Headers
+   * object, if they exist on the source.
+   *
+   * @param target the headers to target
+   * @param source the headers to source from
+   * @returns the target headers
+   */
+  protected addUserProjectAndAuthHeaders<T extends Headers>(
+    target: T,
+    source: Headers
+  ): T {
+    const xGoogUserProject = source.get('x-goog-user-project');
+    const authorizationHeader = source.get('authorization');
+
+    if (xGoogUserProject) {
+      target.set('x-goog-user-project', xGoogUserProject);
+    }
+
+    if (authorizationHeader) {
+      target.set('authorization', authorizationHeader);
+    }
+
+    return target;
+  }
+
+  static readonly DEFAULT_REQUEST_INTERCEPTOR: Parameters<
+    Gaxios['interceptors']['request']['add']
+  >[0] = {
+    resolved: async config => {
+      // Set `x-goog-api-client`, if not already set
+      if (!config.headers.has('x-goog-api-client')) {
+        const nodeVersion = process.version.replace(/^v/, '');
+        config.headers.set('x-goog-api-client', `gl-node/${nodeVersion}`);
+      }
+
+      // Set `User-Agent`
+      const userAgent = config.headers.get('User-Agent');
+      if (!userAgent) {
+        config.headers.set('User-Agent', USER_AGENT);
+      } else if (!userAgent.includes(`${PRODUCT_NAME}/`)) {
+        config.headers.set('User-Agent', `${userAgent} ${USER_AGENT}`);
+      }
+
+      return config;
+    },
+  };
 
   /**
    * Retry config for Auth-related requests.
@@ -308,4 +363,19 @@ export abstract class AuthClient
       },
     };
   }
+}
+
+// TypeScript does not have `HeadersInit` in the standard types yet
+export type HeadersInit = ConstructorParameters<typeof Headers>[0];
+
+export interface GetAccessTokenResponse {
+  token?: string | null;
+  res?: GaxiosResponse | null;
+}
+
+/**
+ * @deprecated - use the Promise API instead
+ */
+export interface BodyResponseCallback<T> {
+  (err: Error | null, res?: GaxiosResponse<T> | null): void;
 }

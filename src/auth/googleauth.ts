@@ -14,21 +14,19 @@
 
 import {exec} from 'child_process';
 import * as fs from 'fs';
-import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
+import {Gaxios, GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 import * as os from 'os';
 import * as path from 'path';
 import * as stream from 'stream';
 
 import {Crypto, createCrypto} from '../crypto/crypto';
-import {DefaultTransporter, Transporter} from '../transporters';
-
 import {Compute, ComputeOptions} from './computeclient';
 import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {Headers, OAuth2ClientOptions} from './oauth2client';
+import {OAuth2ClientOptions} from './oauth2client';
 import {
   UserRefreshClient,
   UserRefreshClientOptions,
@@ -108,6 +106,10 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
    * Object containing client_email and private_key properties, or the
    * external account client options.
    * Cannot be used with {@link GoogleAuthOptions.apiKey `apiKey`}.
+   *
+   * @remarks
+   *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    */
   credentials?: JWTInput | ExternalAccountClientOptions;
 
@@ -162,8 +164,6 @@ export const GoogleAuthExceptionMessages = {
 } as const;
 
 export class GoogleAuth<T extends AuthClient = JSONClient> {
-  transporter?: Transporter;
-
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
@@ -200,11 +200,6 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   private keyFilename?: string;
   private scopes?: string | string[];
   private clientOptions: AuthClientOptions = {};
-
-  /**
-   * Export DefaultTransporter as a static property of the class.
-   */
-  static DefaultTransporter = DefaultTransporter;
 
   /**
    * Configuration is resolved in the following order of precedence:
@@ -670,6 +665,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Create a credentials instance using the given input options.
    * This client is not cached.
    *
+   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
+   *
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
@@ -690,16 +687,16 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     } else if (json.type === IMPERSONATED_ACCOUNT_TYPE) {
       client = this.fromImpersonatedJSON(json as ImpersonatedJWTInput);
     } else if (json.type === EXTERNAL_ACCOUNT_TYPE) {
-      client = ExternalAccountClient.fromJSON(
-        json as ExternalAccountClientOptions,
-        options
-      )!;
+      client = ExternalAccountClient.fromJSON({
+        ...json,
+        ...options,
+      } as ExternalAccountClientOptions)!;
       client.scopes = this.getAnyScopes();
     } else if (json.type === EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE) {
-      client = new ExternalAccountAuthorizedUserClient(
-        json as ExternalAccountAuthorizedUserClientOptions,
-        options
-      );
+      client = new ExternalAccountAuthorizedUserClient({
+        ...json,
+        ...options,
+      } as ExternalAccountAuthorizedUserClientOptions);
     } else {
       (options as JWTOptions).scopes = this.scopes;
       client = new JWT(options);
@@ -1066,7 +1063,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Obtain the HTTP headers that will provide authorization for a given
    * request.
    */
-  async getRequestHeaders(url?: string) {
+  async getRequestHeaders(url?: string | URL) {
     const client = await this.getClient();
     return client.getRequestHeaders(url);
   }
@@ -1076,16 +1073,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * the request options.
    * @param opts Axios or Request options on which to attach the headers
    */
-  async authorizeRequest(opts: {
-    url?: string;
-    uri?: string;
-    headers?: Headers;
-  }) {
-    opts = opts || {};
-    const url = opts.url || opts.uri;
+  async authorizeRequest(opts: Pick<GaxiosOptions, 'url' | 'headers'> = {}) {
+    const url = opts.url;
     const client = await this.getClient();
     const headers = await client.getRequestHeaders(url);
-    opts.headers = Object.assign(opts.headers || {}, headers);
+    opts.headers = Gaxios.mergeHeaders(opts.headers, headers);
     return opts;
   }
 
@@ -1094,8 +1086,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * HTTP request using the given options.
    * @param opts Axios request options for the HTTP request.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async request<T = any>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
+  async request<T>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
     const client = await this.getClient();
     return client.request<T>(opts);
   }

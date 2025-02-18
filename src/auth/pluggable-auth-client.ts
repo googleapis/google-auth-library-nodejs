@@ -20,8 +20,9 @@ import {
   ExecutableResponse,
   InvalidExpirationTimeFieldError,
 } from './executable-response';
-import {PluggableAuthHandler} from './pluggable-auth-handler';
-import {AuthClientOptions} from './authclient';
+import {PluggableAuthHandler, ExecutableError} from './pluggable-auth-handler';
+
+export {ExecutableError} from './pluggable-auth-handler';
 
 /**
  * Defines the credential source portion of the configuration for PluggableAuthClient.
@@ -63,24 +64,6 @@ export interface PluggableAuthClientOptions
       output_file?: string;
     };
   };
-}
-
-/**
- * Error thrown from the executable run by PluggableAuthClient.
- */
-export class ExecutableError extends Error {
-  /**
-   * The exit code returned by the executable.
-   */
-  readonly code: string;
-
-  constructor(message: string, code: string) {
-    super(
-      `The executable failed with exit code: ${code} and error message: ${message}.`
-    );
-    this.code = code;
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
 }
 
 /**
@@ -189,16 +172,9 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
    * An error is thrown if the credential is not a valid pluggable auth credential.
    * @param options The external account options object typically loaded from
    *   the external account JSON credential file.
-   * @param additionalOptions **DEPRECATED, all options are available in the
-   *   `options` parameter.** Optional additional behavior customization options.
-   *   These currently customize expiration threshold time and whether to retry
-   *   on 401/403 API request errors.
    */
-  constructor(
-    options: PluggableAuthClientOptions,
-    additionalOptions?: AuthClientOptions
-  ) {
-    super(options, additionalOptions);
+  constructor(options: PluggableAuthClientOptions) {
+    super(options);
     if (!options.credential_source.executable) {
       throw new Error('No valid Pluggable Auth "credential_source" provided.');
     }

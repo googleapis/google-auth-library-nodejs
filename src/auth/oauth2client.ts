@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -23,11 +24,16 @@ import * as stream from 'stream';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
 
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
-import {BodyResponseCallback} from '../transporters';
 
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  BodyResponseCallback,
+} from './authclient';
 import {CredentialRequest, Credentials} from './credentials';
 import {LoginTicket, TokenPayload} from './loginticket';
+
 /**
  * The results from the `generateCodeVerifierAsync` method.  To learn more,
  * See the sample:
@@ -51,10 +57,6 @@ export interface Certificates {
 }
 
 export interface PublicKeys {
-  [index: string]: string;
-}
-
-export interface Headers {
   [index: string]: string;
 }
 
@@ -359,11 +361,6 @@ export interface GetAccessTokenCallback {
   ): void;
 }
 
-export interface GetAccessTokenResponse {
-  token?: string | null;
-  res?: GaxiosResponse | null;
-}
-
 export interface RefreshAccessTokenCallback {
   (
     err: GaxiosError | null,
@@ -486,9 +483,51 @@ export interface OAuth2ClientEndpoints {
   oauth2IapPublicKeyUrl: string | URL;
 }
 
-export interface OAuth2ClientOptions extends AuthClientOptions {
+/**
+ * A convenient interface for those looking to pass the OAuth2 Client config via a parsed
+ * JSON file.
+ */
+interface OAuth2JSONOptions {
+  /**
+   * The authentication client ID.
+   *
+   * @alias {@link OAuth2ClientOptions.clientId}
+   */
+  client_id?: string;
+  /**
+   * The authentication client secret.
+   *
+   * @alias {@link OAuth2ClientOptions.clientSecret}
+   */
+  client_secret?: string;
+  /**
+   * The URIs to redirect to after completing the auth request.
+   *
+   * @alias {@link OAuth2ClientOptions.redirectUri}
+   */
+  redirect_uris?: string[];
+}
+
+export interface OAuth2ClientOptions
+  extends AuthClientOptions,
+    OAuth2JSONOptions {
+  /**
+   * The authentication client ID.
+   *
+   * @alias {@link OAuth2JSONOptions.client_id}
+   */
   clientId?: string;
+  /**
+   * The authentication client secret.
+   *
+   * @alias {@link OAuth2JSONOptions.client_secret}
+   */
   clientSecret?: string;
+  /**
+   * The URI to redirect to after completing the auth request.
+   *
+   * @alias {@link OAuth2JSONOptions.redirect_uris}
+   */
   redirectUri?: string;
   /**
    * Customizable endpoints.
@@ -531,32 +570,36 @@ export class OAuth2Client extends AuthClient {
   refreshHandler?: GetRefreshHandlerCallback;
 
   /**
-   * Handles OAuth2 flow for Google APIs.
+   * An OAuth2 Client for Google APIs.
    *
-   * @param clientId The authentication client ID.
-   * @param clientSecret The authentication client secret.
-   * @param redirectUri The URI to redirect to after completing the auth
-   * request.
-   * @param opts optional options for overriding the given parameters.
-   * @constructor
+   * @param options The OAuth2 Client Options. Passing an `clientId` directly is **@DEPRECATED**.
+   * @param clientSecret **@DEPRECATED**. Provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead.
+   * @param redirectUri **@DEPRECATED**. Provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead.
    */
-  constructor(options?: OAuth2ClientOptions);
-  constructor(clientId?: string, clientSecret?: string, redirectUri?: string);
   constructor(
-    optionsOrClientId?: string | OAuth2ClientOptions,
-    clientSecret?: string,
-    redirectUri?: string
+    options: OAuth2ClientOptions | OAuth2ClientOptions['clientId'] = {},
+    /**
+     * @deprecated - provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead
+     */
+    clientSecret?: OAuth2ClientOptions['clientSecret'],
+    /**
+     * @deprecated - provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead
+     */
+    redirectUri?: OAuth2ClientOptions['redirectUri']
   ) {
-    const opts =
-      optionsOrClientId && typeof optionsOrClientId === 'object'
-        ? optionsOrClientId
-        : {clientId: optionsOrClientId, clientSecret, redirectUri};
+    super(typeof options === 'object' ? options : {});
 
-    super(opts);
+    if (typeof options !== 'object') {
+      options = {
+        clientId: options,
+        clientSecret,
+        redirectUri,
+      };
+    }
 
-    this._clientId = opts.clientId;
-    this._clientSecret = opts.clientSecret;
-    this.redirectUri = opts.redirectUri;
+    this._clientId = options.clientId || options.client_id;
+    this._clientSecret = options.clientSecret || options.client_secret;
+    this.redirectUri = options.redirectUri || options.redirect_uris?.[0];
 
     this.endpoints = {
       tokenInfoUrl: 'https://oauth2.googleapis.com/tokeninfo',
@@ -568,12 +611,12 @@ export class OAuth2Client extends AuthClient {
       oauth2FederatedSignonJwkCertsUrl:
         'https://www.googleapis.com/oauth2/v3/certs',
       oauth2IapPublicKeyUrl: 'https://www.gstatic.com/iap/verify/public_key',
-      ...opts.endpoints,
+      ...options.endpoints,
     };
     this.clientAuthentication =
-      opts.clientAuthentication || ClientAuthentication.ClientSecretPost;
+      options.clientAuthentication || ClientAuthentication.ClientSecretPost;
 
-    this.issuers = opts.issuers || [
+    this.issuers = options.issuers || [
       'accounts.google.com',
       'https://accounts.google.com',
       this.universeDomain,
@@ -690,9 +733,7 @@ export class OAuth2Client extends AuthClient {
     options: GetTokenOptions
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const headers: Headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
+    const headers = new Headers();
     const values: GetTokenQuery = {
       client_id: options.client_id || this._clientId,
       code_verifier: options.codeVerifier,
@@ -703,7 +744,7 @@ export class OAuth2Client extends AuthClient {
     if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
       const basic = Buffer.from(`${this._clientId}:${this._clientSecret}`);
 
-      headers['Authorization'] = `Basic ${basic.toString('base64')}`;
+      headers.set('authorization', `Basic ${basic.toString('base64')}`);
     }
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
@@ -711,7 +752,7 @@ export class OAuth2Client extends AuthClient {
 
     const request = {
       url,
-      data: querystring.stringify(values),
+      data: new URLSearchParams(values as {}),
       headers,
     };
     this.log.info('getTokenAsync %j', request);
@@ -769,7 +810,7 @@ export class OAuth2Client extends AuthClient {
       throw new Error('No refresh token is set.');
     }
     const url = this.endpoints.oauth2TokenUrl.toString();
-    const data = {
+    const data: {} = {
       refresh_token: refreshToken,
       client_id: this._clientId,
       client_secret: this._clientSecret,
@@ -791,6 +832,8 @@ export class OAuth2Client extends AuthClient {
         ...request,
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
+        url,
+        data: new URLSearchParams(data),
       });
     } catch (exc) {
       const e = exc as Error;
@@ -901,10 +944,10 @@ export class OAuth2Client extends AuthClient {
    * resolves with authorization header fields.
    *
    * In OAuth2Client, the result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    * @param url The optional url being authorized
    */
-  async getRequestHeaders(url?: string): Promise<Headers> {
+  async getRequestHeaders(url?: string | URL): Promise<Headers> {
     const headers = (await this.getRequestMetadataAsync(url)).headers;
     return headers;
   }
@@ -927,9 +970,9 @@ export class OAuth2Client extends AuthClient {
 
     if (thisCreds.access_token && !this.isTokenExpiring()) {
       thisCreds.token_type = thisCreds.token_type || 'Bearer';
-      const headers = {
-        Authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
-      };
+      const headers = new Headers({
+        authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
+      });
       return {headers: this.addSharedMetadataHeaders(headers)};
     }
 
@@ -939,15 +982,15 @@ export class OAuth2Client extends AuthClient {
         await this.processAndValidateRefreshHandler();
       if (refreshedAccessToken?.access_token) {
         this.setCredentials(refreshedAccessToken);
-        const headers = {
-          Authorization: 'Bearer ' + this.credentials.access_token,
-        };
+        const headers = new Headers({
+          authorization: 'Bearer ' + this.credentials.access_token,
+        });
         return {headers: this.addSharedMetadataHeaders(headers)};
       }
     }
 
     if (this.apiKey) {
-      return {headers: {'X-Goog-Api-Key': this.apiKey}};
+      return {headers: new Headers({'X-Goog-Api-Key': this.apiKey})};
     }
     let r: GetTokenResponse | null = null;
     let tokens: Credentials | null = null;
@@ -969,9 +1012,9 @@ export class OAuth2Client extends AuthClient {
     credentials.token_type = credentials.token_type || 'Bearer';
     tokens.refresh_token = credentials.refresh_token;
     this.credentials = tokens;
-    const headers: {[index: string]: string} = {
-      Authorization: credentials.token_type + ' ' + tokens.access_token,
-    };
+    const headers = new Headers({
+      authorization: credentials.token_type + ' ' + tokens.access_token,
+    });
     return {headers: this.addSharedMetadataHeaders(headers), res: r.res};
   }
 
@@ -1089,20 +1132,17 @@ export class OAuth2Client extends AuthClient {
     opts: GaxiosOptions,
     reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
-    let r2: GaxiosResponse;
     try {
       const r = await this.getRequestMetadataAsync(opts.url);
-      opts.headers = opts.headers || {};
-      if (r.headers && r.headers['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] = r.headers['x-goog-user-project'];
-      }
-      if (r.headers && r.headers.Authorization) {
-        opts.headers.Authorization = r.headers.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, r.headers);
+
       if (this.apiKey) {
-        opts.headers['X-Goog-Api-Key'] = this.apiKey;
+        opts.headers.set('X-Goog-Api-Key', this.apiKey);
       }
-      r2 = await this.transporter.request<T>(opts);
+
+      return await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
       if (res) {
@@ -1165,7 +1205,6 @@ export class OAuth2Client extends AuthClient {
       }
       throw e;
     }
-    return r2;
   }
 
   /**
@@ -1228,8 +1267,8 @@ export class OAuth2Client extends AuthClient {
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        authorization: `Bearer ${accessToken}`,
       },
       url: this.endpoints.tokenInfoUrl.toString(),
     });
@@ -1311,14 +1350,14 @@ export class OAuth2Client extends AuthClient {
       throw e;
     }
 
-    const cacheControl = res ? res.headers['cache-control'] : undefined;
+    const cacheControl = res?.headers.get('cache-control');
     let cacheAge = -1;
     if (cacheControl) {
-      const pattern = new RegExp('max-age=([0-9]*)');
-      const regexResult = pattern.exec(cacheControl as string);
-      if (regexResult && regexResult.length === 2) {
+      const maxAge = /max-age=(?<maxAge>[0-9]+)/.exec(cacheControl)?.groups
+        ?.maxAge;
+      if (maxAge) {
         // Cache results with max-age (in seconds)
-        cacheAge = Number(regexResult[1]) * 1000; // milliseconds
+        cacheAge = Number(maxAge) * 1000; // milliseconds
       }
     }
 

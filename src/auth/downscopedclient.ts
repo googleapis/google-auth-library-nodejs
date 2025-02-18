@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -20,11 +21,14 @@ import {
 } from 'gaxios';
 import * as stream from 'stream';
 
-import {BodyResponseCallback} from '../transporters';
 import {Credentials} from './credentials';
-import {AuthClient, AuthClientOptions} from './authclient';
+import {
+  AuthClient,
+  AuthClientOptions,
+  GetAccessTokenResponse,
+  BodyResponseCallback,
+} from './authclient';
 
-import {GetAccessTokenResponse, Headers} from './oauth2client';
 import * as sts from './stscredentials';
 
 /**
@@ -92,6 +96,20 @@ interface AvailabilityCondition {
   description?: string;
 }
 
+export interface DownscopedClientOptions extends AuthClientOptions {
+  /**
+   * The source AuthClient to be downscoped based on the provided Credential Access Boundary rules.
+   */
+  authClient: AuthClient;
+  /**
+   * The Credential Access Boundary which contains a list of access boundary rules.
+   * Each rule contains information on the resource that the rule applies to, the upper bound of the
+   * permissions that are available on that resource and an optional
+   * condition to further restrict permissions.
+   */
+  credentialAccessBoundary: CredentialAccessBoundary;
+}
+
 /**
  * Defines a set of Google credentials that are downscoped from an existing set
  * of Google OAuth2 credentials. This is useful to restrict the Identity and
@@ -103,6 +121,8 @@ interface AvailabilityCondition {
  * resources.
  */
 export class DownscopedClient extends AuthClient {
+  private readonly authClient: AuthClient;
+  private readonly credentialAccessBoundary: CredentialAccessBoundary;
   private cachedDownscopedAccessToken: CredentialsWithResponse | null;
   private readonly stsCredential: sts.StsCredentials;
 
@@ -114,34 +134,42 @@ export class DownscopedClient extends AuthClient {
    * well as an upper bound on the permissions that are available on each
    * resource, has to be defined. A downscoped client can then be instantiated
    * using the source AuthClient and the Credential Access Boundary.
-   * @param authClient The source AuthClient to be downscoped based on the
-   *   provided Credential Access Boundary rules.
-   * @param credentialAccessBoundary The Credential Access Boundary which
-   *   contains a list of access boundary rules. Each rule contains information
-   *   on the resource that the rule applies to, the upper bound of the
-   *   permissions that are available on that resource and an optional
-   *   condition to further restrict permissions.
-   * @param additionalOptions **DEPRECATED, set this in the provided `authClient`.**
-   *   Optional additional behavior customization options.
-   * @param quotaProjectId **DEPRECATED, set this in the provided `authClient`.**
-   *   Optional quota project id for setting up in the x-goog-user-project header.
+   * @param options the {@link DownscopedClientOptions `DownscopedClientOptions`} to use. Passing an `AuthClient` directly is **@DEPRECATED**.
+   * @param credentialAccessBoundary **@DEPRECATED**. Provide a {@link DownscopedClientOptions `DownscopedClientOptions`} object in the first parameter instead.
    */
   constructor(
-    private readonly authClient: AuthClient,
-    private readonly credentialAccessBoundary: CredentialAccessBoundary,
-    additionalOptions?: AuthClientOptions,
-    quotaProjectId?: string
+    /**
+     * AuthClient is for backwards-compatibility.
+     */
+    options: AuthClient | DownscopedClientOptions,
+    /**
+     * @deprecated - provide a {@link DownscopedClientOptions `DownscopedClientOptions`} object in the first parameter instead
+     */
+    credentialAccessBoundary: CredentialAccessBoundary = {
+      accessBoundary: {
+        accessBoundaryRules: [],
+      },
+    }
   ) {
-    super({...additionalOptions, quotaProjectId});
+    super(options instanceof AuthClient ? {} : options);
+
+    if (options instanceof AuthClient) {
+      this.authClient = options;
+      this.credentialAccessBoundary = credentialAccessBoundary;
+    } else {
+      this.authClient = options.authClient;
+      this.credentialAccessBoundary = options.credentialAccessBoundary;
+    }
 
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
     if (
-      credentialAccessBoundary.accessBoundary.accessBoundaryRules.length === 0
+      this.credentialAccessBoundary.accessBoundary.accessBoundaryRules
+        .length === 0
     ) {
       throw new Error('At least one access boundary rule needs to be defined.');
     } else if (
-      credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
+      this.credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
       MAX_ACCESS_BOUNDARY_RULES_COUNT
     ) {
       throw new Error(
@@ -152,7 +180,7 @@ export class DownscopedClient extends AuthClient {
 
     // Check at least one permission should be defined in each Access Boundary
     // Rule.
-    for (const rule of credentialAccessBoundary.accessBoundary
+    for (const rule of this.credentialAccessBoundary.accessBoundary
       .accessBoundaryRules) {
       if (rule.availablePermissions.length === 0) {
         throw new Error(
@@ -161,9 +189,9 @@ export class DownscopedClient extends AuthClient {
       }
     }
 
-    this.stsCredential = new sts.StsCredentials(
-      `https://sts.${this.universeDomain}/v1/token`
-    );
+    this.stsCredential = new sts.StsCredentials({
+      tokenExchangeEndpoint: `https://sts.${this.universeDomain}/v1/token`,
+    });
 
     this.cachedDownscopedAccessToken = null;
   }
@@ -209,13 +237,13 @@ export class DownscopedClient extends AuthClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    */
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
-    const headers: Headers = {
-      Authorization: `Bearer ${accessTokenResponse.token}`,
-    };
+    const headers = new Headers({
+      authorization: `Bearer ${accessTokenResponse.token}`,
+    });
     return this.addSharedMetadataHeaders(headers);
   }
 
@@ -260,14 +288,10 @@ export class DownscopedClient extends AuthClient {
     let response: GaxiosResponse;
     try {
       const requestHeaders = await this.getRequestHeaders();
-      opts.headers = opts.headers || {};
-      if (requestHeaders && requestHeaders['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] =
-          requestHeaders['x-goog-user-project'];
-      }
-      if (requestHeaders && requestHeaders.Authorization) {
-        opts.headers.Authorization = requestHeaders.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
+
       response = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;

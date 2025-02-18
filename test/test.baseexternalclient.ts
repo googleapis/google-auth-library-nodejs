@@ -23,7 +23,6 @@ import {
   EXPIRATION_TIME_OFFSET,
   BaseExternalAccountClient,
   BaseExternalAccountClientOptions,
-  DEFAULT_UNIVERSE,
 } from '../src/auth/baseexternalclient';
 import {
   OAuthErrorResponse,
@@ -40,7 +39,7 @@ import {
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
-import {AuthClientOptions} from '../src/auth/authclient';
+import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
 
 nock.disableNetConnect();
 
@@ -53,11 +52,8 @@ interface SampleResponse {
 class TestExternalAccountClient extends BaseExternalAccountClient {
   private counter = 0;
 
-  constructor(
-    options: BaseExternalAccountClientOptions,
-    additionalOptions?: Partial<AuthClientOptions>
-  ) {
-    super(options, additionalOptions);
+  constructor(options: BaseExternalAccountClientOptions) {
+    super(options);
     this.credentialSourceType = 'test';
   }
 
@@ -256,10 +252,10 @@ describe('BaseExternalAccountClient', () => {
         eagerRefreshThresholdMillis: 5000,
         forceRefreshOnFailure: true,
       };
-      const client = new TestExternalAccountClient(
-        externalAccountOptions,
-        refreshOptions
-      );
+      const client = new TestExternalAccountClient({
+        ...externalAccountOptions,
+        ...refreshOptions,
+      });
 
       assert.strictEqual(
         client.forceRefreshOnFailure,
@@ -633,11 +629,7 @@ describe('BaseExternalAccountClient', () => {
       ];
       const client = new TestExternalAccountClient(options);
 
-      await assert.rejects(
-        client.getProjectId(),
-        /The caller does not have permission/
-      );
-
+      await assert.rejects(client.getProjectId(), GaxiosError);
       assert.strictEqual(client.projectId, null);
       scopes.forEach(scope => scope.done());
     });
@@ -705,7 +697,7 @@ describe('BaseExternalAccountClient', () => {
             },
           ],
           {
-            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+            authorization: `Basic ${crypto.encodeBase64StringUtf8(
               basicAuthCreds
             )}`,
           }
@@ -780,7 +772,7 @@ describe('BaseExternalAccountClient', () => {
             },
           ],
           {
-            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+            authorization: `Basic ${crypto.encodeBase64StringUtf8(
               basicAuthCreds
             )}`,
           }
@@ -1104,8 +1096,9 @@ describe('BaseExternalAccountClient', () => {
           },
         ]);
 
-        const client = new TestExternalAccountClient(externalAccountOptions, {
-          // Override 5min threshold with 10 second threshold.
+        // Override 5min threshold with 10 second threshold.
+        const client = new TestExternalAccountClient({
+          ...externalAccountOptions,
           eagerRefreshThresholdMillis: customThresh,
         });
         const actualResponse = await client.getAccessToken();
@@ -1160,7 +1153,7 @@ describe('BaseExternalAccountClient', () => {
             },
           ],
           {
-            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+            authorization: `Basic ${crypto.encodeBase64StringUtf8(
               basicAuthCreds
             )}`,
           }
@@ -1329,10 +1322,7 @@ describe('BaseExternalAccountClient', () => {
         const client = new TestExternalAccountClient(
           externalAccountOptionsWithSA
         );
-        await assert.rejects(
-          client.getAccessToken(),
-          new RegExp(saErrorResponse.error.message)
-        );
+        await assert.rejects(client.getAccessToken(), GaxiosError);
         // Next try should succeed.
         const actualResponse = await client.getAccessToken();
         // Confirm raw GaxiosResponse appended to response.
@@ -1576,13 +1566,12 @@ describe('BaseExternalAccountClient', () => {
           })
         );
 
-        const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA,
-          {
-            // Override 5min threshold with 10 second threshold.
-            eagerRefreshThresholdMillis: customThresh,
-          }
-        );
+        // Override 5min threshold with 10 second threshold.
+        const client = new TestExternalAccountClient({
+          ...externalAccountOptionsWithSA,
+          eagerRefreshThresholdMillis: customThresh,
+        });
+
         const actualResponse = await client.getAccessToken();
 
         // Confirm raw GaxiosResponse appended to response.
@@ -1637,7 +1626,7 @@ describe('BaseExternalAccountClient', () => {
               },
             ],
             {
-              Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+              authorization: `Basic ${crypto.encodeBase64StringUtf8(
                 basicAuthCreds
               )}`,
             }
@@ -1881,9 +1870,9 @@ describe('BaseExternalAccountClient', () => {
 
   describe('getRequestHeaders()', () => {
     it('should inject the authorization headers', async () => {
-      const expectedHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
-      };
+      const expectedHeaders = new Headers({
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -1913,9 +1902,9 @@ describe('BaseExternalAccountClient', () => {
         accessToken: 'SA_ACCESS_TOKEN',
         expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
       };
-      const expectedHeaders = {
-        Authorization: `Bearer ${saSuccessResponse.accessToken}`,
-      };
+      const expectedHeaders = new Headers({
+        authorization: `Bearer ${saSuccessResponse.accessToken}`,
+      });
       const scopes: nock.Scope[] = [];
       scopes.push(
         mockStsTokenExchange([
@@ -1954,10 +1943,10 @@ describe('BaseExternalAccountClient', () => {
 
     it('should inject the authorization and metadata headers', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
-      const expectedHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+      const expectedHeaders = new Headers({
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
-      };
+      });
       const scope = mockStsTokenExchange([
         {
           statusCode: 200,
@@ -2020,7 +2009,7 @@ describe('BaseExternalAccountClient', () => {
     it('should process HTTP request with authorization header', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
@@ -2068,7 +2057,6 @@ describe('BaseExternalAccountClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2083,7 +2071,7 @@ describe('BaseExternalAccountClient', () => {
       };
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${saSuccessResponse.accessToken}`,
+        authorization: `Bearer ${saSuccessResponse.accessToken}`,
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
@@ -2137,7 +2125,6 @@ describe('BaseExternalAccountClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2147,7 +2134,7 @@ describe('BaseExternalAccountClient', () => {
     it('should process headerless HTTP request', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
@@ -2191,7 +2178,6 @@ describe('BaseExternalAccountClient', () => {
         url: 'https://example.com/api',
         method: 'POST',
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2230,7 +2216,6 @@ describe('BaseExternalAccountClient', () => {
           url: 'https://example.com/api',
           method: 'POST',
           data: exampleRequest,
-          responseType: 'json',
         }),
         getErrorFromOAuthErrorResponse(errorResponse)
       );
@@ -2239,7 +2224,7 @@ describe('BaseExternalAccountClient', () => {
 
     it('should trigger callback on success when provided', done => {
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -2283,7 +2268,6 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         (err, result) => {
           assert.strictEqual(err, null);
@@ -2297,7 +2281,7 @@ describe('BaseExternalAccountClient', () => {
     it('should trigger callback on error when provided', done => {
       const errorMessage = 'Bad Request';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -2337,11 +2321,11 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
-        (err, result) => {
-          assert.strictEqual(err!.message, errorMessage);
-          assert.deepStrictEqual(result, (err as GaxiosError)!.response);
+        err => {
+          assert(err instanceof GaxiosError);
+          assert.equal(err.status, 400);
+
           scopes.forEach(scope => scope.done());
           done();
         }
@@ -2352,10 +2336,10 @@ describe('BaseExternalAccountClient', () => {
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const authHeaders2 = {
-        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -2410,7 +2394,8 @@ describe('BaseExternalAccountClient', () => {
           .reply(200, Object.assign({}, exampleResponse)),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions, {
+      const client = new TestExternalAccountClient({
+        ...externalAccountOptions,
         forceRefreshOnFailure: true,
       });
       const actualResponse = await client.request<SampleResponse>({
@@ -2418,7 +2403,6 @@ describe('BaseExternalAccountClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -2427,7 +2411,7 @@ describe('BaseExternalAccountClient', () => {
 
     it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -2467,7 +2451,6 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 401,
@@ -2481,10 +2464,10 @@ describe('BaseExternalAccountClient', () => {
       const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
       stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
       const authHeaders = {
-        Authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
       };
       const authHeaders2 = {
-        Authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
+        authorization: `Bearer ${stsSuccessfulResponse2.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -2535,7 +2518,8 @@ describe('BaseExternalAccountClient', () => {
           .reply(403),
       ];
 
-      const client = new TestExternalAccountClient(externalAccountOptions, {
+      const client = new TestExternalAccountClient({
+        ...externalAccountOptions,
         forceRefreshOnFailure: true,
       });
       await assert.rejects(
@@ -2544,7 +2528,6 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 403,

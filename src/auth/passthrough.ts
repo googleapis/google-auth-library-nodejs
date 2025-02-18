@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import {GaxiosOptions} from 'gaxios';
-import {AuthClient} from './authclient';
-import {GetAccessTokenResponse, Headers} from './oauth2client';
+import {AuthClient, GetAccessTokenResponse} from './authclient';
 
 /**
  * An AuthClient without any Authentication information. Useful for:
@@ -56,7 +55,7 @@ export class PassThroughClient extends AuthClient {
    * @returns {}
    */
   async getRequestHeaders(): Promise<Headers> {
-    return {};
+    return new Headers();
   }
 }
 

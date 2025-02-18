@@ -87,7 +87,6 @@ export {
   ExecutableError,
 } from './auth/pluggable-auth-client';
 export {PassThroughClient} from './auth/passthrough';
-export {DefaultTransporter} from './transporters';
 
 type ALL_EXPORTS = (typeof import('./'))[keyof typeof import('./')];
 

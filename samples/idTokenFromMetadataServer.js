@@ -14,7 +14,7 @@
 
 /**
  * Uses the Google Cloud metadata server environment to create an identity token
- * and add it to the HTTP request as part of an Authorization header.
+ * and add it to the HTTP request as part of an authorization header.
  *
  * @param {string} targetAudience - The url or target audience to obtain the ID token for.
  */
