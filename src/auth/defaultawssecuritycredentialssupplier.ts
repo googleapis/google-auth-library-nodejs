@@ -194,7 +194,6 @@ export class DefaultAwsSecurityCredentialsSupplier
    */
   async #getImdsV2SessionToken(transporter: Gaxios): Promise<string> {
     const request = {
-      ...this.additionalGaxiosOptions,
       url: this.imdsV2SessionTokenUrl,
       method: 'PUT',
       headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
@@ -261,8 +260,8 @@ export class DefaultAwsSecurityCredentialsSupplier
     };
     this.log.info('#retrieveAwsSecurityCredentials %j', request);
     const response = await transporter.request<AwsSecurityCredentialsResponse>({
-      ...request,
       ...this.additionalGaxiosOptions,
+      ...request,
     });
     this.log.info('#retrieveAwsSecurityCredentials %s', response.data);
     return response.data;

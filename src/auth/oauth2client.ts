@@ -758,9 +758,9 @@ export class OAuth2Client extends AuthClient {
     this.log.info('getTokenAsync %j', request);
 
     const res = await this.transporter.request<CredentialRequest>({
-      ...request,
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
+      ...request,
     });
     const tokens = res.data as Credentials;
     this.log.info('getTokenAsync success %j', tokens);
@@ -828,9 +828,9 @@ export class OAuth2Client extends AuthClient {
     try {
       // request for new token
       res = await this.transporter.request<CredentialRequest>({
-        ...request,
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
+        ...request,
       });
     } catch (exc) {
       const e = exc as Error;
@@ -1065,7 +1065,7 @@ export class OAuth2Client extends AuthClient {
       }, callback);
     } else {
       return this.transporter.request<RevokeCredentialsResult>(opts).then(r => {
-        this.log.info('revokeToken success %j', r.data);
+        this.log.info('revokeToken success %s', r.data ?? '');
         return r;
       });
     }

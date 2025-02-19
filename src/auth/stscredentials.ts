@@ -220,9 +220,9 @@ export class StsCredentials extends OAuthClientAuthHandler {
     this.log.info('exchangeToken %j', request);
 
     const opts: GaxiosOptions = {
-      ...request,
       ...StsCredentials.RETRY_CONFIG,
       method: 'POST',
+      ...request,
     };
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
