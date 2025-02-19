@@ -134,7 +134,6 @@ export class DefaultAwsSecurityCredentialsSupplier
       ...request,
       ...this.additionalGaxiosOptions,
       method: 'GET',
-      responseType: 'text',
     };
     const response = await context.transporter.request<string>(opts);
     this.log.info('getAwsRegion is %s', response.data);
@@ -204,7 +203,6 @@ export class DefaultAwsSecurityCredentialsSupplier
       ...request,
       ...this.additionalGaxiosOptions,
       method: 'PUT',
-      responseType: 'text',
     };
     this.log.info('#getImdsV2SessionToken %j', request);
     const response = await transporter.request<string>(opts);
@@ -237,7 +235,6 @@ export class DefaultAwsSecurityCredentialsSupplier
       ...request,
       ...this.additionalGaxiosOptions,
       method: 'GET',
-      responseType: 'text',
     };
     const response = await transporter.request<string>(opts);
     this.log.info('#getAwsRoleName name is %s', response.data);
@@ -266,7 +263,6 @@ export class DefaultAwsSecurityCredentialsSupplier
     const response = await transporter.request<AwsSecurityCredentialsResponse>({
       ...request,
       ...this.additionalGaxiosOptions,
-      responseType: 'json',
     });
     this.log.info('#retrieveAwsSecurityCredentials %s', response.data);
     return response.data;

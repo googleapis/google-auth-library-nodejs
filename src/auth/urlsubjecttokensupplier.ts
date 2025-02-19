@@ -94,7 +94,6 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
       ...request,
       ...this.additionalGaxiosOptions,
       method: 'GET',
-      responseType: this.formatType,
     };
     let subjectToken: string | undefined;
     if (this.formatType === 'text') {

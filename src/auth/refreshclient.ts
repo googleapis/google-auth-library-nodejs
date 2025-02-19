@@ -102,9 +102,6 @@ export class UserRefreshClient extends OAuth2Client {
   async fetchIdToken(targetAudience: string): Promise<string> {
     const request = {
       url: this.endpoints.oauth2TokenUrl,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
       method: 'POST',
       data: new URLSearchParams({
         client_id: this._clientId,

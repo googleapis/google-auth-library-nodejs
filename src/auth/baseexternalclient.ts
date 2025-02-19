@@ -484,7 +484,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       const response = await this.transporter.request<ProjectInfo>({
         ...request,
         ...BaseExternalAccountClient.RETRY_CONFIG,
-        responseType: 'json',
       });
       this.projectId = response.data.projectId;
       this.log.info('getProjectId, id %s', this.projectId);
@@ -680,7 +679,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       ...request,
       ...BaseExternalAccountClient.RETRY_CONFIG,
       method: 'POST',
-      responseType: 'json',
     };
     const response =
       await this.transporter.request<IamGenerateAccessTokenResponse>(opts);

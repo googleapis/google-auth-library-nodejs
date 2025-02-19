@@ -211,15 +211,9 @@ export class StsCredentials extends OAuthClientAuthHandler {
       }
     });
 
-    const requestHeaders = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
-    // Inject additional STS headers if available.
-    Object.assign(requestHeaders, headers || {});
-
     const request = {
       url: this.#tokenExchangeEndpoint.toString(),
-      requestHeaders,
+      headers,
       data: new URLSearchParams(payload),
     };
 
@@ -229,7 +223,6 @@ export class StsCredentials extends OAuthClientAuthHandler {
       ...request,
       ...StsCredentials.RETRY_CONFIG,
       method: 'POST',
-      responseType: 'json',
     };
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);

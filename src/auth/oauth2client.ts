@@ -820,7 +820,6 @@ export class OAuth2Client extends AuthClient {
     const request = {
       url,
       data: querystring.stringify(data),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     };
     this.log.info('refreshTokenNoCache %j', request);
 
@@ -832,8 +831,6 @@ export class OAuth2Client extends AuthClient {
         ...request,
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
-        url,
-        data: new URLSearchParams(data),
       });
     } catch (exc) {
       const e = exc as Error;
