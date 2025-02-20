@@ -14,7 +14,8 @@
 
 import {strict as assert} from 'assert';
 
-import {Gaxios, GaxiosOptionsPrepared} from 'gaxios';
+import {Gaxios, GaxiosOptions, GaxiosOptionsPrepared} from 'gaxios';
+import * as nock from 'nock';
 
 import {AuthClient, PassThroughClient} from '../src';
 import {snakeToCamel} from '../src/util';
@@ -40,6 +41,58 @@ describe('AuthClient', () => {
       authClient = new PassThroughClient({[camelCased]: value});
       assert.equal(authClient[camelCased], value);
     }
+  });
+
+  describe('fetch', () => {
+    const url = 'https://google.com';
+
+    it('should accept a `string`', async () => {
+      const scope = nock(url).get('/').reply(200, {});
+
+      const authClient = new PassThroughClient();
+      const res = await authClient.fetch(url);
+
+      scope.done();
+      assert(typeof url === 'string');
+      assert.deepStrictEqual(res.data, {});
+    });
+
+    it('should accept a `URL`', async () => {
+      const scope = nock(url).get('/').reply(200, {});
+
+      const authClient = new PassThroughClient();
+      const res = await authClient.fetch(new URL(url));
+
+      scope.done();
+      assert.deepStrictEqual(res.data, {});
+    });
+
+    it('should accept an input with initialization', async () => {
+      const scope = nock(url).post('/', 'abc').reply(200, {});
+
+      const authClient = new PassThroughClient();
+      const res = await authClient.fetch(url, {
+        body: Buffer.from('abc'),
+        method: 'POST',
+      });
+
+      scope.done();
+      assert.deepStrictEqual(res.data, {});
+    });
+
+    it('should accept `GaxiosOptions`', async () => {
+      const scope = nock(url).post('/', 'abc').reply(200, {});
+
+      const authClient = new PassThroughClient();
+      const options: GaxiosOptions = {
+        body: Buffer.from('abc'),
+        method: 'POST',
+      };
+      const res = await authClient.fetch(url, options);
+
+      scope.done();
+      assert.deepStrictEqual(res.data, {});
+    });
   });
 
   describe('shared auth interceptor', () => {

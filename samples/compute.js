@@ -28,7 +28,7 @@ async function main() {
   });
   const projectId = await auth.getProjectId();
   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
-  const res = await client.request({url});
+  const res = await client.fetch(url);
   console.log(res.data);
 }
 
