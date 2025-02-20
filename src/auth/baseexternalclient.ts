@@ -482,8 +482,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       };
       this.log.info('getProjectId %j', request);
       const response = await this.transporter.request<ProjectInfo>({
-        ...request,
         ...BaseExternalAccountClient.RETRY_CONFIG,
+        ...request,
       });
       this.projectId = response.data.projectId;
       this.log.info('getProjectId, id %s', this.projectId);

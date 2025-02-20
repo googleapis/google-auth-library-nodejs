@@ -131,9 +131,9 @@ export class DefaultAwsSecurityCredentialsSupplier
     };
     this.log.info('getAwsRegion %j', request);
     const opts: GaxiosOptions = {
-      ...request,
       ...this.additionalGaxiosOptions,
       method: 'GET',
+      ...request,
     };
     const response = await context.transporter.request<string>(opts);
     this.log.info('getAwsRegion is %s', response.data);
@@ -195,13 +195,12 @@ export class DefaultAwsSecurityCredentialsSupplier
   async #getImdsV2SessionToken(transporter: Gaxios): Promise<string> {
     const request = {
       url: this.imdsV2SessionTokenUrl,
-      method: 'PUT',
       headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
     };
     const opts: GaxiosOptions = {
-      ...request,
       ...this.additionalGaxiosOptions,
       method: 'PUT',
+      ...request,
     };
     this.log.info('#getImdsV2SessionToken %j', request);
     const response = await transporter.request<string>(opts);
@@ -231,9 +230,9 @@ export class DefaultAwsSecurityCredentialsSupplier
     };
     this.log.info('#getAwsRoleName %j', request);
     const opts: GaxiosOptions = {
-      ...request,
       ...this.additionalGaxiosOptions,
       method: 'GET',
+      ...request,
     };
     const response = await transporter.request<string>(opts);
     this.log.info('#getAwsRoleName name is %s', response.data);
