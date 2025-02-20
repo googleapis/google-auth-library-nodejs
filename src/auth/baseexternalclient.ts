@@ -676,8 +676,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     };
     this.log.info('getImpersonatedAccessToken %j', request);
     const opts: GaxiosOptions = {
-      ...request,
       ...BaseExternalAccountClient.RETRY_CONFIG,
+      ...request,
       method: 'POST',
     };
     const response =

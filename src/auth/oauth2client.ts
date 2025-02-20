@@ -819,7 +819,7 @@ export class OAuth2Client extends AuthClient {
 
     const request = {
       url,
-      data: querystring.stringify(data),
+      data: new URLSearchParams(data),
     };
     this.log.info('refreshTokenNoCache %j', request);
 
