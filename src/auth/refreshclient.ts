@@ -103,17 +103,14 @@ export class UserRefreshClient extends OAuth2Client {
     const res = await this.transporter.request<CredentialRequest>({
       ...UserRefreshClient.RETRY_CONFIG,
       url: this.endpoints.oauth2TokenUrl,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
       method: 'POST',
-      data: stringify({
+      data: new URLSearchParams({
         client_id: this._clientId,
         client_secret: this._clientSecret,
         grant_type: 'refresh_token',
         refresh_token: this._refreshToken,
         target_audience: targetAudience,
-      }),
+      } as {}),
     });
 
     return res.data.id_token!;

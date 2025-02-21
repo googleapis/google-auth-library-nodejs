@@ -18,7 +18,7 @@
 
 import * as base64js from 'base64-js';
 
-import {Crypto, JwkCertificate, fromArrayBufferToHex} from '../crypto';
+import {Crypto, JwkCertificate, fromArrayBufferToHex} from '../shared';
 
 export class BrowserCrypto implements Crypto {
   constructor() {

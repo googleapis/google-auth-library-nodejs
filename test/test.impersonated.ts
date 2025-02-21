@@ -27,9 +27,7 @@ nock.disableNetConnect();
 const url = 'http://example.com';
 
 function createGTokenMock(body: CredentialRequest) {
-  return nock('https://www.googleapis.com')
-    .post('/oauth2/v4/token')
-    .reply(200, body);
+  return nock('https://oauth2.googleapis.com').post('/token').reply(200, body);
 }
 
 function createSampleJWTClient() {
@@ -378,7 +376,7 @@ describe('impersonated', () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const scopes = [
-      nock('https://www.googleapis.com').post('/oauth2/v4/token').reply(401),
+      nock('https://oauth2.googleapis.com').post('/token').reply(401),
     ];
 
     const impersonated = new Impersonated({
@@ -427,7 +425,7 @@ describe('impersonated', () => {
     impersonated.credentials.access_token = 'initial-access-token';
     impersonated.credentials.expiry_date = Date.now() - 10000;
     const headers = await impersonated.getRequestHeaders();
-    assert.strictEqual(headers['Authorization'], 'Bearer qwerty345');
+    assert.strictEqual(headers.get('authorization'), 'Bearer qwerty345');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
       tomorrow.getTime()

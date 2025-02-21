@@ -87,7 +87,6 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
       url: this.url,
       method: 'GET',
       headers: this.headers,
-      responseType: this.formatType,
     };
     let subjectToken: string | undefined;
     if (this.formatType === 'text') {

@@ -26,8 +26,8 @@ describe('idtokenclient', () => {
   nock.disableNetConnect();
 
   function createGTokenMock(body: CredentialRequest) {
-    return nock('https://www.googleapis.com')
-      .post('/oauth2/v4/token')
+    return nock('https://oauth2.googleapis.com')
+      .post('/token')
       .reply(200, body);
   }
 
@@ -68,7 +68,10 @@ describe('idtokenclient', () => {
     const headers = await client.getRequestHeaders();
     scope.done();
     assert.strictEqual(client.credentials.id_token, 'abc123');
-    assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
+    assert.deepStrictEqual(
+      headers,
+      new Headers({authorization: 'Bearer abc123'})
+    );
   });
 
   it('should refresh ID token if expiry_date not set', async () => {
@@ -87,6 +90,9 @@ describe('idtokenclient', () => {
     const headers = await client.getRequestHeaders();
     scope.done();
     assert.strictEqual(client.credentials.id_token, 'abc123');
-    assert.deepStrictEqual(headers, {Authorization: 'Bearer abc123'});
+    assert.deepStrictEqual(
+      headers,
+      new Headers({authorization: 'Bearer abc123'})
+    );
   });
 });

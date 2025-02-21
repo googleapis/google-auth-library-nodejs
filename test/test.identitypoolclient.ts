@@ -521,7 +521,7 @@ describe('IdentityPoolClient', () => {
             },
           ],
           {
-            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+            authorization: `Basic ${crypto.encodeBase64StringUtf8(
               basicAuthCreds
             )}`,
           }
@@ -597,7 +597,7 @@ describe('IdentityPoolClient', () => {
             },
           ],
           {
-            Authorization: `Basic ${crypto.encodeBase64StringUtf8(
+            authorization: `Basic ${crypto.encodeBase64StringUtf8(
               basicAuthCreds
             )}`,
           }

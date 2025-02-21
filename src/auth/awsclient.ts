@@ -21,6 +21,7 @@ import {
 
 import {DefaultAwsSecurityCredentialsSupplier} from './defaultawssecuritycredentialssupplier';
 import {originalOrCamelOptions, SnakeToCamelObject} from '../util';
+import {Gaxios} from 'gaxios';
 
 /**
  * AWS credentials JSON interface. This is used for AWS workloads.
@@ -230,7 +231,7 @@ export class AwsClient extends BaseExternalAccountClient {
     // The GCP STS endpoint expects the headers to be formatted as:
     // [
     //   {key: 'x-amz-date', value: '...'},
-    //   {key: 'Authorization', value: '...'},
+    //   {key: 'authorization', value: '...'},
     //   ...
     // ]
     // And then serialized as:
@@ -240,7 +241,7 @@ export class AwsClient extends BaseExternalAccountClient {
     //   headers: [{key: 'x-amz-date', value: '...'}, ...]
     // }))
     const reformattedHeader: {key: string; value: string}[] = [];
-    const extendedHeaders = Object.assign(
+    const extendedHeaders = Gaxios.mergeHeaders(
       {
         // The full, canonical resource name of the workload identity pool
         // provider, with or without the HTTPS prefix.
@@ -250,13 +251,12 @@ export class AwsClient extends BaseExternalAccountClient {
       },
       options.headers
     );
+
     // Reformat header to GCP STS expected format.
-    for (const key in extendedHeaders) {
-      reformattedHeader.push({
-        key,
-        value: extendedHeaders[key],
-      });
-    }
+    extendedHeaders.forEach((value, key) =>
+      reformattedHeader.push({key, value})
+    );
+
     // Serialize the reformatted signed request.
     return encodeURIComponent(
       JSON.stringify({

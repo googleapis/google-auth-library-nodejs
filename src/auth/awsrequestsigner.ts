@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions} from 'gaxios';
+import {Gaxios, GaxiosOptions} from 'gaxios';
 
-import {Headers} from './authclient';
+import {HeadersInit} from './authclient';
 import {Crypto, createCrypto, fromArrayBufferToHex} from '../crypto/crypto';
-
-type HttpMethod =
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'PATCH'
-  | 'HEAD'
-  | 'DELETE'
-  | 'CONNECT'
-  | 'OPTIONS'
-  | 'TRACE';
 
 /** Interface defining the AWS authorization header map for signed requests. */
 interface AwsAuthHeaderMap {
@@ -60,7 +49,7 @@ interface GenerateAuthHeaderMapOptions {
   // The AWS service URL query string.
   canonicalQuerystring: string;
   // The HTTP method used to call this API.
-  method: HttpMethod;
+  method: string;
   // The AWS region.
   region: string;
   // The AWS security credentials.
@@ -68,7 +57,7 @@ interface GenerateAuthHeaderMapOptions {
   // The optional request payload if available.
   requestPayload?: string;
   // The optional additional headers needed for the requested AWS API.
-  additionalAmzHeaders?: Headers;
+  additionalAmzHeaders?: HeadersInit;
 }
 
 /** AWS Signature Version 4 signing algorithm identifier.  */
@@ -113,7 +102,7 @@ export class AwsRequestSigner {
    */
   async getRequestOptions(amzOptions: GaxiosOptions): Promise<GaxiosOptions> {
     if (!amzOptions.url) {
-      throw new Error('"url" is required in "amzOptions"');
+      throw new RangeError('"url" is required in "amzOptions"');
     }
     // Stringify JSON requests. This will be set in the request body of the
     // generated signed request.
@@ -127,11 +116,18 @@ export class AwsRequestSigner {
     const additionalAmzHeaders = amzOptions.headers;
     const awsSecurityCredentials = await this.getCredentials();
     const uri = new URL(url);
+
+    if (typeof requestPayload !== 'string' && requestPayload !== undefined) {
+      throw new TypeError(
+        `'requestPayload' is expected to be a string if provided. Got: ${requestPayload}`
+      );
+    }
+
     const headerMap = await generateAuthenticationHeaderMap({
       crypto: this.crypto,
       host: uri.host,
       canonicalUri: uri.pathname,
-      canonicalQuerystring: uri.search.substr(1),
+      canonicalQuerystring: uri.search.slice(1),
       method,
       region: this.region,
       securityCredentials: awsSecurityCredentials,
@@ -139,17 +135,17 @@ export class AwsRequestSigner {
       additionalAmzHeaders,
     });
     // Append additional optional headers, eg. X-Amz-Target, Content-Type, etc.
-    const headers: {[key: string]: string} = Object.assign(
+    const headers = Gaxios.mergeHeaders(
       // Add x-amz-date if available.
       headerMap.amzDate ? {'x-amz-date': headerMap.amzDate} : {},
       {
-        Authorization: headerMap.authorizationHeader,
+        authorization: headerMap.authorizationHeader,
         host: uri.host,
       },
       additionalAmzHeaders || {}
     );
     if (awsSecurityCredentials.token) {
-      Object.assign(headers, {
+      Gaxios.mergeHeaders(headers, {
         'x-amz-security-token': awsSecurityCredentials.token,
       });
     }
@@ -159,7 +155,7 @@ export class AwsRequestSigner {
       headers,
     };
 
-    if (typeof requestPayload !== 'undefined') {
+    if (requestPayload !== undefined) {
       awsSignedReq.body = requestPayload;
     }
 
@@ -223,7 +219,9 @@ async function getSigningKey(
 async function generateAuthenticationHeaderMap(
   options: GenerateAuthHeaderMapOptions
 ): Promise<AwsAuthHeaderMap> {
-  const additionalAmzHeaders = options.additionalAmzHeaders || {};
+  const additionalAmzHeaders = Gaxios.mergeHeaders(
+    options.additionalAmzHeaders
+  );
   const requestPayload = options.requestPayload || '';
   // iam.amazonaws.com host => iam service.
   // sts.us-east-2.amazonaws.com => sts service.
@@ -237,38 +235,38 @@ async function generateAuthenticationHeaderMap(
   // Format: '%Y%m%d'.
   const dateStamp = now.toISOString().replace(/[-]/g, '').replace(/T.*/, '');
 
-  // Change all additional headers to be lower case.
-  const reformattedAdditionalAmzHeaders: Headers = {};
-  Object.keys(additionalAmzHeaders).forEach(key => {
-    reformattedAdditionalAmzHeaders[key.toLowerCase()] =
-      additionalAmzHeaders[key];
-  });
   // Add AWS token if available.
   if (options.securityCredentials.token) {
-    reformattedAdditionalAmzHeaders['x-amz-security-token'] =
-      options.securityCredentials.token;
+    additionalAmzHeaders.set(
+      'x-amz-security-token',
+      options.securityCredentials.token
+    );
   }
   // Header keys need to be sorted alphabetically.
-  const amzHeaders = Object.assign(
+  const amzHeaders = Gaxios.mergeHeaders(
     {
       host: options.host,
     },
     // Previously the date was not fixed with x-amz- and could be provided manually.
     // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-header-value-trim.req
-    reformattedAdditionalAmzHeaders.date ? {} : {'x-amz-date': amzDate},
-    reformattedAdditionalAmzHeaders
+    additionalAmzHeaders.has('date') ? {} : {'x-amz-date': amzDate},
+    additionalAmzHeaders
   );
   let canonicalHeaders = '';
-  const signedHeadersList = Object.keys(amzHeaders).sort();
+
+  // TypeScript is missing `Headers#keys` at the time of writing
+  const signedHeadersList = [
+    ...(amzHeaders as Headers & {keys: () => string[]}).keys(),
+  ].sort();
   signedHeadersList.forEach(key => {
-    canonicalHeaders += `${key}:${amzHeaders[key]}\n`;
+    canonicalHeaders += `${key}:${amzHeaders.get(key)}\n`;
   });
   const signedHeaders = signedHeadersList.join(';');
 
   const payloadHash = await options.crypto.sha256DigestHex(requestPayload);
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
   const canonicalRequest =
-    `${options.method}\n` +
+    `${options.method.toUpperCase()}\n` +
     `${options.canonicalUri}\n` +
     `${options.canonicalQuerystring}\n` +
     `${canonicalHeaders}\n` +
@@ -298,7 +296,7 @@ async function generateAuthenticationHeaderMap(
 
   return {
     // Do not return x-amz-date if date is available.
-    amzDate: reformattedAdditionalAmzHeaders.date ? undefined : amzDate,
+    amzDate: additionalAmzHeaders.has('date') ? undefined : amzDate,
     authorizationHeader,
     canonicalQuerystring: options.canonicalQuerystring,
   };

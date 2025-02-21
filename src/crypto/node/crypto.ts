@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import * as crypto from 'crypto';
-import {Crypto} from '../crypto';
+
+import {Crypto} from '../shared';
 
 export class NodeCrypto implements Crypto {
   async sha256DigestBase64(str: string): Promise<string> {
