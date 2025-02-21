@@ -103,7 +103,7 @@ export class FileSubjectTokenSupplier implements SubjectTokenSupplier {
     }
     if (!subjectToken) {
       throw new Error(
-        'Unable to parse the subject_token from the credential_source file'
+        'Unable to parse the subject_token from the credential_source file',
       );
     }
     return subjectToken;

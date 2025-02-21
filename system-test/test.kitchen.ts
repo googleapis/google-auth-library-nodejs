@@ -71,7 +71,7 @@ async function run(...params: Parameters<typeof spawn>) {
 
 async function packAndInstall() {
   stagingDir = await fs.promises.mkdtemp(
-    path.join(os.tmpdir(), 'google-auth-library-nodejs-pack-')
+    path.join(os.tmpdir(), 'google-auth-library-nodejs-pack-'),
   );
 
   await run('npm', ['pack'], {});

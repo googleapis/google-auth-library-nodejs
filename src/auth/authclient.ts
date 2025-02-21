@@ -227,7 +227,7 @@ export abstract class AuthClient
 
     if (options.get('useAuthRequestParameters') !== false) {
       this.transporter.interceptors.request.add(
-        AuthClient.DEFAULT_REQUEST_INTERCEPTOR
+        AuthClient.DEFAULT_REQUEST_INTERCEPTOR,
       );
     }
 
@@ -306,7 +306,7 @@ export abstract class AuthClient
    */
   protected addUserProjectAndAuthHeaders<T extends Headers>(
     target: T,
-    source: Headers
+    source: Headers,
   ): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');

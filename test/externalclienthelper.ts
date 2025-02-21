@@ -59,13 +59,13 @@ const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 export function mockStsTokenExchange(
   nockParams: NockMockStsToken[],
   additionalHeaders?: {[key: string]: string},
-  baseURL = baseUrl
+  baseURL = baseUrl,
 ): nock.Scope {
   const headers = Object.assign(
     {
       'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
     },
-    additionalHeaders || {}
+    additionalHeaders || {},
   );
   const scope = nock(baseURL, {reqheaders: headers});
   nockParams.forEach(nockMockStsToken => {
@@ -77,7 +77,7 @@ export function mockStsTokenExchange(
 }
 
 export function mockGenerateAccessToken(
-  nockMockGenerateAccessToken: NockMockGenerateAccessToken
+  nockMockGenerateAccessToken: NockMockGenerateAccessToken,
 ): nock.Scope {
   const token = nockMockGenerateAccessToken.token;
   const scope = nock(saBaseUrl, {
@@ -93,13 +93,13 @@ export function mockGenerateAccessToken(
     })
     .reply(
       nockMockGenerateAccessToken.statusCode,
-      nockMockGenerateAccessToken.response
+      nockMockGenerateAccessToken.response,
     );
   return scope;
 }
 
 export function getAudience(
-  projectNumber: string = defaultProjectNumber
+  projectNumber: string = defaultProjectNumber,
 ): string {
   return (
     `//iam.googleapis.com/projects/${projectNumber}` +
@@ -125,7 +125,7 @@ export function mockCloudResourceManager(
   projectNumber: string,
   accessToken: string,
   statusCode: number,
-  response: ProjectInfo | CloudRequestError
+  response: ProjectInfo | CloudRequestError,
 ): nock.Scope {
   return nock('https://cloudresourcemanager.googleapis.com', {
     reqheaders: {authorization: `Bearer ${accessToken}`},
@@ -137,7 +137,7 @@ export function mockCloudResourceManager(
 export function getExpectedExternalAccountMetricsHeaderValue(
   expectedSource: string,
   expectedSaImpersonation: boolean,
-  expectedConfigLifetime: boolean
+  expectedConfigLifetime: boolean,
 ): string {
   const languageVersion = process.version.replace(/^v/, '');
   return `gl-node/${languageVersion} auth/${pkg.version} google-byoid-sdk source/${expectedSource} sa-impersonation/${expectedSaImpersonation} config-lifetime/${expectedConfigLifetime}`;

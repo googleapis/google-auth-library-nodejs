@@ -69,7 +69,7 @@ export class UserRefreshClient extends OAuth2Client {
     /**
      * @deprecated - provide a {@link UserRefreshClientOptions `UserRefreshClientOptions`} object in the first parameter instead
      */
-    forceRefreshOnFailure?: UserRefreshClientOptions['forceRefreshOnFailure']
+    forceRefreshOnFailure?: UserRefreshClientOptions['forceRefreshOnFailure'],
   ) {
     const opts =
       optionsOrClientId && typeof optionsOrClientId === 'object'
@@ -120,27 +120,27 @@ export class UserRefreshClient extends OAuth2Client {
   fromJSON(json: JWTInput): void {
     if (!json) {
       throw new Error(
-        'Must pass in a JSON object containing the user refresh token'
+        'Must pass in a JSON object containing the user refresh token',
       );
     }
     if (json.type !== 'authorized_user') {
       throw new Error(
-        'The incoming JSON object does not have the "authorized_user" type'
+        'The incoming JSON object does not have the "authorized_user" type',
       );
     }
     if (!json.client_id) {
       throw new Error(
-        'The incoming JSON object does not contain a client_id field'
+        'The incoming JSON object does not contain a client_id field',
       );
     }
     if (!json.client_secret) {
       throw new Error(
-        'The incoming JSON object does not contain a client_secret field'
+        'The incoming JSON object does not contain a client_secret field',
       );
     }
     if (!json.refresh_token) {
       throw new Error(
-        'The incoming JSON object does not contain a refresh_token field'
+        'The incoming JSON object does not contain a refresh_token field',
       );
     }
     this._clientId = json.client_id;
@@ -160,11 +160,11 @@ export class UserRefreshClient extends OAuth2Client {
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(
     inputStream: stream.Readable,
-    callback: (err?: Error) => void
+    callback: (err?: Error) => void,
   ): void;
   fromStream(
     inputStream: stream.Readable,
-    callback?: (err?: Error) => void
+    callback?: (err?: Error) => void,
   ): void | Promise<void> {
     if (callback) {
       this.fromStreamAsync(inputStream).then(() => callback(), callback);
@@ -177,7 +177,7 @@ export class UserRefreshClient extends OAuth2Client {
     return new Promise<void>((resolve, reject) => {
       if (!inputStream) {
         return reject(
-          new Error('Must pass in a stream containing the user refresh token.')
+          new Error('Must pass in a stream containing the user refresh token.'),
         );
       }
       let s = '';

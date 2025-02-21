@@ -127,7 +127,7 @@ export type OriginalAndCamel<T> = {
  */
 export function snakeToCamel<T extends string>(str: T): SnakeToCamel<T> {
   return str.replace(/([_][^_])/g, match =>
-    match.slice(1).toUpperCase()
+    match.slice(1).toUpperCase(),
   ) as SnakeToCamel<T>;
 }
 

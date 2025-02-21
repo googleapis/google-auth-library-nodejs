@@ -99,7 +99,7 @@ describe('jwt', () => {
       assert.strictEqual(PEM_PATH, jwt.gtoken!.keyFile);
       assert.strictEqual(
         ['http://bar', 'http://foo'].join(' '),
-        jwt.gtoken!.scope
+        jwt.gtoken!.scope,
       );
       assert.strictEqual('bar@subjectaccount.com', jwt.gtoken!.sub);
       assert.strictEqual('initial-access-token', jwt.credentials.access_token);
@@ -145,7 +145,7 @@ describe('jwt', () => {
       assert.strictEqual(
         'initial-access-token',
         got,
-        'the access token was wrong: ' + got
+        'the access token was wrong: ' + got,
       );
       done();
     });
@@ -166,7 +166,8 @@ describe('jwt', () => {
         scope.done();
         done();
       })
-      .getAccessToken();
+      .getAccessToken()
+      .catch(console.error);
   });
 
   it('can obtain new access token when scopes are set', async () => {
@@ -186,7 +187,7 @@ describe('jwt', () => {
     assert.strictEqual(
       want,
       headers.get('authorization'),
-      `the authorization header was wrong: ${headers.get('authorization')}`
+      `the authorization header was wrong: ${headers.get('authorization')}`,
     );
   });
 
@@ -491,7 +492,7 @@ describe('jwt', () => {
     const dateInMillis = new Date().getTime();
     assert.strictEqual(
       dateInMillis.toString().length,
-      jwt.credentials.expiry_date!.toString().length
+      jwt.credentials.expiry_date!.toString().length,
     );
   });
 
@@ -678,7 +679,7 @@ describe('jwt', () => {
     // Read the contents of the file into a json object.
     const fileContents = fs.readFileSync(
       './test/fixtures/private.json',
-      'utf-8'
+      'utf-8',
     );
     const json = JSON.parse(fileContents);
 
@@ -743,7 +744,7 @@ describe('jwt', () => {
         require('../../test/fixtures/service-account-with-quota.json'),
         {
           private_key: keypair(512 /* bitsize of private key */).private,
-        }
+        },
       ),
     });
     const client = await auth.getClient();
@@ -751,11 +752,11 @@ describe('jwt', () => {
     // If a URL isn't provided to authorize, the OAuth2Client super class is
     // executed, which was already exercised.
     const headers = await client.getRequestHeaders(
-      'http:/example.com/my_test_service'
+      'http:/example.com/my_test_service',
     );
     assert.strictEqual(
       headers.get('x-goog-user-project'),
-      'fake-quota-project'
+      'fake-quota-project',
     );
   });
 
@@ -835,7 +836,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -857,7 +858,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -879,7 +880,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -902,7 +903,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -924,7 +925,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -968,7 +969,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -990,7 +991,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1013,7 +1014,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1035,7 +1036,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1058,7 +1059,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1079,7 +1080,7 @@ describe('jwt', () => {
 
       await assert.rejects(
         () => jwt.getRequestHeaders('https//beepboop.googleapis.com'),
-        /Domain-wide delegation is not supported in universes other than/
+        /Domain-wide delegation is not supported in universes other than/,
       );
     });
 

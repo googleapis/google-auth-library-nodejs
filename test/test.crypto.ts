@@ -121,8 +121,8 @@ describe('crypto', () => {
         'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
       const extectedHash = new Uint8Array(
         (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
-          parseInt(byte, 16)
-        )
+          parseInt(byte, 16),
+        ),
       );
 
       const calculatedHash = await crypto.signWithHmacSha256(key, message);
@@ -136,8 +136,8 @@ describe('crypto', () => {
         'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
       const extectedHash = new Uint8Array(
         (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
-          parseInt(byte, 16)
-        )
+          parseInt(byte, 16),
+        ),
       );
 
       const calculatedHash = await crypto.signWithHmacSha256(key, message);

@@ -49,7 +49,7 @@ describe('AuthClient', () => {
       new PassThroughClient({transporter: gaxios});
 
       assert(
-        gaxios.interceptors.request.has(AuthClient.DEFAULT_REQUEST_INTERCEPTOR)
+        gaxios.interceptors.request.has(AuthClient.DEFAULT_REQUEST_INTERCEPTOR),
       );
     });
 
@@ -65,7 +65,7 @@ describe('AuthClient', () => {
       assert.equal(authClient.transporter, gaxios);
       assert.equal(
         authClient.transporter.interceptors.request.size,
-        originalInterceptorCount
+        originalInterceptorCount,
       );
     });
 
@@ -133,7 +133,7 @@ describe('AuthClient', () => {
 
         assert.equal(
           options.headers.get('x-goog-api-client'),
-          `gl-node/${process.version.replace(/^v/, '')}`
+          `gl-node/${process.version.replace(/^v/, '')}`,
         );
       });
 

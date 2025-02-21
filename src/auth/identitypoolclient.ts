@@ -116,7 +116,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
   constructor(
     options:
       | IdentityPoolClientOptions
-      | SnakeToCamelObject<IdentityPoolClientOptions>
+      | SnakeToCamelObject<IdentityPoolClientOptions>,
   ) {
     super(options);
 
@@ -126,12 +126,12 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
     // Validate credential sourcing configuration.
     if (!credentialSource && !subjectTokenSupplier) {
       throw new Error(
-        'A credential source or subject token supplier must be specified.'
+        'A credential source or subject token supplier must be specified.',
       );
     }
     if (credentialSource && subjectTokenSupplier) {
       throw new Error(
-        'Only one of credential source or subject token supplier can be specified.'
+        'Only one of credential source or subject token supplier can be specified.',
       );
     }
 
@@ -142,13 +142,13 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       const credentialSourceOpts = originalOrCamelOptions(credentialSource);
 
       const formatOpts = originalOrCamelOptions(
-        credentialSourceOpts.get('format')
+        credentialSourceOpts.get('format'),
       );
 
       // Text is the default format type.
       const formatType = formatOpts.get('type') || 'text';
       const formatSubjectTokenFieldName = formatOpts.get(
-        'subject_token_field_name'
+        'subject_token_field_name',
       );
 
       if (formatType !== 'json' && formatType !== 'text') {
@@ -156,7 +156,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       }
       if (formatType === 'json' && !formatSubjectTokenFieldName) {
         throw new Error(
-          'Missing subject_token_field_name for JSON credential_source format'
+          'Missing subject_token_field_name for JSON credential_source format',
         );
       }
 
@@ -165,7 +165,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       const headers = credentialSourceOpts.get('headers');
       if (file && url) {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file or url.'
+          'No valid Identity Pool "credential_source" provided, must be either file or url.',
         );
       } else if (file && !url) {
         this.credentialSourceType = 'file';
@@ -185,7 +185,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         });
       } else {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file or url.'
+          'No valid Identity Pool "credential_source" provided, must be either file or url.',
         );
       }
     }

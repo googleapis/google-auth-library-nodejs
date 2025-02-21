@@ -27,7 +27,7 @@ export class IAMAuth {
    */
   constructor(
     public selector: string,
-    public token: string
+    public token: string,
   ) {
     this.selector = selector;
     this.token = token;

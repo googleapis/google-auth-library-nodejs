@@ -53,7 +53,7 @@ export class JWTAccess {
     email?: string | null,
     key?: string | null,
     keyId?: string | null,
-    eagerRefreshThresholdMillis?: number
+    eagerRefreshThresholdMillis?: number,
   ) {
     this.email = email;
     this.key = key;
@@ -95,7 +95,7 @@ export class JWTAccess {
   getRequestHeaders(
     url?: string,
     additionalClaims?: Claims,
-    scopes?: string | string[]
+    scopes?: string | string[],
   ): Headers {
     // Return cached authorization headers, unless we are within
     // eagerRefreshThresholdMillis ms of them expiring:
@@ -146,7 +146,7 @@ export class JWTAccess {
       for (const claim in defaultClaims) {
         if (additionalClaims[claim]) {
           throw new Error(
-            `The '${claim}' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`
+            `The '${claim}' property is not allowed when passing additionalClaims. This claim is included in the JWT by default.`,
           );
         }
       }
@@ -185,17 +185,17 @@ export class JWTAccess {
   fromJSON(json: JWTInput): void {
     if (!json) {
       throw new Error(
-        'Must pass in a JSON object containing the service account auth settings.'
+        'Must pass in a JSON object containing the service account auth settings.',
       );
     }
     if (!json.client_email) {
       throw new Error(
-        'The incoming JSON object does not contain a client_email field'
+        'The incoming JSON object does not contain a client_email field',
       );
     }
     if (!json.private_key) {
       throw new Error(
-        'The incoming JSON object does not contain a private_key field'
+        'The incoming JSON object does not contain a private_key field',
       );
     }
     // Extract the relevant information from the json key file.
@@ -213,11 +213,11 @@ export class JWTAccess {
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(
     inputStream: stream.Readable,
-    callback: (err?: Error) => void
+    callback: (err?: Error) => void,
   ): void;
   fromStream(
     inputStream: stream.Readable,
-    callback?: (err?: Error) => void
+    callback?: (err?: Error) => void,
   ): void | Promise<void> {
     if (callback) {
       this.fromStreamAsync(inputStream).then(() => callback(), callback);
@@ -231,8 +231,8 @@ export class JWTAccess {
       if (!inputStream) {
         reject(
           new Error(
-            'Must pass in a stream containing the service account auth settings.'
-          )
+            'Must pass in a stream containing the service account auth settings.',
+          ),
         );
       }
       let s = '';

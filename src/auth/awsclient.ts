@@ -97,7 +97,7 @@ export interface AwsSecurityCredentialsSupplier {
    * @return A promise that resolves with the requested {@link AwsSecurityCredentials}.
    */
   getAwsSecurityCredentials: (
-    context: ExternalAccountSupplierContext
+    context: ExternalAccountSupplierContext,
   ) => Promise<AwsSecurityCredentials>;
 }
 
@@ -133,23 +133,23 @@ export class AwsClient extends BaseExternalAccountClient {
    *   from the external account JSON credential file.
    */
   constructor(
-    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>
+    options: AwsClientOptions | SnakeToCamelObject<AwsClientOptions>,
   ) {
     super(options);
     const opts = originalOrCamelOptions(options as AwsClientOptions);
     const credentialSource = opts.get('credential_source');
     const awsSecurityCredentialsSupplier = opts.get(
-      'aws_security_credentials_supplier'
+      'aws_security_credentials_supplier',
     );
     // Validate credential sourcing configuration.
     if (!credentialSource && !awsSecurityCredentialsSupplier) {
       throw new Error(
-        'A credential source or AWS security credentials supplier must be specified.'
+        'A credential source or AWS security credentials supplier must be specified.',
       );
     }
     if (credentialSource && awsSecurityCredentialsSupplier) {
       throw new Error(
-        'Only one of credential source or AWS security credentials supplier can be specified.'
+        'Only one of credential source or AWS security credentials supplier can be specified.',
       );
     }
 
@@ -168,7 +168,7 @@ export class AwsClient extends BaseExternalAccountClient {
       // environment variables.
       const securityCredentialsUrl = credentialSourceOpts.get('url');
       const imdsV2SessionTokenUrl = credentialSourceOpts.get(
-        'imdsv2_session_token_url'
+        'imdsv2_session_token_url',
       );
       this.awsSecurityCredentialsSupplier =
         new DefaultAwsSecurityCredentialsSupplier({
@@ -178,7 +178,7 @@ export class AwsClient extends BaseExternalAccountClient {
         });
 
       this.regionalCredVerificationUrl = credentialSourceOpts.get(
-        'regional_cred_verification_url'
+        'regional_cred_verification_url',
       );
       this.credentialSourceType = 'aws';
 
@@ -195,7 +195,7 @@ export class AwsClient extends BaseExternalAccountClient {
       throw new Error('No valid AWS "credential_source" provided');
     } else if (parseInt(match[2], 10) !== 1) {
       throw new Error(
-        `aws version "${match[2]}" is not supported in the current build.`
+        `aws version "${match[2]}" is not supported in the current build.`,
       );
     }
   }
@@ -212,11 +212,11 @@ export class AwsClient extends BaseExternalAccountClient {
     // Initialize AWS request signer if not already initialized.
     if (!this.awsRequestSigner) {
       this.region = await this.awsSecurityCredentialsSupplier.getAwsRegion(
-        this.supplierContext
+        this.supplierContext,
       );
       this.awsRequestSigner = new AwsRequestSigner(async () => {
         return this.awsSecurityCredentialsSupplier.getAwsSecurityCredentials(
-          this.supplierContext
+          this.supplierContext,
         );
       }, this.region);
     }
@@ -249,12 +249,12 @@ export class AwsClient extends BaseExternalAccountClient {
         // ensure data integrity.
         'x-goog-cloud-target-resource': this.audience,
       },
-      options.headers
+      options.headers,
     );
 
     // Reformat header to GCP STS expected format.
     extendedHeaders.forEach((value, key) =>
-      reformattedHeader.push({key, value})
+      reformattedHeader.push({key, value}),
     );
 
     // Serialize the reformatted signed request.
@@ -263,7 +263,7 @@ export class AwsClient extends BaseExternalAccountClient {
         url: options.url,
         method: options.method,
         headers: reformattedHeader,
-      })
+      }),
     );
   }
 }

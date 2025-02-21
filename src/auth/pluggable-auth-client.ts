@@ -193,7 +193,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       ) {
         throw new Error(
           `Timeout must be between ${MINIMUM_EXECUTABLE_TIMEOUT_MILLIS} and ` +
-            `${MAXIMUM_EXECUTABLE_TIMEOUT_MILLIS} milliseconds.`
+            `${MAXIMUM_EXECUTABLE_TIMEOUT_MILLIS} milliseconds.`,
         );
       }
     }
@@ -231,7 +231,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       throw new Error(
         'Pluggable Auth executables need to be explicitly allowed to run by ' +
           'setting the GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES environment ' +
-          'Variable to 1.'
+          'Variable to 1.',
       );
     }
 
@@ -255,7 +255,7 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
       if (serviceAccountEmail) {
         envMap.set(
           'GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL',
-          serviceAccountEmail
+          serviceAccountEmail,
         );
       }
       executableResponse =
@@ -264,21 +264,21 @@ export class PluggableAuthClient extends BaseExternalAccountClient {
 
     if (executableResponse.version > MAXIMUM_EXECUTABLE_VERSION) {
       throw new Error(
-        `Version of executable is not currently supported, maximum supported version is ${MAXIMUM_EXECUTABLE_VERSION}.`
+        `Version of executable is not currently supported, maximum supported version is ${MAXIMUM_EXECUTABLE_VERSION}.`,
       );
     }
     // Check that response was successful.
     if (!executableResponse.success) {
       throw new ExecutableError(
         executableResponse.errorMessage as string,
-        executableResponse.errorCode as string
+        executableResponse.errorCode as string,
       );
     }
     // Check that response contains expiration time if output file was specified.
     if (this.outputFile) {
       if (!executableResponse.expirationTime) {
         throw new InvalidExpirationTimeFieldError(
-          'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.'
+          'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.',
         );
       }
     }

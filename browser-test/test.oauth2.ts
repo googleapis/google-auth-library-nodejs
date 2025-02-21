@@ -135,7 +135,7 @@ describe('Browser OAuth2 tests', () => {
     assert.strictEqual(params.get('code_challenge'), codes.codeChallenge);
     assert.strictEqual(
       params.get('code_challenge_method'),
-      CodeChallengeMethod.S256
+      CodeChallengeMethod.S256,
     );
   });
 
@@ -172,18 +172,18 @@ describe('Browser OAuth2 tests', () => {
       privateKey,
       algo,
       true,
-      ['sign']
+      ['sign'],
     );
     const signature = await window.crypto.subtle.sign(
       algo,
       cryptoKey,
-      new TextEncoder().encode(data)
+      new TextEncoder().encode(data),
     );
     data += '.' + base64js.fromByteArray(new Uint8Array(signature));
     const login = await client.verifySignedJwtWithCertsAsync(
       data,
       {keyid: publicKey},
-      'testaudience'
+      'testaudience',
     );
     assert.strictEqual(login.getUserId(), '123456789');
   });
