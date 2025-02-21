@@ -57,7 +57,7 @@ export class IdTokenClient extends OAuth2Client {
       this.isTokenExpiring()
     ) {
       const idToken = await this.idTokenProvider.fetchIdToken(
-        this.targetAudience
+        this.targetAudience,
       );
       this.credentials = {
         id_token: idToken,
@@ -75,7 +75,7 @@ export class IdTokenClient extends OAuth2Client {
     const payloadB64 = idToken.split('.')[1];
     if (payloadB64) {
       const payload = JSON.parse(
-        Buffer.from(payloadB64, 'base64').toString('ascii')
+        Buffer.from(payloadB64, 'base64').toString('ascii'),
       );
       return payload.exp * 1000;
     }

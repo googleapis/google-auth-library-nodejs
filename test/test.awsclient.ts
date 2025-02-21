@@ -18,10 +18,7 @@ import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {AwsClient, AwsSecurityCredentialsSupplier} from '../src/auth/awsclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {
-  BaseExternalAccountClient,
-  ExternalAccountSupplierContext,
-} from '../src/auth/baseexternalclient';
+import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -62,7 +59,7 @@ describe('AwsClient', () => {
   };
   const awsCredentialSourceWithImdsv2 = Object.assign(
     {imdsv2_session_token_url: `${metadataBaseUrl}/latest/api/token`},
-    awsCredentialSource
+    awsCredentialSource,
   );
   const awsOptions = {
     type: 'external_account',
@@ -82,7 +79,7 @@ describe('AwsClient', () => {
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    awsOptions
+    awsOptions,
   );
   const stsSuccessfulResponse: StsSuccessfulResponse = {
     access_token: 'ACCESS_TOKEN',
@@ -134,7 +131,7 @@ describe('AwsClient', () => {
           value: awsOptions.audience,
         },
       ],
-    })
+    }),
   );
   // Signature retrieved from "signed request when AWS credentials have no
   // token" test in test.awsclient.ts.
@@ -175,7 +172,7 @@ describe('AwsClient', () => {
           value: awsOptions.audience,
         },
       ],
-    })
+    }),
   );
 
   beforeEach(() => {
@@ -201,7 +198,7 @@ describe('AwsClient', () => {
     requiredCredentialSourceFields.forEach(required => {
       it(`should throw when credential_source is missing ${required}`, () => {
         const expectedError = new Error(
-          'No valid AWS "credential_source" provided'
+          'No valid AWS "credential_source" provided',
         );
         const invalidCredentialSource = Object.assign({}, awsCredentialSource);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -237,7 +234,7 @@ describe('AwsClient', () => {
 
     it('should throw when an unsupported environment ID is provided', () => {
       const expectedError = new Error(
-        'No valid AWS "credential_source" provided'
+        'No valid AWS "credential_source" provided',
       );
       const invalidCredentialSource = Object.assign({}, awsCredentialSource);
       invalidCredentialSource.environment_id = 'azure1';
@@ -254,7 +251,7 @@ describe('AwsClient', () => {
 
     it('should throw when an unsupported environment version is provided', () => {
       const expectedError = new Error(
-        'aws version "3" is not supported in the current build.'
+        'aws version "3" is not supported in the current build.',
       );
       const invalidCredentialSource = Object.assign({}, awsCredentialSource);
       invalidCredentialSource.environment_id = 'aws3';
@@ -271,7 +268,7 @@ describe('AwsClient', () => {
 
     it('should throw when both a credential source and supplier are provided', () => {
       const expectedError = new Error(
-        'Only one of credential source or AWS security credentials supplier can be specified.'
+        'Only one of credential source or AWS security credentials supplier can be specified.',
       );
       const invalidOptions = {
         type: 'external_account',
@@ -287,7 +284,7 @@ describe('AwsClient', () => {
 
     it('should throw when neither a credential source or supplier are provided', () => {
       const expectedError = new Error(
-        'A credential source or AWS security credentials supplier must be specified.'
+        'A credential source or AWS security credentials supplier must be specified.',
       );
       const invalidOptions = {
         type: 'external_account',
@@ -365,7 +362,7 @@ describe('AwsClient', () => {
           })
             .put('/latest/api/token')
             .twice()
-            .reply(200, awsSessionToken)
+            .reply(200, awsSessionToken),
         );
 
         scopes.push(
@@ -377,7 +374,7 @@ describe('AwsClient', () => {
             .get('/latest/meta-data/iam/security-credentials')
             .reply(200, awsRole)
             .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-            .reply(200, awsSecurityCredentials)
+            .reply(200, awsSecurityCredentials),
         );
 
         const client = new AwsClient(awsOptionsWithImdsv2);
@@ -390,7 +387,7 @@ describe('AwsClient', () => {
       it('should resolve on success with permanent creds', async () => {
         const permanentAwsSecurityCredentials = Object.assign(
           {},
-          awsSecurityCredentials
+          awsSecurityCredentials,
         );
         delete permanentAwsSecurityCredentials.Token;
         const scope = nock(metadataBaseUrl)
@@ -482,11 +479,11 @@ describe('AwsClient', () => {
       it('should reject when "credential_source.url" is missing', async () => {
         const expectedError = new Error(
           'Unable to determine AWS role name due to missing ' +
-            '"options.credential_source.url"'
+            '"options.credential_source.url"',
         );
         const missingUrlCredentialSource = Object.assign(
           {},
-          awsCredentialSource
+          awsCredentialSource,
         );
         delete (
           missingUrlCredentialSource as Partial<typeof awsCredentialSource>
@@ -511,11 +508,11 @@ describe('AwsClient', () => {
       it('should reject when "credential_source.region_url" is missing', async () => {
         const expectedError = new RangeError(
           'Unable to determine AWS region due to missing ' +
-            '"options.credential_source.region_url"'
+            '"options.credential_source.region_url"',
         );
         const missingRegionUrlCredentialSource = Object.assign(
           {},
-          awsCredentialSource
+          awsCredentialSource,
         );
         delete (
           missingRegionUrlCredentialSource as Partial<
@@ -555,7 +552,7 @@ describe('AwsClient', () => {
                   'urn:ietf:params:aws:token-type:aws4_request',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           nock(metadataBaseUrl)
@@ -564,7 +561,7 @@ describe('AwsClient', () => {
             .get('/latest/meta-data/iam/security-credentials')
             .reply(200, awsRole)
             .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-            .reply(200, awsSecurityCredentials)
+            .reply(200, awsSecurityCredentials),
         );
 
         const client = new AwsClient(awsOptions);
@@ -583,7 +580,7 @@ describe('AwsClient', () => {
         const saSuccessResponse = {
           accessToken: 'SA_ACCESS_TOKEN',
           expireTime: new Date(
-            referenceDate.getTime() + ONE_HOUR_IN_SECS * 1000
+            referenceDate.getTime() + ONE_HOUR_IN_SECS * 1000,
           ).toISOString(),
         };
         const scopes: nock.Scope[] = [];
@@ -616,7 +613,7 @@ describe('AwsClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new AwsClient(awsOptionsWithSA);
@@ -788,7 +785,7 @@ describe('AwsClient', () => {
         process.env.AWS_REGION = awsRegion;
         const requiredOnlyCredentialSource = Object.assign(
           {},
-          awsCredentialSource
+          awsCredentialSource,
         );
         // Remove all optional fields.
         delete (
@@ -821,7 +818,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
           })
             .put('/latest/api/token')
-            .reply(200, awsSessionToken)
+            .reply(200, awsSessionToken),
         );
 
         scopes.push(
@@ -829,7 +826,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
           })
             .get('/latest/meta-data/placement/availability-zone')
-            .reply(200, `${awsRegion}b`)
+            .reply(200, `${awsRegion}b`),
         );
 
         const client = new AwsClient(awsOptionsWithImdsv2);
@@ -850,7 +847,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
           })
             .put('/latest/api/token')
-            .reply(200, awsSessionToken)
+            .reply(200, awsSessionToken),
         );
 
         scopes.push(
@@ -858,7 +855,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token': awsSessionToken},
           })
             .get('/latest/meta-data/placement/availability-zone')
-            .reply(200, `${awsRegion}b`)
+            .reply(200, `${awsRegion}b`),
         );
 
         const client = new AwsClient(awsOptionsWithImdsv2);
@@ -888,7 +885,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
           })
             .put('/latest/api/token')
-            .reply(200, awsSessionToken)
+            .reply(200, awsSessionToken),
         );
 
         scopes.push(
@@ -898,7 +895,7 @@ describe('AwsClient', () => {
             .get('/latest/meta-data/iam/security-credentials')
             .reply(200, awsRole)
             .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-            .reply(200, awsSecurityCredentials)
+            .reply(200, awsSecurityCredentials),
         );
 
         const client = new AwsClient(awsOptionsWithImdsv2);
@@ -918,7 +915,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
           })
             .put('/latest/api/token')
-            .reply(200, awsSessionToken)
+            .reply(200, awsSessionToken),
         );
 
         scopes.push(
@@ -928,7 +925,7 @@ describe('AwsClient', () => {
             .get('/latest/meta-data/iam/security-credentials')
             .reply(200, awsRole)
             .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-            .reply(200, awsSecurityCredentials)
+            .reply(200, awsSecurityCredentials),
         );
 
         const client = new AwsClient(awsOptionsWithImdsv2);
@@ -948,7 +945,7 @@ describe('AwsClient', () => {
             reqheaders: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
           })
             .put('/latest/api/token')
-            .reply(200, awsSessionToken)
+            .reply(200, awsSessionToken),
         );
 
         scopes.push(
@@ -958,7 +955,7 @@ describe('AwsClient', () => {
             .get('/latest/meta-data/iam/security-credentials')
             .reply(200, awsRole)
             .get(`/latest/meta-data/iam/security-credentials/${awsRole}`)
-            .reply(200, awsSecurityCredentials)
+            .reply(200, awsSecurityCredentials),
         );
 
         const client = new AwsClient(awsOptionsWithImdsv2);
@@ -988,12 +985,12 @@ describe('AwsClient', () => {
                   'urn:ietf:params:aws:token-type:aws4_request',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           nock(metadataBaseUrl)
             .get('/latest/meta-data/placement/availability-zone')
-            .reply(200, `${awsRegion}b`)
+            .reply(200, `${awsRegion}b`),
         );
         process.env.AWS_ACCESS_KEY_ID = accessKeyId;
         process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
@@ -1050,15 +1047,15 @@ describe('AwsClient', () => {
               'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
                 'aws',
                 false,
-                false
+                false,
               ),
-            }
-          )
+            },
+          ),
         );
         scopes.push(
           nock(metadataBaseUrl)
             .get('/latest/meta-data/placement/availability-zone')
-            .reply(200, `${awsRegion}b`)
+            .reply(200, `${awsRegion}b`),
         );
         process.env.AWS_ACCESS_KEY_ID = accessKeyId;
         process.env.AWS_SECRET_ACCESS_KEY = secretAccessKey;
@@ -1173,7 +1170,7 @@ describe('AwsClient', () => {
                   'urn:ietf:params:aws:token-type:aws4_request',
               },
             },
-          ])
+          ]),
         );
         const supplier = new TestAwsSupplier({
           credentials: {
@@ -1241,10 +1238,10 @@ describe('AwsClient', () => {
               'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
                 'programmatic',
                 false,
-                false
+                false,
               ),
-            }
-          )
+            },
+          ),
         );
         const supplier = new TestAwsSupplier({
           credentials: {
@@ -1294,7 +1291,7 @@ class TestAwsSupplier implements AwsSecurityCredentialsSupplier {
     this.regionError = options.regionError;
   }
 
-  async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
+  async getAwsRegion(): Promise<string> {
     if (this.regionError) {
       throw this.regionError;
     } else {
@@ -1302,9 +1299,7 @@ class TestAwsSupplier implements AwsSecurityCredentialsSupplier {
     }
   }
 
-  async getAwsSecurityCredentials(
-    context: ExternalAccountSupplierContext
-  ): Promise<AwsSecurityCredentials> {
+  async getAwsSecurityCredentials(): Promise<AwsSecurityCredentials> {
     if (this.credentialsError) {
       throw this.credentialsError;
     } else {

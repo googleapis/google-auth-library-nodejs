@@ -109,7 +109,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
    */
   async refreshToken(
     refreshToken: string,
-    headers?: HeadersInit
+    headers?: HeadersInit,
   ): Promise<TokenRefreshResponse> {
     const opts: GaxiosOptions = {
       ...ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
@@ -138,7 +138,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.
-          error
+          error,
         );
       }
       // Request could fail before the server responds.
@@ -228,14 +228,14 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
   request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
   request<T>(
     opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
+    callback?: BodyResponseCallback<T>,
   ): GaxiosPromise<T> | void {
     if (callback) {
       this.requestAsync<T>(opts).then(
         r => callback(null, r),
         e => {
           return callback(e, e.response);
-        }
+        },
       );
     } else {
       return this.requestAsync<T>(opts);
@@ -251,7 +251,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    reAuthRetried = false
+    reAuthRetried = false,
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -295,7 +295,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     // Refresh the access token using the refresh token.
     const refreshResponse =
       await this.externalAccountAuthorizedUserHandler.refreshToken(
-        this.refreshToken
+        this.refreshToken,
       );
 
     this.cachedAccessToken = {

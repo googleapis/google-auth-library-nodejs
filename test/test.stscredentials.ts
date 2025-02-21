@@ -91,13 +91,13 @@ describe('StsCredentials', () => {
     response: StsSuccessfulResponse | OAuthErrorResponse,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     request: {[key: string]: any},
-    additionalHeaders?: {[key: string]: string}
+    additionalHeaders?: {[key: string]: string},
   ): nock.Scope {
     const headers = Object.assign(
       {
         'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
       },
-      additionalHeaders || {}
+      additionalHeaders || {},
     );
     return nock(baseUrl)
       .post(path, request, {
@@ -149,7 +149,7 @@ describe('StsCredentials', () => {
       {
         client_id: requestBodyAuth.clientId,
         client_secret: requestBodyAuth.clientSecret,
-      }
+      },
     );
 
     describe('without client authentication', () => {
@@ -158,14 +158,14 @@ describe('StsCredentials', () => {
           200,
           stsSuccessfulResponse,
           expectedRequest,
-          additionalHeaders
+          additionalHeaders,
         );
         const stsCredentials = new StsCredentials(tokenExchangeEndpoint);
 
         const resp = await stsCredentials.exchangeToken(
           stsCredentialsOptions,
           additionalHeaders,
-          options
+          options,
         );
 
         // Confirm raw GaxiosResponse appended to response.
@@ -179,12 +179,12 @@ describe('StsCredentials', () => {
         const scope = mockStsTokenExchange(
           200,
           stsSuccessfulResponse,
-          expectedPartialRequest
+          expectedPartialRequest,
         );
         const stsCredentials = new StsCredentials(tokenExchangeEndpoint);
 
         const resp = await stsCredentials.exchangeToken(
-          partialStsCredentialsOptions
+          partialStsCredentialsOptions,
         );
 
         // Confirm raw GaxiosResponse appended to response.
@@ -199,7 +199,7 @@ describe('StsCredentials', () => {
           400,
           errorResponse,
           expectedRequest,
-          additionalHeaders
+          additionalHeaders,
         );
         const expectedError = getErrorFromOAuthErrorResponse(errorResponse);
         const stsCredentials = new StsCredentials(tokenExchangeEndpoint);
@@ -208,9 +208,9 @@ describe('StsCredentials', () => {
           stsCredentials.exchangeToken(
             stsCredentialsOptions,
             additionalHeaders,
-            options
+            options,
           ),
-          expectedError
+          expectedError,
         );
         scope.done();
       });
@@ -225,7 +225,7 @@ describe('StsCredentials', () => {
                 'content-type':
                   'application/x-www-form-urlencoded;charset=UTF-8',
               },
-            }
+            },
           )
           .replyWithError('ETIMEDOUT')
           .post(
@@ -236,7 +236,7 @@ describe('StsCredentials', () => {
                 'content-type':
                   'application/x-www-form-urlencoded;charset=UTF-8',
               },
-            }
+            },
           )
           .reply(200, stsSuccessfulResponse);
         const stsCredentials = new StsCredentials(tokenExchangeEndpoint);
@@ -244,7 +244,7 @@ describe('StsCredentials', () => {
         const resp = await stsCredentials.exchangeToken(
           stsCredentialsOptions,
           additionalHeaders,
-          options
+          options,
         );
 
         assertGaxiosResponsePresent(resp);
@@ -265,18 +265,18 @@ describe('StsCredentials', () => {
             {
               authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
             },
-            additionalHeaders
-          )
+            additionalHeaders,
+          ),
         );
         const stsCredentials = new StsCredentials(
           tokenExchangeEndpoint,
-          basicAuth
+          basicAuth,
         );
 
         const resp = await stsCredentials.exchangeToken(
           stsCredentialsOptions,
           additionalHeaders,
-          options
+          options,
         );
 
         // Confirm raw GaxiosResponse appended to response.
@@ -293,15 +293,15 @@ describe('StsCredentials', () => {
           expectedPartialRequest,
           {
             authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
-          }
+          },
         );
         const stsCredentials = new StsCredentials(
           tokenExchangeEndpoint,
-          basicAuth
+          basicAuth,
         );
 
         const resp = await stsCredentials.exchangeToken(
-          partialStsCredentialsOptions
+          partialStsCredentialsOptions,
         );
 
         // Confirm raw GaxiosResponse appended to response.
@@ -321,21 +321,21 @@ describe('StsCredentials', () => {
             {
               authorization: `Basic ${crypto.encodeBase64StringUtf8(creds)}`,
             },
-            additionalHeaders
-          )
+            additionalHeaders,
+          ),
         );
         const stsCredentials = new StsCredentials(
           tokenExchangeEndpoint,
-          basicAuth
+          basicAuth,
         );
 
         await assert.rejects(
           stsCredentials.exchangeToken(
             stsCredentialsOptions,
             additionalHeaders,
-            options
+            options,
           ),
-          expectedError
+          expectedError,
         );
         scope.done();
       });
@@ -347,17 +347,17 @@ describe('StsCredentials', () => {
           200,
           stsSuccessfulResponse,
           expectedRequestWithCreds,
-          additionalHeaders
+          additionalHeaders,
         );
         const stsCredentials = new StsCredentials(
           tokenExchangeEndpoint,
-          requestBodyAuth
+          requestBodyAuth,
         );
 
         const resp = await stsCredentials.exchangeToken(
           stsCredentialsOptions,
           additionalHeaders,
-          options
+          options,
         );
 
         // Confirm raw GaxiosResponse appended to response.
@@ -371,15 +371,15 @@ describe('StsCredentials', () => {
         const scope = mockStsTokenExchange(
           200,
           stsSuccessfulResponse,
-          expectedPartialRequestWithCreds
+          expectedPartialRequestWithCreds,
         );
         const stsCredentials = new StsCredentials(
           tokenExchangeEndpoint,
-          requestBodyAuth
+          requestBodyAuth,
         );
 
         const resp = await stsCredentials.exchangeToken(
-          partialStsCredentialsOptions
+          partialStsCredentialsOptions,
         );
 
         // Confirm raw GaxiosResponse appended to response.
@@ -395,20 +395,20 @@ describe('StsCredentials', () => {
           400,
           errorResponse,
           expectedRequestWithCreds,
-          additionalHeaders
+          additionalHeaders,
         );
         const stsCredentials = new StsCredentials(
           tokenExchangeEndpoint,
-          requestBodyAuth
+          requestBodyAuth,
         );
 
         await assert.rejects(
           stsCredentials.exchangeToken(
             stsCredentialsOptions,
             additionalHeaders,
-            options
+            options,
           ),
-          expectedError
+          expectedError,
         );
         scope.done();
       });

@@ -113,13 +113,13 @@ export class DefaultAwsSecurityCredentialsSupplier
     if (!this.#regionFromEnv && this.imdsV2SessionTokenUrl) {
       metadataHeaders.set(
         'x-aws-ec2-metadata-token',
-        await this.#getImdsV2SessionToken(context.transporter)
+        await this.#getImdsV2SessionToken(context.transporter),
       );
     }
     if (!this.regionUrl) {
       throw new RangeError(
         'Unable to determine AWS region due to missing ' +
-          '"options.credential_source.region_url"'
+          '"options.credential_source.region_url"',
       );
     }
     const opts: GaxiosOptions = {
@@ -144,7 +144,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @return A promise that resolves with the AWS security credentials.
    */
   async getAwsSecurityCredentials(
-    context: ExternalAccountSupplierContext
+    context: ExternalAccountSupplierContext,
   ): Promise<AwsSecurityCredentials> {
     // Check environment variables for permanent credentials first.
     // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
@@ -156,13 +156,13 @@ export class DefaultAwsSecurityCredentialsSupplier
     if (this.imdsV2SessionTokenUrl) {
       metadataHeaders.set(
         'x-aws-ec2-metadata-token',
-        await this.#getImdsV2SessionToken(context.transporter)
+        await this.#getImdsV2SessionToken(context.transporter),
       );
     }
     // Since the role on a VM can change, we don't need to cache it.
     const roleName = await this.#getAwsRoleName(
       metadataHeaders,
-      context.transporter
+      context.transporter,
     );
     // Temporary credentials typically last for several hours.
     // Expiration is returned in response.
@@ -171,7 +171,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     const awsCreds = await this.#retrieveAwsSecurityCredentials(
       roleName,
       metadataHeaders,
-      context.transporter
+      context.transporter,
     );
     return {
       accessKeyId: awsCreds.AccessKeyId,
@@ -203,12 +203,12 @@ export class DefaultAwsSecurityCredentialsSupplier
    */
   async #getAwsRoleName(
     headers: Headers,
-    transporter: Gaxios
+    transporter: Gaxios,
   ): Promise<string> {
     if (!this.securityCredentialsUrl) {
       throw new Error(
         'Unable to determine AWS role name due to missing ' +
-          '"options.credential_source.url"'
+          '"options.credential_source.url"',
       );
     }
     const opts: GaxiosOptions = {
@@ -233,7 +233,7 @@ export class DefaultAwsSecurityCredentialsSupplier
   async #retrieveAwsSecurityCredentials(
     roleName: string,
     headers: Headers,
-    transporter: Gaxios
+    transporter: Gaxios,
   ): Promise<AwsSecurityCredentialsResponse> {
     const response = await transporter.request<AwsSecurityCredentialsResponse>({
       ...this.additionalGaxiosOptions,

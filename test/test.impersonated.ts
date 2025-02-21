@@ -70,7 +70,7 @@ describe('impersonated', () => {
               'https://www.googleapis.com/auth/cloud-platform',
             ]);
             return true;
-          }
+          },
         )
         .reply(200, {
           accessToken: 'qwerty345',
@@ -89,7 +89,7 @@ describe('impersonated', () => {
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
-      tomorrow.getTime()
+      tomorrow.getTime(),
     );
     scopes.forEach(s => s.done());
   });
@@ -115,7 +115,7 @@ describe('impersonated', () => {
               'https://www.googleapis.com/auth/cloud-platform',
             ]);
             return true;
-          }
+          },
         )
         .reply(200, {
           accessToken: 'universe-token',
@@ -183,7 +183,7 @@ describe('impersonated', () => {
               'https://www.googleapis.com/auth/cloud-platform',
             ]);
             return true;
-          }
+          },
         )
         .reply(200, {
           accessToken: 'qwerty345',
@@ -203,7 +203,7 @@ describe('impersonated', () => {
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
-      tomorrow.getTime()
+      tomorrow.getTime(),
     );
     scopes.forEach(s => s.done());
   });
@@ -225,7 +225,7 @@ describe('impersonated', () => {
           '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
           () => {
             return true;
-          }
+          },
         )
         .reply(200, {
           accessToken: 'qwerty345',
@@ -236,7 +236,7 @@ describe('impersonated', () => {
           '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
           () => {
             return true;
-          }
+          },
         )
         .reply(200, {
           accessToken: 'qwerty456',
@@ -260,7 +260,7 @@ describe('impersonated', () => {
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty456');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
-      tomorrow.getTime()
+      tomorrow.getTime(),
     );
     scopes.forEach(s => s.done());
   });
@@ -283,7 +283,7 @@ describe('impersonated', () => {
               'https://www.googleapis.com/auth/cloud-platform',
             ]);
             return true;
-          }
+          },
         )
         .reply(200, {
           accessToken: 'qwerty345',
@@ -307,7 +307,7 @@ describe('impersonated', () => {
     assert.strictEqual(impersonated.credentials.access_token, 'qwerty345');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
-      tomorrow.getTime()
+      tomorrow.getTime(),
     );
     scopes.forEach(s => s.done());
   });
@@ -321,7 +321,7 @@ describe('impersonated', () => {
       }),
       nock('https://iamcredentials.googleapis.com')
         .post(
-          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken'
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
         )
         .reply(404, {
           error: {
@@ -354,7 +354,7 @@ describe('impersonated', () => {
       }),
       nock('https://iamcredentials.googleapis.com')
         .post(
-          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken'
+          '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
         )
         .reply(500),
     ];
@@ -407,7 +407,7 @@ describe('impersonated', () => {
               'https://www.googleapis.com/auth/cloud-platform',
             ]);
             return true;
-          }
+          },
         )
         .reply(200, {
           accessToken: 'qwerty345',
@@ -428,7 +428,7 @@ describe('impersonated', () => {
     assert.strictEqual(headers.get('authorization'), 'Bearer qwerty345');
     assert.strictEqual(
       impersonated.credentials.expiry_date,
-      tomorrow.getTime()
+      tomorrow.getTime(),
     );
     scopes.forEach(s => s.done());
   });
@@ -457,7 +457,7 @@ describe('impersonated', () => {
             assert.deepStrictEqual(body.delegates, expectedDeligates);
             assert.strictEqual(body.useEmailAzp, true);
             return true;
-          }
+          },
         )
         .reply(200, {
           token: expectedToken,
@@ -501,7 +501,7 @@ describe('impersonated', () => {
             assert.strictEqual(body.includeEmail, expectedIncludeEmail);
             assert.deepStrictEqual(body.delegates, expectedDeligates);
             return true;
-          }
+          },
         )
         .reply(200, {
           token: expectedToken,
@@ -542,11 +542,11 @@ describe('impersonated', () => {
           (body: {delegates: string[]; payload: string}) => {
             assert.strictEqual(
               body.payload,
-              Buffer.from(expectedBlobToSign).toString('base64')
+              Buffer.from(expectedBlobToSign).toString('base64'),
             );
             assert.deepStrictEqual(body.delegates, expectedDeligates);
             return true;
-          }
+          },
         )
         .reply(200, {
           keyId: expectedKeyID,

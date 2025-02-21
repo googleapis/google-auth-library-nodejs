@@ -31,6 +31,7 @@ import {
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
+import {pkg} from '../shared.cjs';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -68,9 +69,6 @@ export const CLOUD_RESOURCE_MANAGER =
 const WORKFORCE_AUDIENCE_PATTERN =
   '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../../package.json');
 
 /**
  * Shared options used to build {@link ExternalAccountClient} and
@@ -205,8 +203,7 @@ export interface ProjectInfo {
   lifecycleState: string;
   name: string;
   createTime?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parent: {[key: string]: any};
+  parent: {[key: string]: ReturnType<JSON['parse']>};
 }
 
 /**
@@ -266,19 +263,19 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   constructor(
     options:
       | BaseExternalAccountClientOptions
-      | SnakeToCamelObject<BaseExternalAccountClientOptions>
+      | SnakeToCamelObject<BaseExternalAccountClientOptions>,
   ) {
     super(options);
 
     const opts = originalOrCamelOptions(
-      options as BaseExternalAccountClientOptions
+      options as BaseExternalAccountClientOptions,
     );
 
     const type = opts.get('type');
     if (type && type !== EXTERNAL_ACCOUNT_TYPE) {
       throw new Error(
         `Expected "${EXTERNAL_ACCOUNT_TYPE}" type but ` +
-          `received "${options.type}"`
+          `received "${options.type}"`,
       );
     }
 
@@ -290,18 +287,18 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     const subjectTokenType = opts.get('subject_token_type');
     const workforcePoolUserProject = opts.get('workforce_pool_user_project');
     const serviceAccountImpersonationUrl = opts.get(
-      'service_account_impersonation_url'
+      'service_account_impersonation_url',
     );
     const serviceAccountImpersonation = opts.get(
-      'service_account_impersonation'
+      'service_account_impersonation',
     );
     const serviceAccountImpersonationLifetime = originalOrCamelOptions(
-      serviceAccountImpersonation
+      serviceAccountImpersonation,
     ).get('token_lifetime_seconds');
 
     this.cloudResourceManagerURL = new URL(
       opts.get('cloud_resource_manager_url') ||
-        `https://cloudresourcemanager.${this.universeDomain}/v1/projects/`
+        `https://cloudresourcemanager.${this.universeDomain}/v1/projects/`,
     );
 
     if (clientId) {
@@ -328,7 +325,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     ) {
       throw new Error(
         'workforcePoolUserProject should not be set for non-workforce pool ' +
-          'credentials.'
+          'credentials.',
       );
     }
 
@@ -360,7 +357,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
          * @see {@link https://github.com/googleapis/google-auth-library-nodejs/security/code-scanning/84}
          **/
         throw new RangeError(
-          `URL is too long: ${this.serviceAccountImpersonationUrl}`
+          `URL is too long: ${this.serviceAccountImpersonationUrl}`,
         );
       }
 
@@ -438,14 +435,14 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
   request<T>(
     opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
+    callback?: BodyResponseCallback<T>,
   ): GaxiosPromise<T> | void {
     if (callback) {
       this.requestAsync<T>(opts).then(
         r => callback(null, r),
         e => {
           return callback(e, e.response);
-        }
+        },
       );
     } else {
       return this.requestAsync<T>(opts);
@@ -495,7 +492,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    reAuthRetried = false
+    reAuthRetried = false,
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -588,12 +585,12 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       additionalHeaders,
-      additionalOptions
+      additionalOptions,
     );
 
     if (this.serviceAccountImpersonationUrl) {
       this.cachedAccessToken = await this.getImpersonatedAccessToken(
-        stsResponse.access_token
+        stsResponse.access_token,
       );
     } else if (stsResponse.expires_in) {
       // Save response in cached access token.
@@ -655,7 +652,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    *   credentials response.
    */
   private async getImpersonatedAccessToken(
-    token: string
+    token: string,
   ): Promise<CredentialsWithResponse> {
     const opts: GaxiosOptions = {
       ...BaseExternalAccountClient.RETRY_CONFIG,

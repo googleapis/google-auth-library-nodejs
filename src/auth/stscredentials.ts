@@ -157,7 +157,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
     /**
      * @deprecated - provide a {@link StsCredentialsConstructionOptions `StsCredentialsConstructionOptions`} object in the first parameter instead
      */
-    clientAuthentication?: ClientAuthentication
+    clientAuthentication?: ClientAuthentication,
   ) {
     if (typeof options !== 'object' || options instanceof URL) {
       options = {
@@ -187,7 +187,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
   async exchangeToken(
     stsCredentialsOptions: StsCredentialsOptions,
     headers?: HeadersInit,
-    options?: Parameters<JSON['stringify']>[0]
+    options?: Parameters<JSON['stringify']>[0],
   ): Promise<StsSuccessfulResponse> {
     const values: StsRequestOptions = {
       grant_type: stsCredentialsOptions.grantType,
@@ -234,7 +234,7 @@ export class StsCredentials extends OAuthClientAuthHandler {
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.
-          error
+          error,
         );
       }
       // Request could fail before the server responds.

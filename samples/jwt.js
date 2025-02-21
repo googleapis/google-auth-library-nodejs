@@ -29,7 +29,7 @@ const fs = require('fs');
 
 async function main(
   // Full path to the service account credential
-  keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
+  keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS,
 ) {
   const keys = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
   const client = new JWT({
