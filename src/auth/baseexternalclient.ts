@@ -477,13 +477,12 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         headers,
         url,
       };
-      this.log.info('getProjectId %j', request);
+      AuthClient.setMethodName(request, 'getProjectId');
       const response = await this.transporter.request<ProjectInfo>({
         ...BaseExternalAccountClient.RETRY_CONFIG,
         ...request,
       });
       this.projectId = response.data.projectId;
-      this.log.info('getProjectId, id %s', this.projectId);
       return this.projectId;
     }
     return null;
@@ -671,21 +670,15 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
     };
-    this.log.info('getImpersonatedAccessToken %j', request);
     const opts: GaxiosOptions = {
       ...BaseExternalAccountClient.RETRY_CONFIG,
       ...request,
       method: 'POST',
     };
+    AuthClient.setMethodName(opts, 'getImpersonatedAccessToken');
     const response =
       await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
     const successResponse = response.data;
-    this.log.info(
-      'getImpersonatedAccessToken success: %s, %s, %s',
-      successResponse.accessToken,
-      successResponse.expireTime,
-      response
-    );
     return {
       access_token: successResponse.accessToken,
       // Convert from ISO format to timestamp.

@@ -22,6 +22,13 @@ import {log as makeLog} from 'google-logging-utils';
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
 
 /**
+ * Easy access to symbol-indexed strings on config objects.
+ */
+export type SymbolIndexString = {
+  [key: symbol]: string | undefined;
+};
+
+/**
  * Base auth configurations (e.g. from JWT or `.json` files) with conventional
  * camelCased options.
  *
@@ -212,6 +219,16 @@ export abstract class AuthClient
   universeDomain = DEFAULT_UNIVERSE;
   log = makeLog('auth');
 
+  /**
+   * Symbols that can be added to GaxiosOptions to specify the method name that is
+   * making an RPC call, for logging purposes, as well as a string ID that can be
+   * used to correlate calls and responses.
+   */
+  static readonly RequestMethodNameSymbol: unique symbol = Symbol(
+    'request method name'
+  );
+  static readonly RequestLogIdSymbol: unique symbol = Symbol('request log id');
+
   constructor(opts: AuthClientOptions = {}) {
     super();
 
@@ -229,7 +246,10 @@ export abstract class AuthClient
 
     if (options.get('useAuthRequestParameters') !== false) {
       this.transporter.interceptors.request.add(
-        AuthClient.DEFAULT_REQUEST_INTERCEPTOR,
+        AuthClient.DEFAULT_REQUEST_INTERCEPTOR
+      );
+      this.transporter.interceptors.response.add(
+        AuthClient.DEFAULT_RESPONSE_INTERCEPTOR
       );
     }
 
@@ -308,7 +328,7 @@ export abstract class AuthClient
    */
   protected addUserProjectAndAuthHeaders<T extends Headers>(
     target: T,
-    source: Headers,
+    source: Headers
   ): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');
@@ -324,6 +344,7 @@ export abstract class AuthClient
     return target;
   }
 
+  static log = makeLog('auth:interceptor');
   static readonly DEFAULT_REQUEST_INTERCEPTOR: Parameters<
     Gaxios['interceptors']['request']['add']
   >[0] = {
@@ -342,9 +363,80 @@ export abstract class AuthClient
         config.headers.set('User-Agent', `${userAgent} ${USER_AGENT}`);
       }
 
+      const symbols: SymbolIndexString = config as unknown as SymbolIndexString;
+      const methodName = symbols[AuthClient.RequestMethodNameSymbol];
+
+      // This doesn't need to be very unique or interesting, it's just an aid for
+      // matching requests to responses.
+      const logId = `${Math.floor(Math.random() * 1000)}`;
+      symbols[AuthClient.RequestLogIdSymbol] = logId;
+
+      // Boil down the object we're printing out.
+      const logObject = {
+        url: config.url,
+        headers: config.headers,
+      };
+      if (methodName) {
+        AuthClient.log.info('%s [%s] request %j', methodName, logId, logObject);
+      } else {
+        AuthClient.log.info('[%s] request %j', logId, logObject);
+      }
+
       return config;
     },
   };
+
+  static readonly DEFAULT_RESPONSE_INTERCEPTOR: Parameters<
+    Gaxios['interceptors']['response']['add']
+  >[0] = {
+    resolved: async response => {
+      const symbols: SymbolIndexString =
+        response.config as unknown as SymbolIndexString;
+      const methodName = symbols[AuthClient.RequestMethodNameSymbol];
+      const logId = symbols[AuthClient.RequestLogIdSymbol];
+      if (methodName) {
+        AuthClient.log.info(
+          '%s [%s] response %j',
+          methodName,
+          logId,
+          response.data
+        );
+      } else {
+        AuthClient.log.info('[%s] response %j', logId, response.data);
+      }
+
+      return response;
+    },
+    rejected: async error => {
+      const symbols: SymbolIndexString =
+        error.config as unknown as SymbolIndexString;
+      const methodName = symbols[AuthClient.RequestMethodNameSymbol];
+      const logId = symbols[AuthClient.RequestLogIdSymbol];
+      if (methodName) {
+        AuthClient.log.info(
+          '%s [%s] error %j',
+          methodName,
+          logId,
+          error.response?.data
+        );
+      } else {
+        AuthClient.log.error('[%s] error %j', logId, error.response?.data);
+      }
+
+      return error;
+    },
+  };
+
+  /**
+   * Sets the method name that is making a Gaxios request, so that logging may tag
+   * log lines with the operation.
+   * @param config A Gaxios request config
+   * @param methodName The method name making the call
+   */
+  static setMethodName(config: GaxiosOptions, methodName: string) {
+    const symbols: SymbolIndexString = config as unknown as SymbolIndexString;
+    symbols[AuthClient.RequestMethodNameSymbol] = methodName;
+  }
 
   /**
    * Retry config for Auth-related requests.

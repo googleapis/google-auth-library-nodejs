@@ -750,20 +750,16 @@ export class OAuth2Client extends AuthClient {
       values.client_secret = this._clientSecret;
     }
 
-    const request = {
+    const opts = {
+      ...OAuth2Client.RETRY_CONFIG,
       url,
+      method: 'POST',
       data: new URLSearchParams(values as {}),
       headers,
     };
-    this.log.info('getTokenAsync %j', request);
-
-    const res = await this.transporter.request<CredentialRequest>({
-      ...OAuth2Client.RETRY_CONFIG,
-      method: 'POST',
-      ...request,
-    });
+    AuthClient.setMethodName(opts, 'getTokenAsync');
+    const res = await this.transporter.request<CredentialRequest>(opts);
     const tokens = res.data as Credentials;
-    this.log.info('getTokenAsync success %j', tokens);
     if (res.data && res.data.expires_in) {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
@@ -821,7 +817,7 @@ export class OAuth2Client extends AuthClient {
       url,
       data: new URLSearchParams(data),
     };
-    this.log.info('refreshTokenNoCache %j', request);
+    AuthClient.setMethodName(request, 'refreshTokenNoCache');
 
     let res: GaxiosResponse<CredentialRequest>;
 
@@ -842,13 +838,11 @@ export class OAuth2Client extends AuthClient {
       ) {
         e.message = JSON.stringify(e.response.data);
       }
-      this.log.error('refreshTokenNoCache failure %j', e.message);
 
       throw e;
     }
 
     const tokens = res.data as Credentials;
-    this.log.info('refreshTokenNoCache success %j', tokens);
     // TODO: de-duplicate this code from a few spots
     if (res.data && res.data.expires_in) {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;

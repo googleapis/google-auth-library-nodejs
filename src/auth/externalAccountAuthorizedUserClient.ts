@@ -109,7 +109,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
    */
   async refreshToken(
     refreshToken: string,
-    headers?: HeadersInit,
+    headers?: HeadersInit
   ): Promise<TokenRefreshResponse> {
     const opts: GaxiosOptions = {
       ...ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
@@ -121,15 +121,10 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
         refresh_token: refreshToken,
       }),
     };
+    AuthClient.setMethodName(opts, 'refreshToken');
 
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
-
-    this.log.info('refreshToken %j', {
-      url: opts.url,
-      headers: opts.headers,
-      data: opts.data,
-    });
 
     try {
       const response =
@@ -137,16 +132,14 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
       // Successful response.
       const tokenRefreshResponse = response.data;
       tokenRefreshResponse.res = response;
-      this.log.info('refreshToken response %j', tokenRefreshResponse);
       return tokenRefreshResponse;
     } catch (error) {
       // Translate error to OAuthError.
       if (error instanceof GaxiosError && error.response) {
-        this.log.error('refreshToken failed %j', error.response?.data);
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.
-          error,
+          error
         );
       }
       // Request could fail before the server responds.
