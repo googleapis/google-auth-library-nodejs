@@ -63,10 +63,7 @@ export class Compute extends OAuth2Client {
    * Refreshes the access token.
    * @param refreshToken Unused parameter
    */
-  protected async refreshTokenNoCache(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    refreshToken?: string | null
-  ): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(): Promise<GetTokenResponse> {
     const tokenPath = `service-accounts/${this.serviceAccountEmail}/token`;
     let data: CredentialRequest;
     try {

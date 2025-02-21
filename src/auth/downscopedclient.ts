@@ -149,7 +149,7 @@ export class DownscopedClient extends AuthClient {
       accessBoundary: {
         accessBoundaryRules: [],
       },
-    }
+    },
   ) {
     super(options instanceof AuthClient ? {} : options);
 
@@ -174,7 +174,7 @@ export class DownscopedClient extends AuthClient {
     ) {
       throw new Error(
         'The provided access boundary has more than ' +
-          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
+          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`,
       );
     }
 
@@ -184,7 +184,7 @@ export class DownscopedClient extends AuthClient {
       .accessBoundaryRules) {
       if (rule.availablePermissions.length === 0) {
         throw new Error(
-          'At least one permission should be defined in access boundary rules.'
+          'At least one permission should be defined in access boundary rules.',
         );
       }
     }
@@ -206,7 +206,7 @@ export class DownscopedClient extends AuthClient {
     if (!credentials.expiry_date) {
       throw new Error(
         'The access token expiry_date field is missing in the provided ' +
-          'credentials.'
+          'credentials.',
       );
     }
     super.setCredentials(credentials);
@@ -260,14 +260,14 @@ export class DownscopedClient extends AuthClient {
   request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
   request<T>(
     opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
+    callback?: BodyResponseCallback<T>,
   ): GaxiosPromise<T> | void {
     if (callback) {
       this.requestAsync<T>(opts).then(
         r => callback(null, r),
         e => {
           return callback(e, e.response);
-        }
+        },
       );
     } else {
       return this.requestAsync<T>(opts);
@@ -283,7 +283,7 @@ export class DownscopedClient extends AuthClient {
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    reAuthRetried = false
+    reAuthRetried = false,
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
@@ -343,7 +343,7 @@ export class DownscopedClient extends AuthClient {
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       undefined,
-      this.credentialAccessBoundary
+      this.credentialAccessBoundary,
     );
 
     /**

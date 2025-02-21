@@ -101,7 +101,7 @@ function generateRandomString(length) {
   const allowedChars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   for (let i = 0; i < length; i++) {
     chars.push(
-      allowedChars.charAt(Math.floor(Math.random() * allowedChars.length))
+      allowedChars.charAt(Math.floor(Math.random() * allowedChars.length)),
     );
   }
   return chars.join('');
@@ -276,12 +276,12 @@ const config = {
 main(config)
   .then(audiences => {
     console.log(
-      'The following constants need to be set in test/externalclient.test.js'
+      'The following constants need to be set in test/externalclient.test.js',
     );
     console.log(`AUDIENCE_OIDC='${audiences.oidcAudience}'`);
     console.log(`AUDIENCE_AWS='${audiences.awsAudience}'`);
     console.log(
-      `AWS_ROLE_ARN='arn:aws:iam::${config.awsAccountId}:role/${config.awsRoleName}'`
+      `AWS_ROLE_ARN='arn:aws:iam::${config.awsAccountId}:role/${config.awsRoleName}'`,
     );
   })
   .catch(console.error);

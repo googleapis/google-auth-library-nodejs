@@ -57,7 +57,7 @@ function generateRandomString(length) {
   const allowedChars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   for (let i = 0; i < length; i++) {
     chars.push(
-      allowedChars.charAt(Math.floor(Math.random() * allowedChars.length))
+      allowedChars.charAt(Math.floor(Math.random() * allowedChars.length)),
     );
   }
   return chars.join('');

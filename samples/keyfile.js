@@ -24,7 +24,7 @@ const {GoogleAuth} = require('google-auth-library');
  */
 async function main(
   // Full path to the service account credential
-  keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
+  keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS,
 ) {
   const auth = new GoogleAuth({
     keyFile: keyFile,

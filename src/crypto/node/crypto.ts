@@ -28,7 +28,7 @@ export class NodeCrypto implements Crypto {
   async verify(
     pubkey: string,
     data: string | Buffer,
-    signature: string
+    signature: string,
   ): Promise<boolean> {
     const verifier = crypto.createVerify('RSA-SHA256');
     verifier.update(data);
@@ -71,11 +71,11 @@ export class NodeCrypto implements Crypto {
    */
   async signWithHmacSha256(
     key: string | ArrayBuffer,
-    msg: string
+    msg: string,
   ): Promise<ArrayBuffer> {
     const cryptoKey = typeof key === 'string' ? key : toBuffer(key);
     return toArrayBuffer(
-      crypto.createHmac('sha256', cryptoKey).update(msg).digest()
+      crypto.createHmac('sha256', cryptoKey).update(msg).digest(),
     );
   }
 }
@@ -89,7 +89,7 @@ export class NodeCrypto implements Crypto {
 function toArrayBuffer(buffer: Buffer): ArrayBuffer {
   return buffer.buffer.slice(
     buffer.byteOffset,
-    buffer.byteOffset + buffer.byteLength
+    buffer.byteOffset + buffer.byteLength,
   );
 }
 

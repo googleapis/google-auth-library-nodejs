@@ -58,7 +58,3 @@ export class PassThroughClient extends AuthClient {
     return new Headers();
   }
 }
-
-const a = new PassThroughClient();
-
-a.getAccessToken();

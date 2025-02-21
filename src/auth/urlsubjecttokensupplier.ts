@@ -82,7 +82,7 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
    *   token type for the external account identity. Not used.
    */
   async getSubjectToken(
-    context: ExternalAccountSupplierContext
+    context: ExternalAccountSupplierContext,
   ): Promise<string> {
     const request = {
       url: this.url,
@@ -107,7 +107,7 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
     if (!subjectToken) {
       this.log.error('getSubjectToken failed');
       throw new Error(
-        'Unable to parse the subject_token from the credential_source URL'
+        'Unable to parse the subject_token from the credential_source URL',
       );
     }
 

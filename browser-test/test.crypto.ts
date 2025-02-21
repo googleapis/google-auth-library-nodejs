@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as base64js from 'base64-js';
-import {assert} from 'chai';
+import {strict as assert} from 'assert';
 import {createCrypto, fromArrayBufferToHex} from '../src/crypto/crypto';
 import {BrowserCrypto} from '../src/crypto/browser/crypto';
 import {privateKey, publicKey} from './fixtures/keys';
@@ -112,8 +112,8 @@ describe('Browser crypto tests', () => {
         'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
       const expectedHash = new Uint8Array(
         (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
-          parseInt(byte, 16)
-        )
+          parseInt(byte, 16),
+        ),
       );
 
       const calculatedHash = await crypto.signWithHmacSha256(key, message);
@@ -129,8 +129,8 @@ describe('Browser crypto tests', () => {
         'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8';
       const expectedHash = new Uint8Array(
         (expectedHexHash.match(/.{1,2}/g) as string[]).map(byte =>
-          parseInt(byte, 16)
-        )
+          parseInt(byte, 16),
+        ),
       );
 
       const calculatedHash = await crypto.signWithHmacSha256(key, message);

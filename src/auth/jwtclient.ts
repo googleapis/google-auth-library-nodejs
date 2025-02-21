@@ -116,7 +116,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    * @param url the URI being authorized.
    */
   protected async getRequestMetadataAsync(
-    url?: string | null
+    url?: string | null,
   ): Promise<RequestMetadataResponse> {
     url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
     const useSelfSignedJWT =
@@ -126,7 +126,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
 
     if (this.subject && this.universeDomain !== DEFAULT_UNIVERSE) {
       throw new RangeError(
-        `Service Account user is configured for the credential. Domain-wide delegation is not supported in universes other than ${DEFAULT_UNIVERSE}`
+        `Service Account user is configured for the credential. Domain-wide delegation is not supported in universes other than ${DEFAULT_UNIVERSE}`,
       );
     }
 
@@ -144,7 +144,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
           headers: this.addSharedMetadataHeaders(
             new Headers({
               authorization: `Bearer ${tokens.id_token}`,
-            })
+            }),
           ),
         };
       } else {
@@ -155,7 +155,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
             this.email,
             this.key,
             this.keyId,
-            this.eagerRefreshThresholdMillis
+            this.eagerRefreshThresholdMillis,
           );
         }
 
@@ -176,7 +176,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
           // Scopes take precedent over audience for signing,
           // so we only provide them if `useJWTAccessWithScope` is on or
           // if we are in a non-default universe
-          useScopes ? scopes : undefined
+          useScopes ? scopes : undefined,
         );
 
         return {headers: this.addSharedMetadataHeaders(headers)};
@@ -241,7 +241,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   authorize(): Promise<Credentials>;
   authorize(callback: (err: Error | null, result?: Credentials) => void): void;
   authorize(
-    callback?: (err: Error | null, result?: Credentials) => void
+    callback?: (err: Error | null, result?: Credentials) => void,
   ): Promise<Credentials> | void {
     if (callback) {
       this.authorizeAsync().then(r => callback(null, r), callback);
@@ -267,10 +267,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    * @param refreshToken ignored
    * @private
    */
-  protected async refreshTokenNoCache(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    refreshToken?: string | null
-  ): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
     const token = await gtoken.getToken({
       forceRefresh: this.isTokenExpiring(),
@@ -314,17 +311,17 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   fromJSON(json: JWTInput): void {
     if (!json) {
       throw new Error(
-        'Must pass in a JSON object containing the service account auth settings.'
+        'Must pass in a JSON object containing the service account auth settings.',
       );
     }
     if (!json.client_email) {
       throw new Error(
-        'The incoming JSON object does not contain a client_email field'
+        'The incoming JSON object does not contain a client_email field',
       );
     }
     if (!json.private_key) {
       throw new Error(
-        'The incoming JSON object does not contain a private_key field'
+        'The incoming JSON object does not contain a private_key field',
       );
     }
     // Extract the relevant information from the json key file.
@@ -348,11 +345,11 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   fromStream(inputStream: stream.Readable): Promise<void>;
   fromStream(
     inputStream: stream.Readable,
-    callback: (err?: Error | null) => void
+    callback: (err?: Error | null) => void,
   ): void;
   fromStream(
     inputStream: stream.Readable,
-    callback?: (err?: Error | null) => void
+    callback?: (err?: Error | null) => void,
   ): void | Promise<void> {
     if (callback) {
       this.fromStreamAsync(inputStream).then(() => callback(), callback);
@@ -365,7 +362,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     return new Promise<void>((resolve, reject) => {
       if (!inputStream) {
         throw new Error(
-          'Must pass in a stream containing the service account auth settings.'
+          'Must pass in a stream containing the service account auth settings.',
         );
       }
       let s = '';

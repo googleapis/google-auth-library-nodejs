@@ -40,7 +40,7 @@ async function main() {
   // After acquiring an access_token, you may want to check on the audience, expiration,
   // or original scopes requested.  You can do that with the `getTokenInfo` method.
   const tokenInfo = await oAuth2Client.getTokenInfo(
-    oAuth2Client.credentials.access_token
+    oAuth2Client.credentials.access_token,
   );
   console.log(tokenInfo);
 }

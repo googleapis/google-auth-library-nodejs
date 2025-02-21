@@ -20,7 +20,7 @@
 
 function main(
   url = 'https://some.iap.url',
-  targetAudience = 'IAP_CLIENT_ID.apps.googleusercontent.com'
+  targetAudience = 'IAP_CLIENT_ID.apps.googleusercontent.com',
 ) {
   // [START iap_make_request]
   /**
