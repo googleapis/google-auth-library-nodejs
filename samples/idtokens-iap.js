@@ -35,7 +35,7 @@ function main(
   async function request() {
     console.info(`request IAP ${url} with target audience ${targetAudience}`);
     const client = await auth.getIdTokenClient(targetAudience);
-    const res = await client.request({url});
+    const res = await client.fetch(url);
     console.info(res.data);
   }
 

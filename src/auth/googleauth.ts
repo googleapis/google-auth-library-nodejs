@@ -1079,8 +1079,36 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   /**
+   * A {@link fetch `fetch`} compliant API for {@link GoogleAuth}.
+   *
+   * @see {@link GoogleAuth.request} for the classic method.
+   *
+   * @remarks
+   *
+   * This is useful as a drop-in replacement for `fetch` API usage.
+   *
+   * @example
+   *
+   * ```ts
+   * const auth = new GoogleAuth();
+   * const fetchWithAuth: typeof fetch = (...args) => auth.fetch(...args);
+   * await fetchWithAuth('https://example.com');
+   * ```
+   *
+   * @param args `fetch` API or {@link Gaxios.fetch `Gaxios#fetch`} parameters
+   * @returns the {@link GaxiosResponse} with Gaxios-added properties
+   */
+  async fetch<T>(...args: Parameters<AuthClient['fetch']>) {
+    const client = await this.getClient();
+    return client.fetch<T>(...args);
+  }
+
+  /**
    * Automatically obtain application default credentials, and make an
    * HTTP request using the given options.
+   *
+   * @see {@link GoogleAuth.fetch} for the modern method.
+   *
    * @param opts Axios request options for the HTTP request.
    */
   async request<T>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {

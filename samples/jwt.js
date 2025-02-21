@@ -38,7 +38,7 @@ async function main(
     scopes: ['https://www.googleapis.com/auth/cloud-platform'],
   });
   const url = `https://dns.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({url});
+  const res = await client.fetch(url);
   console.log('DNS Info:');
   console.log(res.data);
 
