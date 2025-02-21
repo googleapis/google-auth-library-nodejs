@@ -19,7 +19,6 @@ import {
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
-import {stringify} from 'querystring';
 
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
@@ -92,10 +91,7 @@ export class UserRefreshClient extends OAuth2Client {
    * @param refreshToken An ignored refreshToken..
    * @param callback Optional callback.
    */
-  protected async refreshTokenNoCache(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    refreshToken?: string | null
-  ): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(): Promise<GetTokenResponse> {
     return super.refreshTokenNoCache(this._refreshToken);
   }
 

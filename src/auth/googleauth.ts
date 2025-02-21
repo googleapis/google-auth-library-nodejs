@@ -141,9 +141,6 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   universeDomain?: string;
 }
 
-export const CLOUD_SDK_CLIENT_ID =
-  '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
-
 export const GoogleAuthExceptionMessages = {
   API_KEY_WITH_CREDENTIALS:
     'API Keys and Credentials are mutually exclusive authentication methods and cannot be used together.',

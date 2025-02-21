@@ -16,6 +16,7 @@ import * as assert from 'assert';
 import {
   ExecutableError,
   PluggableAuthClient,
+  PluggableAuthClientOptions,
 } from '../src/auth/pluggable-auth-client';
 import {BaseExternalAccountClient} from '../src';
 import {
@@ -159,9 +160,9 @@ describe('PluggableAuthClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthClient(invalidOptions);
+        return new PluggableAuthClient(
+          invalidOptions as unknown as PluggableAuthClientOptions
+        );
       }, expectedError);
     });
 
@@ -184,9 +185,9 @@ describe('PluggableAuthClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthClient(invalidOptions);
+        return new PluggableAuthClient(
+          invalidOptions as unknown as PluggableAuthClientOptions
+        );
       }, expectedError);
     });
 

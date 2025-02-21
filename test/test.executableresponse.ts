@@ -22,6 +22,7 @@ import {
   InvalidMessageFieldError,
   InvalidSuccessFieldError,
   InvalidVersionFieldError,
+  ExecutableResponseJson,
 } from '../src/auth/executable-response';
 import * as sinon from 'sinon';
 
@@ -53,9 +54,9 @@ describe('ExecutableResponse', () => {
       );
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new ExecutableResponse(responseJson);
+        return new ExecutableResponse(
+          responseJson as unknown as ExecutableResponseJson
+        );
       }, expectedError);
     });
 
@@ -68,9 +69,9 @@ describe('ExecutableResponse', () => {
       );
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new ExecutableResponse(responseJson);
+        return new ExecutableResponse(
+          responseJson as unknown as ExecutableResponseJson
+        );
       }, expectedError);
     });
 

@@ -267,10 +267,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
    * @param refreshToken ignored
    * @private
    */
-  protected async refreshTokenNoCache(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    refreshToken?: string | null
-  ): Promise<GetTokenResponse> {
+  protected async refreshTokenNoCache(): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
     const token = await gtoken.getToken({
       forceRefresh: this.isTokenExpiring(),

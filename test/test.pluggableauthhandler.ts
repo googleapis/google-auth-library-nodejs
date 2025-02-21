@@ -56,9 +56,9 @@ describe('PluggableAuthHandler', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthHandler(invalidOptions);
+        return new PluggableAuthHandler(
+          invalidOptions as unknown as PluggableAuthHandlerOptions
+        );
       }, expectedError);
     });
 
@@ -70,9 +70,9 @@ describe('PluggableAuthHandler', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthHandler(invalidOptions);
+        return new PluggableAuthHandler(
+          invalidOptions as unknown as PluggableAuthHandlerOptions
+        );
       }, expectedError);
     });
 

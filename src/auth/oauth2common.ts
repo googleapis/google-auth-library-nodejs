@@ -254,8 +254,7 @@ export function getErrorFromOAuthErrorResponse(
       // Do not overwrite the message field.
       if (key !== 'message') {
         Object.defineProperty(newError, key, {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          value: (err! as {[index: string]: any})[key],
+          value: (err as {} as {[index: string]: string})[key],
           writable: false,
           enumerable: true,
         });

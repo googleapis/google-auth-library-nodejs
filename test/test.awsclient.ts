@@ -18,10 +18,7 @@ import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {AwsClient, AwsSecurityCredentialsSupplier} from '../src/auth/awsclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {
-  BaseExternalAccountClient,
-  ExternalAccountSupplierContext,
-} from '../src/auth/baseexternalclient';
+import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -1294,7 +1291,7 @@ class TestAwsSupplier implements AwsSecurityCredentialsSupplier {
     this.regionError = options.regionError;
   }
 
-  async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
+  async getAwsRegion(): Promise<string> {
     if (this.regionError) {
       throw this.regionError;
     } else {
@@ -1302,9 +1299,7 @@ class TestAwsSupplier implements AwsSecurityCredentialsSupplier {
     }
   }
 
-  async getAwsSecurityCredentials(
-    context: ExternalAccountSupplierContext
-  ): Promise<AwsSecurityCredentials> {
+  async getAwsSecurityCredentials(): Promise<AwsSecurityCredentials> {
     if (this.credentialsError) {
       throw this.credentialsError;
     } else {

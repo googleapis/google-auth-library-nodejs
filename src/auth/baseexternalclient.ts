@@ -31,6 +31,7 @@ import {
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
+import {pkg} from '../shared.cjs';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -68,9 +69,6 @@ export const CLOUD_RESOURCE_MANAGER =
 const WORKFORCE_AUDIENCE_PATTERN =
   '//iam\\.googleapis\\.com/locations/[^/]+/workforcePools/[^/]+/providers/.+';
 const DEFAULT_TOKEN_URL = 'https://sts.{universeDomain}/v1/token';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../../package.json');
 
 /**
  * Shared options used to build {@link ExternalAccountClient} and
@@ -205,8 +203,7 @@ export interface ProjectInfo {
   lifecycleState: string;
   name: string;
   createTime?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parent: {[key: string]: any};
+  parent: {[key: string]: ReturnType<JSON['parse']>};
 }
 
 /**

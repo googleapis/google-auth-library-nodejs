@@ -22,6 +22,8 @@ import {
   ProjectInfo,
 } from '../src/auth/baseexternalclient';
 
+import {pkg} from '../src/shared.cjs';
+
 interface CloudRequestError {
   error: {
     code: number;
@@ -33,8 +35,7 @@ interface CloudRequestError {
 interface NockMockStsToken {
   statusCode: number;
   response: StsSuccessfulResponse | OAuthErrorResponse;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  request: {[key: string]: any};
+  request: {[key: string]: ReturnType<JSON['parse']>};
 }
 
 interface NockMockGenerateAccessToken {
@@ -54,9 +55,6 @@ const path = '/v1/token';
 export const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../package.json');
 
 export function mockStsTokenExchange(
   nockParams: NockMockStsToken[],

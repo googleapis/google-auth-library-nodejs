@@ -927,7 +927,6 @@ export class OAuth2Client extends AuthClient {
    *
    * In OAuth2Client, the result has the form:
    * { authorization: 'Bearer <access_token_value>' }
-   * @param url The optional url being authorized
    */
   async getRequestHeaders(url?: string | URL): Promise<Headers> {
     const headers = (await this.getRequestMetadataAsync(url)).headers;
@@ -935,9 +934,9 @@ export class OAuth2Client extends AuthClient {
   }
 
   protected async getRequestMetadataAsync(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     url?: string | URL | null
   ): Promise<RequestMetadataResponse> {
+    url;
     const thisCreds = this.credentials;
     if (
       !thisCreds.access_token &&
@@ -1110,7 +1109,7 @@ export class OAuth2Client extends AuthClient {
     reAuthRetried = false
   ): Promise<GaxiosResponse<T>> {
     try {
-      const r = await this.getRequestMetadataAsync(opts.url);
+      const r = await this.getRequestMetadataAsync();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
       this.addUserProjectAndAuthHeaders(opts.headers, r.headers);

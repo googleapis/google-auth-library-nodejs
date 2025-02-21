@@ -167,7 +167,6 @@ describe('Browser OAuth2 tests', () => {
       name: 'RSASSA-PKCS1-v1_5',
       hash: {name: 'SHA-256'},
     };
-    // eslint-disable-next-line no-undef
     const cryptoKey = await window.crypto.subtle.importKey(
       'jwk',
       privateKey,
@@ -175,7 +174,6 @@ describe('Browser OAuth2 tests', () => {
       true,
       ['sign']
     );
-    // eslint-disable-next-line no-undef
     const signature = await window.crypto.subtle.sign(
       algo,
       cryptoKey,

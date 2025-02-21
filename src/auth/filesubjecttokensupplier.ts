@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {
   SubjectTokenFormatType,
   SubjectTokenJsonResponse,
@@ -74,9 +73,7 @@ export class FileSubjectTokenSupplier implements SubjectTokenSupplier {
    *   {@link IdentityPoolClient}, contains the requested audience and subject
    *   token type for the external account identity. Not used.
    */
-  async getSubjectToken(
-    context: ExternalAccountSupplierContext
-  ): Promise<string> {
+  async getSubjectToken(): Promise<string> {
     // Make sure there is a file at the path. lstatSync will throw if there is
     // nothing there.
     let parsedFilePath = this.filePath;

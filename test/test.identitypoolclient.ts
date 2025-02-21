@@ -23,10 +23,7 @@ import {
   SubjectTokenSupplier,
 } from '../src/auth/identitypoolclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {
-  BaseExternalAccountClient,
-  ExternalAccountSupplierContext,
-} from '../src/auth/baseexternalclient';
+import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -1410,7 +1407,7 @@ class TestSubjectTokenSupplier implements SubjectTokenSupplier {
     this.error = options.error;
   }
 
-  getSubjectToken(context: ExternalAccountSupplierContext): Promise<string> {
+  getSubjectToken(): Promise<string> {
     if (this.error) {
       throw this.error;
     }
