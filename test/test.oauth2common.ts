@@ -17,7 +17,6 @@ import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import * as querystring from 'querystring';
 
-import {Headers} from '../src/auth/authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
@@ -28,7 +27,7 @@ import {
 class TestOAuthClientAuthHandler extends OAuthClientAuthHandler {
   testApplyClientAuthenticationOptions(
     opts: GaxiosOptions,
-    bearerToken?: string
+    bearerToken?: string,
   ) {
     return this.applyClientAuthenticationOptions(opts, bearerToken);
   }
@@ -46,6 +45,13 @@ class CustomError extends Error {
   }
 }
 
+function prepareExpectedOptions(options: GaxiosOptions) {
+  return {
+    ...options,
+    headers: new Headers(options.headers),
+  };
+}
+
 describe('OAuthClientAuthHandler', () => {
   const basicAuth: ClientAuthentication = {
     confidentialClientType: 'basic',
@@ -60,11 +66,11 @@ describe('OAuthClientAuthHandler', () => {
   };
   // Base64 encoding of "username:"
   const expectedBase64EncodedCredNoSecret = 'dXNlcm5hbWU6';
-  const reqBodyAuth: ClientAuthentication = {
+  const reqBodyAuth = {
     confidentialClientType: 'request-body',
     clientId: 'username',
     clientSecret: 'password',
-  };
+  } as const;
   const reqBodyAuthNoSecret: ClientAuthentication = {
     confidentialClientType: 'request-body',
     clientId: 'username',
@@ -72,83 +78,89 @@ describe('OAuthClientAuthHandler', () => {
 
   it('should not process request when no client authentication is used', () => {
     const handler = new TestOAuthClientAuthHandler();
-    const originalOptions: GaxiosOptions = {
+    const options: GaxiosOptions = {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
         key2: 'value2',
       },
     };
-    const actualOptions = Object.assign({}, originalOptions);
 
-    handler.testApplyClientAuthenticationOptions(actualOptions);
-    assert.deepStrictEqual(originalOptions, actualOptions);
+    const expectedOptions = prepareExpectedOptions(options);
+    handler.testApplyClientAuthenticationOptions(options);
+    assert.deepStrictEqual(options, expectedOptions);
   });
 
   it('should process request with basic client auth', () => {
     const handler = new TestOAuthClientAuthHandler(basicAuth);
-    const originalOptions: GaxiosOptions = {
+    const options: GaxiosOptions = {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
         key2: 'value2',
       },
     };
-    const actualOptions = Object.assign({}, originalOptions);
-    const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization =
-      `Basic ${expectedBase64EncodedCred}`;
 
-    handler.testApplyClientAuthenticationOptions(actualOptions);
-    assert.deepStrictEqual(expectedOptions, actualOptions);
+    const expectedOptions = prepareExpectedOptions(options);
+    expectedOptions.headers.set(
+      'authorization',
+      `Basic ${expectedBase64EncodedCred}`,
+    );
+
+    handler.testApplyClientAuthenticationOptions(options);
+    assert.deepStrictEqual(options, expectedOptions);
   });
 
   it('should process request with secretless basic client auth', () => {
     const handler = new TestOAuthClientAuthHandler(basicAuthNoSecret);
-    const originalOptions: GaxiosOptions = {
+    const options: GaxiosOptions = {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
         key2: 'value2',
       },
     };
-    const actualOptions = Object.assign({}, originalOptions);
-    const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization =
-      `Basic ${expectedBase64EncodedCredNoSecret}`;
 
-    handler.testApplyClientAuthenticationOptions(actualOptions);
-    assert.deepStrictEqual(expectedOptions, actualOptions);
+    const expectedOptions = prepareExpectedOptions(options);
+    expectedOptions.headers.set(
+      'authorization',
+      `Basic ${expectedBase64EncodedCredNoSecret}`,
+    );
+
+    handler.testApplyClientAuthenticationOptions(options);
+    assert.deepStrictEqual(options, expectedOptions);
   });
 
   it('should process GET (non-request-body) with basic client auth', () => {
     const handler = new TestOAuthClientAuthHandler(basicAuth);
-    const originalOptions: GaxiosOptions = {
+    const options: GaxiosOptions = {
       url: 'https://www.example.com/path/to/api',
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
     };
-    const actualOptions = Object.assign({}, originalOptions);
-    const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization =
-      `Basic ${expectedBase64EncodedCred}`;
 
-    handler.testApplyClientAuthenticationOptions(actualOptions);
-    assert.deepStrictEqual(expectedOptions, actualOptions);
+    const expectedOptions = prepareExpectedOptions(options);
+    expectedOptions.headers.set(
+      'authorization',
+      `Basic ${expectedBase64EncodedCred}`,
+    );
+
+    handler.testApplyClientAuthenticationOptions(options);
+    assert.deepStrictEqual(options, expectedOptions);
   });
 
   describe('with request-body client auth', () => {
@@ -165,7 +177,7 @@ describe('OAuthClientAuthHandler', () => {
       it(`should throw on requests with unsupported HTTP method ${method}`, () => {
         const expectedError = new Error(
           `${method || 'GET'} HTTP method does not support request-body ` +
-            'client authentication'
+            'client authentication',
         );
         const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
         const originalOptions: GaxiosOptions = {
@@ -182,12 +194,12 @@ describe('OAuthClientAuthHandler', () => {
     it('should throw on unsupported content-types', () => {
       const expectedError = new Error(
         'text/html content-types are not supported with request-body ' +
-          'client authentication'
+          'client authentication',
       );
       const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
       const originalOptions: GaxiosOptions = {
         headers: {
-          'Content-Type': 'text/html',
+          'content-type': 'text/html',
         },
         method: 'POST',
         url: 'https://www.example.com/path/to/api',
@@ -200,205 +212,227 @@ describe('OAuthClientAuthHandler', () => {
 
     it('should inject creds in non-empty json content', () => {
       const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
-      const originalOptions: GaxiosOptions = {
+      const options = {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
         data: {
           key1: 'value1',
           key2: 'value2',
         },
       };
-      const actualOptions = Object.assign({}, originalOptions);
-      const expectedOptions = Object.assign({}, originalOptions);
-      expectedOptions.data.client_id = reqBodyAuth.clientId;
-      expectedOptions.data.client_secret = reqBodyAuth.clientSecret;
 
-      handler.testApplyClientAuthenticationOptions(actualOptions);
-      assert.deepStrictEqual(expectedOptions, actualOptions);
+      const expectedOptions = prepareExpectedOptions(options);
+      expectedOptions.data = {
+        ...options.data,
+        client_id: reqBodyAuth.clientId,
+        client_secret: reqBodyAuth.clientSecret,
+      };
+
+      handler.testApplyClientAuthenticationOptions(options);
+      assert.deepStrictEqual(options, expectedOptions);
     });
 
     it('should inject secretless creds in json content', () => {
       const handler = new TestOAuthClientAuthHandler(reqBodyAuthNoSecret);
-      const originalOptions: GaxiosOptions = {
+      const options = {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
         data: {
           key1: 'value1',
           key2: 'value2',
         },
       };
-      const actualOptions = Object.assign({}, originalOptions);
-      const expectedOptions = Object.assign({}, originalOptions);
-      expectedOptions.data.client_id = reqBodyAuthNoSecret.clientId;
-      expectedOptions.data.client_secret = '';
 
-      handler.testApplyClientAuthenticationOptions(actualOptions);
-      assert.deepStrictEqual(expectedOptions, actualOptions);
+      const expectedOptions = prepareExpectedOptions(options);
+      expectedOptions.data = {
+        ...options.data,
+        client_id: reqBodyAuthNoSecret.clientId,
+        client_secret: '',
+      };
+
+      handler.testApplyClientAuthenticationOptions(options);
+      assert.deepStrictEqual(options, expectedOptions);
     });
 
     it('should inject creds in empty json content', () => {
       const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
-      const originalOptions: GaxiosOptions = {
+      const options: GaxiosOptions = {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
       };
-      const actualOptions = Object.assign({}, originalOptions);
-      const expectedOptions = Object.assign({}, originalOptions);
+
+      const expectedOptions = prepareExpectedOptions(options);
       expectedOptions.data = {
         client_id: reqBodyAuth.clientId,
         client_secret: reqBodyAuth.clientSecret,
       };
 
-      handler.testApplyClientAuthenticationOptions(actualOptions);
-      assert.deepStrictEqual(expectedOptions, actualOptions);
+      handler.testApplyClientAuthenticationOptions(options);
+      assert.deepStrictEqual(options, expectedOptions);
     });
 
     it('should inject creds in non-empty x-www-form-urlencoded content', () => {
       const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
-      const originalOptions: GaxiosOptions = {
+      const options: GaxiosOptions = {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
-        headers: {
-          // Handling of headers should be case insensitive.
-          'content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: new Headers({
+          'content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        }),
         data: querystring.stringify({key1: 'value1', key2: 'value2'}),
       };
-      const actualOptions = Object.assign({}, originalOptions);
-      const expectedOptions = Object.assign({}, originalOptions);
-      expectedOptions.data = querystring.stringify({
+
+      const expectedOptions = prepareExpectedOptions(options);
+      expectedOptions.data = new URLSearchParams({
         key1: 'value1',
         key2: 'value2',
         client_id: reqBodyAuth.clientId,
         client_secret: reqBodyAuth.clientSecret,
       });
 
-      handler.testApplyClientAuthenticationOptions(actualOptions);
-      assert.deepStrictEqual(expectedOptions, actualOptions);
+      handler.testApplyClientAuthenticationOptions(options);
+      assert.deepStrictEqual(options, expectedOptions);
+    });
+
+    it('should inject creds in non-empty URLSearchParams content', () => {
+      const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
+      const options: GaxiosOptions = {
+        url: 'https://www.example.com/path/to/api',
+        method: 'POST',
+        data: new URLSearchParams({key1: 'value1', key2: 'value2'}),
+      };
+
+      const expectedOptions = prepareExpectedOptions(options);
+      expectedOptions.data = new URLSearchParams({
+        key1: 'value1',
+        key2: 'value2',
+        client_id: reqBodyAuth.clientId,
+        client_secret: reqBodyAuth.clientSecret,
+      });
+
+      handler.testApplyClientAuthenticationOptions(options);
+      assert.deepStrictEqual(options, expectedOptions);
     });
 
     it('should inject secretless creds in x-www-form-urlencoded content', () => {
       const handler = new TestOAuthClientAuthHandler(reqBodyAuthNoSecret);
-      const originalOptions: GaxiosOptions = {
+      const options: GaxiosOptions = {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
         data: querystring.stringify({key1: 'value1', key2: 'value2'}),
       };
-      const actualOptions = Object.assign({}, originalOptions);
-      const expectedOptions = Object.assign({}, originalOptions);
-      expectedOptions.data = querystring.stringify({
+
+      const expectedOptions = prepareExpectedOptions(options);
+      expectedOptions.data = new URLSearchParams({
         key1: 'value1',
         key2: 'value2',
         client_id: reqBodyAuth.clientId,
         client_secret: '',
       });
 
-      handler.testApplyClientAuthenticationOptions(actualOptions);
-      assert.deepStrictEqual(expectedOptions, actualOptions);
+      handler.testApplyClientAuthenticationOptions(options);
+      assert.deepStrictEqual(options, expectedOptions);
     });
 
     it('should inject creds in empty x-www-form-urlencoded content', () => {
       const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
-      const originalOptions: GaxiosOptions = {
+      const options: GaxiosOptions = {
         url: 'https://www.example.com/path/to/api',
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       };
-      const actualOptions = Object.assign({}, originalOptions);
-      const expectedOptions = Object.assign({}, originalOptions);
-      expectedOptions.data = querystring.stringify({
+
+      const expectedOptions = prepareExpectedOptions(options);
+      expectedOptions.data = new URLSearchParams({
         client_id: reqBodyAuth.clientId,
         client_secret: reqBodyAuth.clientSecret,
       });
 
-      handler.testApplyClientAuthenticationOptions(actualOptions);
-      assert.deepStrictEqual(expectedOptions, actualOptions);
+      handler.testApplyClientAuthenticationOptions(options);
+      assert.deepStrictEqual(options, expectedOptions);
     });
   });
 
   it('should process request with bearer token when provided', () => {
     const bearerToken = 'BEARER_TOKEN';
     const handler = new TestOAuthClientAuthHandler();
-    const originalOptions: GaxiosOptions = {
+    const options: GaxiosOptions = {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
         key2: 'value2',
       },
     };
-    const actualOptions = Object.assign({}, originalOptions);
-    const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization =
-      `Bearer ${bearerToken}`;
 
-    handler.testApplyClientAuthenticationOptions(actualOptions, bearerToken);
-    assert.deepStrictEqual(expectedOptions, actualOptions);
+    const expectedOptions = prepareExpectedOptions(options);
+    expectedOptions.headers.set('authorization', `Bearer ${bearerToken}`);
+
+    handler.testApplyClientAuthenticationOptions(options, bearerToken);
+
+    assert(options.headers instanceof Headers);
+    assert.deepStrictEqual(options, expectedOptions);
   });
 
   it('should prioritize bearer token over basic auth', () => {
     const bearerToken = 'BEARER_TOKEN';
     const handler = new TestOAuthClientAuthHandler(basicAuth);
-    const originalOptions: GaxiosOptions = {
+    const options: GaxiosOptions = {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
         key2: 'value2',
       },
     };
-    const actualOptions = Object.assign({}, originalOptions);
-    // Expected options should have bearer token in header.
-    const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization =
-      `Bearer ${bearerToken}`;
 
-    handler.testApplyClientAuthenticationOptions(actualOptions, bearerToken);
-    assert.deepStrictEqual(expectedOptions, actualOptions);
+    const expectedOptions = prepareExpectedOptions(options);
+    expectedOptions.headers.set('authorization', `Bearer ${bearerToken}`);
+
+    handler.testApplyClientAuthenticationOptions(options, bearerToken);
+    assert.deepStrictEqual(options, expectedOptions);
   });
 
   it('should prioritize bearer token over request body', () => {
     const bearerToken = 'BEARER_TOKEN';
     const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
-    const originalOptions: GaxiosOptions = {
+    const options: GaxiosOptions = {
       url: 'https://www.example.com/path/to/api',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       data: {
         key1: 'value1',
         key2: 'value2',
       },
     };
-    const actualOptions = Object.assign({}, originalOptions);
-    // Expected options should have bearer token in header.
-    const expectedOptions = Object.assign({}, originalOptions);
-    (expectedOptions.headers as Headers).Authorization =
-      `Bearer ${bearerToken}`;
 
-    handler.testApplyClientAuthenticationOptions(actualOptions, bearerToken);
-    assert.deepStrictEqual(expectedOptions, actualOptions);
+    const expectedOptions = prepareExpectedOptions(options);
+    expectedOptions.headers.set('authorization', `Bearer ${bearerToken}`);
+
+    handler.testApplyClientAuthenticationOptions(options, bearerToken);
+    assert.deepStrictEqual(options, expectedOptions);
   });
 });
 
@@ -413,7 +447,7 @@ describe('getErrorFromOAuthErrorResponse', () => {
     assert.strictEqual(
       error.message,
       `Error code ${resp.error}: ${resp.error_description} ` +
-        `- ${resp.error_uri}`
+        `- ${resp.error_uri}`,
     );
   });
 
@@ -425,7 +459,7 @@ describe('getErrorFromOAuthErrorResponse', () => {
     const error = getErrorFromOAuthErrorResponse(resp);
     assert.strictEqual(
       error.message,
-      `Error code ${resp.error}: ${resp.error_description}`
+      `Error code ${resp.error}: ${resp.error_description}`,
     );
   });
 
@@ -441,7 +475,7 @@ describe('getErrorFromOAuthErrorResponse', () => {
     const originalError = new CustomError(
       'Original error message',
       'Error stack',
-      '123456'
+      '123456',
     );
     const resp = {
       error: 'unsupported_grant_type',
@@ -452,7 +486,7 @@ describe('getErrorFromOAuthErrorResponse', () => {
       `Error code ${resp.error}: ${resp.error_description} ` +
         `- ${resp.error_uri}`,
       'Error stack',
-      '123456'
+      '123456',
     );
 
     const actualError = getErrorFromOAuthErrorResponse(resp, originalError);

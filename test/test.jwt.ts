@@ -23,6 +23,10 @@ import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
 
+function removeBearerFromAuthorizationHeader(headers: Headers): string {
+  return (headers.get('authorization') || '').replace('Bearer ', '');
+}
+
 describe('jwt', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const keypair = require('keypair');
@@ -52,8 +56,8 @@ describe('jwt', () => {
   }
 
   function createGTokenMock(body: CredentialRequest) {
-    return nock('https://www.googleapis.com')
-      .post('/oauth2/v4/token')
+    return nock('https://oauth2.googleapis.com')
+      .post('/token')
       .reply(200, body);
   }
 
@@ -95,7 +99,7 @@ describe('jwt', () => {
       assert.strictEqual(PEM_PATH, jwt.gtoken!.keyFile);
       assert.strictEqual(
         ['http://bar', 'http://foo'].join(' '),
-        jwt.gtoken!.scope
+        jwt.gtoken!.scope,
       );
       assert.strictEqual('bar@subjectaccount.com', jwt.gtoken!.sub);
       assert.strictEqual('initial-access-token', jwt.credentials.access_token);
@@ -141,7 +145,7 @@ describe('jwt', () => {
       assert.strictEqual(
         'initial-access-token',
         got,
-        'the access token was wrong: ' + got
+        'the access token was wrong: ' + got,
       );
       done();
     });
@@ -162,7 +166,8 @@ describe('jwt', () => {
         scope.done();
         done();
       })
-      .getAccessToken();
+      .getAccessToken()
+      .catch(console.error);
   });
 
   it('can obtain new access token when scopes are set', async () => {
@@ -181,8 +186,8 @@ describe('jwt', () => {
     scope.done();
     assert.strictEqual(
       want,
-      headers.Authorization,
-      `the authorization header was wrong: ${headers.Authorization}`
+      headers.get('authorization'),
+      `the authorization header was wrong: ${headers.get('authorization')}`,
     );
   });
 
@@ -198,7 +203,7 @@ describe('jwt', () => {
     const testUri = 'http:/example.com/my_test_service';
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
-    const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+    const decoded = jws.decode(removeBearerFromAuthorizationHeader(got));
     assert(decoded);
     assert.strictEqual(decoded.header.alg, 'RS256');
     assert.strictEqual(decoded.header.typ, 'JWT');
@@ -221,7 +226,7 @@ describe('jwt', () => {
     const testUri = 'http:/example.com/my_test_service';
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
-    const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+    const decoded = jws.decode(removeBearerFromAuthorizationHeader(got));
     assert(decoded);
     assert.deepStrictEqual(decoded.header, {
       alg: 'RS256',
@@ -246,7 +251,7 @@ describe('jwt', () => {
     const testDefault = 'https://example.com/';
     const got = await jwt.getRequestHeaders(testUri);
     assert.notStrictEqual(null, got, 'the creds should be present');
-    const decoded = jws.decode(got.Authorization.replace('Bearer ', ''));
+    const decoded = jws.decode(removeBearerFromAuthorizationHeader(got));
     assert(decoded);
     const payload = decoded.payload;
     assert.strictEqual(testDefault, payload.aud);
@@ -268,7 +273,7 @@ describe('jwt', () => {
     const got = await jwt.getRequestHeaders(testUri);
     scope.done();
     assert.notStrictEqual(null, got, 'the creds should be present');
-    const decoded = got.Authorization.replace('Bearer ', '');
+    const decoded = removeBearerFromAuthorizationHeader(got);
     assert.strictEqual(decoded, 'abc123');
   });
 
@@ -487,7 +492,7 @@ describe('jwt', () => {
     const dateInMillis = new Date().getTime();
     assert.strictEqual(
       dateInMillis.toString().length,
-      jwt.credentials.expiry_date!.toString().length
+      jwt.credentials.expiry_date!.toString().length,
     );
   });
 
@@ -674,7 +679,7 @@ describe('jwt', () => {
     // Read the contents of the file into a json object.
     const fileContents = fs.readFileSync(
       './test/fixtures/private.json',
-      'utf-8'
+      'utf-8',
     );
     const json = JSON.parse(fileContents);
 
@@ -739,7 +744,7 @@ describe('jwt', () => {
         require('../../test/fixtures/service-account-with-quota.json'),
         {
           private_key: keypair(512 /* bitsize of private key */).private,
-        }
+        },
       ),
     });
     const client = await auth.getClient();
@@ -747,9 +752,12 @@ describe('jwt', () => {
     // If a URL isn't provided to authorize, the OAuth2Client super class is
     // executed, which was already exercised.
     const headers = await client.getRequestHeaders(
-      'http:/example.com/my_test_service'
+      'http:/example.com/my_test_service',
     );
-    assert.strictEqual(headers['x-goog-user-project'], 'fake-quota-project');
+    assert.strictEqual(
+      headers.get('x-goog-user-project'),
+      'fake-quota-project',
+    );
   });
 
   it('should return an ID token for fetchIdToken', async () => {
@@ -795,7 +803,7 @@ describe('jwt', () => {
         subject: 'bar@subjectaccount.com',
       });
       const headers = await jwt.getRequestHeaders();
-      assert.deepStrictEqual(headers, {});
+      assert.deepStrictEqual(headers, new Headers());
     });
 
     it('returns empty headers if: user scope = false, default scope = false, audience = falsy, useJWTACcessWithScope = truthy', async () => {
@@ -807,11 +815,11 @@ describe('jwt', () => {
       });
       jwt.useJWTAccessWithScope = true;
       const headers = await jwt.getRequestHeaders();
-      assert.deepStrictEqual(headers, {});
+      assert.deepStrictEqual(headers, new Headers());
     });
 
     it('signs JWT with audience if: user scope = false, default scope = false, audience = truthy, useJWTAccessWithScope = false', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -828,12 +836,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
     it('signs JWT with audience if: user scope = false, default scope = true, audience = truthy, useJWTAccessWithScope = false', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -850,12 +858,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
     it('signs JWT with audience if: user scope = false, default scope = no, audience = truthy, useJWTAccessWithScope = truthy', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -872,12 +880,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
     it('signs JWT with audience if: user scope = false, default scope = yes, audience = truthy, useJWTAccessWithScope = truthy', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -895,12 +903,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
     it('signs JWT with scopes if: user scope = true, default scope = false, audience = falsy, useJWTAccessWithScope = true', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -917,12 +925,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
     it('signs JWT with scopes if: user scope = false, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -943,7 +951,7 @@ describe('jwt', () => {
     });
 
     it('signs JWT with scopes if: user scope = true, default scope = true, audience = falsy, useJWTAccessWithScope = true', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -961,12 +969,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
     it('signs JWT with scopes if: user scope = true, default scope = false, audience = truthy, useJWTAccessWithScope = true', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -983,12 +991,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
     it('signs JWT with scopes if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -1006,12 +1014,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
     it('signs JWT with scopes if: user scope = true, default scope = true, audience = truthy, universeDomain = not default universe', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -1028,12 +1036,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
     it('signs JWT with scopes if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = true, universeDomain = not default universe', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       const stubJWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -1051,12 +1059,12 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
     it('throws on domain-wide delegation on non-default universe', async () => {
-      const stubGetRequestHeaders = sandbox.stub().returns({});
+      const stubGetRequestHeaders = sandbox.stub().returns(new Headers());
       sandbox.stub(jwtaccess, 'JWTAccess').returns({
         getRequestHeaders: stubGetRequestHeaders,
       });
@@ -1072,13 +1080,13 @@ describe('jwt', () => {
 
       await assert.rejects(
         () => jwt.getRequestHeaders('https//beepboop.googleapis.com'),
-        /Domain-wide delegation is not supported in universes other than/
+        /Domain-wide delegation is not supported in universes other than/,
       );
     });
 
     it('does not use self signed JWT if target_audience provided', async () => {
       const JWTAccess = sandbox.stub(jwtaccess, 'JWTAccess').returns({
-        getRequestHeaders: sinon.stub().returns({}),
+        getRequestHeaders: sinon.stub().returns(new Headers()),
       });
       const keys = keypair(512 /* bitsize of private key */);
       const jwt = new JWT({
@@ -1159,11 +1167,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders();
       scope.done();
-      assert.strictEqual(
-        want,
-        headers.Authorization,
-        `the authorization header was wrong: ${headers.Authorization}`
-      );
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = false, audience = falsy, useJWTAccessWithScope = false', async () => {
@@ -1179,11 +1183,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders();
       scope.done();
-      assert.strictEqual(
-        want,
-        headers.Authorization,
-        `the authorization header was wrong: ${headers.Authorization}`
-      );
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = true, audience = falsy, useJWTAccessWithScope = false', async () => {
@@ -1201,11 +1201,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders();
       scope.done();
-      assert.strictEqual(
-        want,
-        headers.Authorization,
-        `the authorization header was wrong: ${headers.Authorization}`
-      );
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = false, audience = truthy, useJWTAccessWithScope = false', async () => {
@@ -1222,11 +1218,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders(testUri);
       scope.done();
-      assert.strictEqual(
-        want,
-        headers.Authorization,
-        `the authorization header was wrong: ${headers.Authorization}`
-      );
+      assert.strictEqual(headers.get('authorization'), want);
     });
 
     it('calls oauth2api if: user scope = true, default scope = true, audience = truthy, useJWTAccessWithScope = false', async () => {
@@ -1245,11 +1237,7 @@ describe('jwt', () => {
       const scope = createGTokenMock({access_token: wantedToken});
       const headers = await jwt.getRequestHeaders(testUri);
       scope.done();
-      assert.strictEqual(
-        want,
-        headers.Authorization,
-        `the authorization header was wrong: ${headers.Authorization}`
-      );
+      assert.strictEqual(headers.get('authorization'), want);
     });
   });
 });

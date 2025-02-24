@@ -31,7 +31,7 @@ export class ExecutableError extends Error {
 
   constructor(message: string, code: string) {
     super(
-      `The executable failed with exit code: ${code} and error message: ${message}.`
+      `The executable failed with exit code: ${code} and error message: ${message}.`,
     );
     this.code = code;
     Object.setPrototypeOf(this, new.target.prototype);
@@ -75,7 +75,7 @@ export class PluggableAuthHandler {
       throw new Error('No command provided.');
     }
     this.commandComponents = PluggableAuthHandler.parseCommand(
-      options.command
+      options.command,
     ) as Array<string>;
     this.timeoutMillis = options.timeoutMillis;
     if (!this.timeoutMillis) {
@@ -92,7 +92,7 @@ export class PluggableAuthHandler {
    * @return A promise that resolves with the executable response.
    */
   retrieveResponseFromExecutable(
-    envMap: Map<string, string>
+    envMap: Map<string, string>,
   ): Promise<ExecutableResponse> {
     return new Promise((resolve, reject) => {
       // Spawn process to run executable using added environment variables.
@@ -101,7 +101,7 @@ export class PluggableAuthHandler {
         this.commandComponents.slice(1),
         {
           env: {...process.env, ...Object.fromEntries(envMap)},
-        }
+        },
       );
       let output = '';
       // Append stdout to output as executable runs.
@@ -121,8 +121,8 @@ export class PluggableAuthHandler {
         child.kill();
         return reject(
           new Error(
-            'The executable failed to finish within the timeout specified.'
-          )
+            'The executable failed to finish within the timeout specified.',
+          ),
         );
       }, this.timeoutMillis);
 
@@ -141,8 +141,8 @@ export class PluggableAuthHandler {
             }
             return reject(
               new ExecutableResponseError(
-                `The executable returned an invalid response: ${output}`
-              )
+                `The executable returned an invalid response: ${output}`,
+              ),
             );
           }
         } else {
@@ -196,7 +196,7 @@ export class PluggableAuthHandler {
         throw error;
       }
       throw new ExecutableResponseError(
-        `The output file contained an invalid response: ${responseString}`
+        `The output file contained an invalid response: ${responseString}`,
       );
     }
   }

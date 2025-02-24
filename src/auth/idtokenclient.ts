@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {Credentials} from './credentials';
-import {Headers} from './authclient';
 import {
   OAuth2Client,
   OAuth2ClientOptions,
@@ -51,17 +50,14 @@ export class IdTokenClient extends OAuth2Client {
     this.idTokenProvider = options.idTokenProvider;
   }
 
-  protected async getRequestMetadataAsync(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    url?: string | null
-  ): Promise<RequestMetadataResponse> {
+  protected async getRequestMetadataAsync(): Promise<RequestMetadataResponse> {
     if (
       !this.credentials.id_token ||
       !this.credentials.expiry_date ||
       this.isTokenExpiring()
     ) {
       const idToken = await this.idTokenProvider.fetchIdToken(
-        this.targetAudience
+        this.targetAudience,
       );
       this.credentials = {
         id_token: idToken,
@@ -69,9 +65,9 @@ export class IdTokenClient extends OAuth2Client {
       } as Credentials;
     }
 
-    const headers: Headers = {
-      Authorization: 'Bearer ' + this.credentials.id_token,
-    };
+    const headers = new Headers({
+      authorization: 'Bearer ' + this.credentials.id_token,
+    });
     return {headers};
   }
 
@@ -79,7 +75,7 @@ export class IdTokenClient extends OAuth2Client {
     const payloadB64 = idToken.split('.')[1];
     if (payloadB64) {
       const payload = JSON.parse(
-        Buffer.from(payloadB64, 'base64').toString('ascii')
+        Buffer.from(payloadB64, 'base64').toString('ascii'),
       );
       return payload.exp * 1000;
     }

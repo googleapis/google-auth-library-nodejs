@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Gaxios,
   GaxiosError,
   GaxiosOptions,
   GaxiosPromise,
@@ -25,7 +26,6 @@ import {
   AuthClient,
   AuthClientOptions,
   GetAccessTokenResponse,
-  Headers,
   BodyResponseCallback,
 } from './authclient';
 
@@ -149,7 +149,7 @@ export class DownscopedClient extends AuthClient {
       accessBoundary: {
         accessBoundaryRules: [],
       },
-    }
+    },
   ) {
     super(options instanceof AuthClient ? {} : options);
 
@@ -174,7 +174,7 @@ export class DownscopedClient extends AuthClient {
     ) {
       throw new Error(
         'The provided access boundary has more than ' +
-          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
+          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`,
       );
     }
 
@@ -184,7 +184,7 @@ export class DownscopedClient extends AuthClient {
       .accessBoundaryRules) {
       if (rule.availablePermissions.length === 0) {
         throw new Error(
-          'At least one permission should be defined in access boundary rules.'
+          'At least one permission should be defined in access boundary rules.',
         );
       }
     }
@@ -206,7 +206,7 @@ export class DownscopedClient extends AuthClient {
     if (!credentials.expiry_date) {
       throw new Error(
         'The access token expiry_date field is missing in the provided ' +
-          'credentials.'
+          'credentials.',
       );
     }
     super.setCredentials(credentials);
@@ -237,13 +237,13 @@ export class DownscopedClient extends AuthClient {
    * resolves with authorization header fields.
    *
    * The result has the form:
-   * { Authorization: 'Bearer <access_token_value>' }
+   * { authorization: 'Bearer <access_token_value>' }
    */
   async getRequestHeaders(): Promise<Headers> {
     const accessTokenResponse = await this.getAccessToken();
-    const headers: Headers = {
-      Authorization: `Bearer ${accessTokenResponse.token}`,
-    };
+    const headers = new Headers({
+      authorization: `Bearer ${accessTokenResponse.token}`,
+    });
     return this.addSharedMetadataHeaders(headers);
   }
 
@@ -260,14 +260,14 @@ export class DownscopedClient extends AuthClient {
   request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
   request<T>(
     opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
+    callback?: BodyResponseCallback<T>,
   ): GaxiosPromise<T> | void {
     if (callback) {
       this.requestAsync<T>(opts).then(
         r => callback(null, r),
         e => {
           return callback(e, e.response);
-        }
+        },
       );
     } else {
       return this.requestAsync<T>(opts);
@@ -283,19 +283,15 @@ export class DownscopedClient extends AuthClient {
    */
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    reAuthRetried = false
+    reAuthRetried = false,
   ): Promise<GaxiosResponse<T>> {
     let response: GaxiosResponse;
     try {
       const requestHeaders = await this.getRequestHeaders();
-      opts.headers = opts.headers || {};
-      if (requestHeaders && requestHeaders['x-goog-user-project']) {
-        opts.headers['x-goog-user-project'] =
-          requestHeaders['x-goog-user-project'];
-      }
-      if (requestHeaders && requestHeaders.Authorization) {
-        opts.headers.Authorization = requestHeaders.Authorization;
-      }
+      opts.headers = Gaxios.mergeHeaders(opts.headers);
+
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
+
       response = await this.transporter.request<T>(opts);
     } catch (e) {
       const res = (e as GaxiosError).response;
@@ -347,7 +343,7 @@ export class DownscopedClient extends AuthClient {
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       undefined,
-      this.credentialAccessBoundary
+      this.credentialAccessBoundary,
     );
 
     /**

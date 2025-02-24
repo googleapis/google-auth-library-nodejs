@@ -146,7 +146,7 @@ const assumeRoleWithWebIdentity = async (
   auth,
   aud,
   clientEmail,
-  awsRoleArn
+  awsRoleArn,
 ) => {
   // API documented at:
   // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
@@ -186,7 +186,7 @@ const generateRandomString = length => {
   const allowedChars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   while (length > 0) {
     chars.push(
-      allowedChars.charAt(Math.floor(Math.random() * allowedChars.length))
+      allowedChars.charAt(Math.floor(Math.random() * allowedChars.length)),
     );
     length--;
   }
@@ -242,7 +242,7 @@ describe('samples for external-account', () => {
       auth,
       clientId,
       clientEmail,
-      AWS_ROLE_ARN
+      AWS_ROLE_ARN,
     );
   });
 
@@ -356,20 +356,20 @@ describe('samples for external-account', () => {
       if (req.url === '/token' && req.method === 'GET') {
         // Confirm expected header is passed along the request.
         if (req.headers['my-header'] === 'some-value') {
-          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('content-type', 'application/json');
           res.writeHead(200);
           res.end(
             JSON.stringify({
               access_token: oidcToken,
-            })
+            }),
           );
         } else {
-          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('content-type', 'application/json');
           res.writeHead(400);
           res.end(
             JSON.stringify({
               error: 'missing-header',
-            })
+            }),
           );
         }
       } else {
@@ -506,7 +506,7 @@ describe('samples for external-account', () => {
     const actualExpireTime = new Date(token.res.data.expireTime).getTime();
 
     assert.isTrue(
-      minExpireTime <= actualExpireTime && actualExpireTime <= maxExpireTime
+      minExpireTime <= actualExpireTime && actualExpireTime <= maxExpireTime,
     );
   });
 });

@@ -80,14 +80,13 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
    *   token type for the external account identity. Not used.
    */
   async getSubjectToken(
-    context: ExternalAccountSupplierContext
+    context: ExternalAccountSupplierContext,
   ): Promise<string> {
     const opts: GaxiosOptions = {
       ...this.additionalGaxiosOptions,
       url: this.url,
       method: 'GET',
       headers: this.headers,
-      responseType: this.formatType,
     };
     let subjectToken: string | undefined;
     if (this.formatType === 'text') {
@@ -100,7 +99,7 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
     }
     if (!subjectToken) {
       throw new Error(
-        'Unable to parse the subject_token from the credential_source URL'
+        'Unable to parse the subject_token from the credential_source URL',
       );
     }
     return subjectToken;

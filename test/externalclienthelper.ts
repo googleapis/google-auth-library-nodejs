@@ -14,7 +14,6 @@
 
 import * as assert from 'assert';
 import * as nock from 'nock';
-import * as qs from 'querystring';
 import {GetAccessTokenResponse} from '../src/auth/authclient';
 import {OAuthErrorResponse} from '../src/auth/oauth2common';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
@@ -22,6 +21,8 @@ import {
   IamGenerateAccessTokenResponse,
   ProjectInfo,
 } from '../src/auth/baseexternalclient';
+
+import {pkg} from '../src/shared.cjs';
 
 interface CloudRequestError {
   error: {
@@ -34,8 +35,7 @@ interface CloudRequestError {
 interface NockMockStsToken {
   statusCode: number;
   response: StsSuccessfulResponse | OAuthErrorResponse;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  request: {[key: string]: any};
+  request: {[key: string]: ReturnType<JSON['parse']>};
 }
 
 interface NockMockGenerateAccessToken {
@@ -56,37 +56,34 @@ export const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
 const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../package.json');
-
 export function mockStsTokenExchange(
   nockParams: NockMockStsToken[],
   additionalHeaders?: {[key: string]: string},
-  baseURL = baseUrl
+  baseURL = baseUrl,
 ): nock.Scope {
   const headers = Object.assign(
     {
-      'content-type': 'application/x-www-form-urlencoded',
+      'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
     },
-    additionalHeaders || {}
+    additionalHeaders || {},
   );
   const scope = nock(baseURL, {reqheaders: headers});
   nockParams.forEach(nockMockStsToken => {
     scope
-      .post(path, qs.stringify(nockMockStsToken.request))
+      .post(path, nockMockStsToken.request)
       .reply(nockMockStsToken.statusCode, nockMockStsToken.response);
   });
   return scope;
 }
 
 export function mockGenerateAccessToken(
-  nockMockGenerateAccessToken: NockMockGenerateAccessToken
+  nockMockGenerateAccessToken: NockMockGenerateAccessToken,
 ): nock.Scope {
   const token = nockMockGenerateAccessToken.token;
   const scope = nock(saBaseUrl, {
     reqheaders: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
     },
   });
   scope
@@ -96,13 +93,13 @@ export function mockGenerateAccessToken(
     })
     .reply(
       nockMockGenerateAccessToken.statusCode,
-      nockMockGenerateAccessToken.response
+      nockMockGenerateAccessToken.response,
     );
   return scope;
 }
 
 export function getAudience(
-  projectNumber: string = defaultProjectNumber
+  projectNumber: string = defaultProjectNumber,
 ): string {
   return (
     `//iam.googleapis.com/projects/${projectNumber}` +
@@ -128,10 +125,10 @@ export function mockCloudResourceManager(
   projectNumber: string,
   accessToken: string,
   statusCode: number,
-  response: ProjectInfo | CloudRequestError
+  response: ProjectInfo | CloudRequestError,
 ): nock.Scope {
   return nock('https://cloudresourcemanager.googleapis.com', {
-    reqheaders: {Authorization: `Bearer ${accessToken}`},
+    reqheaders: {authorization: `Bearer ${accessToken}`},
   })
     .get(`/v1/projects/${projectNumber}`)
     .reply(statusCode, response);
@@ -140,7 +137,7 @@ export function mockCloudResourceManager(
 export function getExpectedExternalAccountMetricsHeaderValue(
   expectedSource: string,
   expectedSaImpersonation: boolean,
-  expectedConfigLifetime: boolean
+  expectedConfigLifetime: boolean,
 ): string {
   const languageVersion = process.version.replace(/^v/, '');
   return `gl-node/${languageVersion} auth/${pkg.version} google-byoid-sdk source/${expectedSource} sa-impersonation/${expectedSaImpersonation} config-lifetime/${expectedConfigLifetime}`;

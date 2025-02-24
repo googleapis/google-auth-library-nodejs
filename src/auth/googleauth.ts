@@ -14,7 +14,7 @@
 
 import {exec} from 'child_process';
 import * as fs from 'fs';
-import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
+import {Gaxios, GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 import * as gcpMetadata from 'gcp-metadata';
 import * as os from 'os';
 import * as path from 'path';
@@ -26,17 +26,8 @@ import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {OAuth2ClientOptions} from './oauth2client';
-import {
-  UserRefreshClient,
-  UserRefreshClientOptions,
-  USER_REFRESH_ACCOUNT_TYPE,
-} from './refreshclient';
-import {
-  Impersonated,
-  ImpersonatedOptions,
-  IMPERSONATED_ACCOUNT_TYPE,
-} from './impersonated';
+import {UserRefreshClient, USER_REFRESH_ACCOUNT_TYPE} from './refreshclient';
+import {Impersonated, IMPERSONATED_ACCOUNT_TYPE} from './impersonated';
 import {
   ExternalAccountClient,
   ExternalAccountClientOptions,
@@ -45,19 +36,14 @@ import {
   EXTERNAL_ACCOUNT_TYPE,
   BaseExternalAccountClient,
 } from './baseexternalclient';
-import {
-  AuthClient,
-  AuthClientOptions,
-  DEFAULT_UNIVERSE,
-  Headers,
-} from './authclient';
+import {AuthClient, AuthClientOptions, DEFAULT_UNIVERSE} from './authclient';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
   ExternalAccountAuthorizedUserClientOptions,
 } from './externalAccountAuthorizedUserClient';
 import {originalOrCamelOptions} from '../util';
-import {AnyAuthClient} from '..';
+import {AnyAuthClient, AnyAuthClientConstructor} from '..';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -87,7 +73,7 @@ export interface ADCResponse {
   projectId: string | null;
 }
 
-export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
+export interface GoogleAuthOptions<T extends AuthClient = AnyAuthClient> {
   /**
    * An API key to use, optional. Cannot be used with {@link GoogleAuthOptions.credentials `credentials`}.
    */
@@ -119,13 +105,12 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   credentials?: JWTInput | ExternalAccountClientOptions;
 
   /**
-   * Options object passed to the constructor of the client
+   * `AuthClientOptions` object passed to the constructor of the client
    */
-  clientOptions?:
-    | JWTOptions
-    | OAuth2ClientOptions
-    | UserRefreshClientOptions
-    | ImpersonatedOptions;
+  clientOptions?: Extract<
+    ConstructorParameters<AnyAuthClientConstructor>[0],
+    AuthClientOptions
+  >;
 
   /**
    * Required scopes for the desired API request
@@ -146,9 +131,6 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   universeDomain?: string;
 }
 
-export const CLOUD_SDK_CLIENT_ID =
-  '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
-
 export const GoogleAuthExceptionMessages = {
   API_KEY_WITH_CREDENTIALS:
     'API Keys and Credentials are mutually exclusive authentication methods and cannot be used together.',
@@ -168,7 +150,7 @@ export const GoogleAuthExceptionMessages = {
     'https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys',
 } as const;
 
-export class GoogleAuth<T extends AuthClient = JSONClient> {
+export class GoogleAuth<T extends AuthClient = AuthClient> {
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
@@ -229,7 +211,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // Cannot use both API Key + Credentials
     if (this.apiKey && (this.jsonContent || this.clientOptions.credentials)) {
       throw new RangeError(
-        GoogleAuthExceptionMessages.API_KEY_WITH_CREDENTIALS
+        GoogleAuthExceptionMessages.API_KEY_WITH_CREDENTIALS,
       );
     }
 
@@ -363,7 +345,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   async getUniverseDomain(): Promise<string> {
     let universeDomain = originalOrCamelOptions(this.clientOptions).get(
-      'universe_domain'
+      'universe_domain',
     );
     try {
       universeDomain ??= (await this.getClient()).universeDomain;
@@ -394,11 +376,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   getApplicationDefault(options: AuthClientOptions): Promise<ADCResponse>;
   getApplicationDefault(
     options: AuthClientOptions,
-    callback: ADCCallback
+    callback: ADCCallback,
   ): void;
   getApplicationDefault(
     optionsOrCallback: ADCCallback | AuthClientOptions = {},
-    callback?: ADCCallback
+    callback?: ADCCallback,
   ): void | Promise<ADCResponse> {
     let options: AuthClientOptions | undefined;
     if (typeof optionsOrCallback === 'function') {
@@ -409,7 +391,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (callback) {
       this.getApplicationDefaultAsync(options).then(
         r => callback!(null, r.credential, r.projectId),
-        callback
+        callback,
       );
     } else {
       return this.getApplicationDefaultAsync(options);
@@ -417,7 +399,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   }
 
   private async getApplicationDefaultAsync(
-    options: AuthClientOptions = {}
+    options: AuthClientOptions = {},
   ): Promise<ADCResponse> {
     // If we've already got a cached credential, return it.
     // This will also preserve one's configured quota project, in case they
@@ -466,7 +448,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   async #prepareAndCacheClient(
     credential: AnyAuthClient | T,
-    quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'] || null
+    quotaProjectIdOverride = process.env['GOOGLE_CLOUD_QUOTA_PROJECT'] || null,
   ): Promise<ADCResponse> {
     const projectId = await this.getProjectIdOptional();
 
@@ -502,7 +484,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * @api private
    */
   async _tryGetApplicationCredentialsFromEnvironmentVariable(
-    options?: AuthClientOptions
+    options?: AuthClientOptions,
   ): Promise<JSONClient | null> {
     const credentialsPath =
       process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
@@ -513,7 +495,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     try {
       return this._getApplicationCredentialsFromFilePath(
         credentialsPath,
-        options
+        options,
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -530,7 +512,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * @api private
    */
   async _tryGetApplicationCredentialsFromWellKnownFile(
-    options?: AuthClientOptions
+    options?: AuthClientOptions,
   ): Promise<JSONClient | null> {
     // First, figure out the location of the file, depending upon the OS type.
     let location = null;
@@ -549,7 +531,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       location = path.join(
         location,
         'gcloud',
-        'application_default_credentials.json'
+        'application_default_credentials.json',
       );
       if (!fs.existsSync(location)) {
         location = null;
@@ -562,7 +544,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     // The file seems to exist. Try to use it.
     const client = await this._getApplicationCredentialsFromFilePath(
       location,
-      options
+      options,
     );
     return client;
   }
@@ -575,7 +557,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   async _getApplicationCredentialsFromFilePath(
     filePath: string,
-    options: AuthClientOptions = {}
+    options: AuthClientOptions = {},
   ): Promise<JSONClient> {
     // Make sure the path looks like a string.
     if (!filePath || filePath.length === 0) {
@@ -613,22 +595,22 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   fromImpersonatedJSON(json: ImpersonatedJWTInput): Impersonated {
     if (!json) {
       throw new Error(
-        'Must pass in a JSON object containing an  impersonated refresh token'
+        'Must pass in a JSON object containing an  impersonated refresh token',
       );
     }
     if (json.type !== IMPERSONATED_ACCOUNT_TYPE) {
       throw new Error(
-        `The incoming JSON object does not have the "${IMPERSONATED_ACCOUNT_TYPE}" type`
+        `The incoming JSON object does not have the "${IMPERSONATED_ACCOUNT_TYPE}" type`,
       );
     }
     if (!json.source_credentials) {
       throw new Error(
-        'The incoming JSON object does not contain a source_credentials field'
+        'The incoming JSON object does not contain a source_credentials field',
       );
     }
     if (!json.service_account_impersonation_url) {
       throw new Error(
-        'The incoming JSON object does not contain a service_account_impersonation_url field'
+        'The incoming JSON object does not contain a service_account_impersonation_url field',
       );
     }
 
@@ -640,19 +622,19 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
        * @see {@link https://github.com/googleapis/google-auth-library-nodejs/security/code-scanning/85}
        **/
       throw new RangeError(
-        `Target principal is too long: ${json.service_account_impersonation_url}`
+        `Target principal is too long: ${json.service_account_impersonation_url}`,
       );
     }
 
     // Extract service account from service_account_impersonation_url
     const targetPrincipal =
       /(?<target>[^/]+):(generateAccessToken|generateIdToken)$/.exec(
-        json.service_account_impersonation_url
+        json.service_account_impersonation_url,
       )?.groups?.target;
 
     if (!targetPrincipal) {
       throw new RangeError(
-        `Cannot extract target principal from ${json.service_account_impersonation_url}`
+        `Cannot extract target principal from ${json.service_account_impersonation_url}`,
       );
     }
 
@@ -678,7 +660,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   fromJSON(
     json: JWTInput | ImpersonatedJWTInput,
-    options: AuthClientOptions = {}
+    options: AuthClientOptions = {},
   ): JSONClient {
     let client: JSONClient;
 
@@ -725,7 +707,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   private _cacheClientFromJSON(
     json: JWTInput | ImpersonatedJWTInput,
-    options?: AuthClientOptions
+    options?: AuthClientOptions,
   ): JSONClient {
     const client = this.fromJSON(json, options);
 
@@ -744,17 +726,17 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
   fromStream(inputStream: stream.Readable, callback: CredentialCallback): void;
   fromStream(
     inputStream: stream.Readable,
-    options: AuthClientOptions
+    options: AuthClientOptions,
   ): Promise<JSONClient>;
   fromStream(
     inputStream: stream.Readable,
     options: AuthClientOptions,
-    callback: CredentialCallback
+    callback: CredentialCallback,
   ): void;
   fromStream(
     inputStream: stream.Readable,
     optionsOrCallback: AuthClientOptions | CredentialCallback = {},
-    callback?: CredentialCallback
+    callback?: CredentialCallback,
   ): Promise<JSONClient> | void {
     let options: AuthClientOptions = {};
     if (typeof optionsOrCallback === 'function') {
@@ -765,7 +747,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     if (callback) {
       this.fromStreamAsync(inputStream, options).then(
         r => callback!(null, r),
-        callback
+        callback,
       );
     } else {
       return this.fromStreamAsync(inputStream, options);
@@ -774,12 +756,12 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
 
   private fromStreamAsync(
     inputStream: stream.Readable,
-    options?: AuthClientOptions
+    options?: AuthClientOptions,
   ): Promise<JSONClient> {
     return new Promise((resolve, reject) => {
       if (!inputStream) {
         throw new Error(
-          'Must pass in a stream containing the Google auth settings.'
+          'Must pass in a stream containing the Google auth settings.',
         );
       }
       const chunks: string[] = [];
@@ -949,10 +931,10 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    */
   getCredentials(): Promise<CredentialBody>;
   getCredentials(
-    callback: (err: Error | null, credentials?: CredentialBody) => void
+    callback: (err: Error | null, credentials?: CredentialBody) => void,
   ): void;
   getCredentials(
-    callback?: (err: Error | null, credentials?: CredentialBody) => void
+    callback?: (err: Error | null, credentials?: CredentialBody) => void,
   ): void | Promise<CredentialBody> {
     if (callback) {
       this.getCredentialsAsync().then(r => callback(null, r), callback);
@@ -1034,7 +1016,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       return credential;
     } else {
       const {credential} = await this.getApplicationDefaultAsync(
-        this.clientOptions
+        this.clientOptions,
       );
       return credential;
     }
@@ -1049,7 +1031,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     const client = await this.getClient();
     if (!('fetchIdToken' in client)) {
       throw new Error(
-        'Cannot fetch ID token in this environment, use GCE or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a service account credentials JSON file.'
+        'Cannot fetch ID token in this environment, use GCE or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a service account credentials JSON file.',
       );
     }
     return new IdTokenClient({targetAudience, idTokenProvider: client});
@@ -1068,7 +1050,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * Obtain the HTTP headers that will provide authorization for a given
    * request.
    */
-  async getRequestHeaders(url?: string) {
+  async getRequestHeaders(url?: string | URL) {
     const client = await this.getClient();
     return client.getRequestHeaders(url);
   }
@@ -1078,16 +1060,11 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * the request options.
    * @param opts Axios or Request options on which to attach the headers
    */
-  async authorizeRequest(opts: {
-    url?: string;
-    uri?: string;
-    headers?: Headers;
-  }) {
-    opts = opts || {};
-    const url = opts.url || opts.uri;
+  async authorizeRequest(opts: Pick<GaxiosOptions, 'url' | 'headers'> = {}) {
+    const url = opts.url;
     const client = await this.getClient();
     const headers = await client.getRequestHeaders(url);
-    opts.headers = Object.assign(opts.headers || {}, headers);
+    opts.headers = Gaxios.mergeHeaders(opts.headers, headers);
     return opts;
   }
 
@@ -1096,8 +1073,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
    * HTTP request using the given options.
    * @param opts Axios request options for the HTTP request.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async request<T = any>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
+  async request<T>(opts: GaxiosOptions): Promise<GaxiosResponse<T>> {
     const client = await this.getClient();
     return client.request<T>(opts);
   }
@@ -1151,7 +1127,7 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
     crypto: Crypto,
     emailOrUniqueId: string,
     data: string,
-    endpoint: string
+    endpoint: string,
   ): Promise<string> {
     const url = new URL(endpoint + `${emailOrUniqueId}:signBlob`);
     const res = await this.request<SignBlobResponse>({

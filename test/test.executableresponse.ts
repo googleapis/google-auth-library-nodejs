@@ -22,6 +22,7 @@ import {
   InvalidMessageFieldError,
   InvalidSuccessFieldError,
   InvalidVersionFieldError,
+  ExecutableResponseJson,
 } from '../src/auth/executable-response';
 import * as sinon from 'sinon';
 
@@ -49,13 +50,13 @@ describe('ExecutableResponse', () => {
         success: 'true',
       };
       const expectedError = new InvalidVersionFieldError(
-        "Executable response must contain a 'version' field."
+        "Executable response must contain a 'version' field.",
       );
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new ExecutableResponse(responseJson);
+        return new ExecutableResponse(
+          responseJson as unknown as ExecutableResponseJson,
+        );
       }, expectedError);
     });
 
@@ -64,13 +65,13 @@ describe('ExecutableResponse', () => {
         version: 1,
       };
       const expectedError = new InvalidSuccessFieldError(
-        "Executable response must contain a 'success' field."
+        "Executable response must contain a 'success' field.",
       );
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new ExecutableResponse(responseJson);
+        return new ExecutableResponse(
+          responseJson as unknown as ExecutableResponseJson,
+        );
       }, expectedError);
     });
 
@@ -82,7 +83,7 @@ describe('ExecutableResponse', () => {
       };
       const expectedError = new InvalidTokenTypeFieldError(
         "Executable response must contain a 'token_type' field when successful " +
-          `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
+          `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`,
       );
 
       assert.throws(() => {
@@ -99,7 +100,7 @@ describe('ExecutableResponse', () => {
       };
       const expectedError = new InvalidTokenTypeFieldError(
         "Executable response must contain a 'token_type' field when successful " +
-          `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
+          `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`,
       );
 
       assert.throws(() => {
@@ -116,7 +117,7 @@ describe('ExecutableResponse', () => {
         saml_response: 'response',
       };
       const expectedError = new InvalidSubjectTokenError(
-        "Executable response must contain a 'id_token' field when token_type=urn:ietf:params:oauth:token-type:id_token or urn:ietf:params:oauth:token-type:jwt."
+        "Executable response must contain a 'id_token' field when token_type=urn:ietf:params:oauth:token-type:id_token or urn:ietf:params:oauth:token-type:jwt.",
       );
 
       assert.throws(() => {
@@ -133,7 +134,7 @@ describe('ExecutableResponse', () => {
         id_token: 'response',
       };
       const expectedError = new InvalidSubjectTokenError(
-        "Executable response must contain a 'saml_response' field when token_type=urn:ietf:params:oauth:token-type:saml2."
+        "Executable response must contain a 'saml_response' field when token_type=urn:ietf:params:oauth:token-type:saml2.",
       );
 
       assert.throws(() => {
@@ -148,7 +149,7 @@ describe('ExecutableResponse', () => {
         message: 'error message',
       };
       const expectedError = new InvalidCodeFieldError(
-        "Executable response must contain a 'code' field when unsuccessful."
+        "Executable response must contain a 'code' field when unsuccessful.",
       );
 
       assert.throws(() => {
@@ -163,7 +164,7 @@ describe('ExecutableResponse', () => {
         code: '1',
       };
       const expectedError = new InvalidMessageFieldError(
-        "Executable response must contain a 'message' field when unsuccessful."
+        "Executable response must contain a 'message' field when unsuccessful.",
       );
 
       assert.throws(() => {
@@ -187,7 +188,7 @@ describe('ExecutableResponse', () => {
       assert.equal(executableResponse.tokenType, responseJson.token_type);
       assert.equal(
         executableResponse.expirationTime,
-        responseJson.expiration_time
+        responseJson.expiration_time,
       );
       assert.equal(executableResponse.subjectToken, responseJson.saml_response);
     });
@@ -208,7 +209,7 @@ describe('ExecutableResponse', () => {
       assert.equal(executableResponse.tokenType, responseJson.token_type);
       assert.equal(
         executableResponse.expirationTime,
-        responseJson.expiration_time
+        responseJson.expiration_time,
       );
       assert.equal(executableResponse.subjectToken, responseJson.id_token);
     });
@@ -229,7 +230,7 @@ describe('ExecutableResponse', () => {
       assert.equal(executableResponse.tokenType, responseJson.token_type);
       assert.equal(
         executableResponse.expirationTime,
-        responseJson.expiration_time
+        responseJson.expiration_time,
       );
       assert.equal(executableResponse.subjectToken, responseJson.id_token);
     });

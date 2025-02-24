@@ -58,13 +58,13 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     url: string,
     path: string,
     nockParams: NockMockRefreshResponse[],
-    additionalHeaders?: {[key: string]: string}
+    additionalHeaders?: {[key: string]: string},
   ): nock.Scope {
     const headers = Object.assign(
       {
-        'content-type': 'application/x-www-form-urlencoded',
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
       },
-      additionalHeaders || {}
+      additionalHeaders || {},
     );
     const scope = nock(url, {
       reqheaders: headers,
@@ -125,14 +125,14 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     it('should not throw when valid options are provided', () => {
       assert.doesNotThrow(() => {
         return new ExternalAccountAuthorizedUserClient(
-          externalAccountAuthorizedUserCredentialOptions
+          externalAccountAuthorizedUserCredentialOptions,
         );
       });
     });
 
     it('should set default RefreshOptions', () => {
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
 
       assert(!client.forceRefreshOnFailure);
@@ -152,7 +152,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptionsNoToken
+        externalAccountAuthorizedUserCredentialOptionsNoToken,
       );
       await client.getAccessToken();
       scope.done();
@@ -189,18 +189,18 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       assert.strictEqual(
         client.forceRefreshOnFailure,
-        refreshOptions.forceRefreshOnFailure
+        refreshOptions.forceRefreshOnFailure,
       );
       assert.strictEqual(
         client.eagerRefreshThresholdMillis,
-        refreshOptions.eagerRefreshThresholdMillis
+        refreshOptions.eagerRefreshThresholdMillis,
       );
     });
 
     describe('universeDomain', () => {
       it('should be the default universe if not set', () => {
         const client = new ExternalAccountAuthorizedUserClient(
-          externalAccountAuthorizedUserCredentialOptions
+          externalAccountAuthorizedUserCredentialOptions,
         );
 
         assert.equal(client.universeDomain, DEFAULT_UNIVERSE);
@@ -232,7 +232,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       const actualResponse = await client.getAccessToken();
       assertGaxiosResponsePresent(actualResponse);
@@ -262,11 +262,11 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       await assert.rejects(
         client.getAccessToken(),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -275,23 +275,23 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       // we need timers/`setTimeout` for this test
       clock.restore();
 
-      const expectedRequest = new URLSearchParams({
+      const expectedRequest = {
         grant_type: 'refresh_token',
         refresh_token: 'refreshToken',
-      });
+      };
 
       const scope = nock(BASE_URL, {
         reqheaders: {
-          'content-type': 'application/x-www-form-urlencoded',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
       })
-        .post(REFRESH_PATH, expectedRequest.toString())
-        .replyWithError({code: 'ETIMEDOUT'})
-        .post(REFRESH_PATH, expectedRequest.toString())
+        .post(REFRESH_PATH, expectedRequest)
+        .replyWithError('ETIMEOUT')
+        .post(REFRESH_PATH, expectedRequest)
         .reply(200, successfulRefreshResponse);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
 
       const actualResponse = await client.getAccessToken();
@@ -325,7 +325,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Get initial access token and new refresh token.
       await client.getAccessToken();
@@ -355,7 +355,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Get initial access token and new refresh token.
       await client.getAccessToken();
@@ -363,7 +363,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       clock.tick(
         successfulRefreshResponseNoRefreshToken.expires_in * 1000 -
           client.eagerRefreshThresholdMillis -
-          1
+          1,
       );
       // Refresh access token with new access token.
       const actualResponse = await client.getAccessToken();
@@ -390,7 +390,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Get initial access token.
       await client.getAccessToken();
@@ -398,7 +398,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       clock.tick(
         successfulRefreshResponseNoRefreshToken.expires_in * 1000 -
           client.eagerRefreshThresholdMillis +
-          1
+          1,
       );
       // Refresh access token with new access token.
       const actualResponse = await client.getAccessToken();
@@ -414,10 +414,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
   describe('getRequestHeaders()', () => {
     it('should inject the authorization headers', async () => {
-      const expectedHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+      const expectedHeaders = new Headers({
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
         'x-goog-user-project': 'quotaProjectId',
-      };
+      });
       const scope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
         {
           statusCode: 200,
@@ -431,10 +431,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: 'quotaProjectId'},
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       const client = new ExternalAccountAuthorizedUserClient(
-        optionsWithQuotaProjectId
+        optionsWithQuotaProjectId,
       );
       const actualHeaders = await client.getRequestHeaders();
 
@@ -460,11 +460,11 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       await assert.rejects(
         client.getRequestHeaders(),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -474,12 +474,12 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     it('should process HTTP request with authorization header', async () => {
       const quotaProjectId = 'QUOTA_PROJECT_ID';
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
         'x-goog-user-project': quotaProjectId,
       };
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: quotaProjectId},
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       const exampleRequest = {
         key1: 'value1',
@@ -512,14 +512,13 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        optionsWithQuotaProjectId
+        optionsWithQuotaProjectId,
       );
       const actualResponse = await client.request<Object>({
         url: 'https://example.com/api',
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -548,23 +547,22 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       await assert.rejects(
         client.request<Object>({
           url: 'https://example.com/api',
           method: 'POST',
           data: exampleRequest,
-          responseType: 'json',
         }),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
 
     it('should trigger callback on success when provided', done => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -597,7 +595,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       client.request<Object>(
         {
@@ -605,21 +603,20 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         (err, result) => {
           assert.strictEqual(err, null);
           assert.deepStrictEqual(result?.data, exampleResponse);
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
     it('should trigger callback on error when provided', done => {
       const errorMessage = 'Bad Request';
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -648,7 +645,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       client.request<Object>(
         {
@@ -656,7 +653,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         },
         err => {
           assert(err instanceof GaxiosError);
@@ -664,13 +660,13 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
     it('should retry on 401 on forceRefreshOnFailure=true', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -717,7 +713,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         method: 'POST',
         headers: exampleHeaders,
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
@@ -726,7 +721,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should not retry on 401 on forceRefreshOnFailure=false', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -764,11 +759,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 401,
-        }
+        },
       );
 
       scopes.forEach(scope => scope.done());
@@ -776,7 +770,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
     it('should not retry more than once', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponseNoRefreshToken.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -820,18 +814,17 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           headers: exampleHeaders,
           data: exampleRequest,
-          responseType: 'json',
         }),
         {
           status: 403,
-        }
+        },
       );
       scopes.forEach(scope => scope.done());
     });
 
     it('should process headerless HTTP request', async () => {
       const authHeaders = {
-        Authorization: `Bearer ${successfulRefreshResponse.access_token}`,
+        authorization: `Bearer ${successfulRefreshResponse.access_token}`,
       };
       const exampleRequest = {
         key1: 'value1',
@@ -860,14 +853,13 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Send request with no headers.
       const actualResponse = await client.request<Object>({
         url: 'https://example.com/api',
         method: 'POST',
         data: exampleRequest,
-        responseType: 'json',
       });
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);

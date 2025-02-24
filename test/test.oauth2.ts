@@ -20,7 +20,6 @@ import * as fs from 'fs';
 import {GaxiosError} from 'gaxios';
 import * as nock from 'nock';
 import * as path from 'path';
-import * as qs from 'querystring';
 import * as sinon from 'sinon';
 
 import {
@@ -46,19 +45,19 @@ describe('oauth2', () => {
   const certsPath = '/oauth2/v1/certs';
   const certsResPath = path.join(
     __dirname,
-    '../../test/fixtures/oauthcertspem.json'
+    '../../test/fixtures/oauthcertspem.json',
   );
   const publicKeyEcdsa = fs.readFileSync(
     './test/fixtures/fake-ecdsa-public.pem',
-    'utf-8'
+    'utf-8',
   );
   const privateKeyEcdsa = fs.readFileSync(
     './test/fixtures/fake-ecdsa-private.pem',
-    'utf-8'
+    'utf-8',
   );
   const pubkeysResPath = path.join(
     __dirname,
-    '../../test/fixtures/ecdsapublickeys.json'
+    '../../test/fixtures/ecdsapublickeys.json',
   );
 
   describe(__filename, () => {
@@ -116,7 +115,7 @@ describe('oauth2', () => {
       };
       assert.throws(
         () => client.generateAuthUrl(opts),
-        /If a code_challenge_method is provided, code_challenge must be included/
+        /If a code_challenge_method is provided, code_challenge must be included/,
       );
     });
 
@@ -140,7 +139,7 @@ describe('oauth2', () => {
       assert.strictEqual(props.get('code_challenge'), codes.codeChallenge);
       assert.strictEqual(
         props.get('code_challenge_method'),
-        CodeChallengeMethod.S256
+        CodeChallengeMethod.S256,
       );
     });
 
@@ -164,7 +163,7 @@ describe('oauth2', () => {
         certs: {},
         requiredAudience: string | string[],
         issuers?: string[],
-        theMaxExpiry?: number
+        theMaxExpiry?: number,
       ) => {
         assert.strictEqual(jwt, idToken);
         assert.deepStrictEqual(certs, fakeCerts);
@@ -195,7 +194,7 @@ describe('oauth2', () => {
       client.verifySignedJwtWithCertsAsync = async (
         jwt: string,
         certs: {},
-        requiredAudience: string
+        requiredAudience: string,
       ) => {
         assert.strictEqual(jwt, idToken);
         assert.deepStrictEqual(certs, fakeCerts);
@@ -205,7 +204,7 @@ describe('oauth2', () => {
       assert.throws(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         () => (client as any).verifyIdToken(idToken, audience),
-        /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./
+        /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./,
       );
     });
 
@@ -257,7 +256,7 @@ describe('oauth2', () => {
       const login = await client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
-        'testaudience'
+        'testaudience',
       );
       assert.strictEqual(login.getUserId(), '123456789');
     });
@@ -295,9 +294,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Wrong recipient/
+        /Wrong recipient/,
       );
     });
 
@@ -335,9 +334,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          validAudiences
+          validAudiences,
         ),
-        /Wrong recipient/
+        /Wrong recipient/,
       );
     });
 
@@ -368,9 +367,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Wrong number of segments/
+        /Wrong number of segments/,
       );
     });
 
@@ -406,9 +405,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Can't parse token envelope/
+        /Can't parse token envelope/,
       );
     });
 
@@ -444,9 +443,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Can't parse token payload/
+        /Can't parse token payload/,
       );
     });
 
@@ -480,9 +479,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Invalid token signature/
+        /Invalid token signature/,
       );
     });
 
@@ -513,9 +512,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /No expiration time/
+        /No expiration time/,
       );
     });
 
@@ -548,9 +547,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /No issue time/
+        /No issue time/,
       );
     });
 
@@ -586,9 +585,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Expiration time too far in future/
+        /Expiration time too far in future/,
       );
     });
 
@@ -626,7 +625,7 @@ describe('oauth2', () => {
         {keyid: publicKey},
         'testaudience',
         ['testissuer'],
-        maxExpiry
+        maxExpiry,
       );
     });
 
@@ -664,9 +663,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Token used too early/
+        /Token used too early/,
       );
     });
 
@@ -705,9 +704,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Token used too late/
+        /Token used too late/,
       );
     });
 
@@ -744,9 +743,9 @@ describe('oauth2', () => {
           data,
           {keyid: publicKey},
           'testaudience',
-          ['testissuer']
+          ['testissuer'],
         ),
-        /Invalid issuer/
+        /Invalid issuer/,
       );
     });
 
@@ -782,7 +781,7 @@ describe('oauth2', () => {
         data,
         {keyid: publicKey},
         'testaudience',
-        ['testissuer']
+        ['testissuer'],
       );
     });
 
@@ -814,14 +813,14 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = formatEcdsa.derToJose(
         signer.sign(privateKeyEcdsa, 'base64'),
-        'ES256'
+        'ES256',
       );
       data += '.' + signature;
       await client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKeyEcdsa},
         'testaudience',
-        ['testissuer']
+        ['testissuer'],
       );
     });
 
@@ -833,37 +832,33 @@ describe('oauth2', () => {
         assert.strictEqual(err, null);
         assert.notStrictEqual(
           certs!['a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21'],
-          null
+          null,
         );
         assert.notStrictEqual(
           certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'],
-          null
+          null,
         );
         scope.done();
         done();
       });
     });
 
-    it('should be able to retrieve a list of Google certificates from cache again', done => {
+    it('should be able to retrieve a list of Google certificates from cache again', async () => {
       const scope = nock('https://www.googleapis.com')
         .defaultReplyHeaders({
           'Cache-Control':
             'public, max-age=23641, must-revalidate, no-transform',
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         })
         .get(certsPath)
         .replyWithFile(200, certsResPath);
-      client.getFederatedSignonCerts((err, certs) => {
-        assert.strictEqual(err, null);
-        assert.strictEqual(Object.keys(certs!).length, 2);
-        scope.done(); // has retrieved from nock... nock no longer will reply
-        client.getFederatedSignonCerts((err2, certs2) => {
-          assert.strictEqual(err2, null);
-          assert.strictEqual(Object.keys(certs2!).length, 2);
-          scope.done();
-          done();
-        });
-      });
+      const {certs} = await client.getFederatedSignonCerts();
+      assert.strictEqual(Object.keys(certs).length, 2);
+      scope.done(); // has retrieved from nock... nock no longer will reply
+
+      const {certs: certs2} = await client.getFederatedSignonCerts();
+      assert.strictEqual(Object.keys(certs2).length, 2);
+      scope.done(); // has retrieved from nock... nock no longer will reply
     });
 
     it('should be able to retrieve a list of IAP certificates', done => {
@@ -907,7 +902,7 @@ describe('oauth2', () => {
       client.request({}, (err, result) => {
         assert.strictEqual(
           err!.message,
-          'No access, refresh token, API key or refresh handler callback is set.'
+          'No access, refresh token, API key or refresh handler callback is set.',
         );
         assert.strictEqual(result, undefined);
         done();
@@ -925,7 +920,9 @@ describe('oauth2', () => {
     function mockExample() {
       return [
         nock(baseUrl, {
-          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          reqheaders: {
+            'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          },
         })
           .post('/token')
           .reply(200, {access_token: 'abc123', expires_in: 1}),
@@ -959,7 +956,9 @@ describe('oauth2', () => {
       // endpoint. This makes sure that refreshToken is called only once.
       const scopes = [
         nock(baseUrl, {
-          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          reqheaders: {
+            'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          },
         })
           .post('/token')
           .reply(200, {access_token: 'abc123', expires_in: 1}),
@@ -981,7 +980,9 @@ describe('oauth2', () => {
       // the promise from getting cached for too long.
       const scopes = [
         nock(baseUrl, {
-          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          reqheaders: {
+            'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          },
         })
           .post('/token')
           .twice()
@@ -1001,7 +1002,9 @@ describe('oauth2', () => {
       // a second call to refreshToken, which should use a different promise.
       const scopes = [
         nock(baseUrl, {
-          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          reqheaders: {
+            'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          },
         })
           .post('/token')
           .reply(400)
@@ -1029,7 +1032,9 @@ describe('oauth2', () => {
 
       const scopes = [
         nock(baseUrl, {
-          reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+          reqheaders: {
+            'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          },
         })
           .post('/token')
           .reply(400, reAuthErrorBody),
@@ -1098,7 +1103,7 @@ describe('oauth2', () => {
       await client.request({url: 'http://example.com'});
       assert.strictEqual(
         'initial-access-token',
-        client.credentials.access_token
+        client.credentials.access_token,
       );
       assert.strictEqual(false as boolean, scopes[0].isDone());
       scopes[1].done();
@@ -1114,7 +1119,7 @@ describe('oauth2', () => {
       client.request({url: 'http://example.com'}, () => {
         assert.strictEqual(
           'initial-access-token',
-          client.credentials.access_token
+          client.credentials.access_token,
         );
         assert.strictEqual(false as boolean, scopes[0].isDone());
         scopes[1].done();
@@ -1131,7 +1136,7 @@ describe('oauth2', () => {
       client.request({url: 'http://example.com'}, () => {
         assert.strictEqual(
           'initial-access-token',
-          client.credentials.access_token
+          client.credentials.access_token,
         );
         assert.strictEqual(false as boolean, scopes[0].isDone());
         scopes[1].done();
@@ -1148,12 +1153,14 @@ describe('oauth2', () => {
               error: {code, message: 'Invalid Credentials'},
             }),
           nock('http://example.com', {
-            reqheaders: {Authorization: 'Bearer abc123'},
+            reqheaders: {authorization: 'Bearer abc123'},
           })
             .get('/access')
             .reply(200),
           nock(baseUrl, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+            reqheaders: {
+              'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            },
           })
             .post('/token')
             .reply(200, {access_token: 'abc123', expires_in: 1000}),
@@ -1180,7 +1187,9 @@ describe('oauth2', () => {
         });
         const scopes = [
           nock(baseUrl, {
-            reqheaders: {'content-type': 'application/x-www-form-urlencoded'},
+            reqheaders: {
+              'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            },
           })
             .post('/token')
             .reply(200, {access_token: 'abc123', expires_in: 1000}),
@@ -1190,7 +1199,7 @@ describe('oauth2', () => {
               error: {code, message: 'Invalid Credentials'},
             }),
           nock('http://example.com', {
-            reqheaders: {Authorization: 'Bearer abc123'},
+            reqheaders: {authorization: 'Bearer abc123'},
           })
             .get('/access')
             .reply(200),
@@ -1211,7 +1220,7 @@ describe('oauth2', () => {
 
       it('should call refreshHandler in request() on token expiration and no refresh token available', async () => {
         const authHeaders = {
-          Authorization: 'Bearer access_token',
+          authorization: 'Bearer access_token',
         };
         const scopes = [
           nock('http://example.com')
@@ -1242,18 +1251,18 @@ describe('oauth2', () => {
           scopes.forEach(s => s.done());
           assert.strictEqual(
             client.credentials.access_token,
-            expectedRefreshedAccessToken.access_token
+            expectedRefreshedAccessToken.access_token,
           );
           assert.strictEqual(
             client.credentials.expiry_date,
-            expectedRefreshedAccessToken.expiry_date
+            expectedRefreshedAccessToken.expiry_date,
           );
         });
       });
 
       it('should call refreshHandler in request() if no credentials available', async () => {
         const authHeaders = {
-          Authorization: 'Bearer access_token',
+          authorization: 'Bearer access_token',
         };
         const scopes = [
           nock('http://example.com')
@@ -1280,11 +1289,11 @@ describe('oauth2', () => {
           scopes.forEach(s => s.done());
           assert.strictEqual(
             client.credentials.access_token,
-            expectedRefreshedAccessToken.access_token
+            expectedRefreshedAccessToken.access_token,
           );
           assert.strictEqual(
             client.credentials.expiry_date,
-            expectedRefreshedAccessToken.expiry_date
+            expectedRefreshedAccessToken.expiry_date,
           );
         });
       });
@@ -1306,7 +1315,7 @@ describe('oauth2', () => {
           assert(e);
           assert.strictEqual(e.response!.status, 401);
           done();
-        }
+        },
       );
     });
 
@@ -1336,7 +1345,9 @@ describe('oauth2', () => {
 
     it('getToken should allow a code_verifier to be passed', async () => {
       const scope = nock(baseUrl, {
-        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
       })
         .post('/token')
         .reply(200, {
@@ -1350,14 +1361,16 @@ describe('oauth2', () => {
       });
       scope.done();
       assert(res.res);
-      if (!res.res) return;
-      const params = qs.parse(res.res.config.data);
-      assert.strictEqual(params.code_verifier, 'its_verified');
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('code_verifier'), 'its_verified');
     });
 
     it('getToken should set redirect_uri if not provided in options', async () => {
       const scope = nock(baseUrl, {
-        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
       })
         .post('/token')
         .reply(200, {
@@ -1368,14 +1381,16 @@ describe('oauth2', () => {
       const res = await client.getToken({code: 'code here'});
       scope.done();
       assert(res.res);
-      if (!res.res) return;
-      const params = qs.parse(res.res.config.data);
-      assert.strictEqual(params.redirect_uri, REDIRECT_URI);
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('redirect_uri'), REDIRECT_URI);
     });
 
     it('getToken should set client_id if not provided in options', async () => {
       const scope = nock(baseUrl, {
-        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
       })
         .post('/token')
         .matchHeader('authorization', value => value === undefined)
@@ -1387,14 +1402,16 @@ describe('oauth2', () => {
       const res = await client.getToken({code: 'code here'});
       scope.done();
       assert(res.res);
-      if (!res.res) return;
-      const params = qs.parse(res.res.config.data);
-      assert.strictEqual(params.client_id, CLIENT_ID);
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('client_id'), CLIENT_ID);
     });
 
     it('getToken should override redirect_uri if provided in options', async () => {
       const scope = nock(baseUrl, {
-        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
       })
         .post('/token')
         .reply(200, {
@@ -1408,14 +1425,16 @@ describe('oauth2', () => {
       });
       scope.done();
       assert(res.res);
-      if (!res.res) return;
-      const params = qs.parse(res.res.config.data);
-      assert.strictEqual(params.redirect_uri, 'overridden');
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('redirect_uri'), 'overridden');
     });
 
     it('getToken should override client_id if provided in options', async () => {
       const scope = nock(baseUrl, {
-        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
       })
         .post('/token')
         .reply(200, {
@@ -1429,9 +1448,9 @@ describe('oauth2', () => {
       });
       scope.done();
       assert(res.res);
-      if (!res.res) return;
-      const params = qs.parse(res.res.config.data);
-      assert.strictEqual(params.client_id, 'overridden');
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('client_id'), 'overridden');
     });
 
     it('getToken should use basic header auth if provided in options', async () => {
@@ -1441,7 +1460,7 @@ describe('oauth2', () => {
         Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
       const scope = nock(authurl)
         .post('/oauthtoken')
-        .matchHeader('Authorization', basic_auth)
+        .matchHeader('authorization', basic_auth)
         .reply(200, {
           access_token: 'abc',
           refresh_token: '123',
@@ -1472,7 +1491,7 @@ describe('oauth2', () => {
       const authurl = 'https://some.example.auth/';
       const scope = nock(authurl)
         .post('/token')
-        .matchHeader('Authorization', val => val === undefined)
+        .matchHeader('authorization', val => val === undefined)
         .reply(401);
       const opts = {
         clientId: CLIENT_ID,
@@ -1487,7 +1506,7 @@ describe('oauth2', () => {
       const oauth2client = new OAuth2Client(opts);
       assert.equal(
         oauth2client.clientAuthentication,
-        ClientAuthentication.None
+        ClientAuthentication.None,
       );
 
       try {
@@ -1516,14 +1535,16 @@ describe('oauth2', () => {
       const oauth2client = new OAuth2Client(opts);
       assert.equal(
         oauth2client.clientAuthentication,
-        ClientAuthentication.ClientSecretPost
+        ClientAuthentication.ClientSecretPost,
       );
     });
 
     it('should return expiry_date', done => {
       const now = new Date().getTime();
       const scope = nock(baseUrl, {
-        reqheaders: {'Content-Type': 'application/x-www-form-urlencoded'},
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
       })
         .post('/token')
         .reply(200, {
@@ -1550,7 +1571,7 @@ describe('oauth2', () => {
 
       const scope = nock(baseUrl, {
         reqheaders: {
-          'content-type': 'application/x-www-form-urlencoded',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
           authorization: `Bearer ${accessToken}`,
         },
       })
@@ -1572,9 +1593,9 @@ describe('oauth2', () => {
       client.refreshHandler = async () => {
         return expectedRefreshedAccessToken;
       };
-      const expectedMetadata = {
-        Authorization: 'Bearer access_token',
-      };
+      const expectedMetadata = new Headers({
+        authorization: 'Bearer access_token',
+      });
       assert.deepStrictEqual(client.credentials, {});
 
       const requestMetaData =
@@ -1595,9 +1616,9 @@ describe('oauth2', () => {
         access_token: 'initial-access-token',
         expiry_date: new Date().getTime() - 1000,
       });
-      const expectedMetadata = {
-        Authorization: 'Bearer access_token',
-      };
+      const expectedMetadata = new Headers({
+        authorization: 'Bearer access_token',
+      });
 
       const requestMetaData =
         await client.getRequestHeaders('http://example.com');
@@ -1610,9 +1631,9 @@ describe('oauth2', () => {
         access_token: 'initial-access-token',
         expiry_date: new Date().getTime() + 3600 * 1000,
       };
-      const expectedMetadata = {
-        Authorization: 'Bearer initial-access-token',
-      };
+      const expectedMetadata = new Headers({
+        authorization: 'Bearer initial-access-token',
+      });
 
       const requestMetaData =
         await client.getRequestHeaders('http://example.com');
@@ -1628,7 +1649,7 @@ describe('oauth2', () => {
 
       await assert.rejects(
         client.getRequestHeaders('http://example.com'),
-        /No refresh token is set./
+        /No refresh token is set./,
       );
     });
 
@@ -1646,7 +1667,7 @@ describe('oauth2', () => {
 
       assert.strictEqual(
         refreshedAccessToken.token,
-        expectedRefreshedAccessToken.access_token
+        expectedRefreshedAccessToken.access_token,
       );
     });
 
@@ -1667,7 +1688,7 @@ describe('oauth2', () => {
 
       assert.strictEqual(
         refreshedAccessToken.token,
-        expectedRefreshedAccessToken.access_token
+        expectedRefreshedAccessToken.access_token,
       );
     });
 
@@ -1686,7 +1707,7 @@ describe('oauth2', () => {
 
       await assert.rejects(
         client.getAccessToken(),
-        /No access token is returned by the refreshHandler callback./
+        /No access token is returned by the refreshHandler callback./,
       );
     });
 
@@ -1698,7 +1719,7 @@ describe('oauth2', () => {
 
       const scope = nock(url, {
         reqheaders: {
-          Authorization: `Bearer ${credentials.access_token}`,
+          authorization: `Bearer ${credentials.access_token}`,
         },
       })
         .get('/')

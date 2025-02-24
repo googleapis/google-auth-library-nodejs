@@ -37,5 +37,8 @@ describe('index', () => {
     assert(gal.BaseExternalAccountClient);
     assert(gal.DownscopedClient);
     assert(gal.Impersonated);
+
+    assert(gal.gaxios);
+    assert(gal.gcpMetadata);
   });
 });

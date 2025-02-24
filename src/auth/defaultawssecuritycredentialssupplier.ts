@@ -16,7 +16,6 @@ import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {Gaxios, GaxiosOptions} from 'gaxios';
 import {AwsSecurityCredentialsSupplier} from './awsclient';
 import {AwsSecurityCredentials} from './awsrequestsigner';
-import {Headers} from './authclient';
 
 /**
  * Interface defining the AWS security-credentials endpoint response.
@@ -110,22 +109,23 @@ export class DefaultAwsSecurityCredentialsSupplier
       return this.#regionFromEnv;
     }
 
-    const metadataHeaders: Headers = {};
+    const metadataHeaders = new Headers();
     if (!this.#regionFromEnv && this.imdsV2SessionTokenUrl) {
-      metadataHeaders['x-aws-ec2-metadata-token'] =
-        await this.#getImdsV2SessionToken(context.transporter);
+      metadataHeaders.set(
+        'x-aws-ec2-metadata-token',
+        await this.#getImdsV2SessionToken(context.transporter),
+      );
     }
     if (!this.regionUrl) {
-      throw new Error(
+      throw new RangeError(
         'Unable to determine AWS region due to missing ' +
-          '"options.credential_source.region_url"'
+          '"options.credential_source.region_url"',
       );
     }
     const opts: GaxiosOptions = {
       ...this.additionalGaxiosOptions,
       url: this.regionUrl,
       method: 'GET',
-      responseType: 'text',
       headers: metadataHeaders,
     };
     const response = await context.transporter.request<string>(opts);
@@ -144,7 +144,7 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @return A promise that resolves with the AWS security credentials.
    */
   async getAwsSecurityCredentials(
-    context: ExternalAccountSupplierContext
+    context: ExternalAccountSupplierContext,
   ): Promise<AwsSecurityCredentials> {
     // Check environment variables for permanent credentials first.
     // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
@@ -152,15 +152,17 @@ export class DefaultAwsSecurityCredentialsSupplier
       return this.#securityCredentialsFromEnv;
     }
 
-    const metadataHeaders: Headers = {};
+    const metadataHeaders = new Headers();
     if (this.imdsV2SessionTokenUrl) {
-      metadataHeaders['x-aws-ec2-metadata-token'] =
-        await this.#getImdsV2SessionToken(context.transporter);
+      metadataHeaders.set(
+        'x-aws-ec2-metadata-token',
+        await this.#getImdsV2SessionToken(context.transporter),
+      );
     }
     // Since the role on a VM can change, we don't need to cache it.
     const roleName = await this.#getAwsRoleName(
       metadataHeaders,
-      context.transporter
+      context.transporter,
     );
     // Temporary credentials typically last for several hours.
     // Expiration is returned in response.
@@ -169,7 +171,7 @@ export class DefaultAwsSecurityCredentialsSupplier
     const awsCreds = await this.#retrieveAwsSecurityCredentials(
       roleName,
       metadataHeaders,
-      context.transporter
+      context.transporter,
     );
     return {
       accessKeyId: awsCreds.AccessKeyId,
@@ -187,7 +189,6 @@ export class DefaultAwsSecurityCredentialsSupplier
       ...this.additionalGaxiosOptions,
       url: this.imdsV2SessionTokenUrl,
       method: 'PUT',
-      responseType: 'text',
       headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
     };
     const response = await transporter.request<string>(opts);
@@ -202,19 +203,18 @@ export class DefaultAwsSecurityCredentialsSupplier
    */
   async #getAwsRoleName(
     headers: Headers,
-    transporter: Gaxios
+    transporter: Gaxios,
   ): Promise<string> {
     if (!this.securityCredentialsUrl) {
       throw new Error(
         'Unable to determine AWS role name due to missing ' +
-          '"options.credential_source.url"'
+          '"options.credential_source.url"',
       );
     }
     const opts: GaxiosOptions = {
       ...this.additionalGaxiosOptions,
       url: this.securityCredentialsUrl,
       method: 'GET',
-      responseType: 'text',
       headers: headers,
     };
     const response = await transporter.request<string>(opts);
@@ -233,12 +233,11 @@ export class DefaultAwsSecurityCredentialsSupplier
   async #retrieveAwsSecurityCredentials(
     roleName: string,
     headers: Headers,
-    transporter: Gaxios
+    transporter: Gaxios,
   ): Promise<AwsSecurityCredentialsResponse> {
     const response = await transporter.request<AwsSecurityCredentialsResponse>({
       ...this.additionalGaxiosOptions,
       url: `${this.securityCredentialsUrl}/${roleName}`,
-      responseType: 'json',
       headers: headers,
     });
     return response.data;
