@@ -28,7 +28,7 @@ function main(
   iapJwt,
   projectNumber = '',
   projectId = '',
-  backendServiceId = ''
+  backendServiceId = '',
 ) {
   // [START iap_validate_jwt]
   /**
@@ -54,7 +54,7 @@ function main(
       iapJwt,
       response.pubkeys,
       expectedAudience,
-      ['https://cloud.google.com/iap']
+      ['https://cloud.google.com/iap'],
     );
     // Print out the info contained in the IAP ID token
     console.log(ticket);
@@ -65,7 +65,7 @@ function main(
   // [END iap_validate_jwt]
   if (!expectedAudience) {
     console.log(
-      'Audience not verified! Supply a projectNumber and projectID to verify'
+      'Audience not verified! Supply a projectNumber and projectID to verify',
     );
   }
 }

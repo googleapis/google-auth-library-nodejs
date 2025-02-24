@@ -16,6 +16,7 @@ import * as assert from 'assert';
 import {
   ExecutableError,
   PluggableAuthClient,
+  PluggableAuthClientOptions,
 } from '../src/auth/pluggable-auth-client';
 import {BaseExternalAccountClient} from '../src';
 import {
@@ -67,7 +68,7 @@ describe('PluggableAuthClient', () => {
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    pluggableAuthOptions
+    pluggableAuthOptions,
   );
   const pluggableAuthCredentialSourceNoOutput = {
     executable: {
@@ -124,12 +125,12 @@ describe('PluggableAuthClient', () => {
 
     fileStub = sandbox.stub(
       PluggableAuthHandler.prototype,
-      'retrieveCachedResponse'
+      'retrieveCachedResponse',
     );
 
     executableStub = sandbox.stub(
       PluggableAuthHandler.prototype,
-      'retrieveResponseFromExecutable'
+      'retrieveResponseFromExecutable',
     );
   });
 
@@ -147,7 +148,7 @@ describe('PluggableAuthClient', () => {
   describe('Constructor', () => {
     it('should throw when credential_source is missing executable', () => {
       const expectedError = new Error(
-        'No valid Pluggable Auth "credential_source" provided.'
+        'No valid Pluggable Auth "credential_source" provided.',
       );
       const invalidCredentialSource = {};
       const invalidOptions = {
@@ -159,15 +160,15 @@ describe('PluggableAuthClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthClient(invalidOptions);
+        return new PluggableAuthClient(
+          invalidOptions as unknown as PluggableAuthClientOptions,
+        );
       }, expectedError);
     });
 
     it('should throw when credential_source is missing command', () => {
       const expectedError = new Error(
-        'No valid Pluggable Auth "credential_source" provided.'
+        'No valid Pluggable Auth "credential_source" provided.',
       );
       const invalidCredentialSource = {
         executable: {
@@ -184,15 +185,15 @@ describe('PluggableAuthClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthClient(invalidOptions);
+        return new PluggableAuthClient(
+          invalidOptions as unknown as PluggableAuthClientOptions,
+        );
       }, expectedError);
     });
 
     it('should throw when time_millis is below minimum allowed value', () => {
       const expectedError = new Error(
-        'Timeout must be between 5000 and 120000 milliseconds.'
+        'Timeout must be between 5000 and 120000 milliseconds.',
       );
       const invalidCredentialSource = {
         executable: {
@@ -216,7 +217,7 @@ describe('PluggableAuthClient', () => {
 
     it('should throw when time_millis is above maximum allowed value', () => {
       const expectedError = new Error(
-        'Timeout must be between 5000 and 120000 milliseconds.'
+        'Timeout must be between 5000 and 120000 milliseconds.',
       );
       const invalidCredentialSource = {
         executable: {
@@ -249,7 +250,7 @@ describe('PluggableAuthClient', () => {
     it('should throw when allow executables environment variables is not 1', async () => {
       process.env.GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES = '0';
       const expectedError = new Error(
-        'Pluggable Auth executables need to be explicitly allowed to run by setting the GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES environment Variable to 1.'
+        'Pluggable Auth executables need to be explicitly allowed to run by setting the GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES environment Variable to 1.',
       );
 
       const client = new PluggableAuthClient(pluggableAuthOptions);
@@ -315,7 +316,7 @@ describe('PluggableAuthClient', () => {
     it('should throw error when version is not supported', async () => {
       responseJson.version = 99999;
       const expectedError = new Error(
-        'Version of executable is not currently supported, maximum supported version is 1.'
+        'Version of executable is not currently supported, maximum supported version is 1.',
       );
       fileStub.resolves(undefined);
       executableStub.resolves(new ExecutableResponse(responseJson));
@@ -393,7 +394,7 @@ describe('PluggableAuthClient', () => {
     it('should throw error when output file response does not contain expiration_time and output file is specified', async () => {
       responseJson.expiration_time = undefined;
       const expectedError = new InvalidExpirationTimeFieldError(
-        'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.'
+        'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.',
       );
       const client = new PluggableAuthClient(pluggableAuthOptions);
       fileStub.resolves(new ExecutableResponse(responseJson));
@@ -406,7 +407,7 @@ describe('PluggableAuthClient', () => {
     it('should throw error when executable response does not contain expiration_time and output file is specified', async () => {
       responseJson.expiration_time = undefined;
       const expectedError = new InvalidExpirationTimeFieldError(
-        'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.'
+        'The executable response must contain the `expiration_time` field for successful responses when an output_file has been specified in the configuration.',
       );
       const client = new PluggableAuthClient(pluggableAuthOptions);
       fileStub.resolves(undefined);
@@ -422,7 +423,7 @@ describe('PluggableAuthClient', () => {
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE', audience);
       expectedEnvMap.set(
         'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
-        responseJson.token_type
+        responseJson.token_type,
       );
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
       const client = new PluggableAuthClient(pluggableAuthOptionsNoOutput);
@@ -440,12 +441,12 @@ describe('PluggableAuthClient', () => {
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE', audience);
       expectedEnvMap.set(
         'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
-        responseJson.token_type
+        responseJson.token_type,
       );
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
       expectedEnvMap.set(
         'GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE',
-        pluggableAuthCredentialSource.executable.output_file
+        pluggableAuthCredentialSource.executable.output_file,
       );
       const client = new PluggableAuthClient(pluggableAuthOptions);
       fileStub.resolves(undefined);
@@ -462,12 +463,12 @@ describe('PluggableAuthClient', () => {
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_AUDIENCE', audience);
       expectedEnvMap.set(
         'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
-        responseJson.token_type
+        responseJson.token_type,
       );
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
       expectedEnvMap.set(
         'GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE',
-        pluggableAuthCredentialSource.executable.output_file
+        pluggableAuthCredentialSource.executable.output_file,
       );
       expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL', saEmail);
       const client = new PluggableAuthClient(pluggableAuthOptionsWithSA);
@@ -512,9 +513,9 @@ describe('PluggableAuthClient', () => {
           'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
             'executable',
             false,
-            false
+            false,
           ),
-        }
+        },
       );
 
       const client = new PluggableAuthClient(pluggableAuthOptionsOIDC);

@@ -107,7 +107,7 @@ export abstract class OAuthClientAuthHandler {
    */
   protected applyClientAuthenticationOptions(
     opts: GaxiosOptions,
-    bearerToken?: string
+    bearerToken?: string,
   ) {
     opts.headers = Gaxios.mergeHeaders(opts.headers);
 
@@ -130,7 +130,7 @@ export abstract class OAuthClientAuthHandler {
    */
   private injectAuthenticatedHeaders(
     opts: GaxiosOptions,
-    bearerToken?: string
+    bearerToken?: string,
   ) {
     // Bearer token prioritized higher than basic Auth.
     if (bearerToken) {
@@ -142,7 +142,7 @@ export abstract class OAuthClientAuthHandler {
       const clientId = this.#clientAuthentication!.clientId;
       const clientSecret = this.#clientAuthentication!.clientSecret || '';
       const base64EncodedCreds = this.#crypto.encodeBase64StringUtf8(
-        `${clientId}:${clientSecret}`
+        `${clientId}:${clientSecret}`,
       );
       Gaxios.mergeHeaders(opts.headers, {
         authorization: `Basic ${base64EncodedCreds}`,
@@ -165,7 +165,7 @@ export abstract class OAuthClientAuthHandler {
         throw new Error(
           `${method} HTTP method does not support ` +
             `${this.#clientAuthentication!.confidentialClientType} ` +
-            'client authentication'
+            'client authentication',
         );
       }
 
@@ -182,7 +182,7 @@ export abstract class OAuthClientAuthHandler {
         data.append('client_id', this.#clientAuthentication!.clientId);
         data.append(
           'client_secret',
-          this.#clientAuthentication!.clientSecret || ''
+          this.#clientAuthentication!.clientSecret || '',
         );
         opts.data = data;
       } else if (contentType?.startsWith('application/json')) {
@@ -195,7 +195,7 @@ export abstract class OAuthClientAuthHandler {
         throw new Error(
           `${contentType} content-types are not supported with ` +
             `${this.#clientAuthentication!.confidentialClientType} ` +
-            'client authentication'
+            'client authentication',
         );
       }
     }
@@ -229,7 +229,7 @@ export abstract class OAuthClientAuthHandler {
  */
 export function getErrorFromOAuthErrorResponse(
   resp: OAuthErrorResponse,
-  err?: Error
+  err?: Error,
 ): Error {
   // Error response.
   const errorCode = resp.error;
@@ -254,8 +254,7 @@ export function getErrorFromOAuthErrorResponse(
       // Do not overwrite the message field.
       if (key !== 'message') {
         Object.defineProperty(newError, key, {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          value: (err! as {[index: string]: any})[key],
+          value: (err as {} as {[index: string]: string})[key],
           writable: false,
           enumerable: true,
         });

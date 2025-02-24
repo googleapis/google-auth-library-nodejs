@@ -179,7 +179,7 @@ describe('jwtaccess', () => {
     // Read the contents of the file into a json object.
     const fileContents = fs.readFileSync(
       './test/fixtures/private.json',
-      'utf-8'
+      'utf-8',
     );
     const json = JSON.parse(fileContents);
 

@@ -27,11 +27,11 @@ export interface Crypto {
   verify(
     pubkey: string | JwkCertificate,
     data: string | Buffer,
-    signature: string
+    signature: string,
   ): Promise<boolean>;
   sign(
     privateKey: string | JwkCertificate,
-    data: string | Buffer
+    data: string | Buffer,
   ): Promise<string>;
   decodeBase64StringUtf8(base64: string): string;
   encodeBase64StringUtf8(text: string): string;
@@ -53,7 +53,7 @@ export interface Crypto {
    */
   signWithHmacSha256(
     key: string | ArrayBuffer,
-    msg: string
+    msg: string,
   ): Promise<ArrayBuffer>;
 }
 

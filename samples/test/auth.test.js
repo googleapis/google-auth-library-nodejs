@@ -40,7 +40,7 @@ describe('auth samples', () => {
     const projectId = await auth.getProjectId();
 
     const output = execSync(
-      `node authenticateImplicitWithAdc ${projectId} ${ZONE}`
+      `node authenticateImplicitWithAdc ${projectId} ${ZONE}`,
     );
 
     assert.match(output, /Listed all storage buckets./);
@@ -48,7 +48,7 @@ describe('auth samples', () => {
 
   it('should get id token from metadata server', async () => {
     const output = execSync(
-      'node idTokenFromMetadataServer https://www.google.com'
+      'node idTokenFromMetadataServer https://www.google.com',
     );
 
     assert.match(output, /Generated ID token./);
@@ -56,7 +56,7 @@ describe('auth samples', () => {
 
   it('should get id token from service account', async () => {
     const output = execSync(
-      `node idTokenFromServiceAccount ${TARGET_AUDIENCE} ${keyFile}`
+      `node idTokenFromServiceAccount ${TARGET_AUDIENCE} ${keyFile}`,
     );
 
     assert.match(output, /Generated ID token./);
@@ -69,7 +69,7 @@ describe('auth samples', () => {
     const idToken = await client.fetchIdToken(TARGET_AUDIENCE);
 
     const output = execSync(
-      `node verifyGoogleIdToken ${idToken} ${TARGET_AUDIENCE} https://www.googleapis.com/oauth2/v3/certs`
+      `node verifyGoogleIdToken ${idToken} ${TARGET_AUDIENCE} https://www.googleapis.com/oauth2/v3/certs`,
     );
 
     assert.match(output, /ID token verified./);
