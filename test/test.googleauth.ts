@@ -64,13 +64,7 @@ import {stringify} from 'querystring';
 import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
 import {IMPERSONATED_ACCOUNT_TYPE} from '../src/auth/impersonated';
 import {USER_REFRESH_ACCOUNT_TYPE} from '../src/auth/refreshclient';
-import {
-  Gaxios,
-  GaxiosError,
-  GaxiosOptions,
-  GaxiosPromise,
-  GaxiosResponse,
-} from 'gaxios';
+import {Gaxios, GaxiosError, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
 nock.disableNetConnect();
 

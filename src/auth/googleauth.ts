@@ -26,17 +26,8 @@ import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {OAuth2ClientOptions} from './oauth2client';
-import {
-  UserRefreshClient,
-  UserRefreshClientOptions,
-  USER_REFRESH_ACCOUNT_TYPE,
-} from './refreshclient';
-import {
-  Impersonated,
-  ImpersonatedOptions,
-  IMPERSONATED_ACCOUNT_TYPE,
-} from './impersonated';
+import {UserRefreshClient, USER_REFRESH_ACCOUNT_TYPE} from './refreshclient';
+import {Impersonated, IMPERSONATED_ACCOUNT_TYPE} from './impersonated';
 import {
   ExternalAccountClient,
   ExternalAccountClientOptions,
