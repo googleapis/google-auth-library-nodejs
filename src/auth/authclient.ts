@@ -344,7 +344,7 @@ export abstract class AuthClient
     return target;
   }
 
-  static log = makeLog('auth:interceptor');
+  static log = makeLog('auth');
   static readonly DEFAULT_REQUEST_INTERCEPTOR: Parameters<
     Gaxios['interceptors']['request']['add']
   >[0] = {
