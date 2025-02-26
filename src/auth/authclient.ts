@@ -328,7 +328,7 @@ export abstract class AuthClient
    */
   protected addUserProjectAndAuthHeaders<T extends Headers>(
     target: T,
-    source: Headers
+    source: Headers,
   ): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');
