@@ -752,8 +752,8 @@ export class OAuth2Client extends AuthClient {
 
     const opts = {
       ...OAuth2Client.RETRY_CONFIG,
-      url,
       method: 'POST',
+      url,
       data: new URLSearchParams(values as {}),
       headers,
     };
@@ -813,17 +813,17 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'refresh_token',
     };
 
-    const opts: GaxiosOptions = {
-      ...OAuth2Client.RETRY_CONFIG,
-      method: 'POST',
-    url,
-      data: new URLSearchParams(data),
-    };
-    AuthClient.setMethodName(opts, 'refreshTokenNoCache');
-
     let res: GaxiosResponse<CredentialRequest>;
 
     try {
+      const opts: GaxiosOptions = {
+        ...OAuth2Client.RETRY_CONFIG,
+        method: 'POST',
+      url,
+        data: new URLSearchParams(data),
+      };
+      AuthClient.setMethodName(opts, 'refreshTokenNoCache');
+
       // request for new token
       res = await this.transporter.request<CredentialRequest>(opts);
     } catch (e) {
@@ -1051,9 +1051,7 @@ export class OAuth2Client extends AuthClient {
     if (callback) {
       this.transporter
         .request<RevokeCredentialsResult>(opts)
-        .then(r => {
-          callback(null, r);
-        }, callback);
+        .then(r => callback(null, r), callback);
     } else {
       return this.transporter.request<RevokeCredentialsResult>(opts);
     }

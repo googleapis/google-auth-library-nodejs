@@ -237,7 +237,7 @@ export class DefaultAwsSecurityCredentialsSupplier
   async #retrieveAwsSecurityCredentials(
     roleName: string,
     headers: Headers,
-    transporter: Gaxios
+    transporter: Gaxios,
   ): Promise<AwsSecurityCredentialsResponse> {
     const opts = {
       ...this.additionalGaxiosOptions,

@@ -472,11 +472,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     } else if (projectNumber) {
       // Preferable not to use request() to avoid retrial policies.
       const headers = await this.getRequestHeaders();
-      const url = `${this.cloudResourceManagerURL.toString()}${projectNumber}`;
       const opts: GaxiosOptions = {
         ...BaseExternalAccountClient.RETRY_CONFIG,
         headers,
-        url,
+        url: `${this.cloudResourceManagerURL.toString()}${projectNumber}`,
       };
       AuthClient.setMethodName(opts, 'getProjectId');
       const response = await this.transporter.request<ProjectInfo>(opts);
