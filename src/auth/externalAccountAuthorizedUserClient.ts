@@ -109,7 +109,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
    */
   async refreshToken(
     refreshToken: string,
-    headers?: HeadersInit
+    headers?: HeadersInit,
   ): Promise<TokenRefreshResponse> {
     const opts: GaxiosOptions = {
       ...ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
@@ -139,7 +139,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
         throw getErrorFromOAuthErrorResponse(
           error.response.data as OAuthErrorResponse,
           // Preserve other fields from the original error.
-          error
+          error,
         );
       }
       // Request could fail before the server responds.

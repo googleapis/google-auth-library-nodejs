@@ -446,8 +446,12 @@ export abstract class AuthClient
    * @param methodName The method name making the call
    */
   static setMethodName(config: GaxiosOptions, methodName: string) {
-    const symbols: SymbolIndexString = config as unknown as SymbolIndexString;
-    symbols[AuthClient.RequestMethodNameSymbol] = methodName;
+    try {
+      const symbols: SymbolIndexString = config as unknown as SymbolIndexString;
+      symbols[AuthClient.RequestMethodNameSymbol] = methodName;
+    } catch (e) {
+      // Logging must not create new errors; swallow them all.
+    }
   }
 
   /**

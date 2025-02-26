@@ -20,6 +20,7 @@ import {
   OAuth2ClientOptions,
 } from './oauth2client';
 import {AuthClient} from './authclient';
+import {GaxiosOptions} from 'gaxios';
 
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
@@ -97,7 +98,7 @@ export class UserRefreshClient extends OAuth2Client {
   }
 
   async fetchIdToken(targetAudience: string): Promise<string> {
-    const request = {
+    const opts: GaxiosOptions = {
       ...UserRefreshClient.RETRY_CONFIG,
       url: this.endpoints.oauth2TokenUrl,
       method: 'POST',
@@ -109,9 +110,9 @@ export class UserRefreshClient extends OAuth2Client {
         target_audience: targetAudience,
       } as {}),
     };
-    AuthClient.setMethodName(request, 'fetchIdToken');
+    AuthClient.setMethodName(opts, 'fetchIdToken');
 
-    const res = await this.transporter.request<CredentialRequest>(request);
+    const res = await this.transporter.request<CredentialRequest>(opts);
     return res.data.id_token!;
   }
 

@@ -813,23 +813,20 @@ export class OAuth2Client extends AuthClient {
       grant_type: 'refresh_token',
     };
 
-    const request = {
-      url,
+    const opts: GaxiosOptions = {
+      ...OAuth2Client.RETRY_CONFIG,
+      method: 'POST',
+    url,
       data: new URLSearchParams(data),
     };
-    AuthClient.setMethodName(request, 'refreshTokenNoCache');
+    AuthClient.setMethodName(opts, 'refreshTokenNoCache');
 
     let res: GaxiosResponse<CredentialRequest>;
 
     try {
       // request for new token
-      res = await this.transporter.request<CredentialRequest>({
-        ...OAuth2Client.RETRY_CONFIG,
-        method: 'POST',
-        ...request,
-      });
-    } catch (exc) {
-      const e = exc as Error;
+      res = await this.transporter.request<CredentialRequest>(opts);
+    } catch (e) {
       if (
         e instanceof GaxiosError &&
         e.message === 'invalid_grant' &&
@@ -1052,9 +1049,11 @@ export class OAuth2Client extends AuthClient {
     };
     AuthClient.setMethodName(opts, 'revokeToken');
     if (callback) {
-      this.transporter.request<RevokeCredentialsResult>(opts).then(r => {
-        callback(null, r);
-      }, callback);
+      this.transporter
+        .request<RevokeCredentialsResult>(opts)
+        .then(r => {
+          callback(null, r);
+        }, callback);
     } else {
       return this.transporter.request<RevokeCredentialsResult>(opts);
     }
@@ -1322,8 +1321,7 @@ export class OAuth2Client extends AuthClient {
       };
       AuthClient.setMethodName(opts, 'getFederatedSignonCertsAsync');
       res = await this.transporter.request(opts);
-    } catch (err) {
-      const e = err as Error;
+    } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
       }

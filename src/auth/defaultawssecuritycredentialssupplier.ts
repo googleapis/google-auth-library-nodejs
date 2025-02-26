@@ -16,7 +16,6 @@ import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {Gaxios, GaxiosOptions} from 'gaxios';
 import {AwsSecurityCredentialsSupplier} from './awsclient';
 import {AwsSecurityCredentials} from './awsrequestsigner';
-import {log as makeLog} from 'google-logging-utils';
 import {AuthClient} from './authclient';
 
 /**
@@ -82,8 +81,6 @@ export class DefaultAwsSecurityCredentialsSupplier
   private readonly imdsV2SessionTokenUrl?: string;
   private readonly additionalGaxiosOptions?: GaxiosOptions;
 
-  private log = makeLog('auth');
-
   /**
    * Instantiates a new DefaultAwsSecurityCredentialsSupplier using information
    * from the credential_source stored in the ADC file.
@@ -126,14 +123,11 @@ export class DefaultAwsSecurityCredentialsSupplier
           '"options.credential_source.region_url"',
       );
     }
-    const request = {
-      url: this.regionUrl,
-      headers: metadataHeaders,
-    };
     const opts: GaxiosOptions = {
       ...this.additionalGaxiosOptions,
+      url: this.regionUrl,
       method: 'GET',
-      ...request,
+      headers: metadataHeaders,
     };
     AuthClient.setMethodName(opts, 'getAwsRegion');
     const response = await context.transporter.request<string>(opts);
@@ -193,15 +187,12 @@ export class DefaultAwsSecurityCredentialsSupplier
    * @return A promise that resolves with the IMDSv2 Session Token.
    */
   async #getImdsV2SessionToken(transporter: Gaxios): Promise<string> {
-    const request = {
-      url: this.imdsV2SessionTokenUrl,
-      headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
-    };
     const opts: GaxiosOptions = {
       ...this.additionalGaxiosOptions,
+      url: this.imdsV2SessionTokenUrl,
       method: 'PUT',
-      ...request,
-    };
+      headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
+      };
     AuthClient.setMethodName(opts, '#getImdsV2SessionToken');
     const response = await transporter.request<string>(opts);
     return response.data;

@@ -14,7 +14,6 @@
 
 import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {GaxiosOptions} from 'gaxios';
-import {log as makeLog} from 'google-logging-utils';
 import {
   SubjectTokenFormatType,
   SubjectTokenJsonResponse,
@@ -61,7 +60,6 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
   private readonly formatType: SubjectTokenFormatType;
   private readonly subjectTokenFieldName?: string;
   private readonly additionalGaxiosOptions?: GaxiosOptions;
-  private readonly log = makeLog('auth');
 
   /**
    * Instantiates a URL subject token supplier.

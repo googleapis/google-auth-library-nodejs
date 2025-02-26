@@ -473,15 +473,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       // Preferable not to use request() to avoid retrial policies.
       const headers = await this.getRequestHeaders();
       const url = `${this.cloudResourceManagerURL.toString()}${projectNumber}`;
-      const request = {
+      const opts: GaxiosOptions = {
+        ...BaseExternalAccountClient.RETRY_CONFIG,
         headers,
         url,
       };
-      AuthClient.setMethodName(request, 'getProjectId');
-      const response = await this.transporter.request<ProjectInfo>({
-        ...BaseExternalAccountClient.RETRY_CONFIG,
-        ...request,
-      });
+      AuthClient.setMethodName(opts, 'getProjectId');
+      const response = await this.transporter.request<ProjectInfo>(opts);
       this.projectId = response.data.projectId;
       return this.projectId;
     }
@@ -659,8 +657,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private async getImpersonatedAccessToken(
     token: string,
   ): Promise<CredentialsWithResponse> {
-    const request = {
+    const opts: GaxiosOptions = {
+      ...BaseExternalAccountClient.RETRY_CONFIG,
       url: this.serviceAccountImpersonationUrl!,
+      method: 'POST',
       headers: {
         'content-type': 'application/json',
         authorization: `Bearer ${token}`,
@@ -669,11 +669,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         scope: this.getScopesArray(),
         lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
-    };
-    const opts: GaxiosOptions = {
-      ...BaseExternalAccountClient.RETRY_CONFIG,
-      ...request,
-      method: 'POST',
     };
     AuthClient.setMethodName(opts, 'getImpersonatedAccessToken');
     const response =

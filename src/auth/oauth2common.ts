@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {Gaxios, GaxiosOptions} from 'gaxios';
-import {log as makeLog} from 'google-logging-utils';
 
 import {createCrypto} from '../crypto/crypto';
 
@@ -80,7 +79,6 @@ export interface OAuthClientAuthHandlerOptions {
  * request bodies are supported.
  */
 export abstract class OAuthClientAuthHandler {
-  log = makeLog('auth');
   #crypto = createCrypto();
   #clientAuthentication?: ClientAuthentication;
   protected transporter: Gaxios;
