@@ -363,23 +363,27 @@ export abstract class AuthClient
         config.headers.set('User-Agent', `${userAgent} ${USER_AGENT}`);
       }
 
-      const symbols: SymbolIndexString = config as unknown as SymbolIndexString;
-      const methodName = symbols[AuthClient.RequestMethodNameSymbol];
+      try {
+        const symbols: SymbolIndexString = config as unknown as SymbolIndexString;
+        const methodName = symbols[AuthClient.RequestMethodNameSymbol];
 
-      // This doesn't need to be very unique or interesting, it's just an aid for
-      // matching requests to responses.
-      const logId = `${Math.floor(Math.random() * 1000)}`;
-      symbols[AuthClient.RequestLogIdSymbol] = logId;
+        // This doesn't need to be very unique or interesting, it's just an aid for
+        // matching requests to responses.
+        const logId = `${Math.floor(Math.random() * 1000)}`;
+        symbols[AuthClient.RequestLogIdSymbol] = logId;
 
-      // Boil down the object we're printing out.
-      const logObject = {
-        url: config.url,
-        headers: config.headers,
-      };
-      if (methodName) {
-        AuthClient.log.info('%s [%s] request %j', methodName, logId, logObject);
-      } else {
-        AuthClient.log.info('[%s] request %j', logId, logObject);
+        // Boil down the object we're printing out.
+        const logObject = {
+          url: config.url,
+          headers: config.headers,
+        };
+        if (methodName) {
+          AuthClient.log.info('%s [%s] request %j', methodName, logId, logObject);
+        } else {
+          AuthClient.log.info('[%s] request %j', logId, logObject);
+        }
+      } catch (e) {
+        // Logging must not create new errors; swallow them all.
       }
 
       return config;
@@ -390,37 +394,45 @@ export abstract class AuthClient
     Gaxios['interceptors']['response']['add']
   >[0] = {
     resolved: async response => {
-      const symbols: SymbolIndexString =
-        response.config as unknown as SymbolIndexString;
-      const methodName = symbols[AuthClient.RequestMethodNameSymbol];
-      const logId = symbols[AuthClient.RequestLogIdSymbol];
-      if (methodName) {
-        AuthClient.log.info(
-          '%s [%s] response %j',
-          methodName,
-          logId,
-          response.data
-        );
-      } else {
-        AuthClient.log.info('[%s] response %j', logId, response.data);
+      try {
+        const symbols: SymbolIndexString =
+          response.config as unknown as SymbolIndexString;
+        const methodName = symbols[AuthClient.RequestMethodNameSymbol];
+        const logId = symbols[AuthClient.RequestLogIdSymbol];
+        if (methodName) {
+          AuthClient.log.info(
+            '%s [%s] response %j',
+            methodName,
+            logId,
+            response.data
+          );
+        } else {
+          AuthClient.log.info('[%s] response %j', logId, response.data);
+        }
+      } catch (e) {
+        // Logging must not create new errors; swallow them all.
       }
 
       return response;
     },
     rejected: async error => {
-      const symbols: SymbolIndexString =
-        error.config as unknown as SymbolIndexString;
-      const methodName = symbols[AuthClient.RequestMethodNameSymbol];
-      const logId = symbols[AuthClient.RequestLogIdSymbol];
-      if (methodName) {
-        AuthClient.log.info(
-          '%s [%s] error %j',
-          methodName,
-          logId,
-          error.response?.data
-        );
-      } else {
-        AuthClient.log.error('[%s] error %j', logId, error.response?.data);
+      try {
+        const symbols: SymbolIndexString =
+          error.config as unknown as SymbolIndexString;
+        const methodName = symbols[AuthClient.RequestMethodNameSymbol];
+        const logId = symbols[AuthClient.RequestLogIdSymbol];
+        if (methodName) {
+          AuthClient.log.info(
+            '%s [%s] error %j',
+            methodName,
+            logId,
+            error.response?.data
+          );
+        } else {
+          AuthClient.log.error('[%s] error %j', logId, error.response?.data);
+        }
+      } catch (e) {
+        // Logging must not create new errors; swallow them all.
       }
 
       return error;

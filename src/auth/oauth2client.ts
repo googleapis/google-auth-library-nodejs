@@ -1050,17 +1050,13 @@ export class OAuth2Client extends AuthClient {
       url: this.getRevokeTokenURL(token).toString(),
       method: 'POST',
     };
-    this.log.info('revokeToken %s', opts.url);
+    AuthClient.setMethodName(opts, 'revokeToken');
     if (callback) {
       this.transporter.request<RevokeCredentialsResult>(opts).then(r => {
-        this.log.info('revokeToken success %s', r.data ?? '');
         callback(null, r);
       }, callback);
     } else {
-      return this.transporter.request<RevokeCredentialsResult>(opts).then(r => {
-        this.log.info('revokeToken success %s', r.data ?? '');
-        return r;
-      });
+      return this.transporter.request<RevokeCredentialsResult>(opts);
     }
   }
 
@@ -1320,22 +1316,17 @@ export class OAuth2Client extends AuthClient {
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
-      this.log.info('getFederatedSignonCertsAsync %s', url);
-      res = await this.transporter.request({
+      const opts = {
         ...OAuth2Client.RETRY_CONFIG,
         url,
-      });
-      this.log.info(
-        'getFederatedSignonCertsAsync success %j %j',
-        res?.data,
-        res?.headers
-      );
+      };
+      AuthClient.setMethodName(opts, 'getFederatedSignonCertsAsync');
+      res = await this.transporter.request(opts);
     } catch (err) {
       const e = err as Error;
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
       }
-      this.log.error('getFederatedSignonCertsAsync failed', e?.message);
 
       throw e;
     }
@@ -1399,18 +1390,16 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      this.log.info('getIapPublicKeysAsync %s', url);
-      res = await this.transporter.request({
+      const opts = {
         ...OAuth2Client.RETRY_CONFIG,
         url,
-      });
-      this.log.info('getIapPublicKeysAsync success %j', res.data);
-    } catch (err) {
-      const e = err as Error;
+      };
+      AuthClient.setMethodName(opts, 'getIapPublicKeysAsync');
+      res = await this.transporter.request(opts);
+    } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
       }
-      this.log.error('getIapPublicKeysAsync failed', e?.message);
 
       throw e;
     }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
-import {HeadersInit} from './authclient';
+import {AuthClient, HeadersInit} from './authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
@@ -211,19 +211,15 @@ export class StsCredentials extends OAuthClientAuthHandler {
       }
     });
 
-    const request = {
+    const opts: GaxiosOptions = {
+      ...StsCredentials.RETRY_CONFIG,
       url: this.#tokenExchangeEndpoint.toString(),
+      method: 'POST',
       headers,
       data: new URLSearchParams(payload),
     };
+    AuthClient.setMethodName(opts, 'exchangeToken');
 
-    this.log.info('exchangeToken %j', request);
-
-    const opts: GaxiosOptions = {
-      ...StsCredentials.RETRY_CONFIG,
-      method: 'POST',
-      ...request,
-    };
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
 
@@ -231,13 +227,10 @@ export class StsCredentials extends OAuthClientAuthHandler {
       const response =
         await this.transporter.request<StsSuccessfulResponse>(opts);
       // Successful response.
-      this.log.info('exchangeToken success %j', response.data);
       const stsSuccessfulResponse = response.data;
       stsSuccessfulResponse.res = response;
       return stsSuccessfulResponse;
     } catch (error) {
-      this.log.error('exchangeToken failure %j', error);
-
       // Translate error to OAuthError.
       if (error instanceof GaxiosError && error.response) {
         throw getErrorFromOAuthErrorResponse(

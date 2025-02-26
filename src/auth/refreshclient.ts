@@ -19,6 +19,7 @@ import {
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
+import {AuthClient} from './authclient';
 
 export const USER_REFRESH_ACCOUNT_TYPE = 'authorized_user';
 
@@ -97,7 +98,9 @@ export class UserRefreshClient extends OAuth2Client {
 
   async fetchIdToken(targetAudience: string): Promise<string> {
     const request = {
+      ...UserRefreshClient.RETRY_CONFIG,
       url: this.endpoints.oauth2TokenUrl,
+      method: 'POST',
       data: new URLSearchParams({
         client_id: this._clientId,
         client_secret: this._clientSecret,
@@ -106,16 +109,9 @@ export class UserRefreshClient extends OAuth2Client {
         target_audience: targetAudience,
       } as {}),
     };
-    this.log.info('fetchIdToken %j', request);
+    AuthClient.setMethodName(request, 'fetchIdToken');
 
-    const res = await this.transporter.request<CredentialRequest>({
-      ...UserRefreshClient.RETRY_CONFIG,
-      method: 'POST',
-      ...request,
-    });
-
-    this.log.info('fetchIdToken success %s', res?.data?.id_token);
-
+    const res = await this.transporter.request<CredentialRequest>(request);
     return res.data.id_token!;
   }
 

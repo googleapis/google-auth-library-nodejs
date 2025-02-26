@@ -20,6 +20,7 @@ import {
   SubjectTokenJsonResponse,
   SubjectTokenSupplier,
 } from './identitypoolclient';
+import {AuthClient} from './authclient';
 
 /**
  * Interface that defines options used to build a {@link UrlSubjectTokenSupplier}
@@ -84,17 +85,14 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
   async getSubjectToken(
     context: ExternalAccountSupplierContext,
   ): Promise<string> {
-    const request = {
-      url: this.url,
-      headers: this.headers,
-    };
-    this.log.info('getSubjectToken %j', request);
-
     const opts: GaxiosOptions = {
       ...this.additionalGaxiosOptions,
+      url: this.url,
       method: 'GET',
-      ...request,
+      headers: this.headers,
     };
+    AuthClient.setMethodName(opts, 'getSubjectToken');
+
     let subjectToken: string | undefined;
     if (this.formatType === 'text') {
       const response = await context.transporter.request<string>(opts);
@@ -105,13 +103,11 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
       subjectToken = response.data[this.subjectTokenFieldName];
     }
     if (!subjectToken) {
-      this.log.error('getSubjectToken failed');
       throw new Error(
         'Unable to parse the subject_token from the credential_source URL',
       );
     }
 
-    this.log.info('getSubjectToken success %s', subjectToken);
     return subjectToken;
   }
 }
