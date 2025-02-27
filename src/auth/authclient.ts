@@ -217,7 +217,6 @@ export abstract class AuthClient
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
-  log = makeLog('auth');
 
   /**
    * Symbols that can be added to GaxiosOptions to specify the method name that is
