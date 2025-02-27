@@ -225,7 +225,7 @@ export abstract class AuthClient
    * used to correlate calls and responses.
    */
   static readonly RequestMethodNameSymbol: unique symbol = Symbol(
-    'request method name'
+    'request method name',
   );
   static readonly RequestLogIdSymbol: unique symbol = Symbol('request log id');
 
@@ -246,10 +246,10 @@ export abstract class AuthClient
 
     if (options.get('useAuthRequestParameters') !== false) {
       this.transporter.interceptors.request.add(
-        AuthClient.DEFAULT_REQUEST_INTERCEPTOR
+        AuthClient.DEFAULT_REQUEST_INTERCEPTOR,
       );
       this.transporter.interceptors.response.add(
-        AuthClient.DEFAULT_RESPONSE_INTERCEPTOR
+        AuthClient.DEFAULT_RESPONSE_INTERCEPTOR,
       );
     }
 
@@ -364,7 +364,8 @@ export abstract class AuthClient
       }
 
       try {
-        const symbols: SymbolIndexString = config as unknown as SymbolIndexString;
+        const symbols: SymbolIndexString =
+          config as unknown as SymbolIndexString;
         const methodName = symbols[AuthClient.RequestMethodNameSymbol];
 
         // This doesn't need to be very unique or interesting, it's just an aid for
@@ -378,7 +379,12 @@ export abstract class AuthClient
           headers: config.headers,
         };
         if (methodName) {
-          AuthClient.log.info('%s [%s] request %j', methodName, logId, logObject);
+          AuthClient.log.info(
+            '%s [%s] request %j',
+            methodName,
+            logId,
+            logObject,
+          );
         } else {
           AuthClient.log.info('[%s] request %j', logId, logObject);
         }
@@ -404,7 +410,7 @@ export abstract class AuthClient
             '%s [%s] response %j',
             methodName,
             logId,
-            response.data
+            response.data,
           );
         } else {
           AuthClient.log.info('[%s] response %j', logId, response.data);
@@ -426,7 +432,7 @@ export abstract class AuthClient
             '%s [%s] error %j',
             methodName,
             logId,
-            error.response?.data
+            error.response?.data,
           );
         } else {
           AuthClient.log.error('[%s] error %j', logId, error.response?.data);

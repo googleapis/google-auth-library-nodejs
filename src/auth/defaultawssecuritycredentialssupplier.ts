@@ -192,7 +192,7 @@ export class DefaultAwsSecurityCredentialsSupplier
       url: this.imdsV2SessionTokenUrl,
       method: 'PUT',
       headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
-      };
+    };
     AuthClient.setMethodName(opts, '#getImdsV2SessionToken');
     const response = await transporter.request<string>(opts);
     return response.data;

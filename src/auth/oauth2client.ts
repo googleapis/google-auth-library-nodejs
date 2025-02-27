@@ -819,7 +819,7 @@ export class OAuth2Client extends AuthClient {
       const opts: GaxiosOptions = {
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
-      url,
+        url,
         data: new URLSearchParams(data),
       };
       AuthClient.setMethodName(opts, 'refreshTokenNoCache');
