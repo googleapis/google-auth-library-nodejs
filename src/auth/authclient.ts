@@ -440,6 +440,7 @@ export abstract class AuthClient
         // Logging must not create new errors; swallow them all.
       }
 
+      // Re-throw the error.
       throw error;
     },
   };

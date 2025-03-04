@@ -14,11 +14,36 @@
 
 import {strict as assert} from 'assert';
 
-import {Gaxios, GaxiosOptionsPrepared} from 'gaxios';
+import {Gaxios, GaxiosError, GaxiosOptionsPrepared, GaxiosResponse} from 'gaxios';
 
 import {AuthClient, PassThroughClient} from '../src';
 import {snakeToCamel} from '../src/util';
 import {PRODUCT_NAME, USER_AGENT} from '../src/shared.cjs';
+import * as logging from 'google-logging-utils';
+
+// Fakes for the logger, to capture logs that would've happened.
+interface TestLog {
+  namespace: string;
+  fields: logging.LogFields;
+  args: unknown[];
+}
+
+class TestLogSink extends logging.DebugLogBackendBase {
+  logs: TestLog[] = [];
+
+  makeLogger(namespace: string): logging.AdhocDebugLogCallable {
+    return (fields: logging.LogFields, ...args: unknown[]) => {
+      this.logs.push({namespace, fields, args});
+    };
+  }
+
+  setFilters(): void {}
+
+  reset() {
+    this.filters = [];
+    this.logs = [];
+  }
+}
 
 describe('AuthClient', () => {
   it('should accept and normalize snake case options to camel case', () => {
@@ -160,6 +185,100 @@ describe('AuthClient', () => {
         await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
 
         assert.equal(options.headers.get('x-goog-api-client'), expected);
+      });
+    });
+
+    describe('logging', () => {
+      // Enable and capture any log lines that happen during these tests.
+      let testLogSink: TestLogSink;
+      let replacementLogger: logging.AdhocDebugLogFunction;
+      beforeEach(() => {
+        process.env[logging.env.nodeEnables] = 'auth';
+        testLogSink = new TestLogSink();
+        logging.setBackend(testLogSink);
+        replacementLogger = logging.log('auth');
+      });
+      after(() => {
+        delete process.env[logging.env.nodeEnables];
+        logging.setBackend(null);
+      })
+
+      it('logs requests', async () => {
+        const options: GaxiosOptionsPrepared = {
+          headers: new Headers({
+            'x-goog-api-client': 'something',
+          }),
+          url: new URL('https://google.com'),
+        };
+        AuthClient.setMethodName(options, 'testMethod');
+
+        // This will become nicer with the 1.1.0 release of google-logging-utils.
+        AuthClient.log = replacementLogger;
+        const returned = await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
+        assert.strictEqual(returned, options);
+
+        // Unfortunately, there is a fair amount of entropy and changeable formatting in the
+        // actual logs, so this mostly validates that a few key pieces of info are in there.
+        assert.deepStrictEqual(testLogSink.logs.length, 1);
+        assert.deepStrictEqual(testLogSink.logs[0].namespace, 'auth');
+        assert.deepStrictEqual(testLogSink.logs[0].args.length, 4);
+        assert.strictEqual((testLogSink.logs[0].args[0] as string).includes('request'), true);
+        assert.deepStrictEqual(testLogSink.logs[0].args[1], 'testMethod');
+        assert.deepStrictEqual((testLogSink.logs[0].args[3] as GaxiosOptionsPrepared).headers.get('x-goog-api-client'), 'something');
+        assert.deepStrictEqual((testLogSink.logs[0].args[3] as GaxiosOptionsPrepared).url.href, 'https://google.com/');
+      });
+
+      it('logs responses', async () => {
+        const response = {
+          config: {
+            headers: new Headers({
+              'x-goog-api-client': 'something',
+            }),
+            url: new URL('https://google.com'),
+          } as GaxiosOptionsPrepared,
+          headers: new Headers({
+            'x-goog-api-client': 'something',
+          }),
+          url: new URL('https://google.com'),
+          data: {
+            test:'test!'
+          },
+        } as unknown as GaxiosResponse<{test: string}>;
+        AuthClient.setMethodName(response.config, 'testMethod');
+
+        // This will become nicer with the 1.1.0 release of google-logging-utils.
+        AuthClient.log = replacementLogger;
+        const resolvedReturned = await AuthClient.DEFAULT_RESPONSE_INTERCEPTOR?.resolved?.(response);
+        assert.strictEqual(resolvedReturned, response);
+
+        // Unfortunately, there is a fair amount of entropy and changeable formatting in the
+        // actual logs, so this mostly validates that a few key pieces of info are in there.
+        assert.deepStrictEqual(testLogSink.logs.length, 1);
+        assert.deepStrictEqual(testLogSink.logs[0].namespace, 'auth');
+        assert.deepStrictEqual(testLogSink.logs[0].args.length, 4);
+        assert.strictEqual((testLogSink.logs[0].args[0] as string).includes('response'), true);
+        assert.deepStrictEqual(testLogSink.logs[0].args[1], 'testMethod');
+        assert.deepStrictEqual((testLogSink.logs[0].args[3] as {test: string}), {test: 'test!'});
+
+        const error = {
+          config: response.config,
+          response: {
+            data: {
+              message: 'boo!',
+            }
+          }
+        } as unknown as GaxiosError<{test: string}>;
+        testLogSink.reset();
+        AuthClient.DEFAULT_RESPONSE_INTERCEPTOR?.rejected?.(error);
+
+        // Unfortunately, there is a fair amount of entropy and changeable formatting in the
+        // actual logs, so this mostly validates that a few key pieces of info are in there.
+        assert.deepStrictEqual(testLogSink.logs.length, 1);
+        assert.deepStrictEqual(testLogSink.logs[0].namespace, 'auth');
+        assert.deepStrictEqual(testLogSink.logs[0].args.length, 4);
+        assert.strictEqual((testLogSink.logs[0].args[0] as string).includes('error'), true);
+        assert.deepStrictEqual(testLogSink.logs[0].args[1], 'testMethod');
+        assert.deepStrictEqual((testLogSink.logs[0].args[3] as {test: string}), {message: 'boo!'});
       });
     });
   });
