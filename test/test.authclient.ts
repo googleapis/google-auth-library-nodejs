@@ -42,8 +42,8 @@ describe('AuthClient', () => {
     }
   });
 
-  describe('shared auth interceptor', () => {
-    it('should use the default interceptor', () => {
+  describe('shared auth interceptors', () => {
+    it('should use the default interceptors', () => {
       const gaxios = new Gaxios();
 
       new PassThroughClient({transporter: gaxios});
@@ -51,11 +51,15 @@ describe('AuthClient', () => {
       assert(
         gaxios.interceptors.request.has(AuthClient.DEFAULT_REQUEST_INTERCEPTOR),
       );
+      assert(
+        gaxios.interceptors.response.has(AuthClient.DEFAULT_RESPONSE_INTERCEPTOR),
+      );
     });
 
     it('should allow disabling of the default interceptor', () => {
       const gaxios = new Gaxios();
-      const originalInterceptorCount = gaxios.interceptors.request.size;
+      const originalRequestInterceptorCount = gaxios.interceptors.request.size;
+      const originalResponseInterceptorCount = gaxios.interceptors.response.size;
 
       const authClient = new PassThroughClient({
         transporter: gaxios,
@@ -65,19 +69,26 @@ describe('AuthClient', () => {
       assert.equal(authClient.transporter, gaxios);
       assert.equal(
         authClient.transporter.interceptors.request.size,
-        originalInterceptorCount,
+        originalRequestInterceptorCount,
+      );
+      assert.equal(
+        authClient.transporter.interceptors.response.size,
+        originalResponseInterceptorCount,
       );
     });
 
     it('should add the default interceptor exactly once between instances', () => {
       const gaxios = new Gaxios();
-      const originalInterceptorCount = gaxios.interceptors.request.size;
-      const expectedInterceptorCount = originalInterceptorCount + 1;
+      const originalRequestInterceptorCount = gaxios.interceptors.request.size;
+      const expectedRequestInterceptorCount = originalRequestInterceptorCount + 1;
+      const originalResponseInterceptorCount = gaxios.interceptors.response.size;
+      const expectedResponseInterceptorCount = originalResponseInterceptorCount + 1;
 
       new PassThroughClient({transporter: gaxios});
       new PassThroughClient({transporter: gaxios});
 
-      assert.equal(gaxios.interceptors.request.size, expectedInterceptorCount);
+      assert.equal(gaxios.interceptors.request.size, expectedRequestInterceptorCount);
+      assert.equal(gaxios.interceptors.response.size, expectedResponseInterceptorCount);
     });
 
     describe('User-Agent', () => {
