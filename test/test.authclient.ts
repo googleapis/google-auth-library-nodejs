@@ -14,7 +14,12 @@
 
 import {strict as assert} from 'assert';
 
-import {Gaxios, GaxiosError, GaxiosOptionsPrepared, GaxiosResponse} from 'gaxios';
+import {
+  Gaxios,
+  GaxiosError,
+  GaxiosOptionsPrepared,
+  GaxiosResponse,
+} from 'gaxios';
 
 import {AuthClient, PassThroughClient} from '../src';
 import {snakeToCamel} from '../src/util';
@@ -77,14 +82,17 @@ describe('AuthClient', () => {
         gaxios.interceptors.request.has(AuthClient.DEFAULT_REQUEST_INTERCEPTOR),
       );
       assert(
-        gaxios.interceptors.response.has(AuthClient.DEFAULT_RESPONSE_INTERCEPTOR),
+        gaxios.interceptors.response.has(
+          AuthClient.DEFAULT_RESPONSE_INTERCEPTOR,
+        ),
       );
     });
 
     it('should allow disabling of the default interceptor', () => {
       const gaxios = new Gaxios();
       const originalRequestInterceptorCount = gaxios.interceptors.request.size;
-      const originalResponseInterceptorCount = gaxios.interceptors.response.size;
+      const originalResponseInterceptorCount =
+        gaxios.interceptors.response.size;
 
       const authClient = new PassThroughClient({
         transporter: gaxios,
@@ -105,15 +113,24 @@ describe('AuthClient', () => {
     it('should add the default interceptor exactly once between instances', () => {
       const gaxios = new Gaxios();
       const originalRequestInterceptorCount = gaxios.interceptors.request.size;
-      const expectedRequestInterceptorCount = originalRequestInterceptorCount + 1;
-      const originalResponseInterceptorCount = gaxios.interceptors.response.size;
-      const expectedResponseInterceptorCount = originalResponseInterceptorCount + 1;
+      const expectedRequestInterceptorCount =
+        originalRequestInterceptorCount + 1;
+      const originalResponseInterceptorCount =
+        gaxios.interceptors.response.size;
+      const expectedResponseInterceptorCount =
+        originalResponseInterceptorCount + 1;
 
       new PassThroughClient({transporter: gaxios});
       new PassThroughClient({transporter: gaxios});
 
-      assert.equal(gaxios.interceptors.request.size, expectedRequestInterceptorCount);
-      assert.equal(gaxios.interceptors.response.size, expectedResponseInterceptorCount);
+      assert.equal(
+        gaxios.interceptors.request.size,
+        expectedRequestInterceptorCount,
+      );
+      assert.equal(
+        gaxios.interceptors.response.size,
+        expectedResponseInterceptorCount,
+      );
     });
 
     describe('User-Agent', () => {
@@ -201,7 +218,7 @@ describe('AuthClient', () => {
       after(() => {
         delete process.env[logging.env.nodeEnables];
         logging.setBackend(null);
-      })
+      });
 
       it('logs requests', async () => {
         const options: GaxiosOptionsPrepared = {
@@ -214,7 +231,8 @@ describe('AuthClient', () => {
 
         // This will become nicer with the 1.1.0 release of google-logging-utils.
         AuthClient.log = replacementLogger;
-        const returned = await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
+        const returned =
+          await AuthClient.DEFAULT_REQUEST_INTERCEPTOR?.resolved?.(options);
         assert.strictEqual(returned, options);
 
         // Unfortunately, there is a fair amount of entropy and changeable formatting in the
@@ -222,10 +240,21 @@ describe('AuthClient', () => {
         assert.deepStrictEqual(testLogSink.logs.length, 1);
         assert.deepStrictEqual(testLogSink.logs[0].namespace, 'auth');
         assert.deepStrictEqual(testLogSink.logs[0].args.length, 4);
-        assert.strictEqual((testLogSink.logs[0].args[0] as string).includes('request'), true);
+        assert.strictEqual(
+          (testLogSink.logs[0].args[0] as string).includes('request'),
+          true,
+        );
         assert.deepStrictEqual(testLogSink.logs[0].args[1], 'testMethod');
-        assert.deepStrictEqual((testLogSink.logs[0].args[3] as GaxiosOptionsPrepared).headers.get('x-goog-api-client'), 'something');
-        assert.deepStrictEqual((testLogSink.logs[0].args[3] as GaxiosOptionsPrepared).url.href, 'https://google.com/');
+        assert.deepStrictEqual(
+          (testLogSink.logs[0].args[3] as GaxiosOptionsPrepared).headers.get(
+            'x-goog-api-client',
+          ),
+          'something',
+        );
+        assert.deepStrictEqual(
+          (testLogSink.logs[0].args[3] as GaxiosOptionsPrepared).url.href,
+          'https://google.com/',
+        );
       });
 
       it('logs responses', async () => {
@@ -241,14 +270,15 @@ describe('AuthClient', () => {
           }),
           url: new URL('https://google.com'),
           data: {
-            test:'test!'
+            test: 'test!',
           },
         } as unknown as GaxiosResponse<{test: string}>;
         AuthClient.setMethodName(response.config, 'testMethod');
 
         // This will become nicer with the 1.1.0 release of google-logging-utils.
         AuthClient.log = replacementLogger;
-        const resolvedReturned = await AuthClient.DEFAULT_RESPONSE_INTERCEPTOR?.resolved?.(response);
+        const resolvedReturned =
+          await AuthClient.DEFAULT_RESPONSE_INTERCEPTOR?.resolved?.(response);
         assert.strictEqual(resolvedReturned, response);
 
         // Unfortunately, there is a fair amount of entropy and changeable formatting in the
@@ -256,17 +286,22 @@ describe('AuthClient', () => {
         assert.deepStrictEqual(testLogSink.logs.length, 1);
         assert.deepStrictEqual(testLogSink.logs[0].namespace, 'auth');
         assert.deepStrictEqual(testLogSink.logs[0].args.length, 4);
-        assert.strictEqual((testLogSink.logs[0].args[0] as string).includes('response'), true);
+        assert.strictEqual(
+          (testLogSink.logs[0].args[0] as string).includes('response'),
+          true,
+        );
         assert.deepStrictEqual(testLogSink.logs[0].args[1], 'testMethod');
-        assert.deepStrictEqual((testLogSink.logs[0].args[3] as {test: string}), {test: 'test!'});
+        assert.deepStrictEqual(testLogSink.logs[0].args[3] as {test: string}, {
+          test: 'test!',
+        });
 
         const error = {
           config: response.config,
           response: {
             data: {
               message: 'boo!',
-            }
-          }
+            },
+          },
         } as unknown as GaxiosError<{test: string}>;
         testLogSink.reset();
         AuthClient.DEFAULT_RESPONSE_INTERCEPTOR?.rejected?.(error);
@@ -276,9 +311,14 @@ describe('AuthClient', () => {
         assert.deepStrictEqual(testLogSink.logs.length, 1);
         assert.deepStrictEqual(testLogSink.logs[0].namespace, 'auth');
         assert.deepStrictEqual(testLogSink.logs[0].args.length, 4);
-        assert.strictEqual((testLogSink.logs[0].args[0] as string).includes('error'), true);
+        assert.strictEqual(
+          (testLogSink.logs[0].args[0] as string).includes('error'),
+          true,
+        );
         assert.deepStrictEqual(testLogSink.logs[0].args[1], 'testMethod');
-        assert.deepStrictEqual((testLogSink.logs[0].args[3] as {test: string}), {message: 'boo!'});
+        assert.deepStrictEqual(testLogSink.logs[0].args[3] as {test: string}, {
+          message: 'boo!',
+        });
       });
     });
   });
