@@ -91,12 +91,16 @@ export {PassThroughClient} from './auth/passthrough';
 type ALL_EXPORTS = (typeof import('./'))[keyof typeof import('./')];
 
 /**
+ * A union type for all {@link AuthClient `AuthClient`} constructors.
+ */
+export type AnyAuthClientConstructor =
+  // Extract All `AuthClient`s from exports
+  Extract<ALL_EXPORTS, typeof AuthClient>;
+
+/**
  * A union type for all {@link AuthClient `AuthClient`}s.
  */
-export type AnyAuthClient = InstanceType<
-  // Extract All `AuthClient`s from exports
-  Extract<ALL_EXPORTS, typeof AuthClient>
->;
+export type AnyAuthClient = InstanceType<AnyAuthClientConstructor>;
 
 const auth = new GoogleAuth();
 export {auth, GoogleAuth};
