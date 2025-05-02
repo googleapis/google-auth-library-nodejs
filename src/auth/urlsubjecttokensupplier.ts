@@ -19,6 +19,7 @@ import {
   SubjectTokenJsonResponse,
   SubjectTokenSupplier,
 } from './identitypoolclient';
+import {AuthClient} from './authclient';
 
 /**
  * Interface that defines options used to build a {@link UrlSubjectTokenSupplier}
@@ -88,6 +89,8 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
       method: 'GET',
       headers: this.headers,
     };
+    AuthClient.setMethodName(opts, 'getSubjectToken');
+
     let subjectToken: string | undefined;
     if (this.formatType === 'text') {
       const response = await context.transporter.request<string>(opts);
@@ -102,6 +105,7 @@ export class UrlSubjectTokenSupplier implements SubjectTokenSupplier {
         'Unable to parse the subject_token from the credential_source URL',
       );
     }
+
     return subjectToken;
   }
 }

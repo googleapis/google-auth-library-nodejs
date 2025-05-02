@@ -121,6 +121,7 @@ class ExternalAccountAuthorizedUserHandler extends OAuthClientAuthHandler {
         refresh_token: refreshToken,
       }),
     };
+    AuthClient.setMethodName(opts, 'refreshToken');
 
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
