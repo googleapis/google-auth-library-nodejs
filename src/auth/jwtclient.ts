@@ -25,6 +25,7 @@ import {
   RequestMetadataResponse,
 } from './oauth2client';
 import {DEFAULT_UNIVERSE} from './authclient';
+import { lookupServiceAccountTrustBoundary, TrustBoundaryData, TrustBoundaryDescriptor, TrustBoundaryProvider } from './trustboundary';
 
 export interface JWTOptions extends OAuth2ClientOptions {
   /**
@@ -62,7 +63,7 @@ export interface JWTOptions extends OAuth2ClientOptions {
   additionalClaims?: {};
 }
 
-export class JWT extends OAuth2Client implements IdTokenProvider {
+export class JWT extends OAuth2Client implements IdTokenProvider, TrustBoundaryProvider {
   email?: string;
   keyFile?: string;
   key?: string;
@@ -272,11 +273,20 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     const token = await gtoken.getToken({
       forceRefresh: this.isTokenExpiring(),
     });
+
+    if(!this.trustBoundary){
+      const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
+          email: this.email
+      };  
+      this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor)
+    }
+
     const tokens = {
       access_token: token.access_token,
       token_type: 'Bearer',
       expiry_date: gtoken.expiresAt,
       id_token: gtoken.idToken,
+      trust_boundary_data: this.trustBoundary
     };
     this.emit('tokens', tokens);
     return {res: null, tokens};
@@ -407,4 +417,12 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     }
     throw new Error('A key or a keyFile must be provided to getCredentials.');
   }
+
+  /**
+   * Fetches a trustBoundary .
+   * @param trustBoundaryDescriptor the descriptor containing the email of the Service Account
+   */
+    async fetchTrustBoundary(trustBoundaryDescriptor: TrustBoundaryDescriptor): Promise<TrustBoundaryData|null> {
+      return lookupServiceAccountTrustBoundary(this, trustBoundaryDescriptor.email, this.trustBoundary)
+    }
 }
