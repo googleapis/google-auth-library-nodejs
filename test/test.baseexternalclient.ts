@@ -38,9 +38,16 @@ import {
   mockGenerateAccessToken,
   mockStsTokenExchange,
   getExpectedExternalAccountMetricsHeaderValue,
+  saEmail,
 } from './externalclienthelper';
 import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {TestUtils} from './utils';
+import {
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+  WORKFORCE_LOOKUP_ENDPOINT,
+  WORKLOAD_LOOKUP_ENDPOINT,
+} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 
@@ -2600,6 +2607,412 @@ describe('BaseExternalAccountClient', () => {
         unexpiredTokenResponse.token,
         credentials.access_token,
       );
+    });
+  });
+
+  describe('trust boundaries', () => {
+    const MOCK_ACCESS_TOKEN = 'ACCESS_TOKEN';
+    const MOCK_AUTH_HEADER = `Bearer ${MOCK_ACCESS_TOKEN}`;
+    const EXPECTED_TB_DATA: TrustBoundaryData = {
+      locations: ['some-locations'],
+      encodedLocations: '0xdeadbeef',
+    };
+
+    beforeEach(() => {
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
+    });
+
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+      nock.cleanAll();
+    });
+
+    it('should fetch trust boundaries successfully for workload identity', async () => {
+      const projectNumber = '12345';
+      const workloadPoolId = 'my-pool';
+      const workloadAudience = `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${workloadPoolId}/providers/my-provider`;
+      const workloadOptions = {
+        ...externalAccountOptions,
+        audience: workloadAudience,
+      };
+      const client = new TestExternalAccountClient(workloadOptions);
+
+      const stsScope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: {...stsSuccessfulResponse, access_token: MOCK_ACCESS_TOKEN},
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience: workloadAudience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      const lookupUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
+        '{project_id}',
+        projectNumber,
+      ).replace('{pool_id}', workloadPoolId);
+      const tbScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+
+      const headers = await client.getRequestHeaders();
+
+      assert.deepStrictEqual(
+        headers.get('x-allowed-locations'),
+        EXPECTED_TB_DATA.encodedLocations,
+      );
+      assert.deepStrictEqual(client.trustBoundary, EXPECTED_TB_DATA);
+
+      stsScope.done();
+      tbScope.done();
+    });
+
+    it('should fetch trust boundaries successfully for workforce identity', async () => {
+      const workforcePoolId = 'my-workforce-pool';
+      const workforceAudience = `//iam.googleapis.com/locations/global/workforcePools/${workforcePoolId}/providers/my-provider`;
+      const workforceOptions = {
+        ...externalAccountOptions,
+        audience: workforceAudience,
+      };
+      const client = new TestExternalAccountClient(workforceOptions);
+
+      const stsScope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: {...stsSuccessfulResponse, access_token: MOCK_ACCESS_TOKEN},
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience: workforceAudience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
+        '{pool_id}',
+        workforcePoolId,
+      );
+      const tbScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+
+      const headers = await client.getRequestHeaders();
+
+      assert.deepStrictEqual(
+        headers.get('x-allowed-locations'),
+        EXPECTED_TB_DATA.encodedLocations,
+      );
+      assert.deepStrictEqual(client.trustBoundary, EXPECTED_TB_DATA);
+
+      stsScope.done();
+      tbScope.done();
+    });
+
+    it('should throw an trust boundary error for an invalid audience', async () => {
+      const invalidAudience = 'invalid-audience-format/providers/1235';
+      const invalidOptions = {
+        ...externalAccountOptions,
+        audience: invalidAudience,
+      };
+      const client = new TestExternalAccountClient(invalidOptions);
+
+      const stsScope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: {...stsSuccessfulResponse, access_token: MOCK_ACCESS_TOKEN},
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience: invalidAudience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      await assert.rejects(
+        client.getRequestHeaders(),
+        /TrustBoundary: Invalid audience provided/,
+      );
+
+      stsScope.done();
+    });
+
+    it('should pass in the impersonated service accounts trust boundary in the header', async () => {
+      const projectNumber = '12345';
+      const workloadPoolId = 'my-pool';
+      const workloadAudience = `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${workloadPoolId}/providers/my-provider`;
+      const workloadOptions = {
+        ...externalAccountOptionsWithSA,
+        audience: workloadAudience,
+      };
+      const client = new TestExternalAccountClient(workloadOptions);
+
+      const stsScope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: {...stsSuccessfulResponse, access_token: MOCK_ACCESS_TOKEN},
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience: workloadAudience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(saEmail),
+      );
+      const tbScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+
+      const now = new Date().getTime();
+      const saSuccessResponse = {
+        accessToken: MOCK_ACCESS_TOKEN,
+        expireTime: new Date(now + ONE_HOUR_IN_SECS * 1000).toISOString(),
+      };
+      const impersonatedScope = mockGenerateAccessToken({
+        statusCode: 200,
+        response: saSuccessResponse,
+        token: stsSuccessfulResponse.access_token,
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      });
+
+      const headers = await client.getRequestHeaders();
+
+      assert.deepStrictEqual(
+        headers.get('x-allowed-locations'),
+        EXPECTED_TB_DATA.encodedLocations,
+      );
+      assert.deepStrictEqual(client.trustBoundary, EXPECTED_TB_DATA);
+
+      stsScope.done();
+      tbScope.done();
+      impersonatedScope.done();
+    });
+
+    it('should throw an IDNS fetch error for an invalid audience', async () => {
+      const invalidAudience = 'invalid-audience-format';
+      const invalidOptions = {
+        ...externalAccountOptions,
+        audience: invalidAudience,
+      };
+      const client = new TestExternalAccountClient(invalidOptions);
+
+      await assert.rejects(
+        client.getRequestHeaders(),
+        /TrustBoundary: Cannot fetch IDNS header from invalid audience provided/,
+      );
+    });
+
+    it('should pass the IDNS header to STS when TB is not available, else, pass TB header to STS.', async () => {
+      const projectNumber = '12345';
+      const workloadPoolId = 'my-pool';
+      const workloadAudience = `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${workloadPoolId}/providers/my-provider`;
+      const workloadOptions = {
+        ...externalAccountOptions,
+        audience: workloadAudience,
+      };
+      const client = new TestExternalAccountClient(workloadOptions);
+
+      const idnsHeader = `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${workloadPoolId}`;
+      const initialStsScope = mockStsTokenExchange(
+        [
+          {
+            statusCode: 200,
+            response: {
+              ...stsSuccessfulResponse,
+              access_token: MOCK_ACCESS_TOKEN,
+            },
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience: workloadAudience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_0',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ],
+        {
+          // Verify that the IDNS header is passed.
+          'x-sts-api-identity-pool': idnsHeader,
+        },
+      );
+      const nextStsScope = mockStsTokenExchange(
+        [
+          {
+            statusCode: 200,
+            response: {
+              ...stsSuccessfulResponse,
+              access_token: MOCK_ACCESS_TOKEN,
+              expires_in: ONE_HOUR_IN_SECS * 2,
+            },
+            request: {
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              audience: workloadAudience,
+              scope: 'https://www.googleapis.com/auth/cloud-platform',
+              requested_token_type:
+                'urn:ietf:params:oauth:token-type:access_token',
+              subject_token: 'subject_token_1',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            },
+          },
+        ],
+        {
+          // Verify that the TB header is passed.
+          'x-allowed-locations': EXPECTED_TB_DATA.encodedLocations,
+        },
+      );
+
+      const lookupUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
+        '{project_id}',
+        projectNumber,
+      ).replace('{pool_id}', workloadPoolId);
+      const tbScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+
+      // First call to STS uses IDNS headers.
+      await client.getRequestHeaders();
+      // Force a token refresh in the client.
+      client.eagerRefreshThresholdMillis = ONE_HOUR_IN_SECS * 1000;
+
+      // Second call to STS uses TB headers.
+      const headers = await client.getRequestHeaders();
+
+      assert.deepStrictEqual(
+        headers.get('x-allowed-locations'),
+        EXPECTED_TB_DATA.encodedLocations,
+      );
+
+      initialStsScope.done();
+      tbScope.done();
+      nextStsScope.done();
+    });
+
+    it('should pass the TB header to IAM endpoint when TB is available.', async () => {
+      // 1. First set up an external workload client which impersonates a service account.
+      const projectNumber = '12345';
+      const workloadPoolId = 'my-pool';
+      const workloadAudience = `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${workloadPoolId}/providers/my-provider`;
+      const workloadOptions = {
+        ...externalAccountOptionsWithSA,
+        audience: workloadAudience,
+      };
+      const client = new TestExternalAccountClient(workloadOptions);
+
+      //2. Set up mocks to
+      // 2.1 Mock call to STS
+      // 2.2 Mock call to IAM without the tb header
+      // 2.3 mock call to TB
+      const stsScope = mockStsTokenExchange([
+        {
+          statusCode: 200,
+          response: {...stsSuccessfulResponse, access_token: MOCK_ACCESS_TOKEN},
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience: workloadAudience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_0',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+
+        {
+          statusCode: 200,
+          response: {...stsSuccessfulResponse, access_token: MOCK_ACCESS_TOKEN},
+          request: {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            audience: workloadAudience,
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            requested_token_type:
+              'urn:ietf:params:oauth:token-type:access_token',
+            subject_token: 'subject_token_1',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          },
+        },
+      ]);
+
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(saEmail),
+      );
+      const tbScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+
+      const saSuccessResponse = {
+        accessToken: MOCK_ACCESS_TOKEN,
+        expireTime: new Date(
+          Date.now() + ONE_HOUR_IN_SECS * 1000,
+        ).toISOString(),
+      };
+      // Second call to IAM, this time with the TB header.
+      const impersonatedScopeWithoutTB = mockGenerateAccessToken({
+        statusCode: 200,
+        response: saSuccessResponse,
+        token: MOCK_ACCESS_TOKEN,
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      });
+
+      // 3. Get first token for the client, this will call the IAM API without the TB.
+      await client.getRequestHeaders();
+
+      // 4. Expire the token and then attempt to get a token again, this will result in call to IAM with TB headers.
+      client.eagerRefreshThresholdMillis = ONE_HOUR_IN_SECS * 1000;
+
+      const saSuccessResponse2 = {
+        accessToken: MOCK_ACCESS_TOKEN,
+        expireTime: new Date(
+          Date.now() + ONE_HOUR_IN_SECS * 2000,
+        ).toISOString(),
+      };
+
+      // Second call to IAM, this time with the TB header.
+      const impersonatedScopeWithTB = mockGenerateAccessToken({
+        statusCode: 200,
+        response: saSuccessResponse2,
+        token: MOCK_ACCESS_TOKEN,
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        additionalHeaders: {
+          'x-allowed-locations': EXPECTED_TB_DATA.encodedLocations,
+        },
+      });
+
+      await client.getRequestHeaders();
+
+      // 5. Verify that all mocks were satisfied.
+      stsScope.done();
+      tbScope.done();
+      impersonatedScopeWithoutTB.done();
+      impersonatedScopeWithTB.done();
     });
   });
 });

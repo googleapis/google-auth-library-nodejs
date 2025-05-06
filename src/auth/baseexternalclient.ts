@@ -32,6 +32,11 @@ import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {pkg} from '../shared.cjs';
+import {
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  WORKFORCE_LOOKUP_ENDPOINT,
+  WORKLOAD_LOOKUP_ENDPOINT,
+} from './trustboundary';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -585,6 +590,21 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     const additionalHeaders = new Headers({
       'x-goog-api-client': this.getMetricsHeaderValue(),
     });
+
+    if (this.trustBoundaryEnabled) {
+      const trustBoundaryHeader = this.getTrustBoundaryHeader();
+      // add trust boundary headers to call STS endpoint if they exist
+      if (trustBoundaryHeader !== null) {
+        additionalHeaders.set('x-allowed-locations', trustBoundaryHeader);
+      } else {
+        // else add IDNS headers
+        additionalHeaders.set(
+          'x-sts-api-identity-pool',
+          this.getIDNSHeader(this.audience),
+        );
+      }
+    }
+
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       additionalHeaders,
@@ -614,6 +634,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     this.credentials = {};
     Object.assign(this.credentials, this.cachedAccessToken);
     delete (this.credentials as CredentialsWithResponse).res;
+
+    this.trustBoundary = await this.refreshTrustBoundary(this.credentials);
 
     // Trigger tokens event to notify external listeners.
     this.emit('tokens', {
@@ -671,6 +693,16 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
     };
+
+    // Add trust boundary headers if available
+    const trustBoundaryHeader = this.getTrustBoundaryHeader();
+    if (trustBoundaryHeader !== null) {
+      opts.headers = {
+        ...opts.headers,
+        'x-allowed-locations': trustBoundaryHeader,
+      };
+    }
+
     AuthClient.setMethodName(opts, 'getImpersonatedAccessToken');
     const response =
       await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
@@ -707,5 +739,100 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   protected getTokenUrl(): string {
     return this.tokenUrl;
+  }
+
+  /**
+   * Returns the workforce identity pool-id if it is determinable
+   * from the audience resource name.
+   * @param audience The STS audience used to determine the pool-id.
+   * @return The pool-id associated with the workforce identity pool, if
+   *   this can be determined from the STS audience field. Otherwise, null is
+   *   returned.
+   */
+  #getWorkForcePoolId(audience: string): string | null {
+    // STS audience pattern:
+    // .../workforcePools/$WORKFORCE_POOL_ID/providers/...
+    return (
+      audience.match(/\/workforcePools\/(?<workforcePool>[^/]+)\/providers\//)
+        ?.groups?.workforcePool ?? null
+    );
+  }
+
+  /**
+   * Returns the workload identity pool-id if it is determinable
+   * from the audience resource name.
+   * @param audience The STS audience used to determine the pool-id.
+   * @return The pool-id associated with the workload identity pool, if
+   *   this can be determined from the STS audience field. Otherwise, null is
+   *   returned.
+   */
+  #getWorkloadPoolId(audience: string): string | null {
+    // STS audience pattern:
+    // .../workloadIdentityPools/POOL_ID/providers/...
+    return (
+      audience.match(
+        /\/workloadIdentityPools\/(?<workloadPool>[^/]+)\/providers\//,
+      )?.groups?.workloadPool ?? null
+    );
+  }
+
+  protected async getTrustBoundaryUrl(): Promise<string> {
+    if (this.serviceAccountImpersonationUrl) {
+      const email = this.getServiceAccountEmail();
+      if (!email) {
+        throw new Error(
+          `TrustBoundary: A service account email is required for trust boundary lookups but could not be determined from the serviceAccountImpersonationUrl ${this.serviceAccountImpersonationUrl}.`,
+        );
+      }
+      return SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(email),
+      );
+    }
+
+    //check for workforce
+    const wfPoolId = this.#getWorkForcePoolId(this.audience);
+    if (wfPoolId) {
+      return WORKFORCE_LOOKUP_ENDPOINT.replace(
+        '{pool_id}',
+        encodeURIComponent(wfPoolId),
+      );
+    }
+
+    //check for workload
+    const wlPoolId = this.#getWorkloadPoolId(this.audience);
+    const projectNumber = this.getProjectNumber(this.audience);
+    if (wlPoolId && projectNumber) {
+      return WORKLOAD_LOOKUP_ENDPOINT.replace(
+        '{project_id}',
+        projectNumber,
+      ).replace('{pool_id}', wlPoolId);
+    }
+
+    throw new RangeError(
+      `TrustBoundary: Invalid audience provided: "${this.audience}" does not correspond to workforce or workload`,
+    );
+  }
+
+  /**
+   * Returns the IDNS header to be included in call to STS endpoint for routing.
+   * The IDNS header is used during the first token-refresh,
+   * in place of the trust-boundary which is not yet available.
+   * @param audience The STS audience used to determine the pool-id.
+   * @return The Identity Pool header to be sent to STS. For example:
+   * * For Workforce ==> //iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID
+   * * For Workload ==> //iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID
+   */
+  protected getIDNSHeader(audience: string): string {
+    const regex = /^(.*)\/providers\/[^/]+$/;
+    const match = audience.match(regex);
+
+    if (match) {
+      const stsIdentityPoolHeader = match[1];
+      return stsIdentityPoolHeader;
+    }
+    throw new RangeError(
+      `TrustBoundary: Cannot fetch IDNS header from invalid audience provided: "${this.audience}". Does not correspond to workforce or workload.`,
+    );
   }
 }

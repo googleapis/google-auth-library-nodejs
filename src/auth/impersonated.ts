@@ -160,10 +160,18 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       delegates: this.delegates,
       payload: Buffer.from(blobToSign).toString('base64'),
     };
+
+    let headers = {};
+    const trustBoundaryHeader = this.getTrustBoundaryHeader();
+    if (trustBoundaryHeader !== null) {
+      headers = {'x-allowed-locations': trustBoundaryHeader};
+    }
+
     const res = await this.sourceClient.request<SignBlobResponse>({
       ...Impersonated.RETRY_CONFIG,
       url: u,
       data: body,
+      headers,
       method: 'POST',
     });
     return res.data;
@@ -187,9 +195,15 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
         scope: this.targetScopes,
         lifetime: this.lifetime + 's',
       };
+      let headers = {};
+      const trustBoundaryHeader = this.getTrustBoundaryHeader();
+      if (trustBoundaryHeader !== null) {
+        headers = {'x-allowed-locations': trustBoundaryHeader};
+      }
       const res = await this.sourceClient.request<TokenResponse>({
         ...Impersonated.RETRY_CONFIG,
         url: u,
+        headers,
         data: body,
         method: 'POST',
       });
@@ -261,7 +275,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     const targetPrincipal = this.getTargetPrincipal();
     if (!targetPrincipal) {
       throw new Error(
-        'TrustBoundary: Error getting tbUrl because of missing targetPrincipal in ImpersonatedClient',
+        'TrustBoundary: A targetPrincipal is required for trust boundary lookups but was not provided in the ImpersonatedClient options.',
       );
     }
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
