@@ -44,6 +44,7 @@ interface NockMockGenerateAccessToken {
   response: IamGenerateAccessTokenResponse | CloudRequestError;
   scopes: string[];
   lifetime?: number;
+  additionalHeaders?: {[key: string]: string};
 }
 
 const defaultLifetime = 3600;
@@ -81,11 +82,13 @@ export function mockGenerateAccessToken(
   nockMockGenerateAccessToken: NockMockGenerateAccessToken,
 ): nock.Scope {
   const token = nockMockGenerateAccessToken.token;
+  const reqheaders = {
+    authorization: `Bearer ${token}`,
+    'content-type': 'application/json',
+    ...nockMockGenerateAccessToken.additionalHeaders,
+  };
   const scope = nock(saBaseUrl, {
-    reqheaders: {
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
+    reqheaders,
   });
   scope
     .post(saPath, {
