@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GoogleToken, TokenData } from 'gtoken';
 import { AuthClient } from './authclient';
 import { GaxiosError, GaxiosOptions, GaxiosResponse } from 'gaxios';
 
@@ -54,11 +55,16 @@ export interface TrustBoundaryData {
 export interface TrustBoundaryDescriptor {
   project_id?: string,
   pool_id?: string,
-  email?: string
+  email?: string,
+  tbEnabled?: boolean
 }
   
 export interface TrustBoundaryProvider {
-  fetchTrustBoundary: (tbDescriptor: TrustBoundaryDescriptor) => Promise<TrustBoundaryData|null>;
+  fetchTrustBoundary: (
+    tbDescriptor: TrustBoundaryDescriptor,
+    gToken: GoogleToken,
+    token: TokenData
+  ) => Promise<TrustBoundaryData|null>;
 }
 
 // --- TrustBoundary Class ---
@@ -142,7 +148,7 @@ async function _fetchTrustBoundaryData(
 
   console.log(`TrustBoundary: Fetching data from ${url}`);
   try {
-    const response: GaxiosResponse<TrustBoundaryData> = await authenticatedClient.transporter.request<TrustBoundaryData>(requestOptions)
+    const response: GaxiosResponse<TrustBoundaryData> = await authenticatedClient.request<TrustBoundaryData>(requestOptions)
     console.log("Response from lookup endpoint "+ response)
     // const response: GaxiosResponse<AllowedLocationsResponse> = await authenticatedClient.request<AllowedLocationsResponse>(requestOptions);
     if (response.status === 200 && response.data) {

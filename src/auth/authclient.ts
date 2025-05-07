@@ -20,7 +20,7 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-import { TrustBoundary, TrustBoundaryData } from './trustboundary';
+import { TrustBoundaryData } from './trustboundary';
 
 /**
  * Easy access to symbol-indexed strings on config objects.
@@ -218,6 +218,7 @@ export abstract class AuthClient
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
+  trustBoundaryEnabled: boolean
   trustBoundary?: TrustBoundaryData | null;
 
   /**
@@ -234,6 +235,7 @@ export abstract class AuthClient
     super();
 
     const options = originalOrCamelOptions(opts);
+    const tbEnvEnabled = process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
 
     // Shared auth options
     this.apiKey = opts.apiKey;
@@ -241,6 +243,7 @@ export abstract class AuthClient
     this.quotaProjectId = options.get('quota_project_id');
     this.credentials = options.get('credentials') ?? {};
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
+    this.trustBoundaryEnabled = tbEnvEnabled ? tbEnvEnabled.toLowerCase() === 'true' : false; 
     this.trustBoundary = null;
 
     // Shared client options
