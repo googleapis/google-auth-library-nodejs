@@ -74,7 +74,7 @@
     "compile": "tsc -p .",
     "fix": "gts fix",
     "pretest": "npm run compile -- --sourceMap",
-    "docs": "jsdoc -c .jsdoc.json",
+    "docs": "jsdoc -c .jsdoc.js",
     "samples-setup": "cd samples/ && npm link ../ && npm run setup && cd ../",
     "samples-test": "cd samples/ && npm link ../ && npm test && cd ../",
     "system-test": "mocha build/system-test --timeout 60000",
