@@ -89,8 +89,7 @@ describe('StsCredentials', () => {
   function mockStsTokenExchange(
     statusCode = 200,
     response: StsSuccessfulResponse | OAuthErrorResponse,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: {[key: string]: any},
+    request: ReturnType<JSON['parse']>,
     additionalHeaders?: {[key: string]: string},
   ): nock.Scope {
     const headers = Object.assign(
