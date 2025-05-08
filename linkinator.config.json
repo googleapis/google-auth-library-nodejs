@@ -8,5 +8,8 @@
   ],
   "silent": true,
   "concurrency": 10,
-  "retry": true
+  "retry": true,
+  "retryErrors": true,
+  "retryErrorsCount": 3,
+  "retryErrorsJitter": 5
 }
