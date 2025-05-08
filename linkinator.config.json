@@ -1,15 +1,1 @@
-{
-  "recurse": true,
-  "skip": [
-    "https://codecov.io/gh/googleapis/",
-    "www.googleapis.com",
-    "img.shields.io",
-    "http://169.254.169.254/latest/api/token%22"
-  ],
-  "silent": true,
-  "concurrency": 10,
-  "retry": true,
-  "retryErrors": true,
-  "retryErrorsCount": 3,
-  "retryErrorsJitter": 5
-}
+{}
