@@ -19,8 +19,10 @@ import { GaxiosError, GaxiosOptions, GaxiosResponse } from 'gaxios';
 
 // NoOpEncodedLocations is a special value indicating that no trust boundary is enforced.
 const NoOpEncodedLocations = "0x0";
+
 // universeDomainDefault is the default domain for Google Cloud Universe.
 const universeDomainDefault = "googleapis.com";
+
 // ServiceAccountAllowedLocationsEndpoint is the URL for fetching allowed locations for a given service account email.
 // The '%s' will be replaced with the URL-encoded service account email.
 const ServiceAccountAllowedLocationsEndpoint = "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s/allowedLocations";
@@ -53,17 +55,17 @@ export interface TrustBoundaryData {
  * Workforce Pool -> pool_id
  */
 export interface TrustBoundaryDescriptor {
+  auth_header: string,
   project_id?: string,
   pool_id?: string,
   email?: string,
-  tbEnabled?: boolean
 }
   
 export interface TrustBoundaryProvider {
   fetchTrustBoundary: (
     tbDescriptor: TrustBoundaryDescriptor,
-    gToken: GoogleToken,
-    token: TokenData
+    // gToken: GoogleToken,
+    // token: TokenData
   ) => Promise<TrustBoundaryData|null>;
 }
 
@@ -133,22 +135,21 @@ export class TrustBoundary {
  */
 async function _fetchTrustBoundaryData(
   authenticatedClient: AuthClient,
+  authHeader: string,
   url: string,
 ): Promise<TrustBoundaryData> { // Throws on error instead of returning null
-
-  if (!url) {
-      throw new Error("TrustBoundary: URL cannot be empty for fetching data.");
-  }
 
   const requestOptions: GaxiosOptions = {
     method: 'GET',
     url: url,
-    timeout: 5000, // todo: make this configurable 5 seconds
+    timeout: 5000, // todo: make this configurable 5 seconds,
   };
+  requestOptions.headers = new Headers();
+  requestOptions.headers.set('authorization', authHeader) 
 
   console.log(`TrustBoundary: Fetching data from ${url}`);
   try {
-    const response: GaxiosResponse<TrustBoundaryData> = await authenticatedClient.request<TrustBoundaryData>(requestOptions)
+    const response: GaxiosResponse<TrustBoundaryData> = await authenticatedClient.transporter.request<TrustBoundaryData>(requestOptions)
     console.log("Response from lookup endpoint "+ response)
     // const response: GaxiosResponse<AllowedLocationsResponse> = await authenticatedClient.request<AllowedLocationsResponse>(requestOptions);
     if (response.status === 200 && response.data) {
@@ -170,13 +171,10 @@ async function _fetchTrustBoundaryData(
     console.error(`TrustBoundary: Failed request to ${url}.`);
     if (error instanceof GaxiosError) {
       console.error(`Status: ${error.response?.status}, Message: ${error.message}, Body:`, error.response?.data);
-      // Re-throw a more specific error or the original GaxiosError
       throw new Error(`TrustBoundary: API request failed with status ${error.response?.status}: ${error.message}`);
     } else if (error instanceof Error) {
-      // Re-throw the original error or wrap it
       throw new Error(`TrustBoundary: Network or unexpected error: ${error.message}`);
     } else {
-      // Handle unknown error types
       throw new Error(`TrustBoundary: An unknown error occurred during fetch: ${error}`);
     }
   }
@@ -197,25 +195,23 @@ async function _fetchTrustBoundaryData(
  */
 export async function lookupServiceAccountTrustBoundary(
   authenticatedClient: AuthClient,
+  authHeader: string,
   serviceAccountEmail?: string,
   cachedData?: TrustBoundaryData|null
 ): Promise<TrustBoundaryData | null> { // Returns null on unrecoverable error with no cache
 
-  // --- Input Validation ---
-  if (!authenticatedClient) {
-    console.error('TrustBoundaryLookup: Authenticated client is required.');
-    return cachedData ?? null; // Use cache if available, else null
-  }
   if (!serviceAccountEmail) {
-    console.error('TrustBoundaryLookup: Service account email cannot be empty.');
-    return cachedData ?? null;
+    if (cachedData){
+      return cachedData;
+    }
+    throw new Error('TrustBoundaryLookup: Failed to fetch trust boundary data due to missing serviceAccountEmail')
   }
 
   // --- Check Universe Domain ---
   const universeDomain = authenticatedClient.universeDomain || universeDomainDefault;
   if (universeDomain !== universeDomainDefault) {
     console.log(`TrustBoundaryLookup: Skipping check for non-default universe domain: ${universeDomain}`);
-    return new TrustBoundary(undefined, NoOpEncodedLocations); // Return No-Op
+    return null; // Return null as we don't wish to add any headers
   }
 
   // --- Check Cached Data for No-Op ---
@@ -224,28 +220,17 @@ export async function lookupServiceAccountTrustBoundary(
     return cachedData;
   }
 
-  // --- Prepare URL and Fetch --- 
   const url = ServiceAccountAllowedLocationsEndpoint.replace('%s', encodeURIComponent(serviceAccountEmail));
  
   try {
-    // Call the internal fetch function
-    return await _fetchTrustBoundaryData(authenticatedClient, url);
+    return await _fetchTrustBoundaryData(authenticatedClient, authHeader, url);
   } catch (error) {
-    // --- Handle Errors and Fallback ---
-    console.error('TrustBoundaryLookup: Failed to fetch trust boundary data.');
-    if (error instanceof Error) {
-      console.error(error.message); // Log the specific error message
-    } else {
-      console.error('An unknown error occurred during lookup.', error);
-    }
-
     // Fallback to cached data if available on error
     if (cachedData) {
       console.warn('TrustBoundaryLookup: Falling back to cached data due to error.');
       return cachedData;
     }
 
-    // If no cache, return null to indicate failure without fallback
-    return null;
+    throw new Error(`TrustBoundary: Error call to API failed and no cache : ${error}`);
   }
 }

@@ -21,6 +21,7 @@ import {
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
+import { lookupServiceAccountTrustBoundary, TrustBoundaryData, TrustBoundaryDescriptor, TrustBoundaryProvider } from './trustboundary';
 
 export interface ComputeOptions extends OAuth2ClientOptions {
   /**
@@ -36,7 +37,7 @@ export interface ComputeOptions extends OAuth2ClientOptions {
   scopes?: string | string[];
 }
 
-export class Compute extends OAuth2Client {
+export class Compute extends OAuth2Client implements TrustBoundaryProvider {
   readonly serviceAccountEmail: string;
   scopes: string[];
 
@@ -90,6 +91,13 @@ export class Compute extends OAuth2Client {
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
+
+    const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
+      auth_header: `Bearer ${tokens.access_token}`,
+      email: this.serviceAccountEmail
+    };  
+    this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor, /*gtoken, token*/)
+
     return {tokens, res: null};
   }
 
@@ -137,4 +145,21 @@ export class Compute extends OAuth2Client {
       }
     }
   }
+
+  /**
+   * Fetches a trustBoundary .
+   * @param trustBoundaryDescriptor the descriptor containing the email of the Service Account
+   */
+    async fetchTrustBoundary(
+      trustBoundaryDescriptor: TrustBoundaryDescriptor,
+    ): Promise<TrustBoundaryData|null> {
+
+      if( !this.trustBoundaryEnabled){
+        return null;
+      }
+
+      //todo pjiyer, add Error handling
+      return lookupServiceAccountTrustBoundary(this, trustBoundaryDescriptor.auth_header, trustBoundaryDescriptor.email, this.trustBoundary);
+
+    }  
 }

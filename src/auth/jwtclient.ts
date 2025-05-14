@@ -274,19 +274,19 @@ export class JWT extends OAuth2Client implements IdTokenProvider, TrustBoundaryP
       forceRefresh: this.isTokenExpiring(),
     });
 
-      if(!this.trustBoundary){
-        const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
-          email: this.email
-      };  
-      this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor, gtoken, token)
-    }
+    const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
+      auth_header: `Bearer ${token.access_token}`,
+      email: this.email
+    };
+    
+    this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor, /*gtoken, token*/)
 
     const tokens = {
       access_token: token.access_token,
       token_type: 'Bearer',
       expiry_date: gtoken.expiresAt,
       id_token: gtoken.idToken,
-      trust_boundary_data: this.trustBoundary
+      // trust_boundary_data: this.trustBoundary
     };
     this.emit('tokens', tokens);
     return {res: null, tokens};
@@ -424,28 +424,14 @@ export class JWT extends OAuth2Client implements IdTokenProvider, TrustBoundaryP
    */
     async fetchTrustBoundary(
       trustBoundaryDescriptor: TrustBoundaryDescriptor,
-      gtoken: GoogleToken,
-      token: TokenData,
     ): Promise<TrustBoundaryData|null> {
 
       if( !this.trustBoundaryEnabled){
         return null;
       }
 
-      // copy the original credentials
-      const orgCredentials = this.credentials;
+      //todo pjiyer, add Error handling
+      return lookupServiceAccountTrustBoundary(this, trustBoundaryDescriptor.auth_header, trustBoundaryDescriptor.email, this.trustBoundary);
 
-      // makes the authclient have enough details to call the trust Boundary api
-      // avoids the infinite loop problem
-      this.credentials.access_token = token.access_token;
-      this.credentials.expiry_date = gtoken.expiresAt;
-      this.credentials.id_token = token.id_token;
-      this.credentials.token_type = 'Bearer';
-
-      const trustBoundaryData = await lookupServiceAccountTrustBoundary(this, trustBoundaryDescriptor.email, this.trustBoundary);
-
-      // sets the credentials back to their original value.
-      this.credentials = orgCredentials;
-      return trustBoundaryData
     }
 }

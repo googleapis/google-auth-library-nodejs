@@ -24,6 +24,7 @@ import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 import {SignBlobResponse} from './googleauth';
 import {originalOrCamelOptions} from '../util';
+import { lookupServiceAccountTrustBoundary, TrustBoundaryData, TrustBoundaryDescriptor, TrustBoundaryProvider } from './trustboundary';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -72,7 +73,7 @@ export interface FetchIdTokenResponse {
   token: string;
 }
 
-export class Impersonated extends OAuth2Client implements IdTokenProvider {
+export class Impersonated extends OAuth2Client implements IdTokenProvider, TrustBoundaryProvider {
   private sourceClient: AuthClient;
   private targetPrincipal: string;
   private targetScopes: string[];
@@ -195,6 +196,13 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       const tokenResponse = res.data;
       this.credentials.access_token = tokenResponse.accessToken;
       this.credentials.expiry_date = Date.parse(tokenResponse.expireTime);
+
+      const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
+        auth_header: `Bearer ${tokenResponse.accessToken}`,
+        email: this.targetPrincipal
+      };  
+      this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor, /*gtoken, token*/)
+
       return {
         tokens: this.credentials,
         res,
@@ -253,4 +261,21 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
 
     return res.data.token;
   }
+
+  /**
+   * Fetches a trustBoundary .
+   * @param trustBoundaryDescriptor the descriptor containing the email of the Service Account
+   */
+    async fetchTrustBoundary(
+      trustBoundaryDescriptor: TrustBoundaryDescriptor,
+    ): Promise<TrustBoundaryData|null> {
+
+      if( !this.trustBoundaryEnabled){
+        return null;
+      }
+
+      //todo pjiyer, add Error handling
+      return lookupServiceAccountTrustBoundary(this, trustBoundaryDescriptor.auth_header, trustBoundaryDescriptor.email, this.trustBoundary);
+
+    }  
 }
