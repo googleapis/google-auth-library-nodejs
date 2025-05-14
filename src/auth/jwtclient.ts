@@ -25,6 +25,12 @@ import {
   RequestMetadataResponse,
 } from './oauth2client';
 import {DEFAULT_UNIVERSE} from './authclient';
+import {
+  lookupServiceAccountTrustBoundary,
+  TrustBoundaryData,
+  TrustBoundaryDescriptor,
+  TrustBoundaryProvider,
+} from './trustboundary';
 
 export interface JWTOptions extends OAuth2ClientOptions {
   /**
@@ -62,7 +68,10 @@ export interface JWTOptions extends OAuth2ClientOptions {
   additionalClaims?: {};
 }
 
-export class JWT extends OAuth2Client implements IdTokenProvider {
+export class JWT
+  extends OAuth2Client
+  implements IdTokenProvider, TrustBoundaryProvider
+{
   email?: string;
   keyFile?: string;
   key?: string;
@@ -272,6 +281,13 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     const token = await gtoken.getToken({
       forceRefresh: this.isTokenExpiring(),
     });
+
+    const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
+      auth_header: `Bearer ${token.access_token}`,
+      email: this.email,
+    };
+    this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor);
+
     const tokens = {
       access_token: token.access_token,
       token_type: 'Bearer',
@@ -406,5 +422,24 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       return {private_key: creds.privateKey, client_email: creds.clientEmail};
     }
     throw new Error('A key or a keyFile must be provided to getCredentials.');
+  }
+
+  /**
+   * Fetches a trustBoundary .
+   * @param trustBoundaryDescriptor the descriptor containing the email of the Service Account
+   */
+  async fetchTrustBoundary(
+    trustBoundaryDescriptor: TrustBoundaryDescriptor,
+  ): Promise<TrustBoundaryData | null> {
+    if (!this.trustBoundaryEnabled) {
+      return null;
+    }
+    //todo pjiyer, add Error handling
+    return lookupServiceAccountTrustBoundary(
+      this,
+      trustBoundaryDescriptor.auth_header,
+      trustBoundaryDescriptor.email,
+      this.trustBoundary,
+    );
   }
 }

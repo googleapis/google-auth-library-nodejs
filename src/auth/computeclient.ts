@@ -21,6 +21,12 @@ import {
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
+import {
+  lookupServiceAccountTrustBoundary,
+  TrustBoundaryData,
+  TrustBoundaryDescriptor,
+  TrustBoundaryProvider,
+} from './trustboundary';
 
 export interface ComputeOptions extends OAuth2ClientOptions {
   /**
@@ -36,7 +42,7 @@ export interface ComputeOptions extends OAuth2ClientOptions {
   scopes?: string | string[];
 }
 
-export class Compute extends OAuth2Client {
+export class Compute extends OAuth2Client implements TrustBoundaryProvider {
   readonly serviceAccountEmail: string;
   scopes: string[];
 
@@ -85,6 +91,13 @@ export class Compute extends OAuth2Client {
       throw e;
     }
     const tokens = data as Credentials;
+
+    const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
+      auth_header: `Bearer ${tokens.access_token}`,
+      email: this.serviceAccountEmail,
+    };
+    this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor);
+
     if (data && data.expires_in) {
       tokens.expiry_date = new Date().getTime() + data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
@@ -136,5 +149,24 @@ export class Compute extends OAuth2Client {
           e.message;
       }
     }
+  }
+
+  /**
+   * Fetches a trustBoundary .
+   * @param trustBoundaryDescriptor the descriptor containing the email of the Service Account
+   */
+  async fetchTrustBoundary(
+    trustBoundaryDescriptor: TrustBoundaryDescriptor,
+  ): Promise<TrustBoundaryData | null> {
+    if (!this.trustBoundaryEnabled) {
+      return null;
+    }
+    //todo pjiyer, add Error handling
+    return lookupServiceAccountTrustBoundary(
+      this,
+      trustBoundaryDescriptor.auth_header,
+      trustBoundaryDescriptor.email,
+      this.trustBoundary,
+    );
   }
 }
