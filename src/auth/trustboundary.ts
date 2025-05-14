@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AuthClient } from './authclient';
-import { GaxiosError, GaxiosOptions, GaxiosResponse } from 'gaxios';
-
+import {AuthClient} from './authclient';
+import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 
 // NoOpEncodedLocations is a special value indicating that no trust boundary is enforced.
-const NoOpEncodedLocations = "0x0";
+const NoOpEncodedLocations = '0x0';
 
 // universeDomainDefault is the default domain for Google Cloud Universe.
-const universeDomainDefault = "googleapis.com";
+const universeDomainDefault = 'googleapis.com';
 
 // ServiceAccountAllowedLocationsEndpoint is the URL for fetching allowed locations for a given service account email.
 // The '%s' will be replaced with the URL-encoded service account email.
-const ServiceAccountAllowedLocationsEndpoint = "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s/allowedLocations";
-
+const ServiceAccountAllowedLocationsEndpoint =
+  'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s/allowedLocations';
 
 // --- Interfaces ---
 
@@ -34,17 +33,17 @@ const ServiceAccountAllowedLocationsEndpoint = "https://iamcredentials.googleapi
  * where the credentials can be used.
  */
 export interface TrustBoundaryData {
-    /**
-     * The readable text format of the allowed trust boundary locations.
-     * This is optional, as it might not be present if no trust boundary is enforced.
-     */
-    locations?: string[];
+  /**
+   * The readable text format of the allowed trust boundary locations.
+   * This is optional, as it might not be present if no trust boundary is enforced.
+   */
+  locations?: string[];
 
-    /**
-     * The encoded text format of allowed trust boundary locations.
-     * Expected to always be present in valid responses.
-     */
-    encodedLocations: string;
+  /**
+   * The encoded text format of allowed trust boundary locations.
+   * Expected to always be present in valid responses.
+   */
+  encodedLocations: string;
 }
 
 /**
@@ -54,18 +53,18 @@ export interface TrustBoundaryData {
  * Workforce Pool -> pool_id
  */
 export interface TrustBoundaryDescriptor {
-  auth_header: string,
-  project_id?: string,
-  pool_id?: string,
-  email?: string,
+  auth_header: string;
+  project_id?: string;
+  pool_id?: string;
+  email?: string;
 }
-  
+
 export interface TrustBoundaryProvider {
   fetchTrustBoundary: (
     tbDescriptor: TrustBoundaryDescriptor,
     // gToken: GoogleToken,
     // token: TokenData
-  ) => Promise<TrustBoundaryData|null>;
+  ) => Promise<TrustBoundaryData | null>;
 }
 
 // --- TrustBoundary Class ---
@@ -74,51 +73,51 @@ export interface TrustBoundaryProvider {
  * Represents trust boundary information, holding allowed locations.
  */
 export class TrustBoundary {
-    // The readable text format of the allowed trust boundary locations
-    readonly locations?: string[];
-    // The encoded text format of allowed trust boundary locations
-    readonly encodedLocations: string;
+  // The readable text format of the allowed trust boundary locations
+  readonly locations?: string[];
+  // The encoded text format of allowed trust boundary locations
+  readonly encodedLocations: string;
 
-    /**
-     * Creates an instance of TrustBoundary.
-     * @param locations Optional array of allowed location strings.
-     * @param encodedLocations The encoded location string. Defaults to NoOpEncodedLocations.
-     */
-    constructor (
-        locations?: string[],
-        encodedLocations : string = NoOpEncodedLocations
-    ) {
-        // Store a copy of the locations array if provided
-        this.locations = locations ? [...locations] : undefined;
-        this.encodedLocations = encodedLocations;
-    }
+  /**
+   * Creates an instance of TrustBoundary.
+   * @param locations Optional array of allowed location strings.
+   * @param encodedLocations The encoded location string. Defaults to NoOpEncodedLocations.
+   */
+  constructor(
+    locations?: string[],
+    encodedLocations: string = NoOpEncodedLocations,
+  ) {
+    // Store a copy of the locations array if provided
+    this.locations = locations ? [...locations] : undefined;
+    this.encodedLocations = encodedLocations;
+  }
 
-    /**
-     * Gets a copy of the allowed locations array.
-     * @returns A copy of the locations array, or undefined if not set.
-     */
-    getLocations(): string[] | undefined {
-        return this.locations ? [...this.locations] : undefined;
-    }
+  /**
+   * Gets a copy of the allowed locations array.
+   * @returns A copy of the locations array, or undefined if not set.
+   */
+  getLocations(): string[] | undefined {
+    return this.locations ? [...this.locations] : undefined;
+  }
 
-    /**
-     * Gets the encoded locations string.
-     * @returns The encoded locations string.
-     */
-    getEncodedLocations(): string {
-        return this.encodedLocations ? this.encodedLocations : "";
-    }
+  /**
+   * Gets the encoded locations string.
+   * @returns The encoded locations string.
+   */
+  getEncodedLocations(): string {
+    return this.encodedLocations ? this.encodedLocations : '';
+  }
 
-    /**
-     * Checks if the trust boundary is effectively empty or represents no restrictions.
-     * @returns True if no encoded locations are set or if it's the No-Op value, false otherwise.
-     */
-    isNoOpOrEmpty(): boolean {
-        return !this.encodedLocations || this.encodedLocations === NoOpEncodedLocations;
-    }
+  /**
+   * Checks if the trust boundary is effectively empty or represents no restrictions.
+   * @returns True if no encoded locations are set or if it's the No-Op value, false otherwise.
+   */
+  isNoOpOrEmpty(): boolean {
+    return (
+      !this.encodedLocations || this.encodedLocations === NoOpEncodedLocations
+    );
+  }
 }
-
-
 
 // --- Internal Helper Function ---
 
@@ -136,7 +135,8 @@ async function _fetchTrustBoundaryData(
   authenticatedClient: AuthClient,
   authHeader: string,
   url: string,
-): Promise<TrustBoundaryData> { // Throws on error instead of returning null
+): Promise<TrustBoundaryData> {
+  // Throws on error instead of returning null
 
   const requestOptions: GaxiosOptions = {
     method: 'GET',
@@ -144,41 +144,55 @@ async function _fetchTrustBoundaryData(
     timeout: 5000, // todo: make this configurable 5 seconds,
   };
   requestOptions.headers = new Headers();
-  requestOptions.headers.set('authorization', authHeader) 
+  requestOptions.headers.set('authorization', authHeader);
 
   console.log(`TrustBoundary: Fetching data from ${url}`);
   try {
-    const response: GaxiosResponse<TrustBoundaryData> = await authenticatedClient.transporter.request<TrustBoundaryData>(requestOptions)
-    console.log("Response from lookup endpoint "+ response)
+    const response: GaxiosResponse<TrustBoundaryData> =
+      await authenticatedClient.transporter.request<TrustBoundaryData>(
+        requestOptions,
+      );
+    console.log('Response from lookup endpoint ' + response);
     // const response: GaxiosResponse<AllowedLocationsResponse> = await authenticatedClient.request<AllowedLocationsResponse>(requestOptions);
     if (response.status === 200 && response.data) {
       const trustBoundaryData = response.data;
 
       // Basic validation of the response structure
       if (typeof trustBoundaryData.encodedLocations !== 'string') {
-         throw new Error('TrustBoundary: Invalid response format - missing or invalid encodedLocations');
+        throw new Error(
+          'TrustBoundary: Invalid response format - missing or invalid encodedLocations',
+        );
       }
 
       console.log('TrustBoundary: Successfully fetched data.');
-      return trustBoundaryData
-
+      return trustBoundaryData;
     } else {
       // Handle unexpected non-error statuses (though gaxios usually throws for >=400)
-      throw new Error(`TrustBoundary: Request failed with status ${response.status}`);
+      throw new Error(
+        `TrustBoundary: Request failed with status ${response.status}`,
+      );
     }
   } catch (error) {
     console.error(`TrustBoundary: Failed request to ${url}.`);
     if (error instanceof GaxiosError) {
-      console.error(`Status: ${error.response?.status}, Message: ${error.message}, Body:`, error.response?.data);
-      throw new Error(`TrustBoundary: API request failed with status ${error.response?.status}: ${error.message}`);
+      console.error(
+        `Status: ${error.response?.status}, Message: ${error.message}, Body:`,
+        error.response?.data,
+      );
+      throw new Error(
+        `TrustBoundary: API request failed with status ${error.response?.status}: ${error.message}`,
+      );
     } else if (error instanceof Error) {
-      throw new Error(`TrustBoundary: Network or unexpected error: ${error.message}`);
+      throw new Error(
+        `TrustBoundary: Network or unexpected error: ${error.message}`,
+      );
     } else {
-      throw new Error(`TrustBoundary: An unknown error occurred during fetch: ${error}`);
+      throw new Error(
+        `TrustBoundary: An unknown error occurred during fetch: ${error}`,
+      );
     }
   }
 }
-
 
 // --- Exported Lookup Function ---
 
@@ -196,40 +210,57 @@ export async function lookupServiceAccountTrustBoundary(
   authenticatedClient: AuthClient,
   authHeader: string,
   serviceAccountEmail?: string,
-  cachedData?: TrustBoundaryData|null
-): Promise<TrustBoundaryData | null> { // Returns null on unrecoverable error with no cache
+  cachedData?: TrustBoundaryData | null,
+): Promise<TrustBoundaryData | null> {
+  // Returns null on unrecoverable error with no cache
 
   if (!serviceAccountEmail) {
-    if (cachedData){
+    if (cachedData) {
       return cachedData;
     }
-    throw new Error('TrustBoundaryLookup: Failed to fetch trust boundary data due to missing serviceAccountEmail')
+    throw new Error(
+      'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing serviceAccountEmail',
+    );
   }
 
   // --- Check Universe Domain ---
-  const universeDomain = authenticatedClient.universeDomain || universeDomainDefault;
+  const universeDomain =
+    authenticatedClient.universeDomain || universeDomainDefault;
   if (universeDomain !== universeDomainDefault) {
-    console.log(`TrustBoundaryLookup: Skipping check for non-default universe domain: ${universeDomain}`);
+    console.log(
+      `TrustBoundaryLookup: Skipping check for non-default universe domain: ${universeDomain}`,
+    );
     return null; // Return null as we don't wish to add any headers
   }
 
   // --- Check Cached Data for No-Op ---
-  if (cachedData && cachedData.encodedLocations && cachedData.encodedLocations === NoOpEncodedLocations) {
+  if (
+    cachedData &&
+    cachedData.encodedLocations &&
+    cachedData.encodedLocations === NoOpEncodedLocations
+  ) {
     console.log('TrustBoundaryLookup: Returning cached No-Op data.');
     return cachedData;
   }
 
-  const url = ServiceAccountAllowedLocationsEndpoint.replace('%s', encodeURIComponent(serviceAccountEmail));
- 
+  const url = ServiceAccountAllowedLocationsEndpoint.replace(
+    '%s',
+    encodeURIComponent(serviceAccountEmail),
+  );
+
   try {
     return await _fetchTrustBoundaryData(authenticatedClient, authHeader, url);
   } catch (error) {
     // Fallback to cached data if available on error
     if (cachedData) {
-      console.warn('TrustBoundaryLookup: Falling back to cached data due to error.');
+      console.warn(
+        'TrustBoundaryLookup: Falling back to cached data due to error.',
+      );
       return cachedData;
     }
 
-    throw new Error(`TrustBoundary: Error call to API failed and no cache : ${error}`);
+    throw new Error(
+      `TrustBoundary: Error call to API failed and no cache : ${error}`,
+    );
   }
 }
