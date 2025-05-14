@@ -20,6 +20,7 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
+import { TrustBoundaryData } from './trustboundary';
 
 /**
  * Easy access to symbol-indexed strings on config objects.
@@ -220,6 +221,8 @@ export abstract class AuthClient
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
+  trustBoundaryEnabled: boolean
+  trustBoundary?: TrustBoundaryData | null;
 
   /**
    * Symbols that can be added to GaxiosOptions to specify the method name that is
@@ -235,6 +238,8 @@ export abstract class AuthClient
     super();
 
     const options = originalOrCamelOptions(opts);
+    const tbEnvEnabled = process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+
 
     // Shared auth options
     this.apiKey = opts.apiKey;
@@ -242,6 +247,8 @@ export abstract class AuthClient
     this.quotaProjectId = options.get('quota_project_id');
     this.credentials = options.get('credentials') ?? {};
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
+    this.trustBoundaryEnabled = tbEnvEnabled ? tbEnvEnabled.toLowerCase() === 'true' : false; 
+    this.trustBoundary = null;
 
     // Shared client options
     this.transporter = opts.transporter ?? new Gaxios(opts.transporterOptions);
@@ -317,6 +324,12 @@ export abstract class AuthClient
     ) {
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
+    if (
+      !headers.has('x-goog-allowed-locations') && // don't override a value the user sets.
+      this.trustBoundary && this.trustBoundary.encodedLocations
+    ) {
+      headers.set('x-goog-allowed-locations', this.trustBoundary.encodedLocations);
+    }    
     return headers;
   }
 
@@ -334,6 +347,8 @@ export abstract class AuthClient
   ): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');
+    const xGoogAllowedLocs = source.get('x-goog-allowed-locations');
+
 
     if (xGoogUserProject) {
       target.set('x-goog-user-project', xGoogUserProject);
@@ -341,6 +356,10 @@ export abstract class AuthClient
 
     if (authorizationHeader) {
       target.set('authorization', authorizationHeader);
+    }
+
+    if(xGoogAllowedLocs) {
+      target.set('x-goog-allowed-locations', xGoogAllowedLocs);
     }
 
     return target;
