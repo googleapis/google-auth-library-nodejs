@@ -20,7 +20,7 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-import {TrustBoundaryData} from './trustboundary';
+import {NoOpEncodedLocations, TrustBoundaryData} from './trustboundary';
 
 /**
  * Easy access to symbol-indexed strings on config objects.
@@ -326,9 +326,9 @@ export abstract class AuthClient
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
     if (
-      !headers.has('x-goog-allowed-locations') &&
       this.trustBoundary &&
-      this.trustBoundary.encodedLocations
+      this.trustBoundary.encodedLocations &&
+      this.trustBoundary.encodedLocations !== NoOpEncodedLocations
     ) {
       headers.set(
         'x-goog-allowed-locations',
@@ -347,7 +347,7 @@ export abstract class AuthClient
    * @param source the headers to source from
    * @returns the target headers
    */
-  protected addUserProjectAndAuthHeaders<T extends Headers>(
+  protected addUserProjectAndAuthAndTBHeaders<T extends Headers>(
     target: T,
     source: Headers,
   ): T {
