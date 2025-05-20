@@ -20,7 +20,7 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-import { TrustBoundaryData } from './trustboundary';
+import {TrustBoundaryData} from './trustboundary';
 
 /**
  * Easy access to symbol-indexed strings on config objects.
@@ -199,6 +199,9 @@ export declare interface AuthClient {
   on(event: 'tokens', listener: (tokens: Credentials) => void): this;
 }
 
+/**
+ * The base of all Auth Clients.
+ */
 export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient
@@ -218,7 +221,7 @@ export abstract class AuthClient
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
-  trustBoundaryEnabled: boolean
+  trustBoundaryEnabled: boolean;
   trustBoundary?: TrustBoundaryData | null;
 
   /**
@@ -235,7 +238,6 @@ export abstract class AuthClient
     super();
 
     const options = originalOrCamelOptions(opts);
-    const tbEnvEnabled = process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
 
     // Shared auth options
     this.apiKey = opts.apiKey;
@@ -243,7 +245,10 @@ export abstract class AuthClient
     this.quotaProjectId = options.get('quota_project_id');
     this.credentials = options.get('credentials') ?? {};
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
-    this.trustBoundaryEnabled = tbEnvEnabled ? tbEnvEnabled.toLowerCase() === 'true' : false; 
+    this.trustBoundaryEnabled =
+      (
+        process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] || ''
+      ).toLowerCase() === 'true';
     this.trustBoundary = null;
 
     // Shared client options
@@ -321,16 +326,21 @@ export abstract class AuthClient
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
     if (
-      !headers.has('x-goog-allowed-locations') && // don't override a value the user sets.
-      this.trustBoundary && this.trustBoundary.encodedLocations
+      !headers.has('x-goog-allowed-locations') &&
+      this.trustBoundary &&
+      this.trustBoundary.encodedLocations
     ) {
-      headers.set('x-goog-allowed-locations', this.trustBoundary.encodedLocations);
+      headers.set(
+        'x-goog-allowed-locations',
+        this.trustBoundary.encodedLocations,
+      );
     }
     return headers;
   }
 
   /**
-   * Adds the `x-goog-user-project` and `authorization` headers to the target Headers
+   * Adds the `x-goog-user-project` and `authorization` and 'x-goog-allowed-locations'
+   * headers to the target Headers
    * object, if they exist on the source.
    *
    * @param target the headers to target
@@ -353,7 +363,7 @@ export abstract class AuthClient
       target.set('authorization', authorizationHeader);
     }
 
-    if(xGoogAllowedLocs) {
+    if (xGoogAllowedLocs) {
       target.set('x-goog-allowed-locations', xGoogAllowedLocs);
     }
 

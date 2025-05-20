@@ -24,7 +24,12 @@ import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 import {SignBlobResponse} from './googleauth';
 import {originalOrCamelOptions} from '../util';
-import { lookupServiceAccountTrustBoundary, TrustBoundaryData, TrustBoundaryDescriptor, TrustBoundaryProvider } from './trustboundary';
+import {
+  lookupTrustBoundary,
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+  TrustBoundaryProvider,
+} from './trustboundary';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -73,7 +78,10 @@ export interface FetchIdTokenResponse {
   token: string;
 }
 
-export class Impersonated extends OAuth2Client implements IdTokenProvider, TrustBoundaryProvider {
+export class Impersonated
+  extends OAuth2Client
+  implements IdTokenProvider, TrustBoundaryProvider
+{
   private sourceClient: AuthClient;
   private targetPrincipal: string;
   private targetScopes: string[];
@@ -196,12 +204,9 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider, Trust
       const tokenResponse = res.data;
       this.credentials.access_token = tokenResponse.accessToken;
       this.credentials.expiry_date = Date.parse(tokenResponse.expireTime);
-
-      const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
-        auth_header: `Bearer ${tokenResponse.accessToken}`,
-        email: this.targetPrincipal
-      };  
-      this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor, /*gtoken, token*/)
+      this.trustBoundary = await this.fetchTrustBoundary(
+        `Bearer ${tokenResponse.accessToken}`,
+      );
 
       return {
         tokens: this.credentials,
@@ -263,19 +268,25 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider, Trust
   }
 
   /**
-   * Fetches a trustBoundary .
-   * @param trustBoundaryDescriptor the descriptor containing the email of the Service Account
+   * Fetches a trustBoundary for the given service account.
+   * @param authHeader the authheader for calling the lookup endpoint
    */
-    async fetchTrustBoundary(
-      trustBoundaryDescriptor: TrustBoundaryDescriptor,
-    ): Promise<TrustBoundaryData|null> {
-
-      if( !this.trustBoundaryEnabled){
-        return null;
+  async fetchTrustBoundary(
+    authHeader: string,
+  ): Promise<TrustBoundaryData | null> {
+    if (!this.targetPrincipal) {
+      if (this.trustBoundary) {
+        return this.trustBoundary;
       }
+      throw new Error(
+        'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing targetPrincipal',
+      );
+    }
+    const lookupTrustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+      '{service_account_email}',
+      encodeURIComponent(this.targetPrincipal),
+    );
 
-      //todo pjiyer, add Error handling
-      return lookupServiceAccountTrustBoundary(this, trustBoundaryDescriptor.auth_header, trustBoundaryDescriptor.email, this.trustBoundary);
-
-    }  
+    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
+  }
 }

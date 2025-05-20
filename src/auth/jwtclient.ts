@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GoogleToken, TokenData} from 'gtoken';
+import {GoogleToken} from 'gtoken';
 import * as stream from 'stream';
 
 import {CredentialBody, Credentials, JWTInput} from './credentials';
@@ -25,7 +25,12 @@ import {
   RequestMetadataResponse,
 } from './oauth2client';
 import {DEFAULT_UNIVERSE} from './authclient';
-import { lookupServiceAccountTrustBoundary, TrustBoundaryData, TrustBoundaryDescriptor, TrustBoundaryProvider } from './trustboundary';
+import {
+  lookupTrustBoundary,
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+  TrustBoundaryProvider,
+} from './trustboundary';
 
 export interface JWTOptions extends OAuth2ClientOptions {
   /**
@@ -63,7 +68,10 @@ export interface JWTOptions extends OAuth2ClientOptions {
   additionalClaims?: {};
 }
 
-export class JWT extends OAuth2Client implements IdTokenProvider, TrustBoundaryProvider {
+export class JWT
+  extends OAuth2Client
+  implements IdTokenProvider, TrustBoundaryProvider
+{
   email?: string;
   keyFile?: string;
   key?: string;
@@ -274,19 +282,15 @@ export class JWT extends OAuth2Client implements IdTokenProvider, TrustBoundaryP
       forceRefresh: this.isTokenExpiring(),
     });
 
-    const trustBoundaryDescriptor: TrustBoundaryDescriptor = {
-      auth_header: `Bearer ${token.access_token}`,
-      email: this.email
-    };
-    
-    this.trustBoundary = await this.fetchTrustBoundary(trustBoundaryDescriptor, /*gtoken, token*/)
+    this.trustBoundary = await this.fetchTrustBoundary(
+      `Bearer ${token.access_token}`,
+    );
 
     const tokens = {
       access_token: token.access_token,
       token_type: 'Bearer',
       expiry_date: gtoken.expiresAt,
       id_token: gtoken.idToken,
-      // trust_boundary_data: this.trustBoundary
     };
     this.emit('tokens', tokens);
     return {res: null, tokens};
@@ -420,18 +424,24 @@ export class JWT extends OAuth2Client implements IdTokenProvider, TrustBoundaryP
 
   /**
    * Fetches a trustBoundary .
-   * @param trustBoundaryDescriptor the descriptor containing the email of the Service Account
+   * @param authHeader the authheader for calling the lookup endpoint
    */
-    async fetchTrustBoundary(
-      trustBoundaryDescriptor: TrustBoundaryDescriptor,
-    ): Promise<TrustBoundaryData|null> {
-
-      if( !this.trustBoundaryEnabled){
-        return null;
+  async fetchTrustBoundary(
+    authHeader: string,
+  ): Promise<TrustBoundaryData | null> {
+    if (!this.email) {
+      if (this.trustBoundary) {
+        return this.trustBoundary;
       }
-
-      //todo pjiyer, add Error handling
-      return lookupServiceAccountTrustBoundary(this, trustBoundaryDescriptor.auth_header, trustBoundaryDescriptor.email, this.trustBoundary);
-
+      throw new Error(
+        'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing email',
+      );
     }
+    const lookupTrustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+      '{service_account_email}',
+      encodeURIComponent(this.email),
+    );
+
+    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
+  }
 }
