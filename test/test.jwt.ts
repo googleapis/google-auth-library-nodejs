@@ -1256,7 +1256,7 @@ describe('jwt', () => {
       sandbox.restore();
     });
 
-    it('should return null when GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES env variable is false/null', async () => {
+    it('fetchTrustBoundary should return null when GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES env variable is false/null', async () => {
       //TODO:pjiyer can this be moved to tb.ts file?
       process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'false';
       const jwt = new JWT({
@@ -1271,7 +1271,7 @@ describe('jwt', () => {
       assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
     });
 
-    it('should fetch and return trust boundary data successfully', async () => {
+    it('fetchTrustBoundary should fetch and return trust boundary data successfully', async () => {
       //TODO:pjiyer Can this be moved to tb.ts test file?
       const jwt = new JWT({
         email: 'test@example.iam.gserviceaccount.com',
@@ -1325,7 +1325,7 @@ describe('jwt', () => {
       assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
     });
 
-    it('should not call lookup endpoint in case cachedTrustBoundaries is no-op', async () => {
+    it('fetchTrustBoundary should not call lookup endpoint in case cachedTrustBoundaries is no-op', async () => {
       //TODO:pjiyer Can this be moved to tb.ts test file?
       const jwt = new JWT({
         email: 'test@example.iam.gserviceaccount.com',
@@ -1341,7 +1341,7 @@ describe('jwt', () => {
       assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
     });
 
-    it('should return cached tb in case call to lookup endpoint fails', async () => {
+    it('fetchTrustBoundary should return cached tb in case call to lookup endpoint fails', async () => {
       //TODO:pjiyer Can this be moved to tb.ts test file?
       const jwt = new JWT({
         email: 'test@example.iam.gserviceaccount.com',
@@ -1369,7 +1369,7 @@ describe('jwt', () => {
       scope.done();
     });
 
-    it('should throw in case call to lookup endpoint fails and no cached tb', async () => {
+    it('fetchTrustBoundary should throw in case call to lookup endpoint fails and no cached tb', async () => {
       //TODO:pjiyer Can this be moved to tb.ts test file?
       const jwt = new JWT({
         email: 'test@example.iam.gserviceaccount.com',

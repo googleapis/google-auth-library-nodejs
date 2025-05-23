@@ -653,7 +653,7 @@ export abstract class BaseExternalAccountClient
   private getProjectNumber(audience: string): string | null {
     // STS audience pattern:
     // //iam.googleapis.com/projects/$PROJECT_NUMBER/locations/...
-    const match = audience.match(/\/projects\/([^/]+)/);
+    const match = audience.match(/\/projects\/([^/]+)\/locations\//);
     if (!match) {
       return null;
     }
@@ -780,32 +780,39 @@ export abstract class BaseExternalAccountClient
     authHeader: string,
   ): Promise<TrustBoundaryData | null> {
     let lookupTrustBoundaryUrl = null;
-    if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
-      //client configured for workforce authorization
-      const wfPoolId = this.getWorkForcePoolId(this.audience);
-      if (wfPoolId) {
-        lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-          '{pool_id}',
-          encodeURIComponent(wfPoolId),
-        );
+    try {
+      if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
+        //client configured for workforce authorization
+        const wfPoolId = this.getWorkForcePoolId(this.audience);
+        if (wfPoolId) {
+          lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
+            '{pool_id}',
+            encodeURIComponent(wfPoolId),
+          );
+        } else {
+          throw new Error(
+            'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workforce pool id',
+          );
+        }
       } else {
-        throw new Error(
-          'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workforce pool id',
-        );
+        //client configured for workload authorization
+        const wlPoolId = this.getWorkloadPoolId(this.audience);
+        if (wlPoolId && this.projectNumber) {
+          lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
+            '{project_id}',
+            this.projectNumber,
+          ).replace('{pool_id}', wlPoolId);
+        } else {
+          throw new Error(
+            'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number',
+          );
+        }
       }
-    } else {
-      //client configured for workload authorization
-      const wlPoolId = this.getWorkloadPoolId(this.audience);
-      if (wlPoolId && this.projectNumber) {
-        lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
-          '{project_id}',
-          this.projectNumber,
-        ).replace('{pool_id}', wlPoolId);
-      } else {
-        throw new Error(
-          'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number',
-        );
+    } catch (e) {
+      if (this.trustBoundary) {
+        return this.trustBoundary;
       }
+      throw e; //no cache and invalid audience so we throw.
     }
 
     return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
