@@ -24,6 +24,12 @@ import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 import {SignBlobResponse} from './googleauth';
 import {originalOrCamelOptions} from '../util';
+import {
+  lookupTrustBoundary,
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+  TrustBoundaryProvider,
+} from './trustboundary';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -72,7 +78,10 @@ export interface FetchIdTokenResponse {
   token: string;
 }
 
-export class Impersonated extends OAuth2Client implements IdTokenProvider {
+export class Impersonated
+  extends OAuth2Client
+  implements IdTokenProvider, TrustBoundaryProvider
+{
   private sourceClient: AuthClient;
   private targetPrincipal: string;
   private targetScopes: string[];
@@ -195,6 +204,10 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
       const tokenResponse = res.data;
       this.credentials.access_token = tokenResponse.accessToken;
       this.credentials.expiry_date = Date.parse(tokenResponse.expireTime);
+      this.trustBoundary = await this.fetchTrustBoundary(
+        `Bearer ${tokenResponse.accessToken}`,
+      );
+
       return {
         tokens: this.credentials,
         res,
@@ -252,5 +265,28 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     });
 
     return res.data.token;
+  }
+
+  /**
+   * Fetches a trustBoundary for the given service account.
+   * @param authHeader the authheader for calling the lookup endpoint
+   */
+  async fetchTrustBoundary(
+    authHeader: string,
+  ): Promise<TrustBoundaryData | null> {
+    if (!this.targetPrincipal) {
+      if (this.trustBoundary) {
+        return this.trustBoundary;
+      }
+      throw new Error(
+        'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing targetPrincipal',
+      );
+    }
+    const lookupTrustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+      '{service_account_email}',
+      encodeURIComponent(this.targetPrincipal),
+    );
+
+    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
   }
 }
