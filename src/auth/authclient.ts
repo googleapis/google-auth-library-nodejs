@@ -198,6 +198,9 @@ export declare interface AuthClient {
   on(event: 'tokens', listener: (tokens: Credentials) => void): this;
 }
 
+/**
+ * The base of all Auth Clients.
+ */
 export abstract class AuthClient
   extends EventEmitter
   implements CredentialsClient
