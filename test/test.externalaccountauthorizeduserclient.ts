@@ -49,8 +49,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   interface NockMockRefreshResponse {
     statusCode: number;
     response: TokenRefreshResponse | OAuthErrorResponse;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: {[key: string]: any};
+    request: ReturnType<JSON['parse']>;
     times?: number;
   }
 

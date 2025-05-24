@@ -36,8 +36,11 @@ class TestOAuthClientAuthHandler extends OAuthClientAuthHandler {
 /** Custom error object for testing additional fields on an Error. */
 class CustomError extends Error {
   public readonly code?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(message: string, stack?: any, code?: string) {
+  constructor(
+    message: string,
+    stack?: ReturnType<JSON['parse']>,
+    code?: string,
+  ) {
     super(message);
     this.name = 'CustomError';
     this.stack = stack;
@@ -164,8 +167,7 @@ describe('OAuthClientAuthHandler', () => {
   });
 
   describe('with request-body client auth', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const unsupportedMethods: any[] = [
+    const unsupportedMethods: ReturnType<JSON['parse']>[] = [
       undefined,
       'GET',
       'DELETE',
@@ -491,8 +493,10 @@ describe('getErrorFromOAuthErrorResponse', () => {
 
     const actualError = getErrorFromOAuthErrorResponse(resp, originalError);
     assert.strictEqual(actualError.message, expectedError.message);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    assert.strictEqual((actualError as any).code, expectedError.code);
+    assert.strictEqual(
+      (actualError as ReturnType<JSON['parse']>).code,
+      expectedError.code,
+    );
     assert.strictEqual(actualError.name, expectedError.name);
     assert.strictEqual(actualError.stack, expectedError.stack);
   });

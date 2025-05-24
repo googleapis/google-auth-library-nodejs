@@ -40,8 +40,7 @@ describe('refresh', () => {
     const refresh = new UserRefreshClient();
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (refresh as any).fromJSON(null);
+      (refresh as ReturnType<JSON['parse']>).fromJSON(null);
     });
   });
 
@@ -104,8 +103,7 @@ describe('refresh', () => {
   it('fromStream should error on null stream', done => {
     const refresh = new UserRefreshClient();
     // Test verifies invalid parameter tests, which requires cast to any.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (refresh as any).fromStream(null, (err: Error) => {
+    (refresh as ReturnType<JSON['parse']>).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
     });

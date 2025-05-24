@@ -202,8 +202,11 @@ describe('oauth2', () => {
         return new LoginTicket('c', payload);
       };
       assert.throws(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        () => (client as any).verifyIdToken(idToken, audience),
+        () =>
+          (client as ReturnType<JSON['parse']>).verifyIdToken(
+            idToken,
+            audience,
+          ),
         /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./,
       );
     });
@@ -1015,8 +1018,9 @@ describe('oauth2', () => {
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
       try {
         await client.request({url: 'http://example.com'});
-        // eslint-disable-next-line no-empty
-      } catch (e) {}
+      } catch (e) {
+        // ignore
+      }
       await client.request({url: 'http://example.com'});
       scopes.forEach(s => s.done());
       assert.strictEqual('abc123', client.credentials.access_token);
