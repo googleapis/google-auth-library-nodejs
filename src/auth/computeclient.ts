@@ -21,12 +21,6 @@ import {
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
-import {
-  lookupTrustBoundary,
-  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  TrustBoundaryData,
-  TrustBoundaryProvider,
-} from './trustboundary';
 
 export interface ComputeOptions extends OAuth2ClientOptions {
   /**
@@ -42,7 +36,7 @@ export interface ComputeOptions extends OAuth2ClientOptions {
   scopes?: string | string[];
 }
 
-export class Compute extends OAuth2Client implements TrustBoundaryProvider {
+export class Compute extends OAuth2Client {
   readonly serviceAccountEmail: string;
   scopes: string[];
 
@@ -91,11 +85,6 @@ export class Compute extends OAuth2Client implements TrustBoundaryProvider {
       throw e;
     }
     const tokens = data as Credentials;
-
-    this.trustBoundary = await this.fetchTrustBoundary(
-      `Bearer ${tokens.access_token}`,
-    );
-
     if (data && data.expires_in) {
       tokens.expiry_date = new Date().getTime() + data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
@@ -147,16 +136,5 @@ export class Compute extends OAuth2Client implements TrustBoundaryProvider {
           e.message;
       }
     }
-  }
-
-  async fetchTrustBoundary(
-    authHeader: string,
-  ): Promise<TrustBoundaryData | null> {
-    const lookupTrustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-      '{service_account_email}',
-      encodeURIComponent(this.serviceAccountEmail),
-    );
-
-    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
   }
 }
