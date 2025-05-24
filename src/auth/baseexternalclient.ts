@@ -32,13 +32,6 @@ import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {pkg} from '../shared.cjs';
-import {
-  lookupTrustBoundary,
-  TrustBoundaryData,
-  TrustBoundaryProvider,
-  WORKFORCE_LOOKUP_ENDPOINT,
-  WORKLOAD_LOOKUP_ENDPOINT,
-} from './trustboundary';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -229,10 +222,7 @@ interface CredentialsWithResponse extends Credentials {
  * retrieving the external credential based on the environment and
  * credential_source will be left for the subclasses.
  */
-export abstract class BaseExternalAccountClient
-  extends AuthClient
-  implements TrustBoundaryProvider
-{
+export abstract class BaseExternalAccountClient extends AuthClient {
   /**
    * OAuth scopes for the GCP access token to use. When not provided,
    * the default https://www.googleapis.com/auth/cloud-platform is
@@ -511,7 +501,7 @@ export abstract class BaseExternalAccountClient
       const requestHeaders = await this.getRequestHeaders();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
-      this.addUserProjectAndAuthAndTBHeaders(opts.headers, requestHeaders);
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
 
       response = await this.transporter.request<T>(opts);
     } catch (e) {
@@ -632,12 +622,6 @@ export abstract class BaseExternalAccountClient
       token_type: 'Bearer',
       id_token: null,
     });
-
-    //Add trust boundaries to the call.
-    this.trustBoundary = await this.fetchTrustBoundary(
-      `Bearer ${this.cachedAccessToken!.access_token}`,
-    );
-
     // Return the cached access token.
     return this.cachedAccessToken;
   }
@@ -653,7 +637,7 @@ export abstract class BaseExternalAccountClient
   private getProjectNumber(audience: string): string | null {
     // STS audience pattern:
     // //iam.googleapis.com/projects/$PROJECT_NUMBER/locations/...
-    const match = audience.match(/\/projects\/([^/]+)\/locations\//);
+    const match = audience.match(/\/projects\/([^/]+)/);
     if (!match) {
       return null;
     }
@@ -730,91 +714,5 @@ export abstract class BaseExternalAccountClient
       ? this.credentialSourceType
       : 'unknown';
     return `gl-node/${nodeVersion} auth/${pkg.version} google-byoid-sdk source/${credentialSourceType} sa-impersonation/${saImpersonation} config-lifetime/${this.configLifetimeRequested}`;
-  }
-
-  //"//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID"
-  //"//iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID"
-  /**
-   * Returns the workforce identity pool-id if it is determinable
-   * from the audience resource name.
-   * @param audience The STS audience used to determine the pool-id.
-   * @return The pool-id associated with the workforce identity pool, if
-   *   this can be determined from the STS audience field. Otherwise, null is
-   *   returned.
-   */
-  private getWorkForcePoolId(audience: string): string | null {
-    // STS audience pattern:
-    // .../workforcePools/$WORKFORCE_POOL_ID/providers/...
-    const match = audience.match(/\/workforcePools\/([^/]+)\/providers\//);
-    if (!match) {
-      return null;
-    }
-    return match[1];
-  }
-
-  /**
-   * Returns the workload identity pool-id if it is determinable
-   * from the audience resource name.
-   * @param audience The STS audience used to determine the pool-id.
-   * @return The pool-id associated with the workload identity pool, if
-   *   this can be determined from the STS audience field. Otherwise, null is
-   *   returned.
-   */
-  private getWorkloadPoolId(audience: string): string | null {
-    // STS audience pattern:
-    // .../workloadIdentityPools/POOL_ID/providers/...
-    const match = audience.match(
-      /\/workloadIdentityPools\/([^/]+)\/providers\//,
-    );
-    if (!match) {
-      return null;
-    }
-    return match[1];
-  }
-
-  /**
-   * Fetches a trustBoundary .
-   * @param authHeader the authheader for calling the lookup endpoint
-   */
-  async fetchTrustBoundary(
-    authHeader: string,
-  ): Promise<TrustBoundaryData | null> {
-    let lookupTrustBoundaryUrl = null;
-    try {
-      if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
-        //client configured for workforce authorization
-        const wfPoolId = this.getWorkForcePoolId(this.audience);
-        if (wfPoolId) {
-          lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-            '{pool_id}',
-            encodeURIComponent(wfPoolId),
-          );
-        } else {
-          throw new Error(
-            'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workforce pool id',
-          );
-        }
-      } else {
-        //client configured for workload authorization
-        const wlPoolId = this.getWorkloadPoolId(this.audience);
-        if (wlPoolId && this.projectNumber) {
-          lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
-            '{project_id}',
-            this.projectNumber,
-          ).replace('{pool_id}', wlPoolId);
-        } else {
-          throw new Error(
-            'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number',
-          );
-        }
-      }
-    } catch (e) {
-      if (this.trustBoundary) {
-        return this.trustBoundary;
-      }
-      throw e; //no cache and invalid audience so we throw.
-    }
-
-    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
   }
 }

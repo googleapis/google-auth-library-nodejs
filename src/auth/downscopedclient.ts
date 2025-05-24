@@ -290,7 +290,7 @@ export class DownscopedClient extends AuthClient {
       const requestHeaders = await this.getRequestHeaders();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
-      this.addUserProjectAndAuthAndTBHeaders(opts.headers, requestHeaders);
+      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
 
       response = await this.transporter.request<T>(opts);
     } catch (e) {

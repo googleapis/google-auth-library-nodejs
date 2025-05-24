@@ -40,11 +40,6 @@ import {
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
 import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
-import {
-  TrustBoundaryData,
-  WORKFORCE_LOOKUP_ENDPOINT,
-  WORKLOAD_LOOKUP_ENDPOINT,
-} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 
@@ -2602,125 +2597,6 @@ describe('BaseExternalAccountClient', () => {
       assert.deepStrictEqual(
         unexpiredTokenResponse.token,
         credentials.access_token,
-      );
-    });
-  });
-
-  describe('trust boundaries', () => {
-    let sandbox: sinon.SinonSandbox;
-
-    const baseWorkloadOptions: BaseExternalAccountClientOptions = {
-      type: 'external_account',
-      audience:
-        '//iam.googleapis.com/projects/12345/locations/global/workloadIdentityPools/my-pool/providers/my-provider',
-      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-      token_url: 'https://sts.googleapis.com/v1/token',
-    };
-
-    const baseWorkforceOptions: BaseExternalAccountClientOptions = {
-      type: 'external_account',
-      audience:
-        '//iam.googleapis.com/locations/global/workforcePools/my-workforce-pool/providers/my-workforce-provider',
-      subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-      token_url: 'https://sts.googleapis.com/v1/token',
-      // workforce_pool_user_project: '67890',
-    };
-
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
-    });
-
-    afterEach(() => {
-      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
-      sandbox.restore();
-      nock.cleanAll();
-    });
-
-    it('fetchTrustBoundary should return null when GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES env variable is false/null', async () => {
-      //TODO:pjiyer can this be moved to tb.ts file?
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'false';
-      const client = new TestExternalAccountClient(baseWorkforceOptions);
-
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData = null;
-
-      const trustBoundary = await client.fetchTrustBoundary(mockAuthHeader);
-
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-    });
-
-    it('fetchTrustBoundary should fetch and return trust boundary data for workforce successfully', async () => {
-      //TODO:pjiyer Can this be moved to tb.ts test file?
-      const client = new TestExternalAccountClient(baseWorkforceOptions);
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '000x9',
-      };
-      const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-        '{pool_id}',
-        encodeURIComponent('my-workforce-pool'),
-      );
-
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
-
-      const trustBoundary = await client.fetchTrustBoundary(mockAuthHeader);
-
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      scope.done();
-    });
-
-    it('fetchTrustBoundary should throw when audience is workforce and pool-id is null', async () => {
-      baseWorkforceOptions.audience =
-        '//iam.googleapis.com/locations/global/workforcePools/providers/my-workforce-provider';
-      const client = new TestExternalAccountClient(baseWorkforceOptions);
-      const mockAuthHeader = 'Bearer test-access-token';
-
-      await assert.rejects(
-        client.fetchTrustBoundary(mockAuthHeader),
-        /TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number/,
-      );
-    });
-
-    it('fetchTrustBoundary should fetch and return trust boundary data for workload successfully', async () => {
-      const client = new TestExternalAccountClient(baseWorkloadOptions);
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '000x9',
-      };
-      const lookupUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
-        '{project_id}',
-        encodeURIComponent('12345'),
-      ).replace('{pool_id}', 'my-pool');
-
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
-
-      const trustBoundary = await client.fetchTrustBoundary(mockAuthHeader);
-
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      scope.done();
-    });
-
-    it('fetchTrustBoundary should throw when audience is workload and pool-id is null', async () => {
-      const incorrectWLOptions: BaseExternalAccountClientOptions = {
-        ...baseWorkloadOptions, // Copies all properties from baseWorkforceOptions
-        audience:
-          '//iam.googleapis.com/projects/locations/global/workloadIdentityPools/providers/my-provider', // Overrides the audience property with the new value
-      };
-      const client = new TestExternalAccountClient(incorrectWLOptions);
-      const mockAuthHeader = 'Bearer test-access-token';
-
-      await assert.rejects(
-        client.fetchTrustBoundary(mockAuthHeader),
-        /TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number/,
       );
     });
   });
