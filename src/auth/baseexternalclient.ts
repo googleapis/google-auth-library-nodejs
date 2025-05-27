@@ -229,17 +229,17 @@ export abstract class BaseExternalAccountClient extends AuthClient {
    * used.
    */
   public scopes?: string | string[];
-  private cachedAccessToken: CredentialsWithResponse | null;
+  public projectNumber: string | null;
   protected readonly audience: string;
   protected readonly subjectTokenType: string;
-  private readonly serviceAccountImpersonationUrl?: string;
-  private readonly serviceAccountImpersonationLifetime?: number;
   protected stsCredential: sts.StsCredentials;
   protected readonly clientAuth?: ClientAuthentication;
-  private readonly workforcePoolUserProject?: string;
-  public projectNumber: string | null;
-  private readonly configLifetimeRequested: boolean;
   protected credentialSourceType?: string;
+  private cachedAccessToken: CredentialsWithResponse | null;
+  private readonly serviceAccountImpersonationUrl?: string;
+  private readonly serviceAccountImpersonationLifetime?: number;
+  private readonly workforcePoolUserProject?: string;
+  private readonly configLifetimeRequested: boolean;
   private readonly tokenUrl: string;
   /**
    * @example
@@ -717,7 +717,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     return `gl-node/${nodeVersion} auth/${pkg.version} google-byoid-sdk source/${credentialSourceType} sa-impersonation/${saImpersonation} config-lifetime/${this.configLifetimeRequested}`;
   }
 
-  getTokenUrl(): string {
+  protected getTokenUrl(): string {
     return this.tokenUrl;
   }
 }

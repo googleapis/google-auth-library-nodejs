@@ -86,12 +86,10 @@ interface CertificateConfigFileJson {
  * It provides the certificate chain as the subject token for identity federation.
  */
 export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
-  private readonly certificateConfigPath: string;
+  private certificateConfigPath: string;
   private readonly trustChainPath?: string;
-  private readonly certPath: string;
-  private readonly keyPath: string;
-  private readonly cert: Buffer;
-  private readonly key: Buffer;
+  private cert?: Buffer;
+  private key?: Buffer;
 
   /**
    * Initializes a new instance of the CertificateSubjectTokenSupplier.
@@ -109,20 +107,19 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
       );
     }
     this.trustChainPath = opts.trustChainPath;
-    this.certificateConfigPath = this.#resolveCertificateConfigFilePath(
-      opts.certificateConfigLocation,
-    );
-    ({certPath: this.certPath, keyPath: this.keyPath} =
-      this.#getWorkloadCertificatePaths(this.certificateConfigPath));
-
-    ({cert: this.cert, key: this.key} = this.#getKeyAndCert());
+    this.certificateConfigPath = opts.certificateConfigLocation ?? '';
   }
 
   /**
    * Creates an HTTPS agent configured with the client certificate and private key for mTLS.
    * @returns An mTLS-configured https.Agent.
    */
-  public createMtlsHttpsAgent(): https.Agent {
+  public async createMtlsHttpsAgent(): Promise<https.Agent> {
+    if (!this.key || !this.cert) {
+      throw new InvalidConfigurationError(
+        'Cannot create mTLS Agent with missing certificate or key',
+      );
+    }
     return new https.Agent({key: this.key, cert: this.cert});
   }
 
@@ -132,7 +129,17 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
    */
   public async getSubjectToken(): Promise<string> {
     // The "subject token" in this context is the processed certificate chain.
-    return await this.#processChainFromPaths();
+
+    this.certificateConfigPath = await this.#resolveCertificateConfigFilePath();
+
+    const {certPath, keyPath} = await this.#getCertAndKeyPaths();
+
+    ({cert: this.cert, key: this.key} = await this.#getKeyAndCert(
+      certPath,
+      keyPath,
+    ));
+
+    return await this.#processChainFromPaths(this.cert);
   }
 
   /**
@@ -143,10 +150,11 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
    * @param overridePath An optional path to check first.
    * @returns The resolved file path.
    */
-  #resolveCertificateConfigFilePath(overridePath?: string): string {
+  async #resolveCertificateConfigFilePath(): Promise<string> {
     // 1. Check for the override path from constructor options.
+    const overridePath = this.certificateConfigPath;
     if (overridePath) {
-      if (isValidFile(overridePath)) {
+      if (await isValidFile(overridePath)) {
         return overridePath;
       }
       throw new CertificateSourceUnavailableError(
@@ -157,7 +165,7 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
     // 2. Check the standard environment variable.
     const envPath = process.env[CERTIFICATE_CONFIGURATION_ENV_VARIABLE];
     if (envPath) {
-      if (isValidFile(envPath)) {
+      if (await isValidFile(envPath)) {
         return envPath;
       }
       throw new CertificateSourceUnavailableError(
@@ -167,7 +175,7 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
 
     // 3. Check the well-known gcloud config location.
     const wellKnownPath = getWellKnownCertificateConfigFileLocation();
-    if (isValidFile(wellKnownPath)) {
+    if (await isValidFile(wellKnownPath)) {
       return wellKnownPath;
     }
 
@@ -179,17 +187,17 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
   }
 
   /**
-   * Reads and parses the certificate config file to extract the certificate and key paths.
-   * @param configPath The path to the certificate configuration JSON file.
+   * Reads and parses the certificate config JSON file to extract the certificate and key paths.
    * @returns An object containing the certificate and key paths.
    */
-  #getWorkloadCertificatePaths(configPath: string): {
+  async #getCertAndKeyPaths(): Promise<{
     certPath: string;
     keyPath: string;
-  } {
+  }> {
+    const configPath = this.certificateConfigPath;
     let fileContents: string;
     try {
-      fileContents = fs.readFileSync(configPath, 'utf8');
+      fileContents = await fs.promises.readFile(configPath, 'utf8');
     } catch (err) {
       throw new CertificateSourceUnavailableError(
         `Failed to read certificate config file at: ${configPath}`,
@@ -221,27 +229,30 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
    * Reads and parses the cert and key files get their content and check valid format.
    * @returns An object containing the cert content and key content in buffer format.
    */
-  #getKeyAndCert(): {
+  async #getKeyAndCert(
+    certPath: string,
+    keyPath: string,
+  ): Promise<{
     cert: Buffer;
     key: Buffer;
-  } {
+  }> {
     let cert, key;
     try {
-      cert = fs.readFileSync(this.certPath);
+      cert = await fs.promises.readFile(certPath);
       new X509Certificate(cert);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new CertificateSourceUnavailableError(
-        `Failed to read certificate file at ${this.certPath}: ${message}`,
+        `Failed to read certificate file at ${certPath}: ${message}`,
       );
     }
     try {
-      key = fs.readFileSync(this.keyPath);
+      key = await fs.promises.readFile(keyPath);
       createPrivateKey(key);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new CertificateSourceUnavailableError(
-        `Failed to read private key file at ${this.keyPath}: ${message}`,
+        `Failed to read private key file at ${keyPath}: ${message}`,
       );
     }
 
@@ -253,8 +264,8 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
    * and returns a JSON array of base64-encoded certificates.
    * @returns A stringified JSON array of the certificate chain.
    */
-  async #processChainFromPaths(): Promise<string> {
-    const leafCert = new X509Certificate(this.cert);
+  async #processChainFromPaths(leafCertBuffer: Buffer): Promise<string> {
+    const leafCert = new X509Certificate(leafCertBuffer);
 
     // If no trust chain is provided, just use the successfully parsed leaf certificate.
     if (!this.trustChainPath) {

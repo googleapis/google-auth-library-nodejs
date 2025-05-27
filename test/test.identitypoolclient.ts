@@ -1505,9 +1505,8 @@ describe('IdentityPoolClient', () => {
             },
           },
         };
-        assert.throws(() => {
-          new IdentityPoolClient(certificateSourcedOptionsWrong);
-        }, expectedError);
+        const client = new IdentityPoolClient(certificateSourcedOptionsWrong);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should check GOOGLE_API_CERTIFICATE_CONFIG path for file', async () => {
@@ -1547,9 +1546,8 @@ describe('IdentityPoolClient', () => {
         const expectedError = new CertificateSourceUnavailableError(
           `Path from environment variable "${CERTIFICATE_CONFIGURATION_ENV_VARIABLE}" is invalid: ${wrongPath}`,
         );
-        assert.throws(() => {
-          new IdentityPoolClient(wrongCertOptionsEnvVar);
-        }, expectedError);
+        const client = new IdentityPoolClient(wrongCertOptionsEnvVar);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should access well known certificate config location', async () => {
@@ -1602,9 +1600,8 @@ describe('IdentityPoolClient', () => {
           'getWellKnownCertificateConfigFileLocation',
         );
         getLocationStub.returns(wrongPath);
-        assert.throws(() => {
-          new IdentityPoolClient(wrongCertOptionsEnvVar);
-        }, expectedError);
+        const client = new IdentityPoolClient(wrongCertOptionsEnvVar);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should throw in case cert config has missing key path', async () => {
@@ -1624,10 +1621,8 @@ describe('IdentityPoolClient', () => {
             },
           },
         };
-
-        assert.throws(() => {
-          new IdentityPoolClient(certificateSourcedOptionsWrong);
-        }, expectedError);
+        const client = new IdentityPoolClient(certificateSourcedOptionsWrong);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should throw in case cert config has missing cert path', async () => {
@@ -1648,9 +1643,8 @@ describe('IdentityPoolClient', () => {
           },
         };
 
-        assert.throws(() => {
-          new IdentityPoolClient(certificateSourcedOptionsWrong);
-        }, expectedError);
+        const client = new IdentityPoolClient(certificateSourcedOptionsWrong);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should throw in case cert config is empty or malformed', async () => {
@@ -1671,9 +1665,8 @@ describe('IdentityPoolClient', () => {
           },
         };
 
-        assert.throws(() => {
-          new IdentityPoolClient(certificateSourcedOptionsWrong);
-        }, expectedError);
+        const client = new IdentityPoolClient(certificateSourcedOptionsWrong);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should throw if cert has invalid PEM format', async () => {
@@ -1692,9 +1685,8 @@ describe('IdentityPoolClient', () => {
           },
         };
 
-        assert.throws(() => {
-          new IdentityPoolClient(certificateSourcedOptionsWrong);
-        }, expectedError);
+        const client = new IdentityPoolClient(certificateSourcedOptionsWrong);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should throw if key has invalid private key format', async () => {
@@ -1713,9 +1705,8 @@ describe('IdentityPoolClient', () => {
           },
         };
 
-        assert.throws(() => {
-          new IdentityPoolClient(certificateSourcedOptionsWrong);
-        }, expectedError);
+        const client = new IdentityPoolClient(certificateSourcedOptionsWrong);
+        await assert.rejects(client.retrieveSubjectToken(), expectedError);
       });
 
       it('should throw if trust chain path is invalid', async () => {

@@ -262,11 +262,11 @@ export function removeUndefinedValuesInObject(object: {[key: string]: any}): {
 /**
  * Helper to check if a path points to a valid file.
  */
-export function isValidFile(filePath: string): boolean {
+export async function isValidFile(filePath: string): Promise<boolean> {
   try {
-    return fs.existsSync(filePath) && fs.lstatSync(filePath).isFile();
+    const stats = await fs.promises.lstat(filePath);
+    return stats.isFile();
   } catch (e) {
-    // Path might be malformed, causing existsSync or lstatSync to throw.
     return false;
   }
 }

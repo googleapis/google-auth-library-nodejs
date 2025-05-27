@@ -233,17 +233,6 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
             trustChainPath: certificate.trust_chain_path,
           });
         this.subjectTokenSupplier = certificateSubjecttokensupplier;
-        const mtlsAgent =
-          certificateSubjecttokensupplier.createMtlsHttpsAgent();
-        const stsClientGaxiosOptions = {
-          agent: mtlsAgent,
-        };
-        this.stsCredential = new StsCredentials({
-          tokenExchangeEndpoint: this.getTokenUrl(),
-          clientAuthentication: this.clientAuth,
-          transporter: new Gaxios(stsClientGaxiosOptions),
-        });
-        this.transporter = new Gaxios(stsClientGaxiosOptions);
       } else {
         throw new Error(
           'No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.',
@@ -259,6 +248,25 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * @return A promise that resolves with the external subject token.
    */
   async retrieveSubjectToken(): Promise<string> {
-    return this.subjectTokenSupplier.getSubjectToken(this.supplierContext);
+    const subjectToken = await this.subjectTokenSupplier.getSubjectToken(
+      this.supplierContext,
+    );
+
+    if (this.subjectTokenSupplier instanceof CertificateSubjectTokenSupplier) {
+      const mtlsAgent = await this.subjectTokenSupplier.createMtlsHttpsAgent();
+
+      this.stsCredential = new StsCredentials({
+        tokenExchangeEndpoint: this.getTokenUrl(),
+        clientAuthentication: this.clientAuth,
+        transporter: new Gaxios({agent: mtlsAgent}),
+      });
+
+      this.transporter = new Gaxios({
+        ...(this.transporter.defaults || {}),
+        agent: mtlsAgent,
+      });
+    }
+
+    return subjectToken;
   }
 }

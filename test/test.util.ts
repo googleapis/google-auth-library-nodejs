@@ -87,13 +87,13 @@ describe('util', () => {
   });
 
   describe('isValidFilePath', () => {
-    it('should return true when valid file path', () => {
-      const isValidPath = isValidFile('./test/fixtures/empty.json');
+    it('should return true when valid file path', async () => {
+      const isValidPath = await isValidFile('./test/fixtures/empty.json');
       assert.equal(isValidPath, true);
     });
 
-    it('should return false when invalid file path', () => {
-      const isValidPath = isValidFile('abc/pqr');
+    it('should return false when invalid file path', async () => {
+      const isValidPath = await isValidFile('abc/pqr');
       assert.equal(isValidPath, false);
     });
   });
