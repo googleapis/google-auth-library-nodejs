@@ -120,7 +120,7 @@ describe('DownscopedClient', () => {
   describe('Constructor', () => {
     it('should throw on empty access boundary rule', () => {
       const expectedError = new Error(
-        'At least one access boundary rule needs to be defined.'
+        'At least one access boundary rule needs to be defined.',
       );
       const cabWithEmptyAccessBoundaryRules = {
         accessBoundary: {
@@ -138,7 +138,7 @@ describe('DownscopedClient', () => {
     it('should throw when number of access boundary rules is exceeded', () => {
       const expectedError = new Error(
         'The provided access boundary has more than ' +
-          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`
+          `${MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`,
       );
       const cabWithExceedingAccessBoundaryRules: CredentialAccessBoundary = {
         accessBoundary: {
@@ -154,20 +154,20 @@ describe('DownscopedClient', () => {
       };
       for (let num = 0; num <= MAX_ACCESS_BOUNDARY_RULES_COUNT; num++) {
         cabWithExceedingAccessBoundaryRules.accessBoundary.accessBoundaryRules.push(
-          testAccessBoundaryRule
+          testAccessBoundaryRule,
         );
       }
       assert.throws(() => {
         return new DownscopedClient(
           client,
-          cabWithExceedingAccessBoundaryRules
+          cabWithExceedingAccessBoundaryRules,
         );
       }, expectedError);
     });
 
     it('should throw on no permissions are defined in access boundary rules', () => {
       const expectedError = new Error(
-        'At least one permission should be defined in access boundary rules.'
+        'At least one permission should be defined in access boundary rules.',
       );
       const cabWithNoPermissionIncluded = {
         accessBoundary: {
@@ -266,7 +266,7 @@ describe('DownscopedClient', () => {
       assert.doesNotThrow(() => {
         return new DownscopedClient(
           client,
-          cabWithOnlyAvailabilityConditionExpression
+          cabWithOnlyAvailabilityConditionExpression,
         );
       });
     });
@@ -289,7 +289,7 @@ describe('DownscopedClient', () => {
       assert.doesNotThrow(() => {
         const instance = new DownscopedClient(
           client,
-          cabWithOneAccessBoundaryRule
+          cabWithOneAccessBoundaryRule,
         );
         instance.quotaProjectId = quotaProjectId;
         return instance;
@@ -316,7 +316,7 @@ describe('DownscopedClient', () => {
       };
       const downscopedClient = new DownscopedClient(
         client,
-        cabWithOneAccessBoundaryRules
+        cabWithOneAccessBoundaryRules,
       );
       downscopedClient.eagerRefreshThresholdMillis =
         refreshOptions.eagerRefreshThresholdMillis;
@@ -324,11 +324,11 @@ describe('DownscopedClient', () => {
         refreshOptions.forceRefreshOnFailure;
       assert.strictEqual(
         downscopedClient.forceRefreshOnFailure,
-        refreshOptions.forceRefreshOnFailure
+        refreshOptions.forceRefreshOnFailure,
       );
       assert.strictEqual(
         downscopedClient.eagerRefreshThresholdMillis,
-        refreshOptions.eagerRefreshThresholdMillis
+        refreshOptions.eagerRefreshThresholdMillis,
       );
     });
   });
@@ -340,11 +340,11 @@ describe('DownscopedClient', () => {
       };
       const expectedError = new Error(
         'The access token expiry_date field is missing in the provided ' +
-          'credentials.'
+          'credentials.',
       );
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       assert.throws(() => {
         downscopedClient.setCredentials(credentials);
@@ -359,7 +359,7 @@ describe('DownscopedClient', () => {
       };
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       assert.doesNotThrow(() => {
         downscopedClient.setCredentials(credentials);
@@ -368,7 +368,7 @@ describe('DownscopedClient', () => {
       assert.deepStrictEqual(tokenResponse.token, credentials.access_token);
       assert.deepStrictEqual(
         tokenResponse.expirationTime,
-        credentials.expiry_date
+        credentials.expiry_date,
       );
     });
   });
@@ -383,33 +383,33 @@ describe('DownscopedClient', () => {
       };
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       downscopedClient.setCredentials(credentials);
       const tokenResponse = await downscopedClient.getAccessToken();
       assert.deepStrictEqual(tokenResponse.token, credentials.access_token);
       assert.deepStrictEqual(
         tokenResponse.expirationTime,
-        credentials.expiry_date
+        credentials.expiry_date,
       );
       assert.deepStrictEqual(
         tokenResponse.token,
-        downscopedClient.credentials.access_token
+        downscopedClient.credentials.access_token,
       );
       assert.deepStrictEqual(
         tokenResponse.expirationTime,
-        downscopedClient.credentials.expiry_date
+        downscopedClient.credentials.expiry_date,
       );
 
       clock.tick(ONE_HOUR_IN_SECS * 1000 - EXPIRATION_TIME_OFFSET - 1);
       const cachedTokenResponse = await downscopedClient.getAccessToken();
       assert.deepStrictEqual(
         cachedTokenResponse.token,
-        credentials.access_token
+        credentials.access_token,
       );
       assert.deepStrictEqual(
         cachedTokenResponse.expirationTime,
-        credentials.expiry_date
+        credentials.expiry_date,
       );
     });
 
@@ -438,7 +438,7 @@ describe('DownscopedClient', () => {
 
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       // Listen to tokens events. On every event, push to list of
       // emittedEvents.
@@ -476,19 +476,19 @@ describe('DownscopedClient', () => {
 
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
-        stsSuccessfulResponse.access_token
+        stsSuccessfulResponse.access_token,
       );
       assert.deepStrictEqual(
         refreshedTokenResponse.expirationTime,
-        expectedExpirationTime
+        expectedExpirationTime,
       );
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
-        downscopedClient.credentials.access_token
+        downscopedClient.credentials.access_token,
       );
       assert.deepStrictEqual(
         refreshedTokenResponse.expirationTime,
-        downscopedClient.credentials.expiry_date
+        downscopedClient.credentials.expiry_date,
       );
       scope.done();
     });
@@ -510,21 +510,21 @@ describe('DownscopedClient', () => {
       ]);
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       assert.deepStrictEqual(downscopedClient.credentials, {});
       const tokenResponse = await downscopedClient.getAccessToken();
       assert.deepStrictEqual(
         tokenResponse.token,
-        stsSuccessfulResponse.access_token
+        stsSuccessfulResponse.access_token,
       );
       assert.deepStrictEqual(
         tokenResponse.token,
-        downscopedClient.credentials.access_token
+        downscopedClient.credentials.access_token,
       );
       assert.deepStrictEqual(
         tokenResponse.expirationTime,
-        downscopedClient.credentials.expiry_date
+        downscopedClient.credentials.expiry_date,
       );
       scope.done();
     });
@@ -564,12 +564,12 @@ describe('DownscopedClient', () => {
 
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       assert.deepStrictEqual(downscopedClient.credentials, {});
       await assert.rejects(
         downscopedClient.getAccessToken(),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       assert.deepStrictEqual(downscopedClient.credentials, {});
       // Next try should succeed.
@@ -577,15 +577,15 @@ describe('DownscopedClient', () => {
       delete actualResponse.res;
       assert.deepStrictEqual(
         actualResponse.token,
-        stsSuccessfulResponse.access_token
+        stsSuccessfulResponse.access_token,
       );
       assert.deepStrictEqual(
         actualResponse.token,
-        downscopedClient.credentials.access_token
+        downscopedClient.credentials.access_token,
       );
       assert.deepStrictEqual(
         actualResponse.expirationTime,
-        downscopedClient.credentials.expiry_date
+        downscopedClient.credentials.expiry_date,
       );
       scope.done();
     });
@@ -596,7 +596,7 @@ describe('DownscopedClient', () => {
 
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       await assert.rejects(downscopedClient.getAccessToken(), expectedError);
     });
@@ -606,7 +606,7 @@ describe('DownscopedClient', () => {
       const expireDate = now + ONE_HOUR_IN_SECS * 1000;
       const stsSuccessfulResponseWithoutExpireInField = Object.assign(
         {},
-        stsSuccessfulResponse
+        stsSuccessfulResponse,
       );
       const emittedEvents: Credentials[] = [];
       delete stsSuccessfulResponseWithoutExpireInField.expires_in;
@@ -628,7 +628,7 @@ describe('DownscopedClient', () => {
       client.expirationTime = expireDate;
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       // Listen to tokens events. On every event, push to list of
       // emittedEvents.
@@ -650,12 +650,12 @@ describe('DownscopedClient', () => {
       assert.deepStrictEqual(tokenResponse.expirationTime, expireDate);
       assert.deepStrictEqual(
         tokenResponse.token,
-        stsSuccessfulResponseWithoutExpireInField.access_token
+        stsSuccessfulResponseWithoutExpireInField.access_token,
       );
       assert.strictEqual(downscopedClient.credentials.expiry_date, expireDate);
       assert.strictEqual(
         downscopedClient.credentials.access_token,
-        stsSuccessfulResponseWithoutExpireInField.access_token
+        stsSuccessfulResponseWithoutExpireInField.access_token,
       );
       scope.done();
     });
@@ -663,7 +663,7 @@ describe('DownscopedClient', () => {
     it('should have no expiry date if source cred has no expiry time and STS response does not return one', async () => {
       const stsSuccessfulResponseWithoutExpireInField = Object.assign(
         {},
-        stsSuccessfulResponse
+        stsSuccessfulResponse,
       );
       const emittedEvents: Credentials[] = [];
       delete stsSuccessfulResponseWithoutExpireInField.expires_in;
@@ -684,7 +684,7 @@ describe('DownscopedClient', () => {
 
       const downscopedClient = new DownscopedClient(
         client,
-        testClientAccessBoundary
+        testClientAccessBoundary,
       );
       // Listen to tokens events. On every event, push to list of
       // emittedEvents.
@@ -705,7 +705,7 @@ describe('DownscopedClient', () => {
       });
       assert.deepStrictEqual(
         tokenResponse.token,
-        stsSuccessfulResponseWithoutExpireInField.access_token
+        stsSuccessfulResponseWithoutExpireInField.access_token,
       );
       assert.deepStrictEqual(tokenResponse.expirationTime, null);
       assert.deepStrictEqual(downscopedClient.credentials.expiry_date, null);
@@ -793,7 +793,7 @@ describe('DownscopedClient', () => {
       const cabClient = new DownscopedClient(client, testClientAccessBoundary);
       await assert.rejects(
         cabClient.getRequestHeaders(),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -936,7 +936,7 @@ describe('DownscopedClient', () => {
           method: 'POST',
           data: exampleRequest,
         }),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -993,7 +993,7 @@ describe('DownscopedClient', () => {
           assert.deepStrictEqual(result?.data, exampleResponse);
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
@@ -1047,7 +1047,7 @@ describe('DownscopedClient', () => {
 
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
@@ -1172,7 +1172,7 @@ describe('DownscopedClient', () => {
         }),
         {
           status: 401,
-        }
+        },
       );
 
       scopes.forEach(scope => scope.done());
@@ -1247,7 +1247,7 @@ describe('DownscopedClient', () => {
         }),
         {
           status: 403,
-        }
+        },
       );
       scopes.forEach(scope => scope.done());
     });

@@ -106,12 +106,12 @@ export class ExecutableResponse {
     // Check that the required fields exist in the json response.
     if (!responseJson.version) {
       throw new InvalidVersionFieldError(
-        "Executable response must contain a 'version' field."
+        "Executable response must contain a 'version' field.",
       );
     }
     if (responseJson.success === undefined) {
       throw new InvalidSuccessFieldError(
-        "Executable response must contain a 'success' field."
+        "Executable response must contain a 'success' field.",
       );
     }
 
@@ -131,7 +131,7 @@ export class ExecutableResponse {
       ) {
         throw new InvalidTokenTypeFieldError(
           "Executable response must contain a 'token_type' field when successful " +
-            `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`
+            `and it must be one of ${OIDC_SUBJECT_TOKEN_TYPE1}, ${OIDC_SUBJECT_TOKEN_TYPE2}, or ${SAML_SUBJECT_TOKEN_TYPE}.`,
         );
       }
 
@@ -139,7 +139,7 @@ export class ExecutableResponse {
       if (this.tokenType === SAML_SUBJECT_TOKEN_TYPE) {
         if (!responseJson.saml_response) {
           throw new InvalidSubjectTokenError(
-            `Executable response must contain a 'saml_response' field when token_type=${SAML_SUBJECT_TOKEN_TYPE}.`
+            `Executable response must contain a 'saml_response' field when token_type=${SAML_SUBJECT_TOKEN_TYPE}.`,
           );
         }
         this.subjectToken = responseJson.saml_response;
@@ -147,7 +147,7 @@ export class ExecutableResponse {
         if (!responseJson.id_token) {
           throw new InvalidSubjectTokenError(
             "Executable response must contain a 'id_token' field when " +
-              `token_type=${OIDC_SUBJECT_TOKEN_TYPE1} or ${OIDC_SUBJECT_TOKEN_TYPE2}.`
+              `token_type=${OIDC_SUBJECT_TOKEN_TYPE1} or ${OIDC_SUBJECT_TOKEN_TYPE2}.`,
           );
         }
         this.subjectToken = responseJson.id_token;
@@ -156,12 +156,12 @@ export class ExecutableResponse {
       // Both code and message must be provided for unsuccessful responses.
       if (!responseJson.code) {
         throw new InvalidCodeFieldError(
-          "Executable response must contain a 'code' field when unsuccessful."
+          "Executable response must contain a 'code' field when unsuccessful.",
         );
       }
       if (!responseJson.message) {
         throw new InvalidMessageFieldError(
-          "Executable response must contain a 'message' field when unsuccessful."
+          "Executable response must contain a 'message' field when unsuccessful.",
         );
       }
       this.errorCode = responseJson.code;

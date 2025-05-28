@@ -57,7 +57,7 @@ describe('compute', () => {
     const compute = new Compute();
     assert.strictEqual(
       'compute-placeholder',
-      compute.credentials.refresh_token
+      compute.credentials.refresh_token,
     );
   });
 
@@ -130,7 +130,7 @@ describe('compute', () => {
     await compute.request({url});
     assert.strictEqual(
       compute.credentials.access_token,
-      'initial-access-token'
+      'initial-access-token',
     );
     scope.done();
   });
@@ -142,7 +142,7 @@ describe('compute', () => {
     await compute.request({url});
     assert.strictEqual(
       compute.credentials.access_token,
-      'initial-access-token'
+      'initial-access-token',
     );
     scope.done();
   });
@@ -153,7 +153,7 @@ describe('compute', () => {
       'A Forbidden error was returned while attempting to retrieve an access ' +
         'token for the Compute Engine built-in service account. This may be because the ' +
         'Compute Engine instance does not have the correct permission scopes specified. ' +
-        'Could not refresh access token.'
+        'Could not refresh access token.',
     );
     await assert.rejects(compute.request({url}), expected);
     scope.done();
@@ -164,7 +164,7 @@ describe('compute', () => {
     const expected = new RegExp(
       'A Not Found error was returned while attempting to retrieve an access' +
         'token for the Compute Engine built-in service account. This may be because the ' +
-        'Compute Engine instance does not have any permission scopes specified.'
+        'Compute Engine instance does not have any permission scopes specified.',
     );
     await assert.rejects(compute.request({url}), expected);
     scope.done();
@@ -183,7 +183,7 @@ describe('compute', () => {
       'A Forbidden error was returned while attempting to retrieve an access ' +
         'token for the Compute Engine built-in service account. This may be because the ' +
         'Compute Engine instance does not have the correct permission scopes specified. ' +
-        'Could not refresh access token.'
+        'Could not refresh access token.',
     );
     await assert.rejects(compute.request({}), expected);
     scope.done();
@@ -204,7 +204,7 @@ describe('compute', () => {
       'A Not Found error was returned while attempting to retrieve an access' +
         'token for the Compute Engine built-in service account. This may be because the ' +
         'Compute Engine instance does not have any permission scopes specified. Could not ' +
-        'refresh access token.'
+        'refresh access token.',
     );
 
     await assert.rejects(compute.request({}), expected);
@@ -218,7 +218,7 @@ describe('compute', () => {
       mockExample(),
       nock(HOST_ADDRESS)
         .get(
-          `${BASE_PATH}/instance/service-accounts/${serviceAccountEmail}/token`
+          `${BASE_PATH}/instance/service-accounts/${serviceAccountEmail}/token`,
         )
         .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS),
     ];

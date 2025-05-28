@@ -113,7 +113,7 @@ describe('ExternalAccountClient', () => {
 
       assert.deepStrictEqual(
         ExternalAccountClient.fromJSON(fileSourcedOptions),
-        expectedClient
+        expectedClient,
       );
     });
 
@@ -128,7 +128,7 @@ describe('ExternalAccountClient', () => {
           ...fileSourcedOptions,
           ...refreshOptions,
         }),
-        expectedClient
+        expectedClient,
       );
     });
 
@@ -137,7 +137,7 @@ describe('ExternalAccountClient', () => {
 
       assert.deepStrictEqual(
         ExternalAccountClient.fromJSON(awsOptions),
-        expectedClient
+        expectedClient,
       );
     });
 
@@ -146,7 +146,7 @@ describe('ExternalAccountClient', () => {
 
       assert.deepStrictEqual(
         ExternalAccountClient.fromJSON({...awsOptions, ...refreshOptions}),
-        expectedClient
+        expectedClient,
       );
     });
 
@@ -162,30 +162,30 @@ describe('ExternalAccountClient', () => {
         {
           workforce_pool_user_project: 'workforce_pool_user_project',
           subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-        }
+        },
       );
       for (const validWorkforceIdentityPoolClientAudience of validWorkforceIdentityPoolClientAudiences) {
         workforceFileSourcedOptions.audience =
           validWorkforceIdentityPoolClientAudience;
         const expectedClient = new IdentityPoolClient(
-          workforceFileSourcedOptions
+          workforceFileSourcedOptions,
         );
 
         assert.deepStrictEqual(
           ExternalAccountClient.fromJSON(workforceFileSourcedOptions),
-          expectedClient
+          expectedClient,
         );
       }
     });
 
     it('should return PluggableAuthClient on PluggableAuthClientOptions', () => {
       const expectedClient = new PluggableAuthClient(
-        pluggableAuthClientOptions
+        pluggableAuthClientOptions,
       );
 
       assert.deepStrictEqual(
         ExternalAccountClient.fromJSON(pluggableAuthClientOptions),
-        expectedClient
+        expectedClient,
       );
     });
 
@@ -200,7 +200,7 @@ describe('ExternalAccountClient', () => {
           ...pluggableAuthClientOptions,
           ...refreshOptions,
         }),
-        expectedClient
+        expectedClient,
       );
     });
 
@@ -212,7 +212,7 @@ describe('ExternalAccountClient', () => {
           {
             workforce_pool_user_project: 'workforce_pool_user_project',
             subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-          }
+          },
         );
         it(`should throw an error when an invalid workforce audience ${invalidWorkforceIdentityPoolClientAudience} is provided with a workforce user project`, () => {
           workforceIdentityPoolClientInvalidOptions.audience =
@@ -220,17 +220,17 @@ describe('ExternalAccountClient', () => {
 
           assert.throws(() => {
             return ExternalAccountClient.fromJSON(
-              workforceIdentityPoolClientInvalidOptions
+              workforceIdentityPoolClientInvalidOptions,
             );
           });
         });
-      }
+      },
     );
 
     it('should return null when given non-ExternalAccountClientOptions', () => {
       assert(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ExternalAccountClient.fromJSON(serviceAccountKeys as any) === null
+        ExternalAccountClient.fromJSON(serviceAccountKeys as any) === null,
       );
     });
 

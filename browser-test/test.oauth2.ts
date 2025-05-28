@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as base64js from 'base64-js';
-import {assert} from 'chai';
+import {strict as assert} from 'assert';
 import * as sinon from 'sinon';
 import {privateKey, publicKey} from './fixtures/keys';
 import {it, describe, beforeEach} from 'mocha';
@@ -89,8 +89,8 @@ describe('Browser OAuth2 tests', () => {
     client.transporter.request = stub;
     const response = await client.getToken('code here');
     const tokens = response.tokens;
-    assert.isAbove(tokens!.expiry_date!, now + 10 * 1000);
-    assert.isBelow(tokens!.expiry_date!, now + 15 * 1000);
+    assert(tokens!.expiry_date! > now + 10 * 1000);
+    assert(tokens!.expiry_date! < now + 15 * 1000);
   });
 
   it('getFederatedSignonCerts talks to correct endpoint', async () => {
@@ -135,7 +135,7 @@ describe('Browser OAuth2 tests', () => {
     assert.strictEqual(params.get('code_challenge'), codes.codeChallenge);
     assert.strictEqual(
       params.get('code_challenge_method'),
-      CodeChallengeMethod.S256
+      CodeChallengeMethod.S256,
     );
   });
 
@@ -167,25 +167,23 @@ describe('Browser OAuth2 tests', () => {
       name: 'RSASSA-PKCS1-v1_5',
       hash: {name: 'SHA-256'},
     };
-    // eslint-disable-next-line no-undef
     const cryptoKey = await window.crypto.subtle.importKey(
       'jwk',
       privateKey,
       algo,
       true,
-      ['sign']
+      ['sign'],
     );
-    // eslint-disable-next-line no-undef
     const signature = await window.crypto.subtle.sign(
       algo,
       cryptoKey,
-      new TextEncoder().encode(data)
+      new TextEncoder().encode(data),
     );
     data += '.' + base64js.fromByteArray(new Uint8Array(signature));
     const login = await client.verifySignedJwtWithCertsAsync(
       data,
       {keyid: publicKey},
-      'testaudience'
+      'testaudience',
     );
     assert.strictEqual(login.getUserId(), '123456789');
   });

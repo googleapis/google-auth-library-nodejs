@@ -20,7 +20,7 @@
 
 function main(
   url = 'https://service-1234-uc.a.run.app',
-  targetAudience = null
+  targetAudience = null,
 ) {
   if (!targetAudience) {
     // Use the target service's hostname as the target audience for requests.

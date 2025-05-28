@@ -43,7 +43,7 @@ function main() {
 
     console.log(`Text: ${text}`);
     console.log(
-      `Sentiment: ${response.documentSentiment.score}, ${response.documentSentiment.magnitude}`
+      `Sentiment: ${response.documentSentiment.score}, ${response.documentSentiment.magnitude}`,
     );
     console.log('Successfully authenticated using the API key');
   }

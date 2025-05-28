@@ -16,8 +16,6 @@
  * A utility for converting snake_case to camelCase.
  *
  * For, for example `my_snake_string` becomes `mySnakeString`.
- *
- * @internal
  */
 export type SnakeToCamel<S> = S extends `${infer FirstWord}_${infer Remainder}`
   ? `${FirstWord}${Capitalize<SnakeToCamel<Remainder>>}`
@@ -56,8 +54,6 @@ export type SnakeToCamel<S> = S extends `${infer FirstWord}_${infer Remainder}`
  * The generated documentation for the camelCase'd properties won't be available
  * until {@link https://github.com/microsoft/TypeScript/issues/50715} has been
  * resolved.
- *
- * @internal
  */
 export type SnakeToCamelObject<T> = {
   [K in keyof T as SnakeToCamel<K>]: T[K] extends {}
@@ -103,8 +99,6 @@ export type SnakeToCamelObject<T> = {
  * resolved.
  *
  * Tracking: {@link https://github.com/googleapis/google-auth-library-nodejs/issues/1686}
- *
- * @internal
  */
 export type OriginalAndCamel<T> = {
   [K in keyof T as K | SnakeToCamel<K>]: T[K] extends {}
@@ -120,14 +114,12 @@ export type OriginalAndCamel<T> = {
  * Match any `_` and not `_` pair, then return the uppercase of the not `_`
  * character.
  *
- * @internal
- *
  * @param str the string to convert
  * @returns the camelCase'd string
  */
 export function snakeToCamel<T extends string>(str: T): SnakeToCamel<T> {
   return str.replace(/([_][^_])/g, match =>
-    match.slice(1).toUpperCase()
+    match.slice(1).toUpperCase(),
   ) as SnakeToCamel<T>;
 }
 
@@ -168,7 +160,6 @@ export interface LRUCacheOptions {
  * Not meant for external usage.
  *
  * @experimental
- * @internal
  */
 export class LRUCache<T> {
   readonly capacity: number;

@@ -49,7 +49,7 @@ export class ExternalAccountClient {
         'directly via explicit constructors, eg. ' +
         'new AwsClient(options), new IdentityPoolClient(options), new' +
         'PluggableAuthClientOptions, or via ' +
-        'new GoogleAuth(options).getClient()'
+        'new GoogleAuth(options).getClient()',
     );
   }
 
@@ -63,7 +63,7 @@ export class ExternalAccountClient {
    *   provided do not correspond to an external account credential.
    */
   static fromJSON(
-    options: ExternalAccountClientOptions
+    options: ExternalAccountClientOptions,
   ): BaseExternalAccountClient | null {
     if (options && options.type === EXTERNAL_ACCOUNT_TYPE) {
       if ((options as AwsClientOptions).credential_source?.environment_id) {

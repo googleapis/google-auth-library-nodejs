@@ -135,7 +135,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     } else if (this.sourceClient.universeDomain !== this.universeDomain) {
       // non-default universe and is not matching the source - this could be a credential leak
       throw new RangeError(
-        `Universe domain ${this.sourceClient.universeDomain} in source credentials does not match ${this.universeDomain} universe domain set for impersonated credentials.`
+        `Universe domain ${this.sourceClient.universeDomain} in source credentials does not match ${this.universeDomain} universe domain set for impersonated credentials.`,
       );
     }
 
@@ -231,7 +231,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
    */
   async fetchIdToken(
     targetAudience: string,
-    options?: FetchIdTokenOptions
+    options?: FetchIdTokenOptions,
   ): Promise<string> {
     await this.sourceClient.getAccessToken();
 
