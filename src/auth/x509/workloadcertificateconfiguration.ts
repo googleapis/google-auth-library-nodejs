@@ -1,4 +1,3 @@
-import * as fs from 'fs'; // If loading from path
 import {CertificateConfigFileJson, WorkloadCertPaths} from './x509interfaces';
 import {
   CertificateSourceUnavailableError,

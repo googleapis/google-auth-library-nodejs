@@ -73,7 +73,7 @@ export class ExternalAccountClient {
       ) {
         return new PluggableAuthClient(options as PluggableAuthClientOptions);
       } else {
-        return new IdentityPoolClient(options as Ident tyPoolClientOptions);
+        return new IdentityPoolClient(options as IdentityPoolClientOptions);
       }
     } else {
       return null;

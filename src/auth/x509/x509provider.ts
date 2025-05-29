@@ -217,15 +217,17 @@ export class X509CredentialsProvider {
 
     if (envCloudSdkConfig) {
       cloudConfigDir = envCloudSdkConfig;
-    } else if (process.platform === 'win32') {
-      // Mimics getOsName().indexOf("windows") >= 0
+    } else if (this._isWindows()) {
       const appData = process.env['APPDATA'];
-      // If APPDATA is not set, behavior might be undefined, path.join handles it.
       cloudConfigDir = path.join(appData || '', CLOUDSDK_CONFIG_DIRECTORY);
     } else {
-      const homeDir = os.homedir(); // Mimics getProperty("user.home", "")
-      // Default to .config in home directory for Linux/macOS
-      cloudConfigDir = path.join(homeDir, '.config', CLOUDSDK_CONFIG_DIRECTORY);
+      // Linux or Mac
+      const home = process.env['HOME'];
+      cloudConfigDir = path.join(
+        home || '',
+        '.config',
+        CLOUDSDK_CONFIG_DIRECTORY,
+      );
     }
     return path.join(cloudConfigDir, WELL_KNOWN_CERTIFICATE_CONFIG_FILE);
   }
@@ -255,5 +257,19 @@ export class X509CredentialsProvider {
         }`,
       );
     }
+  }
+
+  /**
+   * Determines whether the current operating system is Windows.
+   * @api private
+   */
+  private _isWindows() {
+    const sys = os.platform();
+    if (sys && sys.length >= 3) {
+      if (sys.substring(0, 3).toLowerCase() === 'win') {
+        return true;
+      }
+    }
+    return false;
   }
 }
