@@ -15,7 +15,10 @@
 import {AuthClient, DEFAULT_UNIVERSE} from './authclient';
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
 
-export const NoOpEncodedLocations = '0x0'; // value indicating no trust boundaries enforced
+/**
+ * value indicating no trust boundaries enforced
+ **/
+export const NoOpEncodedLocations = '0x0';
 
 export const SERVICE_ACCOUNT_LOOKUP_ENDPOINT =
   'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{service_account_email}/allowedLocations';
@@ -96,14 +99,12 @@ async function _fetchTrustBoundaryData(
     if (error instanceof GaxiosError) {
       throw new Error(
         `TrustBoundary: API request failed with status ${error.response?.status}: ${error.message}`,
-      );
-    } else if (error instanceof Error) {
-      throw new Error(
-        `TrustBoundary: Network or unexpected error: ${error.message}`,
+        {cause: error},
       );
     } else {
       throw new Error(
         `TrustBoundary: An unknown error occurred during fetch: ${error}`,
+        {cause: error},
       );
     }
   }

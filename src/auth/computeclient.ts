@@ -149,6 +149,10 @@ export class Compute extends OAuth2Client implements TrustBoundaryProvider {
     }
   }
 
+  /**
+   * Fetches a trustBoundary.
+   * @param authHeader the authheader for calling the lookup endpoint
+   */
   async fetchTrustBoundary(
     authHeader: string,
   ): Promise<TrustBoundaryData | null> {

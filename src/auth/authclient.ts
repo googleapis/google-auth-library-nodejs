@@ -339,7 +339,7 @@ export abstract class AuthClient
   }
 
   /**
-   * Adds the `x-goog-user-project` and `authorization` and 'x-goog-allowed-locations'
+   * Adds the `x-goog-user-project`, `authorization`, and 'x-goog-allowed-locations'
    * headers to the target Headers
    * object, if they exist on the source.
    *
@@ -347,10 +347,7 @@ export abstract class AuthClient
    * @param source the headers to source from
    * @returns the target headers
    */
-  protected addUserProjectAndAuthAndTBHeaders<T extends Headers>(
-    target: T,
-    source: Headers,
-  ): T {
+  protected addCommonHeaders<T extends Headers>(target: T, source: Headers): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');
     const xGoogAllowedLocs = source.get('x-goog-allowed-locations');

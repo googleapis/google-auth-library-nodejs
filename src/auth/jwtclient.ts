@@ -423,7 +423,7 @@ export class JWT
   }
 
   /**
-   * Fetches a trustBoundary .
+   * Fetches a trustBoundary.
    * @param authHeader the authheader for calling the lookup endpoint
    */
   async fetchTrustBoundary(

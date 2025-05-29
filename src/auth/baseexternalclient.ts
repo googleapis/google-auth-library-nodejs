@@ -511,7 +511,7 @@ export abstract class BaseExternalAccountClient
       const requestHeaders = await this.getRequestHeaders();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
-      this.addUserProjectAndAuthAndTBHeaders(opts.headers, requestHeaders);
+      this.addCommonHeaders(opts.headers, requestHeaders);
 
       response = await this.transporter.request<T>(opts);
     } catch (e) {
@@ -653,11 +653,10 @@ export abstract class BaseExternalAccountClient
   private getProjectNumber(audience: string): string | null {
     // STS audience pattern:
     // //iam.googleapis.com/projects/$PROJECT_NUMBER/locations/...
-    const match = audience.match(/\/projects\/([^/]+)\/locations\//);
-    if (!match) {
-      return null;
-    }
-    return match[1];
+    return (
+      audience.match(/\/projects\/(?<projectNumber>[^/]+)\/locations\//)?.groups
+        ?.projectNumber ?? null
+    );
   }
 
   /**
@@ -732,8 +731,6 @@ export abstract class BaseExternalAccountClient
     return `gl-node/${nodeVersion} auth/${pkg.version} google-byoid-sdk source/${credentialSourceType} sa-impersonation/${saImpersonation} config-lifetime/${this.configLifetimeRequested}`;
   }
 
-  //"//iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID/providers/$PROVIDER_ID"
-  //"//iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID"
   /**
    * Returns the workforce identity pool-id if it is determinable
    * from the audience resource name.
@@ -742,14 +739,13 @@ export abstract class BaseExternalAccountClient
    *   this can be determined from the STS audience field. Otherwise, null is
    *   returned.
    */
-  private getWorkForcePoolId(audience: string): string | null {
+  #getWorkForcePoolId(audience: string): string | null {
     // STS audience pattern:
     // .../workforcePools/$WORKFORCE_POOL_ID/providers/...
-    const match = audience.match(/\/workforcePools\/([^/]+)\/providers\//);
-    if (!match) {
-      return null;
-    }
-    return match[1];
+    return (
+      audience.match(/\/workforcePools\/(?<workforcePool>[^/]+)\/providers\//)
+        ?.groups?.workforcePool ?? null
+    );
   }
 
   /**
@@ -760,20 +756,18 @@ export abstract class BaseExternalAccountClient
    *   this can be determined from the STS audience field. Otherwise, null is
    *   returned.
    */
-  private getWorkloadPoolId(audience: string): string | null {
+  #getWorkloadPoolId(audience: string): string | null {
     // STS audience pattern:
     // .../workloadIdentityPools/POOL_ID/providers/...
-    const match = audience.match(
-      /\/workloadIdentityPools\/([^/]+)\/providers\//,
+    return (
+      audience.match(
+        /\/workloadIdentityPools\/(?<workloadPool>[^/]+)\/providers\//,
+      )?.groups?.workloadPool ?? null
     );
-    if (!match) {
-      return null;
-    }
-    return match[1];
   }
 
   /**
-   * Fetches a trustBoundary .
+   * Fetches a trustBoundary.
    * @param authHeader the authheader for calling the lookup endpoint
    */
   async fetchTrustBoundary(
@@ -783,30 +777,28 @@ export abstract class BaseExternalAccountClient
     try {
       if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
         //client configured for workforce authorization
-        const wfPoolId = this.getWorkForcePoolId(this.audience);
-        if (wfPoolId) {
-          lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-            '{pool_id}',
-            encodeURIComponent(wfPoolId),
-          );
-        } else {
-          throw new Error(
+        const wfPoolId = this.#getWorkForcePoolId(this.audience);
+        if (!wfPoolId) {
+          throw new RangeError(
             'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workforce pool id',
           );
         }
+        lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
+          '{pool_id}',
+          encodeURIComponent(wfPoolId),
+        );
       } else {
         //client configured for workload authorization
-        const wlPoolId = this.getWorkloadPoolId(this.audience);
-        if (wlPoolId && this.projectNumber) {
-          lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
-            '{project_id}',
-            this.projectNumber,
-          ).replace('{pool_id}', wlPoolId);
-        } else {
-          throw new Error(
+        const wlPoolId = this.#getWorkloadPoolId(this.audience);
+        if (!wlPoolId || !this.projectNumber) {
+          throw new RangeError(
             'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number',
           );
         }
+        lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
+          '{project_id}',
+          this.projectNumber,
+        ).replace('{pool_id}', wlPoolId);
       }
     } catch (e) {
       if (this.trustBoundary) {
