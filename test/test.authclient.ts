@@ -18,6 +18,7 @@ import * as nock from 'nock';
 import {
   Gaxios,
   GaxiosError,
+  GaxiosOptions,
   GaxiosOptionsPrepared,
   GaxiosResponse,
 } from 'gaxios';
