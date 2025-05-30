@@ -204,9 +204,11 @@ export class Impersonated
       const tokenResponse = res.data;
       this.credentials.access_token = tokenResponse.accessToken;
       this.credentials.expiry_date = Date.parse(tokenResponse.expireTime);
-      this.trustBoundary = await this.fetchTrustBoundary(
-        `Bearer ${tokenResponse.accessToken}`,
-      );
+      if (this.trustBoundaryEnabled) {
+        this.trustBoundary = await this.fetchTrustBoundary(
+          `Bearer ${tokenResponse.accessToken}`,
+        );
+      }
 
       return {
         tokens: this.credentials,

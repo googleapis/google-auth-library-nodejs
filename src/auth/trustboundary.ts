@@ -126,10 +126,6 @@ export async function lookupTrustBoundary(
 ): Promise<TrustBoundaryData | null> {
   // Throws error on unrecoverable error with no cache
 
-  if (!client.trustBoundaryEnabled) {
-    return null; // If trust boundaries aren't enabled return null
-  }
-
   if (client.universeDomain !== DEFAULT_UNIVERSE) {
     return null; // Skipping check for non-default universe domain
   }

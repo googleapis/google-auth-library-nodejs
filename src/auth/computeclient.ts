@@ -92,9 +92,11 @@ export class Compute extends OAuth2Client implements TrustBoundaryProvider {
     }
     const tokens = data as Credentials;
 
-    this.trustBoundary = await this.fetchTrustBoundary(
-      `Bearer ${tokens.access_token}`,
-    );
+    if (this.trustBoundaryEnabled) {
+      this.trustBoundary = await this.fetchTrustBoundary(
+        `Bearer ${tokens.access_token}`,
+      );
+    }
 
     if (data && data.expires_in) {
       tokens.expiry_date = new Date().getTime() + data.expires_in * 1000;

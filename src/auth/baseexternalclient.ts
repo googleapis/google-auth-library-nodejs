@@ -634,9 +634,11 @@ export abstract class BaseExternalAccountClient
     });
 
     //Add trust boundaries to the call.
-    this.trustBoundary = await this.fetchTrustBoundary(
-      `Bearer ${this.cachedAccessToken!.access_token}`,
-    );
+    if (this.trustBoundaryEnabled) {
+      this.trustBoundary = await this.fetchTrustBoundary(
+        `Bearer ${this.cachedAccessToken!.access_token}`,
+      );
+    }
 
     // Return the cached access token.
     return this.cachedAccessToken;

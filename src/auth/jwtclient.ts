@@ -282,9 +282,11 @@ export class JWT
       forceRefresh: this.isTokenExpiring(),
     });
 
-    this.trustBoundary = await this.fetchTrustBoundary(
-      `Bearer ${token.access_token}`,
-    );
+    if (this.trustBoundaryEnabled) {
+      this.trustBoundary = await this.fetchTrustBoundary(
+        `Bearer ${token.access_token}`,
+      );
+    }
 
     const tokens = {
       access_token: token.access_token,

@@ -2637,19 +2637,6 @@ describe('BaseExternalAccountClient', () => {
       nock.cleanAll();
     });
 
-    it('fetchTrustBoundary should return null when GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES env variable is false/null', async () => {
-      //TODO:pjiyer can this be moved to tb.ts file?
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'false';
-      const client = new TestExternalAccountClient(baseWorkforceOptions);
-
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData = null;
-
-      const trustBoundary = await client.fetchTrustBoundary(mockAuthHeader);
-
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-    });
-
     it('fetchTrustBoundary should fetch and return trust boundary data for workforce successfully', async () => {
       //TODO:pjiyer Can this be moved to tb.ts test file?
       const client = new TestExternalAccountClient(baseWorkforceOptions);
