@@ -22,6 +22,18 @@ import {log as makeLog} from 'google-logging-utils';
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
 
 /**
+ * An interface for enforcing `fetch`-type compliance.
+ *
+ * @remarks
+ *
+ * This provides type guarantees during build-time, ensuring the `fetch` method is 1:1
+ * compatible with the `Gaxios#fetch` API.
+ */
+interface GaxiosFetchCompliance {
+  fetch: typeof fetch | Gaxios['fetch'];
+}
+
+/**
  * Easy access to symbol-indexed strings on config objects.
  */
 export type SymbolIndexString = {
@@ -203,7 +215,7 @@ export declare interface AuthClient {
  */
 export abstract class AuthClient
   extends EventEmitter
-  implements CredentialsClient
+  implements CredentialsClient, GaxiosFetchCompliance
 {
   apiKey?: string;
   projectId?: string | null;
@@ -263,7 +275,64 @@ export abstract class AuthClient
   }
 
   /**
+   * A {@link fetch `fetch`} compliant API for {@link AuthClient}.
+   *
+   * @see {@link AuthClient.request} for the classic method.
+   *
+   * @remarks
+   *
+   * This is useful as a drop-in replacement for `fetch` API usage.
+   *
+   * @example
+   *
+   * ```ts
+   * const authClient = new AuthClient();
+   * const fetchWithAuthClient: typeof fetch = (...args) => authClient.fetch(...args);
+   * await fetchWithAuthClient('https://example.com');
+   * ```
+   *
+   * @param args `fetch` API or {@link Gaxios.fetch `Gaxios#fetch`} parameters
+   * @returns the {@link GaxiosResponse} with Gaxios-added properties
+   */
+  fetch<T>(...args: Parameters<Gaxios['fetch']>): GaxiosPromise<T> {
+    // Up to 2 parameters in either overload
+    const input = args[0];
+    const init = args[1];
+
+    let url: URL | undefined = undefined;
+    const headers = new Headers();
+
+    // prepare URL
+    if (typeof input === 'string') {
+      url = new URL(input);
+    } else if (input instanceof URL) {
+      url = input;
+    } else if (input && input.url) {
+      url = new URL(input.url);
+    }
+
+    // prepare headers
+    if (input && typeof input === 'object' && 'headers' in input) {
+      Gaxios.mergeHeaders(headers, input.headers);
+    }
+    if (init) {
+      Gaxios.mergeHeaders(headers, new Headers(init.headers));
+    }
+
+    // prepare request
+    if (typeof input === 'object' && !(input instanceof URL)) {
+      // input must have been a non-URL object
+      return this.request({...init, ...input, headers, url});
+    } else {
+      // input must have been a string or URL
+      return this.request({...init, headers, url});
+    }
+  }
+
+  /**
    * The public request API in which credentials may be added to the request.
+   *
+   * @see {@link AuthClient.fetch} for the modern method.
    *
    * @param options options for `gaxios`
    */
