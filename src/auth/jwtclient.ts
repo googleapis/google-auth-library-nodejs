@@ -25,12 +25,7 @@ import {
   RequestMetadataResponse,
 } from './oauth2client';
 import {DEFAULT_UNIVERSE} from './authclient';
-import {
-  lookupTrustBoundary,
-  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  TrustBoundaryData,
-  TrustBoundaryProvider,
-} from './trustboundary';
+import {SERVICE_ACCOUNT_LOOKUP_ENDPOINT} from './trustboundary';
 
 export interface JWTOptions extends OAuth2ClientOptions {
   /**
@@ -68,10 +63,7 @@ export interface JWTOptions extends OAuth2ClientOptions {
   additionalClaims?: {};
 }
 
-export class JWT
-  extends OAuth2Client
-  implements IdTokenProvider, TrustBoundaryProvider
-{
+export class JWT extends OAuth2Client implements IdTokenProvider {
   email?: string;
   keyFile?: string;
   key?: string;
@@ -105,6 +97,7 @@ export class JWT
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
+    this.trustBoundaryUrl = this.#setTrustBoundaryUrl();
   }
 
   /**
@@ -282,12 +275,6 @@ export class JWT
       forceRefresh: this.isTokenExpiring(),
     });
 
-    if (this.trustBoundaryEnabled) {
-      this.trustBoundary = await this.fetchTrustBoundary(
-        `Bearer ${token.access_token}`,
-      );
-    }
-
     const tokens = {
       access_token: token.access_token,
       token_type: 'Bearer',
@@ -424,26 +411,14 @@ export class JWT
     throw new Error('A key or a keyFile must be provided to getCredentials.');
   }
 
-  /**
-   * Fetches a trustBoundary.
-   * @param authHeader the authheader for calling the lookup endpoint
-   */
-  async fetchTrustBoundary(
-    authHeader: string,
-  ): Promise<TrustBoundaryData | null> {
+  #setTrustBoundaryUrl(): string | null {
     if (!this.email) {
-      if (this.trustBoundary) {
-        return this.trustBoundary;
-      }
-      throw new Error(
-        'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing email',
-      );
+      return null;
     }
-    const lookupTrustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+    const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
       '{service_account_email}',
       encodeURIComponent(this.email),
     );
-
-    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
+    return trustBoundaryUrl;
   }
 }

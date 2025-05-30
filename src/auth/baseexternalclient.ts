@@ -229,10 +229,7 @@ interface CredentialsWithResponse extends Credentials {
  * retrieving the external credential based on the environment and
  * credential_source will be left for the subclasses.
  */
-export abstract class BaseExternalAccountClient
-  extends AuthClient
-  implements TrustBoundaryProvider
-{
+export abstract class BaseExternalAccountClient extends AuthClient {
   /**
    * OAuth scopes for the GCP access token to use. When not provided,
    * the default https://www.googleapis.com/auth/cloud-platform is
@@ -633,13 +630,6 @@ export abstract class BaseExternalAccountClient
       id_token: null,
     });
 
-    //Add trust boundaries to the call.
-    if (this.trustBoundaryEnabled) {
-      this.trustBoundary = await this.fetchTrustBoundary(
-        `Bearer ${this.cachedAccessToken!.access_token}`,
-      );
-    }
-
     // Return the cached access token.
     return this.cachedAccessToken;
   }
@@ -768,13 +758,7 @@ export abstract class BaseExternalAccountClient
     );
   }
 
-  /**
-   * Fetches a trustBoundary.
-   * @param authHeader the authheader for calling the lookup endpoint
-   */
-  async fetchTrustBoundary(
-    authHeader: string,
-  ): Promise<TrustBoundaryData | null> {
+  #setTrustBoundaryUrl(): string | null {
     let lookupTrustBoundaryUrl = null;
     try {
       if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
@@ -803,12 +787,8 @@ export abstract class BaseExternalAccountClient
         ).replace('{pool_id}', wlPoolId);
       }
     } catch (e) {
-      if (this.trustBoundary) {
-        return this.trustBoundary;
-      }
-      throw e; //no cache and invalid audience so we throw.
+      return null;
     }
-
-    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
+    return lookupTrustBoundaryUrl;
   }
 }

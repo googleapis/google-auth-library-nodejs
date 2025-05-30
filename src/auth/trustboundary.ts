@@ -60,9 +60,8 @@ export interface TrustBoundaryProvider {
  * @throws {Error} If the request fails or the response is invalid.
  * @internal
  */
-async function _fetchTrustBoundaryData(
+async function _fetchTrustBoundaryData1(
   authenticatedClient: AuthClient,
-  authHeader: string,
   url: string,
 ): Promise<TrustBoundaryData> {
   const requestOptions: GaxiosOptions = {
@@ -70,8 +69,20 @@ async function _fetchTrustBoundaryData(
     url: url,
     timeout: 5000,
   };
-  requestOptions.headers = new Headers();
-  requestOptions.headers.set('authorization', authHeader);
+  if (
+    !authenticatedClient.credentials.access_token &&
+    !authenticatedClient.credentials.token_type
+  ) {
+    throw new Error(
+      'TrustBoundary: Error calling lookup endpoint without valid access token',
+    );
+  }
+  requestOptions.headers = new Headers({
+    authorization:
+      authenticatedClient.credentials.token_type +
+      ' ' +
+      authenticatedClient.credentials.access_token,
+  });
 
   try {
     const response: GaxiosResponse<TrustBoundaryData> =
@@ -119,10 +130,9 @@ async function _fetchTrustBoundaryData(
  * @returns A Promise resolving to TrustBoundaryData or null if fetching fails and no cache is available.
  *  * @throws {Error} If the request fails and there is no cache available.
  */
-export async function lookupTrustBoundary(
+export async function lookupTrustBoundary1(
   client: AuthClient,
   url: string,
-  authHeader: string,
 ): Promise<TrustBoundaryData | null> {
   // Throws error on unrecoverable error with no cache
 
@@ -140,7 +150,7 @@ export async function lookupTrustBoundary(
   }
 
   try {
-    return await _fetchTrustBoundaryData(client, authHeader, url);
+    return await _fetchTrustBoundaryData1(client, url);
   } catch (error) {
     if (cachedTB) {
       return cachedTB; // Falling back to cached data due to error

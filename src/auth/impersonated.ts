@@ -24,12 +24,7 @@ import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 import {SignBlobResponse} from './googleauth';
 import {originalOrCamelOptions} from '../util';
-import {
-  lookupTrustBoundary,
-  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  TrustBoundaryData,
-  TrustBoundaryProvider,
-} from './trustboundary';
+import {SERVICE_ACCOUNT_LOOKUP_ENDPOINT} from './trustboundary';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -78,10 +73,7 @@ export interface FetchIdTokenResponse {
   token: string;
 }
 
-export class Impersonated
-  extends OAuth2Client
-  implements IdTokenProvider, TrustBoundaryProvider
-{
+export class Impersonated extends OAuth2Client implements IdTokenProvider {
   private sourceClient: AuthClient;
   private targetPrincipal: string;
   private targetScopes: string[];
@@ -134,6 +126,7 @@ export class Impersonated
     this.delegates = options.delegates ?? [];
     this.targetScopes = options.targetScopes ?? [];
     this.lifetime = options.lifetime ?? 3600;
+    this.trustBoundaryUrl = this.#setTrustBoundaryUrl();
 
     const usingExplicitUniverseDomain =
       !!originalOrCamelOptions(options).get('universe_domain');
@@ -204,11 +197,6 @@ export class Impersonated
       const tokenResponse = res.data;
       this.credentials.access_token = tokenResponse.accessToken;
       this.credentials.expiry_date = Date.parse(tokenResponse.expireTime);
-      if (this.trustBoundaryEnabled) {
-        this.trustBoundary = await this.fetchTrustBoundary(
-          `Bearer ${tokenResponse.accessToken}`,
-        );
-      }
 
       return {
         tokens: this.credentials,
@@ -269,26 +257,14 @@ export class Impersonated
     return res.data.token;
   }
 
-  /**
-   * Fetches a trustBoundary for the given service account.
-   * @param authHeader the authheader for calling the lookup endpoint
-   */
-  async fetchTrustBoundary(
-    authHeader: string,
-  ): Promise<TrustBoundaryData | null> {
+  #setTrustBoundaryUrl(): string | null {
     if (!this.targetPrincipal) {
-      if (this.trustBoundary) {
-        return this.trustBoundary;
-      }
-      throw new Error(
-        'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing targetPrincipal',
-      );
+      return null;
     }
-    const lookupTrustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+    const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
       '{service_account_email}',
       encodeURIComponent(this.targetPrincipal),
     );
-
-    return lookupTrustBoundary(this, lookupTrustBoundaryUrl, authHeader);
+    return trustBoundaryUrl;
   }
 }

@@ -20,7 +20,11 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-import {NoOpEncodedLocations, TrustBoundaryData} from './trustboundary';
+import {
+  lookupTrustBoundary1,
+  NoOpEncodedLocations,
+  TrustBoundaryData,
+} from './trustboundary';
 
 /**
  * Easy access to symbol-indexed strings on config objects.
@@ -223,6 +227,7 @@ export abstract class AuthClient
   universeDomain = DEFAULT_UNIVERSE;
   trustBoundaryEnabled: boolean;
   trustBoundary?: TrustBoundaryData | null;
+  trustBoundaryUrl?: string | null;
 
   /**
    * Symbols that can be added to GaxiosOptions to specify the method name that is
@@ -325,16 +330,23 @@ export abstract class AuthClient
     ) {
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
-    if (
-      this.trustBoundary &&
-      this.trustBoundary.encodedLocations &&
-      this.trustBoundary.encodedLocations !== NoOpEncodedLocations
-    ) {
-      headers.set(
-        'x-goog-allowed-locations',
-        this.trustBoundary.encodedLocations,
+    if (this.trustBoundaryUrl) {
+      this.trustBoundary = await lookupTrustBoundary1(
+        this,
+        this.trustBoundaryUrl,
       );
+      if (
+        this.trustBoundary &&
+        this.trustBoundary.encodedLocations &&
+        this.trustBoundary.encodedLocations !== NoOpEncodedLocations
+      ) {
+        headers.set(
+          'x-goog-allowed-locations',
+          this.trustBoundary.encodedLocations,
+        );
+      }
     }
+
     return headers;
   }
 
@@ -500,6 +512,17 @@ export abstract class AuthClient
         httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
       },
     };
+  }
+
+  /**
+   * Gets TrustBoundaries
+   *
+   */
+  getTrustBoundaries(): TrustBoundaryData | null {
+    if (!this.trustBoundaryEnabled) {
+      return null;
+    }
+    return null;
   }
 }
 
