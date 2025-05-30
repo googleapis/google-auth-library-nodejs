@@ -36,7 +36,6 @@ const ONE_HOUR_IN_SECS = 3600;
 
 describe('AwsClient', () => {
   let clock: sinon.SinonFakeTimers;
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials-fake.json');
   const referenceDate = new Date('2020-08-11T06:55:22.345Z');
   const amzDate = '20200811T065522Z';
@@ -201,8 +200,7 @@ describe('AwsClient', () => {
           'No valid AWS "credential_source" provided',
         );
         const invalidCredentialSource = Object.assign({}, awsCredentialSource);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (invalidCredentialSource as any)[required];
+        delete (invalidCredentialSource as ReturnType<JSON['parse']>)[required];
         const invalidOptions = {
           type: 'external_account',
           audience,

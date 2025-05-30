@@ -84,15 +84,10 @@ describe('googleauth', () => {
     STUB_PROJECT,
   ].join('/');
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const privateJSON = require('../../test/fixtures/private.json');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const private2JSON = require('../../test/fixtures/private2.json');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const refreshJSON = require('../../test/fixtures/refresh.json');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const externalAccountJSON = require('../../test/fixtures/external-account-cred.json');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const externalAccountAuthorizedUserJSON = require('../../test/fixtures/external-account-authorized-user-cred.json');
   const privateKey = fs.readFileSync('./test/fixtures/private.pem', 'utf-8');
   const wellKnownPathWindows = path.join(
@@ -268,8 +263,9 @@ describe('googleauth', () => {
     function mockGCE() {
       const scope1 = nockIsGCE();
       const auth = new GoogleAuth();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+      sinon
+        .stub(auth as ReturnType<JSON['parse']>, 'getDefaultServiceProjectId')
+        .resolves();
       const scope2 = nock(HOST_ADDRESS)
         .get(tokenPath)
         .reply(200, {access_token: 'abc123', expires_in: 10000}, HEADERS);
@@ -346,8 +342,7 @@ describe('googleauth', () => {
       const auth = new GoogleAuth();
       assert.throws(() => {
         // Test verifies invalid parameter tests, which requires cast to any.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (auth as any).fromJSON(null);
+        (auth as ReturnType<JSON['parse']>).fromJSON(null);
       });
     });
 
@@ -508,8 +503,7 @@ describe('googleauth', () => {
 
     it('fromStream should error on null stream', done => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (auth as any).fromStream(null, (err: Error) => {
+      (auth as ReturnType<JSON['parse']>).fromStream(null, (err: Error) => {
         assert.strictEqual(true, err instanceof Error);
         done();
       });
@@ -599,8 +593,9 @@ describe('googleauth', () => {
     it('getApplicationCredentialsFromFilePath should error on null file path', async () => {
       try {
         // Test verifies invalid parameter tests, which requires cast to any.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (auth as any)._getApplicationCredentialsFromFilePath(null);
+        await (
+          auth as ReturnType<JSON['parse']>
+        )._getApplicationCredentialsFromFilePath(null);
       } catch (e) {
         return;
       }
@@ -619,8 +614,9 @@ describe('googleauth', () => {
     it('getApplicationCredentialsFromFilePath should error on non-string file path', async () => {
       try {
         // Test verifies invalid parameter tests, which requires cast to any.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await auth._getApplicationCredentialsFromFilePath(2 as any);
+        await auth._getApplicationCredentialsFromFilePath(
+          2 as ReturnType<JSON['parse']>,
+        );
       } catch (e) {
         return;
       }
@@ -842,8 +838,7 @@ describe('googleauth', () => {
       assert.strictEqual(projectId, STUB_PROJECT);
 
       // Null out all the private functions that make this method work
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const anyd = auth as any;
+      const anyd = auth as ReturnType<JSON['parse']>;
       anyd.getProductionProjectId = null;
       anyd.getFileProjectId = null;
       anyd.getDefaultServiceProjectId = null;
@@ -969,13 +964,14 @@ describe('googleauth', () => {
       // Make sure our special test bit is not set yet, indicating that
       // this is a new credentials instance.
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      assert.strictEqual(undefined, (cachedCredential as any).specialTestBit);
+      assert.strictEqual(
+        undefined,
+        (cachedCredential as ReturnType<JSON['parse']>).specialTestBit,
+      );
 
       // Now set the special test bit.
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (cachedCredential as any).specialTestBit = 'monkey';
+      (cachedCredential as ReturnType<JSON['parse']>).specialTestBit = 'monkey';
 
       // Ask for credentials again, from the same auth instance. We expect
       // a cached instance this time.
@@ -987,8 +983,10 @@ describe('googleauth', () => {
       // the object instance is the same.
       // Test verifies invalid parameter tests, which requires cast to
       // any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      assert.strictEqual('monkey', (result2 as any).specialTestBit);
+      assert.strictEqual(
+        'monkey',
+        (result2 as ReturnType<JSON['parse']>).specialTestBit,
+      );
       assert.strictEqual(cachedCredential, result2);
 
       // Now create a second GoogleAuth instance, and ask for
@@ -1000,8 +998,10 @@ describe('googleauth', () => {
       // Make sure we get a new (non-cached) credential instance back.
       // Test verifies invalid parameter tests, which requires cast to
       // any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      assert.strictEqual(undefined, (result3 as any).specialTestBit);
+      assert.strictEqual(
+        undefined,
+        (result3 as ReturnType<JSON['parse']>).specialTestBit,
+      );
       assert.notStrictEqual(cachedCredential, result3);
     });
 
@@ -1467,8 +1467,9 @@ describe('googleauth', () => {
     });
 
     it('should throw if getProjectId cannot find a projectId', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sinon.stub(auth as any, 'getDefaultServiceProjectId').resolves();
+      sinon
+        .stub(auth as ReturnType<JSON['parse']>, 'getDefaultServiceProjectId')
+        .resolves();
       await assert.rejects(
         auth.getProjectId(),
         /Unable to detect a Project Id in the current environment/,
