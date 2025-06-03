@@ -2589,7 +2589,7 @@ describe('googleauth', () => {
                 authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
               },
             })
-            .reply(200, data)
+            .reply(200, data),
         );
 
         const auth = new GoogleAuth({keyFilename});
