@@ -749,13 +749,16 @@ export class OAuth2Client extends AuthClient {
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
     }
-    const res = await this.transporter.request<CredentialRequest>({
+
+    const opts = {
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
       data: new URLSearchParams(values as {}),
       headers,
-    });
+    };
+    AuthClient.setMethodName(opts, 'getTokenAsync');
+    const res = await this.transporter.request<CredentialRequest>(opts);
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
@@ -813,13 +816,16 @@ export class OAuth2Client extends AuthClient {
     let res: GaxiosResponse<CredentialRequest>;
 
     try {
-      // request for new token
-      res = await this.transporter.request<CredentialRequest>({
+      const opts: GaxiosOptions = {
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
         data: new URLSearchParams(data),
-      });
+      };
+      AuthClient.setMethodName(opts, 'refreshTokenNoCache');
+
+      // request for new token
+      res = await this.transporter.request<CredentialRequest>(opts);
     } catch (e) {
       if (
         e instanceof GaxiosError &&
@@ -1041,6 +1047,7 @@ export class OAuth2Client extends AuthClient {
       url: this.getRevokeTokenURL(token).toString(),
       method: 'POST',
     };
+    AuthClient.setMethodName(opts, 'revokeToken');
     if (callback) {
       this.transporter
         .request<RevokeCredentialsResult>(opts)
@@ -1306,10 +1313,12 @@ export class OAuth2Client extends AuthClient {
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
-      res = await this.transporter.request({
+      const opts = {
         ...OAuth2Client.RETRY_CONFIG,
         url,
-      });
+      };
+      AuthClient.setMethodName(opts, 'getFederatedSignonCertsAsync');
+      res = await this.transporter.request(opts);
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
@@ -1377,10 +1386,12 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      res = await this.transporter.request({
+      const opts = {
         ...OAuth2Client.RETRY_CONFIG,
         url,
-      });
+      };
+      AuthClient.setMethodName(opts, 'getIapPublicKeysAsync');
+      res = await this.transporter.request(opts);
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;

@@ -16,6 +16,7 @@ import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {Gaxios, GaxiosOptions} from 'gaxios';
 import {AwsSecurityCredentialsSupplier} from './awsclient';
 import {AwsSecurityCredentials} from './awsrequestsigner';
+import {AuthClient} from './authclient';
 
 /**
  * Interface defining the AWS security-credentials endpoint response.
@@ -128,6 +129,7 @@ export class DefaultAwsSecurityCredentialsSupplier
       method: 'GET',
       headers: metadataHeaders,
     };
+    AuthClient.setMethodName(opts, 'getAwsRegion');
     const response = await context.transporter.request<string>(opts);
     // Remove last character. For example, if us-east-2b is returned,
     // the region would be us-east-2.
@@ -191,6 +193,7 @@ export class DefaultAwsSecurityCredentialsSupplier
       method: 'PUT',
       headers: {'x-aws-ec2-metadata-token-ttl-seconds': '300'},
     };
+    AuthClient.setMethodName(opts, '#getImdsV2SessionToken');
     const response = await transporter.request<string>(opts);
     return response.data;
   }
@@ -217,6 +220,7 @@ export class DefaultAwsSecurityCredentialsSupplier
       method: 'GET',
       headers: headers,
     };
+    AuthClient.setMethodName(opts, '#getAwsRoleName');
     const response = await transporter.request<string>(opts);
     return response.data;
   }
@@ -235,11 +239,14 @@ export class DefaultAwsSecurityCredentialsSupplier
     headers: Headers,
     transporter: Gaxios,
   ): Promise<AwsSecurityCredentialsResponse> {
-    const response = await transporter.request<AwsSecurityCredentialsResponse>({
+    const opts = {
       ...this.additionalGaxiosOptions,
       url: `${this.securityCredentialsUrl}/${roleName}`,
       headers: headers,
-    });
+    } as GaxiosOptions;
+    AuthClient.setMethodName(opts, '#retrieveAwsSecurityCredentials');
+    const response =
+      await transporter.request<AwsSecurityCredentialsResponse>(opts);
     return response.data;
   }
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
-import {HeadersInit} from './authclient';
+import {AuthClient, HeadersInit} from './authclient';
 import {
   ClientAuthentication,
   OAuthClientAuthHandler,
@@ -218,6 +218,8 @@ export class StsCredentials extends OAuthClientAuthHandler {
       headers,
       data: new URLSearchParams(payload),
     };
+    AuthClient.setMethodName(opts, 'exchangeToken');
+
     // Apply OAuth client authentication.
     this.applyClientAuthenticationOptions(opts);
 
