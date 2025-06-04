@@ -20,6 +20,7 @@ import {
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {FileSubjectTokenSupplier} from './filesubjecttokensupplier';
 import {UrlSubjectTokenSupplier} from './urlsubjecttokensupplier';
+import {CertificateSubjectTokenSupplier} from './certificatesubjecttokensupplier';
 
 export type SubjectTokenFormatType = 'json' | 'text';
 
@@ -86,6 +87,28 @@ export interface IdentityPoolClientOptions
        * The field name containing the subject token value if the type is 'json'.
        */
       subject_token_field_name?: string;
+    };
+    /**
+     * The certificate location to call to retrieve the subject token. Either this or a file
+     * location should be specified.
+     */
+    certificate?: {
+      /**
+       * Specify whether the certificate config should be used from the default location
+       * either this or the certificate_config_location must be provided
+       */
+      use_default_certificate_config?: boolean;
+      /**
+       * Location to fetch certificate config from in case default config is not to be used.
+       * either this or use_default_certificate_config=true should be provided
+       */
+      certificate_config_location?: string;
+      /**
+       * Location to fetch trust chain from to send to STS endpoint.
+       * in case no location is provided, we will just send the leaf certificate as the
+       * trust chain
+       */
+      trust_chain_path?: string;
     };
   };
   /**
@@ -162,19 +185,20 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
 
       const file = credentialSourceOpts.get('file');
       const url = credentialSourceOpts.get('url');
+      const certificate = credentialSourceOpts.get('certificate');
       const headers = credentialSourceOpts.get('headers');
-      if (file && url) {
+      if ((file && url) || (url && certificate) || (file && certificate)) {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file or url.',
+          'No valid Identity Pool "credential_source" provided, must be either file, url or certificate.',
         );
-      } else if (file && !url) {
+      } else if (file) {
         this.credentialSourceType = 'file';
         this.subjectTokenSupplier = new FileSubjectTokenSupplier({
           filePath: file,
           formatType: formatType,
           subjectTokenFieldName: formatSubjectTokenFieldName,
         });
-      } else if (!file && url) {
+      } else if (url) {
         this.credentialSourceType = 'url';
         this.subjectTokenSupplier = new UrlSubjectTokenSupplier({
           url: url,
@@ -183,9 +207,17 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
           headers: headers,
           additionalGaxiosOptions: IdentityPoolClient.RETRY_CONFIG,
         });
+      } else if (certificate) {
+        this.credentialSourceType = 'certificate';
+        this.subjectTokenSupplier = new CertificateSubjectTokenSupplier({
+          useDefaultCertificateConfig:
+            certificate.use_default_certificate_config,
+          certificateConfigLocation: certificate.certificate_config_location,
+          trustChainPath: certificate.trust_chain_path,
+        });
       } else {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file or url.',
+          'No valid Identity Pool "credential_source" provided, must be either file or url or certificate.',
         );
       }
     }

@@ -84,7 +84,7 @@ export class X509CredentialsProvider {
    * @param filePathForErrorMessage Optional path of the file, for more descriptive error messages.
    * @returns An object containing the certificate path and private key path.
    */
-  private parseCertificateConfiguration(
+  public parseCertificateConfiguration(
     jsonContent: string,
     filePathForErrorMessage?: string,
   ): WorkloadCertPaths {
