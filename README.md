@@ -89,6 +89,7 @@ const auth = new GoogleAuth({
 });
 const projectId = await auth.getProjectId();
 const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
+// The modern `fetch` and classic `request` APIs are available
 const res = await auth.fetch(url);
 console.log(res.data);
 ```
