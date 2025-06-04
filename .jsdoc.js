@@ -22,30 +22,24 @@ module.exports = {
     template: './node_modules/jsdoc-fresh',
     recurse: true,
     verbose: true,
-    destination: './docs/'
+    destination: './docs/',
   },
-  plugins: [
-    'plugins/markdown',
-    'jsdoc-region-tag'
-  ],
+  plugins: ['plugins/markdown', 'jsdoc-region-tag'],
   source: {
-    excludePattern: '(^|\\/|\\\\)[._]',
-    include: [
-      'build/src',
-    ],
-    includePattern: '\\.js$'
+    include: ['build/src'],
+    includePattern: '\\.js$',
   },
   templates: {
-    copyright: 'Copyright 2019 Google, LLC.',
+    copyright: 'Copyright 2019 Google LLC',
     includeDate: false,
     sourceFiles: false,
     systemName: 'google-auth-library',
     theme: 'lumen',
     default: {
-      outputSourceFiles: false
-    }
+      outputSourceFiles: false,
+    },
   },
   markdown: {
-    idInHeadings: true
-  }
+    idInHeadings: true,
+  },
 };

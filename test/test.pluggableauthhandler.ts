@@ -56,9 +56,9 @@ describe('PluggableAuthHandler', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthHandler(invalidOptions);
+        return new PluggableAuthHandler(
+          invalidOptions as unknown as PluggableAuthHandlerOptions,
+        );
       }, expectedError);
     });
 
@@ -70,15 +70,15 @@ describe('PluggableAuthHandler', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return new PluggableAuthHandler(invalidOptions);
+        return new PluggableAuthHandler(
+          invalidOptions as unknown as PluggableAuthHandlerOptions,
+        );
       }, expectedError);
     });
 
     it('should throw when command cannot be parsed', async () => {
       const expectedError = new Error(
-        'Provided command: " " could not be parsed.'
+        'Provided command: " " could not be parsed.',
       );
       const invalidHandlerOptions = {
         command: ' ',
@@ -108,7 +108,7 @@ describe('PluggableAuthHandler', () => {
     const expectedEnvMap = new Map();
     expectedEnvMap.set(
       'GOOGLE_EXTERNAL_ACCOUNT_TOKEN_TYPE',
-      SAML_SUBJECT_TOKEN_TYPE
+      SAML_SUBJECT_TOKEN_TYPE,
     );
     expectedEnvMap.set('GOOGLE_EXTERNAL_ACCOUNT_INTERACTIVE', '0');
     const expectedOpts = {
@@ -152,7 +152,7 @@ describe('PluggableAuthHandler', () => {
 
       await assert.rejects(
         handler.retrieveResponseFromExecutable(new Map<string, string>()),
-        expectedError
+        expectedError,
       );
     });
 
@@ -160,14 +160,14 @@ describe('PluggableAuthHandler', () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
       spawnEvent.emit('close', 0);
 
       assert.deepEqual(
         await response,
-        new ExecutableResponse(defaultResponseJson)
+        new ExecutableResponse(defaultResponseJson),
       );
     });
 
@@ -177,14 +177,14 @@ describe('PluggableAuthHandler', () => {
       defaultResponseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
       defaultResponseJson.id_token = 'subject token';
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
       spawnEvent.emit('close', 0);
 
       assert.deepEqual(
         await response,
-        new ExecutableResponse(defaultResponseJson)
+        new ExecutableResponse(defaultResponseJson),
       );
     });
 
@@ -192,14 +192,14 @@ describe('PluggableAuthHandler', () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       defaultResponseJson.expiration_time = undefined;
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
       spawnEvent.emit('close', 0);
 
       assert.deepEqual(
         await response,
-        new ExecutableResponse(defaultResponseJson)
+        new ExecutableResponse(defaultResponseJson),
       );
     });
 
@@ -210,14 +210,14 @@ describe('PluggableAuthHandler', () => {
       defaultResponseJson.token_type = OIDC_SUBJECT_TOKEN_TYPE1;
       defaultResponseJson.id_token = 'subject token';
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       spawnEvent.stdout!.emit('data', JSON.stringify(defaultResponseJson));
       spawnEvent.emit('close', 0);
 
       assert.deepEqual(
         await response,
-        new ExecutableResponse(defaultResponseJson)
+        new ExecutableResponse(defaultResponseJson),
       );
     });
 
@@ -236,7 +236,7 @@ describe('PluggableAuthHandler', () => {
         spawnStub,
         expectedCommand,
         expectedArgs,
-        expectedOpts
+        expectedOpts,
       );
     });
 
@@ -259,7 +259,7 @@ describe('PluggableAuthHandler', () => {
         spawnStub,
         expectedCommand,
         expectedArgs,
-        expectedOpts
+        expectedOpts,
       );
     });
 
@@ -282,7 +282,7 @@ describe('PluggableAuthHandler', () => {
         spawnStub,
         expectedCommand,
         expectedArgs,
-        expectedOpts
+        expectedOpts,
       );
     });
 
@@ -291,7 +291,7 @@ describe('PluggableAuthHandler', () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       spawnEvent.stderr!.emit('data', 'test error');
       spawnEvent.emit('close', 1);
@@ -301,7 +301,7 @@ describe('PluggableAuthHandler', () => {
 
     it('should throw error when executable times out', async () => {
       const expectedError = new Error(
-        'The executable failed to finish within the timeout specified.'
+        'The executable failed to finish within the timeout specified.',
       );
       spawnEvent.kill = () => {
         return true;
@@ -309,7 +309,7 @@ describe('PluggableAuthHandler', () => {
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       clock.tick(10001);
 
@@ -318,12 +318,12 @@ describe('PluggableAuthHandler', () => {
 
     it('should throw error when non-json text is returned', async () => {
       const expectedError = new ExecutableResponseError(
-        'The executable returned an invalid response: THIS_IS_NOT_JSON'
+        'The executable returned an invalid response: THIS_IS_NOT_JSON',
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       spawnEvent.stdout!.emit('data', 'THIS_IS_NOT_JSON');
       spawnEvent.emit('close', 0);
@@ -333,7 +333,7 @@ describe('PluggableAuthHandler', () => {
 
     it('should throw ExecutableResponseError', async () => {
       const expectedError = new InvalidSuccessFieldError(
-        "Executable response must contain a 'success' field."
+        "Executable response must contain a 'success' field.",
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const invalidResponse = {
@@ -344,7 +344,7 @@ describe('PluggableAuthHandler', () => {
       };
 
       const response = handler.retrieveResponseFromExecutable(
-        new Map<string, string>()
+        new Map<string, string>(),
       );
       spawnEvent.stdout!.emit('data', JSON.stringify(invalidResponse));
       spawnEvent.emit('close', 0);
@@ -403,7 +403,7 @@ describe('PluggableAuthHandler', () => {
 
       assert.deepEqual(
         await response,
-        new ExecutableResponse(defaultResponseJson)
+        new ExecutableResponse(defaultResponseJson),
       );
     });
 
@@ -419,7 +419,7 @@ describe('PluggableAuthHandler', () => {
 
       assert.deepEqual(
         await response,
-        new ExecutableResponse(defaultResponseJson)
+        new ExecutableResponse(defaultResponseJson),
       );
     });
 
@@ -484,7 +484,7 @@ describe('PluggableAuthHandler', () => {
 
     it('should throw error when non-json text is returned', async () => {
       const expectedError = new ExecutableResponseError(
-        'The output file contained an invalid response: THIS_IS_NOT_JSON'
+        'The output file contained an invalid response: THIS_IS_NOT_JSON',
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
 
@@ -496,7 +496,7 @@ describe('PluggableAuthHandler', () => {
 
     it('should throw ExecutableResponseError', async () => {
       const expectedError = new InvalidSuccessFieldError(
-        "Executable response must contain a 'success' field."
+        "Executable response must contain a 'success' field.",
       );
       const handler = new PluggableAuthHandler(defaultHandlerOptions);
       const invalidResponse = {

@@ -22,11 +22,11 @@ import * as path from 'path';
 import {promisify} from 'util';
 import {spawn} from 'child_process';
 
+import {pkg} from '../src/shared.cjs';
+
 const mvp = promisify(mv) as {} as (...args: string[]) => Promise<void>;
 const ncpp = promisify(ncp);
 const keep = !!process.env.GALN_KEEP_TEMPDIRS;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../package.json');
 
 let stagingDir: string;
 
@@ -71,7 +71,7 @@ async function run(...params: Parameters<typeof spawn>) {
 
 async function packAndInstall() {
   stagingDir = await fs.promises.mkdtemp(
-    path.join(os.tmpdir(), 'google-auth-library-nodejs-pack-')
+    path.join(os.tmpdir(), 'google-auth-library-nodejs-pack-'),
   );
 
   await run('npm', ['pack'], {});

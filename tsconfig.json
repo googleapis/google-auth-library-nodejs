@@ -1,21 +1,17 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "lib": ["es2018", "dom"],
+    "lib": ["DOM"],
     "rootDir": ".",
-    "outDir": "build",
-    "sourceMap": false
+    "outDir": "build"
   },
   "include": [
-    "src/*.ts",
     "src/**/*.ts",
-    "test/*.ts",
+    "src/**/*.cts",
     "test/**/*.ts",
     "system-test/*.ts",
     "browser-test/*.ts",
     "browser-test/**/*.ts"
   ],
-  "exclude": [
-    "test/fixtures"
-  ]
+  "exclude": ["test/fixtures"]
 }

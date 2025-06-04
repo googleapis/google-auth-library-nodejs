@@ -105,7 +105,7 @@ describe('BaseExternalAccountClient', () => {
       audience:
         '//iam.googleapis.com/locations/global/workforcePools/pool/providers/provider',
       subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-    }
+    },
   );
   const externalAccountOptionsWithClientAuthAndWorkforceUserProject =
     Object.assign(
@@ -113,7 +113,7 @@ describe('BaseExternalAccountClient', () => {
         client_id: 'CLIENT_ID',
         client_secret: 'SECRET',
       },
-      externalAccountOptionsWorkforceUserProject
+      externalAccountOptionsWorkforceUserProject,
     );
   const basicAuthCreds =
     `${externalAccountOptionsWithCreds.client_id}:` +
@@ -129,19 +129,19 @@ describe('BaseExternalAccountClient', () => {
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    externalAccountOptions
+    externalAccountOptions,
   );
   const externalAccountOptionsWithCredsAndSA = Object.assign(
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    externalAccountOptionsWithCreds
+    externalAccountOptionsWithCreds,
   );
   const externalAccountOptionsWithWorkforceUserProjectAndSA = Object.assign(
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    externalAccountOptionsWorkforceUserProject
+    externalAccountOptionsWorkforceUserProject,
   );
   const indeterminableProjectIdAudiences = [
     // Legacy K8s audience format.
@@ -165,7 +165,7 @@ describe('BaseExternalAccountClient', () => {
   describe('Constructor', () => {
     it('should throw on invalid type', () => {
       const expectedError = new Error(
-        'Expected "external_account" type but received "invalid"'
+        'Expected "external_account" type but received "invalid"',
       );
       const invalidOptions = Object.assign({}, externalAccountOptions);
       invalidOptions.type = 'invalid';
@@ -192,11 +192,11 @@ describe('BaseExternalAccountClient', () => {
     ];
     const invalidExternalAccountOptionsWorkforceUserProject = Object.assign(
       {},
-      externalAccountOptionsWorkforceUserProject
+      externalAccountOptionsWorkforceUserProject,
     );
     const expectedWorkforcePoolUserProjectError = new Error(
       'workforcePoolUserProject should not be set for non-workforce pool ' +
-        'credentials.'
+        'credentials.',
     );
 
     invalidWorkforceAudiences.forEach(invalidWorkforceAudience => {
@@ -206,7 +206,7 @@ describe('BaseExternalAccountClient', () => {
 
         assert.throws(() => {
           return new TestExternalAccountClient(
-            invalidExternalAccountOptionsWorkforceUserProject
+            invalidExternalAccountOptionsWorkforceUserProject,
           );
         }, expectedWorkforcePoolUserProjectError);
       });
@@ -220,7 +220,7 @@ describe('BaseExternalAccountClient', () => {
       ];
       const validExternalAccountOptionsWorkforceUserProject = Object.assign(
         {},
-        externalAccountOptionsWorkforceUserProject
+        externalAccountOptionsWorkforceUserProject,
       );
       for (const validWorkforceAudience of validWorkforceAudiences) {
         validExternalAccountOptionsWorkforceUserProject.audience =
@@ -228,7 +228,7 @@ describe('BaseExternalAccountClient', () => {
 
         assert.doesNotThrow(() => {
           return new TestExternalAccountClient(
-            validExternalAccountOptionsWorkforceUserProject
+            validExternalAccountOptionsWorkforceUserProject,
           );
         });
       }
@@ -259,11 +259,11 @@ describe('BaseExternalAccountClient', () => {
 
       assert.strictEqual(
         client.forceRefreshOnFailure,
-        refreshOptions.forceRefreshOnFailure
+        refreshOptions.forceRefreshOnFailure,
       );
       assert.strictEqual(
         client.eagerRefreshThresholdMillis,
-        refreshOptions.eagerRefreshThresholdMillis
+        refreshOptions.eagerRefreshThresholdMillis,
       );
     });
 
@@ -315,7 +315,7 @@ describe('BaseExternalAccountClient', () => {
           },
         ],
         {},
-        'https://sts.test.com'
+        'https://sts.test.com',
       );
 
       await client.getAccessToken();
@@ -392,7 +392,7 @@ describe('BaseExternalAccountClient', () => {
     it('should return null for workforce pools with workforce_pool_user_project', () => {
       const options = Object.assign(
         {},
-        externalAccountOptionsWorkforceUserProject
+        externalAccountOptionsWorkforceUserProject,
       );
       const client = new TestExternalAccountClient(options);
 
@@ -446,7 +446,7 @@ describe('BaseExternalAccountClient', () => {
       const saPath = `/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`;
       const options: BaseExternalAccountClientOptions = Object.assign(
         {},
-        externalAccountOptions
+        externalAccountOptions,
       );
       options.service_account_impersonation_url = `${saBaseUrl}${saPath}`;
       const client = new TestExternalAccountClient(options);
@@ -457,7 +457,7 @@ describe('BaseExternalAccountClient', () => {
     it('should return null when impersonation is not used', () => {
       const options: BaseExternalAccountClientOptions = Object.assign(
         {},
-        externalAccountOptions
+        externalAccountOptions,
       );
       delete options.service_account_impersonation_url;
       const client = new TestExternalAccountClient(options);
@@ -471,7 +471,7 @@ describe('BaseExternalAccountClient', () => {
       const saPath = '/v1/projects/-/serviceAccounts/:generateAccessToken';
       const options: BaseExternalAccountClientOptions = Object.assign(
         {},
-        externalAccountOptions
+        externalAccountOptions,
       );
       options.service_account_impersonation_url = `${saBaseUrl}${saPath}`;
       const client = new TestExternalAccountClient(options);
@@ -484,7 +484,7 @@ describe('BaseExternalAccountClient', () => {
     it('should resolve for workforce pools when workforce_pool_user_project is provided', async () => {
       const options = Object.assign(
         {},
-        externalAccountOptionsWorkforceUserProject
+        externalAccountOptionsWorkforceUserProject,
       );
       const projectNumber = options.workforce_pool_user_project;
       const projectId = 'my-proj-id';
@@ -523,7 +523,7 @@ describe('BaseExternalAccountClient', () => {
           options.workforce_pool_user_project,
           stsSuccessfulResponse.access_token,
           200,
-          response
+          response,
         ),
       ];
 
@@ -576,7 +576,7 @@ describe('BaseExternalAccountClient', () => {
           projectNumber,
           stsSuccessfulResponse.access_token,
           200,
-          response
+          response,
         ),
       ];
       const client = new TestExternalAccountClient(options);
@@ -624,7 +624,7 @@ describe('BaseExternalAccountClient', () => {
           projectNumber,
           stsSuccessfulResponse.access_token,
           403,
-          response
+          response,
         ),
       ];
       const client = new TestExternalAccountClient(options);
@@ -698,13 +698,13 @@ describe('BaseExternalAccountClient', () => {
           ],
           {
             authorization: `Basic ${crypto.encodeBase64StringUtf8(
-              basicAuthCreds
+              basicAuthCreds,
             )}`,
-          }
+          },
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithClientAuthAndWorkforceUserProject
+          externalAccountOptionsWithClientAuthAndWorkforceUserProject,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -740,7 +740,7 @@ describe('BaseExternalAccountClient', () => {
         ]);
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWorkforceUserProject
+          externalAccountOptionsWorkforceUserProject,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -773,19 +773,19 @@ describe('BaseExternalAccountClient', () => {
           ],
           {
             authorization: `Basic ${crypto.encodeBase64StringUtf8(
-              basicAuthCreds
+              basicAuthCreds,
             )}`,
-          }
+          },
         );
         const externalAccountOptionsWithClientAuth: BaseExternalAccountClientOptions =
           Object.assign(
             {},
-            externalAccountOptionsWithClientAuthAndWorkforceUserProject
+            externalAccountOptionsWithClientAuthAndWorkforceUserProject,
           );
         delete externalAccountOptionsWithClientAuth.workforce_pool_user_project;
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithClientAuth
+          externalAccountOptionsWithClientAuth,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -820,7 +820,7 @@ describe('BaseExternalAccountClient', () => {
         ]);
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithCreds
+          externalAccountOptionsWithCreds,
         );
         // Listen to tokens events. On every event, push to list of
         // emittedEvents.
@@ -848,7 +848,7 @@ describe('BaseExternalAccountClient', () => {
         assert.deepStrictEqual(client.credentials.expiry_date, undefined);
         assert.deepStrictEqual(
           client.credentials.access_token,
-          stsSuccessfulResponse2.access_token
+          stsSuccessfulResponse2.access_token,
         );
         scope.done();
       });
@@ -891,7 +891,7 @@ describe('BaseExternalAccountClient', () => {
         const client = new TestExternalAccountClient(externalAccountOptions);
         await assert.rejects(
           client.getAccessToken(),
-          getErrorFromOAuthErrorResponse(errorResponse)
+          getErrorFromOAuthErrorResponse(errorResponse),
         );
         // Next try should succeed.
         const actualResponse = await client.getAccessToken();
@@ -1154,13 +1154,13 @@ describe('BaseExternalAccountClient', () => {
           ],
           {
             authorization: `Basic ${crypto.encodeBase64StringUtf8(
-              basicAuthCreds
+              basicAuthCreds,
             )}`,
-          }
+          },
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithCreds
+          externalAccountOptionsWithCreds,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1194,9 +1194,9 @@ describe('BaseExternalAccountClient', () => {
             'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
               'test',
               false,
-              false
+              false,
             ),
-          }
+          },
         );
 
         const client = new TestExternalAccountClient(externalAccountOptions);
@@ -1243,7 +1243,7 @@ describe('BaseExternalAccountClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1251,11 +1251,11 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA
+          externalAccountOptionsWithSA,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1300,7 +1300,7 @@ describe('BaseExternalAccountClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1308,7 +1308,7 @@ describe('BaseExternalAccountClient', () => {
             response: saErrorResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1316,11 +1316,11 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse2.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA
+          externalAccountOptionsWithSA,
         );
         await assert.rejects(client.getAccessToken(), GaxiosError);
         // Next try should succeed.
@@ -1351,7 +1351,7 @@ describe('BaseExternalAccountClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1359,11 +1359,11 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['scope1', 'scope2'],
-          })
+          }),
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA
+          externalAccountOptionsWithSA,
         );
         // These scopes should be used for the iamcredentials call.
         // https://www.googleapis.com/auth/cloud-platform should be used for the
@@ -1386,13 +1386,13 @@ describe('BaseExternalAccountClient', () => {
         const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
         stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
         saSuccessResponse.expireTime = new Date(
-          ONE_HOUR_IN_SECS * 1000
+          ONE_HOUR_IN_SECS * 1000,
         ).toISOString();
         const saSuccessResponse2 = Object.assign({}, saSuccessResponse);
         saSuccessResponse2.accessToken = 'SA_ACCESS_TOKEN2';
         const customExpirationInSecs = 1600;
         saSuccessResponse2.expireTime = new Date(
-          (ONE_HOUR_IN_SECS + customExpirationInSecs) * 1000
+          (ONE_HOUR_IN_SECS + customExpirationInSecs) * 1000,
         ).toISOString();
         const scopes: nock.Scope[] = [];
         scopes.push(
@@ -1423,7 +1423,7 @@ describe('BaseExternalAccountClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1431,7 +1431,7 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1439,11 +1439,11 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse2,
             token: stsSuccessfulResponse2.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA
+          externalAccountOptionsWithSA,
         );
         // Listen to tokens events. On every event, push to list of
         // emittedEvents.
@@ -1510,12 +1510,12 @@ describe('BaseExternalAccountClient', () => {
         const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
         stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
         saSuccessResponse.expireTime = new Date(
-          ONE_HOUR_IN_SECS * 1000
+          ONE_HOUR_IN_SECS * 1000,
         ).toISOString();
         const saSuccessResponse2 = Object.assign({}, saSuccessResponse);
         saSuccessResponse2.accessToken = 'SA_ACCESS_TOKEN2';
         saSuccessResponse2.expireTime = new Date(
-          2 * ONE_HOUR_IN_SECS * 1000
+          2 * ONE_HOUR_IN_SECS * 1000,
         ).toISOString();
 
         const scopes: nock.Scope[] = [];
@@ -1547,7 +1547,7 @@ describe('BaseExternalAccountClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1555,7 +1555,7 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1563,7 +1563,7 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse2,
             token: stsSuccessfulResponse2.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         // Override 5min threshold with 10 second threshold.
@@ -1627,10 +1627,10 @@ describe('BaseExternalAccountClient', () => {
             ],
             {
               authorization: `Basic ${crypto.encodeBase64StringUtf8(
-                basicAuthCreds
+                basicAuthCreds,
               )}`,
-            }
-          )
+            },
+          ),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1638,11 +1638,11 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithCredsAndSA
+          externalAccountOptionsWithCredsAndSA,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1677,7 +1677,7 @@ describe('BaseExternalAccountClient', () => {
                 }),
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1685,11 +1685,11 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithWorkforceUserProjectAndSA
+          externalAccountOptionsWithWorkforceUserProjectAndSA,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1719,7 +1719,7 @@ describe('BaseExternalAccountClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1728,7 +1728,7 @@ describe('BaseExternalAccountClient', () => {
             token: stsSuccessfulResponse.access_token,
             lifetime: 2800,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const externalAccountOptionsWithSATokenLifespan = Object.assign(
@@ -1737,11 +1737,11 @@ describe('BaseExternalAccountClient', () => {
               token_lifetime_seconds: 2800,
             },
           },
-          externalAccountOptionsWithSA
+          externalAccountOptionsWithSA,
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSATokenLifespan
+          externalAccountOptionsWithSATokenLifespan,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1777,10 +1777,10 @@ describe('BaseExternalAccountClient', () => {
               'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
                 'test',
                 true,
-                false
+                false,
               ),
-            }
-          )
+            },
+          ),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1788,11 +1788,11 @@ describe('BaseExternalAccountClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSA
+          externalAccountOptionsWithSA,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1828,10 +1828,10 @@ describe('BaseExternalAccountClient', () => {
               'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
                 'test',
                 true,
-                true
+                true,
               ),
-            }
-          )
+            },
+          ),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -1840,7 +1840,7 @@ describe('BaseExternalAccountClient', () => {
             token: stsSuccessfulResponse.access_token,
             lifetime: 2800,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const externalAccountOptionsWithSATokenLifespan = Object.assign(
@@ -1849,11 +1849,11 @@ describe('BaseExternalAccountClient', () => {
               token_lifetime_seconds: 2800,
             },
           },
-          externalAccountOptionsWithSA
+          externalAccountOptionsWithSA,
         );
 
         const client = new TestExternalAccountClient(
-          externalAccountOptionsWithSATokenLifespan
+          externalAccountOptionsWithSATokenLifespan,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -1921,7 +1921,7 @@ describe('BaseExternalAccountClient', () => {
               subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
             },
           },
-        ])
+        ]),
       );
       scopes.push(
         mockGenerateAccessToken({
@@ -1929,11 +1929,11 @@ describe('BaseExternalAccountClient', () => {
           response: saSuccessResponse,
           token: stsSuccessfulResponse.access_token,
           scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-        })
+        }),
       );
 
       const client = new TestExternalAccountClient(
-        externalAccountOptionsWithSA
+        externalAccountOptionsWithSA,
       );
       const actualHeaders = await client.getRequestHeaders();
 
@@ -1965,7 +1965,7 @@ describe('BaseExternalAccountClient', () => {
 
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: quotaProjectId},
-        externalAccountOptions
+        externalAccountOptions,
       );
       const client = new TestExternalAccountClient(optionsWithQuotaProjectId);
       const actualHeaders = await client.getRequestHeaders();
@@ -1999,7 +1999,7 @@ describe('BaseExternalAccountClient', () => {
       const client = new TestExternalAccountClient(externalAccountOptions);
       await assert.rejects(
         client.getRequestHeaders(),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -2014,7 +2014,7 @@ describe('BaseExternalAccountClient', () => {
       };
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: quotaProjectId},
-        externalAccountOptions
+        externalAccountOptions,
       );
       const exampleRequest = {
         key1: 'value1',
@@ -2076,7 +2076,7 @@ describe('BaseExternalAccountClient', () => {
       };
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: quotaProjectId},
-        externalAccountOptionsWithSA
+        externalAccountOptionsWithSA,
       );
       const exampleRequest = {
         key1: 'value1',
@@ -2139,7 +2139,7 @@ describe('BaseExternalAccountClient', () => {
       };
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: quotaProjectId},
-        externalAccountOptions
+        externalAccountOptions,
       );
       const exampleRequest = {
         key1: 'value1',
@@ -2217,7 +2217,7 @@ describe('BaseExternalAccountClient', () => {
           method: 'POST',
           data: exampleRequest,
         }),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -2274,7 +2274,7 @@ describe('BaseExternalAccountClient', () => {
           assert.deepStrictEqual(result?.data, exampleResponse);
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
@@ -2328,7 +2328,7 @@ describe('BaseExternalAccountClient', () => {
 
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
@@ -2454,7 +2454,7 @@ describe('BaseExternalAccountClient', () => {
         }),
         {
           status: 401,
-        }
+        },
       );
 
       scopes.forEach(scope => scope.done());
@@ -2531,7 +2531,7 @@ describe('BaseExternalAccountClient', () => {
         }),
         {
           status: 403,
-        }
+        },
       );
 
       scopes.forEach(scope => scope.done());
@@ -2574,7 +2574,7 @@ describe('BaseExternalAccountClient', () => {
       const refreshedTokenResponse = await client.getAccessToken();
       assert.deepStrictEqual(
         refreshedTokenResponse.token,
-        stsSuccessfulResponse.access_token
+        stsSuccessfulResponse.access_token,
       );
 
       scope.done();
@@ -2596,7 +2596,7 @@ describe('BaseExternalAccountClient', () => {
       const unexpiredTokenResponse = await client.getAccessToken();
       assert.deepStrictEqual(
         unexpiredTokenResponse.token,
-        credentials.access_token
+        credentials.access_token,
       );
     });
   });

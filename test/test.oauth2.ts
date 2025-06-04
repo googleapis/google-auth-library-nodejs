@@ -45,19 +45,19 @@ describe('oauth2', () => {
   const certsPath = '/oauth2/v1/certs';
   const certsResPath = path.join(
     __dirname,
-    '../../test/fixtures/oauthcertspem.json'
+    '../../test/fixtures/oauthcertspem.json',
   );
   const publicKeyEcdsa = fs.readFileSync(
     './test/fixtures/fake-ecdsa-public.pem',
-    'utf-8'
+    'utf-8',
   );
   const privateKeyEcdsa = fs.readFileSync(
     './test/fixtures/fake-ecdsa-private.pem',
-    'utf-8'
+    'utf-8',
   );
   const pubkeysResPath = path.join(
     __dirname,
-    '../../test/fixtures/ecdsapublickeys.json'
+    '../../test/fixtures/ecdsapublickeys.json',
   );
 
   describe(__filename, () => {
@@ -115,7 +115,7 @@ describe('oauth2', () => {
       };
       assert.throws(
         () => client.generateAuthUrl(opts),
-        /If a code_challenge_method is provided, code_challenge must be included/
+        /If a code_challenge_method is provided, code_challenge must be included/,
       );
     });
 
@@ -139,7 +139,7 @@ describe('oauth2', () => {
       assert.strictEqual(props.get('code_challenge'), codes.codeChallenge);
       assert.strictEqual(
         props.get('code_challenge_method'),
-        CodeChallengeMethod.S256
+        CodeChallengeMethod.S256,
       );
     });
 
@@ -163,7 +163,7 @@ describe('oauth2', () => {
         certs: {},
         requiredAudience: string | string[],
         issuers?: string[],
-        theMaxExpiry?: number
+        theMaxExpiry?: number,
       ) => {
         assert.strictEqual(jwt, idToken);
         assert.deepStrictEqual(certs, fakeCerts);
@@ -194,7 +194,7 @@ describe('oauth2', () => {
       client.verifySignedJwtWithCertsAsync = async (
         jwt: string,
         certs: {},
-        requiredAudience: string
+        requiredAudience: string,
       ) => {
         assert.strictEqual(jwt, idToken);
         assert.deepStrictEqual(certs, fakeCerts);
@@ -202,9 +202,12 @@ describe('oauth2', () => {
         return new LoginTicket('c', payload);
       };
       assert.throws(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        () => (client as any).verifyIdToken(idToken, audience),
-        /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./
+        () =>
+          (client as ReturnType<JSON['parse']>).verifyIdToken(
+            idToken,
+            audience,
+          ),
+        /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./,
       );
     });
 
@@ -256,7 +259,7 @@ describe('oauth2', () => {
       const login = await client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKey},
-        'testaudience'
+        'testaudience',
       );
       assert.strictEqual(login.getUserId(), '123456789');
     });
@@ -294,9 +297,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Wrong recipient/
+        /Wrong recipient/,
       );
     });
 
@@ -334,9 +337,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          validAudiences
+          validAudiences,
         ),
-        /Wrong recipient/
+        /Wrong recipient/,
       );
     });
 
@@ -367,9 +370,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Wrong number of segments/
+        /Wrong number of segments/,
       );
     });
 
@@ -405,9 +408,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Can't parse token envelope/
+        /Can't parse token envelope/,
       );
     });
 
@@ -443,9 +446,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Can't parse token payload/
+        /Can't parse token payload/,
       );
     });
 
@@ -479,9 +482,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Invalid token signature/
+        /Invalid token signature/,
       );
     });
 
@@ -512,9 +515,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /No expiration time/
+        /No expiration time/,
       );
     });
 
@@ -547,9 +550,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /No issue time/
+        /No issue time/,
       );
     });
 
@@ -585,9 +588,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Expiration time too far in future/
+        /Expiration time too far in future/,
       );
     });
 
@@ -625,7 +628,7 @@ describe('oauth2', () => {
         {keyid: publicKey},
         'testaudience',
         ['testissuer'],
-        maxExpiry
+        maxExpiry,
       );
     });
 
@@ -663,9 +666,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Token used too early/
+        /Token used too early/,
       );
     });
 
@@ -704,9 +707,9 @@ describe('oauth2', () => {
         client.verifySignedJwtWithCertsAsync(
           data,
           {keyid: publicKey},
-          'testaudience'
+          'testaudience',
         ),
-        /Token used too late/
+        /Token used too late/,
       );
     });
 
@@ -743,9 +746,9 @@ describe('oauth2', () => {
           data,
           {keyid: publicKey},
           'testaudience',
-          ['testissuer']
+          ['testissuer'],
         ),
-        /Invalid issuer/
+        /Invalid issuer/,
       );
     });
 
@@ -781,7 +784,7 @@ describe('oauth2', () => {
         data,
         {keyid: publicKey},
         'testaudience',
-        ['testissuer']
+        ['testissuer'],
       );
     });
 
@@ -813,14 +816,14 @@ describe('oauth2', () => {
       signer.update(data);
       const signature = formatEcdsa.derToJose(
         signer.sign(privateKeyEcdsa, 'base64'),
-        'ES256'
+        'ES256',
       );
       data += '.' + signature;
       await client.verifySignedJwtWithCertsAsync(
         data,
         {keyid: publicKeyEcdsa},
         'testaudience',
-        ['testissuer']
+        ['testissuer'],
       );
     });
 
@@ -832,11 +835,11 @@ describe('oauth2', () => {
         assert.strictEqual(err, null);
         assert.notStrictEqual(
           certs!['a15eea964ab9cce480e5ef4f47cb17b9fa7d0b21'],
-          null
+          null,
         );
         assert.notStrictEqual(
           certs!['39596dc3a3f12aa74b481579e4ec944f86d24b95'],
-          null
+          null,
         );
         scope.done();
         done();
@@ -902,7 +905,7 @@ describe('oauth2', () => {
       client.request({}, (err, result) => {
         assert.strictEqual(
           err!.message,
-          'No access, refresh token, API key or refresh handler callback is set.'
+          'No access, refresh token, API key or refresh handler callback is set.',
         );
         assert.strictEqual(result, undefined);
         done();
@@ -1015,8 +1018,9 @@ describe('oauth2', () => {
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
       try {
         await client.request({url: 'http://example.com'});
-        // eslint-disable-next-line no-empty
-      } catch (e) {}
+      } catch (e) {
+        // ignore
+      }
       await client.request({url: 'http://example.com'});
       scopes.forEach(s => s.done());
       assert.strictEqual('abc123', client.credentials.access_token);
@@ -1103,7 +1107,7 @@ describe('oauth2', () => {
       await client.request({url: 'http://example.com'});
       assert.strictEqual(
         'initial-access-token',
-        client.credentials.access_token
+        client.credentials.access_token,
       );
       assert.strictEqual(false as boolean, scopes[0].isDone());
       scopes[1].done();
@@ -1119,7 +1123,7 @@ describe('oauth2', () => {
       client.request({url: 'http://example.com'}, () => {
         assert.strictEqual(
           'initial-access-token',
-          client.credentials.access_token
+          client.credentials.access_token,
         );
         assert.strictEqual(false as boolean, scopes[0].isDone());
         scopes[1].done();
@@ -1136,7 +1140,7 @@ describe('oauth2', () => {
       client.request({url: 'http://example.com'}, () => {
         assert.strictEqual(
           'initial-access-token',
-          client.credentials.access_token
+          client.credentials.access_token,
         );
         assert.strictEqual(false as boolean, scopes[0].isDone());
         scopes[1].done();
@@ -1251,11 +1255,11 @@ describe('oauth2', () => {
           scopes.forEach(s => s.done());
           assert.strictEqual(
             client.credentials.access_token,
-            expectedRefreshedAccessToken.access_token
+            expectedRefreshedAccessToken.access_token,
           );
           assert.strictEqual(
             client.credentials.expiry_date,
-            expectedRefreshedAccessToken.expiry_date
+            expectedRefreshedAccessToken.expiry_date,
           );
         });
       });
@@ -1289,11 +1293,11 @@ describe('oauth2', () => {
           scopes.forEach(s => s.done());
           assert.strictEqual(
             client.credentials.access_token,
-            expectedRefreshedAccessToken.access_token
+            expectedRefreshedAccessToken.access_token,
           );
           assert.strictEqual(
             client.credentials.expiry_date,
-            expectedRefreshedAccessToken.expiry_date
+            expectedRefreshedAccessToken.expiry_date,
           );
         });
       });
@@ -1315,7 +1319,7 @@ describe('oauth2', () => {
           assert(e);
           assert.strictEqual(e.response!.status, 401);
           done();
-        }
+        },
       );
     });
 
@@ -1506,7 +1510,7 @@ describe('oauth2', () => {
       const oauth2client = new OAuth2Client(opts);
       assert.equal(
         oauth2client.clientAuthentication,
-        ClientAuthentication.None
+        ClientAuthentication.None,
       );
 
       try {
@@ -1535,7 +1539,7 @@ describe('oauth2', () => {
       const oauth2client = new OAuth2Client(opts);
       assert.equal(
         oauth2client.clientAuthentication,
-        ClientAuthentication.ClientSecretPost
+        ClientAuthentication.ClientSecretPost,
       );
     });
 
@@ -1649,7 +1653,7 @@ describe('oauth2', () => {
 
       await assert.rejects(
         client.getRequestHeaders('http://example.com'),
-        /No refresh token is set./
+        /No refresh token is set./,
       );
     });
 
@@ -1667,7 +1671,7 @@ describe('oauth2', () => {
 
       assert.strictEqual(
         refreshedAccessToken.token,
-        expectedRefreshedAccessToken.access_token
+        expectedRefreshedAccessToken.access_token,
       );
     });
 
@@ -1688,7 +1692,7 @@ describe('oauth2', () => {
 
       assert.strictEqual(
         refreshedAccessToken.token,
-        expectedRefreshedAccessToken.access_token
+        expectedRefreshedAccessToken.access_token,
       );
     });
 
@@ -1707,7 +1711,7 @@ describe('oauth2', () => {
 
       await assert.rejects(
         client.getAccessToken(),
-        /No access token is returned by the refreshHandler callback./
+        /No access token is returned by the refreshHandler callback./,
       );
     });
 

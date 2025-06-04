@@ -49,8 +49,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   interface NockMockRefreshResponse {
     statusCode: number;
     response: TokenRefreshResponse | OAuthErrorResponse;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: {[key: string]: any};
+    request: ReturnType<JSON['parse']>;
     times?: number;
   }
 
@@ -58,13 +57,13 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     url: string,
     path: string,
     nockParams: NockMockRefreshResponse[],
-    additionalHeaders?: {[key: string]: string}
+    additionalHeaders?: {[key: string]: string},
   ): nock.Scope {
     const headers = Object.assign(
       {
         'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
       },
-      additionalHeaders || {}
+      additionalHeaders || {},
     );
     const scope = nock(url, {
       reqheaders: headers,
@@ -125,14 +124,14 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     it('should not throw when valid options are provided', () => {
       assert.doesNotThrow(() => {
         return new ExternalAccountAuthorizedUserClient(
-          externalAccountAuthorizedUserCredentialOptions
+          externalAccountAuthorizedUserCredentialOptions,
         );
       });
     });
 
     it('should set default RefreshOptions', () => {
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
 
       assert(!client.forceRefreshOnFailure);
@@ -152,7 +151,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptionsNoToken
+        externalAccountAuthorizedUserCredentialOptionsNoToken,
       );
       await client.getAccessToken();
       scope.done();
@@ -189,18 +188,18 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       assert.strictEqual(
         client.forceRefreshOnFailure,
-        refreshOptions.forceRefreshOnFailure
+        refreshOptions.forceRefreshOnFailure,
       );
       assert.strictEqual(
         client.eagerRefreshThresholdMillis,
-        refreshOptions.eagerRefreshThresholdMillis
+        refreshOptions.eagerRefreshThresholdMillis,
       );
     });
 
     describe('universeDomain', () => {
       it('should be the default universe if not set', () => {
         const client = new ExternalAccountAuthorizedUserClient(
-          externalAccountAuthorizedUserCredentialOptions
+          externalAccountAuthorizedUserCredentialOptions,
         );
 
         assert.equal(client.universeDomain, DEFAULT_UNIVERSE);
@@ -232,7 +231,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       const actualResponse = await client.getAccessToken();
       assertGaxiosResponsePresent(actualResponse);
@@ -262,11 +261,11 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       await assert.rejects(
         client.getAccessToken(),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -291,7 +290,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         .reply(200, successfulRefreshResponse);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
 
       const actualResponse = await client.getAccessToken();
@@ -325,7 +324,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Get initial access token and new refresh token.
       await client.getAccessToken();
@@ -355,7 +354,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Get initial access token and new refresh token.
       await client.getAccessToken();
@@ -363,7 +362,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       clock.tick(
         successfulRefreshResponseNoRefreshToken.expires_in * 1000 -
           client.eagerRefreshThresholdMillis -
-          1
+          1,
       );
       // Refresh access token with new access token.
       const actualResponse = await client.getAccessToken();
@@ -390,7 +389,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Get initial access token.
       await client.getAccessToken();
@@ -398,7 +397,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       clock.tick(
         successfulRefreshResponseNoRefreshToken.expires_in * 1000 -
           client.eagerRefreshThresholdMillis +
-          1
+          1,
       );
       // Refresh access token with new access token.
       const actualResponse = await client.getAccessToken();
@@ -431,10 +430,10 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: 'quotaProjectId'},
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       const client = new ExternalAccountAuthorizedUserClient(
-        optionsWithQuotaProjectId
+        optionsWithQuotaProjectId,
       );
       const actualHeaders = await client.getRequestHeaders();
 
@@ -460,11 +459,11 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       await assert.rejects(
         client.getRequestHeaders(),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -479,7 +478,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       };
       const optionsWithQuotaProjectId = Object.assign(
         {quota_project_id: quotaProjectId},
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       const exampleRequest = {
         key1: 'value1',
@@ -512,7 +511,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        optionsWithQuotaProjectId
+        optionsWithQuotaProjectId,
       );
       const actualResponse = await client.request<Object>({
         url: 'https://example.com/api',
@@ -547,7 +546,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       await assert.rejects(
         client.request<Object>({
@@ -555,7 +554,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           method: 'POST',
           data: exampleRequest,
         }),
-        getErrorFromOAuthErrorResponse(errorResponse)
+        getErrorFromOAuthErrorResponse(errorResponse),
       );
       scope.done();
     });
@@ -595,7 +594,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       client.request<Object>(
         {
@@ -609,7 +608,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
           assert.deepStrictEqual(result?.data, exampleResponse);
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
@@ -645,7 +644,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       client.request<Object>(
         {
@@ -660,7 +659,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
           scopes.forEach(scope => scope.done());
           done();
-        }
+        },
       );
     });
 
@@ -762,7 +761,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         }),
         {
           status: 401,
-        }
+        },
       );
 
       scopes.forEach(scope => scope.done());
@@ -817,7 +816,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         }),
         {
           status: 403,
-        }
+        },
       );
       scopes.forEach(scope => scope.done());
     });
@@ -853,7 +852,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ];
 
       const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions
+        externalAccountAuthorizedUserCredentialOptions,
       );
       // Send request with no headers.
       const actualResponse = await client.request<Object>({

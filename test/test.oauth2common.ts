@@ -27,7 +27,7 @@ import {
 class TestOAuthClientAuthHandler extends OAuthClientAuthHandler {
   testApplyClientAuthenticationOptions(
     opts: GaxiosOptions,
-    bearerToken?: string
+    bearerToken?: string,
   ) {
     return this.applyClientAuthenticationOptions(opts, bearerToken);
   }
@@ -36,8 +36,11 @@ class TestOAuthClientAuthHandler extends OAuthClientAuthHandler {
 /** Custom error object for testing additional fields on an Error. */
 class CustomError extends Error {
   public readonly code?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(message: string, stack?: any, code?: string) {
+  constructor(
+    message: string,
+    stack?: ReturnType<JSON['parse']>,
+    code?: string,
+  ) {
     super(message);
     this.name = 'CustomError';
     this.stack = stack;
@@ -112,7 +115,7 @@ describe('OAuthClientAuthHandler', () => {
     const expectedOptions = prepareExpectedOptions(options);
     expectedOptions.headers.set(
       'authorization',
-      `Basic ${expectedBase64EncodedCred}`
+      `Basic ${expectedBase64EncodedCred}`,
     );
 
     handler.testApplyClientAuthenticationOptions(options);
@@ -136,7 +139,7 @@ describe('OAuthClientAuthHandler', () => {
     const expectedOptions = prepareExpectedOptions(options);
     expectedOptions.headers.set(
       'authorization',
-      `Basic ${expectedBase64EncodedCredNoSecret}`
+      `Basic ${expectedBase64EncodedCredNoSecret}`,
     );
 
     handler.testApplyClientAuthenticationOptions(options);
@@ -156,7 +159,7 @@ describe('OAuthClientAuthHandler', () => {
     const expectedOptions = prepareExpectedOptions(options);
     expectedOptions.headers.set(
       'authorization',
-      `Basic ${expectedBase64EncodedCred}`
+      `Basic ${expectedBase64EncodedCred}`,
     );
 
     handler.testApplyClientAuthenticationOptions(options);
@@ -164,8 +167,7 @@ describe('OAuthClientAuthHandler', () => {
   });
 
   describe('with request-body client auth', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const unsupportedMethods: any[] = [
+    const unsupportedMethods: ReturnType<JSON['parse']>[] = [
       undefined,
       'GET',
       'DELETE',
@@ -177,7 +179,7 @@ describe('OAuthClientAuthHandler', () => {
       it(`should throw on requests with unsupported HTTP method ${method}`, () => {
         const expectedError = new Error(
           `${method || 'GET'} HTTP method does not support request-body ` +
-            'client authentication'
+            'client authentication',
         );
         const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
         const originalOptions: GaxiosOptions = {
@@ -194,7 +196,7 @@ describe('OAuthClientAuthHandler', () => {
     it('should throw on unsupported content-types', () => {
       const expectedError = new Error(
         'text/html content-types are not supported with request-body ' +
-          'client authentication'
+          'client authentication',
       );
       const handler = new TestOAuthClientAuthHandler(reqBodyAuth);
       const originalOptions: GaxiosOptions = {
@@ -447,7 +449,7 @@ describe('getErrorFromOAuthErrorResponse', () => {
     assert.strictEqual(
       error.message,
       `Error code ${resp.error}: ${resp.error_description} ` +
-        `- ${resp.error_uri}`
+        `- ${resp.error_uri}`,
     );
   });
 
@@ -459,7 +461,7 @@ describe('getErrorFromOAuthErrorResponse', () => {
     const error = getErrorFromOAuthErrorResponse(resp);
     assert.strictEqual(
       error.message,
-      `Error code ${resp.error}: ${resp.error_description}`
+      `Error code ${resp.error}: ${resp.error_description}`,
     );
   });
 
@@ -475,7 +477,7 @@ describe('getErrorFromOAuthErrorResponse', () => {
     const originalError = new CustomError(
       'Original error message',
       'Error stack',
-      '123456'
+      '123456',
     );
     const resp = {
       error: 'unsupported_grant_type',
@@ -486,13 +488,15 @@ describe('getErrorFromOAuthErrorResponse', () => {
       `Error code ${resp.error}: ${resp.error_description} ` +
         `- ${resp.error_uri}`,
       'Error stack',
-      '123456'
+      '123456',
     );
 
     const actualError = getErrorFromOAuthErrorResponse(resp, originalError);
     assert.strictEqual(actualError.message, expectedError.message);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    assert.strictEqual((actualError as any).code, expectedError.code);
+    assert.strictEqual(
+      (actualError as ReturnType<JSON['parse']>).code,
+      expectedError.code,
+    );
     assert.strictEqual(actualError.name, expectedError.name);
     assert.strictEqual(actualError.stack, expectedError.stack);
   });

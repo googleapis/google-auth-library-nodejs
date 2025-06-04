@@ -70,7 +70,7 @@ describe('idtokenclient', () => {
     assert.strictEqual(client.credentials.id_token, 'abc123');
     assert.deepStrictEqual(
       headers,
-      new Headers({authorization: 'Bearer abc123'})
+      new Headers({authorization: 'Bearer abc123'}),
     );
   });
 
@@ -92,7 +92,7 @@ describe('idtokenclient', () => {
     assert.strictEqual(client.credentials.id_token, 'abc123');
     assert.deepStrictEqual(
       headers,
-      new Headers({authorization: 'Bearer abc123'})
+      new Headers({authorization: 'Bearer abc123'}),
     );
   });
 });

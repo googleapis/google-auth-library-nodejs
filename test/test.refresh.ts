@@ -40,8 +40,7 @@ describe('refresh', () => {
     const refresh = new UserRefreshClient();
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (refresh as any).fromJSON(null);
+      (refresh as ReturnType<JSON['parse']>).fromJSON(null);
     });
   });
 
@@ -104,8 +103,7 @@ describe('refresh', () => {
   it('fromStream should error on null stream', done => {
     const refresh = new UserRefreshClient();
     // Test verifies invalid parameter tests, which requires cast to any.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (refresh as any).fromStream(null, (err: Error) => {
+    (refresh as ReturnType<JSON['parse']>).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
     });
@@ -115,7 +113,7 @@ describe('refresh', () => {
     // Read the contents of the file into a json object.
     const fileContents = fs.readFileSync(
       './test/fixtures/refresh.json',
-      'utf-8'
+      'utf-8',
     );
     const json = JSON.parse(fileContents);
 
@@ -143,7 +141,7 @@ describe('refresh', () => {
 
     // Fake loading default credentials with quota project set:
     const stream = fs.createReadStream(
-      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json',
     );
     const refresh = new UserRefreshClient();
     await refresh.fromStream(stream);
@@ -155,7 +153,7 @@ describe('refresh', () => {
 
   it('getRequestHeaders should populate x-goog-user-project header if quota_project_id present and token has not expired', async () => {
     const stream = fs.createReadStream(
-      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json',
     );
     const eagerRefreshThresholdMillis = 10;
     const refresh = new UserRefreshClient({
@@ -176,7 +174,7 @@ describe('refresh', () => {
       .post('/token')
       .reply(200, {});
     const stream = fs.createReadStream(
-      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json'
+      './test/fixtures/config-with-quota/.config/gcloud/application_default_credentials.json',
     );
     const refresh = new UserRefreshClient();
     await refresh.fromStream(stream);

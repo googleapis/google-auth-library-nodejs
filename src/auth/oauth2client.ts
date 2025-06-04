@@ -344,7 +344,7 @@ export interface GetTokenCallback {
   (
     err: GaxiosError | null,
     token?: Credentials | null,
-    res?: GaxiosResponse | null
+    res?: GaxiosResponse | null,
   ): void;
 }
 
@@ -357,7 +357,7 @@ export interface GetAccessTokenCallback {
   (
     err: GaxiosError | null,
     token?: string | null,
-    res?: GaxiosResponse | null
+    res?: GaxiosResponse | null,
   ): void;
 }
 
@@ -365,7 +365,7 @@ export interface RefreshAccessTokenCallback {
   (
     err: GaxiosError | null,
     credentials?: Credentials | null,
-    res?: GaxiosResponse | null
+    res?: GaxiosResponse | null,
   ): void;
 }
 
@@ -383,7 +383,7 @@ export interface RequestMetadataCallback {
   (
     err: GaxiosError | null,
     headers?: Headers,
-    res?: GaxiosResponse<void> | null
+    res?: GaxiosResponse<void> | null,
   ): void;
 }
 
@@ -391,7 +391,7 @@ export interface GetFederatedSignonCertsCallback {
   (
     err: GaxiosError | null,
     certs?: Certificates,
-    response?: GaxiosResponse<void> | null
+    response?: GaxiosResponse<void> | null,
   ): void;
 }
 
@@ -405,7 +405,7 @@ export interface GetIapPublicKeysCallback {
   (
     err: GaxiosError | null,
     pubkeys?: PublicKeys,
-    response?: GaxiosResponse<void> | null
+    response?: GaxiosResponse<void> | null,
   ): void;
 }
 
@@ -579,7 +579,7 @@ export class OAuth2Client extends AuthClient {
     /**
      * @deprecated - provide a {@link OAuth2ClientOptions `OAuth2ClientOptions`} object in the first parameter instead
      */
-    redirectUri?: OAuth2ClientOptions['redirectUri']
+    redirectUri?: OAuth2ClientOptions['redirectUri'],
   ) {
     super(typeof options === 'object' ? options : {});
 
@@ -641,7 +641,7 @@ export class OAuth2Client extends AuthClient {
   generateAuthUrl(opts: GenerateAuthUrlOpts = {}) {
     if (opts.code_challenge_method && !opts.code_challenge) {
       throw new Error(
-        'If a code_challenge_method is provided, code_challenge must be included.'
+        'If a code_challenge_method is provided, code_challenge must be included.',
       );
     }
     opts.response_type = opts.response_type || 'code';
@@ -663,7 +663,7 @@ export class OAuth2Client extends AuthClient {
     // To make the code compatible with browser SubtleCrypto we need to make
     // this method async.
     throw new Error(
-      'generateCodeVerifier is removed, please use generateCodeVerifierAsync instead.'
+      'generateCodeVerifier is removed, please use generateCodeVerifierAsync instead.',
     );
   }
 
@@ -709,14 +709,14 @@ export class OAuth2Client extends AuthClient {
   getToken(options: GetTokenOptions, callback: GetTokenCallback): void;
   getToken(
     codeOrOptions: string | GetTokenOptions,
-    callback?: GetTokenCallback
+    callback?: GetTokenCallback,
   ): Promise<GetTokenResponse> | void {
     const options =
       typeof codeOrOptions === 'string' ? {code: codeOrOptions} : codeOrOptions;
     if (callback) {
       this.getTokenAsync(options).then(
         r => callback(null, r.tokens, r.res),
-        e => callback(e, null, e.response)
+        e => callback(e, null, e.response),
       );
     } else {
       return this.getTokenAsync(options);
@@ -724,7 +724,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async getTokenAsync(
-    options: GetTokenOptions
+    options: GetTokenOptions,
   ): Promise<GetTokenResponse> {
     const url = this.endpoints.oauth2TokenUrl.toString();
     const headers = new Headers();
@@ -743,13 +743,16 @@ export class OAuth2Client extends AuthClient {
     if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
       values.client_secret = this._clientSecret;
     }
-    const res = await this.transporter.request<CredentialRequest>({
+
+    const opts = {
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
       data: new URLSearchParams(values as {}),
       headers,
-    });
+    };
+    AuthClient.setMethodName(opts, 'getTokenAsync');
+    const res = await this.transporter.request<CredentialRequest>(opts);
     const tokens = res.data as Credentials;
     if (res.data && res.data.expires_in) {
       tokens.expiry_date = new Date().getTime() + res.data.expires_in * 1000;
@@ -765,7 +768,7 @@ export class OAuth2Client extends AuthClient {
    * @private
    */
   protected async refreshToken(
-    refreshToken?: string | null
+    refreshToken?: string | null,
   ): Promise<GetTokenResponse> {
     if (!refreshToken) {
       return this.refreshTokenNoCache(refreshToken);
@@ -784,14 +787,14 @@ export class OAuth2Client extends AuthClient {
       e => {
         this.refreshTokenPromises.delete(refreshToken);
         throw e;
-      }
+      },
     );
     this.refreshTokenPromises.set(refreshToken, p);
     return p;
   }
 
   protected async refreshTokenNoCache(
-    refreshToken?: string | null
+    refreshToken?: string | null,
   ): Promise<GetTokenResponse> {
     if (!refreshToken) {
       throw new Error('No refresh token is set.');
@@ -807,13 +810,16 @@ export class OAuth2Client extends AuthClient {
     let res: GaxiosResponse<CredentialRequest>;
 
     try {
-      // request for new token
-      res = await this.transporter.request<CredentialRequest>({
+      const opts: GaxiosOptions = {
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
         data: new URLSearchParams(data),
-      });
+      };
+      AuthClient.setMethodName(opts, 'refreshTokenNoCache');
+
+      // request for new token
+      res = await this.transporter.request<CredentialRequest>(opts);
     } catch (e) {
       if (
         e instanceof GaxiosError &&
@@ -845,12 +851,12 @@ export class OAuth2Client extends AuthClient {
   refreshAccessToken(): Promise<RefreshAccessTokenResponse>;
   refreshAccessToken(callback: RefreshAccessTokenCallback): void;
   refreshAccessToken(
-    callback?: RefreshAccessTokenCallback
+    callback?: RefreshAccessTokenCallback,
   ): Promise<RefreshAccessTokenResponse> | void {
     if (callback) {
       this.refreshAccessTokenAsync().then(
         r => callback(null, r.credentials, r.res),
-        callback
+        callback,
       );
     } else {
       return this.refreshAccessTokenAsync();
@@ -873,12 +879,12 @@ export class OAuth2Client extends AuthClient {
   getAccessToken(): Promise<GetAccessTokenResponse>;
   getAccessToken(callback: GetAccessTokenCallback): void;
   getAccessToken(
-    callback?: GetAccessTokenCallback
+    callback?: GetAccessTokenCallback,
   ): Promise<GetAccessTokenResponse> | void {
     if (callback) {
       this.getAccessTokenAsync().then(
         r => callback(null, r.token, r.res),
-        callback
+        callback,
       );
     } else {
       return this.getAccessTokenAsync();
@@ -899,7 +905,7 @@ export class OAuth2Client extends AuthClient {
           }
         } else {
           throw new Error(
-            'No refresh token or refresh handler callback is set.'
+            'No refresh token or refresh handler callback is set.',
           );
         }
       }
@@ -921,7 +927,6 @@ export class OAuth2Client extends AuthClient {
    *
    * In OAuth2Client, the result has the form:
    * { authorization: 'Bearer <access_token_value>' }
-   * @param url The optional url being authorized
    */
   async getRequestHeaders(url?: string | URL): Promise<Headers> {
     const headers = (await this.getRequestMetadataAsync(url)).headers;
@@ -929,9 +934,9 @@ export class OAuth2Client extends AuthClient {
   }
 
   protected async getRequestMetadataAsync(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    url?: string | URL | null
+    url?: string | URL | null,
   ): Promise<RequestMetadataResponse> {
+    url;
     const thisCreds = this.credentials;
     if (
       !thisCreds.access_token &&
@@ -940,7 +945,7 @@ export class OAuth2Client extends AuthClient {
       !this.refreshHandler
     ) {
       throw new Error(
-        'No access, refresh token, API key or refresh handler callback is set.'
+        'No access, refresh token, API key or refresh handler callback is set.',
       );
     }
 
@@ -1025,17 +1030,18 @@ export class OAuth2Client extends AuthClient {
   revokeToken(token: string): GaxiosPromise<RevokeCredentialsResult>;
   revokeToken(
     token: string,
-    callback: BodyResponseCallback<RevokeCredentialsResult>
+    callback: BodyResponseCallback<RevokeCredentialsResult>,
   ): void;
   revokeToken(
     token: string,
-    callback?: BodyResponseCallback<RevokeCredentialsResult>
+    callback?: BodyResponseCallback<RevokeCredentialsResult>,
   ): GaxiosPromise<RevokeCredentialsResult> | void {
     const opts: GaxiosOptions = {
       ...OAuth2Client.RETRY_CONFIG,
       url: this.getRevokeTokenURL(token).toString(),
       method: 'POST',
     };
+    AuthClient.setMethodName(opts, 'revokeToken');
     if (callback) {
       this.transporter
         .request<RevokeCredentialsResult>(opts)
@@ -1051,10 +1057,10 @@ export class OAuth2Client extends AuthClient {
    */
   revokeCredentials(): GaxiosPromise<RevokeCredentialsResult>;
   revokeCredentials(
-    callback: BodyResponseCallback<RevokeCredentialsResult>
+    callback: BodyResponseCallback<RevokeCredentialsResult>,
   ): void;
   revokeCredentials(
-    callback?: BodyResponseCallback<RevokeCredentialsResult>
+    callback?: BodyResponseCallback<RevokeCredentialsResult>,
   ): GaxiosPromise<RevokeCredentialsResult> | void {
     if (callback) {
       this.revokeCredentialsAsync().then(res => callback(null, res), callback);
@@ -1085,14 +1091,14 @@ export class OAuth2Client extends AuthClient {
   request<T>(opts: GaxiosOptions, callback: BodyResponseCallback<T>): void;
   request<T>(
     opts: GaxiosOptions,
-    callback?: BodyResponseCallback<T>
+    callback?: BodyResponseCallback<T>,
   ): GaxiosPromise<T> | void {
     if (callback) {
       this.requestAsync<T>(opts).then(
         r => callback(null, r),
         e => {
           return callback(e, e.response);
-        }
+        },
       );
     } else {
       return this.requestAsync<T>(opts);
@@ -1101,10 +1107,10 @@ export class OAuth2Client extends AuthClient {
 
   protected async requestAsync<T>(
     opts: GaxiosOptions,
-    reAuthRetried = false
+    reAuthRetried = false,
   ): Promise<GaxiosResponse<T>> {
     try {
-      const r = await this.getRequestMetadataAsync(opts.url);
+      const r = await this.getRequestMetadataAsync();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
       this.addUserProjectAndAuthHeaders(opts.headers, r.headers);
@@ -1186,18 +1192,18 @@ export class OAuth2Client extends AuthClient {
   verifyIdToken(options: VerifyIdTokenOptions): Promise<LoginTicket>;
   verifyIdToken(
     options: VerifyIdTokenOptions,
-    callback: (err: Error | null, login?: LoginTicket) => void
+    callback: (err: Error | null, login?: LoginTicket) => void,
   ): void;
   verifyIdToken(
     options: VerifyIdTokenOptions,
-    callback?: (err: Error | null, login?: LoginTicket) => void
+    callback?: (err: Error | null, login?: LoginTicket) => void,
   ): void | Promise<LoginTicket> {
     // This function used to accept two arguments instead of an options object.
     // Check the types to help users upgrade with less pain.
     // This check can be removed after a 2.0 release.
     if (callback && typeof callback !== 'function') {
       throw new Error(
-        'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.'
+        'This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry.',
       );
     }
 
@@ -1209,7 +1215,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async verifyIdTokenAsync(
-    options: VerifyIdTokenOptions
+    options: VerifyIdTokenOptions,
   ): Promise<LoginTicket> {
     if (!options.idToken) {
       throw new Error('The verifyIdToken method requires an ID Token');
@@ -1220,7 +1226,7 @@ export class OAuth2Client extends AuthClient {
       response.certs,
       options.audience,
       this.issuers,
-      options.maxExpiry
+      options.maxExpiry,
     );
 
     return login;
@@ -1248,7 +1254,7 @@ export class OAuth2Client extends AuthClient {
         expiry_date: new Date().getTime() + data.expires_in! * 1000,
         scopes: data.scope!.split(' '),
       },
-      data
+      data,
     );
     delete info.expires_in;
     delete info.scope;
@@ -1264,12 +1270,12 @@ export class OAuth2Client extends AuthClient {
   getFederatedSignonCerts(): Promise<FederatedSignonCertsResponse>;
   getFederatedSignonCerts(callback: GetFederatedSignonCertsCallback): void;
   getFederatedSignonCerts(
-    callback?: GetFederatedSignonCertsCallback
+    callback?: GetFederatedSignonCertsCallback,
   ): Promise<FederatedSignonCertsResponse> | void {
     if (callback) {
       this.getFederatedSignonCertsAsync().then(
         r => callback(null, r.certs, r.res),
-        callback
+        callback,
       );
     } else {
       return this.getFederatedSignonCertsAsync();
@@ -1301,10 +1307,12 @@ export class OAuth2Client extends AuthClient {
         throw new Error(`Unsupported certificate format ${format}`);
     }
     try {
-      res = await this.transporter.request({
+      const opts = {
         ...OAuth2Client.RETRY_CONFIG,
         url,
-      });
+      };
+      AuthClient.setMethodName(opts, 'getFederatedSignonCertsAsync');
+      res = await this.transporter.request(opts);
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
@@ -1355,12 +1363,12 @@ export class OAuth2Client extends AuthClient {
   getIapPublicKeys(): Promise<IapPublicKeysResponse>;
   getIapPublicKeys(callback: GetIapPublicKeysCallback): void;
   getIapPublicKeys(
-    callback?: GetIapPublicKeysCallback
+    callback?: GetIapPublicKeysCallback,
   ): Promise<IapPublicKeysResponse> | void {
     if (callback) {
       this.getIapPublicKeysAsync().then(
         r => callback(null, r.pubkeys, r.res),
-        callback
+        callback,
       );
     } else {
       return this.getIapPublicKeysAsync();
@@ -1372,10 +1380,12 @@ export class OAuth2Client extends AuthClient {
     const url = this.endpoints.oauth2IapPublicKeyUrl.toString();
 
     try {
-      res = await this.transporter.request({
+      const opts = {
         ...OAuth2Client.RETRY_CONFIG,
         url,
-      });
+      };
+      AuthClient.setMethodName(opts, 'getIapPublicKeysAsync');
+      res = await this.transporter.request(opts);
     } catch (e) {
       if (e instanceof Error) {
         e.message = `Failed to retrieve verification certificates: ${e.message}`;
@@ -1391,7 +1401,7 @@ export class OAuth2Client extends AuthClient {
     // To make the code compatible with browser SubtleCrypto we need to make
     // this method async.
     throw new Error(
-      'verifySignedJwtWithCerts is removed, please use verifySignedJwtWithCertsAsync instead.'
+      'verifySignedJwtWithCerts is removed, please use verifySignedJwtWithCertsAsync instead.',
     );
   }
 
@@ -1410,7 +1420,7 @@ export class OAuth2Client extends AuthClient {
     certs: Certificates | PublicKeys,
     requiredAudience?: string | string[],
     issuers?: string[],
-    maxExpiry?: number
+    maxExpiry?: number,
   ) {
     const crypto = createCrypto();
 
@@ -1478,7 +1488,7 @@ export class OAuth2Client extends AuthClient {
 
     if (!payload.exp) {
       throw new Error(
-        'No expiration time in token: ' + JSON.stringify(payload)
+        'No expiration time in token: ' + JSON.stringify(payload),
       );
     }
 
@@ -1492,7 +1502,7 @@ export class OAuth2Client extends AuthClient {
 
     if (exp >= now + maxExpiry) {
       throw new Error(
-        'Expiration time too far in future: ' + JSON.stringify(payload)
+        'Expiration time too far in future: ' + JSON.stringify(payload),
       );
     }
 
@@ -1506,7 +1516,7 @@ export class OAuth2Client extends AuthClient {
           ' < ' +
           earliest +
           ': ' +
-          JSON.stringify(payload)
+          JSON.stringify(payload),
       );
     }
 
@@ -1517,7 +1527,7 @@ export class OAuth2Client extends AuthClient {
           ' > ' +
           latest +
           ': ' +
-          JSON.stringify(payload)
+          JSON.stringify(payload),
       );
     }
 
@@ -1526,7 +1536,7 @@ export class OAuth2Client extends AuthClient {
         'Invalid issuer, expected one of [' +
           issuers +
           '], but got ' +
-          payload.iss
+          payload.iss,
       );
     }
 
@@ -1543,7 +1553,7 @@ export class OAuth2Client extends AuthClient {
       }
       if (!audVerified) {
         throw new Error(
-          'Wrong recipient, payload audience != requiredAudience'
+          'Wrong recipient, payload audience != requiredAudience',
         );
       }
     }
@@ -1562,7 +1572,7 @@ export class OAuth2Client extends AuthClient {
       const accessTokenResponse = await this.refreshHandler();
       if (!accessTokenResponse.access_token) {
         throw new Error(
-          'No access token is returned by the refreshHandler callback.'
+          'No access token is returned by the refreshHandler callback.',
         );
       }
       return accessTokenResponse;

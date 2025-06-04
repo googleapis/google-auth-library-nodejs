@@ -35,7 +35,6 @@ interface AwsRequestSignerTest {
 describe('AwsRequestSigner', () => {
   let clock: sinon.SinonFakeTimers;
   // Load AWS credentials from a sample security_credentials response.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials-fake.json');
   const accessKeyId = awsSecurityCredentials.AccessKeyId;
   const secretAccessKey = awsSecurityCredentials.SecretAccessKey;
@@ -700,7 +699,7 @@ describe('AwsRequestSigner', () => {
       it(`should resolve with the expected ${test.description}`, async () => {
         clock.tick(test.referenceDate.getTime());
         const actualSignedRequest = await test.instance.getRequestOptions(
-          test.originalRequest
+          test.originalRequest,
         );
         assert.deepStrictEqual(actualSignedRequest, test.getSignedRequest());
       });
@@ -709,7 +708,7 @@ describe('AwsRequestSigner', () => {
     it('should reject with underlying getCredentials error', async () => {
       const awsRequestSigner = new AwsRequestSigner(
         getCredentialsUnsuccessful,
-        'us-east-2'
+        'us-east-2',
       );
       const options: GaxiosOptions = {
         url:
@@ -720,22 +719,22 @@ describe('AwsRequestSigner', () => {
 
       await assert.rejects(
         awsRequestSigner.getRequestOptions(options),
-        awsError
+        awsError,
       );
     });
 
     it('should reject when no URL is available', async () => {
       const invalidOptionsError = new RangeError(
-        '"url" is required in "amzOptions"'
+        '"url" is required in "amzOptions"',
       );
       const awsRequestSigner = new AwsRequestSigner(
         getCredentials,
-        'us-east-2'
+        'us-east-2',
       );
 
       await assert.rejects(
         awsRequestSigner.getRequestOptions({}),
-        invalidOptionsError
+        invalidOptionsError,
       );
     });
   });

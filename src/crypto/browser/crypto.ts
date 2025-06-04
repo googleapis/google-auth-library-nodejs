@@ -28,7 +28,7 @@ export class BrowserCrypto implements Crypto {
       window.crypto.subtle === undefined
     ) {
       throw new Error(
-        "SubtleCrypto not found. Make sure it's an https:// website."
+        "SubtleCrypto not found. Make sure it's an https:// website.",
       );
     }
   }
@@ -44,7 +44,7 @@ export class BrowserCrypto implements Crypto {
     // Result is ArrayBuffer as well.
     const outputBuffer = await window.crypto.subtle.digest(
       'SHA-256',
-      inputBuffer
+      inputBuffer,
     );
 
     return base64js.fromByteArray(new Uint8Array(outputBuffer));
@@ -67,7 +67,7 @@ export class BrowserCrypto implements Crypto {
   async verify(
     pubkey: JwkCertificate,
     data: string,
-    signature: string
+    signature: string,
   ): Promise<boolean> {
     const algo = {
       name: 'RSASSA-PKCS1-v1_5',
@@ -76,14 +76,14 @@ export class BrowserCrypto implements Crypto {
 
     const dataArray = new TextEncoder().encode(data);
     const signatureArray = base64js.toByteArray(
-      BrowserCrypto.padBase64(signature)
+      BrowserCrypto.padBase64(signature),
     );
     const cryptoKey = await window.crypto.subtle.importKey(
       'jwk',
       pubkey,
       algo,
       true,
-      ['verify']
+      ['verify'],
     );
 
     // SubtleCrypto's verify method is async so we must make
@@ -92,7 +92,7 @@ export class BrowserCrypto implements Crypto {
       algo,
       cryptoKey,
       signatureArray,
-      dataArray
+      dataArray,
     );
     return result;
   }
@@ -109,7 +109,7 @@ export class BrowserCrypto implements Crypto {
       privateKey,
       algo,
       true,
-      ['sign']
+      ['sign'],
     );
 
     // SubtleCrypto's sign method is async so we must make
@@ -147,7 +147,7 @@ export class BrowserCrypto implements Crypto {
     // Result is ArrayBuffer as well.
     const outputBuffer = await window.crypto.subtle.digest(
       'SHA-256',
-      inputBuffer
+      inputBuffer,
     );
 
     return fromArrayBufferToHex(outputBuffer);
@@ -163,7 +163,7 @@ export class BrowserCrypto implements Crypto {
    */
   async signWithHmacSha256(
     key: string | ArrayBuffer,
-    msg: string
+    msg: string,
   ): Promise<ArrayBuffer> {
     // Convert key, if provided in ArrayBuffer format, to string.
     const rawKey =
@@ -182,7 +182,7 @@ export class BrowserCrypto implements Crypto {
         },
       },
       false,
-      ['sign']
+      ['sign'],
     );
     return window.crypto.subtle.sign('HMAC', cryptoKey, enc.encode(msg));
   }

@@ -23,10 +23,7 @@ import {
   SubjectTokenSupplier,
 } from '../src/auth/identitypoolclient';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
-import {
-  BaseExternalAccountClient,
-  ExternalAccountSupplierContext,
-} from '../src/auth/baseexternalclient';
+import {BaseExternalAccountClient} from '../src/auth/baseexternalclient';
 import {
   assertGaxiosResponsePresent,
   getAudience,
@@ -50,7 +47,7 @@ function escapeRegExp(str: string): string {
 describe('IdentityPoolClient', () => {
   const fileSubjectToken = fs.readFileSync(
     './test/fixtures/external-subject-token.txt',
-    'utf-8'
+    'utf-8',
   );
   const audience = getAudience();
   const crypto = createCrypto();
@@ -67,7 +64,7 @@ describe('IdentityPoolClient', () => {
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    fileSourcedOptions
+    fileSourcedOptions,
   );
   const fileSourcedOptionsWithWorkforceUserProject = Object.assign(
     {},
@@ -77,20 +74,20 @@ describe('IdentityPoolClient', () => {
       audience:
         '//iam.googleapis.com/locations/global/workforcePools/pool/providers/oidc',
       subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-    }
+    },
   );
   const fileSourcedOptionsWithClientAuthAndWorkforceUserProject = Object.assign(
     {
       client_id: 'CLIENT_ID',
       client_secret: 'SECRET',
     },
-    fileSourcedOptionsWithWorkforceUserProject
+    fileSourcedOptionsWithWorkforceUserProject,
   );
   const fileSourcedOptionsWithWorkforceUserProjectAndSA = Object.assign(
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    fileSourcedOptionsWithWorkforceUserProject
+    fileSourcedOptionsWithWorkforceUserProject,
   );
   const basicAuthCreds =
     `${fileSourcedOptionsWithClientAuthAndWorkforceUserProject.client_id}:` +
@@ -112,7 +109,7 @@ describe('IdentityPoolClient', () => {
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    jsonFileSourcedOptions
+    jsonFileSourcedOptions,
   );
   const fileSourcedOptionsNotFound = {
     type: 'external_account',
@@ -144,7 +141,7 @@ describe('IdentityPoolClient', () => {
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    urlSourcedOptions
+    urlSourcedOptions,
   );
   const jsonRespUrlSourcedOptions: IdentityPoolClientOptions = {
     type: 'external_account',
@@ -164,7 +161,7 @@ describe('IdentityPoolClient', () => {
     {
       service_account_impersonation_url: getServiceAccountImpersonationUrl(),
     },
-    jsonRespUrlSourcedOptions
+    jsonRespUrlSourcedOptions,
   );
   const stsSuccessfulResponse: StsSuccessfulResponse = {
     access_token: 'ACCESS_TOKEN',
@@ -199,16 +196,16 @@ describe('IdentityPoolClient', () => {
     ];
     const invalidWorkforceIdentityPoolFileSourceOptions = Object.assign(
       {},
-      fileSourcedOptionsWithWorkforceUserProject
+      fileSourcedOptionsWithWorkforceUserProject,
     );
     const expectedWorkforcePoolUserProjectError = new Error(
       'workforcePoolUserProject should not be set for non-workforce pool ' +
-        'credentials.'
+        'credentials.',
     );
 
     it('should throw when neither file or url sources are provided', () => {
       const expectedError = new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+        'No valid Identity Pool "credential_source" provided, must be either file or url.',
       );
       const invalidOptions = {
         type: 'external_account',
@@ -221,14 +218,15 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 
     it('should throw when both file and url options are provided', () => {
       const expectedError = new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file or url.'
+        'No valid Identity Pool "credential_source" provided, must be either file or url.',
       );
       const invalidOptions = {
         type: 'external_account',
@@ -241,10 +239,11 @@ describe('IdentityPoolClient', () => {
         },
       };
 
-      assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
-      }, expectedError);
+      assert.throws(
+        () =>
+          new IdentityPoolClient(invalidOptions as ReturnType<JSON['parse']>),
+        expectedError,
+      );
     });
 
     it('should throw on invalid credential_source.format.type', () => {
@@ -263,14 +262,15 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 
     it('should throw on required credential_source.format.subject_token_field_name', () => {
       const expectedError = new Error(
-        'Missing subject_token_field_name for JSON credential_source format'
+        'Missing subject_token_field_name for JSON credential_source format',
       );
       const invalidOptions: IdentityPoolClientOptions = {
         type: 'external_account',
@@ -299,16 +299,16 @@ describe('IdentityPoolClient', () => {
 
           assert.throws(() => {
             return new IdentityPoolClient(
-              invalidWorkforceIdentityPoolFileSourceOptions
+              invalidWorkforceIdentityPoolFileSourceOptions,
             );
           }, expectedWorkforcePoolUserProjectError);
         });
-      }
+      },
     );
 
     it('should throw when neither a credential source or a supplier is provided', () => {
       const expectedError = new Error(
-        'A credential source or subject token supplier must be specified.'
+        'A credential source or subject token supplier must be specified.',
       );
       const invalidOptions = {
         type: 'external_account',
@@ -318,14 +318,15 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 
     it('should throw when both a credential source and a supplier is provided', () => {
       const expectedError = new Error(
-        'Only one of credential source or subject token supplier can be specified.'
+        'Only one of credential source or subject token supplier can be specified.',
       );
       const invalidOptions = {
         type: 'external_account',
@@ -337,8 +338,9 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 
@@ -383,7 +385,7 @@ describe('IdentityPoolClient', () => {
       ];
       const validWorkforceIdentityPoolFileSourceOptions = Object.assign(
         {},
-        fileSourcedOptionsWithWorkforceUserProject
+        fileSourcedOptionsWithWorkforceUserProject,
       );
       for (const validWorkforceIdentityPoolClientAudience of validWorkforceIdentityPoolClientAudiences) {
         validWorkforceIdentityPoolFileSourceOptions.audience =
@@ -391,7 +393,7 @@ describe('IdentityPoolClient', () => {
 
         assert.doesNotThrow(() => {
           return new IdentityPoolClient(
-            validWorkforceIdentityPoolFileSourceOptions
+            validWorkforceIdentityPoolFileSourceOptions,
           );
         });
       }
@@ -416,7 +418,7 @@ describe('IdentityPoolClient', () => {
 
       it('should reject when the json subject_token_field_name is not found', async () => {
         const expectedError = new Error(
-          'Unable to parse the subject_token from the credential_source file'
+          'Unable to parse the subject_token from the credential_source file',
         );
         const invalidOptions: IdentityPoolClientOptions = {
           type: 'external_account',
@@ -444,8 +446,8 @@ describe('IdentityPoolClient', () => {
           client.retrieveSubjectToken(),
           new RegExp(
             `The file at ${escapeRegExp(invalidFile)} does not exist, ` +
-              'or it is not a file'
-          )
+              'or it is not a file',
+          ),
         );
       });
 
@@ -456,7 +458,7 @@ describe('IdentityPoolClient', () => {
           file: './test/fixtures',
         };
         const invalidFile = fs.realpathSync(
-          invalidOptions.credential_source.file
+          invalidOptions.credential_source.file,
         );
         const client = new IdentityPoolClient(invalidOptions);
 
@@ -464,8 +466,8 @@ describe('IdentityPoolClient', () => {
           client.retrieveSubjectToken(),
           new RegExp(
             `The file at ${escapeRegExp(invalidFile)} does not exist, ` +
-              'or it is not a file'
-          )
+              'or it is not a file',
+          ),
         );
       });
     });
@@ -522,13 +524,13 @@ describe('IdentityPoolClient', () => {
           ],
           {
             authorization: `Basic ${crypto.encodeBase64StringUtf8(
-              basicAuthCreds
+              basicAuthCreds,
             )}`,
-          }
+          },
         );
 
         const client = new IdentityPoolClient(
-          fileSourcedOptionsWithClientAuthAndWorkforceUserProject
+          fileSourcedOptionsWithClientAuthAndWorkforceUserProject,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -565,7 +567,7 @@ describe('IdentityPoolClient', () => {
         ]);
 
         const client = new IdentityPoolClient(
-          fileSourcedOptionsWithWorkforceUserProject
+          fileSourcedOptionsWithWorkforceUserProject,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -598,14 +600,14 @@ describe('IdentityPoolClient', () => {
           ],
           {
             authorization: `Basic ${crypto.encodeBase64StringUtf8(
-              basicAuthCreds
+              basicAuthCreds,
             )}`,
-          }
+          },
         );
         const fileSourcedOptionsWithClientAuth: IdentityPoolClientOptions =
           Object.assign(
             {},
-            fileSourcedOptionsWithClientAuthAndWorkforceUserProject
+            fileSourcedOptionsWithClientAuthAndWorkforceUserProject,
           );
         delete fileSourcedOptionsWithClientAuth.workforce_pool_user_project;
 
@@ -648,7 +650,7 @@ describe('IdentityPoolClient', () => {
                 }),
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           mockGenerateAccessToken({
@@ -656,11 +658,11 @@ describe('IdentityPoolClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new IdentityPoolClient(
-          fileSourcedOptionsWithWorkforceUserProjectAndSA
+          fileSourcedOptionsWithWorkforceUserProjectAndSA,
         );
         const actualResponse = await client.getAccessToken();
 
@@ -702,7 +704,7 @@ describe('IdentityPoolClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new IdentityPoolClient(fileSourcedOptionsWithSA);
@@ -776,7 +778,7 @@ describe('IdentityPoolClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new IdentityPoolClient(jsonFileSourcedOptionsWithSA);
@@ -798,8 +800,8 @@ describe('IdentityPoolClient', () => {
         await assert.rejects(
           client.getAccessToken(),
           new RegExp(
-            `The file at ${invalidFile} does not exist, or it is not a file`
-          )
+            `The file at ${invalidFile} does not exist, or it is not a file`,
+          ),
         );
       });
 
@@ -825,9 +827,9 @@ describe('IdentityPoolClient', () => {
             'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
               'file',
               false,
-              false
+              false,
             ),
-          }
+          },
         );
 
         const client = new IdentityPoolClient(fileSourcedOptions);
@@ -881,7 +883,7 @@ describe('IdentityPoolClient', () => {
 
       it('should reject when the json subject_token_field_name is not found', async () => {
         const expectedError = new Error(
-          'Unable to parse the subject_token from the credential_source URL'
+          'Unable to parse the subject_token from the credential_source URL',
         );
         const invalidOptions: IdentityPoolClientOptions = {
           type: 'external_account',
@@ -966,14 +968,14 @@ describe('IdentityPoolClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           nock(metadataBaseUrl, {
             reqheaders: metadataHeaders,
           })
             .get(metadataPath)
-            .reply(200, externalSubjectToken)
+            .reply(200, externalSubjectToken),
         );
 
         const client = new IdentityPoolClient(urlSourcedOptions);
@@ -1023,7 +1025,7 @@ describe('IdentityPoolClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new IdentityPoolClient(urlSourcedOptionsWithSA);
@@ -1060,14 +1062,14 @@ describe('IdentityPoolClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
         scopes.push(
           nock(metadataBaseUrl, {
             reqheaders: metadataHeaders,
           })
             .get(metadataPath)
-            .reply(200, jsonResponse)
+            .reply(200, jsonResponse),
         );
 
         const client = new IdentityPoolClient(jsonRespUrlSourcedOptions);
@@ -1120,7 +1122,7 @@ describe('IdentityPoolClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const client = new IdentityPoolClient(jsonRespUrlSourcedOptionsWithSA);
@@ -1175,17 +1177,17 @@ describe('IdentityPoolClient', () => {
               'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
                 'url',
                 false,
-                false
+                false,
               ),
-            }
-          )
+            },
+          ),
         );
         scopes.push(
           nock(metadataBaseUrl, {
             reqheaders: metadataHeaders,
           })
             .get(metadataPath)
-            .reply(200, externalSubjectToken)
+            .reply(200, externalSubjectToken),
         );
 
         const client = new IdentityPoolClient(urlSourcedOptions);
@@ -1253,7 +1255,7 @@ describe('IdentityPoolClient', () => {
                 subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
               },
             },
-          ])
+          ]),
         );
 
         const options = {
@@ -1305,7 +1307,7 @@ describe('IdentityPoolClient', () => {
             response: saSuccessResponse,
             token: stsSuccessfulResponse.access_token,
             scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          })
+          }),
         );
 
         const options = {
@@ -1368,10 +1370,10 @@ describe('IdentityPoolClient', () => {
               'x-goog-api-client': getExpectedExternalAccountMetricsHeaderValue(
                 'programmatic',
                 false,
-                false
+                false,
               ),
-            }
-          )
+            },
+          ),
         );
 
         const options = {
@@ -1410,7 +1412,7 @@ class TestSubjectTokenSupplier implements SubjectTokenSupplier {
     this.error = options.error;
   }
 
-  getSubjectToken(context: ExternalAccountSupplierContext): Promise<string> {
+  getSubjectToken(): Promise<string> {
     if (this.error) {
       throw this.error;
     }

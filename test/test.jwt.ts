@@ -28,7 +28,6 @@ function removeBearerFromAuthorizationHeader(headers: Headers): string {
 }
 
 describe('jwt', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const keypair = require('keypair');
   const PEM_PATH = './test/fixtures/private.pem';
   const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
@@ -99,7 +98,7 @@ describe('jwt', () => {
       assert.strictEqual(PEM_PATH, jwt.gtoken!.keyFile);
       assert.strictEqual(
         ['http://bar', 'http://foo'].join(' '),
-        jwt.gtoken!.scope
+        jwt.gtoken!.scope,
       );
       assert.strictEqual('bar@subjectaccount.com', jwt.gtoken!.sub);
       assert.strictEqual('initial-access-token', jwt.credentials.access_token);
@@ -145,7 +144,7 @@ describe('jwt', () => {
       assert.strictEqual(
         'initial-access-token',
         got,
-        'the access token was wrong: ' + got
+        'the access token was wrong: ' + got,
       );
       done();
     });
@@ -166,7 +165,8 @@ describe('jwt', () => {
         scope.done();
         done();
       })
-      .getAccessToken();
+      .getAccessToken()
+      .catch(console.error);
   });
 
   it('can obtain new access token when scopes are set', async () => {
@@ -186,7 +186,7 @@ describe('jwt', () => {
     assert.strictEqual(
       want,
       headers.get('authorization'),
-      `the authorization header was wrong: ${headers.get('authorization')}`
+      `the authorization header was wrong: ${headers.get('authorization')}`,
     );
   });
 
@@ -491,7 +491,7 @@ describe('jwt', () => {
     const dateInMillis = new Date().getTime();
     assert.strictEqual(
       dateInMillis.toString().length,
-      jwt.credentials.expiry_date!.toString().length
+      jwt.credentials.expiry_date!.toString().length,
     );
   });
 
@@ -583,8 +583,7 @@ describe('jwt', () => {
   it('fromJson should error on null json', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (jwt as any).fromJSON(null);
+      (jwt as ReturnType<JSON['parse']>).fromJSON(null);
     });
   });
 
@@ -667,8 +666,7 @@ describe('jwt', () => {
 
   it('fromStream should error on null stream', done => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (jwt as any).fromStream(null, (err: Error) => {
+    (jwt as ReturnType<JSON['parse']>).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
     });
@@ -678,7 +676,7 @@ describe('jwt', () => {
     // Read the contents of the file into a json object.
     const fileContents = fs.readFileSync(
       './test/fixtures/private.json',
-      'utf-8'
+      'utf-8',
     );
     const json = JSON.parse(fileContents);
 
@@ -702,8 +700,7 @@ describe('jwt', () => {
   it('fromAPIKey should error without api key', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (jwt as any).fromAPIKey(undefined);
+      (jwt as ReturnType<JSON['parse']>).fromAPIKey(undefined);
     });
   });
 
@@ -711,8 +708,7 @@ describe('jwt', () => {
     const KEY = 'test';
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      jwt.fromAPIKey({key: KEY} as any);
+      jwt.fromAPIKey({key: KEY} as ReturnType<JSON['parse']>);
     });
   });
 
@@ -739,11 +735,10 @@ describe('jwt', () => {
   it('getRequestHeaders populates x-goog-user-project for JWT client', async () => {
     const auth = new GoogleAuth({
       credentials: Object.assign(
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         require('../../test/fixtures/service-account-with-quota.json'),
         {
           private_key: keypair(512 /* bitsize of private key */).private,
-        }
+        },
       ),
     });
     const client = await auth.getClient();
@@ -751,11 +746,11 @@ describe('jwt', () => {
     // If a URL isn't provided to authorize, the OAuth2Client super class is
     // executed, which was already exercised.
     const headers = await client.getRequestHeaders(
-      'http:/example.com/my_test_service'
+      'http:/example.com/my_test_service',
     );
     assert.strictEqual(
       headers.get('x-goog-user-project'),
-      'fake-quota-project'
+      'fake-quota-project',
     );
   });
 
@@ -835,7 +830,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -857,7 +852,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -879,7 +874,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -902,7 +897,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        undefined
+        undefined,
       );
     });
 
@@ -924,7 +919,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -968,7 +963,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -990,7 +985,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1013,7 +1008,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1035,7 +1030,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1058,7 +1053,7 @@ describe('jwt', () => {
         stubGetRequestHeaders,
         'https//beepboop.googleapis.com',
         undefined,
-        ['scope1', 'scope2']
+        ['scope1', 'scope2'],
       );
     });
 
@@ -1079,7 +1074,7 @@ describe('jwt', () => {
 
       await assert.rejects(
         () => jwt.getRequestHeaders('https//beepboop.googleapis.com'),
-        /Domain-wide delegation is not supported in universes other than/
+        /Domain-wide delegation is not supported in universes other than/,
       );
     });
 
@@ -1106,8 +1101,10 @@ describe('jwt', () => {
     it('returns headers from cache, prior to their expiry time', async () => {
       const sign = sandbox.stub(jws, 'sign').returns('abc123');
       const getExpirationTime = sandbox
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .stub(jwtaccess.JWTAccess as any, 'getExpirationTime')
+        .stub(
+          jwtaccess.JWTAccess as ReturnType<JSON['parse']>,
+          'getExpirationTime',
+        )
         .returns(Date.now() / 1000 + 3600); // expire in an hour.
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
@@ -1127,8 +1124,10 @@ describe('jwt', () => {
     it('creates a new self-signed JWT, if headers are close to expiring', async () => {
       const sign = sandbox.stub(jws, 'sign').returns('abc123');
       const getExpirationTime = sandbox
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .stub(jwtaccess.JWTAccess as any, 'getExpirationTime')
+        .stub(
+          jwtaccess.JWTAccess as ReturnType<JSON['parse']>,
+          'getExpirationTime',
+        )
         .returns(Date.now() / 1000 + 5); // expire in 5 seconds.
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',

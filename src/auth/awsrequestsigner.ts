@@ -87,7 +87,7 @@ export class AwsRequestSigner {
    */
   constructor(
     private readonly getCredentials: () => Promise<AwsSecurityCredentials>,
-    private readonly region: string
+    private readonly region: string,
   ) {
     this.crypto = createCrypto();
   }
@@ -119,7 +119,7 @@ export class AwsRequestSigner {
 
     if (typeof requestPayload !== 'string' && requestPayload !== undefined) {
       throw new TypeError(
-        `'requestPayload' is expected to be a string if provided. Got: ${requestPayload}`
+        `'requestPayload' is expected to be a string if provided. Got: ${requestPayload}`,
       );
     }
 
@@ -142,7 +142,7 @@ export class AwsRequestSigner {
         authorization: headerMap.authorizationHeader,
         host: uri.host,
       },
-      additionalAmzHeaders || {}
+      additionalAmzHeaders || {},
     );
     if (awsSecurityCredentials.token) {
       Gaxios.mergeHeaders(headers, {
@@ -176,7 +176,7 @@ export class AwsRequestSigner {
 async function sign(
   crypto: Crypto,
   key: string | ArrayBuffer,
-  msg: string
+  msg: string,
 ): Promise<ArrayBuffer> {
   return await crypto.signWithHmacSha256(key, msg);
 }
@@ -199,7 +199,7 @@ async function getSigningKey(
   key: string,
   dateStamp: string,
   region: string,
-  serviceName: string
+  serviceName: string,
 ): Promise<ArrayBuffer> {
   const kDate = await sign(crypto, `AWS4${key}`, dateStamp);
   const kRegion = await sign(crypto, kDate, region);
@@ -217,10 +217,10 @@ async function getSigningKey(
  *   components: amz-date, authorization header and canonical query string.
  */
 async function generateAuthenticationHeaderMap(
-  options: GenerateAuthHeaderMapOptions
+  options: GenerateAuthHeaderMapOptions,
 ): Promise<AwsAuthHeaderMap> {
   const additionalAmzHeaders = Gaxios.mergeHeaders(
-    options.additionalAmzHeaders
+    options.additionalAmzHeaders,
   );
   const requestPayload = options.requestPayload || '';
   // iam.amazonaws.com host => iam service.
@@ -239,7 +239,7 @@ async function generateAuthenticationHeaderMap(
   if (options.securityCredentials.token) {
     additionalAmzHeaders.set(
       'x-amz-security-token',
-      options.securityCredentials.token
+      options.securityCredentials.token,
     );
   }
   // Header keys need to be sorted alphabetically.
@@ -250,7 +250,7 @@ async function generateAuthenticationHeaderMap(
     // Previously the date was not fixed with x-amz- and could be provided manually.
     // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-header-value-trim.req
     additionalAmzHeaders.has('date') ? {} : {'x-amz-date': amzDate},
-    additionalAmzHeaders
+    additionalAmzHeaders,
   );
   let canonicalHeaders = '';
 
@@ -285,7 +285,7 @@ async function generateAuthenticationHeaderMap(
     options.securityCredentials.secretAccessKey,
     dateStamp,
     options.region,
-    serviceName
+    serviceName,
   );
   const signature = await sign(options.crypto, signingKey, stringToSign);
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html

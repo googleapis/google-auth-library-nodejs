@@ -17,7 +17,6 @@ import * as gal from '../src';
 
 describe('index', () => {
   it('should publicly export GoogleAuth', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cjs = require('../src/');
     assert.strictEqual(cjs.GoogleAuth, gal.GoogleAuth);
   });
