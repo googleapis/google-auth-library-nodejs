@@ -4,6 +4,47 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.0.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.15.1...v10.0.0) (2025-06-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* `Request` Revamp ([#1938](https://github.com/googleapis/google-auth-library-nodejs/issues/1938))
+* Remove `Transporter` ([#1937](https://github.com/googleapis/google-auth-library-nodejs/issues/1937))
+* remove additionalOptions from AuthClients ([#1689](https://github.com/googleapis/google-auth-library-nodejs/issues/1689))
+* Remove `options.ts` ([#1920](https://github.com/googleapis/google-auth-library-nodejs/issues/1920))
+* Remove `messages.ts` ([#1919](https://github.com/googleapis/google-auth-library-nodejs/issues/1919))
+* Support Node 18+ ([#1879](https://github.com/googleapis/google-auth-library-nodejs/issues/1879))
+* Support Node 18, 20, and 22 ([#1928](https://github.com/googleapis/google-auth-library-nodejs/issues/1928))
+* remove DEFAULT_UNIVERSE from BaseExternalClient ([#1690](https://github.com/googleapis/google-auth-library-nodejs/issues/1690))
+* Move Base AuthClient Types to authclient.ts ([#1774](https://github.com/googleapis/google-auth-library-nodejs/issues/1774))
+
+### Features
+
+* `Request` Revamp ([#1938](https://github.com/googleapis/google-auth-library-nodejs/issues/1938)) ([f23e807](https://github.com/googleapis/google-auth-library-nodejs/commit/f23e807e27a1d64f774f2bf25e01d263f1ce7db1))
+* Add debug logging support ([#1903](https://github.com/googleapis/google-auth-library-nodejs/issues/1903)) ([13ca1dc](https://github.com/googleapis/google-auth-library-nodejs/commit/13ca1dcad1f79e2015fa4326287caf9b43bc4cf2))
+* Support Node 18, 20, and 22 ([#1928](https://github.com/googleapis/google-auth-library-nodejs/issues/1928)) ([5b60a95](https://github.com/googleapis/google-auth-library-nodejs/commit/5b60a95d1759fcd4a3a3614e8345203a4e1d29f2))
+* Support Node 18+ ([#1879](https://github.com/googleapis/google-auth-library-nodejs/issues/1879)) ([3d24045](https://github.com/googleapis/google-auth-library-nodejs/commit/3d240453d48a092db4b43c6f000751160ef1dea4))
+
+
+### Bug Fixes
+
+* Circular Dependencies Issue ([#1936](https://github.com/googleapis/google-auth-library-nodejs/issues/1936)) ([aea893c](https://github.com/googleapis/google-auth-library-nodejs/commit/aea893cd03bebee884692bc1bf21c483f89345f7))
+* **deps:** Update dependency @google-cloud/language to v7 ([#1947](https://github.com/googleapis/google-auth-library-nodejs/issues/1947)) ([70e9183](https://github.com/googleapis/google-auth-library-nodejs/commit/70e9183c6baba5ee7118319e7fd37ecb1b9ae2ea))
+* **deps:** Update dependency @googleapis/iam to v27 ([#1962](https://github.com/googleapis/google-auth-library-nodejs/issues/1962)) ([629da74](https://github.com/googleapis/google-auth-library-nodejs/commit/629da74095ae51c258de13d924b65bb3c31ddf82))
+* **deps:** Update dependency @googleapis/iam to v28 ([#2027](https://github.com/googleapis/google-auth-library-nodejs/issues/2027)) ([ebb2bc0](https://github.com/googleapis/google-auth-library-nodejs/commit/ebb2bc01597688e19cfb95ab61deea1568b0761b))
+* **deps:** Update dependency puppeteer to v24 ([#1933](https://github.com/googleapis/google-auth-library-nodejs/issues/1933)) ([474453d](https://github.com/googleapis/google-auth-library-nodejs/commit/474453d64a3ba2a1cfba6d1527a2cd6e60bda62d))
+
+
+### Code Refactoring
+
+* Move Base AuthClient Types to authclient.ts ([#1774](https://github.com/googleapis/google-auth-library-nodejs/issues/1774)) ([b0c3a43](https://github.com/googleapis/google-auth-library-nodejs/commit/b0c3a43124860530a567a3529f8ac41b6c7d20c5))
+* Remove `messages.ts` ([#1919](https://github.com/googleapis/google-auth-library-nodejs/issues/1919)) ([654753d](https://github.com/googleapis/google-auth-library-nodejs/commit/654753dc6a85bfefeee4d3c87439183deb13212d))
+* Remove `options.ts` ([#1920](https://github.com/googleapis/google-auth-library-nodejs/issues/1920)) ([51316e8](https://github.com/googleapis/google-auth-library-nodejs/commit/51316e8e75f111b897b284cc77d8429e4db8e25a))
+* Remove `Transporter` ([#1937](https://github.com/googleapis/google-auth-library-nodejs/issues/1937)) ([dbcc44b](https://github.com/googleapis/google-auth-library-nodejs/commit/dbcc44bf73c494361f331b3423c679cc2d19d51f))
+* Remove additionalOptions from AuthClients ([#1689](https://github.com/googleapis/google-auth-library-nodejs/issues/1689)) ([2f780a8](https://github.com/googleapis/google-auth-library-nodejs/commit/2f780a85e11fe2cfb0dbf7f91dfbd90d15207491))
+* Remove DEFAULT_UNIVERSE from BaseExternalClient ([#1690](https://github.com/googleapis/google-auth-library-nodejs/issues/1690)) ([4f1dc04](https://github.com/googleapis/google-auth-library-nodejs/commit/4f1dc0476ccbfba26043aa2dab6673bc03a0787d))
+
 ## [9.15.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.15.0...v9.15.1) (2025-01-24)
 
 
