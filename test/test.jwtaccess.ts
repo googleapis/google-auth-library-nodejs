@@ -20,7 +20,6 @@ import * as sinon from 'sinon';
 
 import {JWTAccess} from '../src';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const keypair = require('keypair');
 
 describe('jwtaccess', () => {
@@ -124,8 +123,7 @@ describe('jwtaccess', () => {
   it('fromJson should error on null json', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (client as any).fromJSON(null);
+      (client as ReturnType<JSON['parse']>).fromJSON(null);
     });
   });
 
@@ -168,8 +166,7 @@ describe('jwtaccess', () => {
 
   it('fromStream should error on null stream', done => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (client as any).fromStream(null, (err: Error) => {
+    (client as ReturnType<JSON['parse']>).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
     });

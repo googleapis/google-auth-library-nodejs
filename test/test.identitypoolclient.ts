@@ -218,8 +218,9 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 
@@ -238,10 +239,11 @@ describe('IdentityPoolClient', () => {
         },
       };
 
-      assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
-      }, expectedError);
+      assert.throws(
+        () =>
+          new IdentityPoolClient(invalidOptions as ReturnType<JSON['parse']>),
+        expectedError,
+      );
     });
 
     it('should throw on invalid credential_source.format.type', () => {
@@ -260,8 +262,9 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 
@@ -315,8 +318,9 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 
@@ -334,8 +338,9 @@ describe('IdentityPoolClient', () => {
       };
 
       assert.throws(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new IdentityPoolClient(invalidOptions as any);
+        return new IdentityPoolClient(
+          invalidOptions as ReturnType<JSON['parse']>,
+        );
       }, expectedError);
     });
 

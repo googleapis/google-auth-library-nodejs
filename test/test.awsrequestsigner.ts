@@ -35,7 +35,6 @@ interface AwsRequestSignerTest {
 describe('AwsRequestSigner', () => {
   let clock: sinon.SinonFakeTimers;
   // Load AWS credentials from a sample security_credentials response.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const awsSecurityCredentials = require('../../test/fixtures/aws-security-credentials-fake.json');
   const accessKeyId = awsSecurityCredentials.AccessKeyId;
   const secretAccessKey = awsSecurityCredentials.SecretAccessKey;
