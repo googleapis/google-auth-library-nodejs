@@ -28,7 +28,6 @@ function removeBearerFromAuthorizationHeader(headers: Headers): string {
 }
 
 describe('jwt', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const keypair = require('keypair');
   const PEM_PATH = './test/fixtures/private.pem';
   const PEM_CONTENTS = fs.readFileSync(PEM_PATH, 'utf8');
@@ -584,8 +583,7 @@ describe('jwt', () => {
   it('fromJson should error on null json', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (jwt as any).fromJSON(null);
+      (jwt as ReturnType<JSON['parse']>).fromJSON(null);
     });
   });
 
@@ -668,8 +666,7 @@ describe('jwt', () => {
 
   it('fromStream should error on null stream', done => {
     // Test verifies invalid parameter tests, which requires cast to any.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (jwt as any).fromStream(null, (err: Error) => {
+    (jwt as ReturnType<JSON['parse']>).fromStream(null, (err: Error) => {
       assert.strictEqual(true, err instanceof Error);
       done();
     });
@@ -703,8 +700,7 @@ describe('jwt', () => {
   it('fromAPIKey should error without api key', () => {
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (jwt as any).fromAPIKey(undefined);
+      (jwt as ReturnType<JSON['parse']>).fromAPIKey(undefined);
     });
   });
 
@@ -712,8 +708,7 @@ describe('jwt', () => {
     const KEY = 'test';
     assert.throws(() => {
       // Test verifies invalid parameter tests, which requires cast to any.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      jwt.fromAPIKey({key: KEY} as any);
+      jwt.fromAPIKey({key: KEY} as ReturnType<JSON['parse']>);
     });
   });
 
@@ -740,7 +735,6 @@ describe('jwt', () => {
   it('getRequestHeaders populates x-goog-user-project for JWT client', async () => {
     const auth = new GoogleAuth({
       credentials: Object.assign(
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         require('../../test/fixtures/service-account-with-quota.json'),
         {
           private_key: keypair(512 /* bitsize of private key */).private,
@@ -1107,8 +1101,10 @@ describe('jwt', () => {
     it('returns headers from cache, prior to their expiry time', async () => {
       const sign = sandbox.stub(jws, 'sign').returns('abc123');
       const getExpirationTime = sandbox
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .stub(jwtaccess.JWTAccess as any, 'getExpirationTime')
+        .stub(
+          jwtaccess.JWTAccess as ReturnType<JSON['parse']>,
+          'getExpirationTime',
+        )
         .returns(Date.now() / 1000 + 3600); // expire in an hour.
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
@@ -1128,8 +1124,10 @@ describe('jwt', () => {
     it('creates a new self-signed JWT, if headers are close to expiring', async () => {
       const sign = sandbox.stub(jws, 'sign').returns('abc123');
       const getExpirationTime = sandbox
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .stub(jwtaccess.JWTAccess as any, 'getExpirationTime')
+        .stub(
+          jwtaccess.JWTAccess as ReturnType<JSON['parse']>,
+          'getExpirationTime',
+        )
         .returns(Date.now() / 1000 + 5); // expire in 5 seconds.
       const jwt = new JWT({
         email: 'foo@serviceaccount.com',
