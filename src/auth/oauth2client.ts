@@ -23,6 +23,7 @@ import * as querystring from 'querystring';
 import * as stream from 'stream';
 import * as formatEcdsa from 'ecdsa-sig-formatter';
 
+import {removeUndefinedValuesInObject} from '../util';
 import {createCrypto, JwkCertificate, hasBrowserCrypto} from '../crypto/crypto';
 
 import {
@@ -754,7 +755,7 @@ export class OAuth2Client extends AuthClient {
       ...OAuth2Client.RETRY_CONFIG,
       method: 'POST',
       url,
-      data: new URLSearchParams(values as {}),
+      data: new URLSearchParams(removeUndefinedValuesInObject(values) as {}),
       headers,
     };
     AuthClient.setMethodName(opts, 'getTokenAsync');
@@ -820,7 +821,7 @@ export class OAuth2Client extends AuthClient {
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
-        data: new URLSearchParams(data),
+        data: new URLSearchParams(removeUndefinedValuesInObject(data)),
       };
       AuthClient.setMethodName(opts, 'refreshTokenNoCache');
 

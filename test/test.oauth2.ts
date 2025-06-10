@@ -1370,6 +1370,52 @@ describe('oauth2', () => {
       assert.strictEqual(params.get('code_verifier'), 'its_verified');
     });
 
+    it('getToken should ignore undefined code verifier', async () => {
+      const scope = nock(baseUrl, {
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
+      })
+        .post('/token')
+        .reply(200, {
+          access_token: 'abc',
+          refresh_token: '123',
+          expires_in: 10,
+        });
+      const res = await client.getToken({
+        code: 'code here',
+        codeVerifier: undefined,
+      });
+      scope.done();
+      assert(res.res);
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('code_verifier'), null);
+    });
+
+    it('getToken should ignore undefined string code verifier', async () => {
+      const scope = nock(baseUrl, {
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
+      })
+        .post('/token')
+        .reply(200, {
+          access_token: 'abc',
+          refresh_token: '123',
+          expires_in: 10,
+        });
+      const res = await client.getToken({
+        code: 'code here',
+        codeVerifier: 'undefined',
+      });
+      scope.done();
+      assert(res.res);
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('code_verifier'), null);
+    });
+
     it('getToken should set redirect_uri if not provided in options', async () => {
       const scope = nock(baseUrl, {
         reqheaders: {
