@@ -239,3 +239,15 @@ export class LRUCache<T> {
     }
   }
 }
+
+// Given and object remove fields where value is undefined.
+export function removeUndefinedValuesInObject(object: {[key: string]: any}): {
+  [key: string]: any;
+} {
+  Object.entries(object).forEach(([key, value]) => {
+    if (value === undefined || value === 'undefined') {
+      delete object[key];
+    }
+  });
+  return object;
+}

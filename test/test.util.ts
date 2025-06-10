@@ -15,7 +15,7 @@
 import {strict as assert} from 'assert';
 import * as sinon from 'sinon';
 
-import {LRUCache} from '../src/util';
+import {LRUCache, removeUndefinedValuesInObject} from '../src/util';
 
 describe('util', () => {
   let sandbox: sinon.SinonSandbox;
@@ -78,6 +78,27 @@ describe('util', () => {
       // these are too old
       assert.equal(lru.get('first'), undefined);
       assert.equal(lru.get('second'), undefined);
+    });
+  });
+});
+
+describe('util removeUndefinedValuesInObject', () => {
+  it('remove undefined type values in object', () => {
+    const object: {[key: string]: any} = {
+      undefined: undefined,
+      number: 1,
+    };
+    assert.deepEqual(removeUndefinedValuesInObject(object), {
+      number: 1,
+    });
+  });
+  it('remove undefined string values in object', () => {
+    const object: {[key: string]: any} = {
+      undefined: 'undefined',
+      number: 1,
+    };
+    assert.deepEqual(removeUndefinedValuesInObject(object), {
+      number: 1,
     });
   });
 });
