@@ -198,14 +198,20 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
     return false;
   }
 
-  #processChainFromPaths(leafCertPath: string, trustChainPath: string): string {
+  #processChainFromPaths(): string {
     //todo pjiyer
     // What to do if trustChainPath doesn't have a valid file?
     // what to do if leafCertPath doesn't have a valid file? -> Throw!
 
+    if (!this.certPath || !this.trustChainPath) {
+      throw new CertificateSourceUnavailableError(
+        'Cert path or trust chain path is invalid',
+      );
+    }
+
     // 1. Read file contents from the provided paths
-    const leafPem = readFileSync(leafCertPath, 'utf8');
-    const chainPems = readFileSync(trustChainPath, 'utf8');
+    const leafPem = readFileSync(this.certPath, 'utf8');
+    const chainPems = readFileSync(this.trustChainPath, 'utf8');
 
     // 2. Parse all certificates
     const leafCert = new X509Certificate(leafPem);
@@ -224,7 +230,9 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
     if (leafIndex !== -1) {
       if (leafIndex === 0) {
         // Leaf certificate already exists at the top of the chain so we just return
-        return originalChainArray.join('\n');
+        return JSON.stringify(
+          chainCerts.map(cert => cert.raw.toString('base64')),
+        );
       } else {
         throw new CertificateSourceUnavailableError(
           'Leaf certificate exists in the chain but is not at the top (found at index ${leafIndex}).',
@@ -232,7 +240,10 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
       }
     } else {
       //Leaf certificate not found in chain. Adding it to the top.
-      return [leafPem.trim(), ...originalChainArray].join('\n');
+      const newCertChain = [leafCert, ...chainCerts];
+      return JSON.stringify(
+        newCertChain.map(cert => cert.raw.toString('base64')),
+      );
     }
   }
 
@@ -280,38 +291,21 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
       method: 'GET',
     };
     AuthClient.setMethodName(opts, 'getSubjectToken');
-    //1. Resolve the path for the certificate_config.
-    //2. Read Certificate and Key from certificate_config.
-    //3. Read TrustChainFile if needed, build the trustChain and add to subject token.
-
-    //TODO pjiyer: review this code for veracity.
-    // if (!this.certPath || !this.trustChainPath || !this.keyPath) {
-    //   throw new CertificateSourceUnavailableError(
-    //     'Cert path or trust chain path or keyPath is invalid',
-    //   );
-    // }
-    // const trustChain = this.#processChainFromPaths(
-    //   this.certPath,
-    //   this.trustChainPath,
-    // );
-
-    // if (!isValidFile(this.keyPath)) {
-    //   throw new CertificateSourceUnavailableError(
-    //     'Cert path or trust chain path or keyPath is invalid',
-    //   );
-    // }
-
-    // const key = fs.readFileSync(this.keyPath);
 
     if (!this.certPath) {
       throw new CertificateSourceUnavailableError(
         'Cert path or trust chain path or keyPath is invalid',
       );
     }
-    const cert = new X509Certificate(fs.readFileSync(this.certPath));
-    const encodedCert = cert.raw.toString('base64');
-    const certChain = [encodedCert];
-    const subjectToken = JSON.stringify(certChain /*, null, 2*/);
+
+    //LEAF Cert only logic
+    // const cert = new X509Certificate(fs.readFileSync(this.certPath));
+    // const encodedCert = cert.raw.toString('base64');
+    // const certChain = [encodedCert];
+
+    //trust chain logic
+    const subjectToken = this.#processChainFromPaths();
+
     return subjectToken;
   }
 }
