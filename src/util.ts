@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 /**
  * A utility for converting snake_case to camelCase.
  *
@@ -251,3 +255,52 @@ export function removeUndefinedValuesInObject(object: {[key: string]: any}): {
   });
   return object;
 }
+
+/**
+ * Helper to check if a path points to a valid file.
+ */
+export function isValidFile(filePath: string): boolean {
+  try {
+    return fs.existsSync(filePath) && fs.lstatSync(filePath).isFile();
+  } catch (e) {
+    // Path might be malformed, causing existsSync or lstatSync to throw.
+    return false;
+  }
+}
+
+/**
+ * Helper to get the path of the well known ADC file (credential_configuration.json)
+ * based on the operating system
+ */
+// export function getWellKnownFilePath(): string | null {
+//   let location = null;
+//   if (isWindows()) {
+//     // Windows
+//     location = process.env['APPDATA'];
+//   } else {
+//     // Linux or Mac
+//     const home = process.env['HOME'];
+//     if (home) {
+//       location = path.join(home, '.config');
+//     }
+//   }
+//   // If we found the root path, expand it.
+//   if (location) {
+//     location = path.join(
+//       location,
+//       'gcloud',
+//       'application_default_credentials.json',
+//     );
+//   }
+//   return location;
+// }
+
+// function isWindows(): boolean {
+//   const sys = os.platform();
+//   if (sys && sys.length >= 3) {
+//     if (sys.substring(0, 3).toLowerCase() === 'win') {
+//       return true;
+//     }
+//   }
+//   return false;
+// }

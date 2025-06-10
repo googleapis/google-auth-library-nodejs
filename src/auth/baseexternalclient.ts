@@ -234,12 +234,13 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   protected readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly serviceAccountImpersonationLifetime?: number;
-  private readonly stsCredential: sts.StsCredentials;
-  private readonly clientAuth?: ClientAuthentication;
+  stsCredential: sts.StsCredentials;
+  clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
   public projectNumber: string | null;
   private readonly configLifetimeRequested: boolean;
   protected credentialSourceType?: string;
+  private readonly tokenUrl: string;
   /**
    * @example
    * ```ts
@@ -281,7 +282,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     const clientId = opts.get('client_id');
     const clientSecret = opts.get('client_secret');
-    const tokenUrl =
+    this.tokenUrl =
       opts.get('token_url') ??
       DEFAULT_TOKEN_URL.replace('{universeDomain}', this.universeDomain);
     const subjectTokenType = opts.get('subject_token_type');
@@ -310,7 +311,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
 
     this.stsCredential = new sts.StsCredentials({
-      tokenExchangeEndpoint: tokenUrl,
+      tokenExchangeEndpoint: this.tokenUrl,
       clientAuthentication: this.clientAuth,
     });
     this.scopes = opts.get('scopes') || [DEFAULT_OAUTH_SCOPE];
@@ -714,5 +715,9 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       ? this.credentialSourceType
       : 'unknown';
     return `gl-node/${nodeVersion} auth/${pkg.version} google-byoid-sdk source/${credentialSourceType} sa-impersonation/${saImpersonation} config-lifetime/${this.configLifetimeRequested}`;
+  }
+
+  getTokenUrl(): string {
+    return this.tokenUrl;
   }
 }
