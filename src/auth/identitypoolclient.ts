@@ -21,6 +21,8 @@ import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {FileSubjectTokenSupplier} from './filesubjecttokensupplier';
 import {UrlSubjectTokenSupplier} from './urlsubjecttokensupplier';
 import {CertificateSubjectTokenSupplier} from './certificatesubjecttokensupplier';
+import {StsCredentials} from './stscredentials';
+import {Gaxios} from 'gaxios';
 
 export type SubjectTokenFormatType = 'json' | 'text';
 
@@ -209,11 +211,23 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         });
       } else if (certificate) {
         this.credentialSourceType = 'certificate';
-        this.subjectTokenSupplier = new CertificateSubjectTokenSupplier({
-          useDefaultCertificateConfig:
-            certificate.use_default_certificate_config,
-          certificateConfigLocation: certificate.certificate_config_location,
-          trustChainPath: certificate.trust_chain_path,
+        const certificateSubjecttokensupplier =
+          new CertificateSubjectTokenSupplier({
+            useDefaultCertificateConfig:
+              certificate.use_default_certificate_config,
+            certificateConfigLocation: certificate.certificate_config_location,
+            trustChainPath: certificate.trust_chain_path,
+          });
+        this.subjectTokenSupplier = certificateSubjecttokensupplier;
+        const mtlsAgent =
+          certificateSubjecttokensupplier.createMtlsHttpsAgent();
+        const stsClientGaxiosOptions = {
+          agent: mtlsAgent,
+        };
+        this.stsCredential = new StsCredentials({
+          tokenExchangeEndpoint: this.getTokenUrl(),
+          clientAuthentication: this.clientAuth,
+          transporter: new Gaxios(stsClientGaxiosOptions),
         });
       } else {
         throw new Error(
