@@ -29,7 +29,7 @@ const execSync = (command, opts) => {
   return cp.execSync(command, Object.assign({encoding: 'utf-8'}, opts));
 };
 
-describe('auth samples', () => {
+describe('auth samples test', () => {
   it('should authenticate explicitly', async () => {
     const output = execSync('node authenticateExplicit');
 
