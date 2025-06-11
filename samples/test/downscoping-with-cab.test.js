@@ -49,7 +49,8 @@ const execAsync = async (cmd, opts) => {
 };
 
 describe('samples for downscoping with cab', () => {
-  it('should have access to the object specified in the cab rule', async () => {
+  // TODO: un-skip once storage is migrated: https://github.com/googleapis/nodejs-storage/pull/2592
+  it.skip('should have access to the object specified in the cab rule', async () => {
     const output = await execAsync(`${process.execPath} downscopedclient`, {
       env: {
         ...process.env,
