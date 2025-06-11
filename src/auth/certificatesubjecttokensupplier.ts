@@ -13,46 +13,68 @@
 // limitations under the License.
 
 import {GaxiosOptions} from 'gaxios';
-import {ExternalAccountSupplierContext} from './baseexternalclient';
 import {SubjectTokenSupplier} from './identitypoolclient';
 import {AuthClient} from 'google-auth-library';
 import {isValidFile} from '../util';
 import path = require('path');
 import * as os from 'os';
 import * as fs from 'fs';
-import {readFileSync} from 'fs';
 import {X509Certificate} from 'crypto';
 import * as https from 'https';
 
+// --- Constants ---
 const CERTIFICATE_CONFIGURATION_ENV_VARIABLE = 'GOOGLE_API_CERTIFICATE_CONFIG';
 const WELL_KNOWN_CERTIFICATE_CONFIG_FILE = 'certificate_config.json';
 const CLOUDSDK_CONFIG_DIRECTORY = 'gcloud';
 
+// --- Custom Errors ---
+
 /**
- * Interface that defines options used to build a {@link CertificateSubjectTokenSupplier}
+ * Thrown when the certificate source cannot be located or accessed.
+ */
+export class CertificateSourceUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CertificateSourceUnavailableError';
+  }
+}
+
+/**
+ * Thrown for invalid configuration that is not related to file availability.
+ */
+export class InvalidConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidConfigurationError';
+  }
+}
+
+// --- Interfaces ---
+
+/**
+ * Defines options for creating a {@link CertificateSubjectTokenSupplier}.
  */
 export interface CertificateSubjectTokenSupplierOptions {
   /**
-   * Specify whether the certificate config should be used from the default location
-   * either this or the certificate_config_location must be provided
+   * If true, uses the default well-known location for the certificate config.
+   * Either this or `certificateConfigLocation` must be provided.
    */
   useDefaultCertificateConfig?: boolean;
   /**
-   * Location to fetch certificate config from in case default config is not to be used.
-   * either this or use_default_certificate_config=true should be provided
+   * The file path to the certificate configuration JSON file.
+   * Required if `useDefaultCertificateConfig` is not true.
    */
   certificateConfigLocation?: string;
   /**
-   * Location to fetch trust chain from to send to STS endpoint.
-   * in case no location is provided, we will just send the leaf certificate as the
-   * trust chain
+   * The file path to the trust chain (PEM format). If not provided,
+   * only the leaf certificate will be sent.
    */
   trustChainPath?: string;
 }
 
 /**
- * Interface representing the "workload" block within the cert_configs object
- * in certificate_config.json, as described in the design document.
+ * Represents the "workload" block within the certificate configuration file.
+ * @internal
  */
 interface WorkloadCertConfigJson {
   cert_path: string;
@@ -60,274 +82,245 @@ interface WorkloadCertConfigJson {
 }
 
 /**
- * Interface representing the overall structure of the certificate_config.json file.
+ * Represents the structure of the certificate_config.json file.
+ * @internal
  */
 interface CertificateConfigFileJson {
   version: number;
   cert_configs: {
     workload?: WorkloadCertConfigJson;
-    // Other potential configurations could be added here in the future.
   };
 }
 
+// --- Main Class ---
+
 /**
- * Internal subject token supplier implementation used when a certificate
- * is configured in the credential configuration used to build an {@link IdentityPoolClient}
+ * A subject token supplier that uses a client certificate for authentication.
+ * It provides the certificate chain as the subject token for identity federation.
  */
 export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
-  private readonly useDefaultCertificateConfig?: boolean;
-  private readonly certificateConfigLocation?: string;
-  private readonly trustChainPath?: string;
   private readonly certificateConfigPath: string;
-  certPath?: string;
-  keyPath?: string;
+  private readonly trustChainPath?: string;
+  private readonly certPath: string;
+  private readonly keyPath: string;
 
   /**
-   * Instantiates a new certificate based subject token supplier.
-   * @param opts The certificate subject token supplier options to build the supplier
-   *   with.
+   * Initializes a new instance of the CertificateSubjectTokenSupplier.
+   * @param opts The configuration options for the supplier.
    */
   constructor(opts: CertificateSubjectTokenSupplierOptions) {
-    this.useDefaultCertificateConfig = opts.useDefaultCertificateConfig
-      ? true
-      : false;
-    this.certificateConfigLocation = opts.certificateConfigLocation;
+    if (!opts.useDefaultCertificateConfig && !opts.certificateConfigLocation) {
+      throw new InvalidConfigurationError(
+        'Either `useDefaultCertificateConfig` must be true or a `certificateConfigLocation` must be provided.',
+      );
+    }
     this.trustChainPath = opts.trustChainPath;
-    this.certificateConfigPath = this.#resolveCertificateConfigFilePath();
-    this.#getWorkloadCertificatePaths(this.certificateConfigPath);
+    this.certificateConfigPath = this.#resolveCertificateConfigFilePath(
+      opts.certificateConfigLocation,
+    );
+    ({certPath: this.certPath, keyPath: this.keyPath} =
+      this.#getWorkloadCertificatePaths(this.certificateConfigPath));
   }
 
   /**
-   * Reads the certificate_config.json file,
-   * sets the paths for the certificate and private key.
+   * Creates an HTTPS agent configured with the client certificate and private key for mTLS.
+   * @returns An mTLS-configured https.Agent.
    */
-  #getWorkloadCertificatePaths(certificateConfigPath: string) {
-    let fileContents;
+  public createMtlsHttpsAgent(): https.Agent {
     try {
-      fileContents = fs.readFileSync(certificateConfigPath, 'utf-8');
+      const cert = fs.readFileSync(this.certPath);
+      const key = fs.readFileSync(this.keyPath);
+      return new https.Agent({key, cert});
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       throw new CertificateSourceUnavailableError(
-        `Failed to read certificate config file: ${certificateConfigPath}`,
-      );
-    }
-
-    let parsedConfig: CertificateConfigFileJson;
-    try {
-      parsedConfig = JSON.parse(fileContents) as CertificateConfigFileJson;
-      const certConfigs = parsedConfig.cert_configs;
-      const workloadConfig = certConfigs.workload;
-      this.certPath = workloadConfig?.cert_path;
-      this.keyPath = workloadConfig?.key_path;
-    } catch (e) {
-      throw new InvalidConfigurationError(
-        `Failed to parse certificate configuration${certificateConfigPath ? ` from ${certificateConfigPath}` : ''}: ${(e as Error).message}`,
+        `Failed to read certificate or key file: ${message}`,
       );
     }
   }
 
-  #resolveCertificateConfigFilePath(): string {
-    // 1. Check override path if provided during instantiation
-    if (this.certificateConfigLocation) {
-      if (isValidFile(this.certificateConfigLocation)) {
-        return this.certificateConfigLocation;
+  /**
+   * Constructs the subject token, which is the base64-encoded certificate chain.
+   * @param context Not used in this implementation.
+   * @returns A promise that resolves with the subject token.
+   */
+  public async getSubjectToken(): Promise<string> {
+    const opts: GaxiosOptions = {method: 'GET'};
+    AuthClient.setMethodName(opts, 'getSubjectToken');
+
+    // The "subject token" in this context is the processed certificate chain.
+    return this.#processChainFromPaths();
+  }
+
+  /**
+   * Resolves the absolute path to the certificate configuration file
+   * by checking an explicit path, an environment variable, and a well-known location.
+   * @param overridePath An optional path to check first.
+   * @returns The resolved file path.
+   */
+  #resolveCertificateConfigFilePath(overridePath?: string): string {
+    // 1. Check for the override path from constructor options.
+    if (overridePath) {
+      if (isValidFile(overridePath)) {
+        return overridePath;
       }
       throw new CertificateSourceUnavailableError(
-        `Override certificate config path is invalid or not a file: ${this.certificateConfigLocation}`,
+        `Provided certificate config path is invalid: ${overridePath}`,
       );
     }
 
-    // 2. Check GOOGLE_API_CERTIFICATE_CONFIG environment variable
+    // 2. Check the standard environment variable.
     const envPath = process.env[CERTIFICATE_CONFIGURATION_ENV_VARIABLE];
     if (envPath) {
       if (isValidFile(envPath)) {
         return envPath;
       }
       throw new CertificateSourceUnavailableError(
-        `Environment variable ${CERTIFICATE_CONFIGURATION_ENV_VARIABLE} points to an invalid path or is not a file: ${envPath}`,
+        `Path from environment variable "${CERTIFICATE_CONFIGURATION_ENV_VARIABLE}" is invalid: ${envPath}`,
       );
     }
 
-    // 3. Check well-known gcloud location
+    // 3. Check the well-known gcloud config location.
     const wellKnownPath = this.getWellKnownCertificateConfigFileLocation();
     if (isValidFile(wellKnownPath)) {
       return wellKnownPath;
     }
 
+    // 4. If none are found, throw an error.
     throw new CertificateSourceUnavailableError(
-      'Certificate configuration file not found. Checked override, environment variable ' +
-        `'${CERTIFICATE_CONFIGURATION_ENV_VARIABLE}', and well-known gcloud path (e.g., '${wellKnownPath}').`,
+      'Could not find certificate configuration file. Searched override path, ' +
+        `the "${CERTIFICATE_CONFIGURATION_ENV_VARIABLE}" env var, and the gcloud path (${wellKnownPath}).`,
     );
   }
 
   /**
-   * Determines the well-known gcloud location for certificate_config.json.
+   * Reads and parses the certificate config file to extract the certificate and key paths.
+   * @param configPath The path to the certificate configuration JSON file.
+   * @returns An object containing the certificate and key paths.
    */
-  private getWellKnownCertificateConfigFileLocation(): string {
-    let cloudConfigDir: string;
-    // Gcloud's standard environment variable for its configuration root.
-    const envCloudSdkConfig = process.env['CLOUDSDK_CONFIG'];
-
-    if (envCloudSdkConfig) {
-      cloudConfigDir = envCloudSdkConfig;
-    } else if (this._isWindows()) {
-      const appData = process.env['APPDATA'];
-      cloudConfigDir = path.join(appData || '', CLOUDSDK_CONFIG_DIRECTORY);
-    } else {
-      // Linux or Mac
-      const home = process.env['HOME'];
-      cloudConfigDir = path.join(
-        home || '',
-        '.config',
-        CLOUDSDK_CONFIG_DIRECTORY,
-      );
-    }
-    return path.join(cloudConfigDir, WELL_KNOWN_CERTIFICATE_CONFIG_FILE);
-  }
-
-  /**
-   * Determines whether the current operating system is Windows.
-   * @api private
-   */
-  private _isWindows() {
-    const sys = os.platform();
-    if (sys && sys.length >= 3) {
-      if (sys.substring(0, 3).toLowerCase() === 'win') {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  #processChainFromPaths(): string {
-    //todo pjiyer
-    // What to do if trustChainPath doesn't have a valid file?
-    // what to do if leafCertPath doesn't have a valid file? -> Throw!
-
-    if (!this.certPath || !this.trustChainPath) {
-      throw new CertificateSourceUnavailableError(
-        'Cert path or trust chain path is invalid',
-      );
-    }
-
-    // 1. Read file contents from the provided paths
-    const leafPem = readFileSync(this.certPath, 'utf8');
-    const chainPems = readFileSync(this.trustChainPath, 'utf8');
-
-    // 2. Parse all certificates
-    const leafCert = new X509Certificate(leafPem);
-    const originalChainArray =
-      chainPems.match(
-        /-----BEGIN CERTIFICATE-----[^-]+-----END CERTIFICATE-----/g,
-      ) || [];
-    const chainCerts = originalChainArray.map(pem => new X509Certificate(pem));
-
-    // 3. Find the index of the leaf certificate in the chain
-    const leafIndex = chainCerts.findIndex(chainCert =>
-      leafCert.raw.equals(chainCert.raw),
-    );
-
-    // 4. Apply the logic based on whether the leaf was found
-    if (leafIndex !== -1) {
-      if (leafIndex === 0) {
-        // Leaf certificate already exists at the top of the chain so we just return
-        return JSON.stringify(
-          chainCerts.map(cert => cert.raw.toString('base64')),
-        );
-      } else {
-        throw new CertificateSourceUnavailableError(
-          'Leaf certificate exists in the chain but is not at the top (found at index ${leafIndex}).',
-        );
-      }
-    } else {
-      //Leaf certificate not found in chain. Adding it to the top.
-      const newCertChain = [leafCert, ...chainCerts];
-      return JSON.stringify(
-        newCertChain.map(cert => cert.raw.toString('base64')),
-      );
-    }
-  }
-
-  /**
-   * Creates and returns an https.Agent configured for mTLS.
-   * @returns An mTLS-configured https.Agent.
-   */
-  public createMtlsHttpsAgent(): https.Agent {
+  #getWorkloadCertificatePaths(configPath: string): {
+    certPath: string;
+    keyPath: string;
+  } {
+    let fileContents: string;
     try {
-      if (!this.certPath || !this.keyPath) {
-        throw new CertificateSourceUnavailableError(
-          'Cert path or keyPath is invalid',
+      fileContents = fs.readFileSync(configPath, 'utf8');
+    } catch (err) {
+      throw new CertificateSourceUnavailableError(
+        `Failed to read certificate config file at: ${configPath}`,
+      );
+    }
+
+    try {
+      const config = JSON.parse(fileContents) as CertificateConfigFileJson;
+      const certPath = config?.cert_configs?.workload?.cert_path;
+      const keyPath = config?.cert_configs?.workload?.key_path;
+
+      if (!certPath || !keyPath) {
+        throw new InvalidConfigurationError(
+          `Certificate config file (${configPath}) is missing required "cert_path" or "key_path" in the workload config.`,
         );
       }
-      // Correctly read the certificate and key files.
-      const cert = fs.readFileSync(this.certPath);
-      const key = fs.readFileSync(this.keyPath);
-
-      // Return the agent directly.
-      return new https.Agent({
-        key: key,
-        cert: cert,
-      });
-    } catch (err) {
-      // This wraps errors from reading the actual cert/key files.
-      throw new Error(
-        `Failed to read certificate or key file specified in configuration: ${
-          err instanceof Error ? err.message : String(err)
+      return {certPath, keyPath};
+    } catch (e) {
+      if (e instanceof InvalidConfigurationError) throw e;
+      throw new InvalidConfigurationError(
+        `Failed to parse certificate config from ${configPath}: ${
+          (e as Error).message
         }`,
       );
     }
   }
 
   /**
-   * Sends a GET request to the URL provided in the constructor and resolves
-   * with the returned external subject token.
-   * @param context {@link ExternalAccountSupplierContext} from the calling
-   *   {@link IdentityPoolClient}, contains the requested audience and subject
-   *   token type for the external account identity. Not used.
+   * Reads the leaf certificate and trust chain, combines them,
+   * and returns a JSON array of base64-encoded certificates.
+   * @returns A stringified JSON array of the certificate chain.
    */
-  async getSubjectToken(
-    context: ExternalAccountSupplierContext,
-  ): Promise<string> {
-    const opts: GaxiosOptions = {
-      method: 'GET',
-    };
-    AuthClient.setMethodName(opts, 'getSubjectToken');
-
-    if (!this.certPath) {
-      throw new CertificateSourceUnavailableError(
-        'Cert path or trust chain path or keyPath is invalid',
-      );
+  #processChainFromPaths(): string {
+    if (!this.trustChainPath) {
+      // If no trust chain is provided, just use the leaf certificate.
+      try {
+        const leafPem = fs.readFileSync(this.certPath, 'utf8');
+        const leafCert = new X509Certificate(leafPem);
+        return JSON.stringify([leafCert.raw.toString('base64')]);
+      } catch (err) {
+        throw new CertificateSourceUnavailableError(
+          `Failed to read or parse leaf certificate at ${this.certPath}: ${
+            (err as Error).message
+          }`,
+        );
+      }
     }
 
-    //LEAF Cert only logic
-    // const cert = new X509Certificate(fs.readFileSync(this.certPath));
-    // const encodedCert = cert.raw.toString('base64');
-    // const certChain = [encodedCert];
+    try {
+      // Read both the leaf and the chain files.
+      const leafPem = fs.readFileSync(this.certPath, 'utf8');
+      const chainPems = fs.readFileSync(this.trustChainPath, 'utf8');
 
-    //trust chain logic
-    const subjectToken = this.#processChainFromPaths();
+      // Parse all certificates.
+      const leafCert = new X509Certificate(leafPem);
+      const chainCerts =
+        chainPems
+          .match(/-----BEGIN CERTIFICATE-----[^-]+-----END CERTIFICATE-----/g)
+          ?.map(pem => new X509Certificate(pem)) ?? [];
 
-    return subjectToken;
+      // Check if the leaf certificate is already in the provided chain.
+      const leafIndex = chainCerts.findIndex(chainCert =>
+        leafCert.raw.equals(chainCert.raw),
+      );
+
+      let finalChain: X509Certificate[];
+
+      if (leafIndex === -1) {
+        // Leaf not found, so prepend it to the chain.
+        finalChain = [leafCert, ...chainCerts];
+      } else if (leafIndex === 0) {
+        // Leaf is already the first element, so the chain is correctly ordered.
+        finalChain = chainCerts;
+      } else {
+        // Leaf is in the chain but not at the top, which is invalid.
+        throw new InvalidConfigurationError(
+          `Leaf certificate exists in the trust chain but is not the first entry (found at index ${leafIndex}).`,
+        );
+      }
+
+      return JSON.stringify(
+        finalChain.map(cert => cert.raw.toString('base64')),
+      );
+    } catch (err) {
+      if (err instanceof InvalidConfigurationError) throw err;
+      throw new CertificateSourceUnavailableError(
+        `Failed to process certificate chain: ${(err as Error).message}`,
+      );
+    }
   }
-}
 
-/**
- * Error type to capture when something is wrong while
- * getting the STS token from the certificate.
- */
-export class CertificateSourceUnavailableError extends Error {
-  constructor(message: string) {
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
+  /**
+   * Determines the well-known gcloud location for the certificate config file.
+   * @returns The platform-specific path to the configuration file.
+   * @internal
+   */
+  private getWellKnownCertificateConfigFileLocation(): string {
+    const configDir =
+      process.env.CLOUDSDK_CONFIG ||
+      (this._isWindows()
+        ? path.join(process.env.APPDATA || '', CLOUDSDK_CONFIG_DIRECTORY)
+        : path.join(
+            process.env.HOME || '',
+            '.config',
+            CLOUDSDK_CONFIG_DIRECTORY,
+          ));
+
+    return path.join(configDir, WELL_KNOWN_CERTIFICATE_CONFIG_FILE);
   }
-}
 
-/**
- * Custom error for invalid configuration issues not specifically about unavailability.
- */
-export class InvalidConfigurationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidConfigurationError';
-    Object.setPrototypeOf(this, new.target.prototype);
+  /**
+   * Checks if the current operating system is Windows.
+   * @returns True if the OS is Windows, false otherwise.
+   * @internal
+   */
+  private _isWindows(): boolean {
+    return os.platform().startsWith('win');
   }
 }
