@@ -229,6 +229,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
           clientAuthentication: this.clientAuth,
           transporter: new Gaxios(stsClientGaxiosOptions),
         });
+        this.transporter = new Gaxios(stsClientGaxiosOptions);
       } else {
         throw new Error(
           'No valid Identity Pool "credential_source" provided, must be either file or url or certificate.',

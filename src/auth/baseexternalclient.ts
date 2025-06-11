@@ -234,8 +234,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   protected readonly subjectTokenType: string;
   private readonly serviceAccountImpersonationUrl?: string;
   private readonly serviceAccountImpersonationLifetime?: number;
-  stsCredential: sts.StsCredentials;
-  clientAuth?: ClientAuthentication;
+  protected stsCredential: sts.StsCredentials;
+  protected readonly clientAuth?: ClientAuthentication;
   private readonly workforcePoolUserProject?: string;
   public projectNumber: string | null;
   private readonly configLifetimeRequested: boolean;
