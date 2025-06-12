@@ -1401,7 +1401,18 @@ describe('googleauth', () => {
       assert.strictEqual(env, envDetect.GCPEnv.CLOUD_RUN);
     });
 
-    it('should make the request', async () => {
+    it('should make the request via `#fetch`', async () => {
+      const url = 'http://example.com';
+      const {auth, scopes} = mockGCE();
+      scopes.push(createGetProjectIdNock());
+      const data = {breakfast: 'coffee'};
+      scopes.push(nock(url).get('/').reply(200, data));
+      const res = await auth.fetch(url);
+      scopes.forEach(s => s.done());
+      assert.deepStrictEqual(res.data, data);
+    });
+
+    it('should make the request via `#request`', async () => {
       const url = 'http://example.com';
       const {auth, scopes} = mockGCE();
       scopes.push(createGetProjectIdNock());
@@ -2567,7 +2578,29 @@ describe('googleauth', () => {
         scopes.forEach(s => s.done());
       });
 
-      it('request() should make the request with auth header', async () => {
+      it('#fetch() should make the request with auth header', async () => {
+        const url = 'http://example.com';
+        const data = {breakfast: 'coffee'};
+        const keyFilename = './test/fixtures/external-account-cred.json';
+        const scopes = mockGetAccessTokenAndProjectId(false);
+        scopes.push(
+          nock(url)
+            .get('/', undefined, {
+              reqheaders: {
+                authorization: `Bearer ${stsSuccessfulResponse.access_token}`,
+              },
+            })
+            .reply(200, data),
+        );
+
+        const auth = new GoogleAuth({keyFilename});
+        const res = await auth.fetch(url);
+
+        assert.deepStrictEqual(res.data, data);
+        scopes.forEach(s => s.done());
+      });
+
+      it('#request() should make the request with auth header', async () => {
         const url = 'http://example.com';
         const data = {breakfast: 'coffee'};
         const keyFilename = './test/fixtures/external-account-cred.json';
