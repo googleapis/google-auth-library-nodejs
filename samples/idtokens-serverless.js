@@ -65,7 +65,7 @@ function main(
 
     // Alternatively, one can use `client.idTokenProvider.fetchIdToken`
     // to return the ID Token.
-    const res = await client.request({url});
+    const res = await client.fetch(url);
     console.info(res.data);
   }
 

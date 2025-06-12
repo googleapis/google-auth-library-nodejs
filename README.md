@@ -84,18 +84,14 @@ const {GoogleAuth} = require('google-auth-library');
 * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
 * this library will automatically choose the right client based on the environment.
 */
-async function main() {
-  const auth = new GoogleAuth({
-    scopes: 'https://www.googleapis.com/auth/cloud-platform'
-  });
-  const client = await auth.getClient();
-  const projectId = await auth.getProjectId();
-  const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
-  const res = await client.request({ url });
-  console.log(res.data);
-}
-
-main().catch(console.error);
+const auth = new GoogleAuth({
+  scopes: 'https://www.googleapis.com/auth/cloud-platform'
+});
+const projectId = await auth.getProjectId();
+const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
+// The modern `fetch` and classic `request` APIs are available
+const res = await auth.fetch(url);
+console.log(res.data);
 ```
 
 ## OAuth2
@@ -125,10 +121,11 @@ const keys = require('./oauth2.keys.json');
 */
 async function main() {
   const oAuth2Client = await getAuthenticatedClient();
-  // Make a simple request to the People API using our pre-authenticated client. The `request()` method
-  // takes an GaxiosOptions object.  Visit https://github.com/JustinBeckwith/gaxios.
+  // Make a simple request to the People API using our pre-authenticated client. The `fetch` and
+  // `request` methods accept a [`GaxiosOptions`](https://github.com/googleapis/gaxios)
+  // object.
   const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
-  const res = await oAuth2Client.request({url});
+  const res = await oAuth2Client.fetch(url);
   console.log(res.data);
 
   // After acquiring an access_token, you may want to check on the audience, expiration,
@@ -200,6 +197,7 @@ main().catch(console.error);
 This library will automatically obtain an `access_token`, and automatically refresh the `access_token` if a `refresh_token` is present.  The `refresh_token` is only returned on the [first authorization](https://github.com/googleapis/google-api-nodejs-client/issues/750#issuecomment-304521450), so if you want to make sure you store it safely. An easy way to make sure you always store the most recent tokens is to use the `tokens` event:
 
 ```js
+const auth = new GoogleAuth();
 const client = await auth.getClient();
 
 client.on('tokens', (tokens) => {
@@ -210,9 +208,10 @@ client.on('tokens', (tokens) => {
   console.log(tokens.access_token);
 });
 
+const projectId = await auth.getProjectId();
 const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
-const res = await client.request({ url });
 // The `tokens` event would now be raised if this was the first request
+const res = await client.fetch(url);
 ```
 
 #### Retrieve access token
@@ -285,18 +284,14 @@ The Google Developers Console provides a `.json` file that you can use to config
 const {JWT} = require('google-auth-library');
 const keys = require('./jwt.keys.json');
 
-async function main() {
-  const client = new JWT({
-    email: keys.client_email,
-    key: keys.private_key,
-    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-  });
-  const url = `https://dns.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({url});
-  console.log(res.data);
-}
-
-main().catch(console.error);
+const client = new JWT({
+  email: keys.client_email,
+  key: keys.private_key,
+  scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+});
+const url = `https://dns.googleapis.com/dns/v1/projects/${keys.project_id}`;
+const res = await client.fetch(url);
+console.log(res.data);
 ```
 
 The parameters for the JWT auth client including how to use it with a `.pem` file are explained in [samples/jwt.js](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/jwt.js).
@@ -332,16 +327,12 @@ if (!keysEnvVar) {
 }
 const keys = JSON.parse(keysEnvVar);
 
-async function main() {
-  // load the JWT or UserRefreshClient from the keys
-  const client = auth.fromJSON(keys);
-  client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-  const url = `https://dns.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({url});
-  console.log(res.data);
-}
-
-main().catch(console.error);
+// load the JWT or UserRefreshClient from the keys
+const client = auth.fromJSON(keys);
+client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+const url = `https://dns.googleapis.com/dns/v1/projects/${keys.project_id}`;
+const res = await client.fetch(url);
+console.log(res.data);
 ```
 
 **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to [Validate credential configurations from external sources](https://cloud.google.com/docs/authentication/external/externally-sourced-credentials).
@@ -357,18 +348,14 @@ If your application is running on Google Cloud Platform, you can authenticate us
 ``` js
 const {auth, Compute} = require('google-auth-library');
 
-async function main() {
-  const client = new Compute({
-    // Specifying the service account email is optional.
-    serviceAccountEmail: 'my-service-account@example.com'
-  });
-  const projectId = await auth.getProjectId();
-  const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
-  const res = await client.request({url});
-  console.log(res.data);
-}
-
-main().catch(console.error);
+const client = new Compute({
+  // Specifying the service account email is optional.
+  serviceAccountEmail: 'my-service-account@example.com'
+});
+const projectId = await auth.getProjectId();
+const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
+const res = await client.fetch(url);
+console.log(res.data);
 ```
 
 ## Workload Identity Federation
@@ -1067,17 +1054,14 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/config.json
 The library can now automatically choose the right type of client and initialize credentials from the context provided in the configuration file.
 
 ```js
-async function main() {
-  const auth = new GoogleAuth({
-    scopes: 'https://www.googleapis.com/auth/cloud-platform'
-  });
-  const client = await auth.getClient();
-  const projectId = await auth.getProjectId();
-  // List all buckets in a project.
-  const url = `https://storage.googleapis.com/storage/v1/b?project=${projectId}`;
-  const res = await client.request({ url });
-  console.log(res.data);
-}
+const auth = new GoogleAuth({
+  scopes: 'https://www.googleapis.com/auth/cloud-platform'
+});
+const projectId = await auth.getProjectId();
+// List all buckets in a project.
+const url = `https://storage.googleapis.com/storage/v1/b?project=${projectId}`;
+const res = await client.fetch(url);
+console.log(res.data);
 ```
 
 When using external identities with Application Default Credentials in Node.js, the `roles/browser` role needs to be granted to the service account.
@@ -1100,14 +1084,12 @@ You can also explicitly initialize external account clients using the generated 
 const {ExternalAccountClient} = require('google-auth-library');
 const jsonConfig = require('/path/to/config.json');
 
-async function main() {
-  const client = ExternalAccountClient.fromJSON(jsonConfig);
-  client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-  // List all buckets in a project.
-  const url = `https://storage.googleapis.com/storage/v1/b?project=${projectId}`;
-  const res = await client.request({url});
-  console.log(res.data);
-}
+const client = ExternalAccountClient.fromJSON(jsonConfig);
+client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+// List all buckets in a project.
+const url = `https://storage.googleapis.com/storage/v1/b?project=${projectId}`;
+const res = await client.fetch(url);
+console.log(res.data);
 ```
 
 #### Security Considerations
@@ -1131,15 +1113,11 @@ IAM permission.
 // Make a request to a protected Cloud Run service.
 const {GoogleAuth} = require('google-auth-library');
 
-async function main() {
-  const url = 'https://cloud-run-1234-uc.a.run.app';
-  const auth = new GoogleAuth();
-  const client = await auth.getIdTokenClient(url);
-  const res = await client.request({url});
-  console.log(res.data);
-}
-
-main().catch(console.error);
+const url = 'https://cloud-run-1234-uc.a.run.app';
+const auth = new GoogleAuth();
+const client = await auth.getIdTokenClient(url);
+const res = await client.fetch(url);
+console.log(res.data);
 ```
 
 A complete example can be found in [`samples/idtokens-serverless.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-serverless.js).
@@ -1151,16 +1129,12 @@ used when you set up your protected resource as the target audience.
 // Make a request to a protected Cloud Identity-Aware Proxy (IAP) resource
 const {GoogleAuth} = require('google-auth-library');
 
-async function main()
-  const targetAudience = 'iap-client-id';
-  const url = 'https://iap-url.com';
-  const auth = new GoogleAuth();
-  const client = await auth.getIdTokenClient(targetAudience);
-  const res = await client.request({url});
-  console.log(res.data);
-}
-
-main().catch(console.error);
+const targetAudience = 'iap-client-id';
+const url = 'https://iap-url.com';
+const auth = new GoogleAuth();
+const client = await auth.getIdTokenClient(targetAudience);
+const res = await client.fetch(url);
+console.log(res.data);
 ```
 
 A complete example can be found in [`samples/idtokens-iap.js`](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idtokens-iap.js).
@@ -1233,7 +1207,7 @@ async function main() {
 
   // Use impersonated credentials:
   const url = 'https://www.googleapis.com/storage/v1/b?project=anotherProjectID'
-  const resp = await targetClient.request({ url });
+  const resp = await targetClient.fetch(url);
   for (const bucket of resp.data.items) {
     console.log(bucket.name);
   }
