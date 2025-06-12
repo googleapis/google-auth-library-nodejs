@@ -22,6 +22,8 @@ import {
   getErrorFromOAuthErrorResponse,
 } from './oauth2common';
 
+import {removeUndefinedValuesInObject} from '../util';
+
 /**
  * Defines the interface needed to initialize an StsCredentials instance.
  * The interface does not directly map to the spec and instead is converted
@@ -203,20 +205,12 @@ export class StsCredentials extends OAuthClientAuthHandler {
       options: options && JSON.stringify(options),
     };
 
-    // Keep defined fields.
-    const payload: Record<string, string> = {};
-    Object.entries(values).forEach(([key, value]) => {
-      if (value !== undefined) {
-        payload[key] = value;
-      }
-    });
-
     const opts: GaxiosOptions = {
       ...StsCredentials.RETRY_CONFIG,
       url: this.#tokenExchangeEndpoint.toString(),
       method: 'POST',
       headers,
-      data: new URLSearchParams(payload),
+      data: new URLSearchParams(removeUndefinedValuesInObject(values)),
     };
     AuthClient.setMethodName(opts, 'exchangeToken');
 
