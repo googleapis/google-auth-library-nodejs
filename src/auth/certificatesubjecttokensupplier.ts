@@ -15,17 +15,14 @@
 import {GaxiosOptions} from 'gaxios';
 import {SubjectTokenSupplier} from './identitypoolclient';
 import {AuthClient} from 'google-auth-library';
-import {isValidFile} from '../util';
-import path = require('path');
-import * as os from 'os';
+import {getWellKnownCertificateConfigFileLocation, isValidFile} from '../util';
 import * as fs from 'fs';
 import {X509Certificate} from 'crypto';
 import * as https from 'https';
 
 // --- Constants ---
-const CERTIFICATE_CONFIGURATION_ENV_VARIABLE = 'GOOGLE_API_CERTIFICATE_CONFIG';
-const WELL_KNOWN_CERTIFICATE_CONFIG_FILE = 'certificate_config.json';
-const CLOUDSDK_CONFIG_DIRECTORY = 'gcloud';
+export const CERTIFICATE_CONFIGURATION_ENV_VARIABLE =
+  'GOOGLE_API_CERTIFICATE_CONFIG';
 
 // --- Custom Errors ---
 
@@ -114,6 +111,11 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
         'Either `useDefaultCertificateConfig` must be true or a `certificateConfigLocation` must be provided.',
       );
     }
+    if (opts.useDefaultCertificateConfig && opts.certificateConfigLocation) {
+      throw new InvalidConfigurationError(
+        'Both `useDefaultCertificateConfig` and `certificateConfigLocation` cannot be provided.',
+      );
+    }
     this.trustChainPath = opts.trustChainPath;
     this.certificateConfigPath = this.#resolveCertificateConfigFilePath(
       opts.certificateConfigLocation,
@@ -141,7 +143,6 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
 
   /**
    * Constructs the subject token, which is the base64-encoded certificate chain.
-   * @param context Not used in this implementation.
    * @returns A promise that resolves with the subject token.
    */
   public async getSubjectToken(): Promise<string> {
@@ -181,7 +182,7 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
     }
 
     // 3. Check the well-known gcloud config location.
-    const wellKnownPath = this.getWellKnownCertificateConfigFileLocation();
+    const wellKnownPath = getWellKnownCertificateConfigFileLocation();
     if (isValidFile(wellKnownPath)) {
       return wellKnownPath;
     }
@@ -294,33 +295,5 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
         `Failed to process certificate chain: ${(err as Error).message}`,
       );
     }
-  }
-
-  /**
-   * Determines the well-known gcloud location for the certificate config file.
-   * @returns The platform-specific path to the configuration file.
-   * @internal
-   */
-  private getWellKnownCertificateConfigFileLocation(): string {
-    const configDir =
-      process.env.CLOUDSDK_CONFIG ||
-      (this._isWindows()
-        ? path.join(process.env.APPDATA || '', CLOUDSDK_CONFIG_DIRECTORY)
-        : path.join(
-            process.env.HOME || '',
-            '.config',
-            CLOUDSDK_CONFIG_DIRECTORY,
-          ));
-
-    return path.join(configDir, WELL_KNOWN_CERTIFICATE_CONFIG_FILE);
-  }
-
-  /**
-   * Checks if the current operating system is Windows.
-   * @returns True if the OS is Windows, false otherwise.
-   * @internal
-   */
-  private _isWindows(): boolean {
-    return os.platform().startsWith('win');
   }
 }
