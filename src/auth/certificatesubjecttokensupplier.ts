@@ -14,7 +14,7 @@
 
 import {GaxiosOptions} from 'gaxios';
 import {SubjectTokenSupplier} from './identitypoolclient';
-import {AuthClient} from 'google-auth-library';
+import {AuthClient} from './authclient';
 import {getWellKnownCertificateConfigFileLocation, isValidFile} from '../util';
 import * as fs from 'fs';
 import {X509Certificate} from 'crypto';
