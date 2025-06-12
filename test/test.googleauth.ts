@@ -41,6 +41,8 @@ import {
   ExternalAccountClientOptions,
   Impersonated,
   IdentityPoolClient,
+  PassThroughClient,
+  AnyAuthClient,
 } from '../src';
 import {CredentialBody} from '../src/auth/credentials';
 import * as envDetect from '../src/auth/envDetect';
@@ -62,7 +64,7 @@ import {stringify} from 'querystring';
 import {GoogleAuthExceptionMessages} from '../src/auth/googleauth';
 import {IMPERSONATED_ACCOUNT_TYPE} from '../src/auth/impersonated';
 import {USER_REFRESH_ACCOUNT_TYPE} from '../src/auth/refreshclient';
-import {Gaxios, GaxiosError} from 'gaxios';
+import {Gaxios, GaxiosError, GaxiosPromise, GaxiosResponse} from 'gaxios';
 
 nock.disableNetConnect();
 
@@ -278,6 +280,52 @@ describe('googleauth', () => {
       const envVars = Object.assign({}, process.env, {[name]: value});
       return sandbox.stub(process, 'env').value(envVars);
     }
+
+    describe('types', () => {
+      it('should be type-compatible with itself by default', () => {
+        class CustomAuthClient extends AuthClient {
+          request<T>(): GaxiosPromise<T> {
+            throw new Error('Method not implemented.');
+          }
+          getRequestHeaders(): Promise<Headers> {
+            throw new Error('Method not implemented.');
+          }
+          getAccessToken(): Promise<{
+            token?: string | null;
+            res?: GaxiosResponse | null;
+          }> {
+            throw new Error('Method not implemented.');
+          }
+        }
+
+        // default > default
+        const defaultToDefault: GoogleAuth = new GoogleAuth();
+
+        // Explicit > default
+        const explicitToDefault: GoogleAuth =
+          new GoogleAuth<PassThroughClient>();
+
+        // custom > default
+        const customToDefault: GoogleAuth = new GoogleAuth<CustomAuthClient>();
+
+        // AnyAuthClient > default
+        const anyToDefault: GoogleAuth = new GoogleAuth<AnyAuthClient>();
+
+        // default > AnyAuthClient
+        const defaultToAny: GoogleAuth<AnyAuthClient> = new GoogleAuth();
+
+        // AuthClient > AnyAuthClient
+        const baseClientToAny: GoogleAuth<AnyAuthClient> =
+          new GoogleAuth<AuthClient>();
+
+        assert(defaultToDefault);
+        assert(explicitToDefault);
+        assert(customToDefault);
+        assert(anyToDefault);
+        assert(defaultToAny);
+        assert(baseClientToAny);
+      });
+    });
 
     it('should accept and use an `AuthClient`', async () => {
       const customRequestHeaders = new Headers({

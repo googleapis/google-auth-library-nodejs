@@ -26,17 +26,8 @@ import {CredentialBody, ImpersonatedJWTInput, JWTInput} from './credentials';
 import {IdTokenClient} from './idtokenclient';
 import {GCPEnv, getEnv} from './envDetect';
 import {JWT, JWTOptions} from './jwtclient';
-import {OAuth2ClientOptions} from './oauth2client';
-import {
-  UserRefreshClient,
-  UserRefreshClientOptions,
-  USER_REFRESH_ACCOUNT_TYPE,
-} from './refreshclient';
-import {
-  Impersonated,
-  ImpersonatedOptions,
-  IMPERSONATED_ACCOUNT_TYPE,
-} from './impersonated';
+import {UserRefreshClient, USER_REFRESH_ACCOUNT_TYPE} from './refreshclient';
+import {Impersonated, IMPERSONATED_ACCOUNT_TYPE} from './impersonated';
 import {
   ExternalAccountClient,
   ExternalAccountClientOptions,
@@ -52,7 +43,7 @@ import {
   ExternalAccountAuthorizedUserClientOptions,
 } from './externalAccountAuthorizedUserClient';
 import {originalOrCamelOptions} from '../util';
-import {AnyAuthClient} from '..';
+import {AnyAuthClient, AnyAuthClientConstructor} from '..';
 
 /**
  * Defines all types of explicit clients that are determined via ADC JSON
@@ -82,7 +73,7 @@ export interface ADCResponse {
   projectId: string | null;
 }
 
-export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
+export interface GoogleAuthOptions<T extends AuthClient = AnyAuthClient> {
   /**
    * An API key to use, optional. Cannot be used with {@link GoogleAuthOptions.credentials `credentials`}.
    */
@@ -114,13 +105,12 @@ export interface GoogleAuthOptions<T extends AuthClient = JSONClient> {
   credentials?: JWTInput | ExternalAccountClientOptions;
 
   /**
-   * Options object passed to the constructor of the client
+   * `AuthClientOptions` object passed to the constructor of the client
    */
-  clientOptions?:
-    | JWTOptions
-    | OAuth2ClientOptions
-    | UserRefreshClientOptions
-    | ImpersonatedOptions;
+  clientOptions?: Extract<
+    ConstructorParameters<AnyAuthClientConstructor>[0],
+    AuthClientOptions
+  >;
 
   /**
    * Required scopes for the desired API request
@@ -160,7 +150,7 @@ export const GoogleAuthExceptionMessages = {
     'https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys',
 } as const;
 
-export class GoogleAuth<T extends AuthClient = JSONClient> {
+export class GoogleAuth<T extends AuthClient = AuthClient> {
   /**
    * Caches a value indicating whether the auth layer is running on Google
    * Compute Engine.
