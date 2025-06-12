@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.1.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.0.0...v10.1.0) (2025-06-12)
+
+
+### Features
+
+* `fetch`-Compatible API ([#1939](https://github.com/googleapis/google-auth-library-nodejs/issues/1939)) ([c63f608](https://github.com/googleapis/google-auth-library-nodejs/commit/c63f608ce33a3ea95b70f39eadcf0a4415e5657c))
+* Normalize `GoogleAuth<T>` from `JSONClient` to `AuthClient` ([#1940](https://github.com/googleapis/google-auth-library-nodejs/issues/1940)) ([440de51](https://github.com/googleapis/google-auth-library-nodejs/commit/440de519d5c48b00c83d3941004d1516f084d6ce))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency google-auth-library to v10 ([#2034](https://github.com/googleapis/google-auth-library-nodejs/issues/2034)) ([182c5db](https://github.com/googleapis/google-auth-library-nodejs/commit/182c5dba3ef9bcf9ae7eb2d3c7167d4fe899c118))
+
 ## [10.0.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v9.15.1...v10.0.0) (2025-06-11)
 
 
