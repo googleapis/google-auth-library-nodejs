@@ -202,8 +202,11 @@ describe('oauth2', () => {
         return new LoginTicket('c', payload);
       };
       assert.throws(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        () => (client as any).verifyIdToken(idToken, audience),
+        () =>
+          (client as ReturnType<JSON['parse']>).verifyIdToken(
+            idToken,
+            audience,
+          ),
         /This method accepts an options object as the first parameter, which includes the idToken, audience, and maxExpiry./,
       );
     });
@@ -1015,8 +1018,9 @@ describe('oauth2', () => {
       client.credentials = {refresh_token: 'refresh-token-placeholder'};
       try {
         await client.request({url: 'http://example.com'});
-        // eslint-disable-next-line no-empty
-      } catch (e) {}
+      } catch (e) {
+        // ignore
+      }
       await client.request({url: 'http://example.com'});
       scopes.forEach(s => s.done());
       assert.strictEqual('abc123', client.credentials.access_token);
@@ -1364,6 +1368,52 @@ describe('oauth2', () => {
 
       const params = new URLSearchParams(res.res.config.data || '');
       assert.strictEqual(params.get('code_verifier'), 'its_verified');
+    });
+
+    it('getToken should ignore undefined code verifier', async () => {
+      const scope = nock(baseUrl, {
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
+      })
+        .post('/token')
+        .reply(200, {
+          access_token: 'abc',
+          refresh_token: '123',
+          expires_in: 10,
+        });
+      const res = await client.getToken({
+        code: 'code here',
+        codeVerifier: undefined,
+      });
+      scope.done();
+      assert(res.res);
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('code_verifier'), null);
+    });
+
+    it('getToken should ignore undefined string code verifier', async () => {
+      const scope = nock(baseUrl, {
+        reqheaders: {
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
+      })
+        .post('/token')
+        .reply(200, {
+          access_token: 'abc',
+          refresh_token: '123',
+          expires_in: 10,
+        });
+      const res = await client.getToken({
+        code: 'code here',
+        codeVerifier: 'undefined',
+      });
+      scope.done();
+      assert(res.res);
+
+      const params = new URLSearchParams(res.res.config.data || '');
+      assert.strictEqual(params.get('code_verifier'), null);
     });
 
     it('getToken should set redirect_uri if not provided in options', async () => {

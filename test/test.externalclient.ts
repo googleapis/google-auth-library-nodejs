@@ -229,8 +229,9 @@ describe('ExternalAccountClient', () => {
 
     it('should return null when given non-ExternalAccountClientOptions', () => {
       assert(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ExternalAccountClient.fromJSON(serviceAccountKeys as any) === null,
+        ExternalAccountClient.fromJSON(
+          serviceAccountKeys as ReturnType<JSON['parse']>,
+        ) === null,
       );
     });
 
@@ -246,8 +247,7 @@ describe('ExternalAccountClient', () => {
 
     it('should throw when given invalid IdentityPoolClient', () => {
       const invalidOptions = Object.assign({}, fileSourcedOptions);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (invalidOptions as any).credential_source = {};
+      (invalidOptions as ReturnType<JSON['parse']>).credential_source = {};
 
       assert.throws(() => {
         return ExternalAccountClient.fromJSON(invalidOptions);
