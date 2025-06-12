@@ -191,7 +191,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       const headers = credentialSourceOpts.get('headers');
       if ((file && url) || (url && certificate) || (file && certificate)) {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file, url or certificate.',
+          'No valid Identity Pool "credential_source" provided, must be either file, or url, or certificate.',
         );
       } else if (file) {
         this.credentialSourceType = 'file';
@@ -232,7 +232,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         this.transporter = new Gaxios(stsClientGaxiosOptions);
       } else {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file or url or certificate.',
+          'No valid Identity Pool "credential_source" provided, must be either file, or url, or certificate.',
         );
       }
     }

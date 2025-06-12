@@ -14,7 +14,10 @@
 
 import * as fs from 'fs';
 import * as os from 'os';
-import * as path from 'path';
+import path = require('path');
+
+const WELL_KNOWN_CERTIFICATE_CONFIG_FILE = 'certificate_config.json';
+const CLOUDSDK_CONFIG_DIRECTORY = 'gcloud';
 
 /**
  * A utility for converting snake_case to camelCase.
@@ -269,38 +272,29 @@ export function isValidFile(filePath: string): boolean {
 }
 
 /**
- * Helper to get the path of the well known ADC file (credential_configuration.json)
- * based on the operating system
+ * Determines the well-known gcloud location for the certificate config file.
+ * @returns The platform-specific path to the configuration file.
+ * @internal
  */
-// export function getWellKnownFilePath(): string | null {
-//   let location = null;
-//   if (isWindows()) {
-//     // Windows
-//     location = process.env['APPDATA'];
-//   } else {
-//     // Linux or Mac
-//     const home = process.env['HOME'];
-//     if (home) {
-//       location = path.join(home, '.config');
-//     }
-//   }
-//   // If we found the root path, expand it.
-//   if (location) {
-//     location = path.join(
-//       location,
-//       'gcloud',
-//       'application_default_credentials.json',
-//     );
-//   }
-//   return location;
-// }
+export function getWellKnownCertificateConfigFileLocation(): string {
+  const configDir =
+    process.env.CLOUDSDK_CONFIG ||
+    (_isWindows()
+      ? path.join(process.env.APPDATA || '', CLOUDSDK_CONFIG_DIRECTORY)
+      : path.join(
+          process.env.HOME || '',
+          '.config',
+          CLOUDSDK_CONFIG_DIRECTORY,
+        ));
 
-// function isWindows(): boolean {
-//   const sys = os.platform();
-//   if (sys && sys.length >= 3) {
-//     if (sys.substring(0, 3).toLowerCase() === 'win') {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
+  return path.join(configDir, WELL_KNOWN_CERTIFICATE_CONFIG_FILE);
+}
+
+/**
+ * Checks if the current operating system is Windows.
+ * @returns True if the OS is Windows, false otherwise.
+ * @internal
+ */
+function _isWindows(): boolean {
+  return os.platform().startsWith('win');
+}

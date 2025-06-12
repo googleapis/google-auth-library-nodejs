@@ -51,6 +51,7 @@ const defaultProjectNumber = '123456';
 const poolId = 'POOL_ID';
 const providerId = 'PROVIDER_ID';
 const baseUrl = 'https://sts.googleapis.com';
+const baseMtlsUrl = 'https://sts.mtls.googleapis.com';
 const path = '/v1/token';
 export const saEmail = 'service-1234@service-name.iam.gserviceaccount.com';
 const saBaseUrl = 'https://iamcredentials.googleapis.com';
@@ -110,6 +111,10 @@ export function getAudience(
 
 export function getTokenUrl(): string {
   return `${baseUrl}${path}`;
+}
+
+export function getMtlsTokenUrl(): string {
+  return `${baseMtlsUrl}${path}`;
 }
 
 export function getServiceAccountImpersonationUrl(): string {
