@@ -33,9 +33,6 @@ import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {pkg} from '../shared.cjs';
 import {
-  lookupTrustBoundary,
-  TrustBoundaryData,
-  TrustBoundaryProvider,
   WORKFORCE_LOOKUP_ENDPOINT,
   WORKLOAD_LOOKUP_ENDPOINT,
 } from './trustboundary';
@@ -426,7 +423,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     const headers = new Headers({
       authorization: `Bearer ${accessTokenResponse.token}`,
     });
-    return this.addSharedMetadataHeaders(headers);
+    return await this.addSharedMetadataHeaders(headers);
   }
 
   /**

@@ -143,7 +143,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       ) {
         const {tokens} = await this.refreshToken();
         return {
-          headers: this.addSharedMetadataHeaders(
+          headers: await this.addSharedMetadataHeaders(
             new Headers({
               authorization: `Bearer ${tokens.id_token}`,
             }),
@@ -181,7 +181,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
           useScopes ? scopes : undefined,
         );
 
-        return {headers: this.addSharedMetadataHeaders(headers)};
+        return {headers: await this.addSharedMetadataHeaders(headers)};
       }
     } else if (this.hasAnyScopes() || this.apiKey) {
       return super.getRequestMetadataAsync(url);

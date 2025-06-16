@@ -222,7 +222,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     const headers = new Headers({
       authorization: `Bearer ${accessTokenResponse.token}`,
     });
-    return this.addSharedMetadataHeaders(headers);
+    return await this.addSharedMetadataHeaders(headers);
   }
 
   request<T>(opts: GaxiosOptions): GaxiosPromise<T>;

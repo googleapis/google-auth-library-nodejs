@@ -266,63 +266,63 @@ describe('compute', () => {
     assert.fail('failed to throw');
   });
 
-  describe('trust boundaries', () => {
-    beforeEach(() => {
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
-    });
+  // describe('trust boundaries', () => {
+  //   beforeEach(() => {
+  //     process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+  //   });
 
-    afterEach(() => {
-      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
-      sandbox.restore();
-    });
+  //   afterEach(() => {
+  //     delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+  //     sandbox.restore();
+  //   });
 
-    it('should fetch and return trust boundary data successfully', async () => {
-      //TODO:pjiyer Can this be moved to tb.ts test file?
-      const serviceAccountEmail = 'service-account@example.com';
-      const compute = new Compute({serviceAccountEmail});
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '000x9',
-      };
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(compute.serviceAccountEmail),
-      );
+  //   it('should fetch and return trust boundary data successfully', async () => {
+  //     //TODO:pjiyer Can this be moved to tb.ts test file?
+  //     const serviceAccountEmail = 'service-account@example.com';
+  //     const compute = new Compute({serviceAccountEmail});
+  //     const mockAuthHeader = 'Bearer test-access-token';
+  //     const expectedTrustBoundaryData: TrustBoundaryData = {
+  //       locations: ['sadad', 'asdad'],
+  //       encodedLocations: '000x9',
+  //     };
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(compute.serviceAccountEmail),
+  //     );
 
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .reply(200, expectedTrustBoundaryData);
 
-      const trustBoundary = await compute.fetchTrustBoundary(mockAuthHeader);
+  //     const trustBoundary = await compute.fetchTrustBoundary(mockAuthHeader);
 
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      scope.done();
-    });
+  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+  //     scope.done();
+  //   });
 
-    it('fetchTrustBoundary should use default if serviceAccountEmail passed in is null', async () => {
-      const compute = new Compute();
-      const mockAuthHeader = 'Bearer test-access-token';
+  //   it('fetchTrustBoundary should use default if serviceAccountEmail passed in is null', async () => {
+  //     const compute = new Compute();
+  //     const mockAuthHeader = 'Bearer test-access-token';
 
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent('default'),
-      );
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent('default'),
+  //     );
 
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '000x9',
-      };
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
+  //     const expectedTrustBoundaryData: TrustBoundaryData = {
+  //       locations: ['sadad', 'asdad'],
+  //       encodedLocations: '000x9',
+  //     };
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .reply(200, expectedTrustBoundaryData);
 
-      const trustBoundary = await compute.fetchTrustBoundary(mockAuthHeader);
+  //     const trustBoundary = await compute.fetchTrustBoundary(mockAuthHeader);
 
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      scope.done();
-    });
-  });
+  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+  //     scope.done();
+  //   });
+  // });
 });

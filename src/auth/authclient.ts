@@ -320,7 +320,7 @@ export abstract class AuthClient
    *
    * @param headers object to append additional headers to.
    */
-  protected addSharedMetadataHeaders(headers: Headers): Headers {
+  protected async addSharedMetadataHeaders(headers: Headers): Promise<Headers> {
     // quota_project_id, stored in application_default_credentials.json, is set in
     // the x-goog-user-project header, to indicate an alternate account for
     // billing and quota:
