@@ -97,7 +97,6 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {refresh_token: 'jwt-placeholder', expiry_date: 1};
-    this.trustBoundaryUrl = this.#setTrustBoundaryUrl();
   }
 
   /**
@@ -411,9 +410,11 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     throw new Error('A key or a keyFile must be provided to getCredentials.');
   }
 
-  #setTrustBoundaryUrl(): string | null {
+  getTrustBoundaryUrl(): string {
     if (!this.email) {
-      return null;
+      throw new Error(
+        'TrustBoundary: Error getting tbUrl because of missing email in JwtClient',
+      );
     }
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
       '{service_account_email}',

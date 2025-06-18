@@ -156,9 +156,11 @@ export class DownscopedClient extends AuthClient {
     if (options instanceof AuthClient) {
       this.authClient = options;
       this.credentialAccessBoundary = credentialAccessBoundary;
+      this.trustBoundaryUrl = options.trustBoundaryUrl;
     } else {
       this.authClient = options.authClient;
       this.credentialAccessBoundary = options.credentialAccessBoundary;
+      this.trustBoundaryUrl = options.authClient.trustBoundaryUrl;
     }
 
     // Check 1-10 Access Boundary Rules are defined within Credential Access
@@ -394,5 +396,14 @@ export class DownscopedClient extends AuthClient {
       ? now >=
           downscopedAccessToken.expiry_date - this.eagerRefreshThresholdMillis
       : false;
+  }
+
+  getTrustBoundaryUrl(): string {
+    if (!this.authClient.trustBoundaryUrl) {
+      throw new Error(
+        'TrustBoundary: Error getting tbUrl because of missing trustBoundaryUrl in calling client of DownScopedClient',
+      );
+    }
+    return this.authClient.trustBoundaryUrl;
   }
 }

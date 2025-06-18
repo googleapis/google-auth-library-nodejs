@@ -19,10 +19,6 @@ import * as nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
 import {Impersonated, JWT, UserRefreshClient} from '../src';
 import {CredentialRequest} from '../src/auth/credentials';
-import {
-  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  TrustBoundaryData,
-} from '../src/auth/trustboundary';
 
 const PEM_PATH = './test/fixtures/private.pem';
 

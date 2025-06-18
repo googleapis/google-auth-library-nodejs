@@ -40,11 +40,6 @@ import {
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
 import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
-import {
-  TrustBoundaryData,
-  WORKFORCE_LOOKUP_ENDPOINT,
-  WORKLOAD_LOOKUP_ENDPOINT,
-} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 

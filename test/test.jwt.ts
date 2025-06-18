@@ -22,11 +22,6 @@ import * as sinon from 'sinon';
 import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
-import {
-  NoOpEncodedLocations,
-  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  TrustBoundaryData,
-} from '../src/auth/trustboundary';
 
 function removeBearerFromAuthorizationHeader(headers: Headers): string {
   return (headers.get('authorization') || '').replace('Bearer ', '');

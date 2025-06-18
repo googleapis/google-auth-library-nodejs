@@ -58,7 +58,6 @@ export class Compute extends OAuth2Client {
       : options.scopes
         ? [options.scopes]
         : [];
-    this.trustBoundaryUrl = this.#setTrustBoundaryUrl();
   }
 
   /**
@@ -141,7 +140,7 @@ export class Compute extends OAuth2Client {
     }
   }
 
-  #setTrustBoundaryUrl(): string {
+  getTrustBoundaryUrl(): string {
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
       '{service_account_email}',
       encodeURIComponent(this.serviceAccountEmail),

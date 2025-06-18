@@ -20,12 +20,7 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-import {
-  lookupTrustBoundary1,
-  NoOpEncodedLocations,
-  TrustBoundaryData,
-} from './trustboundary';
-
+import {getTrustBoundary} from './trustboundary';
 /**
  * Easy access to symbol-indexed strings on config objects.
  */
@@ -226,7 +221,7 @@ export abstract class AuthClient
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
   trustBoundaryEnabled: boolean;
-  trustBoundary?: TrustBoundaryData | null;
+  trustBoundary?: string | null;
   trustBoundaryUrl?: string | null;
 
   /**
@@ -305,6 +300,15 @@ export abstract class AuthClient
     res?: GaxiosResponse | null;
   }>;
 
+  getTrustBoundaryUrl(): string {
+    if (!this.trustBoundaryUrl) {
+      throw new Error(
+        'TrustBoundary: TrustBoundary: GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES set for invalid client type',
+      );
+    }
+    return this.trustBoundaryUrl;
+  }
+
   /**
    * Sets the auth credentials.
    */
@@ -330,20 +334,10 @@ export abstract class AuthClient
     ) {
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
-    if (this.trustBoundaryUrl) {
-      this.trustBoundary = await lookupTrustBoundary1(
-        this,
-        this.trustBoundaryUrl,
-      );
-      if (
-        this.trustBoundary &&
-        this.trustBoundary.encodedLocations &&
-        this.trustBoundary.encodedLocations !== NoOpEncodedLocations
-      ) {
-        headers.set(
-          'x-goog-allowed-locations',
-          this.trustBoundary.encodedLocations,
-        );
+    if (this.trustBoundaryEnabled) {
+      this.trustBoundary = await getTrustBoundary(this);
+      if (this.trustBoundary) {
+        headers.set('x-goog-allowed-locations', this.trustBoundary);
       }
     }
 
@@ -512,17 +506,6 @@ export abstract class AuthClient
         httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
       },
     };
-  }
-
-  /**
-   * Gets TrustBoundaries
-   *
-   */
-  getTrustBoundaries(): TrustBoundaryData | null {
-    if (!this.trustBoundaryEnabled) {
-      return null;
-    }
-    return null;
   }
 }
 

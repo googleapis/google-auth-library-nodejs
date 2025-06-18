@@ -755,36 +755,32 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     );
   }
 
-  #setTrustBoundaryUrl(): string | null {
+  getTrustBoundaryUrl(): string {
     let lookupTrustBoundaryUrl = null;
-    try {
-      if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
-        //client configured for workforce authorization
-        const wfPoolId = this.#getWorkForcePoolId(this.audience);
-        if (!wfPoolId) {
-          throw new RangeError(
-            'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workforce pool id',
-          );
-        }
-        lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-          '{pool_id}',
-          encodeURIComponent(wfPoolId),
+    if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
+      //client configured for workforce authorization
+      const wfPoolId = this.#getWorkForcePoolId(this.audience);
+      if (!wfPoolId) {
+        throw new RangeError(
+          'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workforce pool id',
         );
-      } else {
-        //client configured for workload authorization
-        const wlPoolId = this.#getWorkloadPoolId(this.audience);
-        if (!wlPoolId || !this.projectNumber) {
-          throw new RangeError(
-            'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number',
-          );
-        }
-        lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
-          '{project_id}',
-          this.projectNumber,
-        ).replace('{pool_id}', wlPoolId);
       }
-    } catch (e) {
-      return null;
+      lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
+        '{pool_id}',
+        encodeURIComponent(wfPoolId),
+      );
+    } else {
+      //client configured for workload authorization
+      const wlPoolId = this.#getWorkloadPoolId(this.audience);
+      if (!wlPoolId || !this.projectNumber) {
+        throw new RangeError(
+          'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number',
+        );
+      }
+      lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
+        '{project_id}',
+        this.projectNumber,
+      ).replace('{pool_id}', wlPoolId);
     }
     return lookupTrustBoundaryUrl;
   }

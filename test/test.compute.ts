@@ -18,10 +18,6 @@ import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {Compute} from '../src';
-import {
-  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  TrustBoundaryData,
-} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 

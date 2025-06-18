@@ -126,7 +126,6 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     this.delegates = options.delegates ?? [];
     this.targetScopes = options.targetScopes ?? [];
     this.lifetime = options.lifetime ?? 3600;
-    this.trustBoundaryUrl = this.#setTrustBoundaryUrl();
 
     const usingExplicitUniverseDomain =
       !!originalOrCamelOptions(options).get('universe_domain');
@@ -257,13 +256,16 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     return res.data.token;
   }
 
-  #setTrustBoundaryUrl(): string | null {
-    if (!this.targetPrincipal) {
-      return null;
+  getTrustBoundaryUrl(): string {
+    const targetPrincipal = this.getTargetPrincipal();
+    if (!targetPrincipal) {
+      throw new Error(
+        'TrustBoundary: Error getting tbUrl because of missing targetPrincipal in ImpersonatedClient',
+      );
     }
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
       '{service_account_email}',
-      encodeURIComponent(this.targetPrincipal),
+      encodeURIComponent(targetPrincipal),
     );
     return trustBoundaryUrl;
   }

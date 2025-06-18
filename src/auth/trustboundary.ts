@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import {AuthClient, DEFAULT_UNIVERSE} from './authclient';
-import {GaxiosError, GaxiosOptions, GaxiosResponse} from 'gaxios';
-
+import {GaxiosError, GaxiosOptions} from 'gaxios';
 /**
  * value indicating no trust boundaries enforced
  **/
@@ -47,117 +46,90 @@ export interface TrustBoundaryData {
   encodedLocations: string;
 }
 
-export interface TrustBoundaryProvider {
-  fetchTrustBoundary: (authHeader: string) => Promise<TrustBoundaryData | null>;
-}
-
 /**
- * Internal helper function to fetch trust boundary data from a specific URL.
- *
- * @param authenticatedClient An authenticated AuthClient instance.
- * @param url The specific URL to fetch data from.
- * @returns A Promise resolving to a new TrustBoundary instance.
- * @throws {Error} If the request fails or the response is invalid.
- * @internal
- */
-async function _fetchTrustBoundaryData1(
-  authenticatedClient: AuthClient,
-  url: string,
-): Promise<TrustBoundaryData> {
-  const requestOptions: GaxiosOptions = {
-    method: 'GET',
-    url: url,
-    timeout: 5000,
-  };
-  if (
-    !authenticatedClient.credentials.access_token &&
-    !authenticatedClient.credentials.token_type
-  ) {
-    throw new Error(
-      'TrustBoundary: Error calling lookup endpoint without valid access token',
-    );
-  }
-  requestOptions.headers = new Headers({
-    authorization:
-      authenticatedClient.credentials.token_type +
-      ' ' +
-      authenticatedClient.credentials.access_token,
-  });
-
-  try {
-    const response: GaxiosResponse<TrustBoundaryData> =
-      await authenticatedClient.transporter.request<TrustBoundaryData>(
-        requestOptions,
-      );
-    if (response.status === 200 && response.data) {
-      const trustBoundaryData = response.data;
-
-      // Basic validation of the response structure
-      if (typeof trustBoundaryData.encodedLocations !== 'string') {
-        throw new Error(
-          'TrustBoundary: Invalid response format - missing or invalid encodedLocations',
-        );
-      }
-
-      return trustBoundaryData;
-    } else {
-      // Handle unexpected non-error statuses (though gaxios usually throws for >=400)
-      throw new Error(
-        `TrustBoundary: Request failed with status ${response.status}`,
-      );
-    }
-  } catch (error) {
-    if (error instanceof GaxiosError) {
-      throw new Error(
-        `TrustBoundary: API request failed with status ${error.response?.status}: ${error.message}`,
-        {cause: error},
-      );
-    } else {
-      throw new Error(
-        `TrustBoundary: An unknown error occurred during fetch: ${error}`,
-        {cause: error},
-      );
-    }
-  }
-}
-
-/**
- * Fetches trust boundary data for a given url using an authenticated client.
+ * Fetches trust boundary data using an authenticated client.
  * Handles caching checks and potential fallbacks.
  * @param authenticatedClient An authenticated AuthClient instance to make the request.
- * @param url A url for calling the trust boundary api.
- * @param authHeader The header within the auth api.
- * @returns A Promise resolving to TrustBoundaryData or null if fetching fails and no cache is available.
+ * @returns A Promise resolving to TrustBoundaryData or null for no-op trust boundaries.
  *  * @throws {Error} If the request fails and there is no cache available.
  */
-export async function lookupTrustBoundary1(
+export async function getTrustBoundary(
   client: AuthClient,
-  url: string,
-): Promise<TrustBoundaryData | null> {
-  // Throws error on unrecoverable error with no cache
+): Promise<string | null> {
+  if (!client.trustBoundaryEnabled) {
+    return null;
+  }
 
   if (client.universeDomain !== DEFAULT_UNIVERSE) {
     return null; // Skipping check for non-default universe domain
   }
 
   const cachedTB = client.trustBoundary;
-  if (
-    cachedTB &&
-    cachedTB.encodedLocations &&
-    cachedTB.encodedLocations === NoOpEncodedLocations
-  ) {
-    return cachedTB; //Returning cached No-Op data.
+  if (cachedTB && cachedTB === NoOpEncodedLocations) {
+    return null; //Returning cached No-Op data.
   }
 
+  const trustBoundaryUrl = client.getTrustBoundaryUrl();
+
+  let headers = {};
+  if (!client.credentials.access_token && !client.credentials.token_type) {
+    throw new Error(
+      'TrustBoundary: Error calling lookup endpoint without valid access token',
+    );
+  }
+  headers = new Headers({
+    //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
+    // authorization:
+    //   client.credentials.token_type + ' ' + client.credentials.access_token,
+  });
+
+  const opts: GaxiosOptions = {
+    ...{
+      retry: true,
+      retryConfig: {
+        httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
+      },
+    },
+    headers,
+    url: trustBoundaryUrl,
+  };
+
   try {
-    return await _fetchTrustBoundaryData1(client, url);
-  } catch (error) {
-    if (cachedTB) {
-      return cachedTB; // Falling back to cached data due to error
+    const {data: trustBoundaryData} =
+      // preferred to client.request to avoid unnecessary retries
+      await client.transporter.request<TrustBoundaryData>(opts);
+
+    if (
+      !trustBoundaryData ||
+      typeof trustBoundaryData.encodedLocations !== 'string'
+    ) {
+      throw new Error(
+        'TrustBoundary: Invalid response format from lookup endpoint.',
+      );
     }
 
-    throw new Error(
-      `TrustBoundary: Error call to API failed and no cache : ${error}`,
-    );
+    // Check for the specific No-Op case and return null.
+    if (trustBoundaryData.encodedLocations === NoOpEncodedLocations) {
+      return null;
+    }
+
+    return trustBoundaryData.encodedLocations;
+  } catch (error) {
+    if (error instanceof GaxiosError) {
+      throw new Error(
+        `TrustBoundary: API request to lookup endpoint failed: ${error.message}`,
+        {cause: error}, // This preserves the original error for deeper debugging if needed.
+      );
+    } else if (error instanceof Error) {
+      throw new Error(
+        `TrustBoundary: Invalid response format from lookup endpoint : ${error.message}`,
+        {cause: error}, // This preserves the original error for deeper debugging if needed.
+      );
+    } else {
+      throw new Error(
+        'TrustBoundary: Unknown failure while getting trust boundaries:',
+        {cause: error}, // This preserves the original error for deeper debugging if needed.
+      );
+    }
   }
 }
