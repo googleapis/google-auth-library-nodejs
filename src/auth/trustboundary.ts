@@ -55,7 +55,7 @@ export interface TrustBoundaryData {
  */
 export async function getTrustBoundary(
   client: AuthClient,
-): Promise<string | null> {
+): Promise<TrustBoundaryData | null> {
   if (!client.trustBoundaryEnabled) {
     return null;
   }
@@ -65,22 +65,25 @@ export async function getTrustBoundary(
   }
 
   const cachedTB = client.trustBoundary;
-  if (cachedTB && cachedTB === NoOpEncodedLocations) {
+  if (cachedTB && cachedTB.encodedLocations === NoOpEncodedLocations) {
     return null; //Returning cached No-Op data.
   }
 
   const trustBoundaryUrl = client.getTrustBoundaryUrl();
+  if (!trustBoundaryUrl) {
+    throw new Error(
+      'TrustBoundary: GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES set for invalid client type',
+    );
+  }
 
-  let headers = {};
-  if (!client.credentials.access_token && !client.credentials.token_type) {
+  if (!client.credentials.access_token) {
     throw new Error(
       'TrustBoundary: Error calling lookup endpoint without valid access token',
     );
   }
-  headers = new Headers({
+  const headers = new Headers({
     //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
-    // authorization:
-    //   client.credentials.token_type + ' ' + client.credentials.access_token,
+    authorization: 'Bearer ' + client.credentials.access_token,
   });
 
   const opts: GaxiosOptions = {
@@ -99,37 +102,18 @@ export async function getTrustBoundary(
       // preferred to client.request to avoid unnecessary retries
       await client.transporter.request<TrustBoundaryData>(opts);
 
-    if (
-      !trustBoundaryData ||
-      typeof trustBoundaryData.encodedLocations !== 'string'
-    ) {
-      throw new Error(
-        'TrustBoundary: Invalid response format from lookup endpoint.',
-      );
-    }
-
     // Check for the specific No-Op case and return null.
     if (trustBoundaryData.encodedLocations === NoOpEncodedLocations) {
       return null;
     }
 
-    return trustBoundaryData.encodedLocations;
+    return trustBoundaryData;
   } catch (error) {
-    if (error instanceof GaxiosError) {
-      throw new Error(
-        `TrustBoundary: API request to lookup endpoint failed: ${error.message}`,
-        {cause: error}, // This preserves the original error for deeper debugging if needed.
-      );
-    } else if (error instanceof Error) {
-      throw new Error(
-        `TrustBoundary: Invalid response format from lookup endpoint : ${error.message}`,
-        {cause: error}, // This preserves the original error for deeper debugging if needed.
-      );
-    } else {
-      throw new Error(
-        'TrustBoundary: Unknown failure while getting trust boundaries:',
-        {cause: error}, // This preserves the original error for deeper debugging if needed.
-      );
+    if (client.trustBoundary) {
+      return client.trustBoundary; // return cached tb if call to lookup fails
     }
+    throw new Error('TrustBoundary: Failure while getting trust boundaries:', {
+      cause: error,
+    });
   }
 }

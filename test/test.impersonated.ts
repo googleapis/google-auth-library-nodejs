@@ -19,6 +19,11 @@ import * as nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
 import {Impersonated, JWT, UserRefreshClient} from '../src';
 import {CredentialRequest} from '../src/auth/credentials';
+import {
+  TrustBoundaryData,
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  getTrustBoundary,
+} from '../src/auth/trustboundary';
 
 const PEM_PATH = './test/fixtures/private.pem';
 
@@ -569,80 +574,58 @@ describe('impersonated', () => {
     scopes.forEach(s => s.done());
   });
 
-  // describe('trust boundaries', () => {
-  //   beforeEach(() => {
-  //     process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
-  //   });
+  describe('trust boundaries', () => {
+    beforeEach(() => {
+      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+    });
 
-  //   afterEach(() => {
-  //     delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
-  //     nock.cleanAll();
-  //   });
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      nock.cleanAll();
+    });
 
-  //   it('should fetch and return trust boundary data successfully', async () => {
-  //     const impersonated = new Impersonated({
-  //       sourceClient: createSampleJWTClient(),
-  //       targetPrincipal: 'target@project.iam.gserviceaccount.com',
-  //       lifetime: 30,
-  //       targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
-  //     });
+    it('should fetch and return trust boundary data successfully', async () => {
+      const impersonated = new Impersonated({
+        sourceClient: createSampleJWTClient(),
+        targetPrincipal: 'target@project.iam.gserviceaccount.com',
+        lifetime: 30,
+        targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      });
+      impersonated.credentials.access_token = 'test-access-token';
 
-  //     const mockAuthHeader = 'Bearer test-access-token';
-  //     const expectedTrustBoundaryData: TrustBoundaryData = {
-  //       locations: ['sadad', 'asdad'],
-  //       encodedLocations: '000x9',
-  //     };
-  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-  //       '{service_account_email}',
-  //       encodeURIComponent(impersonated.getTargetPrincipal()),
-  //     );
+      const mockAuthHeader = 'Bearer test-access-token';
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        locations: ['sadad', 'asdad'],
+        encodedLocations: '000x9',
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(impersonated.getTargetPrincipal()),
+      );
 
-  //     const scope = nock(new URL(lookupUrl).origin)
-  //       .get(new URL(lookupUrl).pathname)
-  //       .matchHeader('authorization', mockAuthHeader)
-  //       .reply(200, expectedTrustBoundaryData);
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, expectedTrustBoundaryData);
 
-  //     const trustBoundary =
-  //       await impersonated.fetchTrustBoundary(mockAuthHeader);
+      const trustBoundary = await getTrustBoundary(impersonated);
 
-  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-  //     scope.done();
-  //   });
+      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+      scope.done();
+    });
 
-  //   it('fetchTrustBoundary should return cache if targetPrincipal passed in is null', async () => {
-  //     const impersonated = new Impersonated({
-  //       sourceClient: createSampleJWTClient(),
-  //       targetPrincipal: undefined,
-  //       lifetime: 30,
-  //       targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
+    it('fetchTrustBoundary should throw if targetPrincipal passed in is null and no cache', async () => {
+      const impersonated = new Impersonated({
+        sourceClient: createSampleJWTClient(),
+        targetPrincipal: undefined,
+        lifetime: 30,
+        targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      });
 
-  //     const expectedTrustBoundaryData: TrustBoundaryData = {
-  //       locations: ['sadad', 'asdad'],
-  //       encodedLocations: '000x9',
-  //     };
-  //     impersonated.trustBoundary = expectedTrustBoundaryData;
-
-  //     const trustBoundary =
-  //       await impersonated.fetchTrustBoundary(mockAuthHeader);
-
-  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-  //   });
-
-  //   it('fetchTrustBoundary should throw if targetPrincipal passed in is null and no cache', async () => {
-  //     const impersonated = new Impersonated({
-  //       sourceClient: createSampleJWTClient(),
-  //       targetPrincipal: undefined,
-  //       lifetime: 30,
-  //       targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
-
-  //     await assert.rejects(
-  //       impersonated.fetchTrustBoundary(mockAuthHeader),
-  //       /TrustBoundaryLookup: Failed to fetch trust boundary data due to missing targetPrincipal/,
-  //     );
-  //   });
-  // });
+      await assert.rejects(
+        getTrustBoundary(impersonated),
+        /TrustBoundary: Error getting tbUrl because of missing targetPrincipal in ImpersonatedClient/,
+      );
+    });
+  });
 });

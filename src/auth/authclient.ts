@@ -20,7 +20,7 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-import {getTrustBoundary} from './trustboundary';
+import {getTrustBoundary, TrustBoundaryData} from './trustboundary';
 /**
  * Easy access to symbol-indexed strings on config objects.
  */
@@ -221,7 +221,7 @@ export abstract class AuthClient
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
   trustBoundaryEnabled: boolean;
-  trustBoundary?: string | null;
+  trustBoundary?: TrustBoundaryData | null;
   trustBoundaryUrl?: string | null;
 
   /**
@@ -300,13 +300,8 @@ export abstract class AuthClient
     res?: GaxiosResponse | null;
   }>;
 
-  getTrustBoundaryUrl(): string {
-    if (!this.trustBoundaryUrl) {
-      throw new Error(
-        'TrustBoundary: TrustBoundary: GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES set for invalid client type',
-      );
-    }
-    return this.trustBoundaryUrl;
+  getTrustBoundaryUrl(): string | null {
+    return this.trustBoundaryUrl ?? null;
   }
 
   /**
@@ -337,7 +332,10 @@ export abstract class AuthClient
     if (this.trustBoundaryEnabled) {
       this.trustBoundary = await getTrustBoundary(this);
       if (this.trustBoundary) {
-        headers.set('x-goog-allowed-locations', this.trustBoundary);
+        headers.set(
+          'x-goog-allowed-locations',
+          this.trustBoundary.encodedLocations,
+        );
       }
     }
 

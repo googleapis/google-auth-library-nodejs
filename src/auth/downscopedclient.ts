@@ -399,11 +399,12 @@ export class DownscopedClient extends AuthClient {
   }
 
   getTrustBoundaryUrl(): string {
-    if (!this.authClient.trustBoundaryUrl) {
+    const trustBoundaryUrl = this.authClient.getTrustBoundaryUrl();
+    if (!trustBoundaryUrl) {
       throw new Error(
         'TrustBoundary: Error getting tbUrl because of missing trustBoundaryUrl in calling client of DownScopedClient',
       );
     }
-    return this.authClient.trustBoundaryUrl;
+    return trustBoundaryUrl;
   }
 }

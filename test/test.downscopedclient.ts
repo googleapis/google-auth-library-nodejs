@@ -32,6 +32,11 @@ import {
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
 import {GetAccessTokenResponse} from '../src/auth/authclient';
+import {
+  getTrustBoundary,
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 
@@ -1250,6 +1255,68 @@ describe('DownscopedClient', () => {
         },
       );
       scopes.forEach(scope => scope.done());
+    });
+  });
+
+  describe('trust boundaries', () => {
+    let sandbox: sinon.SinonSandbox;
+
+    const sampleLookupUrl = 'https://service-1234-uc.a.run.app';
+    let tbClient: AuthClient;
+    const mockAuthHeader = 'Bearer test-access-token';
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+      tbClient = new TestAuthClient({
+        credentials: {
+          token_type: 'Bearer',
+          access_token: 'test-access-token',
+        },
+      });
+    });
+
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      sandbox.restore();
+      nock.cleanAll();
+    });
+
+    it('should fetch and return trust boundary data successfully', async () => {
+      tbClient.trustBoundaryUrl = sampleLookupUrl;
+      const downscopedClient = new DownscopedClient(
+        tbClient,
+        testClientAccessBoundary,
+      );
+      downscopedClient.credentials = {
+        token_type: 'Bearer',
+        access_token: 'test-access-token',
+      };
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        locations: ['sadad', 'asdad'],
+        encodedLocations: '000x9',
+      };
+      const scope = nock(new URL(sampleLookupUrl).origin)
+        .get(new URL(sampleLookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, expectedTrustBoundaryData);
+
+      const trustBoundary = await getTrustBoundary(downscopedClient);
+
+      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+      scope.done();
+    });
+
+    it('should fail if source client does not have valid tbUrl', async () => {
+      tbClient.trustBoundaryUrl = null;
+      const downscopedClient = new DownscopedClient(
+        tbClient,
+        testClientAccessBoundary,
+      );
+      await assert.rejects(
+        getTrustBoundary(downscopedClient),
+        /TrustBoundary: Error getting tbUrl because of missing trustBoundaryUrl in calling client of DownScopedClient/,
+      );
     });
   });
 });

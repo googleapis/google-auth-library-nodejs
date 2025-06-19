@@ -22,6 +22,12 @@ import * as sinon from 'sinon';
 import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
+import {
+  TrustBoundaryData,
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  NoOpEncodedLocations,
+  getTrustBoundary,
+} from '../src/auth/trustboundary';
 
 function removeBearerFromAuthorizationHeader(headers: Headers): string {
   return (headers.get('authorization') || '').replace('Bearer ', '');
@@ -1241,133 +1247,190 @@ describe('jwt', () => {
     });
   });
 
-  // describe('trust boundaries', () => {
-  //   beforeEach(() => {
-  //     process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
-  //   });
+  describe('trust boundaries', () => {
+    beforeEach(() => {
+      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+    });
 
-  //   afterEach(() => {
-  //     delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
-  //     sandbox.restore();
-  //   });
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      sandbox.restore();
+    });
 
-  //   it('fetchTrustBoundary should fetch and return trust boundary data successfully', async () => {
-  //     //TODO:pjiyer Can this be moved to tb.ts test file?
-  //     const jwt = new JWT({
-  //       email: 'test@example.iam.gserviceaccount.com',
-  //       key: 'testkey',
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
-  //     const expectedTrustBoundaryData: TrustBoundaryData = {
-  //       locations: ['sadad', 'asdad'],
-  //       encodedLocations: '000x9',
-  //     };
-  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-  //       '{service_account_email}',
-  //       encodeURIComponent(jwt.email!),
-  //     );
+    it('getTrustBoundary should fetch and return trust boundary data successfully', async () => {
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+      });
+      jwt.credentials.access_token = 'test-access-token';
+      const mockAuthHeader = 'Bearer test-access-token';
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        locations: ['sadad', 'asdad'],
+        encodedLocations: '000x9',
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
 
-  //     const scope = nock(new URL(lookupUrl).origin)
-  //       .get(new URL(lookupUrl).pathname)
-  //       .matchHeader('authorization', mockAuthHeader)
-  //       .reply(200, expectedTrustBoundaryData);
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, expectedTrustBoundaryData);
 
-  //     const trustBoundary = await jwt.fetchTrustBoundary(mockAuthHeader);
+      const trustBoundary = await getTrustBoundary(jwt);
 
-  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-  //     scope.done();
-  //   });
+      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+      scope.done();
+    });
 
-  //   it('fetchTrustBoundary should throw when email is null', async () => {
-  //     const jwt = new JWT({
-  //       email: undefined,
-  //       key: 'testkey',
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
+    it('getTrustBoundary should throw when email is null', async () => {
+      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'false';
+      const jwt = new JWT({
+        email: undefined,
+        key: 'testkey',
+      });
+      assert.strictEqual(await getTrustBoundary(jwt), null);
+    });
 
-  //     await assert.rejects(
-  //       jwt.fetchTrustBoundary(mockAuthHeader),
-  //       /TrustBoundaryLookup: Failed to fetch trust boundary data due to missing email/,
-  //     );
-  //   });
+    it('getTrustBoundary should throw when email is null', async () => {
+      const jwt = new JWT({
+        email: undefined,
+        key: 'testkey',
+      });
 
-  //   it('fetchTrustBoundary should return null when default domain is not googleapis.com', async () => {
-  //     const jwt = new JWT({
-  //       email: 'test@example.iam.gserviceaccount.com',
-  //       key: 'testkey',
-  //       universe_domain: 'abc.com',
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
-  //     const expectedTrustBoundaryData = null;
+      await assert.rejects(
+        getTrustBoundary(jwt),
+        /TrustBoundary: Error getting tbUrl because of missing email in JwtClient/,
+      );
+    });
 
-  //     const trustBoundary = await jwt.fetchTrustBoundary(mockAuthHeader);
+    it('getTrustBoundary should return null when default domain is not googleapis.com', async () => {
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+        universe_domain: 'abc.com',
+      });
 
-  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-  //   });
+      const trustBoundary = await getTrustBoundary(jwt);
 
-  //   it('fetchTrustBoundary should not call lookup endpoint in case cachedTrustBoundaries is no-op', async () => {
-  //     //TODO:pjiyer Can this be moved to tb.ts test file?
-  //     const jwt = new JWT({
-  //       email: 'test@example.iam.gserviceaccount.com',
-  //       key: 'testkey',
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
-  //     const expectedTrustBoundaryData: TrustBoundaryData = {
-  //       encodedLocations: NoOpEncodedLocations,
-  //     };
-  //     jwt.trustBoundary = expectedTrustBoundaryData;
-  //     const trustBoundary = await jwt.fetchTrustBoundary(mockAuthHeader);
+      assert.deepStrictEqual(trustBoundary, null);
+    });
 
-  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-  //   });
+    it('getTrustBoundary should throw when no valid access token is passed', async () => {
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+      });
+      await assert.rejects(
+        getTrustBoundary(jwt),
+        /TrustBoundary: Error calling lookup endpoint without valid access token/,
+      );
+    });
 
-  //   it('fetchTrustBoundary should return cached tb in case call to lookup endpoint fails', async () => {
-  //     //TODO:pjiyer Can this be moved to tb.ts test file?
-  //     const jwt = new JWT({
-  //       email: 'test@example.iam.gserviceaccount.com',
-  //       key: 'testkey',
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
-  //     const expectedTrustBoundaryData: TrustBoundaryData = {
-  //       locations: ['sadad', 'asdad'],
-  //       encodedLocations: '000x9',
-  //     };
-  //     jwt.trustBoundary = expectedTrustBoundaryData;
-  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-  //       '{service_account_email}',
-  //       encodeURIComponent(jwt.email!),
-  //     );
+    it('getTrustBoundary should return null and not call lookup endpoint in case cachedTrustBoundaries is no-op', async () => {
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+      });
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        encodedLocations: NoOpEncodedLocations,
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+      const mockAuthHeader = 'Bearer test-access-token';
 
-  //     const scope = nock(new URL(lookupUrl).origin)
-  //       .get(new URL(lookupUrl).pathname)
-  //       .matchHeader('authorization', mockAuthHeader)
-  //       .replyWithError('Call to Lookup endpoint failed');
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, expectedTrustBoundaryData);
 
-  //     const trustBoundary = await jwt.fetchTrustBoundary(mockAuthHeader);
+      jwt.trustBoundary = expectedTrustBoundaryData;
+      const trustBoundary = await getTrustBoundary(jwt);
 
-  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-  //     scope.done();
-  //   });
+      assert.deepStrictEqual(trustBoundary, null);
+      assert.strictEqual(scope.isDone(), false);
+    });
 
-  //   it('fetchTrustBoundary should throw in case call to lookup endpoint fails and no cached tb', async () => {
-  //     //TODO:pjiyer Can this be moved to tb.ts test file?
-  //     const jwt = new JWT({
-  //       email: 'test@example.iam.gserviceaccount.com',
-  //       key: 'testkey',
-  //     });
-  //     const mockAuthHeader = 'Bearer test-access-token';
-  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-  //       '{service_account_email}',
-  //       encodeURIComponent(jwt.email!),
-  //     );
+    it('getTrustBoundary should return null if response from lookup endpoint is no-op', async () => {
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+      });
+      jwt.credentials.access_token = 'test-access-token';
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        encodedLocations: NoOpEncodedLocations,
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+      const mockAuthHeader = 'Bearer test-access-token';
 
-  //     const scope = nock(new URL(lookupUrl).origin)
-  //       .get(new URL(lookupUrl).pathname)
-  //       .matchHeader('authorization', mockAuthHeader)
-  //       .replyWithError('Call to Lookup endpoint failed');
-  //     ('');
-  //     await assert.rejects(jwt.fetchTrustBoundary(mockAuthHeader));
-  //     scope.done();
-  //   });
-  // });
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, expectedTrustBoundaryData);
+
+      const trustBoundary = await getTrustBoundary(jwt);
+
+      assert.deepStrictEqual(trustBoundary, null);
+      scope.done();
+    });
+
+    it('getTrustBoundary should return cached tb in case call to lookup endpoint fails', async () => {
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+      });
+      jwt.credentials.access_token = 'test-access-token';
+      const mockAuthHeader = 'Bearer test-access-token';
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        locations: ['sadad', 'asdad'],
+        encodedLocations: '000x9',
+      };
+      jwt.trustBoundary = expectedTrustBoundaryData;
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .replyWithError('Call to Lookup endpoint failed');
+
+      const trustBoundary = await getTrustBoundary(jwt);
+
+      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+      scope.done();
+    });
+
+    it('getTrustBoundary should throw in case call to lookup endpoint fails and no cached tb', async () => {
+      //TODO:pjiyer Can this be moved to tb.ts test file?
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+      });
+      jwt.credentials.access_token = 'test-access-token';
+      const mockAuthHeader = 'Bearer test-access-token';
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+
+      const expected = new RegExp(
+        'TrustBoundary: Failure while getting trust boundaries:',
+      );
+
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .replyWithError('Call to Lookup endpoint failed');
+      await assert.rejects(getTrustBoundary(jwt), expected);
+      scope.done();
+    });
+  });
 });
