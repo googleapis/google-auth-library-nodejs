@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {AuthClient, DEFAULT_UNIVERSE} from './authclient';
-import {GaxiosError, GaxiosOptions} from 'gaxios';
+import {GaxiosOptions} from 'gaxios';
 /**
  * value indicating no trust boundaries enforced
  **/
@@ -47,11 +47,11 @@ export interface TrustBoundaryData {
 }
 
 /**
- * Fetches trust boundary data using an authenticated client.
+ * Fetches trust boundary data for an authenticated client.
  * Handles caching checks and potential fallbacks.
  * @param authenticatedClient An authenticated AuthClient instance to make the request.
- * @returns A Promise resolving to TrustBoundaryData or null for no-op trust boundaries.
- *  * @throws {Error} If the request fails and there is no cache available.
+ * @returns A Promise resolving to TrustBoundaryData or empty-string for no-op trust boundaries.
+ * @throws {Error} If the request fails and there is no cache available.
  */
 export async function getTrustBoundary(
   client: AuthClient,
@@ -66,13 +66,13 @@ export async function getTrustBoundary(
 
   const cachedTB = client.trustBoundary;
   if (cachedTB && cachedTB.encodedLocations === NoOpEncodedLocations) {
-    return null; //Returning cached No-Op data.
+    return cachedTB; //Returning cached No-Op data.
   }
 
   const trustBoundaryUrl = client.getTrustBoundaryUrl();
   if (!trustBoundaryUrl) {
     throw new Error(
-      'TrustBoundary: GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES set for invalid client type',
+      'TrustBoundary: GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED set for invalid client type',
     );
   }
 
@@ -90,7 +90,7 @@ export async function getTrustBoundary(
     ...{
       retry: true,
       retryConfig: {
-        httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
+        httpMethodsToRetry: ['GET'],
       },
     },
     headers,
@@ -101,12 +101,6 @@ export async function getTrustBoundary(
     const {data: trustBoundaryData} =
       // preferred to client.request to avoid unnecessary retries
       await client.transporter.request<TrustBoundaryData>(opts);
-
-    // Check for the specific No-Op case and return null.
-    if (trustBoundaryData.encodedLocations === NoOpEncodedLocations) {
-      return null;
-    }
-
     return trustBoundaryData;
   } catch (error) {
     if (client.trustBoundary) {
@@ -116,4 +110,23 @@ export async function getTrustBoundary(
       cause: error,
     });
   }
+}
+
+export function isTrustBoundaryEnabled() {
+  const tbEnabled = process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] || null;
+  const truthyValues = new Set(['1', 't', 'T', 'TRUE', 'true', 'True']);
+  const falsyValues = new Set(['0', 'f', 'F', 'FALSE', 'false', 'False']);
+  if (
+    tbEnabled === null ||
+    tbEnabled === undefined ||
+    falsyValues.has(tbEnabled)
+  ) {
+    return false;
+  }
+  if (truthyValues.has(tbEnabled)) {
+    return true;
+  }
+  throw new Error(
+    `Invalid syntax for the GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED env variable: "${tbEnabled}" is not a valid boolean representation`,
+  );
 }

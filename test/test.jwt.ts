@@ -1249,11 +1249,11 @@ describe('jwt', () => {
 
   describe('trust boundaries', () => {
     beforeEach(() => {
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
     });
 
     afterEach(() => {
-      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
       sandbox.restore();
     });
 
@@ -1285,7 +1285,7 @@ describe('jwt', () => {
     });
 
     it('getTrustBoundary should throw when email is null', async () => {
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'false';
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'false';
       const jwt = new JWT({
         email: undefined,
         key: 'testkey',
@@ -1350,7 +1350,7 @@ describe('jwt', () => {
       jwt.trustBoundary = expectedTrustBoundaryData;
       const trustBoundary = await getTrustBoundary(jwt);
 
-      assert.deepStrictEqual(trustBoundary, null);
+      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
       assert.strictEqual(scope.isDone(), false);
     });
 
@@ -1376,7 +1376,7 @@ describe('jwt', () => {
 
       const trustBoundary = await getTrustBoundary(jwt);
 
-      assert.deepStrictEqual(trustBoundary, null);
+      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
       scope.done();
     });
 

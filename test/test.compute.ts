@@ -271,11 +271,11 @@ describe('compute', () => {
     let sandbox: sinon.SinonSandbox;
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
     });
 
     afterEach(() => {
-      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
       sandbox.restore();
       nock.cleanAll();
     });
@@ -308,6 +308,18 @@ describe('compute', () => {
 
       assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
       scope.done();
+    });
+
+    it('getTrustBoundary should return null when default domain is not googleapis.com', async () => {
+      const serviceAccountEmail = 'service-account@example.com';
+      const compute = new Compute({
+        serviceAccountEmail: serviceAccountEmail,
+        universe_domain: 'abc.com',
+      });
+
+      const trustBoundary = await getTrustBoundary(compute);
+
+      assert.deepStrictEqual(trustBoundary, null);
     });
 
     it('fetchTrustBoundary should use default if serviceAccountEmail passed in is null', async () => {

@@ -2639,11 +2639,11 @@ describe('BaseExternalAccountClient', () => {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
     });
 
     afterEach(() => {
-      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
       sandbox.restore();
       nock.cleanAll();
     });
@@ -2670,17 +2670,6 @@ describe('BaseExternalAccountClient', () => {
       scope.done();
     });
 
-    it('fetchTrustBoundary should throw when audience is workforce and pool-id is null', async () => {
-      baseWorkforceOptions.audience =
-        '//iam.googleapis.com/locations/global/workforcePools/providers/my-workforce-provider';
-      const client = new TestExternalAccountClient(baseWorkforceOptions);
-
-      await assert.rejects(
-        getTrustBoundary(client),
-        /TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number/,
-      );
-    });
-
     it('fetchTrustBoundary should fetch and return trust boundary data for workload successfully', async () => {
       const client = new TestExternalAccountClient(baseWorkloadOptions);
       const expectedTrustBoundaryData: TrustBoundaryData = {
@@ -2703,7 +2692,7 @@ describe('BaseExternalAccountClient', () => {
       scope.done();
     });
 
-    it('fetchTrustBoundary should throw when audience is workload and pool-id is null', async () => {
+    it('fetchTrustBoundary should throw when invalid audience is provided', async () => {
       const incorrectWLOptions: BaseExternalAccountClientOptions = {
         ...baseWorkloadOptions, // Copies all properties from baseWorkforceOptions
         audience:
@@ -2711,10 +2700,11 @@ describe('BaseExternalAccountClient', () => {
       };
       const client = new TestExternalAccountClient(incorrectWLOptions);
 
-      await assert.rejects(
-        getTrustBoundary(client),
-        /TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number/,
+      const expected = new RegExp(
+        'does not correspond to workforce or workload',
       );
+
+      await assert.rejects(getTrustBoundary(client), expected);
     });
   });
 });

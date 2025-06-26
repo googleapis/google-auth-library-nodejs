@@ -642,10 +642,11 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   private getProjectNumber(audience: string): string | null {
     // STS audience pattern:
     // //iam.googleapis.com/projects/$PROJECT_NUMBER/locations/...
-    return (
-      audience.match(/\/projects\/(?<projectNumber>[^/]+)\/locations\//)?.groups
-        ?.projectNumber ?? null
-    );
+    const match = audience.match(/\/projects\/([^/]+)/);
+    if (!match) {
+      return null;
+    }
+    return match[1];
   }
 
   /**
@@ -756,32 +757,27 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   }
 
   getTrustBoundaryUrl(): string {
-    let lookupTrustBoundaryUrl = null;
-    if (this.audience.match(WORKFORCE_AUDIENCE_PATTERN)) {
-      //client configured for workforce authorization
-      const wfPoolId = this.#getWorkForcePoolId(this.audience);
-      if (!wfPoolId) {
-        throw new RangeError(
-          'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workforce pool id',
-        );
-      }
-      lookupTrustBoundaryUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
+    //check for workforce
+    const wfPoolId = this.#getWorkForcePoolId(this.audience);
+    if (wfPoolId) {
+      return WORKFORCE_LOOKUP_ENDPOINT.replace(
         '{pool_id}',
         encodeURIComponent(wfPoolId),
       );
-    } else {
-      //client configured for workload authorization
-      const wlPoolId = this.#getWorkloadPoolId(this.audience);
-      if (!wlPoolId || !this.projectNumber) {
-        throw new RangeError(
-          'TrustBoundaryLookup: Failed to fetch trust boundary data due to missing workload pool id or project number',
-        );
-      }
-      lookupTrustBoundaryUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
+    }
+
+    //check for workload
+    const wlPoolId = this.#getWorkloadPoolId(this.audience);
+    const projectNumber = this.getProjectNumber(this.audience);
+    if (wlPoolId && projectNumber) {
+      return WORKLOAD_LOOKUP_ENDPOINT.replace(
         '{project_id}',
-        this.projectNumber,
+        projectNumber,
       ).replace('{pool_id}', wlPoolId);
     }
-    return lookupTrustBoundaryUrl;
+
+    throw new RangeError(
+      `TrustBoundary: Invalid audience provided: "${this.audience}" does not correspond to workforce or workload`,
+    );
   }
 }

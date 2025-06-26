@@ -20,7 +20,12 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-import {getTrustBoundary, TrustBoundaryData} from './trustboundary';
+import {
+  getTrustBoundary,
+  isTrustBoundaryEnabled,
+  NoOpEncodedLocations,
+  TrustBoundaryData,
+} from './trustboundary';
 /**
  * Easy access to symbol-indexed strings on config objects.
  */
@@ -245,10 +250,7 @@ export abstract class AuthClient
     this.quotaProjectId = options.get('quota_project_id');
     this.credentials = options.get('credentials') ?? {};
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
-    this.trustBoundaryEnabled =
-      (
-        process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] || ''
-      ).toLowerCase() === 'true';
+    this.trustBoundaryEnabled = isTrustBoundaryEnabled();
     this.trustBoundary = null;
 
     // Shared client options
@@ -332,10 +334,11 @@ export abstract class AuthClient
     if (this.trustBoundaryEnabled) {
       this.trustBoundary = await getTrustBoundary(this);
       if (this.trustBoundary) {
-        headers.set(
-          'x-goog-allowed-locations',
-          this.trustBoundary.encodedLocations,
-        );
+        const headerTrustBoundary =
+          this.trustBoundary.encodedLocations === NoOpEncodedLocations
+            ? ''
+            : this.trustBoundary.encodedLocations;
+        headers.set('x-allowed-locations', headerTrustBoundary);
       }
     }
 
@@ -343,7 +346,7 @@ export abstract class AuthClient
   }
 
   /**
-   * Adds the `x-goog-user-project`, `authorization`, and 'x-goog-allowed-locations'
+   * Adds the `x-goog-user-project`, `authorization`, and 'x-allowed-locations'
    * headers to the target Headers
    * object, if they exist on the source.
    *
@@ -354,7 +357,7 @@ export abstract class AuthClient
   protected addCommonHeaders<T extends Headers>(target: T, source: Headers): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');
-    const xGoogAllowedLocs = source.get('x-goog-allowed-locations');
+    const xGoogAllowedLocs = source.get('x-allowed-locations');
 
     if (xGoogUserProject) {
       target.set('x-goog-user-project', xGoogUserProject);
@@ -365,7 +368,7 @@ export abstract class AuthClient
     }
 
     if (xGoogAllowedLocs) {
-      target.set('x-goog-allowed-locations', xGoogAllowedLocs);
+      target.set('x-allowed-locations', xGoogAllowedLocs);
     }
 
     return target;

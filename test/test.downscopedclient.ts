@@ -1267,7 +1267,7 @@ describe('DownscopedClient', () => {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
       tbClient = new TestAuthClient({
         credentials: {
           token_type: 'Bearer',
@@ -1277,7 +1277,7 @@ describe('DownscopedClient', () => {
     });
 
     afterEach(() => {
-      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
       sandbox.restore();
       nock.cleanAll();
     });

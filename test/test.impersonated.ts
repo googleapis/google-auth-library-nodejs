@@ -576,11 +576,11 @@ describe('impersonated', () => {
 
   describe('trust boundaries', () => {
     beforeEach(() => {
-      process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'] = 'true';
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
     });
 
     afterEach(() => {
-      delete process.env['GOOGLE_AUTH_ENABLE_TRUST_BOUNDARIES'];
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
       nock.cleanAll();
     });
 
@@ -612,6 +612,23 @@ describe('impersonated', () => {
 
       assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
       scope.done();
+    });
+
+    it('getTrustBoundary should return null when default domain is not googleapis.com', async () => {
+      const sourceClient = createSampleJWTClient();
+      sourceClient.universeDomain = 'abc.com';
+
+      const impersonated = new Impersonated({
+        sourceClient: sourceClient,
+        targetPrincipal: undefined,
+        lifetime: 30,
+        targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        universe_domain: 'abc.com',
+      });
+
+      const trustBoundary = await getTrustBoundary(impersonated);
+
+      assert.deepStrictEqual(trustBoundary, null);
     });
 
     it('fetchTrustBoundary should throw if targetPrincipal passed in is null and no cache', async () => {
