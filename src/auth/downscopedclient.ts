@@ -27,6 +27,7 @@ import {
   AuthClientOptions,
   GetAccessTokenResponse,
   BodyResponseCallback,
+  DEFAULT_UNIVERSE,
 } from './authclient';
 
 import * as sts from './stscredentials';
@@ -156,12 +157,16 @@ export class DownscopedClient extends AuthClient {
     if (options instanceof AuthClient) {
       this.authClient = options;
       this.credentialAccessBoundary = credentialAccessBoundary;
-      this.trustBoundaryUrl = options.trustBoundaryUrl;
     } else {
       this.authClient = options.authClient;
       this.credentialAccessBoundary = options.credentialAccessBoundary;
-      this.trustBoundaryUrl = options.authClient.trustBoundaryUrl;
     }
+
+    // tb is only enabled if the GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED is truthy
+    // and sourceClient has a valid universe.
+    this.trustBoundaryEnabled =
+      this.trustBoundaryEnabled &&
+      this.authClient.universeDomain === DEFAULT_UNIVERSE;
 
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
@@ -398,12 +403,13 @@ export class DownscopedClient extends AuthClient {
       : false;
   }
 
-  getTrustBoundaryUrl(): string {
+  getTrustBoundaryUrl(): string | null {
     const trustBoundaryUrl = this.authClient.getTrustBoundaryUrl();
-    if (!trustBoundaryUrl) {
-      throw new Error(
-        'TrustBoundary: Error getting tbUrl because of missing trustBoundaryUrl in calling client of DownScopedClient',
-      );
+
+    //use cached trust boundary from source client if
+    // no trust boundary available.
+    if (!this.trustBoundary) {
+      this.trustBoundary = this.authClient.trustBoundary;
     }
     return trustBoundaryUrl;
   }

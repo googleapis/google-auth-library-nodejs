@@ -1409,7 +1409,6 @@ describe('jwt', () => {
     });
 
     it('getTrustBoundary should throw in case call to lookup endpoint fails and no cached tb', async () => {
-      //TODO:pjiyer Can this be moved to tb.ts test file?
       const jwt = new JWT({
         email: 'test@example.iam.gserviceaccount.com',
         key: 'testkey',
@@ -1430,6 +1429,34 @@ describe('jwt', () => {
         .matchHeader('authorization', mockAuthHeader)
         .replyWithError('Call to Lookup endpoint failed');
       await assert.rejects(getTrustBoundary(jwt), expected);
+      scope.done();
+    });
+
+    it('getTrustBoundary should throw in case of malformed response from lookup', async () => {
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+      });
+      jwt.credentials.access_token = 'test-access-token';
+      const mockAuthHeader = 'Bearer test-access-token';
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        locations: ['sadad', 'asdad'],
+        encodedLocations: '',
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, expectedTrustBoundaryData);
+
+      const expectedError = new RegExp(
+        'Error: TrustBoundary: Failure while getting trust boundaries:',
+      );
+      await assert.rejects(getTrustBoundary(jwt), expectedError);
       scope.done();
     });
   });

@@ -72,7 +72,7 @@ export async function getTrustBoundary(
   const trustBoundaryUrl = client.getTrustBoundaryUrl();
   if (!trustBoundaryUrl) {
     throw new Error(
-      'TrustBoundary: GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED set for invalid client type',
+      'TrustBoundary: GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED env variable set for invalid client type',
     );
   }
 
@@ -101,6 +101,13 @@ export async function getTrustBoundary(
     const {data: trustBoundaryData} =
       // preferred to client.request to avoid unnecessary retries
       await client.transporter.request<TrustBoundaryData>(opts);
+
+    if (!trustBoundaryData.encodedLocations) {
+      throw new Error(
+        'TrustBoundary: Malformed response from lookup endpoint.',
+      );
+    }
+
     return trustBoundaryData;
   } catch (error) {
     if (client.trustBoundary) {

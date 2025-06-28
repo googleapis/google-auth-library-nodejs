@@ -32,11 +32,7 @@ import {
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
 import {GetAccessTokenResponse} from '../src/auth/authclient';
-import {
-  getTrustBoundary,
-  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  TrustBoundaryData,
-} from '../src/auth/trustboundary';
+import {getTrustBoundary, TrustBoundaryData} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 
@@ -1264,6 +1260,10 @@ describe('DownscopedClient', () => {
     const sampleLookupUrl = 'https://service-1234-uc.a.run.app';
     let tbClient: AuthClient;
     const mockAuthHeader = 'Bearer test-access-token';
+    const expectedTrustBoundaryData: TrustBoundaryData = {
+      locations: ['sadad', 'asdad'],
+      encodedLocations: '000x9',
+    };
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
@@ -1292,10 +1292,6 @@ describe('DownscopedClient', () => {
         token_type: 'Bearer',
         access_token: 'test-access-token',
       };
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '000x9',
-      };
       const scope = nock(new URL(sampleLookupUrl).origin)
         .get(new URL(sampleLookupUrl).pathname)
         .matchHeader('authorization', mockAuthHeader)
@@ -1315,8 +1311,40 @@ describe('DownscopedClient', () => {
       );
       await assert.rejects(
         getTrustBoundary(downscopedClient),
-        /TrustBoundary: Error getting tbUrl because of missing trustBoundaryUrl in calling client of DownScopedClient/,
+        /Error: TrustBoundary: GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED env variable set for invalid client type/,
       );
+    });
+
+    it('should return null if source client does not have valid universe', async () => {
+      tbClient.trustBoundaryUrl = null;
+      tbClient.universeDomain = 'pqr.com';
+      const downscopedClient = new DownscopedClient(
+        tbClient,
+        testClientAccessBoundary,
+      );
+      const trustBoundary = await getTrustBoundary(downscopedClient);
+      assert.equal(trustBoundary, null);
+    });
+
+    it('should return sourceClient TB if call to lookup fails and no cache in downscopedClient', async () => {
+      tbClient.trustBoundaryUrl = sampleLookupUrl;
+      tbClient.trustBoundary = expectedTrustBoundaryData;
+      const downscopedClient = new DownscopedClient(
+        tbClient,
+        testClientAccessBoundary,
+      );
+      downscopedClient.credentials = {
+        token_type: 'Bearer',
+        access_token: 'test-access-token',
+      };
+      const scope = nock(new URL(sampleLookupUrl).origin)
+        .get(new URL(sampleLookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .replyWithError('Failed to get TrustBoundaries');
+
+      const trustBoundary = await getTrustBoundary(downscopedClient);
+      assert.equal(trustBoundary, expectedTrustBoundaryData);
+      scope.done();
     });
   });
 });
