@@ -302,6 +302,14 @@ export abstract class AuthClient
     res?: GaxiosResponse | null;
   }>;
 
+  /**
+   * Constructs the trust boundary lookup URL for the client.
+   *
+   * @return The trust boundary URL string, or `null` if the client type
+   * does not support trust boundaries.
+   * @throws {Error} If the URL cannot be constructed for a compatible client,
+   * for instance, if a required property like a service account email is missing.
+   */
   getTrustBoundaryUrl(): string | null {
     return this.trustBoundaryUrl ?? null;
   }
