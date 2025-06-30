@@ -375,7 +375,7 @@ export abstract class AuthClient
       target.set('authorization', authorizationHeader);
     }
 
-    if (xGoogAllowedLocs) {
+    if (xGoogAllowedLocs || xGoogAllowedLocs === '') {
       target.set('x-allowed-locations', xGoogAllowedLocs);
     }
 

@@ -2706,5 +2706,12 @@ describe('BaseExternalAccountClient', () => {
 
       await assert.rejects(getTrustBoundary(client), expected);
     });
+
+    it('fetchTrustBoundary should return null if source client does not have valid universe', async () => {
+      const client = new TestExternalAccountClient(baseWorkloadOptions);
+      client.universeDomain = 'pqr.com';
+      const trustBoundary = await getTrustBoundary(client);
+      assert.equal(trustBoundary, null);
+    });
   });
 });

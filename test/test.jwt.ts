@@ -1249,12 +1249,14 @@ describe('jwt', () => {
 
   describe('trust boundaries', () => {
     beforeEach(() => {
+      sandbox = sinon.createSandbox();
       process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
     });
 
     afterEach(() => {
       delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
       sandbox.restore();
+      nock.cleanAll();
     });
 
     it('getTrustBoundary should fetch and return trust boundary data successfully', async () => {
@@ -1458,6 +1460,98 @@ describe('jwt', () => {
       );
       await assert.rejects(getTrustBoundary(jwt), expectedError);
       scope.done();
+    });
+
+    it('getRequestHeaders should attach a trust boundary header in case of valid tb', async () => {
+      // Arrange
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+        apiKey: 'abcefg',
+      });
+      jwt.credentials.access_token = 'test-access-token';
+      jwt.credentials.expiry_date = new Date().getTime() + 3600 * 1000;
+      const expectedTrustBoundaryData: TrustBoundaryData = {
+        encodedLocations: '0x12345ABCDEF',
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+      const mockAuthHeader = 'Bearer test-access-token';
+
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, expectedTrustBoundaryData);
+
+      // Mock the token refresh endpoint, as getRequestHeaders will trigger it.
+      createGTokenMock({access_token: 'token'});
+
+      // Act
+      const headers = await jwt.getRequestHeaders();
+
+      // Assert
+      assert.strictEqual(
+        headers.get('x-allowed-locations'),
+        expectedTrustBoundaryData.encodedLocations,
+      );
+      scope.done();
+    });
+
+    it('getRequestHeaders should attach empty string trust boundary header in case of no-op tb', async () => {
+      // Arrange
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+        apiKey: 'abcefg',
+      });
+      jwt.credentials.access_token = 'test-access-token';
+      jwt.credentials.expiry_date = new Date().getTime() + 3600 * 1000;
+      const tbData: TrustBoundaryData = {
+        encodedLocations: '0x0',
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+      const mockAuthHeader = 'Bearer test-access-token';
+
+      const scope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', mockAuthHeader)
+        .reply(200, tbData);
+
+      // Mock the token refresh endpoint, as getRequestHeaders will trigger it.
+      createGTokenMock({access_token: 'token'});
+
+      // Act
+      const headers = await jwt.getRequestHeaders();
+
+      // Assert
+      assert.strictEqual(headers.get('x-allowed-locations'), '');
+      scope.done();
+    });
+
+    it('getRequestHeaders should not attach tb header in case of non-default universe', async () => {
+      // Arrange
+      const jwt = new JWT({
+        email: 'test@example.iam.gserviceaccount.com',
+        key: 'testkey',
+        apiKey: 'abcefg',
+      });
+      jwt.universeDomain = 'abc.com';
+      jwt.credentials.access_token = 'test-access-token';
+      jwt.credentials.expiry_date = new Date().getTime() + 3600 * 1000;
+
+      // Mock the token refresh endpoint, as getRequestHeaders will trigger it.
+      createGTokenMock({access_token: 'token'});
+
+      // Act
+      const headers = await jwt.getRequestHeaders();
+
+      // Assert
+      assert.strictEqual(headers.get('x-allowed-locations'), null);
     });
   });
 });
