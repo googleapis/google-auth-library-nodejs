@@ -30,8 +30,7 @@ const execSync = (command, opts) => {
 };
 
 describe('auth samples', () => {
-  // TODO: un-skip once storage is migrated: https://github.com/googleapis/nodejs-storage/pull/2592
-  it.skip('should authenticate explicitly', async () => {
+  it('should authenticate explicitly', async () => {
     const output = execSync('node authenticateExplicit');
 
     assert.match(output, /Listed all storage buckets./);
