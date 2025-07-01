@@ -402,15 +402,4 @@ export class DownscopedClient extends AuthClient {
           downscopedAccessToken.expiry_date - this.eagerRefreshThresholdMillis
       : false;
   }
-
-  getTrustBoundaryUrl(): string | null {
-    const trustBoundaryUrl = this.authClient.getTrustBoundaryUrl();
-
-    //use cached trust boundary from source client if
-    // no trust boundary available.
-    if (!this.trustBoundary) {
-      this.trustBoundary = this.authClient.trustBoundary;
-    }
-    return trustBoundaryUrl;
-  }
 }

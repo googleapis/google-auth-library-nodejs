@@ -71,9 +71,7 @@ export async function getTrustBoundary(
 
   const trustBoundaryUrl = client.getTrustBoundaryUrl();
   if (!trustBoundaryUrl) {
-    throw new Error(
-      'TrustBoundary: GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED env variable set for invalid client type',
-    );
+    return null;
   }
 
   if (!client.credentials.access_token) {
