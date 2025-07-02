@@ -32,7 +32,6 @@ import {
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
 import {GetAccessTokenResponse} from '../src/auth/authclient';
-import {getTrustBoundary, TrustBoundaryData} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 

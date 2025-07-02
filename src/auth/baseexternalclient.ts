@@ -32,10 +32,6 @@ import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {pkg} from '../shared.cjs';
-import {
-  WORKFORCE_LOOKUP_ENDPOINT,
-  WORKLOAD_LOOKUP_ENDPOINT,
-} from './trustboundary';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
