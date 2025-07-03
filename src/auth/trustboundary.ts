@@ -118,20 +118,28 @@ export async function getTrustBoundary(
 }
 
 export function isTrustBoundaryEnabled() {
-  const tbEnabled = process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] || null;
-  const truthyValues = new Set(['1', 't', 'T', 'TRUE', 'true', 'True']);
-  const falsyValues = new Set(['0', 'f', 'F', 'FALSE', 'false', 'False']);
-  if (
-    tbEnabled === null ||
-    tbEnabled === undefined ||
-    falsyValues.has(tbEnabled)
-  ) {
+  const tbEnabled = process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+
+  // If the environment variable is not defined, it is disabled by default.
+  if (tbEnabled === undefined || tbEnabled === null) {
     return false;
   }
-  if (truthyValues.has(tbEnabled)) {
+
+  // Use toLowerCase() for case-insensitive comparison of 'true' and 'false'.
+  const lowercasedTbEnabled = tbEnabled.toLowerCase();
+
+  // Check for enabled values.
+  if (lowercasedTbEnabled === 'true' || tbEnabled === '1') {
     return true;
   }
+
+  // Check for disabled values.
+  if (lowercasedTbEnabled === 'false' || tbEnabled === '0') {
+    return false;
+  }
+
+  // Any other value results in an error.
   throw new Error(
-    `Invalid syntax for the GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED env variable: "${tbEnabled}" is not a valid boolean representation`,
+    `Invalid value for GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED environment variable: "${tbEnabled}". Supported values are 'true', '1', 'false', or '0'.`,
   );
 }
