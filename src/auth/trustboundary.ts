@@ -69,7 +69,7 @@ export async function getTrustBoundary(
     return cachedTB; //Returning cached No-Op data.
   }
 
-  const trustBoundaryUrl = client.getTrustBoundaryUrl();
+  const trustBoundaryUrl = await client.getTrustBoundaryUrl();
   if (!trustBoundaryUrl) {
     return null;
   }

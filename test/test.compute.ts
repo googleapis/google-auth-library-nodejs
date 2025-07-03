@@ -17,7 +17,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import {Compute} from '../src';
+import {Compute, gcpMetadata} from '../src';
 import {
   getTrustBoundary,
   SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
@@ -322,8 +322,9 @@ describe('compute', () => {
       assert.deepStrictEqual(trustBoundary, null);
     });
 
-    it('fetchTrustBoundary should use default if serviceAccountEmail passed in is null', async () => {
+    it('fetchTrustBoundary should use the email from metadataServer if no serviceAccountEmail passed', async () => {
       const compute = new Compute();
+      const fakeEmail = 'fake-default-sa@developer.gserviceaccount.com';
       compute.credentials = {
         token_type: 'Bearer',
         access_token: 'test-access-token',
@@ -332,7 +333,7 @@ describe('compute', () => {
 
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
         '{service_account_email}',
-        encodeURIComponent('default'),
+        encodeURIComponent(fakeEmail),
       );
 
       const expectedTrustBoundaryData: TrustBoundaryData = {
@@ -344,10 +345,36 @@ describe('compute', () => {
         .matchHeader('authorization', mockAuthHeader)
         .reply(200, expectedTrustBoundaryData);
 
+      const metadataStub = sandbox
+        .stub(gcpMetadata, 'instance')
+        .resolves(fakeEmail);
+
       const trustBoundary = await getTrustBoundary(compute);
 
+      sinon.assert.calledOnce(metadataStub);
       assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
       scope.done();
+    });
+
+    it('fetchTrustBoundary should fail gcpMetadata call', async () => {
+      const compute = new Compute();
+      compute.credentials = {
+        token_type: 'Bearer',
+        access_token: 'test-access-token',
+      };
+
+      const metadataStub = sandbox
+        .stub(gcpMetadata, 'instance')
+        .throws(new Error());
+
+      await assert.rejects(
+        getTrustBoundary(compute),
+        new RegExp(
+          'TrustBoundary: Failed to retrieve default service account email from metadata server.',
+        ),
+      );
+
+      sinon.assert.calledOnce(metadataStub);
     });
   });
 });

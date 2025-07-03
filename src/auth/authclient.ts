@@ -310,7 +310,7 @@ export abstract class AuthClient
    * @throws {Error} If the URL cannot be constructed for a compatible client,
    * for instance, if a required property like a service account email is missing.
    */
-  getTrustBoundaryUrl(): string | null {
+  async getTrustBoundaryUrl(): Promise<string | null> {
     return this.trustBoundaryUrl ?? null;
   }
 

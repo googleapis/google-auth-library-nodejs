@@ -140,10 +140,24 @@ export class Compute extends OAuth2Client {
     }
   }
 
-  getTrustBoundaryUrl(): string {
+  async getTrustBoundaryUrl(): Promise<string> {
+    let email = this.serviceAccountEmail;
+
+    if (email === 'default') {
+      try {
+        email = await gcpMetadata.instance('service-accounts/default/email');
+      } catch (e) {
+        throw new Error(
+          'TrustBoundary: Failed to retrieve default service account email from metadata server.',
+          {
+            cause: e,
+          },
+        );
+      }
+    }
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
       '{service_account_email}',
-      encodeURIComponent(this.serviceAccountEmail),
+      encodeURIComponent(email),
     );
     return trustBoundaryUrl;
   }

@@ -256,7 +256,7 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     return res.data.token;
   }
 
-  getTrustBoundaryUrl(): string {
+  async getTrustBoundaryUrl(): Promise<string> {
     const targetPrincipal = this.getTargetPrincipal();
     if (!targetPrincipal) {
       throw new Error(

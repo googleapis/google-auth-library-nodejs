@@ -410,7 +410,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
     throw new Error('A key or a keyFile must be provided to getCredentials.');
   }
 
-  getTrustBoundaryUrl(): string {
+  async getTrustBoundaryUrl(): Promise<string> {
     if (!this.email) {
       throw new Error(
         'TrustBoundary: Error getting tbUrl because of missing email in JwtClient',
