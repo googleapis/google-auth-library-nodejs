@@ -972,7 +972,7 @@ export class OAuth2Client extends AuthClient {
         const headers = new Headers({
           authorization: 'Bearer ' + this.credentials.access_token,
         });
-        return {headers: await this.addSharedMetadataHeaders(headers)};
+        return {headers: await this.addSharedMetadataHeaders(headers, true)};
       }
     }
 
@@ -1002,7 +1002,10 @@ export class OAuth2Client extends AuthClient {
     const headers = new Headers({
       authorization: credentials.token_type + ' ' + tokens.access_token,
     });
-    return {headers: await this.addSharedMetadataHeaders(headers), res: r.res};
+    return {
+      headers: await this.addSharedMetadataHeaders(headers, true),
+      res: r.res,
+    };
   }
 
   /**

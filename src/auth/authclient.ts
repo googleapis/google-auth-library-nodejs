@@ -329,7 +329,10 @@ export abstract class AuthClient
    *
    * @param headers object to append additional headers to.
    */
-  protected async addSharedMetadataHeaders(headers: Headers): Promise<Headers> {
+  protected async addSharedMetadataHeaders(
+    headers: Headers,
+    isRefresh = false,
+  ): Promise<Headers> {
     // quota_project_id, stored in application_default_credentials.json, is set in
     // the x-goog-user-project header, to indicate an alternate account for
     // billing and quota:
@@ -339,8 +342,12 @@ export abstract class AuthClient
     ) {
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
+
     if (this.trustBoundaryEnabled) {
-      this.trustBoundary = await getTrustBoundary(this);
+      if (isRefresh) {
+        //only call lookup endpoint in case of refresh
+        this.trustBoundary = await getTrustBoundary(this);
+      }
       if (this.trustBoundary) {
         const headerTrustBoundary =
           this.trustBoundary.encodedLocations === NoOpEncodedLocations
