@@ -121,8 +121,22 @@ describe('PluggableAuthHandler', () => {
     beforeEach(() => {
       // Stub environment variables
       sandbox.stub(process, 'env').value(process.env);
-      clock = sandbox.useFakeTimers({now: referenceTime});
-
+      // sinon adds a timer to `nextTick` by default beginning in v19
+      // manually specifying the timers like this replicates the behavior pre v19
+      clock = sandbox.useFakeTimers({
+        now: referenceTime,
+        toFake: [
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval',
+          'Date',
+          'setImmediate',
+          'clearImmediate',
+          'hrtime',
+          'performance',
+        ],
+      });
       defaultResponseJson = {
         success: true,
         version: 1,
@@ -371,8 +385,22 @@ describe('PluggableAuthHandler', () => {
     let defaultResponseJson: ExecutableResponseJson;
 
     beforeEach(() => {
-      clock = sandbox.useFakeTimers({now: referenceTime});
-
+      // sinon adds a timer to `nextTick` by default beginning in v19
+      // manually specifying the timers like this replicates the behavior pre v19
+      clock = sandbox.useFakeTimers({
+        now: referenceTime,
+        toFake: [
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval',
+          'Date',
+          'setImmediate',
+          'clearImmediate',
+          'hrtime',
+          'performance',
+        ],
+      });
       defaultResponseJson = {
         success: true,
         version: 1,

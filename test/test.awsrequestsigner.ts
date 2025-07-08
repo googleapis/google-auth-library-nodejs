@@ -41,7 +41,21 @@ describe('AwsRequestSigner', () => {
   const token = awsSecurityCredentials.Token;
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers(0);
+    // sinon adds a timer to `nextTick` by default beginning in v19
+    // manually specifying the timers like this replicates the behavior pre v19
+    clock = sinon.useFakeTimers({
+      toFake: [
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval',
+        'Date',
+        'setImmediate',
+        'clearImmediate',
+        'hrtime',
+        'performance',
+      ],
+    });
   });
 
   afterEach(() => {

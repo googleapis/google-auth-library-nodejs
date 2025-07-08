@@ -61,7 +61,21 @@ describe('util', () => {
     it('should evict items older than a supplied `maxAge`', async () => {
       const maxAge = 50;
 
-      sandbox.clock = sinon.useFakeTimers();
+      // sinon adds a timer to `nextTick` by default beginning in v19
+      // manually specifying the timers like this replicates the behavior pre v19
+      sandbox.clock = sandbox.useFakeTimers({
+        toFake: [
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval',
+          'Date',
+          'setImmediate',
+          'clearImmediate',
+          'hrtime',
+          'performance',
+        ],
+      });
 
       const lru = new LRUCache({capacity: 5, maxAge});
 

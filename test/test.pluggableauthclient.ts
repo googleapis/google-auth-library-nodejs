@@ -113,7 +113,22 @@ describe('PluggableAuthClient', () => {
       GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: '1',
     });
     sandbox.stub(process, 'env').value(envVars);
-    clock = sinon.useFakeTimers({now: referenceTime});
+    // sinon adds a timer to `nextTick` by default beginning in v19
+    // manually specifying the timers like this replicates the behavior pre v19
+    clock = sandbox.useFakeTimers({
+      now: referenceTime,
+      toFake: [
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval',
+        'Date',
+        'setImmediate',
+        'clearImmediate',
+        'hrtime',
+        'performance',
+      ],
+    });
 
     responseJson = {
       success: true,
