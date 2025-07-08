@@ -17,7 +17,7 @@ import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 import {AwsRequestSigner} from '../src/auth/awsrequestsigner';
 import {GaxiosOptions} from 'gaxios';
-
+import {TestUtils} from './utils';
 /** Defines the interface to facilitate testing of AWS request signing. */
 interface AwsRequestSignerTest {
   // Test description.
@@ -41,7 +41,7 @@ describe('AwsRequestSigner', () => {
   const token = awsSecurityCredentials.Token;
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers(0);
+    clock = TestUtils.useFakeTimers(sinon);
   });
 
   afterEach(() => {

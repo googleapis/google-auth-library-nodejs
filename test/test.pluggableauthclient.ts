@@ -37,6 +37,7 @@ import {
 } from '../src/auth/executable-response';
 import {PluggableAuthHandler} from '../src/auth/pluggable-auth-handler';
 import {StsSuccessfulResponse} from '../src/auth/stscredentials';
+import {TestUtils} from './utils';
 
 const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
@@ -113,7 +114,7 @@ describe('PluggableAuthClient', () => {
       GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES: '1',
     });
     sandbox.stub(process, 'env').value(envVars);
-    clock = sinon.useFakeTimers({now: referenceTime});
+    clock = TestUtils.useFakeTimers(sinon, referenceTime);
 
     responseJson = {
       success: true,

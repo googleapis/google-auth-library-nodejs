@@ -30,6 +30,7 @@ import {
   OAuthErrorResponse,
 } from '../src/auth/oauth2common';
 import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
+import {TestUtils} from './utils';
 
 nock.disableNetConnect();
 
@@ -110,7 +111,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     expires_in: 3600,
   };
   beforeEach(() => {
-    clock = sinon.useFakeTimers(referenceDate);
+    clock = TestUtils.useFakeTimers(sinon, referenceDate);
   });
 
   afterEach(() => {

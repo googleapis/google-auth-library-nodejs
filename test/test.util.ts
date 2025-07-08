@@ -16,6 +16,7 @@ import {strict as assert} from 'assert';
 import * as sinon from 'sinon';
 
 import {LRUCache, removeUndefinedValuesInObject} from '../src/util';
+import {TestUtils} from './utils';
 
 describe('util', () => {
   let sandbox: sinon.SinonSandbox;
@@ -61,7 +62,7 @@ describe('util', () => {
     it('should evict items older than a supplied `maxAge`', async () => {
       const maxAge = 50;
 
-      sandbox.clock = sinon.useFakeTimers();
+      sandbox.clock = TestUtils.useFakeTimers(sandbox);
 
       const lru = new LRUCache({capacity: 5, maxAge});
 
