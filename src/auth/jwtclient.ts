@@ -146,7 +146,6 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
             new Headers({
               authorization: `Bearer ${tokens.id_token}`,
             }),
-            true,
           ),
         };
       } else {

@@ -1462,76 +1462,80 @@ describe('jwt', () => {
       scope.done();
     });
 
-    // it('getRequestHeaders should attach a trust boundary header in case of valid tb', async () => {
-    //   // Arrange
-    //   const jwt = new JWT({
-    //     email: 'test@example.iam.gserviceaccount.com',
-    //     key: 'testkey',
-    //     apiKey: 'abcefg',
-    //   });
-    //   jwt.credentials.access_token = 'test-access-token';
-    //   jwt.credentials.expiry_date = new Date().getTime() + 3600 * 1000;
-    //   const expectedTrustBoundaryData: TrustBoundaryData = {
-    //     encodedLocations: '0x12345ABCDEF',
-    //   };
-    //   const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-    //     '{service_account_email}',
-    //     encodeURIComponent(jwt.email!),
-    //   );
-    //   const mockAuthHeader = 'Bearer test-access-token';
+    it('getRequestHeaders should attach a trust boundary header in case of valid tb', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      jwt.useJWTAccessWithScope = false;
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      const wantedToken = 'abc123';
+      const scope = createGTokenMock({access_token: wantedToken});
 
-    //   const scope = nock(new URL(lookupUrl).origin)
-    //     .get(new URL(lookupUrl).pathname)
-    //     .matchHeader('authorization', mockAuthHeader)
-    //     .reply(200, expectedTrustBoundaryData);
+      const tbData = {
+        encodedLocations: '0x00009',
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+      const trustBoundaryScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', `Bearer ${wantedToken}`)
+        .reply(200, tbData);
 
-    //   // Mock the token refresh endpoint, as getRequestHeaders will trigger it.
-    //   createGTokenMock({access_token: 'token'});
+      // Act
+      const headers = await jwt.getRequestHeaders();
 
-    //   // Act
-    //   const headers = await jwt.getRequestHeaders();
+      // Assert
+      assert.strictEqual(
+        headers.get('x-allowed-locations'),
+        tbData.encodedLocations,
+      );
 
-    //   // Assert
-    //   assert.strictEqual(
-    //     headers.get('x-allowed-locations'),
-    //     expectedTrustBoundaryData.encodedLocations,
-    //   );
-    //   scope.done();
-    // });
+      // Verify both mocks were hit
+      scope.done();
+      trustBoundaryScope.done();
+    });
 
-    // it('getRequestHeaders should attach empty string trust boundary header in case of no-op tb', async () => {
-    //   // Arrange
-    //   const jwt = new JWT({
-    //     email: 'test@example.iam.gserviceaccount.com',
-    //     key: 'testkey',
-    //     apiKey: 'abcefg',
-    //   });
-    //   jwt.credentials.access_token = 'test-access-token';
-    //   jwt.credentials.expiry_date = new Date().getTime() + 3600 * 1000;
-    //   const tbData: TrustBoundaryData = {
-    //     encodedLocations: '0x0',
-    //   };
-    //   const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-    //     '{service_account_email}',
-    //     encodeURIComponent(jwt.email!),
-    //   );
-    //   const mockAuthHeader = 'Bearer test-access-token';
+    it('getRequestHeaders should attach empty string trust boundary header in case of no-op tb', async () => {
+      const jwt = new JWT({
+        email: 'foo@serviceaccount.com',
+        keyFile: PEM_PATH,
+        scopes: [],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+      jwt.useJWTAccessWithScope = false;
+      jwt.defaultScopes = ['scope1', 'scope2'];
+      const wantedToken = 'abc123';
+      const scope = createGTokenMock({access_token: wantedToken});
 
-    //   const scope = nock(new URL(lookupUrl).origin)
-    //     .get(new URL(lookupUrl).pathname)
-    //     .matchHeader('authorization', mockAuthHeader)
-    //     .reply(200, tbData);
+      const tbData = {
+        encodedLocations: '0x0',
+      };
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(jwt.email!),
+      );
+      const trustBoundaryScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', `Bearer ${wantedToken}`)
+        .reply(200, tbData);
 
-    //   // Mock the token refresh endpoint, as getRequestHeaders will trigger it.
-    //   createGTokenMock({access_token: 'token'});
+      // Act
+      const headers = await jwt.getRequestHeaders();
 
-    //   // Act
-    //   const headers = await jwt.getRequestHeaders();
+      // Assert
+      assert.strictEqual(headers.get('x-allowed-locations'), '');
 
-    //   // Assert
-    //   assert.strictEqual(headers.get('x-allowed-locations'), '');
-    //   scope.done();
-    // });
+      // Verify both mocks were hit
+      scope.done();
+      trustBoundaryScope.done();
+    });
 
     it('getRequestHeaders should not attach tb header in case of non-default universe', async () => {
       // Arrange
