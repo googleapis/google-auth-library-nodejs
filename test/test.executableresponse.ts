@@ -25,6 +25,7 @@ import {
   ExecutableResponseJson,
 } from '../src/auth/executable-response';
 import * as sinon from 'sinon';
+import {TestUtils} from './utils';
 
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
 const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
@@ -35,22 +36,7 @@ describe('ExecutableResponse', () => {
   const referenceTime = 1653429377000;
 
   beforeEach(() => {
-    // sinon adds a timer to `nextTick` by default beginning in v19
-    // manually specifying the timers like this replicates the behavior pre v19
-    clock = sinon.useFakeTimers({
-      now: referenceTime,
-      toFake: [
-        'setTimeout',
-        'clearTimeout',
-        'setInterval',
-        'clearInterval',
-        'Date',
-        'setImmediate',
-        'clearImmediate',
-        'hrtime',
-        'performance',
-      ],
-    });
+    clock = TestUtils.useFakeTimers(sinon, referenceTime);
   });
 
   afterEach(() => {

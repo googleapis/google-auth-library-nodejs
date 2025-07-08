@@ -30,6 +30,7 @@ import {
   OAuthErrorResponse,
 } from '../src/auth/oauth2common';
 import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
+import {TestUtils} from './utils';
 
 nock.disableNetConnect();
 
@@ -110,22 +111,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
     expires_in: 3600,
   };
   beforeEach(() => {
-    // sinon adds a timer to `nextTick` by default beginning in v19
-    // manually specifying the timers like this replicates the behavior pre v19
-    clock = sinon.useFakeTimers({
-      now: referenceDate,
-      toFake: [
-        'setTimeout',
-        'clearTimeout',
-        'setInterval',
-        'clearInterval',
-        'Date',
-        'setImmediate',
-        'clearImmediate',
-        'hrtime',
-        'performance',
-      ],
-    });
+    clock = TestUtils.useFakeTimers(sinon, referenceDate);
   });
 
   afterEach(() => {

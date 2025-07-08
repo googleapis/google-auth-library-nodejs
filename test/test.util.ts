@@ -16,6 +16,7 @@ import {strict as assert} from 'assert';
 import * as sinon from 'sinon';
 
 import {LRUCache, removeUndefinedValuesInObject} from '../src/util';
+import {TestUtils} from './utils';
 
 describe('util', () => {
   let sandbox: sinon.SinonSandbox;
@@ -61,21 +62,7 @@ describe('util', () => {
     it('should evict items older than a supplied `maxAge`', async () => {
       const maxAge = 50;
 
-      // sinon adds a timer to `nextTick` by default beginning in v19
-      // manually specifying the timers like this replicates the behavior pre v19
-      sandbox.clock = sandbox.useFakeTimers({
-        toFake: [
-          'setTimeout',
-          'clearTimeout',
-          'setInterval',
-          'clearInterval',
-          'Date',
-          'setImmediate',
-          'clearImmediate',
-          'hrtime',
-          'performance',
-        ],
-      });
+      sandbox.clock = TestUtils.useFakeTimers(sandbox);
 
       const lru = new LRUCache({capacity: 5, maxAge});
 

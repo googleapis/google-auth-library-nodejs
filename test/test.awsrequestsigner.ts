@@ -17,7 +17,7 @@ import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 import {AwsRequestSigner} from '../src/auth/awsrequestsigner';
 import {GaxiosOptions} from 'gaxios';
-
+import {TestUtils} from './utils';
 /** Defines the interface to facilitate testing of AWS request signing. */
 interface AwsRequestSignerTest {
   // Test description.
@@ -41,21 +41,7 @@ describe('AwsRequestSigner', () => {
   const token = awsSecurityCredentials.Token;
 
   beforeEach(() => {
-    // sinon adds a timer to `nextTick` by default beginning in v19
-    // manually specifying the timers like this replicates the behavior pre v19
-    clock = sinon.useFakeTimers({
-      toFake: [
-        'setTimeout',
-        'clearTimeout',
-        'setInterval',
-        'clearInterval',
-        'Date',
-        'setImmediate',
-        'clearImmediate',
-        'hrtime',
-        'performance',
-      ],
-    });
+    clock = TestUtils.useFakeTimers(sinon);
   });
 
   afterEach(() => {

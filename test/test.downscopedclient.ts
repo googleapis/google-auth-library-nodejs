@@ -32,7 +32,7 @@ import {
   getErrorFromOAuthErrorResponse,
 } from '../src/auth/oauth2common';
 import {GetAccessTokenResponse} from '../src/auth/authclient';
-
+import {TestUtils} from './utils';
 nock.disableNetConnect();
 
 /** A dummy class used as source credential for testing. */
@@ -376,22 +376,7 @@ describe('DownscopedClient', () => {
   describe('getAccessToken()', () => {
     it('should return current unexpired cached DownscopedClient access token', async () => {
       const now = new Date().getTime();
-      // sinon adds a timer to `nextTick` by default beginning in v19
-      // manually specifying the timers like this replicates the behavior pre v19
-      clock = sinon.useFakeTimers({
-        now: now,
-        toFake: [
-          'setTimeout',
-          'clearTimeout',
-          'setInterval',
-          'clearInterval',
-          'Date',
-          'setImmediate',
-          'clearImmediate',
-          'hrtime',
-          'performance',
-        ],
-      });
+      clock = TestUtils.useFakeTimers(sinon, now);
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',
         expiry_date: now + ONE_HOUR_IN_SECS * 1000,
@@ -430,22 +415,7 @@ describe('DownscopedClient', () => {
 
     it('should refresh a new DownscopedClient access when cached one gets expired', async () => {
       const now = new Date().getTime();
-      // sinon adds a timer to `nextTick` by default beginning in v19
-      // manually specifying the timers like this replicates the behavior pre v19
-      clock = sinon.useFakeTimers({
-        now: now,
-        toFake: [
-          'setTimeout',
-          'clearTimeout',
-          'setInterval',
-          'clearInterval',
-          'Date',
-          'setImmediate',
-          'clearImmediate',
-          'hrtime',
-          'performance',
-        ],
-      });
+      clock = TestUtils.useFakeTimers(sinon, now);
       const emittedEvents: Credentials[] = [];
       const credentials = {
         access_token: 'DOWNSCOPED_CLIENT_ACCESS_TOKEN',

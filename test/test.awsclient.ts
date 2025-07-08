@@ -29,7 +29,7 @@ import {
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
 import {AwsSecurityCredentials} from '../src/auth/awsrequestsigner';
-
+import {TestUtils} from './utils';
 nock.disableNetConnect();
 
 const ONE_HOUR_IN_SECS = 3600;
@@ -175,22 +175,7 @@ describe('AwsClient', () => {
   );
 
   beforeEach(() => {
-    // sinon adds a timer to `nextTick` by default beginning in v19
-    // manually specifying the timers like this replicates the behavior pre v19
-    clock = sinon.useFakeTimers({
-      now: referenceDate,
-      toFake: [
-        'setTimeout',
-        'clearTimeout',
-        'setInterval',
-        'clearInterval',
-        'Date',
-        'setImmediate',
-        'clearImmediate',
-        'hrtime',
-        'performance',
-      ],
-    });
+    clock = TestUtils.useFakeTimers(sinon, referenceDate);
   });
 
   afterEach(() => {

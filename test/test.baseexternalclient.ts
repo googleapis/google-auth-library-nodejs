@@ -40,7 +40,7 @@ import {
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
 import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
-
+import {TestUtils} from './utils';
 nock.disableNetConnect();
 
 interface SampleResponse {
@@ -965,21 +965,7 @@ describe('BaseExternalAccountClient', () => {
       });
 
       it('should force refresh when cached credential is expired', async () => {
-        // sinon adds a timer to `nextTick` by default beginning in v19
-        // manually specifying the timers like this replicates the behavior pre v19
-        clock = sinon.useFakeTimers({
-          toFake: [
-            'setTimeout',
-            'clearTimeout',
-            'setInterval',
-            'clearInterval',
-            'Date',
-            'setImmediate',
-            'clearImmediate',
-            'hrtime',
-            'performance',
-          ],
-        });
+        clock = TestUtils.useFakeTimers(sinon);
         const emittedEvents: Credentials[] = [];
         const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
         stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
@@ -1077,21 +1063,8 @@ describe('BaseExternalAccountClient', () => {
       });
 
       it('should respect provided eagerRefreshThresholdMillis', async () => {
-        // sinon adds a timer to `nextTick` by default beginning in v19
-        // manually specifying the timers like this replicates the behavior pre v19
-        clock = sinon.useFakeTimers({
-          toFake: [
-            'setTimeout',
-            'clearTimeout',
-            'setInterval',
-            'clearInterval',
-            'Date',
-            'setImmediate',
-            'clearImmediate',
-            'hrtime',
-            'performance',
-          ],
-        });
+        clock = TestUtils.useFakeTimers(sinon);
+
         const customThresh = 10 * 1000;
         const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
         stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
@@ -1409,21 +1382,7 @@ describe('BaseExternalAccountClient', () => {
       });
 
       it('should force refresh when cached credential is expired', async () => {
-        // sinon adds a timer to `nextTick` by default beginning in v19
-        // manually specifying the timers like this replicates the behavior pre v19
-        clock = sinon.useFakeTimers({
-          toFake: [
-            'setTimeout',
-            'clearTimeout',
-            'setInterval',
-            'clearInterval',
-            'Date',
-            'setImmediate',
-            'clearImmediate',
-            'hrtime',
-            'performance',
-          ],
-        });
+        clock = TestUtils.useFakeTimers(sinon);
         const emittedEvents: Credentials[] = [];
         const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
         stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
@@ -1547,21 +1506,7 @@ describe('BaseExternalAccountClient', () => {
       });
 
       it('should respect provided eagerRefreshThresholdMillis', async () => {
-        // sinon adds a timer to `nextTick` by default beginning in v19
-        // manually specifying the timers like this replicates the behavior pre v19
-        clock = sinon.useFakeTimers({
-          toFake: [
-            'setTimeout',
-            'clearTimeout',
-            'setInterval',
-            'clearInterval',
-            'Date',
-            'setImmediate',
-            'clearImmediate',
-            'hrtime',
-            'performance',
-          ],
-        });
+        clock = TestUtils.useFakeTimers(sinon);
         const customThresh = 10 * 1000;
         const stsSuccessfulResponse2 = Object.assign({}, stsSuccessfulResponse);
         stsSuccessfulResponse2.access_token = 'ACCESS_TOKEN2';
@@ -2596,21 +2541,7 @@ describe('BaseExternalAccountClient', () => {
 
   describe('setCredentials()', () => {
     it('should allow injection of GCP access tokens directly', async () => {
-      // sinon adds a timer to `nextTick` by default beginning in v19
-      // manually specifying the timers like this replicates the behavior pre v19
-      clock = sinon.useFakeTimers({
-        toFake: [
-          'setTimeout',
-          'clearTimeout',
-          'setInterval',
-          'clearInterval',
-          'Date',
-          'setImmediate',
-          'clearImmediate',
-          'hrtime',
-          'performance',
-        ],
-      });
+      clock = TestUtils.useFakeTimers(sinon);
       const credentials = {
         access_token: 'INJECTED_ACCESS_TOKEN',
         // Simulate token expires in 10mins.
@@ -2651,21 +2582,7 @@ describe('BaseExternalAccountClient', () => {
     });
 
     it('should not expire injected creds with no expiry_date', async () => {
-      // sinon adds a timer to `nextTick` by default beginning in v19
-      // manually specifying the timers like this replicates the behavior pre v19
-      clock = sinon.useFakeTimers({
-        toFake: [
-          'setTimeout',
-          'clearTimeout',
-          'setInterval',
-          'clearInterval',
-          'Date',
-          'setImmediate',
-          'clearImmediate',
-          'hrtime',
-          'performance',
-        ],
-      });
+      clock = TestUtils.useFakeTimers(sinon);
       const credentials = {
         access_token: 'INJECTED_ACCESS_TOKEN',
       };
