@@ -234,7 +234,7 @@ describe('IdentityPoolClient', () => {
 
     it('should throw when neither file or url or certificate sources are provided', () => {
       const expectedError = new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file, or url, or certificate.',
+        'No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.',
       );
       const invalidOptions = {
         type: 'external_account',
@@ -255,7 +255,7 @@ describe('IdentityPoolClient', () => {
 
     it('should throw when more than 1 of file, url or certificate options are provided', () => {
       const expectedError = new Error(
-        'No valid Identity Pool "credential_source" provided, must be either file, or url, or certificate.',
+        'No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.',
       );
       const invalidOptions = {
         type: 'external_account',

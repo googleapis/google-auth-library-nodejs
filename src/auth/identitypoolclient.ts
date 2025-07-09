@@ -90,10 +90,12 @@ export interface IdentityPoolClientOptions
        */
       subject_token_field_name?: string;
     };
+
     /**
      * The certificate location to call to retrieve the subject token. Either this, a file
      * location, or an url should be specified.
      * @example
+     * File Format:
      * ```json
      * {
      * "cert_configs": {
@@ -203,7 +205,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
       const headers = credentialSourceOpts.get('headers');
       if ((file && url) || (url && certificate) || (file && certificate)) {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file, or url, or certificate.',
+          'No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.',
         );
       } else if (file) {
         this.credentialSourceType = 'file';
@@ -244,7 +246,7 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
         this.transporter = new Gaxios(stsClientGaxiosOptions);
       } else {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file, or url, or certificate.',
+          'No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.',
         );
       }
     }

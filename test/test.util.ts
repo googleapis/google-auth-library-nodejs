@@ -15,7 +15,11 @@
 import {strict as assert} from 'assert';
 import * as sinon from 'sinon';
 
-import {LRUCache, removeUndefinedValuesInObject} from '../src/util';
+import {
+  isValidFile,
+  LRUCache,
+  removeUndefinedValuesInObject,
+} from '../src/util';
 import {TestUtils} from './utils';
 
 describe('util', () => {
@@ -79,6 +83,18 @@ describe('util', () => {
       // these are too old
       assert.equal(lru.get('first'), undefined);
       assert.equal(lru.get('second'), undefined);
+    });
+  });
+
+  describe('isValidFilePath', () => {
+    it('should return true when valid file path', () => {
+      const isValidPath = isValidFile('./test/fixtures/empty.json');
+      assert.equal(isValidPath, true);
+    });
+
+    it('should return false when invalid file path', () => {
+      const isValidPath = isValidFile('abc/pqr');
+      assert.equal(isValidPath, false);
     });
   });
 });
