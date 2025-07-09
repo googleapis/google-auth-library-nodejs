@@ -61,13 +61,13 @@ export interface IdentityPoolClientOptions
    */
   credential_source?: {
     /**
-     * The file location to read the subject token from. Either this or a URL
-     * should be specified.
+     * The file location to read the subject token from. Either this, a URL
+     * or a certificate location should be specified.
      */
     file?: string;
     /**
-     * The URL to call to retrieve the subject token. Either this or a file
-     * location should be specified.
+     * The URL to call to retrieve the subject token. Either this, a file
+     * location or a certificate location should be specified.
      */
     url?: string;
     /**
@@ -91,24 +91,36 @@ export interface IdentityPoolClientOptions
       subject_token_field_name?: string;
     };
     /**
-     * The certificate location to call to retrieve the subject token. Either this or a file
-     * location should be specified.
+     * The certificate location to call to retrieve the subject token. Either this, a file
+     * location, or an url should be specified.
+     * @example
+     * ```json
+     * {
+     * "cert_configs": {
+     *    "workload": {
+     *      "key_path": "$PATH_TO_LEAF_KEY",
+     *      "cert_path": "$PATH_TO_LEAF_CERT"
+     *    }
+     *  }
+     * }
+     * ```
      */
     certificate?: {
       /**
-       * Specify whether the certificate config should be used from the default location
-       * either this or the certificate_config_location must be provided
+       * Specify whether the certificate config should be used from the default location.
+       * Either this or the certificate_config_location must be provided.
+       * The certificate config file must be in the following JSON format:
        */
       use_default_certificate_config?: boolean;
       /**
        * Location to fetch certificate config from in case default config is not to be used.
-       * either this or use_default_certificate_config=true should be provided
+       * Either this or use_default_certificate_config=true should be provided.
        */
       certificate_config_location?: string;
       /**
-       * Location to fetch trust chain from to send to STS endpoint.
-       * in case no location is provided, we will just send the leaf certificate as the
-       * trust chain
+       * TrustChainPath specifies the path to a PEM-formatted file containing the X.509 certificate trust chain.
+       * The file should contain any intermediate certificates needed to connect
+       * the mTLS leaf certificate to a root certificate in the trust store.
        */
       trust_chain_path?: string;
     };

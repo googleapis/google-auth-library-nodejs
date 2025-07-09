@@ -1609,10 +1609,98 @@ describe('IdentityPoolClient', () => {
 
       it('should throw in case cert config has missing key path', async () => {
         const certConfigPath =
-          './test/fixtures/external-account-cert/cert_config_wrong_struct.json';
+          './test/fixtures/external-account-cert/cert_config_missing_key_path.json';
         const expectedError = new InvalidConfigurationError(
           `Certificate config file (${certConfigPath}) is missing required "cert_path" or "key_path" in the workload config.`,
         );
+        const certificateSourcedOptionsWrong: IdentityPoolClientOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:mtls',
+          token_url: getMtlsTokenUrl(),
+          credential_source: {
+            certificate: {
+              certificate_config_location: certConfigPath,
+            },
+          },
+        };
+
+        assert.throws(() => {
+          new IdentityPoolClient(certificateSourcedOptionsWrong);
+        }, expectedError);
+      });
+
+      it('should throw in case cert config has missing cert path', async () => {
+        const certConfigPath =
+          './test/fixtures/external-account-cert/cert_config_missing_cert_path.json';
+        const expectedError = new InvalidConfigurationError(
+          `Certificate config file (${certConfigPath}) is missing required "cert_path" or "key_path" in the workload config.`,
+        );
+        const certificateSourcedOptionsWrong: IdentityPoolClientOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:mtls',
+          token_url: getMtlsTokenUrl(),
+          credential_source: {
+            certificate: {
+              certificate_config_location: certConfigPath,
+            },
+          },
+        };
+
+        assert.throws(() => {
+          new IdentityPoolClient(certificateSourcedOptionsWrong);
+        }, expectedError);
+      });
+
+      it('should throw in case cert config is empty or malformed', async () => {
+        const certConfigPath =
+          './test/fixtures/external-account-cert/cert_config_empty.json';
+        const expectedError = new RegExp(
+          `Failed to parse certificate config from ${certConfigPath}`,
+        );
+        const certificateSourcedOptionsWrong: IdentityPoolClientOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:mtls',
+          token_url: getMtlsTokenUrl(),
+          credential_source: {
+            certificate: {
+              certificate_config_location: certConfigPath,
+            },
+          },
+        };
+
+        assert.throws(() => {
+          new IdentityPoolClient(certificateSourcedOptionsWrong);
+        }, expectedError);
+      });
+
+      it('should throw if cert has invalid PEM format', async () => {
+        const certConfigPath =
+          './test/fixtures/external-account-cert/cert_config_with_malformed_leaf_cert.json';
+        const expectedError = new RegExp('Failed to read certificate file');
+        const certificateSourcedOptionsWrong: IdentityPoolClientOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:mtls',
+          token_url: getMtlsTokenUrl(),
+          credential_source: {
+            certificate: {
+              certificate_config_location: certConfigPath,
+            },
+          },
+        };
+
+        assert.throws(() => {
+          new IdentityPoolClient(certificateSourcedOptionsWrong);
+        }, expectedError);
+      });
+
+      it('should throw if key has invalid private key format', async () => {
+        const certConfigPath =
+          './test/fixtures/external-account-cert/cert_config_with_malformed_key.json';
+        const expectedError = new RegExp('Failed to read private key file');
         const certificateSourcedOptionsWrong: IdentityPoolClientOptions = {
           type: 'external_account',
           audience,
@@ -1748,6 +1836,35 @@ describe('IdentityPoolClient', () => {
         const subjectToken = await client.retrieveSubjectToken();
 
         assert.deepEqual(subjectToken, expectedSubjectToken);
+      });
+
+      it('should throw when one or more certs in trust chain is malformed', async () => {
+        const certConfigPath =
+          './test/fixtures/external-account-cert/cert_config.json';
+        const trustChainPath =
+          './test/fixtures/external-account-cert/chain_with_malformed_cert.pem';
+        const certificateSourcedOptions: IdentityPoolClientOptions = {
+          type: 'external_account',
+          audience,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:mtls',
+          token_url: getMtlsTokenUrl(),
+          credential_source: {
+            certificate: {
+              certificate_config_location: certConfigPath,
+              trust_chain_path: trustChainPath,
+            },
+          },
+        };
+        const client = new IdentityPoolClient(certificateSourcedOptions);
+
+        await assert.rejects(
+          client.retrieveSubjectToken(),
+          new RegExp(
+            `Failed to parse certificate at index 0 in trust chain file ${
+              trustChainPath
+            }`,
+          ),
+        );
       });
     });
   });

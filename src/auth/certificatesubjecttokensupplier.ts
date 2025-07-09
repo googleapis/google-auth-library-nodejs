@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GaxiosOptions} from 'gaxios';
 import {SubjectTokenSupplier} from './identitypoolclient';
-import {AuthClient} from './authclient';
 import {getWellKnownCertificateConfigFileLocation, isValidFile} from '../util';
 import * as fs from 'fs';
-import {X509Certificate} from 'crypto';
+import {createPrivateKey, X509Certificate} from 'crypto';
 import * as https from 'https';
 
-// --- Constants ---
 export const CERTIFICATE_CONFIGURATION_ENV_VARIABLE =
   'GOOGLE_API_CERTIFICATE_CONFIG';
-
-// --- Custom Errors ---
 
 /**
  * Thrown when the certificate source cannot be located or accessed.
@@ -46,8 +41,6 @@ export class InvalidConfigurationError extends Error {
   }
 }
 
-// --- Interfaces ---
-
 /**
  * Defines options for creating a {@link CertificateSubjectTokenSupplier}.
  */
@@ -63,8 +56,7 @@ export interface CertificateSubjectTokenSupplierOptions {
    */
   certificateConfigLocation?: string;
   /**
-   * The file path to the trust chain (PEM format). If not provided,
-   * only the leaf certificate will be sent.
+   * The file path to the trust chain (PEM format).
    */
   trustChainPath?: string;
 }
@@ -89,8 +81,6 @@ interface CertificateConfigFileJson {
   };
 }
 
-// --- Main Class ---
-
 /**
  * A subject token supplier that uses a client certificate for authentication.
  * It provides the certificate chain as the subject token for identity federation.
@@ -100,6 +90,8 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
   private readonly trustChainPath?: string;
   private readonly certPath: string;
   private readonly keyPath: string;
+  private readonly cert: Buffer;
+  private readonly key: Buffer;
 
   /**
    * Initializes a new instance of the CertificateSubjectTokenSupplier.
@@ -122,6 +114,8 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
     );
     ({certPath: this.certPath, keyPath: this.keyPath} =
       this.#getWorkloadCertificatePaths(this.certificateConfigPath));
+
+    ({cert: this.cert, key: this.key} = this.#getKeyAndCert());
   }
 
   /**
@@ -129,16 +123,7 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
    * @returns An mTLS-configured https.Agent.
    */
   public createMtlsHttpsAgent(): https.Agent {
-    try {
-      const cert = fs.readFileSync(this.certPath);
-      const key = fs.readFileSync(this.keyPath);
-      return new https.Agent({key, cert});
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new CertificateSourceUnavailableError(
-        `Failed to read certificate or key file: ${message}`,
-      );
-    }
+    return new https.Agent({key: this.key, cert: this.cert});
   }
 
   /**
@@ -146,16 +131,15 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
    * @returns A promise that resolves with the subject token.
    */
   public async getSubjectToken(): Promise<string> {
-    const opts: GaxiosOptions = {method: 'GET'};
-    AuthClient.setMethodName(opts, 'getSubjectToken');
-
     // The "subject token" in this context is the processed certificate chain.
-    return this.#processChainFromPaths();
+    return await this.#processChainFromPaths();
   }
 
   /**
    * Resolves the absolute path to the certificate configuration file
-   * by checking an explicit path, an environment variable, and a well-known location.
+   * by checking the "certificate_config_location" provided in the ADC file,
+   * or the "GOOGLE_API_CERTIFICATE_CONFIG" environment variable
+   * or in the default gcloud path.
    * @param overridePath An optional path to check first.
    * @returns The resolved file path.
    */
@@ -234,39 +218,72 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
   }
 
   /**
+   * Reads and parses the cert and key files get their content and check valid format.
+   * @returns An object containing the cert content and key content in buffer format.
+   */
+  #getKeyAndCert(): {
+    cert: Buffer;
+    key: Buffer;
+  } {
+    let cert, key;
+    try {
+      cert = fs.readFileSync(this.certPath);
+      new X509Certificate(cert);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new CertificateSourceUnavailableError(
+        `Failed to read certificate file at ${this.certPath}: ${message}`,
+      );
+    }
+    try {
+      key = fs.readFileSync(this.keyPath);
+      createPrivateKey(key);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new CertificateSourceUnavailableError(
+        `Failed to read private key file at ${this.keyPath}: ${message}`,
+      );
+    }
+
+    return {cert, key};
+  }
+
+  /**
    * Reads the leaf certificate and trust chain, combines them,
    * and returns a JSON array of base64-encoded certificates.
    * @returns A stringified JSON array of the certificate chain.
    */
-  #processChainFromPaths(): string {
+  async #processChainFromPaths(): Promise<string> {
+    const leafCert = new X509Certificate(this.cert);
+
+    // If no trust chain is provided, just use the successfully parsed leaf certificate.
     if (!this.trustChainPath) {
-      // If no trust chain is provided, just use the leaf certificate.
-      try {
-        const leafPem = fs.readFileSync(this.certPath, 'utf8');
-        const leafCert = new X509Certificate(leafPem);
-        return JSON.stringify([leafCert.raw.toString('base64')]);
-      } catch (err) {
-        throw new CertificateSourceUnavailableError(
-          `Failed to read or parse leaf certificate at ${this.certPath}: ${
-            (err as Error).message
-          }`,
-        );
-      }
+      return JSON.stringify([leafCert.raw.toString('base64')]);
     }
 
+    // Handle the trust chain logic.
     try {
-      // Read both the leaf and the chain files.
-      const leafPem = fs.readFileSync(this.certPath, 'utf8');
-      const chainPems = fs.readFileSync(this.trustChainPath, 'utf8');
+      const chainPems = await fs.promises.readFile(this.trustChainPath, 'utf8');
 
-      // Parse all certificates.
-      const leafCert = new X509Certificate(leafPem);
-      const chainCerts =
-        chainPems
-          .match(/-----BEGIN CERTIFICATE-----[^-]+-----END CERTIFICATE-----/g)
-          ?.map(pem => new X509Certificate(pem)) ?? [];
+      const pemBlocks =
+        chainPems.match(
+          /-----BEGIN CERTIFICATE-----[^-]+-----END CERTIFICATE-----/g,
+        ) ?? [];
 
-      // Check if the leaf certificate is already in the provided chain.
+      const chainCerts: X509Certificate[] = pemBlocks.map((pem, index) => {
+        try {
+          return new X509Certificate(pem);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          // Throw a more precise error if a single certificate in the chain is invalid.
+          throw new InvalidConfigurationError(
+            `Failed to parse certificate at index ${index} in trust chain file ${
+              this.trustChainPath
+            }: ${message}`,
+          );
+        }
+      });
+
       const leafIndex = chainCerts.findIndex(chainCert =>
         leafCert.raw.equals(chainCert.raw),
       );
@@ -290,9 +307,12 @@ export class CertificateSubjectTokenSupplier implements SubjectTokenSupplier {
         finalChain.map(cert => cert.raw.toString('base64')),
       );
     } catch (err) {
+      // Re-throw our specific configuration errors.
       if (err instanceof InvalidConfigurationError) throw err;
+
+      const message = err instanceof Error ? err.message : String(err);
       throw new CertificateSourceUnavailableError(
-        `Failed to process certificate chain: ${(err as Error).message}`,
+        `Failed to process certificate chain from ${this.trustChainPath}: ${message}`,
       );
     }
   }
