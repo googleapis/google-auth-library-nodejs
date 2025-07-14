@@ -30,6 +30,7 @@ import {
 } from '../src/auth/pluggable-auth-handler';
 import * as assert from 'assert';
 import {ExecutableError} from '../src/auth/pluggable-auth-client';
+import {TestUtils} from './utils';
 
 const OIDC_SUBJECT_TOKEN_TYPE1 = 'urn:ietf:params:oauth:token-type:id_token';
 const SAML_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
@@ -121,8 +122,7 @@ describe('PluggableAuthHandler', () => {
     beforeEach(() => {
       // Stub environment variables
       sandbox.stub(process, 'env').value(process.env);
-      clock = sandbox.useFakeTimers({now: referenceTime});
-
+      clock = TestUtils.useFakeTimers(sinon, referenceTime);
       defaultResponseJson = {
         success: true,
         version: 1,
@@ -371,8 +371,7 @@ describe('PluggableAuthHandler', () => {
     let defaultResponseJson: ExecutableResponseJson;
 
     beforeEach(() => {
-      clock = sandbox.useFakeTimers({now: referenceTime});
-
+      clock = TestUtils.useFakeTimers(sinon, referenceTime);
       defaultResponseJson = {
         success: true,
         version: 1,

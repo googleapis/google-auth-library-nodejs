@@ -29,7 +29,7 @@ import {
   getExpectedExternalAccountMetricsHeaderValue,
 } from './externalclienthelper';
 import {AwsSecurityCredentials} from '../src/auth/awsrequestsigner';
-
+import {TestUtils} from './utils';
 nock.disableNetConnect();
 
 const ONE_HOUR_IN_SECS = 3600;
@@ -175,7 +175,7 @@ describe('AwsClient', () => {
   );
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers(referenceDate);
+    clock = TestUtils.useFakeTimers(sinon, referenceDate);
   });
 
   afterEach(() => {
