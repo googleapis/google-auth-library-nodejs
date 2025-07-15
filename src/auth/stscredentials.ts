@@ -210,7 +210,9 @@ export class StsCredentials extends OAuthClientAuthHandler {
       url: this.#tokenExchangeEndpoint.toString(),
       method: 'POST',
       headers,
-      data: new URLSearchParams(removeUndefinedValuesInObject(values)),
+      data: new URLSearchParams(
+        removeUndefinedValuesInObject(values) as Record<string, string>,
+      ),
     };
     AuthClient.setMethodName(opts, 'exchangeToken');
 

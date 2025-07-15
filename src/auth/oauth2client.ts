@@ -821,7 +821,9 @@ export class OAuth2Client extends AuthClient {
         ...OAuth2Client.RETRY_CONFIG,
         method: 'POST',
         url,
-        data: new URLSearchParams(removeUndefinedValuesInObject(data)),
+        data: new URLSearchParams(
+          removeUndefinedValuesInObject(data) as Record<string, string>,
+        ),
       };
       AuthClient.setMethodName(opts, 'refreshTokenNoCache');
 

@@ -101,7 +101,7 @@ describe('util', () => {
 
 describe('util removeUndefinedValuesInObject', () => {
   it('remove undefined type values in object', () => {
-    const object: {[key: string]: any} = {
+    const object: {[key: string]: unknown} = {
       undefined: undefined,
       number: 1,
     };
@@ -110,7 +110,7 @@ describe('util removeUndefinedValuesInObject', () => {
     });
   });
   it('remove undefined string values in object', () => {
-    const object: {[key: string]: any} = {
+    const object: {[key: string]: unknown} = {
       undefined: 'undefined',
       number: 1,
     };
