@@ -87,13 +87,13 @@ describe('util', () => {
   });
 
   describe('isValidFilePath', () => {
-    it('should return true when valid file path', () => {
-      const isValidPath = isValidFile('./test/fixtures/empty.json');
+    it('should return true when valid file path', async () => {
+      const isValidPath = await isValidFile('./test/fixtures/empty.json');
       assert.equal(isValidPath, true);
     });
 
-    it('should return false when invalid file path', () => {
-      const isValidPath = isValidFile('abc/pqr');
+    it('should return false when invalid file path', async () => {
+      const isValidPath = await isValidFile('abc/pqr');
       assert.equal(isValidPath, false);
     });
   });
@@ -101,7 +101,7 @@ describe('util', () => {
 
 describe('util removeUndefinedValuesInObject', () => {
   it('remove undefined type values in object', () => {
-    const object: {[key: string]: any} = {
+    const object: {[key: string]: unknown} = {
       undefined: undefined,
       number: 1,
     };
@@ -110,7 +110,7 @@ describe('util removeUndefinedValuesInObject', () => {
     });
   });
   it('remove undefined string values in object', () => {
-    const object: {[key: string]: any} = {
+    const object: {[key: string]: unknown} = {
       undefined: 'undefined',
       number: 1,
     };

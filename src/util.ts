@@ -248,8 +248,10 @@ export class LRUCache<T> {
 }
 
 // Given and object remove fields where value is undefined.
-export function removeUndefinedValuesInObject(object: {[key: string]: any}): {
-  [key: string]: any;
+export function removeUndefinedValuesInObject(object: {
+  [key: string]: unknown;
+}): {
+  [key: string]: unknown;
 } {
   Object.entries(object).forEach(([key, value]) => {
     if (value === undefined || value === 'undefined') {
@@ -262,11 +264,11 @@ export function removeUndefinedValuesInObject(object: {[key: string]: any}): {
 /**
  * Helper to check if a path points to a valid file.
  */
-export function isValidFile(filePath: string): boolean {
+export async function isValidFile(filePath: string): Promise<boolean> {
   try {
-    return fs.existsSync(filePath) && fs.lstatSync(filePath).isFile();
+    const stats = await fs.promises.lstat(filePath);
+    return stats.isFile();
   } catch (e) {
-    // Path might be malformed, causing existsSync or lstatSync to throw.
     return false;
   }
 }
