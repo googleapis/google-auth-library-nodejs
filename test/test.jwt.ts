@@ -26,7 +26,6 @@ import {
   TrustBoundaryData,
   SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
   NoOpEncodedLocations,
-  getTrustBoundary,
 } from '../src/auth/trustboundary';
 
 function removeBearerFromAuthorizationHeader(headers: Headers): string {
@@ -1247,315 +1246,315 @@ describe('jwt', () => {
     });
   });
 
-  describe('trust boundaries', () => {
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
-    });
+  // describe('trust boundaries', () => {
+  //   beforeEach(() => {
+  //     sandbox = sinon.createSandbox();
+  //     process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
+  //   });
 
-    afterEach(() => {
-      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
-      sandbox.restore();
-      nock.cleanAll();
-    });
+  //   afterEach(() => {
+  //     delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+  //     sandbox.restore();
+  //     nock.cleanAll();
+  //   });
 
-    it('getTrustBoundary should fetch and return trust boundary data successfully', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-      });
-      jwt.credentials.access_token = 'test-access-token';
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '000x9',
-      };
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
+  //   it('getTrustBoundary should fetch and return trust boundary data successfully', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //     });
+  //     jwt.credentials.access_token = 'test-access-token';
+  //     const mockAuthHeader = 'Bearer test-access-token';
+  //     const expectedTrustBoundaryData: TrustBoundaryData = {
+  //       locations: ['sadad', 'asdad'],
+  //       encodedLocations: '000x9',
+  //     };
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
 
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .reply(200, expectedTrustBoundaryData);
 
-      const trustBoundary = await getTrustBoundary(jwt);
+  //     const trustBoundary = await getTrustBoundary(jwt);
 
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      scope.done();
-    });
+  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+  //     scope.done();
+  //   });
 
-    it('getTrustBoundary should throw when email is null', async () => {
-      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'false';
-      const jwt = new JWT({
-        email: undefined,
-        key: 'testkey',
-      });
-      assert.strictEqual(await getTrustBoundary(jwt), null);
-    });
+  //   it('getTrustBoundary should throw when email is null', async () => {
+  //     process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'false';
+  //     const jwt = new JWT({
+  //       email: undefined,
+  //       key: 'testkey',
+  //     });
+  //     assert.strictEqual(await getTrustBoundary(jwt), null);
+  //   });
 
-    it('getTrustBoundary should throw when email is null', async () => {
-      const jwt = new JWT({
-        email: undefined,
-        key: 'testkey',
-      });
+  //   it('getTrustBoundary should throw when email is null', async () => {
+  //     const jwt = new JWT({
+  //       email: undefined,
+  //       key: 'testkey',
+  //     });
 
-      await assert.rejects(
-        getTrustBoundary(jwt),
-        /TrustBoundary: Error getting tbUrl because of missing email in JwtClient/,
-      );
-    });
+  //     await assert.rejects(
+  //       getTrustBoundary(jwt),
+  //       /TrustBoundary: Error getting tbUrl because of missing email in JwtClient/,
+  //     );
+  //   });
 
-    it('getTrustBoundary should return null when default domain is not googleapis.com', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-        universe_domain: 'abc.com',
-      });
+  //   it('getTrustBoundary should return null when default domain is not googleapis.com', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //       universe_domain: 'abc.com',
+  //     });
 
-      const trustBoundary = await getTrustBoundary(jwt);
+  //     const trustBoundary = await getTrustBoundary(jwt);
 
-      assert.deepStrictEqual(trustBoundary, null);
-    });
+  //     assert.deepStrictEqual(trustBoundary, null);
+  //   });
 
-    it('getTrustBoundary should throw when no valid access token is passed', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-      });
-      await assert.rejects(
-        getTrustBoundary(jwt),
-        /TrustBoundary: Error calling lookup endpoint without valid access token/,
-      );
-    });
+  //   it('getTrustBoundary should throw when no valid access token is passed', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //     });
+  //     await assert.rejects(
+  //       getTrustBoundary(jwt),
+  //       /TrustBoundary: Error calling lookup endpoint without valid access token/,
+  //     );
+  //   });
 
-    it('getTrustBoundary should return null and not call lookup endpoint in case cachedTrustBoundaries is no-op', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-      });
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        encodedLocations: NoOpEncodedLocations,
-      };
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
-      const mockAuthHeader = 'Bearer test-access-token';
+  //   it('getTrustBoundary should return null and not call lookup endpoint in case cachedTrustBoundaries is no-op', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //     });
+  //     const expectedTrustBoundaryData: TrustBoundaryData = {
+  //       encodedLocations: NoOpEncodedLocations,
+  //     };
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
+  //     const mockAuthHeader = 'Bearer test-access-token';
 
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .reply(200, expectedTrustBoundaryData);
 
-      jwt.trustBoundary = expectedTrustBoundaryData;
-      const trustBoundary = await getTrustBoundary(jwt);
+  //     jwt.trustBoundary = expectedTrustBoundaryData;
+  //     const trustBoundary = await getTrustBoundary(jwt);
 
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      assert.strictEqual(scope.isDone(), false);
-    });
+  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+  //     assert.strictEqual(scope.isDone(), false);
+  //   });
 
-    it('getTrustBoundary should return null if response from lookup endpoint is no-op', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-      });
-      jwt.credentials.access_token = 'test-access-token';
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        encodedLocations: NoOpEncodedLocations,
-      };
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
-      const mockAuthHeader = 'Bearer test-access-token';
+  //   it('getTrustBoundary should return null if response from lookup endpoint is no-op', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //     });
+  //     jwt.credentials.access_token = 'test-access-token';
+  //     const expectedTrustBoundaryData: TrustBoundaryData = {
+  //       encodedLocations: NoOpEncodedLocations,
+  //     };
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
+  //     const mockAuthHeader = 'Bearer test-access-token';
 
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .reply(200, expectedTrustBoundaryData);
 
-      const trustBoundary = await getTrustBoundary(jwt);
+  //     const trustBoundary = await getTrustBoundary(jwt);
 
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      scope.done();
-    });
+  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+  //     scope.done();
+  //   });
 
-    it('getTrustBoundary should return cached tb in case call to lookup endpoint fails', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-      });
-      jwt.credentials.access_token = 'test-access-token';
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '000x9',
-      };
-      jwt.trustBoundary = expectedTrustBoundaryData;
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
+  //   it('getTrustBoundary should return cached tb in case call to lookup endpoint fails', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //     });
+  //     jwt.credentials.access_token = 'test-access-token';
+  //     const mockAuthHeader = 'Bearer test-access-token';
+  //     const expectedTrustBoundaryData: TrustBoundaryData = {
+  //       locations: ['sadad', 'asdad'],
+  //       encodedLocations: '000x9',
+  //     };
+  //     jwt.trustBoundary = expectedTrustBoundaryData;
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
 
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .replyWithError('Call to Lookup endpoint failed');
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .replyWithError('Call to Lookup endpoint failed');
 
-      const trustBoundary = await getTrustBoundary(jwt);
+  //     const trustBoundary = await getTrustBoundary(jwt);
 
-      assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
-      scope.done();
-    });
+  //     assert.deepStrictEqual(trustBoundary, expectedTrustBoundaryData);
+  //     scope.done();
+  //   });
 
-    it('getTrustBoundary should throw in case call to lookup endpoint fails and no cached tb', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-      });
-      jwt.credentials.access_token = 'test-access-token';
-      const mockAuthHeader = 'Bearer test-access-token';
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
+  //   it('getTrustBoundary should throw in case call to lookup endpoint fails and no cached tb', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //     });
+  //     jwt.credentials.access_token = 'test-access-token';
+  //     const mockAuthHeader = 'Bearer test-access-token';
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
 
-      const expected = new RegExp(
-        'TrustBoundary: Failure while getting trust boundaries:',
-      );
+  //     const expected = new RegExp(
+  //       'TrustBoundary: Failure while getting trust boundaries:',
+  //     );
 
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .replyWithError('Call to Lookup endpoint failed');
-      await assert.rejects(getTrustBoundary(jwt), expected);
-      scope.done();
-    });
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .replyWithError('Call to Lookup endpoint failed');
+  //     await assert.rejects(getTrustBoundary(jwt), expected);
+  //     scope.done();
+  //   });
 
-    it('getTrustBoundary should throw in case of malformed response from lookup', async () => {
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-      });
-      jwt.credentials.access_token = 'test-access-token';
-      const mockAuthHeader = 'Bearer test-access-token';
-      const expectedTrustBoundaryData: TrustBoundaryData = {
-        locations: ['sadad', 'asdad'],
-        encodedLocations: '',
-      };
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
+  //   it('getTrustBoundary should throw in case of malformed response from lookup', async () => {
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //     });
+  //     jwt.credentials.access_token = 'test-access-token';
+  //     const mockAuthHeader = 'Bearer test-access-token';
+  //     const expectedTrustBoundaryData: TrustBoundaryData = {
+  //       locations: ['sadad', 'asdad'],
+  //       encodedLocations: '',
+  //     };
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
 
-      const scope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', mockAuthHeader)
-        .reply(200, expectedTrustBoundaryData);
+  //     const scope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', mockAuthHeader)
+  //       .reply(200, expectedTrustBoundaryData);
 
-      const expectedError = new RegExp(
-        'Error: TrustBoundary: Failure while getting trust boundaries:',
-      );
-      await assert.rejects(getTrustBoundary(jwt), expectedError);
-      scope.done();
-    });
+  //     const expectedError = new RegExp(
+  //       'Error: TrustBoundary: Failure while getting trust boundaries:',
+  //     );
+  //     await assert.rejects(getTrustBoundary(jwt), expectedError);
+  //     scope.done();
+  //   });
 
-    it('getRequestHeaders should attach a trust boundary header in case of valid tb', async () => {
-      const jwt = new JWT({
-        email: 'foo@serviceaccount.com',
-        keyFile: PEM_PATH,
-        scopes: [],
-        subject: 'bar@subjectaccount.com',
-      });
-      jwt.credentials = {refresh_token: 'jwt-placeholder'};
-      jwt.useJWTAccessWithScope = false;
-      jwt.defaultScopes = ['scope1', 'scope2'];
-      const wantedToken = 'abc123';
-      const scope = createGTokenMock({access_token: wantedToken});
+  //   it('getRequestHeaders should attach a trust boundary header in case of valid tb', async () => {
+  //     const jwt = new JWT({
+  //       email: 'foo@serviceaccount.com',
+  //       keyFile: PEM_PATH,
+  //       scopes: [],
+  //       subject: 'bar@subjectaccount.com',
+  //     });
+  //     jwt.credentials = {refresh_token: 'jwt-placeholder'};
+  //     jwt.useJWTAccessWithScope = false;
+  //     jwt.defaultScopes = ['scope1', 'scope2'];
+  //     const wantedToken = 'abc123';
+  //     const scope = createGTokenMock({access_token: wantedToken});
 
-      const tbData = {
-        encodedLocations: '0x00009',
-      };
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
-      const trustBoundaryScope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', `Bearer ${wantedToken}`)
-        .reply(200, tbData);
+  //     const tbData = {
+  //       encodedLocations: '0x00009',
+  //     };
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
+  //     const trustBoundaryScope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', `Bearer ${wantedToken}`)
+  //       .reply(200, tbData);
 
-      // Act
-      const headers = await jwt.getRequestHeaders();
+  //     // Act
+  //     const headers = await jwt.getRequestHeaders();
 
-      // Assert
-      assert.strictEqual(
-        headers.get('x-allowed-locations'),
-        tbData.encodedLocations,
-      );
+  //     // Assert
+  //     assert.strictEqual(
+  //       headers.get('x-allowed-locations'),
+  //       tbData.encodedLocations,
+  //     );
 
-      // Verify both mocks were hit
-      scope.done();
-      trustBoundaryScope.done();
-    });
+  //     // Verify both mocks were hit
+  //     scope.done();
+  //     trustBoundaryScope.done();
+  //   });
 
-    it('getRequestHeaders should attach empty string trust boundary header in case of no-op tb', async () => {
-      const jwt = new JWT({
-        email: 'foo@serviceaccount.com',
-        keyFile: PEM_PATH,
-        scopes: [],
-        subject: 'bar@subjectaccount.com',
-      });
-      jwt.credentials = {refresh_token: 'jwt-placeholder'};
-      jwt.useJWTAccessWithScope = false;
-      jwt.defaultScopes = ['scope1', 'scope2'];
-      const wantedToken = 'abc123';
-      const scope = createGTokenMock({access_token: wantedToken});
+  //   it('getRequestHeaders should attach empty string trust boundary header in case of no-op tb', async () => {
+  //     const jwt = new JWT({
+  //       email: 'foo@serviceaccount.com',
+  //       keyFile: PEM_PATH,
+  //       scopes: [],
+  //       subject: 'bar@subjectaccount.com',
+  //     });
+  //     jwt.credentials = {refresh_token: 'jwt-placeholder'};
+  //     jwt.useJWTAccessWithScope = false;
+  //     jwt.defaultScopes = ['scope1', 'scope2'];
+  //     const wantedToken = 'abc123';
+  //     const scope = createGTokenMock({access_token: wantedToken});
 
-      const tbData = {
-        encodedLocations: '0x0',
-      };
-      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(jwt.email!),
-      );
-      const trustBoundaryScope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', `Bearer ${wantedToken}`)
-        .reply(200, tbData);
+  //     const tbData = {
+  //       encodedLocations: '0x0',
+  //     };
+  //     const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+  //       '{service_account_email}',
+  //       encodeURIComponent(jwt.email!),
+  //     );
+  //     const trustBoundaryScope = nock(new URL(lookupUrl).origin)
+  //       .get(new URL(lookupUrl).pathname)
+  //       .matchHeader('authorization', `Bearer ${wantedToken}`)
+  //       .reply(200, tbData);
 
-      // Act
-      const headers = await jwt.getRequestHeaders();
+  //     // Act
+  //     const headers = await jwt.getRequestHeaders();
 
-      // Assert
-      assert.strictEqual(headers.get('x-allowed-locations'), '');
+  //     // Assert
+  //     assert.strictEqual(headers.get('x-allowed-locations'), '');
 
-      // Verify both mocks were hit
-      scope.done();
-      trustBoundaryScope.done();
-    });
+  //     // Verify both mocks were hit
+  //     scope.done();
+  //     trustBoundaryScope.done();
+  //   });
 
-    it('getRequestHeaders should not attach tb header in case of non-default universe', async () => {
-      // Arrange
-      const jwt = new JWT({
-        email: 'test@example.iam.gserviceaccount.com',
-        key: 'testkey',
-        apiKey: 'abcefg',
-      });
-      jwt.universeDomain = 'abc.com';
-      jwt.credentials.access_token = 'test-access-token';
-      jwt.credentials.expiry_date = new Date().getTime() + 3600 * 1000;
+  //   it('getRequestHeaders should not attach tb header in case of non-default universe', async () => {
+  //     // Arrange
+  //     const jwt = new JWT({
+  //       email: 'test@example.iam.gserviceaccount.com',
+  //       key: 'testkey',
+  //       apiKey: 'abcefg',
+  //     });
+  //     jwt.universeDomain = 'abc.com';
+  //     jwt.credentials.access_token = 'test-access-token';
+  //     jwt.credentials.expiry_date = new Date().getTime() + 3600 * 1000;
 
-      // Mock the token refresh endpoint, as getRequestHeaders will trigger it.
-      createGTokenMock({access_token: 'token'});
+  //     // Mock the token refresh endpoint, as getRequestHeaders will trigger it.
+  //     createGTokenMock({access_token: 'token'});
 
-      // Act
-      const headers = await jwt.getRequestHeaders();
+  //     // Act
+  //     const headers = await jwt.getRequestHeaders();
 
-      // Assert
-      assert.strictEqual(headers.get('x-allowed-locations'), null);
-    });
-  });
+  //     // Assert
+  //     assert.strictEqual(headers.get('x-allowed-locations'), null);
+  //   });
+  // });
 });

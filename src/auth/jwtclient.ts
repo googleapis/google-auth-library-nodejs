@@ -281,6 +281,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       id_token: gtoken.idToken,
     };
     this.emit('tokens', tokens);
+    this.trustBoundary = await this.refreshTrustBoundary(tokens);
     return {res: null, tokens};
   }
 
@@ -413,7 +414,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   async getTrustBoundaryUrl(): Promise<string> {
     if (!this.email) {
       throw new Error(
-        'TrustBoundary: Error getting tbUrl because of missing email in JwtClient',
+        'TrustBoundary: An email address is required for trust boundary lookups but was not provided in the JwtClient options.',
       );
     }
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(

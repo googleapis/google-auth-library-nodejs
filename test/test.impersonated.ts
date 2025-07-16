@@ -22,7 +22,6 @@ import {CredentialRequest} from '../src/auth/credentials';
 import {
   TrustBoundaryData,
   SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
-  getTrustBoundary,
 } from '../src/auth/trustboundary';
 
 const PEM_PATH = './test/fixtures/private.pem';
@@ -602,6 +601,8 @@ describe('impersonated', () => {
         '{service_account_email}',
         encodeURIComponent(impersonated.getTargetPrincipal()),
       );
+
+      createGTokenMock({access_token: 'test-access-token'});
 
       const scope = nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)

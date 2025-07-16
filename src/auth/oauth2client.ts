@@ -846,6 +846,7 @@ export class OAuth2Client extends AuthClient {
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
+    // this.trustBoundary = await this.refreshTrustBoundary(tokens);
     return {tokens, res};
   }
 
@@ -972,7 +973,7 @@ export class OAuth2Client extends AuthClient {
         const headers = new Headers({
           authorization: 'Bearer ' + this.credentials.access_token,
         });
-        return {headers: await this.addSharedMetadataHeaders(headers, true)};
+        return {headers: this.addSharedMetadataHeaders(headers)};
       }
     }
 
@@ -1003,7 +1004,7 @@ export class OAuth2Client extends AuthClient {
       authorization: credentials.token_type + ' ' + tokens.access_token,
     });
     return {
-      headers: await this.addSharedMetadataHeaders(headers, true),
+      headers: this.addSharedMetadataHeaders(headers),
       res: r.res,
     };
   }

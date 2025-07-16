@@ -46,76 +46,76 @@ export interface TrustBoundaryData {
   encodedLocations: string;
 }
 
-/**
- * Fetches trust boundary data for an authenticated client.
- * Handles caching checks and potential fallbacks.
- * @param authenticatedClient An authenticated AuthClient instance to make the request.
- * @returns A Promise resolving to TrustBoundaryData or empty-string for no-op trust boundaries.
- * @throws {Error} If the request fails and there is no cache available.
- */
-export async function getTrustBoundary(
-  client: AuthClient,
-): Promise<TrustBoundaryData | null> {
-  if (!client.trustBoundaryEnabled) {
-    return null;
-  }
+// /**
+//  * Fetches trust boundary data for an authenticated client.
+//  * Handles caching checks and potential fallbacks.
+//  * @param authenticatedClient An authenticated AuthClient instance to make the request.
+//  * @returns A Promise resolving to TrustBoundaryData or empty-string for no-op trust boundaries.
+//  * @throws {Error} If the request fails and there is no cache available.
+//  */
+// export async function getTrustBoundary(
+//   client: AuthClient,
+// ): Promise<TrustBoundaryData | null> {
+//   if (!client.trustBoundaryEnabled) {
+//     return null;
+//   }
 
-  if (client.universeDomain !== DEFAULT_UNIVERSE) {
-    return null; // Skipping check for non-default universe domain
-  }
+//   if (client.universeDomain !== DEFAULT_UNIVERSE) {
+//     return null; // Skipping check for non-default universe domain
+//   }
 
-  const cachedTB = client.trustBoundary;
-  if (cachedTB && cachedTB.encodedLocations === NoOpEncodedLocations) {
-    return cachedTB; //Returning cached No-Op data.
-  }
+//   const cachedTB = client.trustBoundary;
+//   if (cachedTB && cachedTB.encodedLocations === NoOpEncodedLocations) {
+//     return cachedTB; //Returning cached No-Op data.
+//   }
 
-  const trustBoundaryUrl = await client.getTrustBoundaryUrl();
-  if (!trustBoundaryUrl) {
-    return null;
-  }
+//   const trustBoundaryUrl = await client.getTrustBoundaryUrl();
+//   if (!trustBoundaryUrl) {
+//     return null;
+//   }
 
-  if (!client.credentials.access_token) {
-    throw new Error(
-      'TrustBoundary: Error calling lookup endpoint without valid access token',
-    );
-  }
-  const headers = new Headers({
-    //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
-    authorization: 'Bearer ' + client.credentials.access_token,
-  });
+//   if (!client.credentials.access_token) {
+//     throw new Error(
+//       'TrustBoundary: Error calling lookup endpoint without valid access token',
+//     );
+//   }
+//   const headers = new Headers({
+//     //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
+//     authorization: 'Bearer ' + client.credentials.access_token,
+//   });
 
-  const opts: GaxiosOptions = {
-    ...{
-      retry: true,
-      retryConfig: {
-        httpMethodsToRetry: ['GET'],
-      },
-    },
-    headers,
-    url: trustBoundaryUrl,
-  };
+//   const opts: GaxiosOptions = {
+//     ...{
+//       retry: true,
+//       retryConfig: {
+//         httpMethodsToRetry: ['GET'],
+//       },
+//     },
+//     headers,
+//     url: trustBoundaryUrl,
+//   };
 
-  try {
-    const {data: trustBoundaryData} =
-      // preferred to client.request to avoid unnecessary retries
-      await client.transporter.request<TrustBoundaryData>(opts);
+//   try {
+//     const {data: trustBoundaryData} =
+//       // preferred to client.request to avoid unnecessary retries
+//       await client.transporter.request<TrustBoundaryData>(opts);
 
-    if (!trustBoundaryData.encodedLocations) {
-      throw new Error(
-        'TrustBoundary: Malformed response from lookup endpoint.',
-      );
-    }
+//     if (!trustBoundaryData.encodedLocations) {
+//       throw new Error(
+//         'TrustBoundary: Malformed response from lookup endpoint.',
+//       );
+//     }
 
-    return trustBoundaryData;
-  } catch (error) {
-    if (client.trustBoundary) {
-      return client.trustBoundary; // return cached tb if call to lookup fails
-    }
-    throw new Error('TrustBoundary: Failure while getting trust boundaries:', {
-      cause: error,
-    });
-  }
-}
+//     return trustBoundaryData;
+//   } catch (error) {
+//     if (client.trustBoundary) {
+//       return client.trustBoundary; // return cached tb if call to lookup fails
+//     }
+//     throw new Error('TrustBoundary: Failure while getting trust boundaries:', {
+//       cause: error,
+//     });
+//   }
+// }
 
 export function isTrustBoundaryEnabled() {
   const tbEnabled = process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
