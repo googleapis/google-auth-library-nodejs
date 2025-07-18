@@ -20,6 +20,9 @@ import {
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {FileSubjectTokenSupplier} from './filesubjecttokensupplier';
 import {UrlSubjectTokenSupplier} from './urlsubjecttokensupplier';
+import {CertificateSubjectTokenSupplier} from './certificatesubjecttokensupplier';
+import {StsCredentials} from './stscredentials';
+import {Gaxios} from 'gaxios';
 
 export type SubjectTokenFormatType = 'json' | 'text';
 
@@ -58,13 +61,13 @@ export interface IdentityPoolClientOptions
    */
   credential_source?: {
     /**
-     * The file location to read the subject token from. Either this or a URL
-     * should be specified.
+     * The file location to read the subject token from. Either this, a URL
+     * or a certificate location should be specified.
      */
     file?: string;
     /**
-     * The URL to call to retrieve the subject token. Either this or a file
-     * location should be specified.
+     * The URL to call to retrieve the subject token. Either this, a file
+     * location or a certificate location should be specified.
      */
     url?: string;
     /**
@@ -86,6 +89,42 @@ export interface IdentityPoolClientOptions
        * The field name containing the subject token value if the type is 'json'.
        */
       subject_token_field_name?: string;
+    };
+
+    /**
+     * The certificate location to call to retrieve the subject token. Either this, a file
+     * location, or an url should be specified.
+     * @example
+     * File Format:
+     * ```json
+     * {
+     * "cert_configs": {
+     *    "workload": {
+     *      "key_path": "$PATH_TO_LEAF_KEY",
+     *      "cert_path": "$PATH_TO_LEAF_CERT"
+     *    }
+     *  }
+     * }
+     * ```
+     */
+    certificate?: {
+      /**
+       * Specify whether the certificate config should be used from the default location.
+       * Either this or the certificate_config_location must be provided.
+       * The certificate config file must be in the following JSON format:
+       */
+      use_default_certificate_config?: boolean;
+      /**
+       * Location to fetch certificate config from in case default config is not to be used.
+       * Either this or use_default_certificate_config=true should be provided.
+       */
+      certificate_config_location?: string;
+      /**
+       * TrustChainPath specifies the path to a PEM-formatted file containing the X.509 certificate trust chain.
+       * The file should contain any intermediate certificates needed to connect
+       * the mTLS leaf certificate to a root certificate in the trust store.
+       */
+      trust_chain_path?: string;
     };
   };
   /**
@@ -162,19 +201,20 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
 
       const file = credentialSourceOpts.get('file');
       const url = credentialSourceOpts.get('url');
+      const certificate = credentialSourceOpts.get('certificate');
       const headers = credentialSourceOpts.get('headers');
-      if (file && url) {
+      if ((file && url) || (url && certificate) || (file && certificate)) {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file or url.',
+          'No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.',
         );
-      } else if (file && !url) {
+      } else if (file) {
         this.credentialSourceType = 'file';
         this.subjectTokenSupplier = new FileSubjectTokenSupplier({
           filePath: file,
           formatType: formatType,
           subjectTokenFieldName: formatSubjectTokenFieldName,
         });
-      } else if (!file && url) {
+      } else if (url) {
         this.credentialSourceType = 'url';
         this.subjectTokenSupplier = new UrlSubjectTokenSupplier({
           url: url,
@@ -183,9 +223,19 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
           headers: headers,
           additionalGaxiosOptions: IdentityPoolClient.RETRY_CONFIG,
         });
+      } else if (certificate) {
+        this.credentialSourceType = 'certificate';
+        const certificateSubjecttokensupplier =
+          new CertificateSubjectTokenSupplier({
+            useDefaultCertificateConfig:
+              certificate.use_default_certificate_config,
+            certificateConfigLocation: certificate.certificate_config_location,
+            trustChainPath: certificate.trust_chain_path,
+          });
+        this.subjectTokenSupplier = certificateSubjecttokensupplier;
       } else {
         throw new Error(
-          'No valid Identity Pool "credential_source" provided, must be either file or url.',
+          'No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.',
         );
       }
     }
@@ -198,6 +248,25 @@ export class IdentityPoolClient extends BaseExternalAccountClient {
    * @return A promise that resolves with the external subject token.
    */
   async retrieveSubjectToken(): Promise<string> {
-    return this.subjectTokenSupplier.getSubjectToken(this.supplierContext);
+    const subjectToken = await this.subjectTokenSupplier.getSubjectToken(
+      this.supplierContext,
+    );
+
+    if (this.subjectTokenSupplier instanceof CertificateSubjectTokenSupplier) {
+      const mtlsAgent = await this.subjectTokenSupplier.createMtlsHttpsAgent();
+
+      this.stsCredential = new StsCredentials({
+        tokenExchangeEndpoint: this.getTokenUrl(),
+        clientAuthentication: this.clientAuth,
+        transporter: new Gaxios({agent: mtlsAgent}),
+      });
+
+      this.transporter = new Gaxios({
+        ...(this.transporter.defaults || {}),
+        agent: mtlsAgent,
+      });
+    }
+
+    return subjectToken;
   }
 }

@@ -15,7 +15,11 @@
 import {strict as assert} from 'assert';
 import * as sinon from 'sinon';
 
-import {LRUCache, removeUndefinedValuesInObject} from '../src/util';
+import {
+  isValidFile,
+  LRUCache,
+  removeUndefinedValuesInObject,
+} from '../src/util';
 import {TestUtils} from './utils';
 
 describe('util', () => {
@@ -81,11 +85,23 @@ describe('util', () => {
       assert.equal(lru.get('second'), undefined);
     });
   });
+
+  describe('isValidFilePath', () => {
+    it('should return true when valid file path', async () => {
+      const isValidPath = await isValidFile('./test/fixtures/empty.json');
+      assert.equal(isValidPath, true);
+    });
+
+    it('should return false when invalid file path', async () => {
+      const isValidPath = await isValidFile('abc/pqr');
+      assert.equal(isValidPath, false);
+    });
+  });
 });
 
 describe('util removeUndefinedValuesInObject', () => {
   it('remove undefined type values in object', () => {
-    const object: {[key: string]: any} = {
+    const object: {[key: string]: unknown} = {
       undefined: undefined,
       number: 1,
     };
@@ -94,7 +110,7 @@ describe('util removeUndefinedValuesInObject', () => {
     });
   });
   it('remove undefined string values in object', () => {
-    const object: {[key: string]: any} = {
+    const object: {[key: string]: unknown} = {
       undefined: 'undefined',
       number: 1,
     };

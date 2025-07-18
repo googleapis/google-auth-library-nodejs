@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as fs from 'fs';
+import * as os from 'os';
+import path = require('path');
+
+const WELL_KNOWN_CERTIFICATE_CONFIG_FILE = 'certificate_config.json';
+const CLOUDSDK_CONFIG_DIRECTORY = 'gcloud';
+
 /**
  * A utility for converting snake_case to camelCase.
  *
@@ -241,8 +248,10 @@ export class LRUCache<T> {
 }
 
 // Given and object remove fields where value is undefined.
-export function removeUndefinedValuesInObject(object: {[key: string]: any}): {
-  [key: string]: any;
+export function removeUndefinedValuesInObject(object: {
+  [key: string]: unknown;
+}): {
+  [key: string]: unknown;
 } {
   Object.entries(object).forEach(([key, value]) => {
     if (value === undefined || value === 'undefined') {
@@ -250,4 +259,44 @@ export function removeUndefinedValuesInObject(object: {[key: string]: any}): {
     }
   });
   return object;
+}
+
+/**
+ * Helper to check if a path points to a valid file.
+ */
+export async function isValidFile(filePath: string): Promise<boolean> {
+  try {
+    const stats = await fs.promises.lstat(filePath);
+    return stats.isFile();
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Determines the well-known gcloud location for the certificate config file.
+ * @returns The platform-specific path to the configuration file.
+ * @internal
+ */
+export function getWellKnownCertificateConfigFileLocation(): string {
+  const configDir =
+    process.env.CLOUDSDK_CONFIG ||
+    (_isWindows()
+      ? path.join(process.env.APPDATA || '', CLOUDSDK_CONFIG_DIRECTORY)
+      : path.join(
+          process.env.HOME || '',
+          '.config',
+          CLOUDSDK_CONFIG_DIRECTORY,
+        ));
+
+  return path.join(configDir, WELL_KNOWN_CERTIFICATE_CONFIG_FILE);
+}
+
+/**
+ * Checks if the current operating system is Windows.
+ * @returns True if the OS is Windows, false otherwise.
+ * @internal
+ */
+function _isWindows(): boolean {
+  return os.platform().startsWith('win');
 }
