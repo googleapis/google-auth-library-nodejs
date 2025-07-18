@@ -4,6 +4,18 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.2.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.1.0...v10.2.0) (2025-07-18)
+
+
+### Features
+
+* X509 cert authentication ([#2055](https://github.com/googleapis/google-auth-library-nodejs/issues/2055)) ([6ac9ab4](https://github.com/googleapis/google-auth-library-nodejs/commit/6ac9ab4fd49d64d8315f16d7f2757da04fbeb579))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v30 ([#2052](https://github.com/googleapis/google-auth-library-nodejs/issues/2052)) ([b8adc26](https://github.com/googleapis/google-auth-library-nodejs/commit/b8adc26657eafb6e61622e0da0035e7e791df710))
+
 ## [10.1.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.0.0...v10.1.0) (2025-06-12)
 
 
