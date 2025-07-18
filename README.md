@@ -586,6 +586,65 @@ Where the following variables need to be substituted:
 - `$URL_TO_GET_OIDC_TOKEN`: The URL of the local server endpoint to call to retrieve the OIDC token.
 - `$HEADER_KEY` and `$HEADER_VALUE`: The additional header key/value pairs to pass along the GET request to `$URL_TO_GET_OIDC_TOKEN`, e.g. `Metadata-Flavor=Google`.
 
+### X.509 certificate-sourced credentials
+For [X.509 certificate-sourced credentials](https://cloud.google.com/iam/docs/workload-identity-federation-with-x509-certificates), we use the certificate and private key cryptographic pair used to prove your application's identity. The certificate has a built-in expiration date and must be renewed before that date to maintain access. 
+
+**Generating Configuration Files for X.509 Federation**
+
+To configure X.509 certificate-sourced credentials, you must generate two separate configuration files: a primary **credential configuration file** and a **certificate configuration file**. The `gcloud iam workload-identity-pools create-cred-config` command handles the creation of both.
+
+The location where the certificate configuration file is created depends on whether you use the `--credential-cert-configuration-output-file` flag.
+
+**Default Behavior (Recommended)**
+
+If you omit the `--credential-cert-configuration-output-file` flag, gcloud creates the certificate configuration file at a default, well-known location that client libraries can automatically discover. This is the simplest approach for most use cases.
+
+**Example Command (Default Behavior):**
+```bash
+gcloud iam workload-identity-pools create-cred-config \
+    projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/providers/$PROVIDER_ID \
+    --service-account $SERVICE_ACCOUNT_EMAIL \
+    --credential-cert-path "$PATH_TO_CERTIFICATE" \
+    --credential-cert-private-key-path "$PATH_TO_PRIVATE_KEY" \
+    --credential-cert-trust-chain-path "$PATH_TO_TRUST_CHAIN" \
+    --output-file /path/to/config.json
+```    
+the following variables need to be substituted:
+- `$PROJECT_NUMBER`: The Google Cloud project number.
+- `$POOL_ID`: The workload identity pool ID.
+- `$PROVIDER_ID`: The provider ID.
+- `$SERVICE_ACCOUNT_EMAIL`: The email of the service account to impersonate.
+- `$PATH_TO_CERTIFICATE`: The file path where your leaf X.509 certificate is located.
+- `$PATH_TO_PRIVATE_KEY`: The file path where the corresponding private key (.key) for the leaf certificate is located.
+- `$PATH_TO_TRUST_CHAIN`: Points to the file path of the X.509 certificate trust chain file, containing any intermediate certificates required to complete the trust chain between the leaf certificate and the trust store configured in the Workload Identity Federation pool.
+
+This command results in:
+- `/path/to/config.json`: Created at the path you specified. This file will contain   `"use_default_certificate_config": true` to instruct clients to look for the certificate configuration at the default path.
+- `certificate_config.json`: Created at the default gcloud configuration path, which is typically `~/.config/gcloud/certificate_config.json` on Linux and macOS, or `%APPDATA%\gcloud\certificate_config.json` on Windows.
+
+**Custom Location Behavior**
+
+If you need to store the certificate configuration file in a non-default location, use the `--credential-cert-configuration-output-file` flag.
+
+**Example Command (Custom Location):**
+```bash
+gcloud iam workload-identity-pools create-cred-config \
+    projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/providers/$PROVIDER_ID \
+    --service-account $SERVICE_ACCOUNT_EMAIL \
+    --credential-cert-path "$PATH_TO_CERTIFICATE" \
+    --credential-cert-private-key-path "$PATH_TO_PRIVATE_KEY" \
+    --credential-cert-trust-chain-path "$PATH_TO_TRUST_CHAIN" \
+    --credential-cert-configuration-output-file "/custom/path/cert_config.json" \
+    --output-file /path/to/config.json
+``` 
+
+Use the default location example as a reference to substitute placeholders.
+
+This command results in:
+
+- `/path/to/config.json`: Created at the path you specified. This file will contain a `"certificate_config_location"` field that points to your custom path.
+- `cert_config.json`: Created at `/custom/path/cert_config.json`, as specified by the flag.
+
 ### Accessing resources from an OIDC or SAML2.0 identity provider using a custom supplier
 
 If you want to use OIDC or SAML2.0 that cannot be retrieved using methods supported natively by this library,
