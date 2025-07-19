@@ -24,7 +24,6 @@ import {IdTokenProvider} from './idtokenclient';
 import {GaxiosError} from 'gaxios';
 import {SignBlobResponse} from './googleauth';
 import {originalOrCamelOptions} from '../util';
-import {SERVICE_ACCOUNT_LOOKUP_ENDPOINT} from './trustboundary';
 
 export interface ImpersonatedOptions extends OAuth2ClientOptions {
   /**
@@ -254,19 +253,5 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
     });
 
     return res.data.token;
-  }
-
-  async getTrustBoundaryUrl(): Promise<string> {
-    const targetPrincipal = this.getTargetPrincipal();
-    if (!targetPrincipal) {
-      throw new Error(
-        'TrustBoundary: Error getting tbUrl because of missing targetPrincipal in ImpersonatedClient',
-      );
-    }
-    const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-      '{service_account_email}',
-      encodeURIComponent(targetPrincipal),
-    );
-    return trustBoundaryUrl;
   }
 }

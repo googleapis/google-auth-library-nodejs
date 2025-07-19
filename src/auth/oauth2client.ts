@@ -959,7 +959,7 @@ export class OAuth2Client extends AuthClient {
       const headers = new Headers({
         authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
       });
-      return {headers: await this.addSharedMetadataHeaders(headers)};
+      return {headers: this.addSharedMetadataHeaders(headers)};
     }
 
     // If refreshHandler exists, call processAndValidateRefreshHandler().

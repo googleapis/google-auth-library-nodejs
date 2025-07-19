@@ -335,14 +335,14 @@ export abstract class AuthClient
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
 
-    if (this.trustBoundaryEnabled) {
-      if (this.trustBoundary) {
-        const headerTrustBoundary =
-          this.trustBoundary.encodedLocations === NoOpEncodedLocations
-            ? ''
-            : this.trustBoundary.encodedLocations;
-        headers.set('x-allowed-locations', headerTrustBoundary);
-      }
+    if (this.trustBoundaryEnabled && this.trustBoundary) {
+      //Empty header sent in case trust-boundary has no-op encoded location.
+      headers.set(
+        'x-allowed-locations',
+        this.trustBoundary.encodedLocations === NoOpEncodedLocations
+          ? ''
+          : this.trustBoundary.encodedLocations,
+      );
     }
 
     return headers;
@@ -548,10 +548,19 @@ export abstract class AuthClient
         'TrustBoundary: Error calling lookup endpoint without valid access token',
       );
     }
+
     const headers = new Headers({
       //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
       authorization: 'Bearer ' + accessToken,
     });
+    if (this.trustBoundary) {
+      headers.set(
+        'x-allowed-locations',
+        this.trustBoundary.encodedLocations === NoOpEncodedLocations
+          ? ''
+          : this.trustBoundary.encodedLocations,
+      );
+    }
 
     const opts: GaxiosOptions = {
       ...{

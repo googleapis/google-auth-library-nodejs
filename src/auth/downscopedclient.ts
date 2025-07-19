@@ -244,7 +244,7 @@ export class DownscopedClient extends AuthClient {
     const headers = new Headers({
       authorization: `Bearer ${accessTokenResponse.token}`,
     });
-    return await this.addSharedMetadataHeaders(headers);
+    return this.addSharedMetadataHeaders(headers);
   }
 
   /**
