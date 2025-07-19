@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, DEFAULT_UNIVERSE} from './authclient';
-import {GaxiosOptions} from 'gaxios';
 /**
  * value indicating no trust boundaries enforced
  **/
@@ -46,99 +44,18 @@ export interface TrustBoundaryData {
   encodedLocations: string;
 }
 
-// /**
-//  * Fetches trust boundary data for an authenticated client.
-//  * Handles caching checks and potential fallbacks.
-//  * @param authenticatedClient An authenticated AuthClient instance to make the request.
-//  * @returns A Promise resolving to TrustBoundaryData or empty-string for no-op trust boundaries.
-//  * @throws {Error} If the request fails and there is no cache available.
-//  */
-// export async function getTrustBoundary(
-//   client: AuthClient,
-// ): Promise<TrustBoundaryData | null> {
-//   if (!client.trustBoundaryEnabled) {
-//     return null;
-//   }
-
-//   if (client.universeDomain !== DEFAULT_UNIVERSE) {
-//     return null; // Skipping check for non-default universe domain
-//   }
-
-//   const cachedTB = client.trustBoundary;
-//   if (cachedTB && cachedTB.encodedLocations === NoOpEncodedLocations) {
-//     return cachedTB; //Returning cached No-Op data.
-//   }
-
-//   const trustBoundaryUrl = await client.getTrustBoundaryUrl();
-//   if (!trustBoundaryUrl) {
-//     return null;
-//   }
-
-//   if (!client.credentials.access_token) {
-//     throw new Error(
-//       'TrustBoundary: Error calling lookup endpoint without valid access token',
-//     );
-//   }
-//   const headers = new Headers({
-//     //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
-//     authorization: 'Bearer ' + client.credentials.access_token,
-//   });
-
-//   const opts: GaxiosOptions = {
-//     ...{
-//       retry: true,
-//       retryConfig: {
-//         httpMethodsToRetry: ['GET'],
-//       },
-//     },
-//     headers,
-//     url: trustBoundaryUrl,
-//   };
-
-//   try {
-//     const {data: trustBoundaryData} =
-//       // preferred to client.request to avoid unnecessary retries
-//       await client.transporter.request<TrustBoundaryData>(opts);
-
-//     if (!trustBoundaryData.encodedLocations) {
-//       throw new Error(
-//         'TrustBoundary: Malformed response from lookup endpoint.',
-//       );
-//     }
-
-//     return trustBoundaryData;
-//   } catch (error) {
-//     if (client.trustBoundary) {
-//       return client.trustBoundary; // return cached tb if call to lookup fails
-//     }
-//     throw new Error('TrustBoundary: Failure while getting trust boundaries:', {
-//       cause: error,
-//     });
-//   }
-// }
-
 export function isTrustBoundaryEnabled() {
   const tbEnabled = process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
-
-  // If the environment variable is not defined, it is disabled by default.
   if (tbEnabled === undefined || tbEnabled === null) {
     return false;
   }
-
-  // Use toLowerCase() for case-insensitive comparison of 'true' and 'false'.
   const lowercasedTbEnabled = tbEnabled.toLowerCase();
-
-  // Check for enabled values.
   if (lowercasedTbEnabled === 'true' || tbEnabled === '1') {
     return true;
   }
-
-  // Check for disabled values.
   if (lowercasedTbEnabled === 'false' || tbEnabled === '0') {
     return false;
   }
-
-  // Any other value results in an error.
   throw new Error(
     `Invalid value for GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED environment variable: "${tbEnabled}". Supported values are 'true', '1', 'false', or '0'.`,
   );

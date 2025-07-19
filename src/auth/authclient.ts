@@ -305,7 +305,7 @@ export abstract class AuthClient
    * @throws {Error} If the URL cannot be constructed for a compatible client,
    * for instance, if a required property like a service account email is missing.
    */
-  async getTrustBoundaryUrl(): Promise<string | null> {
+  protected async getTrustBoundaryUrl(): Promise<string | null> {
     return null;
   }
 
@@ -543,7 +543,7 @@ export abstract class AuthClient
 
     const accessToken = tokens.access_token;
 
-    if (!accessToken) {
+    if (!accessToken || this.isExpired(tokens)) {
       throw new Error(
         'TrustBoundary: Error calling lookup endpoint without valid access token',
       );
@@ -587,6 +587,20 @@ export abstract class AuthClient
         },
       );
     }
+  }
+
+  /**
+   * Returns whether the provided credentials are expired or will expire within
+   * eagerRefreshThresholdMillismilliseconds.
+   * If there is no expiry time, assumes the token is not expired or expiring.
+   * @param credentials The credentials to check for expiration.
+   * @return Whether the credentials are expired or not.
+   */
+  protected isExpired(credentials: Credentials = this.credentials): boolean {
+    const now = new Date().getTime();
+    return credentials.expiry_date
+      ? now >= credentials.expiry_date - this.eagerRefreshThresholdMillis
+      : false;
   }
 }
 

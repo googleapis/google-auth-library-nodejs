@@ -683,19 +683,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   }
 
   /**
-   * Returns whether the provided credentials are expired or not.
-   * If there is no expiry time, assumes the token is not expired or expiring.
-   * @param accessToken The credentials to check for expiration.
-   * @return Whether the credentials are expired or not.
-   */
-  private isExpired(accessToken: Credentials): boolean {
-    const now = new Date().getTime();
-    return accessToken.expiry_date
-      ? now >= accessToken.expiry_date - this.eagerRefreshThresholdMillis
-      : false;
-  }
-
-  /**
    * @return The list of scopes for the requested GCP access token.
    */
   private getScopesArray(): string[] {

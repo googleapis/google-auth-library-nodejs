@@ -846,7 +846,6 @@ export class OAuth2Client extends AuthClient {
       delete (tokens as CredentialRequest).expires_in;
     }
     this.emit('tokens', tokens);
-    // this.trustBoundary = await this.refreshTrustBoundary(tokens);
     return {tokens, res};
   }
 
@@ -899,8 +898,7 @@ export class OAuth2Client extends AuthClient {
   }
 
   private async getAccessTokenAsync(): Promise<GetAccessTokenResponse> {
-    const shouldRefresh =
-      !this.credentials.access_token || this.isTokenExpiring();
+    const shouldRefresh = !this.credentials.access_token || this.isExpired();
     if (shouldRefresh) {
       if (!this.credentials.refresh_token) {
         if (this.refreshHandler) {
@@ -956,7 +954,7 @@ export class OAuth2Client extends AuthClient {
       );
     }
 
-    if (thisCreds.access_token && !this.isTokenExpiring()) {
+    if (thisCreds.access_token && !this.isExpired()) {
       thisCreds.token_type = thisCreds.token_type || 'Bearer';
       const headers = new Headers({
         authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
@@ -1588,17 +1586,5 @@ export class OAuth2Client extends AuthClient {
       return accessTokenResponse;
     }
     return;
-  }
-
-  /**
-   * Returns true if a token is expired or will expire within
-   * eagerRefreshThresholdMillismilliseconds.
-   * If there is no expiry time, assumes the token is not expired or expiring.
-   */
-  protected isTokenExpiring(): boolean {
-    const expiryDate = this.credentials.expiry_date;
-    return expiryDate
-      ? expiryDate <= new Date().getTime() + this.eagerRefreshThresholdMillis
-      : false;
   }
 }

@@ -27,7 +27,6 @@ import {
   AuthClientOptions,
   GetAccessTokenResponse,
   BodyResponseCallback,
-  DEFAULT_UNIVERSE,
 } from './authclient';
 
 import * as sts from './stscredentials';
@@ -161,12 +160,6 @@ export class DownscopedClient extends AuthClient {
       this.authClient = options.authClient;
       this.credentialAccessBoundary = options.credentialAccessBoundary;
     }
-
-    // tb is only enabled if the GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED is truthy
-    // and sourceClient has a valid universe.
-    this.trustBoundaryEnabled =
-      this.trustBoundaryEnabled &&
-      this.authClient.universeDomain === DEFAULT_UNIVERSE;
 
     // Check 1-10 Access Boundary Rules are defined within Credential Access
     // Boundary.
@@ -387,19 +380,5 @@ export class DownscopedClient extends AuthClient {
     });
     // Return the cached access token.
     return this.cachedDownscopedAccessToken;
-  }
-
-  /**
-   * Returns whether the provided credentials are expired or not.
-   * If there is no expiry time, assumes the token is not expired or expiring.
-   * @param downscopedAccessToken The credentials to check for expiration.
-   * @return Whether the credentials are expired or not.
-   */
-  private isExpired(downscopedAccessToken: Credentials): boolean {
-    const now = new Date().getTime();
-    return downscopedAccessToken.expiry_date
-      ? now >=
-          downscopedAccessToken.expiry_date - this.eagerRefreshThresholdMillis
-      : false;
   }
 }

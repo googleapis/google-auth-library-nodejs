@@ -271,7 +271,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
   protected async refreshTokenNoCache(): Promise<GetTokenResponse> {
     const gtoken = this.createGToken();
     const token = await gtoken.getToken({
-      forceRefresh: this.isTokenExpiring(),
+      forceRefresh: this.isExpired(),
     });
 
     const tokens = {
@@ -281,7 +281,6 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       id_token: gtoken.idToken,
     };
     this.emit('tokens', tokens);
-    this.trustBoundary = await this.refreshTrustBoundary(tokens);
     return {res: null, tokens};
   }
 
