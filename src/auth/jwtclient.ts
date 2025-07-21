@@ -25,6 +25,7 @@ import {
   RequestMetadataResponse,
 } from './oauth2client';
 import {DEFAULT_UNIVERSE} from './authclient';
+import {SERVICE_ACCOUNT_LOOKUP_ENDPOINT} from './trustboundary';
 
 export interface JWTOptions extends OAuth2ClientOptions {
   /**
@@ -279,6 +280,7 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       expiry_date: gtoken.expiresAt,
       id_token: gtoken.idToken,
     };
+    this.trustBoundary = await this.refreshTrustBoundary(tokens);
     this.emit('tokens', tokens);
     return {res: null, tokens};
   }
@@ -407,5 +409,18 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       return {private_key: creds.privateKey, client_email: creds.clientEmail};
     }
     throw new Error('A key or a keyFile must be provided to getCredentials.');
+  }
+
+  protected async getTrustBoundaryUrl(): Promise<string> {
+    if (!this.email) {
+      throw new Error(
+        'TrustBoundary: An email address is required for trust boundary lookups but was not provided in the JwtClient options.',
+      );
+    }
+    const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+      '{service_account_email}',
+      encodeURIComponent(this.email),
+    );
+    return trustBoundaryUrl;
   }
 }

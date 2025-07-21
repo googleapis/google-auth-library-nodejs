@@ -141,7 +141,7 @@ export class Compute extends OAuth2Client {
     }
   }
 
-  async getTrustBoundaryUrl(): Promise<string> {
+  protected async getTrustBoundaryUrl(): Promise<string> {
     const email = await this.resolveServiceAccountEmail();
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
       '{service_account_email}',
