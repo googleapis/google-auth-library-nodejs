@@ -549,18 +549,12 @@ export abstract class AuthClient
       );
     }
 
-    const headers = new Headers({
-      //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
-      authorization: 'Bearer ' + accessToken,
-    });
-    if (this.trustBoundary) {
-      headers.set(
-        'x-allowed-locations',
-        this.trustBoundary.encodedLocations === NoOpEncodedLocations
-          ? ''
-          : this.trustBoundary.encodedLocations,
-      );
-    }
+    const headers = this.addSharedMetadataHeaders(
+      new Headers({
+        //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
+        authorization: 'Bearer ' + accessToken,
+      }),
+    );
 
     const opts: GaxiosOptions = {
       ...{
@@ -575,7 +569,8 @@ export abstract class AuthClient
 
     try {
       const {data: trustBoundaryData} =
-        // preferred to client.request to avoid unnecessary retries
+        // Use the transporter directly here. A standard `client.request` would
+        // re-trigger a token refresh, creating an infinite loop.
         await this.transporter.request<TrustBoundaryData>(opts);
 
       if (!trustBoundaryData.encodedLocations) {
