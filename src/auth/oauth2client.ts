@@ -1121,7 +1121,7 @@ export class OAuth2Client extends AuthClient {
       const r = await this.getRequestMetadataAsync();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
-      this.addCommonHeaders(opts.headers, r.headers);
+      this.copyCommonHeaders(opts.headers, r.headers);
 
       if (this.apiKey) {
         opts.headers.set('X-Goog-Api-Key', this.apiKey);

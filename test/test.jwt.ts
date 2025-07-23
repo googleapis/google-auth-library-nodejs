@@ -22,6 +22,11 @@ import * as sinon from 'sinon';
 import {GoogleAuth, JWT} from '../src';
 import {CredentialRequest, JWTInput} from '../src/auth/credentials';
 import * as jwtaccess from '../src/auth/jwtaccess';
+import {
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+} from '../src/auth/trustboundary';
+import {GoogleToken} from 'gtoken';
 
 function removeBearerFromAuthorizationHeader(headers: Headers): string {
   return (headers.get('authorization') || '').replace('Bearer ', '');
@@ -1238,6 +1243,81 @@ describe('jwt', () => {
       const headers = await jwt.getRequestHeaders(testUri);
       scope.done();
       assert.strictEqual(headers.get('authorization'), want);
+    });
+  });
+
+  describe('trust boundaries', () => {
+    let sandbox: sinon.SinonSandbox;
+    const SERVICE_ACCOUNT_EMAIL = 'service-account@example.com';
+    const MOCK_ACCESS_TOKEN = 'abc123';
+    const MOCK_AUTH_HEADER = `Bearer ${MOCK_ACCESS_TOKEN}`;
+
+    const EXPECTED_TB_DATA: TrustBoundaryData = {
+      locations: ['sadad', 'asdad'],
+      encodedLocations: '000x9',
+    };
+
+    function setupTrustBoundaryNock(
+      email: string,
+      trustBoundaryData: TrustBoundaryData = EXPECTED_TB_DATA,
+    ): nock.Scope {
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(email),
+      );
+      return nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, trustBoundaryData);
+    }
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
+    });
+
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+      sandbox.restore();
+      nock.cleanAll();
+    });
+
+    it('should fetch trust boundaries successfully', async () => {
+      const jwt = new JWT({
+        email: SERVICE_ACCOUNT_EMAIL,
+        keyFile: PEM_PATH,
+        scopes: ['http://bar', 'http://foo'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+
+      const scopes = [
+        createGTokenMock({access_token: MOCK_ACCESS_TOKEN}),
+        setupTrustBoundaryNock(SERVICE_ACCOUNT_EMAIL),
+      ];
+      const headers = await jwt.getRequestHeaders();
+      assert.deepStrictEqual(
+        headers.get('x-allowed-locations'),
+        EXPECTED_TB_DATA.encodedLocations,
+      );
+      scopes.forEach(s => s.done());
+    });
+
+    it('should fail getTrustBoundaryUrl if no email is passed', async () => {
+      const jwt = new JWT({
+        keyFile: PEM_PATH,
+        scopes: ['http://bar', 'http://foo'],
+        subject: 'bar@subjectaccount.com',
+      });
+      jwt.gtoken = new GoogleToken({email: 'adas@GA.com', keyFile: PEM_PATH});
+      jwt.credentials = {refresh_token: 'jwt-placeholder'};
+
+      const scopes = [createGTokenMock({access_token: MOCK_ACCESS_TOKEN})];
+      await assert.rejects(
+        jwt.getRequestHeaders(),
+        /TrustBoundary: An email address is required for trust boundary lookups but was not provided in the JwtClient options./,
+      );
+      scopes.forEach(s => s.done());
     });
   });
 });

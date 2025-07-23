@@ -357,7 +357,10 @@ export abstract class AuthClient
    * @param source the headers to source from
    * @returns the target headers
    */
-  protected addCommonHeaders<T extends Headers>(target: T, source: Headers): T {
+  protected copyCommonHeaders<T extends Headers>(
+    target: T,
+    source: Headers,
+  ): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');
     const xGoogAllowedLocs = source.get('x-allowed-locations');

@@ -259,7 +259,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
       const requestHeaders = await this.getRequestHeaders();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
-      this.addCommonHeaders(opts.headers, requestHeaders);
+      this.copyCommonHeaders(opts.headers, requestHeaders);
 
       response = await this.transporter.request<T>(opts);
     } catch (e) {
