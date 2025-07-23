@@ -357,7 +357,7 @@ export abstract class AuthClient
    * @param source the headers to source from
    * @returns the target headers
    */
-  protected copyCommonHeaders<T extends Headers>(
+  protected applyHeadersFromSource<T extends Headers>(
     target: T,
     source: Headers,
   ): T {
