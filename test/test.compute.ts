@@ -17,7 +17,11 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
-import {Compute} from '../src';
+import {Compute, gcpMetadata} from '../src';
+import {
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 
@@ -260,5 +264,96 @@ describe('compute', () => {
     }
 
     assert.fail('failed to throw');
+  });
+
+  describe('trust boundaries', () => {
+    let sandbox: sinon.SinonSandbox;
+
+    const MOCK_ACCESS_TOKEN = 'abc123';
+    const MOCK_AUTH_HEADER = `Bearer ${MOCK_ACCESS_TOKEN}`;
+    const EXPECTED_TB_DATA: TrustBoundaryData = {
+      locations: ['sadad', 'asdad'],
+      encodedLocations: '000x9',
+    };
+
+    function setupTokenNock(email: string | 'default' = 'default'): nock.Scope {
+      const tokenPath =
+        email === 'default'
+          ? `${BASE_PATH}/instance/service-accounts/default/token`
+          : `${BASE_PATH}/instance/service-accounts/${email}/token`;
+      return nock(HOST_ADDRESS)
+        .get(tokenPath)
+        .reply(
+          200,
+          {access_token: MOCK_ACCESS_TOKEN, expires_in: 10000},
+          HEADERS,
+        );
+    }
+
+    function setupTrustBoundaryNock(
+      email: string,
+      trustBoundaryData: TrustBoundaryData = EXPECTED_TB_DATA,
+    ): nock.Scope {
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(email),
+      );
+      return nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, trustBoundaryData);
+    }
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
+    });
+
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+      sandbox.restore();
+      nock.cleanAll();
+    });
+
+    it('refreshTrustBoundary should use the email from metadataServer if no serviceAccountEmail passed', async () => {
+      const compute = new Compute();
+      const fakeEmail = 'fake-default-sa@developer.gserviceaccount.com';
+      const metadataStub = sandbox.stub(gcpMetadata, 'instance');
+      metadataStub.callThrough();
+      metadataStub
+        .withArgs('service-accounts/default/email')
+        .resolves(fakeEmail);
+
+      const scopes = [
+        setupTokenNock('default'),
+        setupTrustBoundaryNock(fakeEmail),
+        mockExample(),
+      ];
+
+      await compute.request({url});
+
+      assert.deepStrictEqual(compute.trustBoundary, EXPECTED_TB_DATA);
+      scopes.forEach(s => s.done());
+    });
+
+    it('refreshTrustBoundary should throw when gcpMetadata call fails', async () => {
+      const compute = new Compute();
+      const scopes = [setupTokenNock()];
+
+      const metadataStub = sandbox.stub(gcpMetadata, 'instance');
+      metadataStub.callThrough();
+      metadataStub
+        .withArgs('service-accounts/default/email')
+        .throws(new Error('sdfs'));
+
+      await assert.rejects(
+        compute.request({url}),
+        new RegExp(
+          'TrustBoundary: Failed to retrieve default service account email from metadata server.',
+        ),
+      );
+
+      scopes.forEach(s => s.done());
+    });
   });
 });
