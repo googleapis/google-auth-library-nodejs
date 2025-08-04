@@ -58,6 +58,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
+      - run: node --version
       - run: npm install
       - run: npm run lint
   docs:
