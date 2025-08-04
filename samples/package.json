@@ -16,7 +16,7 @@
     "@google-cloud/language": "^7.0.0",
     "@google-cloud/storage": "^7.0.0",
     "@googleapis/iam": "^30.0.0",
-    "google-auth-library": "^10.2.0",
+    "google-auth-library": "^10.2.1",
     "node-fetch": "^2.3.0",
     "open": "^9.0.0",
     "server-destroy": "^1.0.1"

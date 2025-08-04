@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.2.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.2.0...v10.2.1) (2025-08-01)
+
+
+### Bug Fixes
+
+* Pin nock and typescript dependencies to fix window.crypto.subtle.verify signature argument type ([#2106](https://github.com/googleapis/google-auth-library-nodejs/issues/2106)) ([afc3bc8](https://github.com/googleapis/google-auth-library-nodejs/commit/afc3bc8f000c2794df626419515e87017b0dd655))
+
 ## [10.2.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.1.0...v10.2.0) (2025-07-18)
 
 
