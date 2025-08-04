@@ -54,7 +54,7 @@ export class IdTokenClient extends OAuth2Client {
     if (
       !this.credentials.id_token ||
       !this.credentials.expiry_date ||
-      this.isTokenExpiring()
+      this.isExpired()
     ) {
       const idToken = await this.idTokenProvider.fetchIdToken(
         this.targetAudience,

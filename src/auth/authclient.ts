@@ -20,7 +20,11 @@ import {OriginalAndCamel, originalOrCamelOptions} from '../util';
 import {log as makeLog} from 'google-logging-utils';
 
 import {PRODUCT_NAME, USER_AGENT} from '../shared.cjs';
-
+import {
+  isTrustBoundaryEnabled,
+  NoOpEncodedLocations,
+  TrustBoundaryData,
+} from './trustboundary';
 /**
  * An interface for enforcing `fetch`-type compliance.
  *
@@ -232,6 +236,8 @@ export abstract class AuthClient
   eagerRefreshThresholdMillis = DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS;
   forceRefreshOnFailure = false;
   universeDomain = DEFAULT_UNIVERSE;
+  trustBoundaryEnabled: boolean;
+  trustBoundary?: TrustBoundaryData | null;
 
   /**
    * Symbols that can be added to GaxiosOptions to specify the method name that is
@@ -254,6 +260,8 @@ export abstract class AuthClient
     this.quotaProjectId = options.get('quota_project_id');
     this.credentials = options.get('credentials') ?? {};
     this.universeDomain = options.get('universe_domain') ?? DEFAULT_UNIVERSE;
+    this.trustBoundaryEnabled = isTrustBoundaryEnabled();
+    this.trustBoundary = null;
 
     // Shared client options
     this.transporter = opts.transporter ?? new Gaxios(opts.transporterOptions);
@@ -362,6 +370,18 @@ export abstract class AuthClient
   }>;
 
   /**
+   * Constructs the trust boundary lookup URL for the client.
+   *
+   * @return The trust boundary URL string, or `null` if the client type
+   * does not support trust boundaries.
+   * @throws {Error} If the URL cannot be constructed for a compatible client,
+   * for instance, if a required property like a service account email is missing.
+   */
+  protected async getTrustBoundaryUrl(): Promise<string | null> {
+    return null;
+  }
+
+  /**
    * Sets the auth credentials.
    */
   setCredentials(credentials: Credentials) {
@@ -386,23 +406,36 @@ export abstract class AuthClient
     ) {
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
+
+    if (this.trustBoundaryEnabled && this.trustBoundary) {
+      //Empty header sent in case trust-boundary has no-op encoded location.
+      headers.set(
+        'x-allowed-locations',
+        this.trustBoundary.encodedLocations === NoOpEncodedLocations
+          ? ''
+          : this.trustBoundary.encodedLocations,
+      );
+    }
+
     return headers;
   }
 
   /**
-   * Adds the `x-goog-user-project` and `authorization` headers to the target Headers
+   * Adds the `x-goog-user-project`, `authorization`, and 'x-allowed-locations'
+   * headers to the target Headers
    * object, if they exist on the source.
    *
    * @param target the headers to target
    * @param source the headers to source from
    * @returns the target headers
    */
-  protected addUserProjectAndAuthHeaders<T extends Headers>(
+  protected applyHeadersFromSource<T extends Headers>(
     target: T,
     source: Headers,
   ): T {
     const xGoogUserProject = source.get('x-goog-user-project');
     const authorizationHeader = source.get('authorization');
+    const xGoogAllowedLocs = source.get('x-allowed-locations');
 
     if (xGoogUserProject) {
       target.set('x-goog-user-project', xGoogUserProject);
@@ -410,6 +443,10 @@ export abstract class AuthClient
 
     if (authorizationHeader) {
       target.set('authorization', authorizationHeader);
+    }
+
+    if (xGoogAllowedLocs || xGoogAllowedLocs === '') {
+      target.set('x-allowed-locations', xGoogAllowedLocs);
     }
 
     return target;
@@ -548,6 +585,101 @@ export abstract class AuthClient
         httpMethodsToRetry: ['GET', 'PUT', 'POST', 'HEAD', 'OPTIONS', 'DELETE'],
       },
     };
+  }
+
+  /**
+   * Refreshes trust boundary data for an authenticated client.
+   * Handles caching checks and potential fallbacks.
+   * @param tokens The refreshed credentials containing access token to call the trust boundary endpoint.
+   * @returns A Promise resolving to TrustBoundaryData or empty-string for no-op trust boundaries.
+   * @throws {Error} If the request fails and there is no cache available.
+   */
+  protected async refreshTrustBoundary(
+    tokens: Credentials,
+  ): Promise<TrustBoundaryData | null> {
+    if (!this.trustBoundaryEnabled) {
+      return null;
+    }
+
+    if (this.universeDomain !== DEFAULT_UNIVERSE) {
+      // Skipping check for non-default universe domain as this feature is only supported in GDU
+      return null;
+    }
+
+    const cachedTB = this.trustBoundary;
+    if (cachedTB && cachedTB.encodedLocations === NoOpEncodedLocations) {
+      return cachedTB;
+    }
+
+    const trustBoundaryUrl = await this.getTrustBoundaryUrl();
+    if (!trustBoundaryUrl) {
+      return null;
+    }
+
+    const accessToken = tokens.access_token;
+
+    if (!accessToken || this.isExpired(tokens)) {
+      throw new Error(
+        'TrustBoundary: Error calling lookup endpoint without valid access token',
+      );
+    }
+
+    const headers = this.addSharedMetadataHeaders(
+      new Headers({
+        //we can directly pass the access_token as the trust boundaries are always fetched after token refresh
+        authorization: 'Bearer ' + accessToken,
+      }),
+    );
+
+    const opts: GaxiosOptions = {
+      ...{
+        retry: true,
+        retryConfig: {
+          httpMethodsToRetry: ['GET'],
+        },
+      },
+      headers,
+      url: trustBoundaryUrl,
+    };
+
+    try {
+      const {data: trustBoundaryData} =
+        // Use the transporter directly here. A standard `client.request` would
+        // re-trigger a token refresh, creating an infinite loop.
+        await this.transporter.request<TrustBoundaryData>(opts);
+
+      if (!trustBoundaryData.encodedLocations) {
+        throw new Error(
+          'TrustBoundary: Malformed response from lookup endpoint.',
+        );
+      }
+
+      return trustBoundaryData;
+    } catch (error) {
+      if (this.trustBoundary) {
+        return this.trustBoundary; // return cached tb if call to lookup fails
+      }
+      throw new Error(
+        'TrustBoundary: Failure while getting trust boundaries:',
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+
+  /**
+   * Returns whether the provided credentials are expired or will expire within
+   * eagerRefreshThresholdMillismilliseconds.
+   * If there is no expiry time, assumes the token is not expired or expiring.
+   * @param credentials The credentials to check for expiration.
+   * @return Whether the credentials are expired or not.
+   */
+  protected isExpired(credentials: Credentials = this.credentials): boolean {
+    const now = new Date().getTime();
+    return credentials.expiry_date
+      ? now >= credentials.expiry_date - this.eagerRefreshThresholdMillis
+      : false;
   }
 }
 

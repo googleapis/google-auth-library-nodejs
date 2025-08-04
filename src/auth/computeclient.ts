@@ -21,6 +21,7 @@ import {
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
+import {SERVICE_ACCOUNT_LOOKUP_ENDPOINT} from './trustboundary';
 
 export interface ComputeOptions extends OAuth2ClientOptions {
   /**
@@ -85,10 +86,12 @@ export class Compute extends OAuth2Client {
       throw e;
     }
     const tokens = data as Credentials;
+
     if (data && data.expires_in) {
       tokens.expiry_date = new Date().getTime() + data.expires_in * 1000;
       delete (tokens as CredentialRequest).expires_in;
     }
+    this.trustBoundary = await this.refreshTrustBoundary(data);
     this.emit('tokens', tokens);
     return {tokens, res: null};
   }
@@ -135,6 +138,39 @@ export class Compute extends OAuth2Client {
           'Engine instance does not have any permission scopes specified: ' +
           e.message;
       }
+    }
+  }
+
+  protected async getTrustBoundaryUrl(): Promise<string> {
+    const email = await this.resolveServiceAccountEmail();
+    const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+      '{service_account_email}',
+      encodeURIComponent(email),
+    );
+    return trustBoundaryUrl;
+  }
+
+  /**
+   * Resolves the service account email. If the email is set to 'default',
+   * it fetches the email from the GCE metadata server.
+   * @returns A promise that resolves with the service account email.
+   */
+  private async resolveServiceAccountEmail(): Promise<string> {
+    if (this.serviceAccountEmail !== 'default') {
+      // If a specific email is provided, return it directly.
+      return this.serviceAccountEmail;
+    }
+
+    // Otherwise, fetch the default email from the metadata server.
+    try {
+      return await gcpMetadata.instance('service-accounts/default/email');
+    } catch (e) {
+      throw new Error(
+        'TrustBoundary: Failed to retrieve default service account email from metadata server.',
+        {
+          cause: e,
+        },
+      );
     }
   }
 }

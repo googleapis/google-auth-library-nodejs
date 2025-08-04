@@ -502,7 +502,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       const requestHeaders = await this.getRequestHeaders();
       opts.headers = Gaxios.mergeHeaders(opts.headers);
 
-      this.addUserProjectAndAuthHeaders(opts.headers, requestHeaders);
+      this.applyHeadersFromSource(opts.headers, requestHeaders);
 
       response = await this.transporter.request<T>(opts);
     } catch (e) {
@@ -623,6 +623,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       token_type: 'Bearer',
       id_token: null,
     });
+
     // Return the cached access token.
     return this.cachedAccessToken;
   }
@@ -680,19 +681,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       expiry_date: new Date(successResponse.expireTime).getTime(),
       res: response,
     };
-  }
-
-  /**
-   * Returns whether the provided credentials are expired or not.
-   * If there is no expiry time, assumes the token is not expired or expiring.
-   * @param accessToken The credentials to check for expiration.
-   * @return Whether the credentials are expired or not.
-   */
-  private isExpired(accessToken: Credentials): boolean {
-    const now = new Date().getTime();
-    return accessToken.expiry_date
-      ? now >= accessToken.expiry_date - this.eagerRefreshThresholdMillis
-      : false;
   }
 
   /**

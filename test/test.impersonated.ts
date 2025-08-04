@@ -19,6 +19,11 @@ import * as nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
 import {Impersonated, JWT, UserRefreshClient} from '../src';
 import {CredentialRequest} from '../src/auth/credentials';
+import {
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  TrustBoundaryData,
+} from '../src/auth/trustboundary';
+import sinon = require('sinon');
 
 const PEM_PATH = './test/fixtures/private.pem';
 
@@ -567,5 +572,125 @@ describe('impersonated', () => {
     assert.equal(resp.keyId, expectedKeyID);
     assert.equal(resp.signedBlob, expectedSignedBlob);
     scopes.forEach(s => s.done());
+  });
+
+  describe('trust boundaries', () => {
+    let sandbox: sinon.SinonSandbox;
+    const SOURCE_EMAIL = 'foo@serviceaccount.com';
+    const TARGET_PRINCIPAL_EMAIL = 'target@project.iam.gserviceaccount.com';
+    const MOCK_ACCESS_TOKEN = 'abc123';
+    const MOCK_AUTH_HEADER = `Bearer ${MOCK_ACCESS_TOKEN}`;
+
+    const EXPECTED_TB_DATA: TrustBoundaryData = {
+      locations: ['sadad', 'asdad'],
+      encodedLocations: '000x9',
+    };
+
+    function setupTrustBoundaryNock(
+      email: string,
+      trustBoundaryData: TrustBoundaryData = EXPECTED_TB_DATA,
+    ): nock.Scope {
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(email),
+      );
+      return nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, trustBoundaryData);
+    }
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
+    });
+
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+      sandbox.restore();
+      nock.cleanAll();
+    });
+
+    it('should fetch trust boundaries successfully', async () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const impersonated = new Impersonated({
+        sourceClient: createSampleJWTClient(),
+        targetPrincipal: TARGET_PRINCIPAL_EMAIL,
+        lifetime: 30,
+        delegates: [],
+        targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      });
+
+      const scopes = [
+        createGTokenMock({
+          access_token: MOCK_ACCESS_TOKEN,
+        }),
+        nock('https://iamcredentials.googleapis.com')
+          .post(
+            '/v1/projects/-/serviceAccounts/target@project.iam.gserviceaccount.com:generateAccessToken',
+            (body: ImpersonatedCredentialRequest) => {
+              assert.strictEqual(body.lifetime, '30s');
+              assert.deepStrictEqual(body.delegates, []);
+              assert.deepStrictEqual(body.scope, [
+                'https://www.googleapis.com/auth/cloud-platform',
+              ]);
+              return true;
+            },
+          )
+          .reply(200, {
+            accessToken: MOCK_ACCESS_TOKEN,
+            expireTime: tomorrow.toISOString(),
+          }),
+        setupTrustBoundaryNock(SOURCE_EMAIL),
+        setupTrustBoundaryNock(TARGET_PRINCIPAL_EMAIL),
+      ];
+      const headers = await impersonated.getRequestHeaders();
+      assert.deepStrictEqual(
+        headers.get('x-allowed-locations'),
+        EXPECTED_TB_DATA.encodedLocations,
+      );
+      scopes.forEach(s => s.done());
+    });
+
+    it('should fail when no target principal is specified', async () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const impersonated = new Impersonated({
+        sourceClient: createSampleJWTClient(),
+        // targetPrincipal: TARGET_PRINCIPAL_EMAIL,
+        lifetime: 30,
+        delegates: [],
+        targetScopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      });
+
+      const scopes = [
+        createGTokenMock({
+          access_token: MOCK_ACCESS_TOKEN,
+        }),
+        nock('https://iamcredentials.googleapis.com')
+          .post(
+            '/v1/projects/-/serviceAccounts/:generateAccessToken',
+            (body: ImpersonatedCredentialRequest) => {
+              assert.strictEqual(body.lifetime, '30s');
+              assert.deepStrictEqual(body.delegates, []);
+              assert.deepStrictEqual(body.scope, [
+                'https://www.googleapis.com/auth/cloud-platform',
+              ]);
+              return true;
+            },
+          )
+          .reply(200, {
+            accessToken: MOCK_ACCESS_TOKEN,
+            expireTime: tomorrow.toISOString(),
+          }),
+        setupTrustBoundaryNock(SOURCE_EMAIL),
+      ];
+      await assert.rejects(
+        impersonated.getRequestHeaders(),
+        /TrustBoundary: Error getting tbUrl because of missing targetPrincipal in ImpersonatedClient/,
+      );
+      scopes.forEach(s => s.done());
+    });
   });
 });
