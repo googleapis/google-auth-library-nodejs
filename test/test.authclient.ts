@@ -28,7 +28,6 @@ import {snakeToCamel} from '../src/util';
 import {PRODUCT_NAME, USER_AGENT} from '../src/shared.cjs';
 import * as logging from 'google-logging-utils';
 import {BASE_PATH, HOST_ADDRESS, HEADERS} from 'gcp-metadata';
-import nock = require('nock');
 import sinon = require('sinon');
 import {
   TrustBoundaryData,
