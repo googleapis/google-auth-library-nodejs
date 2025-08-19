@@ -590,21 +590,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     const additionalHeaders = new Headers({
       'x-goog-api-client': this.getMetricsHeaderValue(),
     });
-
-    if (this.trustBoundaryEnabled) {
-      const trustBoundaryHeader = this.getTrustBoundaryHeader();
-      // add trust boundary headers to call STS endpoint if they exist
-      if (trustBoundaryHeader !== null) {
-        additionalHeaders.set('x-allowed-locations', trustBoundaryHeader);
-      } else {
-        // else add IDNS headers
-        additionalHeaders.set(
-          'x-sts-api-identity-pool',
-          this.getIDNSHeader(this.audience),
-        );
-      }
-    }
-
     const stsResponse = await this.stsCredential.exchangeToken(
       stsCredentialsOptions,
       additionalHeaders,
@@ -636,7 +621,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     delete (this.credentials as CredentialsWithResponse).res;
 
     this.trustBoundary = await this.refreshTrustBoundary(this.credentials);
-
     // Trigger tokens event to notify external listeners.
     this.emit('tokens', {
       refresh_token: null,
@@ -693,16 +677,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         lifetime: this.serviceAccountImpersonationLifetime + 's',
       },
     };
-
-    // Add trust boundary headers if available
-    const trustBoundaryHeader = this.getTrustBoundaryHeader();
-    if (trustBoundaryHeader !== null) {
-      opts.headers = {
-        ...opts.headers,
-        'x-allowed-locations': trustBoundaryHeader,
-      };
-    }
-
     AuthClient.setMethodName(opts, 'getImpersonatedAccessToken');
     const response =
       await this.transporter.request<IamGenerateAccessTokenResponse>(opts);
@@ -811,28 +785,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
     throw new RangeError(
       `TrustBoundary: Invalid audience provided: "${this.audience}" does not correspond to workforce or workload`,
-    );
-  }
-
-  /**
-   * Returns the IDNS header to be included in call to STS endpoint for routing.
-   * The IDNS header is used during the first token-refresh,
-   * in place of the trust-boundary which is not yet available.
-   * @param audience The STS audience used to determine the pool-id.
-   * @return The Identity Pool header to be sent to STS. For example:
-   * * For Workforce ==> //iam.googleapis.com/locations/global/workforcePools/$WORKFORCE_POOL_ID
-   * * For Workload ==> //iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID
-   */
-  protected getIDNSHeader(audience: string): string {
-    const regex = /^(.*)\/providers\/[^/]+$/;
-    const match = audience.match(regex);
-
-    if (match) {
-      const stsIdentityPoolHeader = match[1];
-      return stsIdentityPoolHeader;
-    }
-    throw new RangeError(
-      `TrustBoundary: Cannot fetch IDNS header from invalid audience provided: "${this.audience}". Does not correspond to workforce or workload.`,
     );
   }
 }
