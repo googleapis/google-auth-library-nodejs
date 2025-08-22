@@ -716,10 +716,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   }
 
   /**
-   * Returns the workforce identity pool-id if it is determinable
+   * Returns the workforce identity pool id if it is determinable
    * from the audience resource name.
-   * @param audience The STS audience used to determine the pool-id.
-   * @return The pool-id associated with the workforce identity pool, if
+   * @param audience The STS audience used to determine the pool id.
+   * @return The pool id associated with the workforce identity pool, if
    *   this can be determined from the STS audience field. Otherwise, null is
    *   returned.
    */
@@ -733,10 +733,10 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   }
 
   /**
-   * Returns the workload identity pool-id if it is determinable
+   * Returns the workload identity pool id if it is determinable
    * from the audience resource name.
-   * @param audience The STS audience used to determine the pool-id.
-   * @return The pool-id associated with the workload identity pool, if
+   * @param audience The STS audience used to determine the pool id.
+   * @return The pool id associated with the workload identity pool, if
    *   this can be determined from the STS audience field. Otherwise, null is
    *   returned.
    */
@@ -784,7 +784,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
 
     throw new RangeError(
-      `TrustBoundary: Invalid audience provided: "${this.audience}" does not correspond to workforce or workload`,
+      `TrustBoundary: Invalid audience provided: "${this.audience}" does not correspond to a workforce or workload pool.`,
     );
   }
 }
