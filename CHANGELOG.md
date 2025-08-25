@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.3.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.2.1...v10.3.0) (2025-08-25)
+
+
+### Features
+
+* Add detection for Cloud Run Jobs ([#2120](https://github.com/googleapis/google-auth-library-nodejs/issues/2120)) ([b659124](https://github.com/googleapis/google-auth-library-nodejs/commit/b659124b0a5f0071dcf74b6b48b252d371fed97b))
+
 ## [10.2.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.2.0...v10.2.1) (2025-08-01)
 
 
