@@ -20,6 +20,7 @@ export enum GCPEnv {
   CLOUD_FUNCTIONS = 'CLOUD_FUNCTIONS',
   COMPUTE_ENGINE = 'COMPUTE_ENGINE',
   CLOUD_RUN = 'CLOUD_RUN',
+  CLOUD_RUN_JOBS = 'CLOUD_RUN_JOBS',
   NONE = 'NONE',
 }
 
@@ -48,6 +49,8 @@ async function getEnvMemoized(): Promise<GCPEnv> {
       env = GCPEnv.KUBERNETES_ENGINE;
     } else if (isCloudRun()) {
       env = GCPEnv.CLOUD_RUN;
+    } else if (isCloudRunJob()) {
+      env = GCPEnv.CLOUD_RUN_JOBS;
     } else {
       env = GCPEnv.COMPUTE_ENGINE;
     }
@@ -72,6 +75,10 @@ function isCloudFunction() {
  */
 function isCloudRun() {
   return !!process.env.K_CONFIGURATION;
+}
+
+function isCloudRunJob() {
+  return !!process.env.CLOUD_RUN_JOB;
 }
 
 async function isKubernetesEngine() {

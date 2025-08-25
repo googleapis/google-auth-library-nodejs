@@ -1449,6 +1449,14 @@ describe('googleauth', () => {
       assert.strictEqual(env, envDetect.GCPEnv.CLOUD_RUN);
     });
 
+    it('should get the current environment if Cloud Run Jobs', async () => {
+      envDetect.clear();
+      mockEnvVar('CLOUD_RUN_JOB', 'KITTY');
+      const {auth} = mockGCE();
+      const env = await auth.getEnv();
+      assert.strictEqual(env, envDetect.GCPEnv.CLOUD_RUN_JOBS);
+    });
+
     it('should make the request via `#fetch`', async () => {
       const url = 'http://example.com';
       const {auth, scopes} = mockGCE();
