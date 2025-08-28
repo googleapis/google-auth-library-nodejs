@@ -17,7 +17,6 @@ import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import * as qs from 'querystring';
-import {assertGaxiosResponsePresent, getAudience} from './externalclienthelper';
 import {
   EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
   ExternalAccountAuthorizedUserClient,
@@ -29,8 +28,13 @@ import {
   getErrorFromOAuthErrorResponse,
   OAuthErrorResponse,
 } from '../src/auth/oauth2common';
+import {assertGaxiosResponsePresent} from './externalclienthelper';
 import {DEFAULT_UNIVERSE} from '../src/auth/authclient';
 import {TestUtils} from './utils';
+import {
+  TrustBoundaryData,
+  WORKFORCE_LOOKUP_ENDPOINT,
+} from '../src/auth/trustboundary';
 
 nock.disableNetConnect();
 
@@ -83,10 +87,11 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
   let clock: sinon.SinonFakeTimers;
   const referenceDate = new Date('2020-08-11T06:55:22.345Z');
-  const audience = getAudience();
+  const workforcePoolAudience =
+    '//iam.googleapis.com/locations/global/workforcePools/pool-id-123/providers/provider-id-abc';
   const externalAccountAuthorizedUserCredentialOptions = {
     type: EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
-    audience: audience,
+    audience: workforcePoolAudience,
     client_id: 'clientId',
     client_secret: 'clientSecret',
     refresh_token: 'refreshToken',
@@ -95,7 +100,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   } as ExternalAccountAuthorizedUserClientOptions;
   const externalAccountAuthorizedUserCredentialOptionsNoToken = {
     type: EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
-    audience: audience,
+    audience: workforcePoolAudience,
     client_id: 'clientId',
     client_secret: 'clientSecret',
     refresh_token: 'refreshToken',
@@ -864,6 +869,134 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       assert.deepStrictEqual(actualResponse.data, exampleResponse);
       scopes.forEach(scope => scope.done());
+    });
+  });
+
+  describe('trust boundaries', () => {
+    // todo fix unit tests.
+    const MOCK_ACCESS_TOKEN = 'newAccessToken';
+    const MOCK_AUTH_HEADER = `Bearer ${MOCK_ACCESS_TOKEN}`;
+    const EXPECTED_TB_DATA: TrustBoundaryData = {
+      locations: ['some-locations'],
+      encodedLocations: '0xdeadbeef',
+    };
+
+    beforeEach(() => {
+      process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'] = 'true';
+    });
+
+    afterEach(() => {
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+      nock.cleanAll();
+    });
+
+    it('should fetch trust boundaries successfully', async () => {
+      const workforcePoolId = 'pool-id-123';
+      const client = new ExternalAccountAuthorizedUserClient(
+        externalAccountAuthorizedUserCredentialOptions,
+      );
+
+      const stsScope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
+        {
+          statusCode: 200,
+          response: {
+            ...successfulRefreshResponse,
+            access_token: MOCK_ACCESS_TOKEN,
+          },
+          request: {
+            grant_type: 'refresh_token',
+            refresh_token: 'refreshToken',
+          },
+        },
+      ]);
+
+      const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
+        '{pool_id}',
+        workforcePoolId,
+      );
+      const tbScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+
+      const headers = await client.getRequestHeaders();
+
+      assert.deepStrictEqual(
+        headers.get('x-allowed-locations'),
+        EXPECTED_TB_DATA.encodedLocations,
+      );
+      assert.deepStrictEqual(client.trustBoundary, EXPECTED_TB_DATA);
+
+      stsScope.done();
+      tbScope.done();
+    });
+
+    it('should throw an error when trust boundary lookup fails', async () => {
+      const workforcePoolId = 'pool-id-123';
+      const client = new ExternalAccountAuthorizedUserClient(
+        externalAccountAuthorizedUserCredentialOptions,
+      );
+
+      const stsScope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
+        {
+          statusCode: 200,
+          response: {
+            ...successfulRefreshResponse,
+            access_token: MOCK_ACCESS_TOKEN,
+          },
+          request: {
+            grant_type: 'refresh_token',
+            refresh_token: 'refreshToken',
+          },
+        },
+      ]);
+
+      const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
+        '{pool_id}',
+        workforcePoolId,
+      );
+      const tbScope = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(500, {error: 'server error'});
+
+      await assert.rejects(
+        client.getRequestHeaders(),
+        /TrustBoundary: Failure while getting trust boundaries/,
+      );
+
+      stsScope.done();
+      tbScope.done();
+    });
+
+    it('should throw an error for an invalid audience', async () => {
+      const invalidAudience = 'invalid-audience-format';
+      const options = {
+        ...externalAccountAuthorizedUserCredentialOptions,
+        audience: invalidAudience,
+      };
+      const client = new ExternalAccountAuthorizedUserClient(options);
+
+      const stsScope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
+        {
+          statusCode: 200,
+          response: {
+            ...successfulRefreshResponse,
+            access_token: MOCK_ACCESS_TOKEN,
+          },
+          request: {
+            grant_type: 'refresh_token',
+            refresh_token: 'refreshToken',
+          },
+        },
+      ]);
+
+      await assert.rejects(
+        client.getRequestHeaders(),
+        /TrustBoundary: A workforce pool ID is required for trust boundary lookups but could not be determined from the audience/,
+      );
+
+      stsScope.done();
     });
   });
 });
