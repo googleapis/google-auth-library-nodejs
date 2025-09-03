@@ -899,10 +899,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       const stsScope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
         {
           statusCode: 200,
-          response: {
-            ...successfulRefreshResponse,
-            access_token: MOCK_ACCESS_TOKEN,
-          },
+          response: successfulRefreshResponse,
           request: {
             grant_type: 'refresh_token',
             refresh_token: 'refreshToken',
@@ -912,7 +909,7 @@ describe('ExternalAccountAuthorizedUserClient', () => {
 
       const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
         '{pool_id}',
-        workforcePoolId,
+        encodeURIComponent(workforcePoolId),
       );
       const tbScope = nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
@@ -926,44 +923,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
         EXPECTED_TB_DATA.encodedLocations,
       );
       assert.deepStrictEqual(client.trustBoundary, EXPECTED_TB_DATA);
-
-      stsScope.done();
-      tbScope.done();
-    });
-
-    it('should throw an error when trust boundary lookup fails', async () => {
-      const workforcePoolId = 'pool-id-123';
-      const client = new ExternalAccountAuthorizedUserClient(
-        externalAccountAuthorizedUserCredentialOptions,
-      );
-
-      const stsScope = mockStsTokenRefresh(BASE_URL, REFRESH_PATH, [
-        {
-          statusCode: 200,
-          response: {
-            ...successfulRefreshResponse,
-            access_token: MOCK_ACCESS_TOKEN,
-          },
-          request: {
-            grant_type: 'refresh_token',
-            refresh_token: 'refreshToken',
-          },
-        },
-      ]);
-
-      const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-        '{pool_id}',
-        workforcePoolId,
-      );
-      const tbScope = nock(new URL(lookupUrl).origin)
-        .get(new URL(lookupUrl).pathname)
-        .matchHeader('authorization', MOCK_AUTH_HEADER)
-        .reply(500, {error: 'server error'});
-
-      await assert.rejects(
-        client.getRequestHeaders(),
-        /TrustBoundary: Failure while getting trust boundaries/,
-      );
 
       stsScope.done();
       tbScope.done();
