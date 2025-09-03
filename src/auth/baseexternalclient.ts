@@ -32,6 +32,11 @@ import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
 import {pkg} from '../shared.cjs';
+import {
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  WORKFORCE_LOOKUP_ENDPOINT,
+  WORKLOAD_LOOKUP_ENDPOINT,
+} from './trustboundary';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -615,6 +620,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     Object.assign(this.credentials, this.cachedAccessToken);
     delete (this.credentials as CredentialsWithResponse).res;
 
+    this.trustBoundary = await this.refreshTrustBoundary(this.credentials);
     // Trigger tokens event to notify external listeners.
     this.emit('tokens', {
       refresh_token: null,
@@ -707,5 +713,78 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   protected getTokenUrl(): string {
     return this.tokenUrl;
+  }
+
+  /**
+   * Returns the workforce identity pool id if it is determinable
+   * from the audience resource name.
+   * @param audience The STS audience used to determine the pool id.
+   * @return The pool id associated with the workforce identity pool, if
+   *   this can be determined from the STS audience field. Otherwise, null is
+   *   returned.
+   */
+  #getWorkForcePoolId(audience: string): string | null {
+    // STS audience pattern:
+    // .../workforcePools/$WORKFORCE_POOL_ID/providers/...
+    return (
+      audience.match(/\/workforcePools\/(?<workforcePool>[^/]+)\/providers\//)
+        ?.groups?.workforcePool ?? null
+    );
+  }
+
+  /**
+   * Returns the workload identity pool id if it is determinable
+   * from the audience resource name.
+   * @param audience The STS audience used to determine the pool id.
+   * @return The pool id associated with the workload identity pool, if
+   *   this can be determined from the STS audience field. Otherwise, null is
+   *   returned.
+   */
+  #getWorkloadPoolId(audience: string): string | null {
+    // STS audience pattern:
+    // .../workloadIdentityPools/POOL_ID/providers/...
+    return (
+      audience.match(
+        /\/workloadIdentityPools\/(?<workloadPool>[^/]+)\/providers\//,
+      )?.groups?.workloadPool ?? null
+    );
+  }
+
+  protected async getTrustBoundaryUrl(): Promise<string> {
+    if (this.serviceAccountImpersonationUrl) {
+      const email = this.getServiceAccountEmail();
+      if (!email) {
+        throw new Error(
+          `TrustBoundary: A service account email is required for trust boundary lookups but could not be determined from the serviceAccountImpersonationUrl ${this.serviceAccountImpersonationUrl}.`,
+        );
+      }
+      return SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(email),
+      );
+    }
+
+    //check for workforce
+    const wfPoolId = this.#getWorkForcePoolId(this.audience);
+    if (wfPoolId) {
+      return WORKFORCE_LOOKUP_ENDPOINT.replace(
+        '{pool_id}',
+        encodeURIComponent(wfPoolId),
+      );
+    }
+
+    //check for workload
+    const wlPoolId = this.#getWorkloadPoolId(this.audience);
+    const projectNumber = this.getProjectNumber(this.audience);
+    if (wlPoolId && projectNumber) {
+      return WORKLOAD_LOOKUP_ENDPOINT.replace(
+        '{project_id}',
+        projectNumber,
+      ).replace('{pool_id}', wlPoolId);
+    }
+
+    throw new RangeError(
+      `TrustBoundary: Invalid audience provided: "${this.audience}" does not correspond to a workforce or workload pool.`,
+    );
   }
 }

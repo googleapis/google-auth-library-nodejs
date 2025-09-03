@@ -468,6 +468,34 @@ describe('AuthClient', () => {
       scopes.forEach(s => s.done());
     });
 
+    it('should retry trust boundary lookup on failure', async () => {
+      const compute = new Compute({serviceAccountEmail: SERVICE_ACCOUNT_EMAIL});
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{service_account_email}',
+        encodeURIComponent(SERVICE_ACCOUNT_EMAIL),
+      );
+      const tbScopeFail = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(503, {error: 'server unavailable'});
+      const tbScopeSuccess = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+      const scopes = [
+        setupTokenNock(SERVICE_ACCOUNT_EMAIL),
+        tbScopeFail,
+        tbScopeSuccess,
+        mockExample(),
+      ];
+
+      await compute.request({url});
+
+      // The request should have succeeded after the retry.
+      assert.deepStrictEqual(compute.trustBoundary, EXPECTED_TB_DATA);
+      scopes.forEach(s => s.done());
+    });
+
     it('refreshTrustBoundary should return null when default domain is not googleapis.com', async () => {
       const compute = new Compute({
         serviceAccountEmail: SERVICE_ACCOUNT_EMAIL,

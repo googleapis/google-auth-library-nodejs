@@ -688,7 +688,7 @@ describe('impersonated', () => {
       ];
       await assert.rejects(
         impersonated.getRequestHeaders(),
-        /TrustBoundary: Error getting tbUrl because of missing targetPrincipal in ImpersonatedClient/,
+        /TrustBoundary: A targetPrincipal is required for trust boundary lookups but was not provided in the ImpersonatedClient options./,
       );
       scopes.forEach(s => s.done());
     });

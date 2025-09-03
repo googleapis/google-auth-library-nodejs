@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, BodyResponseCallback} from './authclient';
+import {AuthClient, BodyResponseCallback, DEFAULT_UNIVERSE} from './authclient';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
@@ -33,6 +33,7 @@ import {
   EXPIRATION_TIME_OFFSET,
   SharedExternalAccountClientOptions,
 } from './baseexternalclient';
+import {WORKFORCE_LOOKUP_ENDPOINT} from './trustboundary';
 
 /**
  * The credentials JSON file type for external account authorized user clients.
@@ -158,6 +159,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
   private cachedAccessToken: CredentialsWithResponse | null;
   private readonly externalAccountAuthorizedUserHandler: ExternalAccountAuthorizedUserHandler;
   private refreshToken: string;
+  private readonly audience: string;
 
   /**
    * Instantiates an ExternalAccountAuthorizedUserClient instances using the
@@ -171,6 +173,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     if (options.universe_domain) {
       this.universeDomain = options.universe_domain;
     }
+    this.audience = options.audience;
     this.refreshToken = options.refresh_token;
     const clientAuthentication = {
       confidentialClientType: 'basic',
@@ -309,6 +312,49 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
       this.refreshToken = refreshResponse.refresh_token;
     }
 
+    // Set credentials and refresh trust boundary data.
+    this.credentials = {...this.cachedAccessToken};
+    delete (this.credentials as CredentialsWithResponse).res;
+    this.trustBoundary = await this.refreshTrustBoundary(this.credentials);
+
     return this.cachedAccessToken;
+  }
+
+  /**
+   * Retrieves the workforce pool ID from the audience.
+   *
+   * The audience has the format:
+   * `//iam.googleapis.com/locations/global/workforcePools/{pool_id}/providers/{provider_id}`
+   *
+   * @returns The workforce pool ID, or `null` if it cannot be determined.
+   */
+  getWorkforcePoolId(): string | null {
+    const match = this.audience.match(
+      /\/workforcePools\/(?<poolId>[^/]+)\/providers\//,
+    );
+    return match?.groups?.poolId ?? null;
+  }
+
+  /**
+   * Constructs the trust boundary lookup URL for the client.
+   *
+   * @return The trust boundary URL string, or `null` if the client type
+   * does not support trust boundaries.
+   * @throws {Error} If the URL cannot be constructed for a compatible client.
+   */
+  protected async getTrustBoundaryUrl(): Promise<string | null> {
+    if (this.universeDomain !== DEFAULT_UNIVERSE) {
+      return null;
+    }
+    const poolId = this.getWorkforcePoolId();
+    if (!poolId) {
+      throw new Error(
+        `TrustBoundary: A workforce pool ID is required for trust boundary lookups but could not be determined from the audience: ${this.audience}.`,
+      );
+    }
+    return WORKFORCE_LOOKUP_ENDPOINT.replace(
+      '{pool_id}',
+      encodeURIComponent(poolId),
+    );
   }
 }
