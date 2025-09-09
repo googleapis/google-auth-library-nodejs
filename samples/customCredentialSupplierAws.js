@@ -1,120 +1,153 @@
-// const {AwsClient} = require('google-auth-library');
-// const {fromNodeProviderChain} = require('@aws-sdk/credential-provider-node');
+'use strict';
+Object.defineProperty(exports, '__esModule', {value: true});
 
-// /**
-//  * A custom AwsSecurityCredentialsSupplier that uses the AWS SDK's default
-//  * credential provider chain to find credentials.
-//  *
-//  * This is useful for authenticating from any AWS environment supported by
-//  * the AWS SDK, including EC2, ECS, EKS, Fargate, or local setups using
-//  * environment variables or shared credential files.
-//  */
-// class CustomAwsSupplier {
-//   /**
-//    * @param {string} region The AWS region to use for signing requests.
-//    */
-//   constructor(region) {
-//     this.region = region;
-//     // The provider chain can be initialized once and reused.
-//     // It will automatically handle credential refreshing.
-//     this.provider = fromNodeProviderChain();
-//     console.log(
-//       '[Supplier] Initialized with AWS SDK default credential provider chain.',
-//     );
-//   }
+// --- Imports ---
+const {AwsClient} = require('google-auth-library');
+const {fromNodeProviderChain} = require('@aws-sdk/credential-providers');
+const {Storage} = require('@google-cloud/storage');
 
-//   /**
-//    * Returns the configured AWS region.
-//    * @param {object} context Context from the calling AwsClient. We'll log it for demonstration.
-//    * @returns {Promise<string>} A promise that resolves with the AWS region.
-//    */
-//   async getAwsRegion(context) {
-//     console.log('[Supplier] getAwsRegion called.');
-//     console.log(`[Supplier] Audience from context: ${context.audience}`);
-//     return this.region;
-//   }
+// ========================================================================
+// START CONFIGURATION: !! REPLACE WITH YOUR VALUES !!
+// ========================================================================
 
-//   /**
-//    * Retrieves AWS credentials using the AWS SDK's default provider chain.
-//    * @param {object} context Context from the calling AwsClient.
-//    * @returns {Promise<object>} A promise that resolves with the AWS security credentials.
-//    */
-//   async getAwsSecurityCredentials(context) {
-//     console.log('[Supplier] getAwsSecurityCredentials called.');
-//     try {
-//       const awsCredentials = await this.provider();
-//       if (!awsCredentials.accessKeyId || !awsCredentials.secretAccessKey) {
-//         throw new Error(
-//           'AWS credentials missing accessKeyId or secretAccessKey',
-//         );
-//       }
+// These values can be found by running the gcloud CLI command:
+// gcloud iam workload-identity-pools create-cred-config \
+//     projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID \
+//     --service-account="$EMAIL" \
+//     --output-format="json" \
+//     --aws
 
-//       console.log(
-//         '[Supplier] Successfully retrieved credentials from AWS SDK provider chain.',
-//       );
+/**
+ * The Audience for the GCP Workload Identity Pool Provider.
+ */
+const GCP_AUDIENCE =
+  '//iam.googleapis.com/projects/654269145772/locations/global/workloadIdentityPools/pjiyer-byoid-testing/providers/aws-pid1';
 
-//       // The google-auth-library AwsClient expects this specific format.
-//       return {
-//         accessKeyId: awsCredentials.accessKeyId,
-//         secretAccessKey: awsCredentials.secretAccessKey,
-//         token: awsCredentials.sessionToken, // This may be undefined for permanent credentials
-//       };
-//     } catch (err) {
-//       throw new Error(
-//         `[Supplier] Failed to get credentials from AWS provider chain: ${err.message}`,
-//       );
-//     }
-//   }
-// }
+/**
+ * The URL for impersonating the target Google Cloud Service Account.
+ */
+const SA_IMPERSONATION_URL =
+  'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/byoid-test@cicpclientproj.iam.gserviceaccount.com:generateAccessToken';
 
-// /**
-//  * Main function to demonstrate the custom AWS supplier in a live environment.
-//  */
-// async function main() {
-//   console.log(
-//     '--- Running Live Custom AWS Security Credentials Supplier Example ---',
-//   );
+/**
+ * The AWS Region your workload is running in. This is required by the AWS SDK
+ * to sign the request properly.
+ */
+const AWS_REGION = 'us-east-2'; // Example: 'us-east-1'
 
-//   const audience = process.argv[2];
-//   const awsRegion = process.argv[3];
+// ========================================================================
+// END CONFIGURATION
+// ========================================================================
 
-//   if (!audience || !awsRegion) {
-//     console.error(
-//       '\nError: Please provide the GCP audience and AWS region as command-line arguments.',
-//     );
-//     console.error(
-//       'Usage: node custom_aws_supplier_example.js "//iam.googleapis.com/..." "us-east-2"',
-//     );
+/**
+ * Custom AWS Security Credentials Supplier.
+ *
+ * This implementation resolves AWS credentials using the default Node provider
+ * chain from the AWS SDK. This allows fetching credentials from environment
+ * variables, shared credential files (~/.aws/credentials), or IAM roles
+ * for service accounts (IRSA) in EKS, etc.
+ */
+class CustomAwsSupplier {
+  /**
+   * @param {string} region The AWS region the workload is running in.
+   */
+  constructor(region) {
+    if (!region || region.includes('YOUR_')) {
+      throw new Error(
+        'AWS_REGION constant must be set at the top of the script.',
+      );
+    }
+    this.region = region;
+  }
 
-//     throw new Error('Audience or AWS region not provided.');
-//   }
+  /**
+   * Returns the AWS region. This is required for signing the AWS request.
+   */
+  async getAwsRegion(context) {
+    return this.region;
+  }
 
-//   try {
-//     // 1. Create an instance of our custom AWS supplier.
-//     const customAwsSupplier = new CustomAwsSupplier(awsRegion);
+  /**
+   * Retrieves AWS security credentials using the AWS SDK's default provider chain.
+   */
+  async getAwsSecurityCredentials(context) {
+    console.log('CustomAwsSupplier: Resolving AWS credentials...');
 
-//     // 2. Create the AwsClient, passing our custom supplier.
-//     //    This client will now use our custom logic to get AWS credentials.
-//     const client = new AwsClient({
-//       audience,
-//       subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-//       aws_security_credentials_supplier: customAwsSupplier,
-//     });
-//     console.log('[Test] AwsClient created with custom supplier.');
+    // Use the official AWS SDK provider chain. This will find credentials
+    // from Env variables, shared config, EC2 metadata, EKS OIDC, etc.
+    const awsCredentialsProvider = fromNodeProviderChain();
+    const awsCredentials = await awsCredentialsProvider();
 
-//     // 3. Call getAccessToken(). This will trigger our supplier's logic to fetch
-//     //    the AWS credentials, sign a request to AWS STS, and exchange it for a
-//     //    Google Cloud access token.
-//     console.log('[Test] Calling client.getAccessToken()...');
-//     const {token} = await client.getAccessToken();
+    if (!awsCredentials.accessKeyId || !awsCredentials.secretAccessKey) {
+      throw new Error(
+        'Unable to resolve AWS credentials from the node provider chain. ' +
+          'Ensure your AWS CLI is configured, or AWS environment variables (like AWS_ACCESS_KEY_ID) are set.',
+      );
+    }
 
-//     console.log('\n--- Result ---');
-//     console.log('✅ Successfully retrieved GCP Access Token!');
-//     console.log('Token:', token ? `${token.substring(0, 30)}...` : 'undefined');
-//   } catch (error) {
-//     console.error('\n--- Result ---');
-//     console.error('❌ Failed to retrieve GCP Access Token:', error.message);
-//   }
-// }
+    console.log(
+      `CustomAwsSupplier: Found AWS Access Key ID: ${awsCredentials.accessKeyId}`,
+    );
 
-// main();
+    // Map the AWS SDK format to the google-auth-library format.
+    const awsSecurityCredentials = {
+      accessKeyId: awsCredentials.accessKeyId,
+      secretAccessKey: awsCredentials.secretAccessKey,
+      token: awsCredentials.sessionToken, // Will be undefined if using static keys, which is fine
+    };
+
+    return awsSecurityCredentials;
+  }
+}
+
+/**
+ * Main function to run the test.
+ */
+async function main() {
+  if (
+    GCP_AUDIENCE.includes('YOUR_') ||
+    SA_IMPERSONATION_URL.includes('YOUR_')
+  ) {
+    throw new Error(
+      'Please update the placeholder constants (GCP_AUDIENCE, SA_IMPERSONATION_URL) at the top of the script with your real values.',
+    );
+  }
+
+  // 1. Instantiate the custom supplier.
+  const customSupplier = new CustomAwsSupplier(AWS_REGION);
+
+  // 2. Configure the AwsClient options using the constants.
+  const clientOptions = {
+    audience: GCP_AUDIENCE,
+    subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
+    service_account_impersonation_url: SA_IMPERSONATION_URL,
+
+    // ** This is the key part: Inject the custom supplier **
+    aws_security_credentials_supplier: customSupplier,
+  };
+
+  // 3. Create the auth client and the service client (Storage).
+  const authClient = new AwsClient(clientOptions);
+  const storage = new Storage({authClient});
+
+  const bucketName = 'pjiyer-byoid-test-gcs-bucket';
+
+  // 4. Run the test command to verify authentication.
+  console.log('Successfully configured client with custom AWS supplier.');
+  console.log(
+    `Attempting to get metadata for GCS bucket "${bucketName}" to verify authentication...`,
+  );
+  const [metadata] = await storage.bucket(bucketName).getMetadata();
+
+  console.log('Authentication Successful! Bucket metadata:');
+  console.log(JSON.stringify(metadata, null, 2));
+
+  console.log('Done.');
+}
+
+// Execute the test.
+main().catch(err => {
+  console.error('\n--- TEST FAILED ---');
+  console.error(err);
+  throw new Error('test failed');
+});
