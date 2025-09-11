@@ -1,126 +1,188 @@
+'use strict';
+
+// --- Imports ---
 const {IdentityPoolClient} = require('google-auth-library');
-const fs = require('fs/promises');
-// const path = require('path');
+const {Storage} = require('@google-cloud/storage');
+const puppeteer = require('puppeteer');
+require('dotenv').config(); // Load environment variables from .env file
+
+// ========================================================================
+// START CONFIGURATION
+// ========================================================================
+
+// These values are loaded from the .env file for security.
+const GCP_WORKFORCE_POOL_ID = process.env.GCP_WORKFORCE_POOL_ID;
+const GCP_WORKFORCE_PROVIDER_ID = process.env.GCP_WORKFORCE_PROVIDER_ID;
+const IDP_USERNAME = process.env.IDP_USERNAME;
+const IDP_PASSWORD = process.env.IDP_PASSWORD;
+
+// --- GCP Workforce Configuration (Constructed from environment variables) ---
+
+// The audience is the resource name of your Workforce Pool Provider.
+const WORKFORCE_AUDIENCE = `//iam.googleapis.com/locations/global/workforcePools/${GCP_WORKFORCE_POOL_ID}/providers/${GCP_WORKFORCE_PROVIDER_ID}`;
+
+// The Sign-in URL requires the full provider resource name.
+const GCP_SIGN_IN_URL = `https://auth.cloud.google/signin-workforce?provider=${encodeURIComponent(
+  WORKFORCE_AUDIENCE,
+)}`;
+
+// This is the Google STS endpoint for exchanging the SAML assertion.
+const TOKEN_URL = 'https://sts.googleapis.com/v1/token';
+// This subject token type tells STS that we are sending a SAML 2.0 assertion.
+const SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
+
+// The URL where the IdP posts the SAML assertion. We will intercept this.
+const ACS_URL =
+  'https://auth.cloud.google/signin-callback/locations/global/workforcePools/';
+
+// ========================================================================
+// END CONFIGURATION
+// ========================================================================
 
 /**
- * A custom SubjectTokenSupplier that reads a JSON file, finds the
- * 'subject_token' field, and returns its value.
- *
- * This is useful when the token is stored in a structured file alongside
- * other data, a scenario the built-in file supplier doesn't handle.
+ * A non-interactive supplier that uses browser automation (Puppeteer)
+ * to perform a SAML login flow and capture the assertion.
  */
-class CustomFileSupplier {
-  /**
-   * @param {string} filePath The absolute path to the JSON token file.
-   */
-  constructor(filePath) {
-    this.filePath = filePath;
-    console.log(`[Supplier] Initialized to read from file: "${this.filePath}"`);
+class AutomatedSamlSupplier {
+  constructor(username, password) {
+    this.username = username;
+    this.password = password;
+    this.samlAssertion = null;
+    console.log('AutomatedSamlSupplier initialized.');
   }
 
   /**
-   * This method is called by the IdentityPoolClient when it needs a subject token.
-   * @param {object} context Context from the calling client. We'll log it for demonstration.
-   * @returns {Promise<string>} A promise that resolves with the subject token.
+   * Main method called by the auth library. Returns a cached assertion
+   * or triggers the full automation flow if no valid assertion exists.
    */
-  async getSubjectToken(context) {
-    console.log('[Supplier] getSubjectToken called.');
-    console.log(`[Supplier] Audience from context: ${context.audience}`);
-
-    try {
-      // 1. Read and parse the JSON file.
-      const fileContent = await fs.readFile(this.filePath, 'utf-8');
-      const tokenData = JSON.parse(fileContent);
-
-      // 2. Extract the token from the 'subject_token' field.
-      //    This is the "custom logic" part.
-      const token = tokenData.subject_token;
-
-      if (
-        !token ||
-        typeof token !== 'string' ||
-        token === 'PASTE_YOUR_THIRD_PARTY_TOKEN_HERE'
-      ) {
-        throw new Error(
-          `'subject_token' field not found, is not a string, or still has the placeholder value in ${this.filePath}`,
-        );
-      }
-
-      console.log('[Supplier] Successfully extracted subject token from file.');
-      return token;
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        throw new Error(
-          `[Supplier] The token file was not found at ${this.filePath}`,
-        );
-      }
-      throw new Error(
-        `[Supplier] Failed to read or parse token file: ${err.message}`,
-      );
+  async getSubjectToken() {
+    if (this.samlAssertion) {
+      // In a real app, you might check for assertion expiration here.
+      console.log('Returning cached SAML assertion.');
+      return this.samlAssertion;
     }
+    console.log('No cached assertion. Starting automated SAML login...');
+    this.samlAssertion = await this.performAutomatedLogin();
+    return this.samlAssertion;
+  }
+
+  /**
+   * Performs the automated SP-initiated SAML login flow using Puppeteer.
+   * @returns {Promise<string>} A promise that resolves with the Base64-encoded SAML assertion.
+   */
+  async performAutomatedLogin() {
+    // Made browser visible for easier debugging. Change to 'new' for headless.
+    console.log('Launching visible browser for debugging...');
+    const browser = await puppeteer.launch({headless: false});
+
+    // **FIXED**: Use the correct function name for creating an incognito context in modern Puppeteer.
+    const context = await browser.createIncognitoBrowserContext();
+    const page = await context.newPage();
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Intercept network requests to find the SAML Response.
+        await page.setRequestInterception(true);
+        page.on('request', request => {
+          if (
+            request.url().startsWith(ACS_URL) &&
+            request.method() === 'POST'
+          ) {
+            const payload = request.postData();
+            // The payload is a URL-encoded string like "SAMLResponse=...&RelayState=..."
+            const samlResponse = new URLSearchParams(payload).get(
+              'SAMLResponse',
+            );
+            if (samlResponse) {
+              console.log('SAML Assertion captured successfully!');
+              // The SAMLResponse is already Base64 encoded by the IdP, but it's
+              // URL-encoded. We decode it from URL format, then re-encode it
+              // in standard Base64 for the STS API.
+              const decodedSaml = decodeURIComponent(samlResponse);
+              const reEncodedSaml = Buffer.from(decodedSaml, 'base64').toString(
+                'base64',
+              );
+              resolve(reEncodedSaml);
+            }
+          }
+          request.continue();
+        });
+
+        // 1. Start the SP-initiated flow.
+        console.log(`Navigating to GCP Sign-in URL: ${GCP_SIGN_IN_URL}`);
+        await page.goto(GCP_SIGN_IN_URL, {waitUntil: 'networkidle0'});
+
+        // 2. The page should have automatically redirected to the Okta login page.
+        console.log('Waiting for IdP login page and entering credentials...');
+
+        // --- CUSTOMIZABLE LOGIN SEQUENCE FOR OKTA ---
+        // This is the part you would change for Azure, AWS, etc.
+        await page.waitForSelector('#okta-signin-username', {timeout: 30000});
+        await page.type('#okta-signin-username', this.username);
+        await page.type('#okta-signin-password', this.password);
+        await page.click('#okta-signin-submit');
+        // --- END CUSTOMIZABLE SEQUENCE ---
+
+        // 3. Wait for the final navigation after login.
+        // The 'request' listener above will resolve the promise when it captures the SAML assertion.
+        await page.waitForNavigation({
+          waitUntil: 'networkidle0',
+          timeout: 30000,
+        });
+      } catch (error) {
+        reject(error);
+      } finally {
+        await browser.close();
+        console.log('Browser closed.');
+      }
+    });
   }
 }
 
 /**
- * Main function to demonstrate the custom supplier in a live environment.
+ * Main function to run the test.
  */
 async function main() {
-  console.log(
-    '--- Running Live Custom Subject Token Supplier for Workforce Pool Example ---',
+  if (!GCP_WORKFORCE_POOL_ID || !IDP_USERNAME) {
+    throw new Error(
+      'Required environment variables are not set. Please create and configure a .env file.',
+    );
+  }
+
+  // 1. Instantiate our automated supplier with credentials.
+  const automatedSupplier = new AutomatedSamlSupplier(
+    IDP_USERNAME,
+    IDP_PASSWORD,
   );
 
-  // The audience for your Workforce Pool Provider and the user project are required
-  // command-line argument.
-  const audience = process.argv[2];
-  const workforcePoolUserProject = process.argv[3];
-  const tokenFilePathArg = process.argv[4];
+  // 2. Configure the IdentityPoolClient to use the supplier.
+  const authClient = new IdentityPoolClient({
+    audience: WORKFORCE_AUDIENCE,
+    subject_token_type: SUBJECT_TOKEN_TYPE,
+    token_url: TOKEN_URL,
+    subject_token_supplier: automatedSupplier,
+  });
 
-  if (!audience || !workforcePoolUserProject) {
-    console.error(
-      '\nError: Please provide the audience and workforce pool user project as command-line arguments.',
-    );
-    console.error(
-      'Usage: node customCredentialSupplierWorkforce.js "AUDIENCE" "WORKFORCE_POOL_USER_PROJECT" [TOKEN_FILE_PATH]',
-    );
-    console.error(
-      'Example: node customCredentialSupplierWorkforce.js "//iam.googleapis.com/locations/global/workforcePools/..." "123456789" token.json',
-    );
-    throw new Error('Audience or workforce_pool_user_project not provided.');
-  }
+  // 3. Create a service client. The first API call will trigger the login flow.
+  const storage = new Storage({authClient});
 
-  // The token file path can be provided as the second argument.
-  // If not, it defaults to 'token.json' in the current directory.
-  const tokenFilePath = tokenFilePathArg
-    ? path.resolve(tokenFilePathArg)
-    : path.join(__dirname, 'token.json');
+  // 4. Run a test command to verify authentication.
+  console.log(
+    'Successfully configured client with custom SAML assertion supplier.',
+  );
+  console.log('Attempting to list GCS buckets to verify authentication...');
+  const [buckets] = await storage.getBuckets();
 
-  try {
-    console.log(`[Test] Using token file path: "${tokenFilePath}"`);
-    // 1. Create an instance of our custom supplier.
-    const customSupplier = new CustomFileSupplier(tokenFilePath);
-
-    // 2. Create the IdentityPoolClient for a workforce pool, passing the custom supplier.
-    //    This client will now use our custom logic to get the subject token.
-    const client = new IdentityPoolClient({
-      audience,
-      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt', // Or another appropriate type like id_token
-      workforce_pool_user_project: workforcePoolUserProject,
-      subject_token_supplier: customSupplier,
-    });
-    console.log('[Test] IdentityPoolClient created with custom supplier.');
-
-    // 3. Call getAccessToken(). This will trigger our supplier's logic to fetch
-    //    the third-party token and exchange it for a Google Cloud access token.
-    console.log('[Test] Calling client.getAccessToken()...');
-    const {token} = await client.getAccessToken();
-
-    console.log('\n--- Result ---');
-    console.log('✅ Successfully retrieved GCP Access Token!');
-    console.log('Token:', token ? `${token.substring(0, 30)}...` : 'undefined');
-  } catch (error) {
-    console.error('\n--- Result ---');
-    console.error('❌ Failed to retrieve GCP Access Token:', error.message);
-  }
+  console.log('\n--- AUTHENTICATION SUCCESSFUL ---');
+  console.log('Found buckets:');
+  buckets.forEach(bucket => {
+    console.log(`- ${bucket.name}`);
+  });
 }
 
-main();
+// Execute the test.
+main().catch(err => {
+  console.error('\n--- SCRIPT FAILED ---');
+  console.error(err);
+  process.exit(1);
+});
