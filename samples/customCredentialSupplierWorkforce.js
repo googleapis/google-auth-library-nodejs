@@ -1,7 +1,7 @@
 'use strict';
 
 // --- Imports ---
-const {IdentityPoolClient} = require('google-auth-library');
+const {GoogleAuth} = require('google-auth-library'); // **CHANGED**: Import GoogleAuth
 const {Storage} = require('@google-cloud/storage');
 const puppeteer = require('puppeteer');
 require('dotenv').config(); // Load environment variables from .env file
@@ -11,17 +11,20 @@ require('dotenv').config(); // Load environment variables from .env file
 // ========================================================================
 
 // These values are loaded from the .env file for security.
+const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID; // Your target Google Cloud Project ID.
 const GCP_WORKFORCE_POOL_ID = process.env.GCP_WORKFORCE_POOL_ID;
 const GCP_WORKFORCE_PROVIDER_ID = process.env.GCP_WORKFORCE_PROVIDER_ID;
 const IDP_USERNAME = process.env.IDP_USERNAME;
 const IDP_PASSWORD = process.env.IDP_PASSWORD;
+const TARGET_SERVICE_ACCOUNT = process.env.TARGET_SERVICE_ACCOUNT; // Email of the SA to impersonate.
+const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME; // The bucket to get metadata from.
 
 // --- GCP Workforce Configuration (Constructed from environment variables) ---
 
 // The audience is the resource name of your Workforce Pool Provider.
 const WORKFORCE_AUDIENCE = `//iam.googleapis.com/locations/global/workforcePools/${GCP_WORKFORCE_POOL_ID}/providers/${GCP_WORKFORCE_PROVIDER_ID}`;
 
-// The Sign-in URL requires the full provider resource name.
+// The Sign-in URL requires the full provider resource name. This is the starting point.
 const GCP_SIGN_IN_URL = `https://auth.cloud.google/signin-workforce?provider=${encodeURIComponent(
   WORKFORCE_AUDIENCE,
 )}`;
@@ -30,6 +33,9 @@ const GCP_SIGN_IN_URL = `https://auth.cloud.google/signin-workforce?provider=${e
 const TOKEN_URL = 'https://sts.googleapis.com/v1/token';
 // This subject token type tells STS that we are sending a SAML 2.0 assertion.
 const SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
+
+// This is the URL the auth library will use to impersonate the service account.
+const SERVICE_ACCOUNT_IMPERSONATION_URL = `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${TARGET_SERVICE_ACCOUNT}:generateAccessToken`;
 
 // The URL where the IdP posts the SAML assertion. We will intercept this.
 const ACS_URL =
@@ -71,13 +77,10 @@ class AutomatedSamlSupplier {
    * @returns {Promise<string>} A promise that resolves with the Base64-encoded SAML assertion.
    */
   async performAutomatedLogin() {
-    // Made browser visible for easier debugging. Change to 'new' for headless.
+    // For documentation, it's helpful to see the browser. For production CI/CD, change to 'new'.
     console.log('Launching visible browser for debugging...');
     const browser = await puppeteer.launch({headless: false});
-
-    // **FIXED**: Use the correct function name for creating an incognito context in modern Puppeteer.
-    const context = await browser.createIncognitoBrowserContext();
-    const page = await context.newPage();
+    const page = await browser.newPage();
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -89,15 +92,11 @@ class AutomatedSamlSupplier {
             request.method() === 'POST'
           ) {
             const payload = request.postData();
-            // The payload is a URL-encoded string like "SAMLResponse=...&RelayState=..."
             const samlResponse = new URLSearchParams(payload).get(
               'SAMLResponse',
             );
             if (samlResponse) {
               console.log('SAML Assertion captured successfully!');
-              // The SAMLResponse is already Base64 encoded by the IdP, but it's
-              // URL-encoded. We decode it from URL format, then re-encode it
-              // in standard Base64 for the STS API.
               const decodedSaml = decodeURIComponent(samlResponse);
               const reEncodedSaml = Buffer.from(decodedSaml, 'base64').toString(
                 'base64',
@@ -116,7 +115,6 @@ class AutomatedSamlSupplier {
         console.log('Waiting for IdP login page and entering credentials...');
 
         // --- CUSTOMIZABLE LOGIN SEQUENCE FOR OKTA ---
-        // This is the part you would change for Azure, AWS, etc.
         await page.waitForSelector('#okta-signin-username', {timeout: 30000});
         await page.type('#okta-signin-username', this.username);
         await page.type('#okta-signin-password', this.password);
@@ -124,12 +122,15 @@ class AutomatedSamlSupplier {
         // --- END CUSTOMIZABLE SEQUENCE ---
 
         // 3. Wait for the final navigation after login.
-        // The 'request' listener above will resolve the promise when it captures the SAML assertion.
         await page.waitForNavigation({
           waitUntil: 'networkidle0',
           timeout: 30000,
         });
       } catch (error) {
+        console.error(
+          'An error occurred during the browser automation.',
+          error,
+        );
         reject(error);
       } finally {
         await browser.close();
@@ -143,9 +144,15 @@ class AutomatedSamlSupplier {
  * Main function to run the test.
  */
 async function main() {
-  if (!GCP_WORKFORCE_POOL_ID || !IDP_USERNAME) {
+  if (
+    !GCP_WORKFORCE_POOL_ID ||
+    !IDP_USERNAME ||
+    !GCP_PROJECT_ID ||
+    !TARGET_SERVICE_ACCOUNT ||
+    !GCS_BUCKET_NAME
+  ) {
     throw new Error(
-      'Required environment variables are not set. Please create and configure a .env file.',
+      'Required environment variables are not set. Please create and configure a .env file with all required values.',
     );
   }
 
@@ -155,29 +162,38 @@ async function main() {
     IDP_PASSWORD,
   );
 
-  // 2. Configure the IdentityPoolClient to use the supplier.
-  const authClient = new IdentityPoolClient({
-    audience: WORKFORCE_AUDIENCE,
-    subject_token_type: SUBJECT_TOKEN_TYPE,
-    token_url: TOKEN_URL,
-    subject_token_supplier: automatedSupplier,
+  // 2. **CHANGED**: Configure the main GoogleAuth client directly.
+  // This is a more robust pattern. Instead of creating a low-level client,
+  // we describe the entire authentication flow in a configuration object.
+  // The GoogleAuth class will use this to construct the correct clients internally.
+  const auth = new GoogleAuth({
+    // By setting the project ID at the top level, we ensure it's used for all
+    // API calls, including the internal call to the impersonation endpoint.
+    // This definitively solves the "unregistered callers" error.
+    projectId: GCP_PROJECT_ID,
+    credentials: {
+      type: 'identity_pool',
+      audience: WORKFORCE_AUDIENCE,
+      subject_token_type: SUBJECT_TOKEN_TYPE,
+      token_url: TOKEN_URL,
+      subject_token_supplier: automatedSupplier,
+      service_account_impersonation_url: SERVICE_ACCOUNT_IMPERSONATION_URL,
+    },
   });
 
-  // 3. Create a service client. The first API call will trigger the login flow.
-  const storage = new Storage({authClient});
+  // 3. Create a service client using the fully configured GoogleAuth instance.
+  const storage = new Storage({auth});
 
-  // 4. Run a test command to verify authentication.
-  console.log(
-    'Successfully configured client with custom SAML assertion supplier.',
-  );
-  console.log('Attempting to list GCS buckets to verify authentication...');
-  const [buckets] = await storage.getBuckets();
+  // 4. Run a new test command to verify authentication and impersonation.
+  console.log('Successfully configured client for impersonation.');
+  console.log(`Attempting to get metadata for bucket: ${GCS_BUCKET_NAME}...`);
+  const [metadata] = await storage.bucket(GCS_BUCKET_NAME).getMetadata();
 
-  console.log('\n--- AUTHENTICATION SUCCESSFUL ---');
-  console.log('Found buckets:');
-  buckets.forEach(bucket => {
-    console.log(`- ${bucket.name}`);
-  });
+  console.log('\n--- AUTHENTICATION & IMPERSONATION SUCCESSFUL ---');
+  console.log(JSON.stringify(metadata, null, 2));
+  console.log(`Bucket Name: ${metadata.name}`);
+  console.log(`Location: ${metadata.location}`);
+  console.log(`Storage Class: ${metadata.storageClass}`);
 }
 
 // Execute the test.
