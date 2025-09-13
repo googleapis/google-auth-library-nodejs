@@ -1,43 +1,9 @@
 'use strict';
-Object.defineProperty(exports, '__esModule', {value: true});
 
 // --- Imports ---
 const {AwsClient} = require('google-auth-library');
 const {fromNodeProviderChain} = require('@aws-sdk/credential-providers');
 const {Storage} = require('@google-cloud/storage');
-
-// ========================================================================
-// START CONFIGURATION: !! REPLACE WITH YOUR VALUES !!
-// ========================================================================
-
-// These values can be found by running the gcloud CLI command:
-// gcloud iam workload-identity-pools create-cred-config \
-//     projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID \
-//     --service-account="$EMAIL" \
-//     --output-format="json" \
-//     --aws
-
-/**
- * The Audience for the GCP Workload Identity Pool Provider.
- */
-const GCP_AUDIENCE =
-  '//iam.googleapis.com/projects/654269145772/locations/global/workloadIdentityPools/pjiyer-byoid-testing/providers/aws-pid1';
-
-/**
- * The URL for impersonating the target Google Cloud Service Account.
- */
-const SA_IMPERSONATION_URL =
-  'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/byoid-test@cicpclientproj.iam.gserviceaccount.com:generateAccessToken';
-
-/**
- * The AWS Region your workload is running in. This is required by the AWS SDK
- * to sign the request properly.
- */
-const AWS_REGION = 'us-east-2'; // Example: 'us-east-1'
-
-// ========================================================================
-// END CONFIGURATION
-// ========================================================================
 
 /**
  * Custom AWS Security Credentials Supplier.
@@ -52,25 +18,20 @@ class CustomAwsSupplier {
    * @param {string} region The AWS region the workload is running in.
    */
   constructor(region) {
-    if (!region || region.includes('YOUR_')) {
-      throw new Error(
-        'AWS_REGION constant must be set at the top of the script.',
-      );
-    }
     this.region = region;
   }
 
   /**
    * Returns the AWS region. This is required for signing the AWS request.
    */
-  async getAwsRegion(context) {
+  async getAwsRegion(_context) {
     return this.region;
   }
 
   /**
    * Retrieves AWS security credentials using the AWS SDK's default provider chain.
    */
-  async getAwsSecurityCredentials(context) {
+  async getAwsSecurityCredentials(_context) {
     console.log('CustomAwsSupplier: Resolving AWS credentials...');
 
     // Use the official AWS SDK provider chain. This will find credentials
@@ -93,7 +54,7 @@ class CustomAwsSupplier {
     const awsSecurityCredentials = {
       accessKeyId: awsCredentials.accessKeyId,
       secretAccessKey: awsCredentials.secretAccessKey,
-      token: awsCredentials.sessionToken, // Will be undefined if using static keys, which is fine
+      token: awsCredentials.sessionToken,
     };
 
     return awsSecurityCredentials;
@@ -104,33 +65,37 @@ class CustomAwsSupplier {
  * Main function to run the test.
  */
 async function main() {
-  if (
-    GCP_AUDIENCE.includes('YOUR_') ||
-    SA_IMPERSONATION_URL.includes('YOUR_')
-  ) {
+  // --- Configuration from Environment Variables ---
+  const gcpAudience = process.env.GCP_WORKLOAD_AUDIENCE;
+  const saImpersonationUrl = process.env.GCP_SERVICE_ACCOUNT_IMPERSONATION_URL;
+  const awsRegion = process.env.AWS_REGION;
+  const bucketName = process.env.GCS_BUCKET_NAME;
+
+  // --- Validate Environment Variables ---
+  if (!gcpAudience || !saImpersonationUrl || !awsRegion || !bucketName) {
     throw new Error(
-      'Please update the placeholder constants (GCP_AUDIENCE, SA_IMPERSONATION_URL) at the top of the script with your real values.',
+      'Missing required environment variables. Please check your .env file or environment settings. Required: GCP_WORKLOAD_AUDIENCE, GCP_SERVICE_ACCOUNT_IMPERSONATION_URL, AWS_REGION, GCS_BUCKET_NAME',
     );
   }
 
+  console.log(
+    '--- Running Custom AWS Workload Credential Supplier Example ---',
+  );
+
   // 1. Instantiate the custom supplier.
-  const customSupplier = new CustomAwsSupplier(AWS_REGION);
+  const customSupplier = new CustomAwsSupplier(awsRegion);
 
   // 2. Configure the AwsClient options using the constants.
   const clientOptions = {
-    audience: GCP_AUDIENCE,
+    audience: gcpAudience,
     subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request',
-    service_account_impersonation_url: SA_IMPERSONATION_URL,
-
-    // ** This is the key part: Inject the custom supplier **
+    service_account_impersonation_url: saImpersonationUrl,
     aws_security_credentials_supplier: customSupplier,
   };
 
   // 3. Create the auth client and the service client (Storage).
   const authClient = new AwsClient(clientOptions);
   const storage = new Storage({authClient});
-
-  const bucketName = 'pjiyer-byoid-test-gcs-bucket';
 
   // 4. Run the test command to verify authentication.
   console.log('Successfully configured client with custom AWS supplier.');
@@ -139,15 +104,14 @@ async function main() {
   );
   const [metadata] = await storage.bucket(bucketName).getMetadata();
 
-  console.log('Authentication Successful! Bucket metadata:');
+  console.log('\n--- SUCCESS ---');
+  console.log('Successfully authenticated and retrieved bucket metadata:');
   console.log(JSON.stringify(metadata, null, 2));
-
-  console.log('Done.');
 }
 
 // Execute the test.
 main().catch(err => {
-  console.error('\n--- TEST FAILED ---');
+  console.error('\n--- FAILED ---');
   console.error(err);
-  throw new Error('test failed');
+  throw new Error('Test failed.');
 });
