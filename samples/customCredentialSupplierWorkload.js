@@ -66,8 +66,6 @@ async function main() {
     );
   }
 
-  console.log('--- Running Custom Workload Credential Supplier Example ---');
-
   try {
     // 1. Create an instance of our custom supplier.
     const customSupplier = new CustomEnvVarSupplier();
@@ -92,11 +90,11 @@ async function main() {
     console.log(`[Test] Getting metadata for bucket: ${gcsBucketName}...`);
     const [metadata] = await storage.bucket(gcsBucketName).getMetadata();
 
-    console.log('\n--- ✅ SUCCESS ---');
+    console.log('\n--- SUCCESS ---');
     console.log('Successfully authenticated and retrieved bucket metadata:');
     console.log(JSON.stringify(metadata, null, 2));
   } catch (error) {
-    console.error('\n--- ❌ FAILED ---');
+    console.error('\n--- FAILED ---');
     console.error('An error occurred during the process:', error.message);
   }
 }
