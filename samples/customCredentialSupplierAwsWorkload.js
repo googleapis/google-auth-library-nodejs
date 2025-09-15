@@ -91,10 +91,6 @@ async function main() {
     );
   }
 
-  console.log(
-    '--- Running Custom AWS Workload Credential Supplier Example ---',
-  );
-
   // 1. Instantiate the custom supplier.
   const customSupplier = new CustomAwsSupplier(awsRegion);
 

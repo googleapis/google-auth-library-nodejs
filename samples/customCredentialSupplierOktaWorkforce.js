@@ -18,7 +18,7 @@ const {Storage} = require('@google-cloud/storage');
 const puppeteer = require('puppeteer');
 require('dotenv').config();
 
-// These values are loaded from the .env file for security.
+// These variables should be set in the .env file.
 const gcpProjectId = process.env.GCP_PROJECT_ID;
 const gcpWorkforceAudience = process.env.GCP_WORKFORCE_AUDIENCE;
 const serviceAccountImpersonationUrl =
@@ -40,10 +40,6 @@ const SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
 // The URL where the IdP posts the SAML assertion. We will intercept this.
 const ACS_URL =
   'https://auth.cloud.google/signin-callback/locations/global/workforcePools/';
-
-// ========================================================================
-// END CONFIGURATION
-// ========================================================================
 
 /**
  * A non-interactive supplier that uses browser automation (Puppeteer)
@@ -73,7 +69,11 @@ class AutomatedSamlSupplier {
   }
 
   /**
-   * Performs the automated SP-initiated SAML login flow using Puppeteer.
+   * Performs a fully automated, non-interactive, Service Provider (SP)-initiated
+   * SAML login flow using Puppeteer. It launches a headless browser, navigates
+   * to the GCP sign-in page, enters the provided credentials into the IdP's
+   * login form, and intercepts the network request containing the SAML
+   * assertion to complete the authentication.
    * @returns {Promise<string>} A promise that resolves with the Base64-encoded SAML assertion.
    */
   async performAutomatedLogin() {
