@@ -418,9 +418,9 @@ export class JWT extends OAuth2Client implements IdTokenProvider {
       );
     }
     const trustBoundaryUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-      '{service_account_email}',
-      encodeURIComponent(this.email),
-    );
+      '{universe_domain}',
+      this.universeDomain,
+    ).replace('{service_account_email}', encodeURIComponent(this.email));
     return trustBoundaryUrl;
   }
 }

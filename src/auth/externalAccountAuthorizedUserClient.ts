@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AuthClient, BodyResponseCallback, DEFAULT_UNIVERSE} from './authclient';
+import {AuthClient, BodyResponseCallback} from './authclient';
 import {
   ClientAuthentication,
   getErrorFromOAuthErrorResponse,
@@ -343,9 +343,6 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * @throws {Error} If the URL cannot be constructed for a compatible client.
    */
   protected async getTrustBoundaryUrl(): Promise<string | null> {
-    if (this.universeDomain !== DEFAULT_UNIVERSE) {
-      return null;
-    }
     const poolId = this.getWorkforcePoolId();
     if (!poolId) {
       throw new Error(
@@ -353,8 +350,8 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
       );
     }
     return WORKFORCE_LOOKUP_ENDPOINT.replace(
-      '{pool_id}',
-      encodeURIComponent(poolId),
-    );
+      '{universe_domain}',
+      this.universeDomain,
+    ).replace('{pool_id}', encodeURIComponent(poolId));
   }
 }

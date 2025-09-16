@@ -908,9 +908,9 @@ describe('ExternalAccountAuthorizedUserClient', () => {
       ]);
 
       const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-        '{pool_id}',
-        encodeURIComponent(workforcePoolId),
-      );
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace('{pool_id}', encodeURIComponent(workforcePoolId));
       const tbScope = nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)

@@ -2654,9 +2654,11 @@ describe('BaseExternalAccountClient', () => {
       ]);
 
       const lookupUrl = WORKLOAD_LOOKUP_ENDPOINT.replace(
-        '{project_id}',
-        projectNumber,
-      ).replace('{pool_id}', workloadPoolId);
+        '{universe_domain}',
+        'googleapis.com',
+      )
+        .replace('{project_id}', projectNumber)
+        .replace('{pool_id}', workloadPoolId);
       const tbScope = nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)
@@ -2700,9 +2702,9 @@ describe('BaseExternalAccountClient', () => {
       ]);
 
       const lookupUrl = WORKFORCE_LOOKUP_ENDPOINT.replace(
-        '{pool_id}',
-        workforcePoolId,
-      );
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace('{pool_id}', workforcePoolId);
       const tbScope = nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)
@@ -2779,9 +2781,9 @@ describe('BaseExternalAccountClient', () => {
       ]);
 
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(saEmail),
-      );
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace('{service_account_email}', encodeURIComponent(saEmail));
       const tbScope = nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)

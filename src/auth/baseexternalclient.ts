@@ -759,28 +759,27 @@ export abstract class BaseExternalAccountClient extends AuthClient {
         );
       }
       return SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(email),
-      );
+        '{universe_domain}',
+        this.universeDomain,
+      ).replace('{service_account_email}', encodeURIComponent(email));
     }
 
     //check for workforce
     const wfPoolId = this.#getWorkForcePoolId(this.audience);
     if (wfPoolId) {
       return WORKFORCE_LOOKUP_ENDPOINT.replace(
-        '{pool_id}',
-        encodeURIComponent(wfPoolId),
-      );
+        '{universe_domain}',
+        this.universeDomain,
+      ).replace('{pool_id}', encodeURIComponent(wfPoolId));
     }
 
     //check for workload
     const wlPoolId = this.#getWorkloadPoolId(this.audience);
     const projectNumber = this.getProjectNumber(this.audience);
     if (wlPoolId && projectNumber) {
-      return WORKLOAD_LOOKUP_ENDPOINT.replace(
-        '{project_id}',
-        projectNumber,
-      ).replace('{pool_id}', wlPoolId);
+      return WORKLOAD_LOOKUP_ENDPOINT.replace('{project_id}', projectNumber)
+        .replace('{pool_id}', wlPoolId)
+        .replace('{universe_domain}', this.universeDomain);
     }
 
     throw new RangeError(

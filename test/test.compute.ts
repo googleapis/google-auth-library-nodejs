@@ -295,9 +295,9 @@ describe('compute', () => {
       trustBoundaryData: TrustBoundaryData = EXPECTED_TB_DATA,
     ): nock.Scope {
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(email),
-      );
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace('{service_account_email}', encodeURIComponent(email));
       return nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)

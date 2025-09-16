@@ -434,9 +434,9 @@ describe('AuthClient', () => {
       trustBoundaryData: TrustBoundaryData = EXPECTED_TB_DATA,
     ): nock.Scope {
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(email),
-      );
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace('{service_account_email}', encodeURIComponent(email));
       return nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)
@@ -471,6 +471,9 @@ describe('AuthClient', () => {
     it('should retry trust boundary lookup on failure', async () => {
       const compute = new Compute({serviceAccountEmail: SERVICE_ACCOUNT_EMAIL});
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace(
         '{service_account_email}',
         encodeURIComponent(SERVICE_ACCOUNT_EMAIL),
       );
@@ -566,6 +569,9 @@ describe('AuthClient', () => {
       compute.trustBoundary = EXPECTED_TB_DATA;
 
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace(
         '{service_account_email}',
         encodeURIComponent(SERVICE_ACCOUNT_EMAIL),
       );
@@ -592,6 +598,9 @@ describe('AuthClient', () => {
       });
 
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace(
         '{service_account_email}',
         encodeURIComponent(SERVICE_ACCOUNT_EMAIL),
       );
