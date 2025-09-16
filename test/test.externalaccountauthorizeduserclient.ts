@@ -873,7 +873,6 @@ describe('ExternalAccountAuthorizedUserClient', () => {
   });
 
   describe('trust boundaries', () => {
-    // todo fix unit tests.
     const MOCK_ACCESS_TOKEN = 'newAccessToken';
     const MOCK_AUTH_HEADER = `Bearer ${MOCK_ACCESS_TOKEN}`;
     const EXPECTED_TB_DATA: TrustBoundaryData = {
