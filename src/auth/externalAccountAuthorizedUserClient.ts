@@ -34,6 +34,7 @@ import {
   SharedExternalAccountClientOptions,
 } from './baseexternalclient';
 import {WORKFORCE_LOOKUP_ENDPOINT} from './trustboundary';
+import {getWorkforcePoolIdFromAudience} from '../util';
 
 /**
  * The credentials JSON file type for external account authorized user clients.
@@ -321,21 +322,6 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
   }
 
   /**
-   * Retrieves the workforce pool ID from the audience.
-   *
-   * The audience has the format:
-   * `//iam.googleapis.com/locations/global/workforcePools/{pool_id}/providers/{provider_id}`
-   *
-   * @returns The workforce pool ID, or `null` if it cannot be determined.
-   */
-  getWorkforcePoolId(): string | null {
-    const match = this.audience.match(
-      /\/workforcePools\/(?<poolId>[^/]+)\/providers\//,
-    );
-    return match?.groups?.poolId ?? null;
-  }
-
-  /**
    * Constructs the trust boundary lookup URL for the client.
    *
    * @return The trust boundary URL string, or `null` if the client type
@@ -343,7 +329,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
    * @throws {Error} If the URL cannot be constructed for a compatible client.
    */
   protected async getTrustBoundaryUrl(): Promise<string | null> {
-    const poolId = this.getWorkforcePoolId();
+    const poolId = getWorkforcePoolIdFromAudience(this.audience);
     if (!poolId) {
       throw new Error(
         `TrustBoundary: A workforce pool ID is required for trust boundary lookups but could not be determined from the audience: ${this.audience}.`,

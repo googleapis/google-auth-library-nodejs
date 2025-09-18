@@ -31,6 +31,7 @@ import {
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
+import {getWorkforcePoolIdFromAudience} from '../util';
 import {pkg} from '../shared.cjs';
 import {
   SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
@@ -716,23 +717,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
   }
 
   /**
-   * Returns the workforce identity pool id if it is determinable
-   * from the audience resource name.
-   * @param audience The STS audience used to determine the pool id.
-   * @return The pool id associated with the workforce identity pool, if
-   *   this can be determined from the STS audience field. Otherwise, null is
-   *   returned.
-   */
-  #getWorkForcePoolId(audience: string): string | null {
-    // STS audience pattern:
-    // .../workforcePools/$WORKFORCE_POOL_ID/providers/...
-    return (
-      audience.match(/\/workforcePools\/(?<workforcePool>[^/]+)\/providers\//)
-        ?.groups?.workforcePool ?? null
-    );
-  }
-
-  /**
    * Returns the workload identity pool id if it is determinable
    * from the audience resource name.
    * @param audience The STS audience used to determine the pool id.
@@ -752,6 +736,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   protected async getTrustBoundaryUrl(): Promise<string> {
     if (this.serviceAccountImpersonationUrl) {
+      // When impersonating a service account, the trust boundary is determined
+      // by the security policies of the target service account.
       const email = this.getServiceAccountEmail();
       if (!email) {
         throw new Error(
@@ -764,8 +750,8 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       ).replace('{service_account_email}', encodeURIComponent(email));
     }
 
-    //check for workforce
-    const wfPoolId = this.#getWorkForcePoolId(this.audience);
+    // Check if the audience corresponds to a workload identity pool.
+    const wfPoolId = getWorkforcePoolIdFromAudience(this.audience);
     if (wfPoolId) {
       return WORKFORCE_LOOKUP_ENDPOINT.replace(
         '{universe_domain}',
@@ -773,7 +759,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
       ).replace('{pool_id}', encodeURIComponent(wfPoolId));
     }
 
-    //check for workload
+    // Check if the audience corresponds to a workforce identity pool.
     const wlPoolId = this.#getWorkloadPoolId(this.audience);
     const projectNumber = this.getProjectNumber(this.audience);
     if (wlPoolId && projectNumber) {

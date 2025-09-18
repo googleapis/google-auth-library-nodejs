@@ -407,9 +407,14 @@ export abstract class AuthClient
       headers.set('x-goog-user-project', this.quotaProjectId);
     }
 
-    const trustBoundaryHeader = this.getTrustBoundaryHeader();
-    if (trustBoundaryHeader !== null) {
-      headers.set('x-allowed-locations', trustBoundaryHeader);
+    if (this.trustBoundaryEnabled && this.trustBoundary) {
+      //Empty header sent in case trust-boundary has no-op encoded location.
+      headers.set(
+        'x-allowed-locations',
+        this.trustBoundary.encodedLocations === NoOpEncodedLocations
+          ? ''
+          : this.trustBoundary.encodedLocations,
+      );
     }
 
     return headers;
@@ -661,21 +666,6 @@ export abstract class AuthClient
         },
       );
     }
-  }
-
-  /**
-   * Gets the trust boundary header to be attached to the request.
-   */
-  protected getTrustBoundaryHeader(): string | null {
-    let trustBoundaryHeader = null;
-    if (this.trustBoundaryEnabled && this.trustBoundary) {
-      //Empty header sent in case trust-boundary has no-op encoded location.
-      trustBoundaryHeader =
-        this.trustBoundary.encodedLocations === NoOpEncodedLocations
-          ? ''
-          : this.trustBoundary.encodedLocations;
-    }
-    return trustBoundaryHeader;
   }
 
   /**
