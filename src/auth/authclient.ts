@@ -408,7 +408,7 @@ export abstract class AuthClient
     }
 
     if (this.trustBoundaryEnabled && this.trustBoundary) {
-      //Empty header sent in case trust-boundary has no-op encoded location.
+      // Empty header sent in case trust-boundary has no-op encoded location.
       headers.set(
         'x-allowed-locations',
         this.trustBoundary.encodedLocations === NoOpEncodedLocations

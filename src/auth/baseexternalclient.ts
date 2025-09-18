@@ -31,7 +31,10 @@ import {
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
-import {getWorkforcePoolIdFromAudience} from '../util';
+import {
+  getWorkforcePoolIdFromAudience,
+  getWorkloadPoolIdFromAudience,
+} from '../util';
 import {pkg} from '../shared.cjs';
 import {
   SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
@@ -716,24 +719,6 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     return this.tokenUrl;
   }
 
-  /**
-   * Returns the workload identity pool id if it is determinable
-   * from the audience resource name.
-   * @param audience The STS audience used to determine the pool id.
-   * @return The pool id associated with the workload identity pool, if
-   *   this can be determined from the STS audience field. Otherwise, null is
-   *   returned.
-   */
-  #getWorkloadPoolId(audience: string): string | null {
-    // STS audience pattern:
-    // .../workloadIdentityPools/POOL_ID/providers/...
-    return (
-      audience.match(
-        /\/workloadIdentityPools\/(?<workloadPool>[^/]+)\/providers\//,
-      )?.groups?.workloadPool ?? null
-    );
-  }
-
   protected async getTrustBoundaryUrl(): Promise<string> {
     if (this.serviceAccountImpersonationUrl) {
       // When impersonating a service account, the trust boundary is determined
@@ -760,7 +745,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     }
 
     // Check if the audience corresponds to a workforce identity pool.
-    const wlPoolId = this.#getWorkloadPoolId(this.audience);
+    const wlPoolId = getWorkloadPoolIdFromAudience(this.audience);
     const projectNumber = this.getProjectNumber(this.audience);
     if (wlPoolId && projectNumber) {
       return WORKLOAD_LOOKUP_ENDPOINT.replace('{project_id}', projectNumber)

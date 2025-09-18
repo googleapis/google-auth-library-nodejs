@@ -454,6 +454,25 @@ describe('AuthClient', () => {
       nock.cleanAll();
     });
 
+    it('should not call look-up endpoint if GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED is not true', async () => {
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+      const compute = new Compute({serviceAccountEmail: SERVICE_ACCOUNT_EMAIL});
+      const scopes = [
+        setupTokenNock(SERVICE_ACCOUNT_EMAIL),
+        mockExample(),
+        setupTrustBoundaryNock(SERVICE_ACCOUNT_EMAIL),
+      ];
+      await compute.request({url});
+      assert.deepStrictEqual(compute.trustBoundary, null);
+      assert.strictEqual(
+        scopes[2].isDone(),
+        false,
+        'Trust boundary endpoint should not be called',
+      );
+      scopes[0].done();
+      scopes[1].done();
+    });
+
     it('should fetch and return trust boundary data successfully', async () => {
       const compute = new Compute({serviceAccountEmail: SERVICE_ACCOUNT_EMAIL});
       const scopes = [
