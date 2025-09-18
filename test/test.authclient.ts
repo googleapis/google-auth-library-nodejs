@@ -434,9 +434,9 @@ describe('AuthClient', () => {
       trustBoundaryData: TrustBoundaryData = EXPECTED_TB_DATA,
     ): nock.Scope {
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(email),
-      );
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace('{service_account_email}', encodeURIComponent(email));
       return nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)
@@ -454,6 +454,25 @@ describe('AuthClient', () => {
       nock.cleanAll();
     });
 
+    it('should not call look-up endpoint if GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED is not true', async () => {
+      delete process.env['GOOGLE_AUTH_TRUST_BOUNDARY_ENABLED'];
+      const compute = new Compute({serviceAccountEmail: SERVICE_ACCOUNT_EMAIL});
+      const scopes = [
+        setupTokenNock(SERVICE_ACCOUNT_EMAIL),
+        mockExample(),
+        setupTrustBoundaryNock(SERVICE_ACCOUNT_EMAIL),
+      ];
+      await compute.request({url});
+      assert.deepStrictEqual(compute.trustBoundary, null);
+      assert.strictEqual(
+        scopes[2].isDone(),
+        false,
+        'Trust boundary endpoint should not be called',
+      );
+      scopes[0].done();
+      scopes[1].done();
+    });
+
     it('should fetch and return trust boundary data successfully', async () => {
       const compute = new Compute({serviceAccountEmail: SERVICE_ACCOUNT_EMAIL});
       const scopes = [
@@ -464,6 +483,37 @@ describe('AuthClient', () => {
 
       await compute.request({url});
 
+      assert.deepStrictEqual(compute.trustBoundary, EXPECTED_TB_DATA);
+      scopes.forEach(s => s.done());
+    });
+
+    it('should retry trust boundary lookup on failure', async () => {
+      const compute = new Compute({serviceAccountEmail: SERVICE_ACCOUNT_EMAIL});
+      const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace(
+        '{service_account_email}',
+        encodeURIComponent(SERVICE_ACCOUNT_EMAIL),
+      );
+      const tbScopeFail = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(503, {error: 'server unavailable'});
+      const tbScopeSuccess = nock(new URL(lookupUrl).origin)
+        .get(new URL(lookupUrl).pathname)
+        .matchHeader('authorization', MOCK_AUTH_HEADER)
+        .reply(200, EXPECTED_TB_DATA);
+      const scopes = [
+        setupTokenNock(SERVICE_ACCOUNT_EMAIL),
+        tbScopeFail,
+        tbScopeSuccess,
+        mockExample(),
+      ];
+
+      await compute.request({url});
+
+      // The request should have succeeded after the retry.
       assert.deepStrictEqual(compute.trustBoundary, EXPECTED_TB_DATA);
       scopes.forEach(s => s.done());
     });
@@ -538,6 +588,9 @@ describe('AuthClient', () => {
       compute.trustBoundary = EXPECTED_TB_DATA;
 
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace(
         '{service_account_email}',
         encodeURIComponent(SERVICE_ACCOUNT_EMAIL),
       );
@@ -564,6 +617,9 @@ describe('AuthClient', () => {
       });
 
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace(
         '{service_account_email}',
         encodeURIComponent(SERVICE_ACCOUNT_EMAIL),
       );

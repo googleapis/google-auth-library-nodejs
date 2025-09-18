@@ -33,6 +33,8 @@ import {
   EXPIRATION_TIME_OFFSET,
   SharedExternalAccountClientOptions,
 } from './baseexternalclient';
+import {WORKFORCE_LOOKUP_ENDPOINT} from './trustboundary';
+import {getWorkforcePoolIdFromAudience} from '../util';
 
 /**
  * The credentials JSON file type for external account authorized user clients.
@@ -158,6 +160,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
   private cachedAccessToken: CredentialsWithResponse | null;
   private readonly externalAccountAuthorizedUserHandler: ExternalAccountAuthorizedUserHandler;
   private refreshToken: string;
+  private readonly audience: string;
 
   /**
    * Instantiates an ExternalAccountAuthorizedUserClient instances using the
@@ -171,6 +174,7 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
     if (options.universe_domain) {
       this.universeDomain = options.universe_domain;
     }
+    this.audience = options.audience;
     this.refreshToken = options.refresh_token;
     const clientAuthentication = {
       confidentialClientType: 'basic',
@@ -309,6 +313,31 @@ export class ExternalAccountAuthorizedUserClient extends AuthClient {
       this.refreshToken = refreshResponse.refresh_token;
     }
 
+    // Set credentials and refresh trust boundary data.
+    this.credentials = {...this.cachedAccessToken};
+    delete (this.credentials as CredentialsWithResponse).res;
+    this.trustBoundary = await this.refreshTrustBoundary(this.credentials);
+
     return this.cachedAccessToken;
+  }
+
+  /**
+   * Constructs the trust boundary lookup URL for the client.
+   *
+   * @return The trust boundary URL string, or `null` if the client type
+   * does not support trust boundaries.
+   * @throws {Error} If the URL cannot be constructed for a compatible client.
+   */
+  protected async getTrustBoundaryUrl(): Promise<string | null> {
+    const poolId = getWorkforcePoolIdFromAudience(this.audience);
+    if (!poolId) {
+      throw new Error(
+        `TrustBoundary: A workforce pool ID is required for trust boundary lookups but could not be determined from the audience: ${this.audience}.`,
+      );
+    }
+    return WORKFORCE_LOOKUP_ENDPOINT.replace(
+      '{universe_domain}',
+      this.universeDomain,
+    ).replace('{pool_id}', encodeURIComponent(poolId));
   }
 }

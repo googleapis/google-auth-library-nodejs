@@ -31,7 +31,16 @@ import {
 import * as sts from './stscredentials';
 import {ClientAuthentication} from './oauth2common';
 import {SnakeToCamelObject, originalOrCamelOptions} from '../util';
+import {
+  getWorkforcePoolIdFromAudience,
+  getWorkloadPoolIdFromAudience,
+} from '../util';
 import {pkg} from '../shared.cjs';
+import {
+  SERVICE_ACCOUNT_LOOKUP_ENDPOINT,
+  WORKFORCE_LOOKUP_ENDPOINT,
+  WORKLOAD_LOOKUP_ENDPOINT,
+} from './trustboundary';
 
 /**
  * The required token exchange grant_type: rfc8693#section-2.1
@@ -615,6 +624,7 @@ export abstract class BaseExternalAccountClient extends AuthClient {
     Object.assign(this.credentials, this.cachedAccessToken);
     delete (this.credentials as CredentialsWithResponse).res;
 
+    this.trustBoundary = await this.refreshTrustBoundary(this.credentials);
     // Trigger tokens event to notify external listeners.
     this.emit('tokens', {
       refresh_token: null,
@@ -707,5 +717,44 @@ export abstract class BaseExternalAccountClient extends AuthClient {
 
   protected getTokenUrl(): string {
     return this.tokenUrl;
+  }
+
+  protected async getTrustBoundaryUrl(): Promise<string> {
+    if (this.serviceAccountImpersonationUrl) {
+      // When impersonating a service account, the trust boundary is determined
+      // by the security policies of the target service account.
+      const email = this.getServiceAccountEmail();
+      if (!email) {
+        throw new Error(
+          `TrustBoundary: A service account email is required for trust boundary lookups but could not be determined from the serviceAccountImpersonationUrl ${this.serviceAccountImpersonationUrl}.`,
+        );
+      }
+      return SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        this.universeDomain,
+      ).replace('{service_account_email}', encodeURIComponent(email));
+    }
+
+    // Check if the audience corresponds to a workload identity pool.
+    const wfPoolId = getWorkforcePoolIdFromAudience(this.audience);
+    if (wfPoolId) {
+      return WORKFORCE_LOOKUP_ENDPOINT.replace(
+        '{universe_domain}',
+        this.universeDomain,
+      ).replace('{pool_id}', encodeURIComponent(wfPoolId));
+    }
+
+    // Check if the audience corresponds to a workforce identity pool.
+    const wlPoolId = getWorkloadPoolIdFromAudience(this.audience);
+    const projectNumber = this.getProjectNumber(this.audience);
+    if (wlPoolId && projectNumber) {
+      return WORKLOAD_LOOKUP_ENDPOINT.replace('{project_id}', projectNumber)
+        .replace('{pool_id}', wlPoolId)
+        .replace('{universe_domain}', this.universeDomain);
+    }
+
+    throw new RangeError(
+      `TrustBoundary: Invalid audience provided: "${this.audience}" does not correspond to a workforce or workload pool.`,
+    );
   }
 }

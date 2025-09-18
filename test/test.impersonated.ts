@@ -591,9 +591,9 @@ describe('impersonated', () => {
       trustBoundaryData: TrustBoundaryData = EXPECTED_TB_DATA,
     ): nock.Scope {
       const lookupUrl = SERVICE_ACCOUNT_LOOKUP_ENDPOINT.replace(
-        '{service_account_email}',
-        encodeURIComponent(email),
-      );
+        '{universe_domain}',
+        'googleapis.com',
+      ).replace('{service_account_email}', encodeURIComponent(email));
       return nock(new URL(lookupUrl).origin)
         .get(new URL(lookupUrl).pathname)
         .matchHeader('authorization', MOCK_AUTH_HEADER)
@@ -688,7 +688,7 @@ describe('impersonated', () => {
       ];
       await assert.rejects(
         impersonated.getRequestHeaders(),
-        /TrustBoundary: Error getting tbUrl because of missing targetPrincipal in ImpersonatedClient/,
+        /TrustBoundary: A targetPrincipal is required for trust boundary lookups but was not provided in the ImpersonatedClient options./,
       );
       scopes.forEach(s => s.done());
     });
