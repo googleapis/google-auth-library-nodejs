@@ -1,7 +1,7 @@
 // Copyright 2025 Google LLC
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// you may not use this file except in compliance with the License.
 //
 //    http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -13,208 +13,180 @@
 
 'use strict';
 
-const {GoogleAuth} = require('google-auth-library');
-const {Storage} = require('@google-cloud/storage');
-const puppeteer = require('puppeteer');
+const {IdentityPoolClient} = require('google-auth-library');
+const {Gaxios} = require('gaxios');
 require('dotenv').config();
 
-// These variables should be set in the .env file.
-const gcpProjectId = process.env.GCP_PROJECT_ID;
+// --- Configuration from Environment Variables ---
+// These variables should be set in a .env file for local testing.
+
+// Workforce Pool User Project
+const workforcePoolUserProject = process.env.WORKFORCE_POOL_USER_PROJECT;
 const gcpWorkforceAudience = process.env.GCP_WORKFORCE_AUDIENCE;
 const serviceAccountImpersonationUrl =
   process.env.GCP_SERVICE_ACCOUNT_IMPERSONATION_URL;
-const OKTA_USERNAME = process.env.OKTA_USERNAME;
-const OKTA_PASSWORD = process.env.OKTA_USERNAME;
-const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME; // The bucket to get metadata from.
+const gcsBucketName = process.env.GCS_BUCKET_NAME;
 
-// The Sign-in URL requires the full provider resource name (the audience).
-const GCP_SIGN_IN_URL = `https://auth.cloud.google/signin-workforce?provider=${encodeURIComponent(
-  gcpWorkforceAudience,
-)}`;
+// Okta Configuration
+const oktaDomain = process.env.OKTA_DOMAIN; // e.g., 'https://dev-12345.okta.com'
+const oktaClientId = process.env.OKTA_CLIENT_ID; // The Client ID of your Okta M2M application
+const oktaClientSecret = process.env.OKTA_CLIENT_SECRET; // The Client Secret of your Okta M2M application
 
-// This is the Google STS endpoint for exchanging the SAML assertion.
+// Constants for the authentication flow
 const TOKEN_URL = 'https://sts.googleapis.com/v1/token';
-// This subject token type tells STS that we are sending a SAML 2.0 assertion.
-const SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:saml2';
-
-// The URL where the IdP posts the SAML assertion. We will intercept this.
-const ACS_URL =
-  'https://auth.cloud.google/signin-callback/locations/global/workforcePools/';
+const SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:jwt';
 
 /**
- * A non-interactive supplier that uses browser automation (Puppeteer)
- * to perform a SAML login flow and capture the assertion.
+ * A custom SubjectTokenSupplier that authenticates with Okta using the
+ * Client Credentials grant flow.
+ *
+ * This flow is designed for machine-to-machine (M2M) authentication and
+ * exchanges the application's client_id and client_secret for an access token.
+ *
+ * This is the recommended secure pattern for service-to-service communication.
  */
-class AutomatedSamlSupplier {
-  constructor(username, password) {
-    this.username = username;
-    this.password = password;
-    this.samlAssertion = null;
-    console.log('AutomatedSamlSupplier initialized.');
+class OktaClientCredentialsSupplier {
+  constructor(domain, clientId, clientSecret) {
+    this.oktaTokenUrl = `${domain}/oauth2/default/v1/token`;
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+    this.accessToken = null;
+    this.expiryTime = 0;
+    this.gaxios = new Gaxios();
+    console.log('OktaClientCredentialsSupplier initialized.');
   }
 
   /**
-   * Main method called by the auth library. Returns a cached assertion
-   * or triggers the full automation flow if no valid assertion exists.
+   * Main method called by the auth library. It will fetch a new token if one
+   * is not already cached.
+   * @returns {Promise<string>} A promise that resolves with the Okta Access token.
    */
   async getSubjectToken() {
-    if (this.samlAssertion) {
-      // In a real app, you might check for assertion expiration here.
-      console.log('Returning cached SAML assertion.');
-      return this.samlAssertion;
+    // Check if the current token is still valid (with a 60-second buffer).
+    const isTokenValid =
+      this.accessToken && Date.now() < this.expiryTime - 60 * 1000;
+
+    if (isTokenValid) {
+      console.log('[Supplier] Returning cached Okta Access token.');
+      return this.accessToken;
     }
-    console.log('No cached assertion. Starting automated SAML login...');
-    this.samlAssertion = await this.performAutomatedLogin();
-    return this.samlAssertion;
+
+    console.log(
+      '[Supplier] Token is missing or expired. Fetching new Okta Access token via Client Credentials grant...',
+    );
+    const {accessToken, expiresIn} = await this.fetchOktaAccessToken();
+    this.accessToken = accessToken;
+    // Calculate the absolute expiry time in milliseconds.
+    this.expiryTime = Date.now() + expiresIn * 1000;
+    return this.accessToken;
   }
 
   /**
-   * Performs a fully automated, non-interactive, Service Provider (SP)-initiated
-   * SAML login flow using Puppeteer. It launches a headless browser, navigates
-   * to the GCP sign-in page, enters the provided credentials into the IdP's
-   * login form, and intercepts the network request containing the SAML
-   * assertion to complete the authentication.
-   * @returns {Promise<string>} A promise that resolves with the Base64-encoded SAML assertion.
+   * Performs the Client Credentials grant flow by making a POST request to Okta's token endpoint.
+   * @returns {Promise<string>} A promise that resolves with the Access Token from Okta.
    */
-  async performAutomatedLogin() {
-    // Launch the browser in headless mode for terminal/CI environments.
-    // For local debugging of the login flow, you can set `headless: false`
-    // to watch the automation in a visible browser window.
-    console.log('Launching headless browser to perform automated login...');
-    const browser = await puppeteer.launch({headless: true});
-    const page = await browser.newPage();
+  async fetchOktaAccessToken() {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'client_credentials');
+    // For Client Credentials, scopes are optional and define the permissions
+    // the token will have. If you have custom scopes, add them here.
+    params.append('scope', 'gcp.test.read');
 
-    const promise = new Promise((resolve, reject) => {
-      // Intercept network requests to find the SAML Response.
-      page
-        .setRequestInterception(true)
-        .then(() => {
-          page.on('request', request => {
-            if (
-              request.url().startsWith(ACS_URL) &&
-              request.method() === 'POST'
-            ) {
-              const payload = request.postData();
-              const samlResponse = new URLSearchParams(payload).get(
-                'SAMLResponse',
-              );
-              if (samlResponse) {
-                console.log('SAML Assertion captured successfully!');
-                const decodedSaml = decodeURIComponent(samlResponse);
-                const reEncodedSaml = Buffer.from(
-                  decodedSaml,
-                  'base64',
-                ).toString('base64');
-                resolve(reEncodedSaml);
-              }
-            }
-            request.continue();
-          });
+    // The client_id and client_secret are sent in a Basic Auth header.
+    const authHeader =
+      'Basic ' +
+      Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
 
-          // 1. Start the SP-initiated flow.
-          console.log(`Navigating to GCP Sign-in URL: ${GCP_SIGN_IN_URL}`);
-          return page.goto(GCP_SIGN_IN_URL, {waitUntil: 'networkidle0'});
-        })
-        .then(() => {
-          // 2. The page should have automatically redirected to the Okta login page.
-          console.log('Waiting for IdP login page and entering credentials...');
+    try {
+      const response = await this.gaxios.request({
+        url: this.oktaTokenUrl,
+        method: 'POST',
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        data: params.toString(),
+      });
 
-          // NOTE: This sequence is specific to the Okta login page. If you are using
-          // a different IdP (like Azure AD), you will need to inspect its login
-          // page and update the selectors and actions below accordingly.
-          // --- CUSTOMIZABLE LOGIN SEQUENCE FOR OKTA ---
-          return page.waitForSelector('#okta-signin-username', {
-            timeout: 30000,
-          });
-        })
-        .then(() => page.type('#okta-signin-username', this.username))
-        .then(() => page.type('#okta-signin-password', this.password))
-        .then(() => page.click('#okta-signin-submit'))
-        .then(() => {
-          // --- END CUSTOMIZABLE SEQUENCE ---
+      const {access_token, expires_in} = response.data;
 
-          // 3. Wait for the final navigation after login.
-          return page.waitForNavigation({
-            waitUntil: 'networkidle0',
-            timeout: 30000,
-          });
-        })
-        .catch(error => {
-          console.error(
-            'An error occurred during the browser automation.',
-            error,
-          );
-          reject(error);
-        });
-    });
-
-    // Ensure the browser is closed whether the promise resolves or rejects.
-    return promise.finally(async () => {
-      await browser.close();
-      console.log('Browser closed.');
-    });
+      if (access_token && expires_in) {
+        console.log(
+          `[Supplier] Successfully received Access Token from Okta. Expires in ${expires_in} seconds.`,
+        );
+        return {accessToken: access_token, expiresIn: expires_in};
+      } else {
+        throw new Error(
+          'Access token or expires_in not found in Okta response.',
+        );
+      }
+    } catch (error) {
+      console.error(
+        '[Supplier] Error fetching token from Okta:',
+        error.response?.data || error.message,
+      );
+      throw new Error(
+        'Failed to authenticate with Okta using Client Credentials grant.',
+      );
+    }
   }
 }
 
 /**
- * Main function to run the test.
+ * Main function to demonstrate the custom supplier.
  */
 async function main() {
   if (
+    !workforcePoolUserProject ||
     !gcpWorkforceAudience ||
     !serviceAccountImpersonationUrl ||
-    !OKTA_USERNAME ||
-    !OKTA_PASSWORD ||
-    !gcpProjectId
+    !gcsBucketName ||
+    !oktaDomain ||
+    !oktaClientId ||
+    !oktaClientSecret
   ) {
     throw new Error(
-      'Required environment variables are not set. Please create and configure a .env file with all required values.',
+      'Missing required environment variables. Please check your .env file.',
     );
   }
 
-  // 1. Instantiate our automated supplier with credentials.
-  const automatedSupplier = new AutomatedSamlSupplier(
-    OKTA_USERNAME,
-    OKTA_PASSWORD,
+  // 1. Instantiate our custom supplier with Okta credentials.
+  const oktaSupplier = new OktaClientCredentialsSupplier(
+    oktaDomain,
+    oktaClientId,
+    oktaClientSecret,
   );
 
-  // 2. Configure the main GoogleAuth client.
-  // This is a more robust pattern. Instead of creating a low-level client,
-  // we describe the entire authentication flow in a configuration object.
-  // The GoogleAuth class will use this to construct the correct clients internally.
-  const auth = new GoogleAuth({
-    // By setting the project ID at the top level, we ensure it's used for all
-    // API calls, including the internal call to the impersonation endpoint.
-    projectId: gcpProjectId,
-    credentials: {
-      type: 'identity_pool',
-      audience: gcpWorkforceAudience,
-      subject_token_type: SUBJECT_TOKEN_TYPE,
-      token_url: TOKEN_URL,
-      subject_token_supplier: automatedSupplier,
-      // The impersonation URL is now read directly from the environment.
-      service_account_impersonation_url: serviceAccountImpersonationUrl,
-    },
+  // 2. Instantiate an IdentityPoolClient directly with the required configuration.
+  // This client is specialized for workforce/workload identity federation flows.
+  const client = new IdentityPoolClient({
+    // For workforce pools, this project is used for quota and billing purposes.
+    // It's passed as the `x-goog-user-project` header.
+    workforcePoolUserProject: workforcePoolUserProject,
+    // The full configuration for the identity pool token exchange.
+    audience: gcpWorkforceAudience,
+    subject_token_type: SUBJECT_TOKEN_TYPE,
+    token_url: TOKEN_URL,
+    subject_token_supplier: oktaSupplier,
+    service_account_impersonation_url: serviceAccountImpersonationUrl,
   });
 
-  // 3. Create a service client using the fully configured GoogleAuth instance.
-  const storage = new Storage({auth});
+  // 3. Construct the URL for the Cloud Storage JSON API to get bucket metadata.
+  const url = `https://storage.googleapis.com/storage/v1/b/${gcsBucketName}`;
+  console.log(`[Test] Getting metadata for bucket: ${gcsBucketName}...`);
+  console.log(`[Test] Request URL: ${url}`);
 
-  // 4. Run a new test command to verify authentication and impersonation.
-  console.log('Successfully configured client for impersonation.');
-  console.log(`Attempting to get metadata for bucket: ${GCS_BUCKET_NAME}...`);
-  const [metadata] = await storage.bucket(GCS_BUCKET_NAME).getMetadata();
+  // 4. Use the client to make an authenticated request.
+  const res = await client.request({url});
 
-  console.log('\n--- AUTHENTICATION & IMPERSONATION SUCCESSFUL ---');
-  console.log(JSON.stringify(metadata, null, 2));
-  console.log(`Bucket Name: ${metadata.name}`);
-  console.log(`Location: ${metadata.location}`);
-  console.log(`Storage Class: ${metadata.storageClass}`);
+  console.log('\n--- SUCCESS! ---');
+  console.log('Successfully authenticated and retrieved bucket data:');
+  console.log(JSON.stringify(res.data, null, 2));
 }
 
-// Execute the test.
-main().catch(err => {
-  console.error('\n--- SCRIPT FAILED ---');
-  console.error(err);
-  throw new Error('Test failed.');
+main().catch(error => {
+  console.error('\n--- FAILED ---');
+  const fullError = error.response?.data || error;
+  console.error(JSON.stringify(fullError, null, 2));
+  process.exitCode = 1;
 });
