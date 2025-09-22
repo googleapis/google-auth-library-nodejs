@@ -19,6 +19,7 @@
     "@googleapis/iam": "^32.0.0",
     "google-auth-library": "^10.4.0",
     "dotenv": "^16.3.1",
+    "gaxios": "^7.0.0",
     "node-fetch": "^2.3.0",
     "open": "^9.0.0",
     "puppeteer": "^21.5.2",
