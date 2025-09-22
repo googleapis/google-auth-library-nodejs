@@ -16,7 +16,6 @@
 // --- Imports ---
 const {AwsClient} = require('google-auth-library');
 const {fromNodeProviderChain} = require('@aws-sdk/credential-providers');
-const {Storage} = require('@google-cloud/storage');
 
 /**
  * Custom AWS Security Credentials Supplier.
@@ -45,6 +44,9 @@ class CustomAwsSupplier {
    * Retrieves AWS security credentials using the AWS SDK's default provider chain.
    */
   async getAwsSecurityCredentials(_context) {
+    if (this.cachedCredentials && this.cachedExpiry > Date.now()) {
+      return this.cachedCredentials;
+    }
     console.log('CustomAwsSupplier: Resolving AWS credentials...');
 
     // Use the official AWS SDK provider chain. This will find credentials
@@ -70,6 +72,12 @@ class CustomAwsSupplier {
       token: awsCredentials.sessionToken,
     };
 
+    // Use the expiration from the AWS credentials if it exists.
+    // Otherwise, fall back to a 5-minute cache (in case testing in local system).
+    this.cachedCredentials = awsSecurityCredentials;
+    this.cachedExpiry = awsCredentials.expiration
+      ? awsCredentials.expiration.getTime()
+      : Date.now() + 300000; // 5 minutes
     return awsSecurityCredentials;
   }
 }
@@ -82,10 +90,10 @@ async function main() {
   const gcpAudience = process.env.GCP_WORKLOAD_AUDIENCE;
   const saImpersonationUrl = process.env.GCP_SERVICE_ACCOUNT_IMPERSONATION_URL;
   const awsRegion = process.env.AWS_REGION;
-  const bucketName = process.env.GCS_BUCKET_NAME;
+  const gcsBucketName = process.env.GCS_BUCKET_NAME;
 
   // --- Validate Environment Variables ---
-  if (!gcpAudience || !saImpersonationUrl || !awsRegion || !bucketName) {
+  if (!gcpAudience || !saImpersonationUrl || !awsRegion || !gcsBucketName) {
     throw new Error(
       'Missing required environment variables. Please check your .env file or environment settings. Required: GCP_WORKLOAD_AUDIENCE, GCP_SERVICE_ACCOUNT_IMPERSONATION_URL, AWS_REGION, GCS_BUCKET_NAME',
     );
@@ -102,20 +110,21 @@ async function main() {
     aws_security_credentials_supplier: customSupplier,
   };
 
-  // 3. Create the auth client and the service client (Storage).
-  const authClient = new AwsClient(clientOptions);
-  const storage = new Storage({authClient});
+  // 3. Create the auth client
+  const client = new AwsClient(clientOptions);
 
-  // 4. Run the test command to verify authentication.
-  console.log('Successfully configured client with custom AWS supplier.');
-  console.log(
-    `Attempting to get metadata for GCS bucket "${bucketName}" to verify authentication...`,
-  );
-  const [metadata] = await storage.bucket(bucketName).getMetadata();
+  // 4. Construct the URL for the Cloud Storage JSON API to get bucket metadata.
 
-  console.log('\n--- SUCCESS ---');
-  console.log('Successfully authenticated and retrieved bucket metadata:');
-  console.log(JSON.stringify(metadata, null, 2));
+  const bucketUrl = `https://storage.googleapis.com/storage/v1/b/${gcsBucketName}`;
+  console.log(`[Test] Getting metadata for bucket: ${gcsBucketName}...`);
+  console.log(`[Test] Request URL: ${bucketUrl}`);
+
+  // 5. Use the client to make an authenticated request.
+  const res = await client.request({url: bucketUrl});
+
+  console.log('\n--- SUCCESS! ---');
+  console.log('Successfully authenticated and retrieved bucket data:');
+  console.log(JSON.stringify(res.data, null, 2));
 }
 
 // Execute the test.
