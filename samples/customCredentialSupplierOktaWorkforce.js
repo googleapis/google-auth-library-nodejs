@@ -172,12 +172,12 @@ async function main() {
   });
 
   // 3. Construct the URL for the Cloud Storage JSON API to get bucket metadata.
-  const url = `https://storage.googleapis.com/storage/v1/b/${gcsBucketName}`;
+  const bucketUrl = `https://storage.googleapis.com/storage/v1/b/${gcsBucketName}`;
   console.log(`[Test] Getting metadata for bucket: ${gcsBucketName}...`);
-  console.log(`[Test] Request URL: ${url}`);
+  console.log(`[Test] Request URL: ${bucketUrl}`);
 
   // 4. Use the client to make an authenticated request.
-  const res = await client.request({url});
+  const res = await client.request({url: bucketUrl});
 
   console.log('\n--- SUCCESS! ---');
   console.log('Successfully authenticated and retrieved bucket data:');
