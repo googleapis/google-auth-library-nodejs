@@ -139,7 +139,6 @@ async function main() {
   if (
     !workforcePoolUserProject ||
     !gcpWorkforceAudience ||
-    !serviceAccountImpersonationUrl ||
     !gcsBucketName ||
     !oktaDomain ||
     !oktaClientId ||
