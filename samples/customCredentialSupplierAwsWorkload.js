@@ -14,7 +14,6 @@
 ('use strict');
 require('dotenv').config();
 
-// --- Imports ---
 const {AwsClient} = require('google-auth-library');
 const {fromNodeProviderChain} = require('@aws-sdk/credential-providers');
 const {STSClient} = require('@aws-sdk/client-sts');
@@ -29,7 +28,12 @@ const {STSClient} = require('@aws-sdk/client-sts');
  */
 class CustomAwsSupplier {
   constructor() {
-    this.region = null; // Will be cached upon first resolution.
+    // Will be cached upon first resolution.
+    this.region = null;
+
+    // Initialize the AWS credential provider.
+    // The AWS SDK handles memoization (caching) and proactive refreshing internally.
+    this.awsCredentialsProvider = fromNodeProviderChain();
   }
 
   /**
@@ -43,7 +47,6 @@ class CustomAwsSupplier {
       return this.region;
     }
 
-    console.log('CustomAwsSupplier: Resolving AWS region...');
     const client = new STSClient({});
     this.region = await client.config.region();
 
@@ -52,7 +55,7 @@ class CustomAwsSupplier {
         'CustomAwsSupplier: Unable to resolve AWS region. Please set the AWS_REGION environment variable or configure it in your ~/.aws/config file.',
       );
     }
-    console.log(`CustomAwsSupplier: Found region: ${this.region}`);
+
     return this.region;
   }
 
@@ -60,26 +63,17 @@ class CustomAwsSupplier {
    * Retrieves AWS security credentials using the AWS SDK's default provider chain.
    */
   async getAwsSecurityCredentials(_context) {
-    if (this.cachedCredentials && this.cachedExpiry > Date.now()) {
-      return this.cachedCredentials;
-    }
-    console.log('CustomAwsSupplier: Resolving AWS credentials...');
+    // Call the initialized provider. It will return cached creds or refresh if needed.
+    const awsCredentials = await this.awsCredentialsProvider();
 
-    // Use the official AWS SDK provider chain. This will find credentials
-    // from Env variables, shared config, EC2 metadata, EKS OIDC, etc.
-    const awsCredentialsProvider = fromNodeProviderChain();
-    const awsCredentials = await awsCredentialsProvider();
-
+    // This check is often redundant as the SDK provider throws on failure,
+    // but serves as an extra safeguard.
     if (!awsCredentials.accessKeyId || !awsCredentials.secretAccessKey) {
       throw new Error(
         'Unable to resolve AWS credentials from the node provider chain. ' +
           'Ensure your AWS CLI is configured, or AWS environment variables (like AWS_ACCESS_KEY_ID) are set.',
       );
     }
-
-    console.log(
-      `CustomAwsSupplier: Found AWS Access Key ID: ${awsCredentials.accessKeyId}`,
-    );
 
     // Map the AWS SDK format to the google-auth-library format.
     const awsSecurityCredentials = {
@@ -88,26 +82,15 @@ class CustomAwsSupplier {
       token: awsCredentials.sessionToken,
     };
 
-    // Use the expiration from the AWS credentials if it exists.
-    // Otherwise, fall back to a 5-minute cache (in case testing in local system).
-    this.cachedCredentials = awsSecurityCredentials;
-    this.cachedExpiry = awsCredentials.expiration
-      ? awsCredentials.expiration.getTime()
-      : Date.now() + 300000; // 5 minutes
     return awsSecurityCredentials;
   }
 }
 
-/**
- * Main function to run the test.
- */
 async function main() {
-  // --- Configuration from Environment Variables ---
   const gcpAudience = process.env.GCP_WORKLOAD_AUDIENCE;
   const saImpersonationUrl = process.env.GCP_SERVICE_ACCOUNT_IMPERSONATION_URL;
   const gcsBucketName = process.env.GCS_BUCKET_NAME;
 
-  // --- Validate Environment Variables ---
   if (!gcpAudience || !saImpersonationUrl || !gcsBucketName) {
     throw new Error(
       'Missing required environment variables. Please check your .env file or environment settings. Required: GCP_WORKLOAD_AUDIENCE, GCP_SERVICE_ACCOUNT_IMPERSONATION_URL, GCS_BUCKET_NAME',
