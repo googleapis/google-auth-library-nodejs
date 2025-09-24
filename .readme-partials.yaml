@@ -614,8 +614,6 @@ body: |-
 
   Note that the client does not cache the returned subject token, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
 
-  For a sample on how to access Google Cloud resources from an OIDC or SAML2.0 identity provider with a custom credential supplier, see [samples/customCredentialSupplierWorkload.js](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierWorkload.js).
-
   ```ts
   class CustomSupplier implements SubjectTokenSupplier {
     async getSubjectToken(
