@@ -443,57 +443,6 @@ __Usage:__
 `node samples/verifyIdToken.js`
 
 
------
-
-
-
-
-### Workload Federation with a Custom Supplier for OIDC/SAML Identity Providers (IDP)
-
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierWorkload.js).
-
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/customCredentialSupplierWorkload.js,samples/README.md)
-
-__Usage:__
-
-
-`node samples/customCredentialSupplierWorkload.js`
-
-
------
-
-
-
-
-### Workload Federation with a Custom Supplier for AWS Identity Providers (IDP)
-
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierAwsWorkload.js).
-
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/customCredentialSupplierAwsWorkload.js,samples/README.md)
-
-__Usage:__
-
-
-`node samples/customCredentialSupplierAwsWorkload.js`
-
-
------
-
-
-
-
-### Workforce Federation with a Custom Supplier for Okta-Id Providers (IDP)
-
-View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierOktaWorkforce.js).
-
-[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/customCredentialSupplierOktaWorkforce.js,samples/README.md)
-
-__Usage:__
-
-
-`node samples/customCredentialSupplierOktaWorkforce.js`
-
-
 
 
 

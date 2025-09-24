@@ -11,11 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-'use strict';
+('use strict');
+require('dotenv').config();
 
 // --- Imports ---
 const {AwsClient} = require('google-auth-library');
 const {fromNodeProviderChain} = require('@aws-sdk/credential-providers');
+const {STSClient} = require('@aws-sdk/client-sts');
 
 /**
  * Custom AWS Security Credentials Supplier.
@@ -26,17 +28,31 @@ const {fromNodeProviderChain} = require('@aws-sdk/credential-providers');
  * for service accounts (IRSA) in EKS, etc.
  */
 class CustomAwsSupplier {
-  /**
-   * @param {string} region The AWS region the workload is running in.
-   */
-  constructor(region) {
-    this.region = region;
+  constructor() {
+    this.region = null; // Will be cached upon first resolution.
   }
 
   /**
    * Returns the AWS region. This is required for signing the AWS request.
+   * It resolves the region automatically by using the default AWS region
+   * provider chain, which searches for the region in the standard locations
+   * (environment variables, AWS config file, etc.).
    */
   async getAwsRegion(_context) {
+    if (this.region) {
+      return this.region;
+    }
+
+    console.log('CustomAwsSupplier: Resolving AWS region...');
+    const client = new STSClient({});
+    this.region = await client.config.region();
+
+    if (!this.region) {
+      throw new Error(
+        'CustomAwsSupplier: Unable to resolve AWS region. Please set the AWS_REGION environment variable or configure it in your ~/.aws/config file.',
+      );
+    }
+    console.log(`CustomAwsSupplier: Found region: ${this.region}`);
     return this.region;
   }
 
@@ -89,18 +105,17 @@ async function main() {
   // --- Configuration from Environment Variables ---
   const gcpAudience = process.env.GCP_WORKLOAD_AUDIENCE;
   const saImpersonationUrl = process.env.GCP_SERVICE_ACCOUNT_IMPERSONATION_URL;
-  const awsRegion = process.env.AWS_REGION;
   const gcsBucketName = process.env.GCS_BUCKET_NAME;
 
   // --- Validate Environment Variables ---
-  if (!gcpAudience || !saImpersonationUrl || !awsRegion || !gcsBucketName) {
+  if (!gcpAudience || !saImpersonationUrl || !gcsBucketName) {
     throw new Error(
-      'Missing required environment variables. Please check your .env file or environment settings. Required: GCP_WORKLOAD_AUDIENCE, GCP_SERVICE_ACCOUNT_IMPERSONATION_URL, AWS_REGION, GCS_BUCKET_NAME',
+      'Missing required environment variables. Please check your .env file or environment settings. Required: GCP_WORKLOAD_AUDIENCE, GCP_SERVICE_ACCOUNT_IMPERSONATION_URL, GCS_BUCKET_NAME',
     );
   }
 
   // 1. Instantiate the custom supplier.
-  const customSupplier = new CustomAwsSupplier(awsRegion);
+  const customSupplier = new CustomAwsSupplier();
 
   // 2. Configure the AwsClient options using the constants.
   const clientOptions = {
@@ -128,8 +143,9 @@ async function main() {
 }
 
 // Execute the test.
-main().catch(err => {
+main().catch(error => {
   console.error('\n--- FAILED ---');
-  console.error(err);
-  throw new Error('Test failed.');
+  const fullError = error.response?.data || error;
+  console.error(JSON.stringify(fullError, null, 2));
+  process.exitCode = 1;
 });
