@@ -14,7 +14,7 @@
 'use strict';
 
 const {IdentityPoolClient} = require('google-auth-library');
-const {ClientCredentials} = require('simple-oauth2');
+const {Gaxios} = require('gaxios');
 require('dotenv').config();
 
 // Workload Identity Pool Configuration
@@ -41,20 +41,12 @@ const SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:jwt';
  */
 class OktaClientCredentialsSupplier {
   constructor(domain, clientId, clientSecret) {
+    this.oktaTokenUrl = `${domain}/oauth2/default/v1/token`;
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
     this.accessToken = null;
     this.expiryTime = 0;
-
-    // Configure the simple-oauth2 client for the Client Credentials grant.
-    this.oauth2Client = new ClientCredentials({
-      client: {
-        id: clientId,
-        secret: clientSecret,
-      },
-      auth: {
-        tokenHost: domain,
-        tokenPath: '/oauth2/default/v1/token',
-      },
-    });
+    this.gaxios = new Gaxios();
     console.log('OktaClientCredentialsSupplier initialized.');
   }
 
@@ -76,31 +68,57 @@ class OktaClientCredentialsSupplier {
     console.log(
       '[Supplier] Token is missing or expired. Fetching new Okta Access token via Client Credentials grant...',
     );
-    const {token} = await this.fetchOktaAccessToken();
-    this.accessToken = token.access_token;
-    this.expiryTime = token.expires_at.getTime();
+    const {accessToken, expiresIn} = await this.fetchOktaAccessToken();
+    this.accessToken = accessToken;
+    // Calculate the absolute expiry time in milliseconds.
+    this.expiryTime = Date.now() + expiresIn * 1000;
     return this.accessToken;
   }
 
   /**
-   * Performs the Client Credentials grant flow using the simple-oauth2 library.
-   * @returns {Promise<object>} A promise that resolves with the token object from Okta.
+   * Performs the Client Credentials grant flow by making a POST request to Okta'''s token endpoint.
+   * @returns {Promise<{accessToken: string, expiresIn: number}>} A promise that resolves with the Access Token and expiry from Okta.
    */
   async fetchOktaAccessToken() {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'client_credentials');
+
+    // For Client Credentials, scopes are optional and define the permissions
+    // the token will have. If you have custom scopes, add them here.
+    params.append('scope', 'gcp.test.read');
+
+    // The client_id and client_secret are sent in a Basic Auth header.
+    const authHeader =
+      'Basic ' +
+      Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+
     try {
-      // For Client Credentials, scopes are optional and define the permissions
-      // the token will have. If you have custom scopes, add them here.
-      const token = await this.oauth2Client.getToken({
-        scope: 'gcp.test.read',
+      const response = await this.gaxios.request({
+        url: this.oktaTokenUrl,
+        method: 'POST',
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        data: params.toString(),
       });
-      console.log(
-        `[Supplier] Successfully received Access Token from Okta. Expires at ${token.token.expires_at}.`,
-      );
-      return token;
+
+      const {access_token, expires_in} = response.data;
+
+      if (access_token && expires_in) {
+        console.log(
+          `[Supplier] Successfully received Access Token from Okta. Expires in ${expires_in} seconds.`,
+        );
+        return {accessToken: access_token, expiresIn: expires_in};
+      } else {
+        throw new Error(
+          'Access token or expires_in not found in Okta response.',
+        );
+      }
     } catch (error) {
       console.error(
         '[Supplier] Error fetching token from Okta:',
-        error.message,
+        error.response?.data || error.message,
       );
       throw new Error(
         'Failed to authenticate with Okta using Client Credentials grant.',
