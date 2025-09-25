@@ -115,7 +115,33 @@ export interface GoogleAuthOptions<T extends AuthClient = AnyAuthClient> {
   keyFilename?: string;
 
   /**
-   * Path to a .json, .pem, or .p12 key file
+   * @deprecated This option is being deprecated because of a potential security risk.
+   *
+   * This option does not validate the credential configuration. The security
+   * risk occurs when a credential configuration is accepted from a source that
+   * is not under your control and used without validation on your side.
+   *
+   * The recommended way to provide credentials is to create an `auth` object
+   * using `google-auth-library` and pass it to the client constructor.
+   * This will ensure that unexpected credential types with potential for
+   * malicious intent are not loaded unintentionally. For example:
+   * ```
+   * const {GoogleAuth} = require('google-auth-library');
+   * const auth = new GoogleAuth({
+   *   // Scopes can be specified either as an array or as a single, space-delimited string.
+   *   scopes: 'https://www.googleapis.com/auth/cloud-platform'
+   * });
+   * const client = new MyClient({ auth: auth });
+   * ```
+   *
+   * If you are loading your credential configuration from an untrusted source and have
+   * not mitigated the risks (e.g. by validating the configuration yourself), make
+   * these changes as soon as possible to prevent security risks to your environment.
+   *
+   * Regardless of the method used, it is always your responsibility to validate
+   * configurations received from external sources.
+   *
+   * For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.
    */
   keyFile?: string;
 
