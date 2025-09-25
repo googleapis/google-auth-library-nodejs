@@ -84,7 +84,33 @@ export interface GoogleAuthOptions<T extends AuthClient = AnyAuthClient> {
    */
   authClient?: T;
   /**
-   * Path to a .json, .pem, or .p12 key file
+   * @deprecated This option is being deprecated because of a potential security risk.
+   *
+   * This option does not validate the credential configuration. The security
+   * risk occurs when a credential configuration is accepted from a source that
+   * is not under your control and used without validation on your side.
+   *
+   * The recommended way to provide credentials is to create an `auth` object
+   * using `google-auth-library` and pass it to the client constructor.
+   * This will ensure that unexpected credential types with potential for
+   * malicious intent are not loaded unintentionally. For example:
+   * ```
+   * const {GoogleAuth} = require('google-auth-library');
+   * const auth = new GoogleAuth({
+   *   // Scopes can be specified either as an array or as a single, space-delimited string.
+   *   scopes: 'https://www.googleapis.com/auth/cloud-platform'
+   * });
+   * const client = new MyClient({ auth: auth });
+   * ```
+   *
+   * If you are loading your credential configuration from an untrusted source and have
+   * not mitigated the risks (e.g. by validating the configuration yourself), make
+   * these changes as soon as possible to prevent security risks to your environment.
+   *
+   * Regardless of the method used, it is always your responsibility to validate
+   * configurations received from external sources.
+   *
+   * For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.
    */
   keyFilename?: string;
 
@@ -94,13 +120,33 @@ export interface GoogleAuthOptions<T extends AuthClient = AnyAuthClient> {
   keyFile?: string;
 
   /**
-   * Object containing client_email and private_key properties, or the
-   * external account client options.
-   * Cannot be used with {@link GoogleAuthOptions.apiKey `apiKey`}.
+   * @deprecated This option is being deprecated because of a potential security risk.
    *
-   * @remarks
+   * This option does not validate the credential configuration. The security
+   * risk occurs when a credential configuration is accepted from a source that
+   * is not under your control and used without validation on your side.
    *
-   * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
+   * The recommended way to provide credentials is to create an `auth` object
+   * using `google-auth-library` and pass it to the client constructor.
+   * This will ensure that unexpected credential types with potential for
+   * malicious intent are not loaded unintentionally. For example:
+   * ```
+   * const {GoogleAuth} = require('google-auth-library');
+   * const auth = new GoogleAuth({
+   *   // Scopes can be specified either as an array or as a single, space-delimited string.
+   *   scopes: 'https://www.googleapis.com/auth/cloud-platform'
+   * });
+   * const client = new MyClient({ auth: auth });
+   * ```
+   *
+   * If you are loading your credential configuration from an untrusted source and have
+   * not mitigated the risks (e.g. by validating the configuration yourself), make
+   * these changes as soon as possible to prevent security risks to your environment.
+   *
+   * Regardless of the method used, it is always your responsibility to validate
+   * configurations received from external sources.
+   *
+   * For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.
    */
   credentials?: JWTInput | ExternalAccountClientOptions;
 
@@ -654,6 +700,38 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
    *
    * **Important**: If you accept a credential configuration (credential JSON/File/Stream) from an external source for authentication to Google Cloud, you must validate it before providing it to any Google API or library. Providing an unvalidated credential configuration to Google APIs can compromise the security of your systems and data. For more information, refer to {@link https://cloud.google.com/docs/authentication/external/externally-sourced-credentials Validate credential configurations from external sources}.
    *
+   * @deprecated This method is being deprecated because of a potential security risk.
+   *
+   * This method does not validate the credential configuration. The security
+   * risk occurs when a credential configuration is accepted from a source that
+   * is not under your control and used without validation on your side.
+   *
+   * If you know that you will be loading credential configurations of a
+   * specific type, it is recommended to use a credential-type-specific
+   * constructor. This will ensure that an unexpected credential type with
+   * potential for malicious intent is not loaded unintentionally. You might
+   * still have to do validation for certain credential types. Please follow
+   * the recommendation for that method. For example, if you want to load only
+   * service accounts, you can use the `JWT` constructor:
+   * ```
+   * const {JWT} = require('google-auth-library');
+   * const keys = require('/path/to/key.json');
+   * const client = new JWT({
+   *   email: keys.client_email,
+   *   key: keys.private_key,
+   *   scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+   * });
+   * ```
+   *
+   * If you are loading your credential configuration from an untrusted source and have
+   * not mitigated the risks (e.g. by validating the configuration yourself), make
+   * these changes as soon as possible to prevent security risks to your environment.
+   *
+   * Regardless of the method used, it is always your responsibility to validate
+   * configurations received from external sources.
+   *
+   * For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.
+   *
    * @param json The input object.
    * @param options The JWT or UserRefresh options for the client
    * @returns JWT or UserRefresh Client with data
@@ -719,6 +797,46 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
 
   /**
    * Create a credentials instance using the given input stream.
+   *
+   * @deprecated This method is being deprecated because of a potential security risk.
+   *
+   * This method does not validate the credential configuration. The security
+   * risk occurs when a credential configuration is accepted from a source that
+   * is not under your control and used without validation on your side.
+   *
+   * If you know that you will be loading credential configurations of a
+   * specific type, it is recommended to read and parse the stream, and then
+   * use a credential-type-specific constructor. This will ensure that an
+   * unexpected credential type with potential for malicious intent is not
+   * loaded unintentionally. You might still have to do validation for certain
+   * credential types. Please follow the recommendation for that method. For
+   * example, if you want to load only service accounts, you can do:
+   * ```
+   * const {JWT} = require('google-auth-library');
+   * const fs = require('fs');
+   *
+   * const stream = fs.createReadStream('path/to/key.json');
+   * const chunks = [];
+   * stream.on('data', (chunk) => chunks.push(chunk));
+   * stream.on('end', () => {
+   *   const keys = JSON.parse(Buffer.concat(chunks).toString());
+   *   const client = new JWT({
+   *     email: keys.client_email,
+   *     key: keys.private_key,
+   *     scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+   *   });
+   *   // use client
+   * });
+   * ```
+   *
+   * If you are loading your credential configuration from an untrusted source and have
+   * not mitigated the risks (e.g. by validating the configuration yourself), make
+   * these changes as soon as possible to prevent security risks to your environment.
+   *
+   * Regardless of the method used, it is always your responsibility to validate
+   * configurations received from external sources.
+   *
+   * For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.
    * @param inputStream The input stream.
    * @param callback Optional callback.
    */

@@ -91,6 +91,13 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
    * Also, the target service account must grant the orginating principal
    * the "Service Account Token Creator" IAM role.
    *
+   * **IMPORTANT**: This method does not validate the credential configuration.
+   * A security risk occurs when a credential configuration configured with
+   * malicious URLs is used. When the credential configuration is accepted from
+   * an untrusted source, you should validate it before using it with this
+   * method. For more details, see
+   * https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.
+   *
    * @param {object} options - The configuration object.
    * @param {object} [options.sourceClient] the source credential used as to
    * acquire the impersonated credentials.
