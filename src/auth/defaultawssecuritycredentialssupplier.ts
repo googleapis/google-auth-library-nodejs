@@ -175,6 +175,9 @@ export class DefaultAwsSecurityCredentialsSupplier
       metadataHeaders,
       context.transporter,
     );
+    if (awsCreds == null || awsCreds.AccessKeyId == null || awsCreds.SecretAccessKey == null || awsCreds.Token == null) {
+      throw new Error("Retrieved invalid aws credentials, expected fields `AccessKeyId`, `SecretAccessKey` and `Token` to be non-null but one or more are null.");
+    }
     return {
       accessKeyId: awsCreds.AccessKeyId,
       secretAccessKey: awsCreds.SecretAccessKey,
@@ -243,6 +246,9 @@ export class DefaultAwsSecurityCredentialsSupplier
       ...this.additionalGaxiosOptions,
       url: `${this.securityCredentialsUrl}/${roleName}`,
       headers: headers,
+      // NOTE: Do not remove this. AWS returns `Content-Type: text/plain` even though
+      // the response is a json, so it is necessary to have this.
+      responseType: 'json'
     } as GaxiosOptions;
     AuthClient.setMethodName(opts, '#retrieveAwsSecurityCredentials');
     const response =
