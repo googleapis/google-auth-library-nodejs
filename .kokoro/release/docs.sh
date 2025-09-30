@@ -24,5 +24,26 @@ if [[ -z "$CREDENTIALS" ]]; then
   export PATH="$PATH:${NPM_CONFIG_PREFIX}/bin"
   cd $(dirname $0)/../..
 fi
+npm install
+npm run docs
 
-echo "Skipping docs in kokoro job"
+# create docs.metadata, based on package.json and .repo-metadata.json.
+npm i json@9.0.6 -g
+python3 -m docuploader create-metadata \
+  --name=$(cat .repo-metadata.json | json name) \
+  --version=$(cat package.json | json version) \
+  --language=$(cat .repo-metadata.json | json language) \
+  --distribution-name=$(cat .repo-metadata.json | json distribution_name) \
+  --product-page=$(cat .repo-metadata.json | json product_documentation) \
+  --github-repository=$(cat .repo-metadata.json | json repo) \
+  --issue-tracker=$(cat .repo-metadata.json | json issue_tracker)
+cp docs.metadata ./docs/docs.metadata
+
+# deploy the docs.
+if [[ -z "$CREDENTIALS" ]]; then
+  CREDENTIALS=${KOKORO_KEYSTORE_DIR}/73713_docuploader_service_account
+fi
+if [[ -z "$BUCKET" ]]; then
+  BUCKET=docs-staging
+fi
+python3 -m docuploader upload ./docs --credentials $CREDENTIALS --staging-bucket $BUCKET
