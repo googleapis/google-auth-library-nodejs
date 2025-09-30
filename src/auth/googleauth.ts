@@ -277,7 +277,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     this.keyFilename = opts.keyFilename || opts.keyFile;
     if (this.keyFilename) {
       console.warn(
-        'The `keyFilename` option is deprecated. Please use the `credentials` option instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.'
+        'The `keyFilename` option is deprecated. Please use the `credentials` option instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
       );
     }
     this.scopes = opts.scopes;
@@ -285,7 +285,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     this.jsonContent = opts.credentials || null;
     if (this.jsonContent) {
       console.warn(
-        'The `credentials` option is deprecated. Please use the `auth` object constructor instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.'
+        'The `credentials` option is deprecated. Please use the `auth` object constructor instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
       );
     }
     this.apiKey = opts.apiKey || this.clientOptions.apiKey || null;
@@ -777,7 +777,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     options: AuthClientOptions = {},
   ): JSONClient {
     console.warn(
-      'The `fromJSON` method is deprecated. Please use the `JWT` constructor instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.'
+      'The `fromJSON` method is deprecated. Please use the `JWT` constructor instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
     );
     let client: JSONClient;
 
@@ -896,7 +896,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     callback?: CredentialCallback,
   ): Promise<JSONClient> | void {
     console.warn(
-      'The `fromStream` method is deprecated. Please use the `JWT` constructor with a parsed stream instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.'
+      'The `fromStream` method is deprecated. Please use the `JWT` constructor with a parsed stream instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
     );
     let options: AuthClientOptions = {};
     if (typeof optionsOrCallback === 'function') {
