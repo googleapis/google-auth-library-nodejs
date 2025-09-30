@@ -60,3 +60,15 @@ jobs:
           node-version: 18
       - run: npm install
       - run: npm run lint
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm install
+      - run: npm run docs
+      - uses: JustinBeckwith/linkinator-action@v1
+        with:
+          paths: docs/
