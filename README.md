@@ -5,7 +5,7 @@
 # [Google Auth Library: Node.js Client](https://github.com/googleapis/google-auth-library-nodejs)
 
 [![release level](https://img.shields.io/badge/release%20level-stable-brightgreen.svg?style=flat)](https://cloud.google.com/terms/launch-stages)
-[![npm version](https://img.shields.io/npm/v/google-auth-library.svg)](https://www.npmjs.org/package/google-auth-library)
+[![npm version](https://img.shields.io/npm/v/google-auth-library.svg)](https://www.npmjs.com/package/google-auth-library)
 
 
 
