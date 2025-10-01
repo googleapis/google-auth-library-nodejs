@@ -423,6 +423,8 @@ your workloads are running in other AWS environments, such as ECS, EKS, Fargate,
 
 Note that the client does not cache the returned AWS security credentials, so caching logic should be implemented in the supplier to prevent multiple requests for the same resources.
 
+For a sample on how to access Google Cloud resources from AWS with a custom credential supplier, see [samples/customCredentialSupplierAwsWorkload.js](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierAwsWorkload.js).
+
 ```ts
 import { AwsClient, AwsSecurityCredentials, AwsSecurityCredentialsSupplier, ExternalAccountSupplierContext } from 'google-auth-library';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
@@ -1103,6 +1105,8 @@ and the workforce pool user project is the project number associated with the [w
 
 The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials#use_configuration_files_for_sign-in).
 
+For a sample on how to access Google Cloud resources from an Okta identity provider with a custom credential supplier, see [samples/customCredentialSupplierOktaWorkforce.js](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierOktaWorkforce.js).
+
 ### Using External Identities
 
 External identities (AWS, Azure and OIDC-based providers) can be used with `Application Default Credentials`.
@@ -1409,6 +1413,8 @@ Samples are in the [`samples/`](https://github.com/googleapis/google-auth-librar
 | Authenticate Implicit With Adc | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/authenticateImplicitWithAdc.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/authenticateImplicitWithAdc.js,samples/README.md) |
 | Compute | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/compute.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/compute.js,samples/README.md) |
 | Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/credentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/credentials.js,samples/README.md) |
+| Custom Credential Supplier Aws Workload | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierAwsWorkload.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/customCredentialSupplierAwsWorkload.js,samples/README.md) |
+| Custom Credential Supplier Okta Workload | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierOktaWorkload.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/customCredentialSupplierOktaWorkload.js,samples/README.md) |
 | Downscopedclient | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/downscopedclient.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/downscopedclient.js,samples/README.md) |
 | Headers | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/headers.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/headers.js,samples/README.md) |
 | Id Token From Impersonated Credentials | [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/idTokenFromImpersonatedCredentials.js) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/idTokenFromImpersonatedCredentials.js,samples/README.md) |

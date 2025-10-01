@@ -49,7 +49,6 @@
     "karma-sourcemap-loader": "^0.4.0",
     "karma-webpack": "^5.0.1",
     "keypair": "^1.0.4",
-    "linkinator": "^6.1.2",
     "mocha": "^11.1.0",
     "mv": "^2.1.1",
     "ncp": "^2.0.0",
@@ -81,7 +80,7 @@
     "presystem-test": "npm run compile -- --sourceMap",
     "webpack": "webpack",
     "browser-test": "karma start",
-    "docs-test": "linkinator docs",
+    "docs-test": "echo 'disabled until linkinator is fixed'",
     "predocs-test": "npm run docs",
     "prelint": "cd samples; npm link ../; npm install"
   },
