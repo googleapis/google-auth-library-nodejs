@@ -1105,7 +1105,7 @@ and the workforce pool user project is the project number associated with the [w
 
 The values for audience, service account impersonation URL, and any other builder field can also be found by generating a [credential configuration file with the gcloud CLI](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials#use_configuration_files_for_sign-in).
 
-For a sample on how to access Google Cloud resources from an Okta identity provider with a custom credential supplier, see [samples/customCredentialSupplierOktaWorkforce.js](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierOktaWorkforce.js).
+For a sample on how to access Google Cloud resources from an Okta identity provider with a custom credential supplier, see [samples/customCredentialSupplierOktaWorkload.js](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierOktaWorkload.js).
 
 ### Using External Identities
 
