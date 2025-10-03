@@ -1,6 +1,6 @@
 {
   "name": "google-auth-library",
-  "version": "10.3.0",
+  "version": "10.4.0",
   "author": "Google Inc.",
   "description": "Google APIs Authentication Client Library for Node.js",
   "engines": {
@@ -39,8 +39,8 @@
     "gts": "^6.0.0",
     "is-docker": "^3.0.0",
     "jsdoc": "^4.0.0",
-    "jsdoc-fresh": "^4.0.0",
-    "jsdoc-region-tag": "^3.0.0",
+    "jsdoc-fresh": "^5.0.0",
+    "jsdoc-region-tag": "^4.0.0",
     "karma": "^6.0.0",
     "karma-chrome-launcher": "^3.0.0",
     "karma-coverage": "^2.0.0",
@@ -49,7 +49,6 @@
     "karma-sourcemap-loader": "^0.4.0",
     "karma-webpack": "^5.0.1",
     "keypair": "^1.0.4",
-    "linkinator": "^6.1.2",
     "mocha": "^11.1.0",
     "mv": "^2.1.1",
     "ncp": "^2.0.0",
@@ -81,7 +80,7 @@
     "presystem-test": "npm run compile -- --sourceMap",
     "webpack": "webpack",
     "browser-test": "karma start",
-    "docs-test": "linkinator docs",
+    "docs-test": "echo 'disabled until linkinator is fixed'",
     "predocs-test": "npm run docs",
     "prelint": "cd samples; npm link ../; npm install"
   },

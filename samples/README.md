@@ -18,6 +18,8 @@ This is Google's officially supported [node.js](http://nodejs.org/) client libra
   * [Authenticate Implicit With Adc](#authenticate-implicit-with-adc)
   * [Compute](#compute)
   * [Credentials](#credentials)
+  * [Custom Credential Supplier Aws Workload](#custom-credential-supplier-aws-workload)
+  * [Custom Credential Supplier Okta Workload](#custom-credential-supplier-okta-workload)
   * [Downscopedclient](#downscopedclient)
   * [Headers](#headers)
   * [Id Token From Impersonated Credentials](#id-token-from-impersonated-credentials)
@@ -146,6 +148,40 @@ __Usage:__
 
 
 `node samples/credentials.js`
+
+
+-----
+
+
+
+
+### Custom Credential Supplier Aws Workload
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierAwsWorkload.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/customCredentialSupplierAwsWorkload.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/customCredentialSupplierAwsWorkload.js`
+
+
+-----
+
+
+
+
+### Custom Credential Supplier Okta Workload
+
+View the [source code](https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/customCredentialSupplierOktaWorkload.js).
+
+[![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/google-auth-library-nodejs&page=editor&open_in_editor=samples/customCredentialSupplierOktaWorkload.js,samples/README.md)
+
+__Usage:__
+
+
+`node samples/customCredentialSupplierOktaWorkload.js`
 
 
 -----
