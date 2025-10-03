@@ -40,7 +40,7 @@
     "is-docker": "^3.0.0",
     "jsdoc": "^4.0.0",
     "jsdoc-fresh": "^5.0.0",
-    "jsdoc-region-tag": "^3.0.0",
+    "jsdoc-region-tag": "^4.0.0",
     "karma": "^6.0.0",
     "karma-chrome-launcher": "^3.0.0",
     "karma-coverage": "^2.0.0",
