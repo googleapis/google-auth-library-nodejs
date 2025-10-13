@@ -275,19 +275,9 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     this._cachedProjectId = opts.projectId || null;
     this.cachedCredential = opts.authClient || null;
     this.keyFilename = opts.keyFilename || opts.keyFile;
-    if (this.keyFilename) {
-      console.warn(
-        'The `keyFilename` option is deprecated. Please use the `credentials` option instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
-      );
-    }
     this.scopes = opts.scopes;
     this.clientOptions = opts.clientOptions || {};
     this.jsonContent = opts.credentials || null;
-    if (this.jsonContent) {
-      console.warn(
-        'The `credentials` option is deprecated. Please use the `auth` object constructor instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
-      );
-    }
     this.apiKey = opts.apiKey || this.clientOptions.apiKey || null;
 
     // Cannot use both API Key + Credentials
@@ -776,9 +766,6 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     json: JWTInput | ImpersonatedJWTInput,
     options: AuthClientOptions = {},
   ): JSONClient {
-    console.warn(
-      'The `fromJSON` method is deprecated. Please use the `JWT` constructor instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
-    );
     let client: JSONClient;
 
     // user's preferred universe domain
@@ -895,9 +882,6 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     optionsOrCallback: AuthClientOptions | CredentialCallback = {},
     callback?: CredentialCallback,
   ): Promise<JSONClient> | void {
-    console.warn(
-      'The `fromStream` method is deprecated. Please use the `JWT` constructor with a parsed stream instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
-    );
     let options: AuthClientOptions = {};
     if (typeof optionsOrCallback === 'function') {
       callback = optionsOrCallback;

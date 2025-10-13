@@ -121,9 +121,6 @@ export class Impersonated extends OAuth2Client implements IdTokenProvider {
    */
   constructor(options: ImpersonatedOptions = {}) {
     super(options);
-    console.warn(
-      'The `Impersonated` constructor does not validate the credential configuration. A security risk occurs when a credential configuration configured with malicious URLs is used. When the credential configuration is accepted from an untrusted source, you should validate it before using it with this method. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
-    );
     // Start with an expired refresh token, which will automatically be
     // refreshed before the first API call is made.
     this.credentials = {
