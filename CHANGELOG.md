@@ -4,6 +4,18 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.4.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.4.0...v10.4.1) (2025-10-14)
+
+
+### Bug Fixes
+
+* **deps:** Update dependency @googleapis/iam to v33 ([#2146](https://github.com/googleapis/google-auth-library-nodejs/issues/2146)) ([bbee39e](https://github.com/googleapis/google-auth-library-nodejs/commit/bbee39e07390f4346d87bf70a7c7a3e28bade8f3))
+* **deps:** Update dependency @googleapis/iam to v34 ([#2159](https://github.com/googleapis/google-auth-library-nodejs/issues/2159)) ([0006ae2](https://github.com/googleapis/google-auth-library-nodejs/commit/0006ae223b4197da2ce154777fa853592adc1f2c))
+* **deps:** Update dependency dotenv to v17 ([#2150](https://github.com/googleapis/google-auth-library-nodejs/issues/2150)) ([5b2c7c5](https://github.com/googleapis/google-auth-library-nodejs/commit/5b2c7c5d6b55b85434ab6128a7ab257f723e376c))
+* **deps:** Update dependency gcp-metadata to v8 ([#2158](https://github.com/googleapis/google-auth-library-nodejs/issues/2158)) ([7e547d4](https://github.com/googleapis/google-auth-library-nodejs/commit/7e547d48ba4244fc69e39f79f64d05a3a6f84d9d))
+* Disable linkinator until 429 issue is fixed. ([#2138](https://github.com/googleapis/google-auth-library-nodejs/issues/2138)) ([2f54532](https://github.com/googleapis/google-auth-library-nodejs/commit/2f54532b2183f9cd3f0b587a5724d1840966a697))
+* Link to customCredentialSupplierOktaWorkload ([#2149](https://github.com/googleapis/google-auth-library-nodejs/issues/2149)) ([3cdef01](https://github.com/googleapis/google-auth-library-nodejs/commit/3cdef0139ce4c64a4edca31a967db454a4723464))
+
 ## [10.4.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.3.1...v10.4.0) (2025-09-30)
 
 
