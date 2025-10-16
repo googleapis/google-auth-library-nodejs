@@ -434,7 +434,7 @@ class AwsSupplier implements AwsSecurityCredentialsSupplier {
   private readonly region: string
 
   constructor(region: string) {
-    this.region = options.region;
+    this.region = region;
   }
 
   async getAwsRegion(context: ExternalAccountSupplierContext): Promise<string> {
@@ -463,7 +463,7 @@ class AwsSupplier implements AwsSecurityCredentialsSupplier {
 const clientOptions = {
   audience: '//iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$WORKLOAD_POOL_ID/providers/$PROVIDER_ID', // Set the GCP audience.
   subject_token_type: 'urn:ietf:params:aws:token-type:aws4_request', // Set the subject token type.
-  aws_security_credentials_supplier: new AwsSupplier("AWS_REGION") // Set the custom supplier.
+  aws_security_credentials_supplier: new AwsSupplier("AWS_REGION"), // Set the custom supplier.
   service_account_impersonation_url: 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$EMAIL:generateAccessToken', // Set the service account impersonation url.
 }
 
