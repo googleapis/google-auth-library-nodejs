@@ -86,6 +86,11 @@ export {
   PluggableAuthClientOptions,
   ExecutableError,
 } from './auth/pluggable-auth-client';
+export {
+  EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE,
+  ExternalAccountAuthorizedUserClient,
+  ExternalAccountAuthorizedUserClientOptions,
+} from './auth/externalAccountAuthorizedUserClient';
 export {PassThroughClient} from './auth/passthrough';
 
 type ALL_EXPORTS = (typeof import('./'))[keyof typeof import('./')];
