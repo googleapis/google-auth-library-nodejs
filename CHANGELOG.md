@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.4.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.4.1...v10.4.2) (2025-10-23)
+
+
+### Bug Fixes
+
+* Export ExternalAccountAuthorizedUserCredential ([#2166](https://github.com/googleapis/google-auth-library-nodejs/issues/2166)) ([c128149](https://github.com/googleapis/google-auth-library-nodejs/commit/c1281490b3e10d3801fb2a18b2ec8f84538ef60d))
+
 ## [10.4.1](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.4.0...v10.4.1) (2025-10-14)
 
 
