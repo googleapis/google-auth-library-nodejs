@@ -536,7 +536,8 @@ export class GoogleAuth<T extends AuthClient = JSONClient> {
       );
     }
 
-    const targetScopes = this.getAnyScopes() ?? [];
+    const targetScopes =
+      (this.scopes || json.scopes || this.defaultScopes) ?? [];
 
     const client = new Impersonated({
       delegates: json.delegates ?? [],
