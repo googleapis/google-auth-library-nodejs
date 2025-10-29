@@ -2430,13 +2430,16 @@ describe('googleauth', () => {
       ];
       const jsonScopes = ['https://www.googleapis.com/auth/drive'];
 
-      function mockGenerateAccessToken(expectedScopes: string[]) {
+      function mockGenerateAccessToken(
+        expectedScopes: string[],
+        serviceAccountEmail = 'service-account-email@project-name.iam.gserviceaccount.com'
+      ) {
         nock('https://oauth2.googleapis.com').post('/token').reply(200, {
           access_token: 'source-token',
         });
         const scope = nock('https://iamcredentials.googleapis.com')
           .post(
-            '/v1/projects/-/serviceAccounts/service-account-email@project-name.iam.gserviceaccount.com:generateAccessToken',
+            `/v1/projects/-/serviceAccounts/${serviceAccountEmail}:generateAccessToken`,
             (body: {scope: string[]}) => {
               assert.deepStrictEqual(body.scope, expectedScopes);
               return true;
@@ -2482,7 +2485,10 @@ describe('googleauth', () => {
       });
 
       it('should use user scopes when JSON has no scopes', async () => {
-        const scope = mockGenerateAccessToken(userScopes);
+        const scope = mockGenerateAccessToken(
+          userScopes,
+          'target@project.iam.gserviceaccount.com'
+        );
         const auth = new GoogleAuth({
           keyFilename:
             './test/fixtures/impersonated_application_default_credentials.json',
@@ -2494,7 +2500,10 @@ describe('googleauth', () => {
       });
 
       it('should fall back to default scopes when no other scopes are present', async () => {
-        const scope = mockGenerateAccessToken(defaultScopes);
+        const scope = mockGenerateAccessToken(
+          defaultScopes,
+          'target@project.iam.gserviceaccount.com'
+        );
         const auth = new GoogleAuth({
           keyFilename:
             './test/fixtures/impersonated_application_default_credentials.json',
