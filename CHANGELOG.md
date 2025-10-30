@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/google-auth-library?activeTab=versions
 
+## [10.5.0](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.4.2...v10.5.0) (2025-10-30)
+
+
+### Features
+
+* Support scopes from impersonated JSON ([#2170](https://github.com/googleapis/google-auth-library-nodejs/issues/2170)) ([f50cb67](https://github.com/googleapis/google-auth-library-nodejs/commit/f50cb67a284076cd7a4b466cd6c6d32523635ea3))
+
 ## [10.4.2](https://github.com/googleapis/google-auth-library-nodejs/compare/v10.4.1...v10.4.2) (2025-10-23)
 
 
