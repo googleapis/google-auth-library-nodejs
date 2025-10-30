@@ -84,6 +84,7 @@ export interface ImpersonatedJWTInput {
   source_credentials?: JWTInput;
   service_account_impersonation_url?: string;
   delegates?: string[];
+  scopes?: string[];
 }
 
 export interface CredentialBody {
