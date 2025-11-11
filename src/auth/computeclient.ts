@@ -21,6 +21,7 @@ import {
   OAuth2Client,
   OAuth2ClientOptions,
 } from './oauth2client';
+import * as agentIdentity from './agentidentity';
 
 export interface ComputeOptions extends OAuth2ClientOptions {
   /**
@@ -75,6 +76,16 @@ export class Compute extends OAuth2Client {
           scopes: this.scopes.join(','),
         };
       }
+
+      // Check for Agent Identity certificate and add fingerprint if present
+      const fingerprint = await agentIdentity.getBindCertificateFingerprint();
+      if (fingerprint) {
+        if (!instanceOptions.params) {
+          instanceOptions.params = {};
+        }
+        instanceOptions.params.bindCertificateFingerprint = fingerprint;
+      }
+
       data = await gcpMetadata.instance(instanceOptions);
     } catch (e) {
       if (e instanceof GaxiosError) {

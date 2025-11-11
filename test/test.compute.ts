@@ -18,6 +18,7 @@ import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {Compute} from '../src';
+import * as agentIdentity from '../src/auth/agentidentity';
 
 nock.disableNetConnect();
 
@@ -25,10 +26,23 @@ describe('compute', () => {
   const url = 'http://example.com';
   const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
   const identityPath = `${BASE_PATH}/instance/service-accounts/default/identity`;
-  function mockToken(statusCode = 200, scopes?: string[]) {
+  function mockToken(
+    statusCode = 200,
+    scopes?: string[],
+    queryParams?: URLSearchParams,
+  ) {
     let path = tokenPath;
+    const params = new URLSearchParams();
     if (scopes && scopes.length > 0) {
-      path += `?scopes=${encodeURIComponent(scopes.join(','))}`;
+      params.append('scopes', scopes.join(','));
+    }
+    if (queryParams) {
+      queryParams.forEach((value, key) => {
+        params.append(key, value);
+      });
+    }
+    if (params.toString()) {
+      path += `?${params.toString()}`;
     }
     return nock(HOST_ADDRESS)
       .get(path, undefined, {reqheaders: HEADERS})
@@ -260,5 +274,20 @@ describe('compute', () => {
     }
 
     assert.fail('failed to throw');
+  });
+
+  it('should include bindCertificateFingerprint when Agent Identity is present', async () => {
+    const fingerprint = 'fake-fingerprint';
+    sandbox
+      .stub(agentIdentity, 'getBindCertificateFingerprint')
+      .resolves(fingerprint);
+
+    const params = new URLSearchParams();
+    params.append('bindCertificateFingerprint', fingerprint);
+    const scopes = [mockToken(200, undefined, params), mockExample()];
+
+    await compute.request({url});
+    scopes.forEach(s => s.done());
+    assert.strictEqual(compute.credentials.access_token, 'abc123');
   });
 });
