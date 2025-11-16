@@ -27,26 +27,11 @@ const NON_AGENTIC_CERT_PATH = path.join(
   '../../test/fixtures/external-account-cert/leaf.crt',
 );
 
-const AGENTIC_CERT_PEM = `-----BEGIN CERTIFICATE-----
-MIIDPjCCAiagAwIBAgIUCYeV4dwM29T5yucwWrSWlOC9wwYwDQYJKoZIhvcNAQEL
-BQAwIjEgMB4GA1UEAwwXVGVzdCBTUElGRkUgQ2VydGlmaWNhdGUwHhcNMjUxMTA3
-MDEyMjQ4WhcNMzUxMTA1MDEyMjQ4WjAiMSAwHgYDVQQDDBdUZXN0IFNQSUZGRSBD
-ZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANDr1Bzo
-KtzIZB35acQ+mpk6yScf59AnwHjjgNCMbC7kq2DSUfQzTlu9Kd0uUB6O7DmJ73D8
-Pge4XLE/Q1B6dI6DzJx7lhPoC1BiQFUGJ4Cu+TbbdlK3RiXNAZYjIj9UKP7DejCY
-WRgFB+PYyLczEkByvU9cy7Z9Uuufsn6LnYu7qOG+DcRSE41ThurZxQ14OWvLfjZm
-lhZXam4VBBli8Qku8qFIALe78kpy+hp2YCRnK84amATwPpGprRACp9WVka2JDYKD
-LY0OoYlyAQel6960aS11N3/2v0cvx03/LM5+Yj+DTvdyb2Mk/NVeRIKo8cM5YwPn
-sTLCf1cdxJvseRMCAwEAAaNsMGowSQYDVR0RBEIwQIY+c3BpZmZlOi8vYWdlbnRz
-Lmdsb2JhbC5wcm9qLTEyMzQ1LnN5c3RlbS5pZC5nb29nL3Rlc3Qtd29ya2xvYWQw
-HQYDVR0OBBYEFPvn+KXBcrYCmAMopkghUczUx/IkMA0GCSqGSIb3DQEBCwUAA4IB
-AQCbwd9RMFkr1C9AEgnLMWd1l9ciBbK0t1Sydu3eA0SNm2w6E58ih8O+huo6eGsM
-7z0E4i7YuaHnTdah/lPMqd75YRO57GSRbvi2g+yPyw6XdFl9HCHwF4WARdTF4Nkf
-1c1WstvBXb24PSSQQdy9un72ZG6f9fSVQrko6hchv8Rg6yyBTFE8APPkeMR/EJtV
-cnXg4CgsQIPHxJGQrhNvQhF7VLZePlTass4bqTqTYXwAte2jX/KW3qlW/t/v4AJe
-/q+pcXmNIvwRpT8zYA5tJHIDVJ+v9pWZA+nhoD9Qtr7FVHfB4mdNuFv7bMPoXN0+
-mCPzP08MnjgbX7zRETVlblrx
------END CERTIFICATE-----`;
+const AGENTIC_CERT_PATH = path.join(
+  __dirname,
+  '../../test/fixtures/external-account-cert/agentic_cert.pem',
+);
+const AGENTIC_CERT_PEM = fs.readFileSync(AGENTIC_CERT_PATH, 'utf-8');
 
 describe('agentidentity', () => {
   let sandbox: sinon.SinonSandbox;
@@ -102,27 +87,44 @@ describe('agentidentity', () => {
     );
   });
 
-//   it('should fail if cert file does not appear within timeout', async () => {
-//     process.env.GOOGLE_API_CERTIFICATE_CONFIG = configPath;
-//     await fs.promises.writeFile(
-//       configPath,
-//       JSON.stringify({
-//         cert_configs: {
-//           workload: {
-//             cert_path: certPath,
-//           },
-//         },
-//       }),
-//     );
+  it('should fail if cert file does not appear within timeout', async () => {
+    process.env.GOOGLE_API_CERTIFICATE_CONFIG = configPath;
 
-//     const promise = getBindCertificateFingerprint();
-//     await clock.tickAsync(31000);
+    // 1. Stub fs.existsSync
+    // We simulate that the config file exists, but the cert file (certPath) NEVER exists.
+    const existsStub = sandbox.stub(fs, 'existsSync');
+    existsStub.withArgs(configPath).returns(true);
+    existsStub.withArgs(certPath).returns(false);
+    existsStub.callThrough(); // Allow other unrelated checks to pass
 
-//     await assert.rejects(
-//       promise,
-//       /Certificate config or certificate file not found after multiple retries/,
-//     );
-//   });
+    // 2. Stub fs.promises.readFile
+    // Return the config JSON immediately without hitting the disk.
+    const readFileStub = sandbox.stub(fs.promises, 'readFile');
+    readFileStub.withArgs(configPath, 'utf-8').resolves(
+      JSON.stringify({
+        cert_configs: {
+          workload: {
+            cert_path: certPath,
+          },
+        },
+      }),
+    );
+    readFileStub.callThrough();
+
+    // 3. Start the function
+    const promise = getBindCertificateFingerprint();
+
+    // 4. Advance the clock
+    // Because FS is mocked, there is no "real" IO wait. The promises resolve
+    // in the microtask queue, which tickAsync handles automatically.
+    await clock.tickAsync(31000);
+
+    // 5. Assert failure
+    await assert.rejects(
+      promise,
+      /Certificate config or certificate file not found after multiple retries/,
+    );
+  });
 
   it('should return undefined for non-agent identity certificate', async () => {
     process.env.GOOGLE_API_CERTIFICATE_CONFIG = configPath;
