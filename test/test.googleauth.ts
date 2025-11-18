@@ -698,7 +698,7 @@ describe('googleauth', () => {
     });
 
     it('getApplicationCredentialsFromFilePath should handle errors thrown from fromStream', async () => {
-      sandbox.stub(auth, 'fromStream').throws('🤮');
+      (sandbox.stub(auth as any, '_fromStreamInternalAsync') as sinon.SinonStub).throws('🤮');
       await assert.rejects(
         auth._getApplicationCredentialsFromFilePath(
           './test/fixtures/private.json',
@@ -709,7 +709,7 @@ describe('googleauth', () => {
 
     it('getApplicationCredentialsFromFilePath should handle errors passed from fromStream', async () => {
       // Set up a mock to return an error from the fromStream method.
-      sandbox.stub(auth, 'fromStream').throws('🤮');
+      (sandbox.stub(auth as any, '_fromStreamInternalAsync') as sinon.SinonStub).throws('🤮');
       await assert.rejects(
         auth._getApplicationCredentialsFromFilePath(
           './test/fixtures/private.json',

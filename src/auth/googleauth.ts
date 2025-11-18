@@ -666,7 +666,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
 
     // Now open a read stream on the file, and parse it.
     const readStream = fs.createReadStream(filePath);
-    return this.fromStream(readStream, options);
+    return this._fromStreamInternalAsync(readStream, options);
   }
 
   /**
@@ -696,7 +696,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
       );
     }
 
-    const sourceClient = this.fromJSON(json.source_credentials);
+    const sourceClient = this._fromJSONInternal(json.source_credentials);
 
     if (json.service_account_impersonation_url?.length > 256) {
       /**
@@ -780,6 +780,13 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     console.warn(
       'The `fromJSON` method is deprecated. Please use the `JWT` constructor instead. For more details, see https://cloud.google.com/docs/authentication/external/externally-sourced-credentials.',
     );
+    return this._fromJSONInternal(json, options);
+  }
+
+  private _fromJSONInternal(
+    json: JWTInput | ImpersonatedJWTInput,
+    options: AuthClientOptions = {},
+  ): JSONClient {
     let client: JSONClient;
 
     // user's preferred universe domain
@@ -827,7 +834,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     json: JWTInput | ImpersonatedJWTInput,
     options?: AuthClientOptions,
   ): JSONClient {
-    const client = this.fromJSON(json, options);
+    const client = this._fromJSONInternal(json, options);
 
     // cache both raw data used to instantiate client and client itself.
     this.jsonContent = json;
@@ -906,16 +913,16 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
       options = optionsOrCallback;
     }
     if (callback) {
-      this.fromStreamAsync(inputStream, options).then(
+      this._fromStreamInternalAsync(inputStream, options).then(
         r => callback!(null, r),
         callback,
       );
     } else {
-      return this.fromStreamAsync(inputStream, options);
+      return this._fromStreamInternalAsync(inputStream, options);
     }
   }
 
-  private fromStreamAsync(
+  private async _fromStreamInternalAsync(
     inputStream: stream.Readable,
     options?: AuthClientOptions,
   ): Promise<JSONClient> {
@@ -1169,7 +1176,7 @@ export class GoogleAuth<T extends AuthClient = AuthClient> {
     } else if (this.keyFilename) {
       const filePath = path.resolve(this.keyFilename);
       const stream = fs.createReadStream(filePath);
-      return await this.fromStreamAsync(stream, this.clientOptions);
+      return await this._fromStreamInternalAsync(stream, this.clientOptions);
     } else if (this.apiKey) {
       const client = await this.fromAPIKey(this.apiKey, this.clientOptions);
       client.scopes = this.scopes;
