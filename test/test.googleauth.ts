@@ -69,6 +69,24 @@ import {Gaxios, GaxiosError, GaxiosPromise, GaxiosResponse} from 'gaxios';
 nock.disableNetConnect();
 
 describe('googleauth', () => {
+  const PREVENT_SHARING_ENV_VAR =
+    'GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES';
+  let originalPreventSharing: string | undefined;
+
+  before(() => {
+    // to prevent tests waiting for the x509 agentic certificate to load.
+    originalPreventSharing = process.env[PREVENT_SHARING_ENV_VAR];
+    process.env[PREVENT_SHARING_ENV_VAR] = 'false';
+  });
+
+  after(() => {
+    // restore original value of environment.
+    if (originalPreventSharing === undefined) {
+      delete process.env[PREVENT_SHARING_ENV_VAR];
+    } else {
+      process.env[PREVENT_SHARING_ENV_VAR] = originalPreventSharing;
+    }
+  });
   const isWindows = process.platform === 'win32';
 
   const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;

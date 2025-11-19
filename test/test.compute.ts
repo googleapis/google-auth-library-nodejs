@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import {describe, it, before, after, beforeEach, afterEach} from 'mocha';
 import {BASE_PATH, HEADERS, HOST_ADDRESS} from 'gcp-metadata';
 import * as nock from 'nock';
 import * as sinon from 'sinon';
@@ -23,6 +23,25 @@ import * as agentIdentity from '../src/auth/agentidentity';
 nock.disableNetConnect();
 
 describe('compute', () => {
+  const PREVENT_SHARING_ENV_VAR =
+    'GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES';
+  let originalPreventSharing: string | undefined;
+
+  before(() => {
+    // to prevent each test waiting for the x509 agentic certificate to load.
+    originalPreventSharing = process.env[PREVENT_SHARING_ENV_VAR];
+    process.env[PREVENT_SHARING_ENV_VAR] = 'false';
+  });
+
+  after(() => {
+    // restore original value of environment.
+    if (originalPreventSharing === undefined) {
+      delete process.env[PREVENT_SHARING_ENV_VAR];
+    } else {
+      process.env[PREVENT_SHARING_ENV_VAR] = originalPreventSharing;
+    }
+  });
+
   const url = 'http://example.com';
   const tokenPath = `${BASE_PATH}/instance/service-accounts/default/token`;
   const identityPath = `${BASE_PATH}/instance/service-accounts/default/identity`;
