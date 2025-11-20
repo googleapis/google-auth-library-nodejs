@@ -21,6 +21,7 @@ logging.basicConfig(level=logging.DEBUG)
 # List of excludes for the enhanced library
 node.owlbot_main(
     templates_excludes=[
-        ".github/ISSUE_TEMPLATE/bug_report.yml"
+        ".github/ISSUE_TEMPLATE/bug_report.yml",
+        "README.md"
     ],
 )
